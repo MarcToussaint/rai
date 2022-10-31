@@ -24,7 +24,7 @@ void testPushes(){
 
   arr Xstart = C.getFrameState();
 
-  for(uint k=0;k<5;k++){
+  for(uint k=0;k<2;k++){
 
     //restart from the same state multiple times
     S.setState(Xstart);
@@ -98,7 +98,7 @@ void testGrasp(){
 
     if(S.getGripperIsGrasping("gripper")){
       arr diff = C.feature(FS_position, {"gripper"})->eval(C);
-      q -= pseudoInverse(diff.J(), NoArr, 1e-2) * ARR(0.,0.,-1e-3);
+      q -= pseudoInverse(diff.J(), NoArr, 1e-2) * arr{0.,0.,-1e-3};
     }
 
     if(t==900){
@@ -188,8 +188,6 @@ void makeRndScene(){
     if(!(t%10)) S.getImageAndDepth(rgb, depth); //we don't need images with 100Hz, rendering is slow
 
     S.step({}, tau, S._none);
-
-    cout <<"depth in range: " <<depth.min() <<' ' <<depth.max() <<endl;
   }
 
   C.sortFrames();
@@ -302,10 +300,10 @@ int main(int argc,char **argv){
   makeRndScene();
   testFriction();
   testStackOfBlocks();
+  testCompound();
   testPushes();
   testOpenClose();
   testGrasp();
-  testCompound();
 
   return 0;
 }

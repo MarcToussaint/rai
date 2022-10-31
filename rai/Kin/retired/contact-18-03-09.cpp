@@ -56,7 +56,7 @@ void rai::TM_ContactNegDistance::phi(arr& y, arr& J, const rai::Configuration& K
     K.kinematicsPos(bp, (!!J?Jbp:NoArr), K.frames(C.b.ID), C.b_rel);
     K.kinematicsVec(bn, (!!J?Jbn:NoArr), K.frames(C.b.ID), C.b_norm);
 
-    y = ARR(.5*scalarProduct(bp-ap, an-bn) - (C.a_rad+C.b_rad));
+    y = arr{.5*scalarProduct(bp-ap, an-bn) - (C.a_rad+C.b_rad)};
     y *= -1.;
     if(!!J) {
       J = ~(bp-ap)*(Jan-Jbn) + ~(an-bn)*(Jbp-Jap);

@@ -17,7 +17,6 @@
 
 #include "../Core/thread.h"
 #include "../Kin/kin.h"
-#include "../Core/array.ipp"
 #include "../Gui/opengl.h"
 #include <map>
 

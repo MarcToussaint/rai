@@ -28,10 +28,13 @@ struct OptConstrained {
   ostream* logFile=nullptr;
 
   OptConstrained(arr& x, arr& dual, const shared_ptr<NLP>& P, rai::OptOptions opt=NOOPT, ostream* _logFile=0);
-  ~OptConstrained();
-  bool step();
+
   uint run();
+  bool ministep();
 //  void reinit();
+private:
+  arr x_beforeNewton;
+  double org_stopTol, org_stopGTol;
 };
 
 //==============================================================================
@@ -39,18 +42,7 @@ struct OptConstrained {
 // evaluating
 //
 
-inline void evaluateNLP(const arr& x, NLP& P, std::ostream& os) {
-  arr phi_x;
-  P.evaluate(phi_x, NoArr, x);
-  double Ef=0., Eh=0., Eg=0.;
-  for(uint i=0; i<phi_x.N; i++) {
-    if(P.featureTypes(i)==OT_f) Ef += phi_x(i);
-    if(P.featureTypes(i)==OT_sos) Ef += rai::sqr(phi_x(i));
-    if(P.featureTypes(i)==OT_ineq && phi_x(i)>0.) Eg += phi_x(i);
-    if(P.featureTypes(i)==OT_eq) Eh += fabs(phi_x(i));
-  }
-  os <<"f=" <<Ef <<" sum([g>0]g)="<<Eg <<" sum(|h|)=" <<Eh <<endl;
-}
+void evaluateNLP(const arr& x, NLP& P, std::ostream& os);
 
 //==============================================================================
 //

@@ -66,7 +66,7 @@ void TEST(Timer){
   double cpuTime = -rai::cpuTime();
 
   for(uint i=0;i<4;i++){
-    cout <<"i=" <<i <<flush;
+    cout <<"i=" <<i <<std::flush;
     for(uint j=0;j<100000;j++){ j+=10; j-=10; } //do something stupid
     rai::wait(.5);
     cout <<" cpu timer reads " <<rai::cpuTime()+cpuTime <<"sec" <<endl;

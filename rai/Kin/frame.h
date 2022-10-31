@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "../Core/util.h"
 #include "../Geo/geo.h"
 #include "../Core/graph.h"
 #include "../Geo/mesh.h"
+#include "../Geo/signedDistanceFunctions.h"
 
 /* TODO:
  * replace the types by more fundamental:
@@ -296,14 +296,16 @@ struct Shape : NonCopyable, GLDrawer {
   Frame& frame;
   Enum<ShapeType> _type;
   arr size;
-  ptr<Mesh> _mesh;
-  ptr<Mesh> _sscCore;
+  shared_ptr<Mesh> _mesh;
+  shared_ptr<Mesh> _sscCore;
+  shared_ptr<SDF_GridData> _sdf;
   char cont=0;           ///< are contacts registered (or filtered in the callback)
 
   double radius() { if(size.N) return size(-1); return 0.; }
   Enum<ShapeType>& type() { return _type; }
   Mesh& mesh() { if(!_mesh) _mesh = make_shared<Mesh>();  return *_mesh; }
   Mesh& sscCore() { if(!_sscCore) _sscCore = make_shared<Mesh>();  return *_sscCore; }
+  SDF_GridData& sdf() { if(!_sdf) _sdf = make_shared<SDF_GridData>();  return *_sdf; }
   double alpha() { arr& C=mesh().C; if(C.N==4 || C.N==2) return C(-1); return 1.; }
 
   void createMeshes();

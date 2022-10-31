@@ -40,7 +40,7 @@ struct TaskControlThread : Thread {
                     const Var<CtrlObjectiveL>& _ctrl_tasks);
   ~TaskControlThread();
 
-  arr whatsTheForce(const ptr<CtrlObjective>& t);
+  arr whatsTheForce(const shared_ptr<CtrlObjective>& t);
 
   void step();
 };
@@ -57,22 +57,22 @@ struct TaskControlUserInterface {
 
 #endif
 
-ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrlTasks,
+shared_ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrlTasks,
                                     Var<rai::Configuration>& ctrl_config,
-                                    const char* name, const ptr<Feature>& map,
-                                    const ptr<CtrlMovingTarget>& ref);
+                                    const char* name, const shared_ptr<Feature>& map,
+                                    const shared_ptr<CtrlMovingTarget>& ref);
 
-ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrlTasks,
+shared_ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrlTasks,
                                     Var<rai::Configuration>& ctrl_config,
                                     const char* name, FeatureSymbol fs, const StringA& frames,
-                                    const ptr<CtrlMovingTarget>& ref);
+                                    const shared_ptr<CtrlMovingTarget>& ref);
 
-ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrlTasks,
+shared_ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrlTasks,
                                     Var<rai::Configuration>& ctrl_config,
                                     const char* name, FeatureSymbol fs, const StringA& frames,
                                     double duration);
 
-ptr<CtrlObjective> addCompliance(Var<CtrlObjectiveL>& ctrlTasks,
+shared_ptr<CtrlObjective> addCompliance(Var<CtrlObjectiveL>& ctrlTasks,
                                  Var<rai::Configuration>& ctrl_config,
                                  const char* name, FeatureSymbol fs, const StringA& frames,
                                  const arr& compliance);

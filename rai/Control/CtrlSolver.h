@@ -28,8 +28,8 @@ struct CtrlSolver : NonCopyable {
   ~CtrlSolver();
 
   void set(const CtrlSet& CS);
-  void addObjectives(const rai::Array<ptr<CtrlObjective>>& O);
-  void delObjectives(const rai::Array<ptr<CtrlObjective>>& O);
+  void addObjectives(const rai::Array<shared_ptr<CtrlObjective>>& O);
+  void delObjectives(const rai::Array<shared_ptr<CtrlObjective>>& O);
 
   void update(const arr& q_real, const arr& qDot_real, rai::Configuration& C);
   void report(ostream& os=std::cout);

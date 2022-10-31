@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "mesh_readAssimp.h"
+#include "../Core/util.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -131,9 +132,9 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
   if(loadTextures && mesh->mTextureCoords[0]) M.tex.resize(mesh->mNumVertices, 2);
 
   for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
-    M.V[i] = ARR(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-    if(mesh->mNormals) M.Vn[i] = ARR(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
-    if(loadTextures && mesh->mTextureCoords[0]) M.tex[i] = ARR(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
+    M.V[i] = arr{mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z};
+    if(mesh->mNormals) M.Vn[i] = arr{mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z};
+    if(loadTextures && mesh->mTextureCoords[0]) M.tex[i] = arr{mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y};
   }
 
   M.T.resize(mesh->mNumFaces, 3);
@@ -142,7 +143,7 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
     aiFace& face = mesh->mFaces[i];
     //      CHECK_EQ(face.mNumIndices, 3, "");
     if(face.mNumIndices==3)
-      M.T[i] = TUP(face.mIndices[0], face.mIndices[1], face.mIndices[2]);
+      M.T[i] = uintA{face.mIndices[0], face.mIndices[1], face.mIndices[2]};
   }
   //cout <<"mean of loaded mesh=" <<M.getCenter() <<endl;
 
@@ -156,7 +157,7 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
     if(!strcmp(m->mKey.C_Str(), "$clr.diffuse")) {
       float* col = (float*)m->mData;
       if(m->mDataLength>=4*sizeof(float) && col[3]) { //not completely transparent
-        M.C = ARR(col[0], col[1], col[2], col[3]);
+        M.C = arr{col[0], col[1], col[2], col[3]};
       }
     }
   }

@@ -8,9 +8,9 @@
 
 #include "optimization.h"
 
+#include <math.h>
+
 uint eval_count=0;
-ObjectiveTypeA __NoTermTypeA(new SpecialArray(SpecialArray::ST_NoArr));
-ObjectiveTypeA& NoObjectiveTypeA = __NoTermTypeA;
 
 //===========================================================================
 
@@ -48,7 +48,7 @@ double Conv_NLP_ScalarProblem::scalar(arr& g, arr& H, const arr& x){
     }
     arr tmp = J;
     if(!isSparseMatrix(tmp)) {
-      for(uint i=0; i<phi.N; i++) tmp[i]() *= sqrt(coeff.p[i]);
+      for(uint i=0; i<phi.N; i++) tmp[i] *= sqrt(coeff.p[i]);
     } else {
       arr sqrtCoeff = sqrt(coeff);
       tmp.sparse().rowWiseMult(sqrtCoeff);

@@ -97,14 +97,31 @@ double shapeSize(const rai::Configuration& K, const char* name, uint i) {
 
 std::shared_ptr<Feature> Feature::deepCopy(){
 #define _cpy(T) { T* f = dynamic_cast<T*>(this); if(f) return make_shared<T>(*f); }
+  _cpy(F_Position);
   _cpy(F_PositionDiff);
+  _cpy(F_PositionRel);
+  _cpy(F_ScalarProduct);
   _cpy(F_qItself);
+  _cpy(F_qLimits);
+  _cpy(F_qQuaternionNorms);
+  _cpy(F_Pose);
+  _cpy(F_PoseRel);
+  _cpy(F_LinAngVel);
+  _cpy(F_PairCollision);
+  _cpy(F_NewtonEuler);
+  _cpy(F_NewtonEuler_DampedVelocities);
+  _cpy(F_fex_POASurfaceDistance);
+  _cpy(F_fex_ForceIsNormal);
+  _cpy(F_fex_ForceIsPositive);
+  _cpy(F_fex_Force);
+  _cpy(F_fex_POA);
+  _cpy(F_PushRadiusPrior);
 #undef _cpy
-  HALT("deepCopy not registered for this type: " <<rai::niceTypeidName(typeid(this)));
+  HALT("deepCopy not registered for this type: " <<rai::niceTypeidName(typeid(*this)));
   return make_shared<Feature>();
 }
 
-ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& C, const arr& scale, const arr& target, int order) {
+shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& C, const arr& scale, const arr& target, int order) {
   shared_ptr<Feature> f;
   if(feat==FS_distance) {  f=make_shared<F_PairCollision>(F_PairCollision::_negScalar, false); }
   else if(feat==FS_oppose) {  f=make_shared<F_GraspOppose>(); }
@@ -209,7 +226,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else HALT("can't interpret feature symbols: " <<feat);
 
 //  if(!f->frameIDs.N) f->frameIDs = C.getFrameIDs(frames);
-  if(!!frames && frames.N){
+  if(frames.N){
     CHECK(!f->frameIDs.N, "frameIDs are already set");
     if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(C.frames);
     else f->frameIDs = C.getFrameIDs(frames);

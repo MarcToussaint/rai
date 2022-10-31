@@ -123,43 +123,43 @@ void init_Frame(pybind11::module& m) {
   .def("getPosition", [](shared_ptr<rai::Frame>& self) {
     //RToken<rai::Configuration> token(*self.config, &self.config->data);
     arr x = self->getPosition();
-    return pybind11::array_t<double>(x.dim(), x.p);
+    return arr2numpy(x);
   })
 
   .def("getQuaternion", [](shared_ptr<rai::Frame>& self) {
     //RToken<rai::Configuration> token(*self.config, &self.config->data);
     arr x = self->getQuaternion();
-    return pybind11::array_t<double>(x.dim(), x.p);
+    return arr2numpy(x);
   })
 
   .def("getRotationMatrix", [](shared_ptr<rai::Frame>& self) {
     //RToken<rai::Configuration> token(*self.config, &self.config->data);
     arr x = self->getRotationMatrix();
-    return pybind11::array_t<double>(x.dim(), x.p);
+    return arr2numpy(x);
   })
 
   .def("getRelativePosition", [](shared_ptr<rai::Frame>& self) {
     //RToken<rai::Configuration> token(*self.config, &self.config->data);
     arr x = self->getRelativePosition();
-    return pybind11::array_t<double>(x.dim(), x.p);
+    return arr2numpy(x);
   })
 
   .def("getRelativeQuaternion", [](shared_ptr<rai::Frame>& self) {
     //RToken<rai::Configuration> token(*self.config, &self.config->data);
     arr x = self->getRelativeQuaternion();
-    return pybind11::array_t<double>(x.dim(), x.p);
+    return arr2numpy(x);
   })
 
   .def("getJointState", [](shared_ptr<rai::Frame>& self) {
     //RToken<rai::Configuration> token(*self.config, &self.config->data);
     arr x = self->getJointState();
-    return pybind11::array_t<double>(x.dim(), x.p);
+    return arr2numpy(x);
   })
 
   .def("getSize", [](shared_ptr<rai::Frame>& self) {
     //RToken<rai::Configuration> token(*self.config, &self.config->data);
     arr x = self->getSize();
-    return pybind11::array_t<double>(x.dim(), x.p);
+    return arr2numpy(x);
   })
 
   .def("getMeshPoints", &rai::Frame::getMeshPoints)

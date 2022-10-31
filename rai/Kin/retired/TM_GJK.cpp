@@ -154,10 +154,10 @@ void TM_GJK::phi(arr& v, arr& J, const rai::Configuration& W) {
   if(negScalar) {
     if(penetrating) {
       if(!!J) J = ~(v/l)*J;
-      v = ARR(l);
+      v = arr{l};
     } else {
       if(!!J) J = ~(v/(-l))*J;
-      v = ARR(-l);
+      v = arr{-l};
     }
   }
 //  CHECK_ZERO(l2-d2, 1e-6,"");

@@ -60,7 +60,7 @@ TaskControlThread::~TaskControlThread() {
   threadClose();
 }
 
-arr TaskControlThread::whatsTheForce(const ptr<CtrlObjective>& t) {
+arr TaskControlThread::whatsTheForce(const shared_ptr<CtrlObjective>& t) {
 // arr tau = ctrl_state.get()->u_bias;
   NIY;
 //  return pseudoInverse(~t->J_y)*torques_real;
@@ -141,7 +141,7 @@ void TaskControlThread::step() {
     //set/test the new configuration
     K->setJointState(q_model); //DONT! the configuration should stay on real; use a separate one for safty checks
     if(useSwift) K->stepSwift();
-    for(ptr<CtrlObjective>& t: ctrl_tasks()) t->update(.0, K); //update without time increment
+    for(shared_ptr<CtrlObjective>& t: ctrl_tasks()) t->update(.0, K); //update without time increment
     double cost = taskController.getIKCosts(ctrl_tasks());
 //    IK_cost.set() = cost;
 
@@ -151,7 +151,7 @@ void TaskControlThread::step() {
       q_model -= .9*dq;
       K->setJointState(q_model);
       if(useSwift) K->stepSwift();
-      for(ptr<CtrlObjective>& t: ctrl_tasks()) t->update(.0, K); //update without time increment
+      for(shared_ptr<CtrlObjective>& t: ctrl_tasks()) t->update(.0, K); //update without time increment
     }
 #endif
 
@@ -166,7 +166,7 @@ void TaskControlThread::step() {
   arr Kp = diag(Kp_base);  Kp *= kp_factor;
   arr Kd = diag(Kd_base);  Kd *= kd_factor;
 //  arr Ki = diag(Kp_base);  Ki *= ki_factor;
-  arr Ki = ARR(ki_factor);
+  arr Ki = arr{ki_factor};
 
 //  Kp = M*Kp; DANGER!!
 //  Kd = M*Kd;
@@ -199,9 +199,9 @@ void TaskControlThread::step() {
     refs.qdot = qdot_model;
     refs.P_compliance = P_compliance;
     refs.fL_gamma = 1.;
-    refs.Kp = Kp; //ARR(1.);
-    refs.Kd = Kd; //ARR(1.);
-    refs.Ki = Ki; //ARR(.2);
+    refs.Kp = Kp; //arr{1.};
+    refs.Kd = Kd; //arr{1.};
+    refs.Ki = Ki; //arr{.2};
     refs.fL = zeros(6);
     refs.fR = zeros(6);
     refs.KiFTL.clear();
@@ -215,29 +215,29 @@ void TaskControlThread::step() {
   }
 }
 
-ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
+shared_ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                                     Var<rai::Configuration>& ctrl_config,
-                                    const char* name, const ptr<Feature>& map,
-                                    const ptr<CtrlMovingTarget>& ref) {
+                                    const char* name, const shared_ptr<Feature>& map,
+                                    const shared_ptr<CtrlMovingTarget>& ref) {
   NIY
 #if 0
-  ptr<CtrlObjective> t = make_shared<CtrlObjective>(name, map, ref);
+  shared_ptr<CtrlObjective> t = make_shared<CtrlObjective>(name, map, ref);
   t->update(0., ctrl_config.get());
   ctrl_tasks.set()->append(t.get());
   return t;
 #endif
 }
 
-ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
+shared_ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                                     Var<rai::Configuration>& ctrl_config,
                                     const char* name, FeatureSymbol fs, const StringA& frames,
-                                    const ptr<CtrlMovingTarget>& ref) {
+                                    const shared_ptr<CtrlMovingTarget>& ref) {
   return addCtrlObjective(ctrl_tasks, ctrl_config, name,
                           symbols2feature(fs, frames, ctrl_config.get()),
                           ref);
 }
 
-ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
+shared_ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                                     Var<rai::Configuration>& ctrl_config,
                                     const char* name, FeatureSymbol fs, const StringA& frames,
                                     double duration) {
@@ -246,12 +246,12 @@ ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                           make_shared<CtrlTarget_Sine>(arr(), duration));
 }
 
-ptr<CtrlObjective> addCompliance(Var<CtrlObjectiveL>& ctrl_tasks,
+shared_ptr<CtrlObjective> addCompliance(Var<CtrlObjectiveL>& ctrl_tasks,
                                  Var<rai::Configuration>& ctrl_config,
                                  const char* name, FeatureSymbol fs, const StringA& frames,
                                  const arr& compliance) {
 #if 0
-  ptr<CtrlObjective> t = make_shared<CtrlObjective>(name, symbols2feature(fs, frames, ctrl_config.get()));
+  shared_ptr<CtrlObjective> t = make_shared<CtrlObjective>(name, symbols2feature(fs, frames, ctrl_config.get()));
   t->compliance = compliance;
   t->ctrlTasks = &ctrl_tasks;
   ctrl_tasks.set()->append(t.get());

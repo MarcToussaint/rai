@@ -18,11 +18,11 @@ TaskControlMethods::TaskControlMethods(const arr& _Hmetric)
   : Hmetric(_Hmetric) { //rai::getParameter<double>("Hrate", .1)*world.getHmetric()) {
 }
 
-CtrlObjective* TaskControlMethods::addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> feat) {
+CtrlObjective* TaskControlMethods::addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, shared_ptr<Feature> feat) {
   return tasks.append(new CtrlObjective(name, feat, decayTime, dampingRatio, 1., 1.));
 }
 
-//ptr<CtrlObjective> TaskControlMethods::addPDTask(const char* name,
+//shared_ptr<CtrlObjective> TaskControlMethods::addPDTask(const char* name,
 //                                         double decayTime, double dampingRatio,
 //                                         TM_DefaultType type,
 //                                         const char* iShapeName, const rai::Vector& ivec,
@@ -385,7 +385,7 @@ void TaskControlMethods::calcForceControl(CtrlObjectiveL& tasks, arr& K_ft, arr&
   uint nForceTasks=0;
   for(CtrlObjective* task : tasks) if(task->active && task->f_ref.N) {
       nForceTasks++;
-      ptr<TM_Default> feat = std::dynamic_pointer_cast<TM_Default>(task->feat);
+      shared_ptr<TM_Default> feat = std::dynamic_pointer_cast<TM_Default>(task->feat);
       rai::Frame* body = world.frames(feat->i);
       rai::Frame* lFtSensor = world.getFrameByName("r_ft_sensor");
       arr y, J, J_ft;
@@ -400,7 +400,7 @@ void TaskControlMethods::calcForceControl(CtrlObjectiveL& tasks, arr& K_ft, arr&
   CHECK_LE(nForceTasks, 1, "Multiple force laws not allowed at the moment");
   if(!nForceTasks) {
     K_ft = zeros(world.getJointStateDimension());
-    fRef = ARR(0.0);
+    fRef = arr{0.0};
     J_ft_inv = zeros(1, 6);
     gamma = 0.0;
   }
@@ -414,7 +414,7 @@ TaskControlMethods::TaskControlMethods(const arr& _Hmetric)
   : Hmetric(_Hmetric) { //rai::getParameter<double>("Hrate", .1)*world.getHmetric()) {
 }
 
-CtrlObjective* TaskControlMethods::addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> feat) {
+CtrlObjective* TaskControlMethods::addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, shared_ptr<Feature> feat) {
   NIY
 }
 
@@ -584,7 +584,7 @@ void CtrlProblem_NLP::getBounds(arr& bounds_lo, arr& bounds_up) {
 void CtrlProblem_NLP::getFeatureTypes(ObjectiveTypeA& featureTypes) {
   for(auto& o: CP.objectives) if(o->active) {
     uint d = o->feat->dim(o->feat->getFrames(CP.komo.world));
-    featureTypes.append(consts<ObjectiveType>(o->type, d));
+    featureTypes.append(o->type, d);
   }
   dimPhi = featureTypes.N;
 }
@@ -593,7 +593,7 @@ void CtrlProblem_NLP::getNames(StringA& variableNames, StringA& featureNames) {
   variableNames = CP.komo.world.getJointNames();
   for(auto& o: CP.objectives) if(o->active) {
     uint d = o->feat->dim(o->feat->getFrames(CP.komo.world));
-    featureNames.append(consts<rai::String>(o->name, d));
+    featureNames.append(o->name, d);
   }
 }
 

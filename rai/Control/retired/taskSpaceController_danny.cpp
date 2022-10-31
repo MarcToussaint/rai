@@ -220,7 +220,7 @@ void TaskSpaceController::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, 
     }
   } else {
     K_ft = zeros(this->world->getJointStateDimension());
-    fRef = ARR(0.0);
+    fRef = arr{0.0};
     J_ft_inv = zeros(1, 6);
     gamma = 0.0;
   }

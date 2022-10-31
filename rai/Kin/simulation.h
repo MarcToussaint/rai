@@ -19,14 +19,14 @@ struct SimulationImp;
 struct Simulation {
   enum SimulatorEngine { _physx, _bullet, _kinematic };
   enum ControlMode { _none, _position, _velocity, _acceleration, _spline };
-  enum ImpType { _closeGripper, _openGripper, _depthNoise, _rgbNoise, _adversarialDropper, _objectImpulses, _blockJoints };
+  enum ImpType { _closeGripper, _openGripper, _depthNoise, _rgbNoise, _adversarialDropper, _objectImpulses, _blockJoints, _noPenetrations };
 
   std::unique_ptr<struct Simulation_self> self;
 
   Configuration& C;
   double time;
   SimulatorEngine engine;
-  Array<ptr<SimulationImp>> imps; ///< list of (adversarial) imps doing things/perturbations/noise in addition to clean physics engine
+  Array<shared_ptr<SimulationImp>> imps; ///< list of (adversarial) imps doing things/perturbations/noise in addition to clean physics engine
   int verbose;
   FrameL grasps;
 
@@ -83,8 +83,8 @@ struct Simulation {
   //== management interface
 
   //-- store and reset the state of the simulation
-  ptr<SimulationState> getState();
-  void restoreState(const ptr<SimulationState>& state);
+  shared_ptr<SimulationState> getState();
+  void restoreState(const shared_ptr<SimulationState>& state);
   void setState(const arr& frameState, const arr& frameVelocities=NoArr);
   void pushConfigurationToSimulator(const arr& frameVelocities=NoArr);
 

@@ -8,6 +8,8 @@
 
 #include "lagrangian.h"
 
+#include <math.h>
+
 //==============================================================================
 //
 // LagrangianProblem
@@ -93,7 +95,7 @@ void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
   CHECK_EQ(nphi, phi.N, "");
 
   if(!!J) { //term Jacobians
-    if(J_x.isSparse()){
+    if(isSparse(J_x)){
       J.sparse().resize(phi.N, J_x.d1, 0);
       J_x.sparse().setupRowsCols();
     }else{
@@ -104,7 +106,7 @@ void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
       ObjectiveType ot = P->featureTypes.p[i];
 //#define J_setRow(fac) { J.setMatrixBlock(fac J_x.sparse().getSparseRow(i), nphi++, 0); }
 //#define J_setRow(fac) { J.setMatrixBlock(fac ~J_x[i], nphi++, 0); }
-#define J_setRow(fac) { if(!J.isSparse()) J.setMatrixBlock(fac ~J_x[i], nphi++, 0); else J.setMatrixBlock(fac J_x.sparse().getSparseRow(i), nphi++, 0); }
+#define J_setRow(fac) { if(!isSparse(J)) J.setMatrixBlock(fac ~J_x[i], nphi++, 0); else J.setMatrixBlock(fac J_x.sparse().getSparseRow(i), nphi++, 0); }
       if(            ot==OT_f)   J_setRow()   // direct cost term
       if(            ot==OT_sos) J_setRow()   // sumOfSqr terms
       if(useLB    && ot==OT_ineq) J_setRow( (-muLB/phi_x.p[i])* )                    //log barrier, check feasibility
@@ -206,7 +208,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     }
     arr tmp = J_x;
     if(!isSpecial(tmp)) {
-      for(uint i=0; i<phi_x.N; i++) tmp[i]() *= sqrt(coeff.p[i]);
+      for(uint i=0; i<phi_x.N; i++) tmp[i] *= sqrt(coeff.p[i]);
     } else if(isSparseMatrix(tmp)){
       arr sqrtCoeff = sqrt(coeff);
       tmp.sparse().rowWiseMult(sqrtCoeff);
@@ -227,6 +229,20 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
 
   return L;
 #endif
+}
+
+arr LagrangianProblem::get_totalFeatures(){
+  arr feat(OT_ineqP+1);
+  feat.setZero();
+  for(uint i=0; i<phi_x.N; i++) {
+    if(P->featureTypes.elem(i)==OT_f) feat.elem(OT_f) += phi_x.elem(i);
+    else if(P->featureTypes.elem(i)==OT_sos) feat.elem(OT_sos) += rai::sqr(phi_x.elem(i));
+    else if(P->featureTypes.elem(i)==OT_ineq && phi_x.elem(i)>0.) feat.elem(OT_ineq) += phi_x.elem(i);
+    else if(P->featureTypes.elem(i)==OT_eq) feat.elem(OT_eq) += fabs(phi_x.elem(i));
+    else if(P->featureTypes.elem(i)==OT_ineqB && phi_x.elem(i)>0.) feat.elem(OT_ineqB) += phi_x.elem(i);
+    else if(P->featureTypes.elem(i)==OT_ineqP && phi_x.elem(i)>0.) feat.elem(OT_ineqP) += phi_x.elem(i);
+  }
+  return feat;
 }
 
 double LagrangianProblem::get_cost_f() {

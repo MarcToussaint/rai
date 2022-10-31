@@ -49,7 +49,7 @@ void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause) {
   K.resize(X.d0);
   KD1.resize(X.d0);
   KD2.resize(X.d0);
-  arr null=ARR(0.);
+  arr null=arr{0.};
   for(uint i=0; i<X.d0; i++) {
     K(i) = gp.cov(gp.kernelP, null, X[i]);
     KD1(i) = gp.covF_D(0, gp.kernelP, null, X[i]);
@@ -68,7 +68,7 @@ void plotKernel2D(GaussianProcess& gp, double lo, double hi, bool pause) {
   K.resize(X.d0, X.d1);
   KD1.resize(X.d0, X.d1);
   KD2.resize(X.d0, X.d1);
-  arr null=ARR(0.);
+  arr null=arr{0.};
   for(uint i=0; i<X.d0; i++) {
     for(uint j=0; j<X.d1; j++) {
       K(i, j) = gp.cov(gp.kernelP, null, X[i]);

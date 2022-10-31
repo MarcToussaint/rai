@@ -11,6 +11,7 @@
 #ifdef RAI_BULLET
 
 #include "frame.h"
+
 #include <btBulletDynamicsCommon.h>
 #include <BulletSoftBody/btSoftBody.h>
 #include <BulletSoftBody/btSoftBodyHelpers.h>
@@ -43,7 +44,7 @@ btTransform conv_trans_btTrans(const rai::Transformation& X) {
 }
 
 arr conv_btVec3_arr(const btVector3& v) {
-  return ARR(v.x(), v.y(), v.z());
+  return arr{v.x(), v.y(), v.z()};
 }
 
 btVector3 conv_arr_btVec3(const arr& v) {
@@ -170,7 +171,7 @@ BulletInterface::BulletInterface(rai::Configuration& C, const rai::Bullet_Option
     FrameL parts = C.getParts();
     for(rai::Frame *f : parts){
       self->addMultiBody(f);
-      if((*f->ats)["motors"]) motorizeMultiBody(f);
+      if(f->ats && (*f->ats)["motors"]) motorizeMultiBody(f);
     }
     //  self->addMultiBody(C(0), verbose);
     //  self->addExample();
@@ -367,10 +368,10 @@ void BulletInterface::pushFullState(const rai::Configuration& C, const arr& fram
       if(!!frameVelocities && frameVelocities.N) {
         b->setLinearVelocity(btVector3(frameVelocities(f->ID, 0, 0), frameVelocities(f->ID, 0, 1), frameVelocities(f->ID, 0, 2)));
         b->setAngularVelocity(btVector3(frameVelocities(f->ID, 1, 0), frameVelocities(f->ID, 1, 1), frameVelocities(f->ID, 1, 2)));
-      } else {
+      } /*else {
         b->setLinearVelocity(btVector3(0., 0., 0.));
         b->setAngularVelocity(btVector3(0., 0., 0.));
-      }
+      }*/
     }
   }
   self->dynamicsWorld->stepSimulation(.01); //without this, two consequtive pushFullState won't work! (something active tag?)
@@ -417,7 +418,7 @@ btCollisionShape* BulletInterface_self::createLinkShape(ShapeL& shapes, rai::Bod
   bool shapesHaveInertia=false;
   for(rai::Shape *s:shapes) if(s->frame.inertia){ shapesHaveInertia=true; break; }
   if(shapesHaveInertia && !f->inertia){
-    DEPR("please use computeComputeInertia and transformToDiagInertia before bullet");
+    DEPR;
     f->computeCompoundInertia();
 #if 1 //we relocate that frame to have zero COM (bullet only accepts zero COM and diagonal inertia)
     if(!f->inertia->com.isZero){
@@ -481,15 +482,14 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f) {
       body->setFriction(friction);
     }
   }
-//  body->setRollingFriction(.01);
-//  body->setSpinningFriction(.01);
-  //cout <<body->getContactStiffness() <<' ' <<body->getContactDamping() <<endl;
-  body->setContactStiffnessAndDamping(opt.contactStiffness, opt.contactDamping);
+  body->setRollingFriction(.01);
+  body->setSpinningFriction(.01);
   {
     double restitution=opt.defaultRestitution;
     for(auto s:shapes) if(s->frame.ats) s->frame.ats->get<double>(restitution, "restitution");
     if(restitution>=0.) body->setRestitution(restitution);
   }
+  body->setContactStiffnessAndDamping(opt.contactStiffness, opt.contactDamping);
 
   dynamicsWorld->addRigidBody(body);
 
@@ -817,7 +817,7 @@ btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape* s) {
 #ifdef BT_USE_DOUBLE_PRECISION
       arr& V = s->mesh().V;
 #else
-      floatA V = convert<float>(s->mesh().V);
+      floatA V = rai::convert<float>(s->mesh().V);
 #endif
       colShape = new btConvexHullShape(V.p, V.d0, V.sizeT*V.d1);
       colShape->setMargin(0.);

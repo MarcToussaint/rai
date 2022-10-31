@@ -34,7 +34,7 @@
 //  uint varTotalDim;
 
 //public:
-//  Conv_CostFunction(const ptr<NLP>& _MP,
+//  Conv_CostFunction(const shared_ptr<NLP>& _MP,
 //                    uint _feature_id,
 //                    const uintA& variableDimensions,
 //                    const uintA& featureDimensions,
@@ -96,7 +96,7 @@
 
 //  ceres::Problem cs;
 
-//  Conv_MatematicalProgram_CeresProblem(const ptr<NLP>& _MP) : MP(_MP) {
+//  Conv_MatematicalProgram_CeresProblem(const shared_ptr<NLP>& _MP) : MP(_MP) {
 
 //    //you must never ever resize these arrays, as ceres takes pointers directly into these fixed memory buffers!
 //    x_base.resize(MP.getDimension());
@@ -243,7 +243,7 @@ void TEST(Ceres){
     CeresInterface opt(P3);
     opt.solve();
     ofstream fil2("z.opt2");
-    P2.xTrace.writeRaw(fil2);
+    fil2 <<P2.xTrace.modRaw();
   }
 
   arr x, phi;

@@ -9,15 +9,18 @@
 #pragma once
 
 #include "../Core/util.h"
+#include "../Core/array.h"
 
 //===========================================================================
 
 struct OpenGL;
 struct Gaussian;
-namespace rai {  template<class T> struct Array;  }
+namespace rai {
+  template<class T> struct Array;
+}
 
+//typedef struct arr;
 typedef unsigned int uint;
-typedef rai::Array<double> arr;
 typedef rai::Array<byte> byteA;
 typedef rai::Array<uint> uintA;
 typedef rai::Array<Gaussian> GaussianA;
@@ -30,7 +33,7 @@ typedef enum { opengl, xfig, gnupl } PlotMode;
 namespace rai {
 
 struct PlotModule : GLDrawer {
-  unique_ptr<struct sPlotModule> self;
+  std::unique_ptr<struct sPlotModule> self;
   PlotMode mode;
   OpenGL* gl;
   bool light, grid, colors, drawBox, drawDots, perspective;

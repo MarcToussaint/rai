@@ -144,9 +144,9 @@ void PR2Interface::initialize(rai::Configuration* realWorld, rai::Configuration*
       }
     }*/
 
-    initMsg.Kp = ARR(0.0);
-    initMsg.Kd = ARR(0.0);
-    initMsg.Ki = ARR(0.0);
+    initMsg.Kp = arr{0.0};
+    initMsg.Kd = arr{0.0};
+    initMsg.Ki = arr{0.0};
     initMsg.gamma = 1.;
     initMsg.velLimitRatio = .1;
     initMsg.effLimitRatio = 1.;
@@ -170,9 +170,9 @@ void PR2Interface::initialize(rai::Configuration* realWorld, rai::Configuration*
     initMsg.KiFT.clear();
     initMsg.J_ft_inv.clear();
     initMsg.u_bias = zeros(this->realWorld->getJointStateDimension());
-    initMsg.Kp = ARR(0.0);
-    initMsg.Kd = ARR(0.0);
-    initMsg.Ki = ARR(0.0);
+    initMsg.Kp = arr{0.0};
+    initMsg.Kd = arr{0.0};
+    initMsg.Ki = arr{0.0};
     initMsg.gamma = 1.;
     initMsg.velLimitRatio = .1;
     initMsg.effLimitRatio = 1.;

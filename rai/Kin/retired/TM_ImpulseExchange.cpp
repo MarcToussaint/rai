@@ -140,7 +140,7 @@ void TM_ImpulsExchange_weak::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   arr Jcc = zeros(3, qdim.last());
   if(!!J) Jcc.setMatrixBlock(Jc, 0, qdim(0));
 
-  y = ARR(1., 1., 1.);
+  y = arr{1., 1., 1.};
   if(!!J) J = zeros(3, J1.d1);
 
   arr d=a2-a1;

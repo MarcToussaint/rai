@@ -13,10 +13,10 @@
 //===========================================================================
 
 struct TM_LinTrans : Feature {
-  ptr<Feature> map;
+  shared_ptr<Feature> map;
   arr A, a;
 
-  TM_LinTrans(ptr<Feature> _map, const arr& A, const arr& a) : map(_map), A(A), a(a) {}
+  TM_LinTrans(shared_ptr<Feature> _map, const arr& A, const arr& a) : map(_map), A(A), a(a) {}
   ~TM_LinTrans() {}
 
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);

@@ -93,6 +93,9 @@ ifdef BASE2
 CPATHS	+= $(BASE2)
 endif
 LPATHS	+= $(BASE)/lib $(HOME)/opt/lib /usr/local/lib
+ifdef BASE2
+LPATHS	+= $(BASE2)/lib
+endif
 LIBS += -lrt
 
 #google-pprof:
@@ -311,8 +314,8 @@ pywrapper: $(OUTPUT) $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 	$(LINK) $(LDFLAGS) -o $@ $(OBJS) $(LIBS) $(SHAREFLAG)
 	cp $@ $(BASE)/lib
 
-#%.so: $(PREOBJS) $(BUILDS) z.SRCS.o
-#	$(LINK) $(LDFLAGS) -o $@ z.SRCS.o $(LIBS) $(SHAREFLAG)
+#%.so: $(PREOBJS) $(BUILDS) z.unity.o
+#	$(LINK) $(LDFLAGS) -o $@ z.unity.o $(LIBS) $(SHAREFLAG)
 #	cp $@ $(BASE)/lib
 
 %.lib: $(PREOBJS) $(BUILDS) $(OBJS)
@@ -368,9 +371,10 @@ endif
 generate_Makefile.dep: $(SRCS)
 	-$(CXX) -MM $(SRCS) $(CFLAGS) $(CXXFLAGS) > Makefile.dep
 
-z.SRCS.cxx: $(SRCS)
-	@echo "$(SRCS:%=#include\"%\"\n)" > z.SRCS.cxx
-#	find . -maxdepth 1 -name '*.cpp' -exec echo "#include \"{}\"" \; > libInc.cxx
+z.unity.cxx: $(SRCS)
+	@echo "$(SRCS:%=#include\"%\"\n)" > z.unity.cxx
+#	find . -maxdepth 1 -name '*.cpp' -fprintf z.unity.cxx '#include "%f"\n'
+
 
 
 ################################################################################

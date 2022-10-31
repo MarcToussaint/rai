@@ -63,7 +63,7 @@ void TM_PushConsistent::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
     J.setMatrixBlock(J2, 0, qidx-J2.d1);
   }
 #else
-  arr a = ARR(1., 0, 0);
+  arr a = arr{1., 0, 0};
   y = crossProduct(yi2-yi1, a);
   if(!!J) {
     uint qidx=0;

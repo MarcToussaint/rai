@@ -11,6 +11,7 @@
 #include "../Gui/opengl.h"
 #include "../Optim/newton.h"
 #include "../Algo/ann.h"
+#include "../Core/util.h"
 
 #ifdef RAI_GJK
 extern "C" {
@@ -437,15 +438,16 @@ void PairCollision::GJK_sqrDistance() {
 #ifdef RAI_GJK
   // convert meshes to 'Object_structures'
   Object_structure m1, m2;
-  rai::Array<double*> Vhelp1, Vhelp2;
-  m1.numpoints = mesh1->V.d0;  m1.vertices = mesh1->V.getCarray(Vhelp1);  m1.rings=nullptr; //TODO: rings would make it faster
-  m2.numpoints = mesh2->V.d0;  m2.vertices = mesh2->V.getCarray(Vhelp2);  m2.rings=nullptr;
+  rai::Array<double*> Vhelp1 = getCarray(mesh1->V);
+  rai::Array<double*> Vhelp2 = getCarray(mesh2->V);
+  m1.numpoints = mesh1->V.d0;  m1.vertices = Vhelp1.p;  m1.rings=nullptr; //TODO: rings would make it faster
+  m2.numpoints = mesh2->V.d0;  m2.vertices = Vhelp2.p;  m2.rings=nullptr;
 
   // convert transformations to affine matrices
   arr T1, T2;
   rai::Array<double*> Thelp1, Thelp2;
-  if(!!t1) {  T1=t1->getAffineMatrix();  T1.getCarray(Thelp1);  }
-  if(!!t2) {  T2=t2->getAffineMatrix();  T2.getCarray(Thelp2);  }
+  if(!!t1) {  T1=t1->getAffineMatrix();  Thelp1 = getCarray(T1);  }
+  if(!!t2) {  T2=t2->getAffineMatrix();  Thelp2 = getCarray(T2);  }
 
   // call GJK
   simplex_point simplex;
@@ -524,7 +526,7 @@ void PairCollision::glDraw(OpenGL&) {
 
 void PairCollision::kinDistance(arr& y, arr& J,
                                 const arr& Jp1, const arr& Jp2) {
-  y = ARR(distance-rad1-rad2);
+  y = arr{distance-rad1-rad2};
   if(!!J) {
     arr Jdiff = Jp1 - Jp2;
     J = ~normal*Jdiff;
@@ -546,7 +548,7 @@ void PairCollision::kinNormal(arr& y, arr& J,
       double ab=scalarProduct(a, b);
       if(1.-ab*ab>1e-8) { //the edges are not colinear
         double nn = ::sqrt(1.-ab*ab);
-        double sign = ::sign(scalarProduct(normal, crossProduct(b, a)));
+        double sign = rai::sign(scalarProduct(normal, crossProduct(b, a)));
         J = ((sign/nn) * (eye(3, 3) - normal*~normal)) * (skew(b) * crossProduct(Jx1, a) - skew(a) * crossProduct(Jx2, b));
       }
     } else if(simplexType(2, 1)) {
@@ -604,7 +606,7 @@ void PairCollision::kinVector(arr& y, arr& J,
       double ab=scalarProduct(a, b);
       if(1.-ab*ab>1e-8) { //the edges are not colinear
         double nn = ::sqrt(1.-ab*ab);
-        double sign = ::sign(scalarProduct(normal, crossProduct(b, a)));
+        double sign = rai::sign(scalarProduct(normal, crossProduct(b, a)));
         J += ((distance * sign/nn) * (eye(3, 3) - normal*~normal)) * (skew(b) * crossProduct(Jx1, a) - skew(a) * crossProduct(Jx2, b));
       }
     }

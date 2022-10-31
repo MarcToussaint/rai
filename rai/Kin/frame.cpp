@@ -11,7 +11,8 @@
 #include "uncertainty.h"
 #include "forceExchange.h"
 #include "dof_particles.h"
-#include "../Geo/analyticShapes.h"
+#include "../Geo/signedDistanceFunctions.h"
+
 #include <climits>
 
 #ifdef RAI_GL
@@ -82,7 +83,7 @@ rai::Frame::~Frame() {
   }else{
     CHECK_EQ(this, C.frames.elem(ID), "");
     C.frames.remove(ID);
-    listReindex(C.frames);
+    for(uint i=0; i<C.frames.N; i++) C.frames.elem(i)->ID=i;
   }
   C.reset_q();
 }
@@ -350,7 +351,7 @@ void rai::Frame::read(const Graph& ats) {
       joint->read(ats);
     }
   }
-  if(ats["shape"] || ats["mesh"]) { shape = new Shape(*this); shape->read(ats); }
+  if(ats["shape"] || ats["mesh"] || ats["sdf"]) { shape = new Shape(*this); shape->read(ats); }
   if(ats["mass"]) { inertia = new Inertia(*this); inertia->read(ats); }
 
   if(ats["collisionCore"]) {
@@ -368,8 +369,8 @@ void rai::Frame::read(const Graph& ats) {
     }
     sh->type() = rai::ST_ssCvx;
     sh->sscCore().V = core;
-    sh->size = ARR(r);
-    sh->mesh().C = ARR(1., 1., 0., .5);
+    sh->size = arr{r};
+    sh->mesh().C = arr{1., 1., 0., .5};
     sh->mesh().setSSCvx(core, r);
   }
 }
@@ -430,7 +431,7 @@ void rai::Frame::write(std::ostream& os) const {
 
 rai::Frame& rai::Frame::setShape(rai::ShapeType shape, const arr& size) {
   getShape().type() = shape;
-  getShape().size() = size;
+  getShape().size = size;
   getShape().createMeshes();
   return *this;
 }
@@ -503,7 +504,7 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
     getShape().sscCore().V.clear().operator=(points).reshape(-1, 3);
     getShape().sscCore().makeConvexHull();
     getShape().mesh().setSSCvx(getShape().sscCore().V, radius);
-    getShape().size = ARR(radius);
+    getShape().size = arr{radius};
   }
   if(colors.N) {
     getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
@@ -709,11 +710,16 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint) {
     qIndex=copyJoint->qIndex; dim=copyJoint->dim;
     type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H; scale=copyJoint->scale;
     active=copyJoint->active;
+    isStable=copyJoint->isStable;
     sampleUniform=copyJoint->sampleUniform;  sampleSdv=copyJoint->sampleSdv;
     code=copyJoint->code;
 
     if(copyJoint->mimic){
-      setMimic(frame->C.frames.elem(copyJoint->mimic->frame->ID)->joint);
+      if(copyJoint->mimic->frame->ID<frame->C.frames.N){
+        setMimic(frame->C.frames.elem(copyJoint->mimic->frame->ID)->joint);
+      }else{
+        setMimic(0);
+      }
     }
 
     if(copyJoint->uncertainty) {
@@ -1365,6 +1371,7 @@ rai::Shape::Shape(Frame& f, const Shape* copyShape)
     const Shape& s = *copyShape;
     if(s._mesh) _mesh = s._mesh; //shallow shared_ptr copy!
     if(s._sscCore) _sscCore = s._sscCore; //shallow shared_ptr copy!
+    if(s._sdf) _sdf = s._sdf; //shallow shared_ptr copy!
     _type = s._type;
     size = s.size;
     cont = s.cont;
@@ -1411,6 +1418,16 @@ void rai::Shape::read(const Graph& ats) {
       fil.cd_file();
       read_ppm(mesh().texImg, fil.name, true);
 //      cout <<"TEXTURE: " <<mesh().texImg.dim() <<endl;
+    }
+    if(ats.get(str, "sdf"))      { sdf().read(FILE(str)); }
+    else if(ats.get(fil, "sdf")) { sdf().read(fil); }
+    if(_sdf){
+      if(size.N){
+        if(size.N==1){ sdf().lo *= size.elem(); sdf().up *= size.elem(); }
+        else NIY;
+      }
+      if(type()==ST_none) type()=ST_sdf;
+      else CHECK_EQ(type(), ST_sdf, "");
     }
     if(ats.get(d, "meshscale"))  { mesh().scale(d); }
     if(ats.get(x, "meshscale"))  { mesh().scale(x(0), x(1), x(2)); }
@@ -1507,7 +1524,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
   glLoadMatrixd(GLmatrix);
 
   if(!gl.drawOptions.drawShapes) {
-    double scale=.33*(.02+sum(size)); //some scale
+    double scale=.33*(.02+::sum(size)); //some scale
     if(!scale) scale=1.;
     scale*=.3;
     glDrawAxes(scale);
@@ -1593,6 +1610,9 @@ void rai::Shape::createMeshes() {
     case rai::ST_pointCloud:
 //      if(!mesh().V.N) LOG(-1) <<"mesh needs to be loaded";
       break;
+    case rai::ST_sdf: {
+      mesh().setImplicitSurface(sdf().gridData, sdf().lo, sdf().up);
+    } break;
     case rai::ST_quad: {
       byteA tex = mesh().texImg;
       mesh().setQuad(size(0), size(1), tex);
@@ -1603,6 +1623,7 @@ void rai::Shape::createMeshes() {
         CHECK(mesh().V.N, "mesh or sscCore needs to be loaded");
         sscCore() = mesh();
       }
+      if(!sscCore().T.N) sscCore().makeConvexHull();
       mesh().setSSCvx(sscCore().V, size.last());
       break;
     case rai::ST_ssBox: {
@@ -1662,23 +1683,26 @@ shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates){
   switch(_type) {
     case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
     case rai::ST_box:
-      return make_shared<DistanceFunction_ssBox>(pose, size(0), size(1), size(2), 0.);
+      return make_shared<SDF_ssBox>(pose, size, 0.);
+    case rai::ST_marker:
+      return make_shared<SDF_Sphere>(pose, 0.);
     case rai::ST_sphere:
-      return make_shared<DistanceFunction_Sphere>(pose, radius());
+      return make_shared<SDF_Sphere>(pose, radius());
     case rai::ST_cylinder:
-      return make_shared<DistanceFunction_Cylinder>(pose, size(0), size(1));
+      return make_shared<SDF_Cylinder>(pose, size(0), size(1));
     case rai::ST_ssCylinder:
-      return make_shared<DistanceFunction_Cylinder>(pose, size(0), size(1));
+      return make_shared<SDF_Cylinder>(pose, size(0), size(1));
       //return make_shared<DistanceFunction_SSSomething>(make_shared<DistanceFunction_Cylinder>(pose, size(0), size(1)-size(2)), size(2));
     case rai::ST_capsule:
-      return make_shared<DistanceFunction_Capsule>(pose, size(0), size(1));
-    case rai::ST_ssBox: {
-      return make_shared<DistanceFunction_ssBox>(pose, size(0), size(1), size(2), size(3));
+      return make_shared<SDF_Capsule>(pose, size(0), size(1));
+    case rai::ST_ssBox:
+      return make_shared<SDF_ssBox>(pose, size);
+    case rai::ST_sdf:
+      CHECK(_sdf, "");
+      return _sdf;
     default:
       return shared_ptr<ScalarFunction>();
-    }
   }
-
 }
 
 rai::Inertia::Inertia(Frame& f, Inertia* copyInertia) : frame(f), type(BT_dynamic) {

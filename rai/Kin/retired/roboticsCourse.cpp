@@ -295,7 +295,7 @@ CarSimulator::CarSimulator() {
   //landmarks
   landmarks.resize(2, 2);
   rndGauss(landmarks, 10.);
-  //landmarks=ARR(10,0); landmarks.reshape(1,2);
+  //landmarks=arr{10,0}; landmarks.reshape(1,2);
 
   gl=new OpenGL;
   gl->add(drawEnv, this);
@@ -326,15 +326,15 @@ void CarSimulator::step(const arr& u) {
 }
 
 void CarSimulator::getRealNoisyObservation(arr& Y) {
-  getMeanObservationAtState(Y, ARR(x, y, theta));
+  getMeanObservationAtState(Y, arr{x, y, theta});
   rndGauss(Y, observationNoise, true);
 }
 
 void CarSimulator::getMeanObservationAtState(arr& Y, const arr& X) {
   Y=landmarks;
-  arr R = ARR(cos(X(2)), -sin(X(2)), sin(X(2)), cos(X(2)));
+  arr R = arr{cos(X(2)), -sin(X(2)), sin(X(2)), cos(X(2))};
   R.reshape(2, 2);
-  arr p = ones(landmarks.d0, 1)*~ARR(X(0), X(1));
+  arr p = ones(landmarks.d0, 1)*~arr{X(0), X(1)};
   Y -= p;
   Y = Y*R;
   Y.reshape(Y.N);
@@ -342,13 +342,13 @@ void CarSimulator::getMeanObservationAtState(arr& Y, const arr& X) {
 
 void CarSimulator::getLinearObservationModelAtState(arr& C, arr& c, const arr& X) {
   uint N=landmarks.d0;
-  arr R = ARR(cos(X(2)), sin(X(2)), -sin(X(2)), cos(X(2)));
+  arr R = arr{cos(X(2)), sin(X(2)), -sin(X(2)), cos(X(2))};
   R.reshape(2, 2);
   C.resize(2*N, 2*N);  C.setZero();
   for(uint i=0; i<N; i++) C.setMatrixBlock(R, 2*i, 2*i);
   cout <<C <<endl;
   c.resize(2*N);
-  for(uint i=0; i<N; i++) c.setVectorBlock(ARR(X(0), X(1)), 2*i);
+  for(uint i=0; i<N; i++) c.setVectorBlock(arr{X(0), X(1)), 2*i};
   c = - C * c;
 }
 
@@ -409,5 +409,4 @@ void glDrawCarSimulator(void* classP, OpenGL&) {
 #endif
 }
 
-#include "../Core/array.ipp"
 template rai::Array<CarSimulator::Gaussian>& rai::Array<CarSimulator::Gaussian>::resize(uint);

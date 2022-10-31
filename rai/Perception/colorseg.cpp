@@ -139,9 +139,9 @@ void get_patch_centroids(arr& pch_cen, uintA& pch, uint np) {
 // INPUT
 //
 // OUTPUT
-//  doubleA& stats                - N-by-6 matrix, #N patches, 1-3: RGB, 4-6: std. dev.
+//  arr& stats                - N-by-6 matrix, #N patches, 1-3: RGB, 4-6: std. dev.
 //
-void patch_color_statistics(doubleA& stats, const uintA& patches, const byteA& image) {
+void patch_color_statistics(arr& stats, const uintA& patches, const byteA& image) {
   uint num_patches = patches.p[patches.maxIndex()]+1;
   uint num_pixels = image.d0*image.d1;
   if(image.d2 != 3)
@@ -210,7 +210,7 @@ void get_patch_colors(floatA& pch_col, byteA& img, uintA& pch, uint np) {
 //
 // OUTPUT
 //
-void colorize_patches(byteA& coloration, const uintA& patches, const doubleA& stats) {
+void colorize_patches(byteA& coloration, const uintA& patches, const arr& stats) {
   int x = patches.d1, y = patches.d0;
   coloration.resize(y, x, 3);
   int counter = 0;
@@ -241,8 +241,8 @@ void colorize_patches(byteA& coloration, const uintA& patches, const doubleA& st
 void get_multiple_color_segmentations(
   MultiSegmentations& segmentations,  // scale-hierarchy of segmented input
   const byteA& image,                 // input image
-  const doubleA& sigma,
-  const doubleA& k,
+  const arr& sigma,
+  const arr& k,
   const intA& min
 ) {
   // TODO phtread to speed up segmentation (one thread per level)
@@ -302,7 +302,7 @@ void pch2img(byteA& img, const uintA& pch, floatA& pch_colormap) {NICO}
 void random_colorMap(floatA& pch_colormap, uint np) {NICO}
 uint incremental_patch_ids(uintA& pch) {NICO}
 void get_patch_colors(floatA& pch_col, byteA& img, uintA& pch, uint np) {NICO}
-void get_patch_centroids(doubleA& pch_cen, byteA& img, uintA& pch, uint np) {NICO}
+void get_patch_centroids(arr& pch_cen, byteA& img, uintA& pch, uint np) {NICO}
 
 uint get_single_color_segmentation(uintA& segmentation,
                                    const byteA& image,

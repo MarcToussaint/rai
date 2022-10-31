@@ -720,7 +720,7 @@ void ActionInterface::indicateFailure() {
     NIY;
     //C->del_edge(e); //otherwise: no object in hand
   }
-  std::cerr <<"ActionInterface: CONTROL FAILURE" <<endl;
+  cerr <<"ActionInterface: CONTROL FAILURE" <<endl;
   relaxPosition();
 }
 

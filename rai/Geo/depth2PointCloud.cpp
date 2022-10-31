@@ -8,6 +8,8 @@
 
 #include "depth2PointCloud.h"
 
+#include <math.h>
+
 Depth2PointCloud::Depth2PointCloud(Var<floatA>& _depth, float _fx, float _fy, float _px, float _py)
   : Thread("Depth2PointCloud"),
     depth(this, _depth, true),
@@ -78,6 +80,12 @@ void depthData2point(double* pt, double* fxypxy) {
   pt[0] =  pt[2] * (pt[0] - fxypxy[2]) / fxypxy[0];
   pt[1] = -pt[2] * (pt[1] - fxypxy[3]) / fxypxy[1];
   pt[2] = -pt[2];
+}
+
+void point2depthData(double* pt, double* fxypxy) {
+  pt[2] = -pt[2];
+  pt[0] = fxypxy[2] + (pt[0]*fxypxy[0])/pt[2];
+  pt[1] = fxypxy[3] - (pt[1]*fxypxy[1])/pt[2];
 }
 
 void depthData2point(arr& pt, const arr& Fxypxy) {

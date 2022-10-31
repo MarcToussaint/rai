@@ -7,7 +7,6 @@
     --------------------------------------------------------------  */
 
 #include "algos.h"
-#include "array.ipp"
 
 #include <cmath>
 #include <cstdlib>
@@ -196,7 +195,7 @@ double rai::matdistance(intA& fix, intA& fox, uintA& p, bool sub) {
   if(fix.d0<=fox.d0) { Nmin=fix.d0; Nmax=fox.d0; } else { Nmin=fox.d0; Nmax=fix.d0; }
   for(i=0; i<Nmin; i++) for(j=0; j<Nmin; j++) if(fix(i, j)!=fox(p(i), p(j))) n++;
   if(!sub) n+=(Nmax-Nmin)*(Nmax+Nmin);
-  //std::cout <<fix <<fox <<n;
+  //cout <<fix <<fox <<n;
   return ((double)n)/Nmax/Nmax;
 }
 
@@ -477,7 +476,7 @@ void LinearStatistics::write(std::ostream& os) const {
       <<"\nvariance X=" <<VarX
       <<"\ncovariance XY=" <<CovXY
       <<"\n</LinearStatistics>"
-      <<std::endl;
+      <<endl;
 }
 
 //===========================================================================
@@ -516,7 +515,7 @@ uint TupleIndex::index(uintA i) {
     CHECK(i(u)>i(u-1) && i(u) < n, "wrong symmetic index!");
     a+=tri(n-i(u-1)-1, k-u)-tri(n-i(u), k-u);
   }
-  //std::cout <<a <<std::endl;
+  //cout <<a <<endl;
   return a;
 }
 
@@ -633,7 +632,7 @@ void Kalman::EMupdate(arr& Y, arr* Rt) {
   //xx/=n-1.;
   //vv/=n-1.;
 
-  std::cout <<"EM-xx=" <<xx <<vv <<xx* inverse(vv);
+  cout <<"EM-xx=" <<xx <<vv <<xx* inverse(vv);
 #endif
 
   LinearStatistics S;
@@ -645,7 +644,7 @@ void Kalman::EMupdate(arr& Y, arr* Rt) {
   //for(t=0;t<n-1;t++) S.learn(X[t], Y[t]);
   //S.regressor(C);
 
-  std::cout <<"EM-update: A, a=" <<A <<a <<std::endl; //S.CovXY <<S.VarX <<std::endl;
+  cout <<"EM-update: A, a=" <<A <<a <<endl; //S.CovXY <<S.VarX <<endl;
 }
 
 void Kalman::fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr* Rt) {
@@ -720,7 +719,7 @@ void Kalman::fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr* Rt)
 
   // EM-update:
   arr up(d, d), dn(d, d);
-  std::cout <<"EM-update: before:\nA=" <<A <<" B=" <<B <<" covH=" <<CovH <<" covV=" <<CovV <<std::endl;
+  cout <<"EM-update: before:\nA=" <<A <<" B=" <<B <<" covH=" <<CovH <<" covV=" <<CovV <<endl;
 
   for(t=0, up=0., dn=0.; t<T-1; t++) { up += h1h[t]; dn += hh[t]; }
   A = up * inverse(dn);
@@ -734,7 +733,7 @@ void Kalman::fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr* Rt)
   for(t=0, up=0., dn=0.; t<T-1; t++) { up += hh[t+1] - (double)2.*A*hh1[t] + A*hh[t]*~A; }
   CovH = up/(T-(double)1.);
 
-  std::cout <<"after:\nA=" <<A <<" B=" <<B <<" covH=" <<CovH <<" covV=" <<CovV <<std::endl;
+  cout <<"after:\nA=" <<A <<" B=" <<B <<" covH=" <<CovH <<" covV=" <<CovV <<endl;
 
   // log-likelihood:
   double LL=0., l;
@@ -747,7 +746,7 @@ void Kalman::fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr* Rt)
     LL += l;
   }
   LL/=T;
-  std::cout <<"log-likelihood=" <<LL <<std::endl;
+  cout <<"log-likelihood=" <<LL <<endl;
 }
 
 //===========================================================================
@@ -976,7 +975,7 @@ void PartialLeastSquares::SIMPLS() {
   resErr.resize(K); resErr=0.;
   for(uint k=0; k<K; k++) {
     //step 0: check non-zero residuals:
-    //std::cout <<sumOfSqr(A) <<std::endl;
+    //cout <<sumOfSqr(A) <<endl;
     if(sumOfSqr(A)<1e-10) break;
     //step 1
     AA=~A*A;
@@ -1004,7 +1003,7 @@ void PartialLeastSquares::SIMPLS() {
     //step 7
     A=C*A;
   }
-  //std::cout <<sumOfSqr(A) <<std::endl;
+  //cout <<sumOfSqr(A) <<endl;
   B=~Q*W;
 }
 

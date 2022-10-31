@@ -14,16 +14,16 @@
 //===========================================================================
 
 struct KOMO_based_bound {
-  ptr<KOMO> komo;
+  shared_ptr<KOMO> komo;
 
-  KOMO_based_bound(ptr<KOMO>& komo) : komo(komo) {}
+  KOMO_based_bound(shared_ptr<KOMO>& komo) : komo(komo) {}
 };
 
 //===========================================================================
 
 struct PoseBound : KOMO_based_bound {
   //the constructor creates the komo problem -- absorbes what previously was defined in skeleton2Bound!
-  PoseBound(ptr<KOMO>& komo, //TODO: eventually remove this!
+  PoseBound(shared_ptr<KOMO>& komo, //TODO: eventually remove this!
             const rai::Skeleton& S,
             const rai::Configuration& startKinematics,
             bool collisions);
@@ -32,7 +32,7 @@ struct PoseBound : KOMO_based_bound {
 //===========================================================================
 
 struct SeqBound : KOMO_based_bound {
-  SeqBound(ptr<KOMO>& komo, //TODO: eventually remove this!
+  SeqBound(shared_ptr<KOMO>& komo, //TODO: eventually remove this!
            const rai::Skeleton& S,
            const rai::Configuration& startKinematics,
            bool collisions);
@@ -41,7 +41,7 @@ struct SeqBound : KOMO_based_bound {
 //===========================================================================
 
 struct PathBound : KOMO_based_bound {
-  PathBound(ptr<KOMO>& komo, //TODO: eventually remove this!
+  PathBound(shared_ptr<KOMO>& komo, //TODO: eventually remove this!
             const rai::Skeleton& S,
             const rai::Configuration& startKinematics,
             bool collisions);
@@ -50,7 +50,7 @@ struct PathBound : KOMO_based_bound {
 //===========================================================================
 
 struct SeqPathBound : KOMO_based_bound {
-  SeqPathBound(ptr<KOMO>& komo, //TODO: eventually remove this!
+  SeqPathBound(shared_ptr<KOMO>& komo, //TODO: eventually remove this!
                const rai::Skeleton& S,
                const rai::Configuration& startKinematics,
                bool collisions, const arrA& waypoints);
@@ -59,7 +59,7 @@ struct SeqPathBound : KOMO_based_bound {
 //===========================================================================
 
 struct SeqVelPathBound : KOMO_based_bound {
-  SeqVelPathBound(ptr<KOMO>& komo, //TODO: eventually remove this!
+  SeqVelPathBound(shared_ptr<KOMO>& komo, //TODO: eventually remove this!
                   const rai::Skeleton& S,
                   const rai::Configuration& startKinematics,
                   bool collisions, const arrA& waypoints);
@@ -76,7 +76,7 @@ enum BoundType { BD_all=-1,
                  BD_max
                };
 
-ptr<KOMO_based_bound> skeleton2Bound(ptr<KOMO>& komo,
+shared_ptr<KOMO_based_bound> skeleton2Bound(shared_ptr<KOMO>& komo,
                                   BoundType boundType,
                                   const rai::Skeleton& S,
                                   const rai::Configuration& startKinematics,

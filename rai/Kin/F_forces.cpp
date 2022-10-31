@@ -96,6 +96,7 @@ arr POA_rel_vel(const FrameL& F, rai::ForceExchange* ex, bool after_or_before) {
 
   arr cp, cpJ;
   ex->kinPOA(cp, cpJ);
+  cp.J() = cpJ;
 
   // p1, p2 are the CENTERS! of the frame a and b
   // v1, v2 are the CENTER velocities of the frame a and b
@@ -451,7 +452,7 @@ void F_Energy::phi2(arr& y, arr& J, const FrameL& F) {
     }
   }
 
-  y = ARR(E);
+  y = arr{E};
 }
 
 //===========================================================================

@@ -85,7 +85,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
     addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(world, to, 0., false), OT_eq, {1e2}, NoArr, 1, +0, -1);
 #else
     //eq for 3DOFs only
-    ptr<Objective> o = addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(false), {to}, OT_eq, {1e2}, NoArr, 1, +0, -1);
+    shared_ptr<Objective> o = addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(false), {to}, OT_eq, {1e2}, NoArr, 1, +0, -1);
     o->feat->scale=1e2 * arr({3, 6}, {
       1, 0, 0, 0, 0, 0,
       0, 1, 0, 0, 0, 0,
@@ -377,7 +377,7 @@ void KOMO_ext::setHoming(double startTime, double endTime, double prec, const ch
 
 void KOMO_ext::setHoldStill(double startTime, double endTime, const char* shape, double prec) {
   Frame* s = world.getFrame(shape);
-  addObjective({startTime, endTime}, make_shared<F_qItself>(TUP(s->ID)), {}, OT_sos, {prec}, NoArr, 1);
+  addObjective({startTime, endTime}, make_shared<F_qItself>(uintA{s->ID}), {}, OT_sos, {prec}, NoArr, 1);
 }
 
 void KOMO_ext::setPosition(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
@@ -618,7 +618,7 @@ void KOMO_ext::setGraspSlide(double time, const char* endeff, const char* object
   HALT("TODO: fix syntax:")
 //  addObjective(startTime, endTime,
 //          make_shared<TM_Default>(TMT_posDiff, world, object, NoVector, placeRef),
-//          OT_sos, ARR(h), ~ARR(0,0,1e1));
+//          OT_sos, arr{h}, ~arr{0,0,1e1});
   //keep object vertial
   addObjective({startTime, endTime},
                make_shared<F_VectorDiff>(Vector_z, Vector_z), {object, placeRef}, OT_sos, {1e1});

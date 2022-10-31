@@ -219,7 +219,7 @@ Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo, const rai::Array<DofL>
     std::shared_ptr<GroundedObjective>& ob = komo.objs(f);
     arr y = ob->feat->eval(ob->frames);
     if(y.N){
-      CHECK(y.J().isSparse(), "");
+      CHECK(isSparse(y.J()), "");
       SparseMatrix& S = y.J().sparse();
       for(uint i=0;i<S.elems.d0;i++){
         uint xIndex = S.elems(i,1);

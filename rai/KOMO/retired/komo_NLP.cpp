@@ -248,7 +248,7 @@ void KOMO::TimeSliceProblem::getDimPhi() {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
   uint M=0;
   for(uint i=0; i<komo.objectives.N; i++) {
-    ptr<Objective> ob = komo.objectives.elem(i);
+    shared_ptr<Objective> ob = komo.objectives.elem(i);
     CHECK_EQ(ob->configs.nd, 2, "only in sparse mode!");
     if(ob->configs.d1!=1) continue; //ONLY USE order 0 objectives!!!!!
     for(uint l=0; l<ob->configs.d0; l++) {
@@ -266,7 +266,7 @@ void KOMO::TimeSliceProblem::getFeatureTypes(ObjectiveTypeA& ft) {
 
   uint M=0;
   for(uint i=0; i<komo.objectives.N; i++) {
-    ptr<Objective> ob = komo.objectives.elem(i);
+    shared_ptr<Objective> ob = komo.objectives.elem(i);
     CHECK_EQ(ob->configs.nd, 2, "only in sparse mode!");
     if(ob->configs.d1!=1) continue; //ONLY USE order 0 objectives!!!!!
     for(uint l=0; l<ob->configs.d0; l++) {
@@ -281,7 +281,7 @@ void KOMO::TimeSliceProblem::getFeatureTypes(ObjectiveTypeA& ft) {
 }
 
 void KOMO::TimeSliceProblem::evaluate(arr& phi, arr& J, const arr& x) {
-  komo.set_x2(x, TUP(slice));
+  komo.set_x2(x, uintA{slice});
 
   if(!dimPhi) getDimPhi();
 
@@ -294,7 +294,7 @@ void KOMO::TimeSliceProblem::evaluate(arr& phi, arr& J, const arr& x) {
   arr y, Jy;
   uint M=0;
   for(uint i=0; i<komo.objectives.N; i++) {
-    ptr<Objective> ob = komo.objectives.elem(i);
+    shared_ptr<Objective> ob = komo.objectives.elem(i);
     CHECK_EQ(ob->configs.nd, 2, "only in sparse mode!");
     if(ob->configs.d1!=1) continue; //ONLY USE order 0 objectives!!!!!
     for(uint l=0; l<ob->configs.d0; l++) {

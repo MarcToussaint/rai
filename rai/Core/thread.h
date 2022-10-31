@@ -10,7 +10,6 @@
 
 #include "util.h"
 #include "array.h"
-#include "graph.h"
 
 #include <mutex>
 #include <shared_mutex>
@@ -141,7 +140,7 @@ struct Var_data : Var_base {
 
   Var_data(const char* name=0) : Var_base(name), data() {} // default constructor for value always initializes, also primitive types 'bool' or 'int'
   ~Var_data() {
-      if (rwlock.isLocked()) { std::cerr << "can't destroy a variable when it is currently accessed!" << endl; exit(1); }
+      if (rwlock.isLocked()) { cerr << "can't destroy a variable when it is currently accessed!" <<endl; exit(1); }
   }
 };
 
@@ -161,7 +160,7 @@ template<class T> void operator<<(ostream& os, const Var_data<T>& v) { os <<"Var
     the variable's content */
 template<class T>
 struct Var {
-  ptr<Var_data<T>> data;
+  shared_ptr<Var_data<T>> data;
   Thread* thread;             ///< which thread is the owner
   int last_read_revision;     ///< last revision that has been accessed (read or write)
 
@@ -190,7 +189,7 @@ struct Var {
   WToken<T> set(const double& dataTime) { return WToken<T>(dataTime, *data, &data->data, thread/*, &last_read_revision*/); } ///< write access to the variable's data
   operator Var_base& () { return *std::dynamic_pointer_cast<Var_base>(data); }
 
-  void reassignTo(const ptr<Var_data<T>>& _data) {
+  void reassignTo(const shared_ptr<Var_data<T>>& _data) {
     data.reset();
     data = _data;
   }
@@ -271,8 +270,8 @@ struct Event : Signaler {
   void callback(Var_base* v);
 };
 
-template<class T> VarL operator+(ptr<T>& p) { return ARRAY<Var_base*>(p->status.data.get()); }
-template<class T> VarL operator+(VarL A, ptr<T>& p) { A.append(p->status.data.get()); return A; }
+template<class T> VarL operator+(shared_ptr<T>& p) { return VarL{p->status.data.get()}; }
+template<class T> VarL operator+(VarL A, shared_ptr<T>& p) { A.append(p->status.data.get()); return A; }
 
 int _allPositive(const VarL& signalers, int whoChanged);
 enum ActStatus { AS_none=-1, AS_init, AS_running, AS_done, AS_converged, AS_stalled, AS_true, AS_false, AS_kill };
@@ -399,11 +398,11 @@ struct ScriptThread : Thread {
   virtual void step() { ActStatus r = (ActStatus)script(); status.set()=r; }
 };
 
-inline ptr<ScriptThread> run(const std::function<int ()>& script, Var_base& listenTo) {
+inline shared_ptr<ScriptThread> run(const std::function<int ()>& script, Var_base& listenTo) {
   return make_shared<ScriptThread>(script, listenTo);
 }
 
-inline ptr<ScriptThread> run(const std::function<int ()>& script, double beatIntervalSec) {
+inline shared_ptr<ScriptThread> run(const std::function<int ()>& script, double beatIntervalSec) {
   return make_shared<ScriptThread>(script, beatIntervalSec);
 }
 
@@ -437,7 +436,7 @@ template<class T>
 int Var<T>::waitForRevisionGreaterThan(int rev) {
   EventFunction evFct = [&rev](const rai::Array<Var_base*>& vars, int whoChanged) -> int {
     CHECK_EQ(vars.N, 1, ""); //this event only checks the revision for a single var
-    if(vars.scalar()->revision > (uint)rev) return 1;
+    if(vars.elem()->revision > (uint)rev) return 1;
     return 0;
   };
 

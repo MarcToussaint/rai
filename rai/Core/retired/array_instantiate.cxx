@@ -19,25 +19,43 @@ template rai::Array<T> rai::operator^(const Array<T>& y, const Array<T>& z);
 template rai::Array<T> rai::operator%(const Array<T>& y, const Array<T>& z);
 template rai::Array<T> rai::operator*(T, const Array<T>& z);
 template rai::Array<T> rai::operator*(const Array<T>& z, T);
+template rai::Array<T> rai::operator/(int mustBeOne, const Array<T>& z_tobeinverted);
+template rai::Array<T> rai::operator/(const Array<T>& y, T z);
+template rai::Array<T> rai::operator/(const Array<T>& y, const Array<T>& z);
+template rai::Array<T> rai::operator, (const Array<T>& y, const Array<T>& z);
+
 template rai::Array<T> rai::operator-(const Array<T>& z);
 template rai::Array<T> rai::operator-(T, const Array<T>& z);
 template rai::Array<T> rai::operator-(const Array<T>& z, T);
 template rai::Array<T> rai::operator+(const Array<T>& y, const Array<T>& z);
-template rai::Array<T> rai::operator+(T, const Array<T>& z);
+template rai::Array<T> rai::operator+(T y, const Array<T>& z);
+template rai::Array<T> rai::operator+(const Array<T>& y, T z);
+
 template rai::Array<T>& rai::operator+=(Array<T>& y, T);
 template rai::Array<T>& rai::operator+=(Array<T>& y, const Array<T>& z);
+template rai::Array<T>& rai::operator+=(Array<T>&& x, const Array<T>& y);
+template rai::Array<T>& rai::operator+=(Array<T>&& x, T y);
+
 template rai::Array<T>& rai::operator-=(Array<T>& y, T);
 template rai::Array<T>& rai::operator-=(Array<T>& y, const Array<T>& z);
+template rai::Array<T>& rai::operator-=(Array<T>&& x, const Array<T>& y);
+template rai::Array<T>& rai::operator-=(Array<T>&& x, T y );
+
 template rai::Array<T>& rai::operator*=(Array<T>& y, T);
 template rai::Array<T>& rai::operator/=(Array<T>& y, T);
 template bool rai::operator==(const Array<T>& v, const Array<T>& w);
-template bool rai::operator==(const Array<T>& v, const T* w);
+template rai::Array<byte> rai::operator==(const Array<T>& v, const T& w);
 template std::istream& rai::operator>>(std::istream& is, Array<T>& x);
 template std::ostream& rai::operator<<(std::ostream& os, const Array<T>& x);
 
+template bool rai::operator!=(const Array<T>& v, const Array<T>& w);
+
 //BinaryOperation
-template void transpose(rai::Array<T>& x, const rai::Array<T>& y);
-template void inverse2d(rai::Array<T>& invA, const rai::Array<T>& A);
+template void op_transpose(rai::Array<T>& x, const rai::Array<T>& y);
+template void op_crossProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
+template rai::Array<T> inverse2d(const rai::Array<T>& X);
+template rai::Array<T> elemWiseMin(const rai::Array<T>& v, const rai::Array<T>& w);
+template rai::Array<T> elemWiseMax(const rai::Array<T>& v, const rai::Array<T>& w);
 
 template T absMax(const rai::Array<T>& v);
 template T absMin(const rai::Array<T>& v);
@@ -49,6 +67,8 @@ template void eliminate(rai::Array<T>& x, const rai::Array<T>& y, uint d);
 template void eliminate(rai::Array<T>& x, const rai::Array<T>& y, uint d, uint e);
 template void eliminatePartial(rai::Array<T>& x, const rai::Array<T>& y, uint d);
 template void checkNan(rai::Array<T> const&);
+template T max(const rai::Array<T>& v);
+template rai::Array<T> max(const rai::Array<T>& v, uint d);
 
 template T sqrDistance(const rai::Array<T>& v, const rai::Array<T>& w);
 template T maxDiff(const rai::Array<T>& v, const rai::Array<T>& w, uint* im);
@@ -72,14 +92,15 @@ template rai::Array<T> log(const rai::Array<T>& v);
 template rai::Array<T> exp(const rai::Array<T>& v);
 template rai::Array<T> atan(const rai::Array<T>& v);
 template rai::Array<T> pow(const rai::Array<T>& v, T);
+template rai::Array<T> fabs(const rai::Array<T>& y);
 
 template T minDiag(const rai::Array<T>& v);
 
 template T product(const rai::Array<T>& v);
 #ifndef NOFLOAT
-template void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
+template void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
 #endif
-template void outerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
+template void op_outerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
 template T scalarProduct(const rai::Array<T>& v, const rai::Array<T>& w);
 template T scalarProduct(const rai::Array<T>& g, const rai::Array<T>& v, const rai::Array<T>& w);
 

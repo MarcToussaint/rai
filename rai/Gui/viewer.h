@@ -25,11 +25,11 @@ struct ImageViewer : Thread {
 };
 
 struct ImageViewerFloat : Thread {
-  ptr<struct OpenGL> gl;
+  shared_ptr<struct OpenGL> gl;
   Var<floatA> img;
   bool flipImage = false;
-  float scale;
-  ImageViewerFloat(const Var<floatA>& _img, double beatIntervalSec=-1., float _scale=256.);
+  double scale;
+  ImageViewerFloat(const Var<floatA>& _img, double beatIntervalSec=-1., double _scale=255.);
   ~ImageViewerFloat();
   void step();
 };

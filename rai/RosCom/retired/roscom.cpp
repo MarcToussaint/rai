@@ -387,12 +387,12 @@ struct sRosCom_ForceSensorSync {
   void cb_left(const geometry_msgs::WrenchStamped::ConstPtr& msg) {
     const geometry_msgs::Vector3& f=msg->wrench.force;
     const geometry_msgs::Vector3& t=msg->wrench.torque;
-    base->wrenchL.set() = ARR(f.x, f.y, f.z, t.x, t.y, t.z);
+    base->wrenchL.set() = arr{f.x, f.y, f.z, t.x, t.y, t.z};
   }
   void cb_right(const geometry_msgs::WrenchStamped::ConstPtr& msg) {
     const geometry_msgs::Vector3& f=msg->wrench.force;
     const geometry_msgs::Vector3& t=msg->wrench.torque;
-    base->wrenchR.set() = ARR(f.x, f.y, f.z, t.x, t.y, t.z);
+    base->wrenchR.set() = arr{f.x, f.y, f.z, t.x, t.y, t.z};
   }
 
 };

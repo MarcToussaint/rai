@@ -43,6 +43,8 @@ struct LagrangianProblem : ScalarFunction, NLP {
 
   double lagrangian(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
 
+  arr get_totalFeatures();
+
   double get_cost_f();            ///< info on the terms from last call
   double get_cost_sos();            ///< info on the terms from last call
   double get_costs();            ///< info on the terms from last call

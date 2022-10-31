@@ -2,7 +2,7 @@
 
 #include "skeletonSymbol.h"
 
-#include "../Core/util.h"
+#include "../Core/defines.h"
 #include "../Core/array.h"
 #include "../Kin/kin.h"
 #include "../Optim/NLP.h"

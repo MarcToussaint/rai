@@ -11,6 +11,8 @@
 #include "../Core/thread.h"
 #include "../Geo/geo.h"
 
+#include <math.h>
+
 struct Depth2PointCloud : Thread {
   //inputs
   Var<floatA> depth;
@@ -35,4 +37,4 @@ void depthData2point(double* pt, double* fxypxy);
 void depthData2point(arr& pt, const arr& Fxypxy);
 void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, float px, float py);
 void depthData2pointCloud(arr& pts, const floatA& depth, const arr& Fxypxy);
-
+void point2depthData(double* pt, double* fxypxy);

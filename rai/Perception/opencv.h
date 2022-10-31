@@ -37,7 +37,7 @@ inline cv::Mat CV(const floatA& img) {
   return cv::Mat();
 }
 
-inline cv::Mat CV(const doubleA& img) {
+inline cv::Mat CV(const arr& img) {
   if(img.nd==2) return cv::Mat(img.d0, img.d1, CV_64FC1, img.p);
   if(img.nd==3) return cv::Mat(img.d0, img.d1, CV_64FC3, img.p);
   return cv::Mat();
@@ -45,8 +45,8 @@ inline cv::Mat CV(const doubleA& img) {
 
 inline byteA conv_cvMat2byteA(const cv::Mat& mat) {
   CHECK_EQ(mat.dims, 2, "");
-  if(mat.elemSize()==1) return byteA(mat.data, mat.total(), true);
-  if(mat.elemSize()==3) return byteA(mat.data, 3*mat.total(), true).reshape(mat.rows, mat.cols, 3);
+  if(mat.elemSize()==1) return byteA().referTo(mat.data, mat.total());
+  if(mat.elemSize()==3) return byteA().referTo(mat.data, 3*mat.total()).reshape(mat.rows, mat.cols, 3);
   NIY;
   return byteA();
 }

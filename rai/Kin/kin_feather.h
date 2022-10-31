@@ -29,9 +29,9 @@ struct F_Link {
   void updateFeatherstones();
   void write(ostream& os) const {
     os <<"*type=" <<type <<" index=" <<qIndex <<" parent=" <<parent <<endl
-       <<" XQ,Q=" <<X <<", " <<Q <<endl
-       <<" cft=" <<com <<force <<torque <<endl
-       <<" mass=" <<mass <<inertia <<endl;
+       <<" XQ,Q=" <<X <<", " <<Q <<std::endl
+       <<" cft=" <<com <<force <<torque <<std::endl
+       <<" mass=" <<mass <<inertia <<std::endl;
   }
 };
 stdOutPipe(F_Link)

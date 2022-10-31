@@ -11,32 +11,31 @@
 #include "../Core/array.h"
 
 template<class T> struct PriorityQueueEntry {
-  double p;
+  double f_prio;
   T x;
 
-  void write(std::ostream& os) const { os <<'[' <<p <<": " <<*x <<']'; }
+  void write(std::ostream& os) const { os <<'[' <<f_prio <<": " <<*x <<']'; }
   static bool cmp(const PriorityQueueEntry<T>& a, const PriorityQueueEntry<T>& b);
 };
 
 template<class T> stdOutPipe(PriorityQueueEntry<T>)
 
-template<class T>
-bool PriorityQueueEntry<T>::cmp(const PriorityQueueEntry<T>& a, const PriorityQueueEntry<T>& b) {
-  return a.p <= b.p;
+template<class T> bool PriorityQueueEntry<T>::cmp(const PriorityQueueEntry<T>& a, const PriorityQueueEntry<T>& b) {
+  return a.f_prio <= b.f_prio;
 }
 
 template<class T> bool operator<=(const PriorityQueueEntry<T>& a, const PriorityQueueEntry<T>& b) {
-  return a.p <= b.p;
+  return a.f_prio <= b.f_prio;
 }
 
 template<class T> struct PriorityQueue : rai::Array<PriorityQueueEntry<T>> {
   PriorityQueue() {
-    rai::Array<PriorityQueueEntry<T>>::memMove = true;
+    rai::Array<PriorityQueueEntry<T>>::memMove = 1;
   }
 
-  void add(double p, const T& x, bool fromBackIfEqual=false) { //'fromBack=true' makes it a FIFO (breadth first search); otherwise LIFO (depth first search)
-    PriorityQueueEntry<T> e = {p, x};
-    rai::Array<PriorityQueueEntry<T>>::insertInSorted(e, PriorityQueueEntry<T>::cmp, fromBackIfEqual);
+  void add(double f_prio, const T& x, bool FIFOifEqual=false) { //'FIFOifEqual=true' makes it a FIFO (breadth first search); otherwise LIFO (depth first search)
+    PriorityQueueEntry<T> e = {f_prio, x};
+    rai::Array<PriorityQueueEntry<T>>::insertInSorted(e, PriorityQueueEntry<T>::cmp, FIFOifEqual);
   }
 
   T pop() {

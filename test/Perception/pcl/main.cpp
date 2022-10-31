@@ -1,4 +1,5 @@
 #include <Core/array.h>
+#include <Core/util.h>
 
 #ifdef RAI_PCL
 

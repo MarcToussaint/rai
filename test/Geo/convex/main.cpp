@@ -129,7 +129,7 @@ void TEST(ForceClosure) {
   c.setZero();
   rndUniform(X,-1.,1.,false);
 
-  Xn=X;  for(i=0;i<N;i++) Xn[i]() /= length(Xn[i]);
+  Xn=X;  for(i=0;i<N;i++) Xn[i] /= length(Xn[i]);
 
   plot()->Opengl();
   plot()->Clear(); plot()->Points(c); plot()->Points(X); plot()->VectorField(X,Xn);
@@ -148,14 +148,14 @@ void TEST(ForceClosure) {
     plot()->Clear(); plot()->Points(c); plot()->Points(X); plot()->VectorField(X,Xn);
     plot()->update(false);
     X -= .005*dFdX;
-    Xn=X;  for(i=0;i<N;i++) Xn[i]() /= -length(Xn[i]);
+    Xn=X;  for(i=0;i<N;i++) Xn[i] /= -length(Xn[i]);
   }
 
   //gradient check
   center.setZero();
   for(k=0;k<100;k++){
     rndUniform(X,-1.,1.,false);
-    Xn=X;  for(i=0;i<N;i++) Xn[i]() /= -length(Xn[i]);
+    Xn=X;  for(i=0;i<N;i++) Xn[i] /= -length(Xn[i]);
 
     d=forceClosure(X,Xn,center,.5,10.,0);
     cout <<"FC= " <<d <<endl;
@@ -250,9 +250,10 @@ void testConvConvIntersect(){
     rndUniform(X,-1.,1.,false);
 
     arr C1, C2;
-    C1 = getHull(X);
+    uintA T;
+    C1 = getHull(X, T);
     rndUniform(X,-1.,1.,false);
-    C2 = getHull(X);
+    C2 = getHull(X, T);
 
     sort2Dpoints(C1);
     sort2Dpoints(C2);

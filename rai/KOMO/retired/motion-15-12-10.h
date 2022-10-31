@@ -59,7 +59,7 @@ struct Objective {
   Objective(Feature* m):map(*m), active(true) {} //TODO: require type here!!
 
   void setCostSpecs(uint fromTime, uint toTime,
-                    const arr& _target=ARR(0.),
+                    const arr& _target=arr{0.},
                     double _prec=1.);
 };
 

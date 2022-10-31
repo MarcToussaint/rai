@@ -13,7 +13,7 @@
 void F_Max::phi2(arr& y, arr& J,  const FrameL& F) {
   arr z = f->eval(F);
   uint i=argmax(z);
-  y = ARR(z(i));
+  y = arr{z(i)};
   if(!!J) J=~z.J()[i];
   if(neg) { y*=-1.; if(!!J) J*=-1.; }
 }
@@ -24,7 +24,7 @@ void F_Norm::phi2(arr& y, arr& J,  const FrameL& F) {
   arr z = f->eval(F);
   double l = sqrt(sumOfSqr(z));
   if(!!J) J = ~(z/l)*z.J();
-  y = ARR(l);
+  y = arr{l};
 }
 
 //===========================================================================

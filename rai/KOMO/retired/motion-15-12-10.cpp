@@ -25,7 +25,7 @@ void Feature::phi(arr& y, arr& J, const ConfigurationL& G, double tau, int t) {
       J = zeros(G.N, y.N, J_bar.d1);
       J[G.N-1]() = J_bar;
       arr tmp(J);
-      tensorPermutation(J, tmp, TUP(1u, 0u, 2u));
+      tensorPermutation(J, tmp, uintA{1u, 0u, 2u});
       J.reshape(y.N, G.N*J_bar.d1);
     }
     return;
@@ -46,7 +46,7 @@ void Feature::phi(arr& y, arr& J, const ConfigurationL& G, double tau, int t) {
     if(k==2) { J[G.N-1-2]() =  J_bar(2);  J[G.N-1-1]() = -2.*J_bar(1);  J[G.N-1-0]() = J_bar(0);  J/=tau2; }
     if(k==3) { J[G.N-1-3]() = -J_bar(3);  J[G.N-1-2]() =  3.*J_bar(2);  J[G.N-1-1]() = -3.*J_bar(1);  J[G.N-1-0]() = J_bar(0);  J/=tau3; }
     arr tmp(J);
-    tensorPermutation(J, tmp, TUP(1u, 0u, 2u));
+    tensorPermutation(J, tmp, uintA{1u, 0u, 2u});
     J.reshape(y.N, G.N*J_bar(0).d1);
   }
 }

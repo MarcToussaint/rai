@@ -263,7 +263,7 @@ void rai::ConfigurationViewer::recopyMeshes(const rai::Configuration& _C) {
     C.copy(_C, false);
     //deep copy meshes!
 //    for(rai::Frame* f:C.frames) if(f->shape) {
-//        ptr<Mesh> org = f->shape->_mesh;
+//        shared_ptr<Mesh> org = f->shape->_mesh;
 //        f->shape->_mesh = make_shared<Mesh> (*org.get());
 //      }
   }

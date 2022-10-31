@@ -11,13 +11,6 @@
 #include "types.h"
 #include "../Geo/mesh.h"
 
-template<> pybind11::array_t<double> arr2numpy(const rai::Array<double>& x){
-  //default!
-  if(!x.isSparse()) return pybind11::array_t<double>(x.dim(), x.p);
-  //sparse!
-  arr triplets = x.sparse().getTriplets();
-  return pybind11::array_t<double>(triplets.dim(), triplets.p);
-}
 
 pybind11::dict graph2dict(const rai::Graph& G) {
   pybind11::dict dict;
@@ -34,13 +27,13 @@ pybind11::dict graph2dict(const rai::Graph& G) {
     } else if(n->isOfType<arr>()) {
       dict[key.p] = n->get<arr>().vec();
     } else if(n->isOfType<arrA>()) {
-      dict[key.p] = n->get<arrA>().vec();
+      dict[key.p] = Array2vec(n->get<arrA>());
     } else if(n->isOfType<intA>()) {
-      dict[key.p] = n->get<intA>().vec();
+      dict[key.p] = Array2vec(n->get<intA>());
     } else if(n->isOfType<uintA>()) {
-      dict[key.p] = n->get<uintA>().vec();
+      dict[key.p] = Array2vec(n->get<uintA>());
     } else if(n->isOfType<boolA>()) {
-      dict[key.p] = n->get<boolA>().vec();
+      dict[key.p] = Array2vec(n->get<boolA>());
     } else if(n->isOfType<double>()) {
       dict[key.p] = n->get<double>();
     } else if(n->isOfType<int>()) {

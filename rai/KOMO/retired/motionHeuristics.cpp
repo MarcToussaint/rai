@@ -38,7 +38,7 @@ void threeStepGraspHeuristic(arr& x, KOMO& MP, uint shapeId, uint verbose) {
       x_side[side]() = x;
     }
     cout <<"3 side costs=" <<cost_side <<endl;
-    side = cost_side.argmin();
+    side = argmin(cost_side);
     x = x_side[side];
   } else {
     setGraspGoals_PR2(MP, T, shapeId, side, 0);
@@ -50,7 +50,7 @@ void threeStepGraspHeuristic(arr& x, KOMO& MP, uint shapeId, uint verbose) {
   }
 
   //-- open hand
-  //x({7,13}) = ARR(0,-1.,.8,-1.,.8,-1.,.8);
+  //x({7,13}) = arr{0,-1.,.8,-1.,.8,-1.,.8};
   x(MP.world.getJointByName("l_gripper_l_finger_joint")->qIndex) = 1.;
 
   if(verbose>=2) {
@@ -107,13 +107,13 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   jvec.set(0, 0, 1);
   switch(target_shape->type) {
     case rai::ST_cylinder:
-      target = ARR(0.);  //y-axis of m9 is orthogonal to world z-axis (tricky :-) )
+      target = arr{0.};  //y-axis of m9 is orthogonal to world z-axis (tricky :-) )
       break;
     case rai::ST_box: {
       //jrel=target_shape->X;
       if(side==1) jvec.set(0, 1, 0);
       if(side==2) jvec.set(1, 0, 0);
-      target = ARR(1.);  //y-axis of m9 is aligned with one of the 3 sides of the cube
+      target = arr{1.};  //y-axis of m9 is aligned with one of the 3 sides of the cube
     } break;
     default: NIY;
   }
@@ -134,9 +134,9 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   shapes.reshape(2, 3); shapes = ~shapes;
   c = MP.addTask("graspContacts", new TM_Proxy(TMT_vectorP, shapes, .05, true));
   double grip=.8; //specifies the desired proxy value
-  target = ARR(grip, grip, grip);
+  target = arr{grip, grip, grip};
   MP.setInterpolatingCosts(c, KOMO::early_restConst,
-                           target, fingerDistPrec, ARR(0., 0., 0.), 0., 0.8);
+                           target, fingerDistPrec, arr{0., 0., 0.}, 0., 0.8);
   for(uint t=0; t<=T; t++) {  //interpolation: 0 up to 4/5 of the trajectory, then interpolating in the last 1/5
     if(5*t<4*T) c->target[t]()=0.;
     else c->target[t]() = (grip*double(5*t-4*T))/T;
@@ -145,7 +145,7 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   //-- collisions with other objects
   shapes = {shapeId};
   c = MP.addTask("otherCollisions", new TM_Proxy(TMT_allExceptListedP, shapes, .04, true));
-  target = ARR(0.);
+  target = arr{0.};
   MP.setInterpolatingCosts(c, KOMO::final_restConst, target, colPrec, target, colPrec);
   c->feat.phi(initial, NoArr, MP.world);
   if(initial(0)>0.) {  //we are in collision/proximity -> depart slowly
@@ -157,14 +157,14 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   //-- opposing fingers
   c = MP.addTask("oppose12",
                  new TM_Default(TMT_vecAlign, MP.world, "tipNormal1", NoVector, "tipNormal2", NoVector));
-  target = ARR(-1.);
+  target = arr{-1.};
   MP.setInterpolatingCosts(c, KOMO::early_restConst,
-                           target, oppositionPrec, ARR(0., 0., 0.), 0., 0.8);
+                           target, oppositionPrec, arr{0., 0., 0.}, 0., 0.8);
   //M.setInterpolatingCosts(c, KOMO::constFinalMid, target, oppositionPrec);
 
   c = MP.addTask("oppose13",
                  new TM_Default(TMT_vecAlign, MP.world, "tipNormal1", NoVector, "tipNormal3", NoVector));
-  target = ARR(-1.);
+  target = arr{-1.};
   MP.setInterpolatingCosts(c, KOMO::final_restConst, target, oppositionPrec);
 
   //RAI_MSG("TODO: fingers should be in relaxed position, or aligned with surface (otherwise they remain ``hooked'' as in previous posture)");
@@ -225,17 +225,17 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   jvec.set(0, 0, 1);
   switch(target_shape->type) {
     case rai::ST_cylinder:
-      target = ARR(0.);  //y-axis of m9 is orthogonal to world z-axis (tricky :-) )
+      target = arr{0.};  //y-axis of m9 is orthogonal to world z-axis (tricky :-) )
       break;
     case rai::ST_mesh:
-      target = ARR(0.);  //works for simple cylinder-like objects
+      target = arr{0.};  //works for simple cylinder-like objects
       break;
     case rai::ST_box: {
       //jrel=target_shape->X;
       //  side =1; //! Hack for PR2
       if(side==1) jvec.set(0, 1, 0);
       if(side==2) jvec.set(1, 0, 0);
-      target = ARR(1.);  //y-axis of m9 is aligned with one of the 3 sides of the cube
+      target = arr{1.};  //y-axis of m9 is aligned with one of the 3 sides of the cube
     } break;
     default: NIY;
   }
@@ -257,9 +257,9 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   c = MP.addTask("graspContacts", new TM_Proxy(TMT_vectorP, shapes, .1, false));
   for(rai::Shape* s: MP.world.shapes) cout <<' ' <<s->name;
   double grip=.98; //specifies the desired proxy value
-  target = ARR(grip, grip);
+  target = arr{grip, grip};
   MP.setInterpolatingCosts(c, KOMO::early_restConst,
-                           target, fingerDistPrec, ARR(0., 0.), 0., 0.8);
+                           target, fingerDistPrec, arr{0., 0.}, 0., 0.8);
   for(uint t=.8*T; t<=T; t++) {  //interpolation: 0 up to 4/5 of the trajectory, then interpolating in the last 1/5
     double a=double(t-.8*T)/(.2*T);
     c->target[t]() = .7*(1.-a) + grip*a;
@@ -270,7 +270,7 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   shapes = {shapeId};
   c = MP.addTask("otherCollisions",
                  new TM_Proxy(TMT_allExceptListedP, shapes, .04, true));
-  target = ARR(0.);
+  target = arr{0.};
   c->setCostSpecs(0, MP.T, NoArr, colPrec);
 //  arr initial;
   c->feat.phi(initial, NoArr, MP.world);
@@ -362,11 +362,11 @@ void setPlaceGoals(KOMO& MP, uint T, uint shapeId, int belowToShapeId, const arr
   //special: condition effector velocities:
   uint t, M=T/8;
   for(t=0; t<M; t++) {
-    V -> v_trajectory[t]() = (1./M*t)*ARR(0., 0., upDownVelocity);
+    V -> v_trajectory[t]() = (1./M*t)*arr{0., 0., upDownVelocity};
     V -> v_prec_trajectory(t) = upDownVelocityPrec;
   }
   for(t=T-M; t<T; t++) {
-    V -> v_trajectory[t]() = (1./M*(T-t))*ARR(0., 0., -upDownVelocity); //0.2
+    V -> v_trajectory[t]() = (1./M*(T-t))*arr{0., 0., -upDownVelocity}; //0.2
     V -> v_prec_trajectory(t) = upDownVelocityPrec; // 1e1
   }
   MP.vars().append(V);
@@ -390,7 +390,7 @@ void setPlaceGoals(KOMO& MP, uint T, uint shapeId, int belowToShapeId, const arr
   //collisions except obj-from and obj-to
   uintA shapes = {shapeId, shapeId, belowToShapeId};
   V = new ProxyTaskVariable("otherCollisions", MP.world, TMT_allExceptListedP, shapes, .04, true);
-  V->y_target = ARR(0.);  V->v_target = ARR(.0);
+  V->y_target = arr{0.};  V->v_target = arr{.0};
   V->y_prec = colPrec;
   V->setConstTargetsConstPrecisions(T);
   if(V->y(0)>0.) {  //we are in collision/proximity -> depart slowly
@@ -442,7 +442,7 @@ void setHomingGoals(KOMO& M, uint T) {
 
   //-- standard collisions
   double margin = .05;
-  V = new DefaultTaskVariable("collision", *M.ors, collTVT, 0, 0, 0, 0, ARR(margin));
+  V = new DefaultTaskVariable("collision", *M.ors, collTVT, 0, 0, 0, 0, arr{margin});
   V->y=0.;  V->y_target=0.;  V->y_prec=colPrec;  V->setConstTargetsConstPrecisions(T);
   M.vars().append(V);
 

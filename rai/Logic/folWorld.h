@@ -107,7 +107,7 @@ struct FOL_World : TreeSearchDomain {
   void copy(const FOL_World& fol) { init(fol.KB); }
 
   virtual TransitionReturn transition(const Handle& action); //returns (observation, reward)
-  virtual const std::vector<Handle> get_actions();
+  virtual const Array<Handle> get_actions();
   virtual bool is_feasible_action(const Handle& action);
   virtual const Handle get_stateCopy();
   virtual void set_state(const Handle& _state);
@@ -148,5 +148,33 @@ struct FOL_World : TreeSearchDomain {
 
 };
 stdOutPipe(FOL_World)
+
+struct FOL_World_State : TreeSearchNode {
+  FOL_World& L;
+  Graph* state;
+  uint T_step;
+  double T_real;
+  double R_total;
+  Array<FOL_World::Handle> actions;
+  rai::String name;
+
+  FOL_World_State(FOL_World& L, TreeSearchNode* _parent, bool _isTerminal)
+    : L(L), state(L.createStateCopy()), T_step(L.T_step), T_real(L.T_real), R_total(L.R_total){
+    parent = _parent;
+    isTerminal = _isTerminal;
+    actions = L.get_actions();
+  }
+
+  //transition in new state
+  virtual const uint getNumActions(){ return actions.N; }
+
+  virtual std::shared_ptr<TreeSearchNode> transition(int action);
+
+  virtual bool compute(){ return true; }
+
+  //access parent
+  virtual void write(std::ostream& os) const;
+  virtual void report(std::ostream& os, int verbose) const;
+};
 
 } //namespace

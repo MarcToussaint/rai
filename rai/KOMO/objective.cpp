@@ -38,17 +38,17 @@ void Objective::write(std::ostream& os) const {
 
 //===========================================================================
 
-ptr<Objective> ObjectiveL::add(const arr& times, const ptr<Feature>& f, ObjectiveType type, const char* name) {
+shared_ptr<Objective> ObjectiveL::add(const arr& times, const shared_ptr<Feature>& f, ObjectiveType type, const char* name) {
   append(make_shared<Objective>(f, type, name, times) );
   return last();
 }
 
-ptr<Objective> ObjectiveL::add(const arr& times, const ptr<Feature>& f, const rai::Configuration& C, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order, int deltaFromStep, int deltaToStep){
+shared_ptr<Objective> ObjectiveL::add(const arr& times, const shared_ptr<Feature>& f, const rai::Configuration& C, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order, int deltaFromStep, int deltaToStep){
   f->setup(C, frames, scale, target, order);
   return add(times, f, type, f->shortTag(C));
 }
 
-ptr<Objective> ObjectiveL::add(const arr& times, const FeatureSymbol& feat, const rai::Configuration& C, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order, int deltaFromStep, int deltaToStep) {
+shared_ptr<Objective> ObjectiveL::add(const arr& times, const FeatureSymbol& feat, const rai::Configuration& C, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order, int deltaFromStep, int deltaToStep) {
   auto f = make_feature(feat, frames, C, scale, target, order);
   return add(times, f, type, f->shortTag(C));
 }

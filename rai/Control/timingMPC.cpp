@@ -101,7 +101,7 @@ void TimingMPC::set_updatedWaypoints(const arr& _waypoints, bool setNextWaypoint
     tangents.resize(waypoints.d0-1, waypoints.d1);
     for(uint k=1; k<waypoints.d0; k++){
       tangents[k-1] = waypoints[k] - waypoints[k-1];
-      op_normalize(tangents[k-1]());
+      op_normalize(tangents[k-1].noconst());
     }
   }
 }

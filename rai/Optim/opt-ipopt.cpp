@@ -10,8 +10,11 @@
 
 #ifdef RAI_IPOPT
 
+#include "../Core/util.h"
+
 #include <coin/IpTNLP.hpp>
 #include <coin/IpIpoptApplication.hpp>
+
 
 struct Conv_MP_Ipopt : Ipopt::TNLP {
   shared_ptr<NLP> P;

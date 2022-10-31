@@ -28,7 +28,7 @@ struct CameraView;
 namespace ry {
 
 struct RyCameraView {
-  ptr<rai::CameraView> cam;
+  shared_ptr<rai::CameraView> cam;
   Var<byteA> image;
   Var<floatA> depth;
   Var<byteA> segmentation;

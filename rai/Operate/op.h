@@ -42,8 +42,8 @@ struct Act_Script : Act, Thread {
 };
 
 template<class T> struct Act_LoopStep : Act, Thread {
-  ptr<T> script;
-  Act_LoopStep(const ptr<T>& S, double beatIntervalSec=-1.)
+  shared_ptr<T> script;
+  Act_LoopStep(const shared_ptr<T>& S, double beatIntervalSec=-1.)
     :  Thread("Act_Script", beatIntervalSec), script(S) {
     if(beatIntervalSec<0.) threadStep();
     else threadLoop();
@@ -60,7 +60,7 @@ inline Act::Ptr loop(const std::function<int ()>& script, double beatIntervalSec
   return make_shared<Act_Script>(script, beatIntervalSec);
 }
 
-template<class T> Act::Ptr loop(const ptr<T>& script, double beatIntervalSec=.1) {
+template<class T> Act::Ptr loop(const shared_ptr<T>& script, double beatIntervalSec=.1) {
   return make_shared<Act_LoopStep<T>>(script, beatIntervalSec);
 }
 

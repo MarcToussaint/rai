@@ -75,7 +75,7 @@ TaskControlThread::TaskControlThread(const char* _robot, const rai::Configuratio
 
   qSign.set()() = zeros(q0.N);
 
-  fRInitialOffset = ARR(-0.17119, 0.544316, -1.2, 0.023718, 0.00802182, 0.0095804);
+  fRInitialOffset = arr{-0.17119, 0.544316, -1.2, 0.023718, 0.00802182, 0.0095804};
 
 }
 
@@ -253,9 +253,9 @@ void TaskControlThread::step() {
     refs.q =  q_model;
     refs.qdot = zeros(q_model.N);
     refs.fL_gamma = 1.;
-    refs.Kp = ARR(1.);
-    refs.Kd = ARR(1.);
-    refs.Ki = ARR(0.2);
+    refs.Kp = arr{1.};
+    refs.Kd = arr{1.};
+    refs.Ki = arr{0.2};
     refs.fL = zeros(6);
     refs.fR = zeros(6);
     refs.KiFTL.clear();

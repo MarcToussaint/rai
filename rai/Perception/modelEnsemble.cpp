@@ -8,6 +8,8 @@
 
 #include "modelEnsemble.h"
 
+#include <math.h>
+
 #define QUALITY_THRESHOLD 0.01
 #define NOISE_MARGIN 0.1
 

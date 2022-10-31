@@ -10,6 +10,7 @@
 
 #include "qhull.h"
 #include "mesh.h"
+#include "../Core/util.h"
 
 extern "C" {
 #ifdef RAI_MSVC
@@ -195,14 +196,13 @@ double distanceToConvexHullGradient(arr& dDdX, const arr& X, const arr& y, bool 
     W.resize(vertices.N, X.d1);      //compose matrix of basis vectors
     for(k=0, l=0; k<vertices.N; k++) if(k!=i && k!=j) {
         wk.referToDim(X, vertices(k));
-        W[l]() = wk-w;
+        W[l] = wk-w;
         l++;
       }
     CHECK_EQ(l, vertices.N-2, "");
-    W[l]() = v-w;
-    W[l+1]() = p-y; //not important (is already orthogonal to the full facet)
-    rai::Array<double*> tmp;
-    qh_gram_schmidt(X.d1, W.getCarray(tmp)); //orthogonalize local basis vectors
+    W[l] = v-w;
+    W[l+1] = p-y; //not important (is already orthogonal to the full facet)
+    qh_gram_schmidt(X.d1, getCarray(W).p); //orthogonalize local basis vectors
     subn = W[l]; //this entry should now be orthogonal to the sub-facet
 
     //f: axis point: projection of v along p onto the sub-facet (``Dreisatz'')
@@ -309,10 +309,10 @@ double forceClosure(const arr& C, const arr& Cn, const rai::Vector& center,
     arr dFdX;
     d = -distanceToConvexHullGradient(dFdX, X, origin, true);
     dFdX *= -1.;
-    dFdX.reshape(TUP(C.d0, S, origin.N));
-    dXdC.reshape(TUP(C.d0, S, origin.N, 3));
-    dFdC->resize(TUP(C.d0, 3));
-    tensorEquation(*dFdC, dFdX, TUP(0u, 2u, 3u), dXdC, TUP(0u, 2u, 3u, 1u), 2);
+    dFdX.reshape(uintA{C.d0, S, origin.N});
+    dXdC.reshape(uintA{C.d0, S, origin.N, 3});
+    dFdC->resize(uintA{C.d0, 3});
+    tensorEquation(*dFdC, dFdX, uintA{0u, 2u, 3u}, dXdC, uintA{0u, 2u, 3u, 1u}, 2);
   }
   return d;
 }
@@ -342,7 +342,7 @@ arr getHull(const arr& V, uintA& T) {
     memmove(&Vnew(i, 0), vertex->point,  dim*sizeof(double));
     i++;
   }
-  if(!!T) { //retrieve also the triangulation
+  if(true) { //retrieve also the triangulation
     T.resize(qh num_facets, dim);
     f=0;
     FORALLfacets {
@@ -391,7 +391,7 @@ void getDelaunayEdges(uintA& E, const arr& V) {
       FOREACHvertex_(facet->vertices) face[i++]=qh_pointid(vertex->point);//vertex->id;
       CHECK_EQ(i, dim+1, "strange number of vertices of a facet!");
       for(j=0; j<dim+1; j++) for(k=j+1; k<dim+1; k++) {
-          E.append(TUP(face[j], face[k]));
+          E.append(uintA{face[j], face[k]});
         }
     }
   }
@@ -609,7 +609,9 @@ void sort2Dpoints(arr& A) {
   }
   uintA perm;
   perm.setStraightPerm(A.d0);
-  perm.sort([&d](const uint&i, const uint&j) { return d(i)<d(j); });
+  static const double* dCapture;
+  dCapture = d.p;
+  perm.sort([](const uint&i, const uint&j) { return dCapture[i]<dCapture[j]; });
   A.permuteRows(perm);
 }
 
@@ -619,8 +621,9 @@ arr convconv_intersect(const arr& A, const arr& B) {
   if(A.d0==2) return A;
   if(B.d0==2) return B;
 
-  arr AA = getHull(A); //rndGauss(AA, 1e-4, true);
-  arr BB = getHull(B); //rndGauss(BB, 1e-4, true);
+  uintA T;
+  arr AA = getHull(A, T); //rndGauss(AA, 1e-4, true);
+  arr BB = getHull(B, T); //rndGauss(BB, 1e-4, true);
   sort2Dpoints(AA);
   sort2Dpoints(BB);
 
@@ -656,5 +659,5 @@ void pullPointsIntoHull(arr& P, const arr& X) {
   distanceToConvexHull(X, P, D, pulled);
   CHECK_EQ(D.N, P.d0, "");
   CHECK_EQ(D.N, pulled.d0, "");
-  for(uint i=0; i<D.N; i++) if(D(i)>0.) P[i]()=pulled[i];
+  for(uint i=0; i<D.N; i++) if(D(i)>0.) P[i]=pulled[i];
 }

@@ -176,15 +176,17 @@ void init_KOMO(pybind11::module& m) {
 
   .def("getFrameState", &KOMO::getConfiguration_X)
 
+  .def("getPath_qOrg", &KOMO::getPath_qOrg)
+
   .def("getPathFrames", &KOMO::getPath_X)
 //  .def("getPathFrames", [](std::shared_ptr<KOMO>& self, const ry::I_StringA& frames) {
 //    arr X = self->getPath_frames(I_conv(frames));
-//    return pybind11::array(X.dim(), X.p);
+//    return arr2numpy(X);
 //  })
 
   .def("getPathTau", [](std::shared_ptr<KOMO>& self) {
     arr X = self->getPath_tau();
-    return pybind11::array(X.dim(), X.p);
+    return arr2numpy(X);
   })
 
   .def("getForceInteractions", [](std::shared_ptr<KOMO>& self) {
@@ -215,12 +217,15 @@ void init_KOMO(pybind11::module& m) {
 
 //-- display
 
-  .def("view", &KOMO::view)
-    .def("view_play",
-	 &KOMO::view_play,
-	 "",
-	 pybind11::arg("pause"),
-       pybind11::arg("delay"),
+  .def("view", &KOMO::view,
+       "",
+       pybind11::arg("pause") = false,
+       pybind11::arg("txt") = nullptr)
+
+  .def("view_play", &KOMO::view_play,
+       "",
+       pybind11::arg("pause") = false,
+       pybind11::arg("delay") = 0.1,
 	 pybind11::arg("saveVideoPath") = nullptr)
 
   .def("view_close", [](shared_ptr<KOMO>& self) {

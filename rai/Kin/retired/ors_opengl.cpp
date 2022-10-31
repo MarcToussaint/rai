@@ -537,7 +537,7 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
       double x=gl.mouseposx, y=gl.mouseposy, z=seld;
       gl.unproject(x, y, z, true);
       cout <<"x=" <<x <<" y=" <<y <<" z=" <<z <<" d=" <<seld <<endl;
-      movingBody->X.pos = selpos + ARR(x-selx, y-sely, z-selz);
+      movingBody->X.pos = selpos + arr{x-selx, y-sely, z-selz};
     }
     return true;
   }
@@ -620,7 +620,7 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
   C.gl().addClickCall(new EditConfigurationClickCall(C));
   Inotify ino(filename);
   for(; !exit;) {
-    cout <<"reloading `" <<filename <<"' ... " <<std::endl;
+    cout <<"reloading `" <<filename <<"' ... " <<endl;
     rai::Configuration W;
     try {
       rai::lineCount=1;

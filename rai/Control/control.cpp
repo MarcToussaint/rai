@@ -25,7 +25,7 @@ void naturalGains(double& Kp, double& Kd, double decayTime, double dampingRatio)
 
 void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const arr& f_ref, double f_alpha, const CtrlObjective& co, const rai::Configuration& world) {
   //-- get necessary Jacobians
-  ptr<TM_Default> m = std::dynamic_pointer_cast<TM_Default>(co.feat);
+  shared_ptr<TM_Default> m = std::dynamic_pointer_cast<TM_Default>(co.feat);
   CHECK(m, "this only works for the default position task feat");
   CHECK_EQ(m->type, TMT_pos, "this only works for the default positioni task feat");
   CHECK_GE(m->i, 0, "this only works for the default position task feat");

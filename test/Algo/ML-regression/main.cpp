@@ -2,6 +2,8 @@
 #include <Plot/plot.h>
 #include <Optim/GlobalIterativeNewton.h>
 
+#include <math.h>
+
 bool plotDev=true;
 
 //===========================================================================
@@ -26,7 +28,7 @@ void testLinReg(const char *datafile=nullptr) {
   //-- compute optimal parameters
   arr Sigma;
   arr beta = ridgeRegression(Phi, y, -1., Sigma);
-  double sigma = sqrt(sumOfSqr(Phi*beta-y)/(X.d0-1));
+  double sigma = sqrt(sumOfSqr(Phi*beta-y)/double(X.d0-1));
 
   cout <<"estimated beta = "<< beta <<endl;
   if(beta.N==beta_true.N) cout <<"max-norm beta-beta_true = " <<maxDiff(beta, beta_true) <<endl; //beta_true is global and generated during artificialData
@@ -93,7 +95,7 @@ void testRobustRegression(const char *datafile=nullptr) {
   arr beta = ridgeRegression(Phi, y, -1., Sigma);
   cout <<"estimated beta = "<< beta <<endl;
   if(beta.N==beta_true.N) cout <<"max-norm beta-beta_true = " <<maxDiff(beta, beta_true) <<endl; //beta_true is global and generated during artificialData
-  double sigma = sqrt(sumOfSqr(Phi*beta-y)/(X.d0-1));
+  double sigma = sqrt(sumOfSqr(Phi*beta-y)/double(X.d0-1));
   cout <<"Mean error (sdv) = " <<sigma <<endl;
 
   //-- evaluate model on a grid
@@ -177,8 +179,8 @@ void testKernelReg(const char *datafile=nullptr) {
       checkHessian(f.getF(1.), x, 1e-4);
     }
 
-    arr bounds_lo = consts<double>(-2., X.d1);
-    arr bounds_hi = consts<double>(+2., X.d1);
+    arr bounds_lo = rai::consts<double>(-2., X.d1);
+    arr bounds_hi = rai::consts<double>(+2., X.d1);
     GlobalIterativeNewton opt(f.getF(-1.), bounds_lo, bounds_hi, rai::OptOptions().set_verbose(1) .set_stopTolerance(1e-3));
     opt.run(10);
     opt.report();
@@ -319,8 +321,8 @@ void TEST(MultiClass){
   arr p_pred,label(Phi.d0);
   p_pred = exp(Phi*beta);
   for(uint i=0; i<label.N; i++) {
-    p_pred[i]() /= sum(p_pred[i]);
-    label(i) = y[i].argmax();
+    p_pred[i] /= sum(p_pred[i]);
+    label(i) = argmax(y[i]);
   }
   rai::arrayBrackets="  ";
   FILE("z.train") <<catCol(X, label, y, p_pred);
@@ -328,7 +330,7 @@ void TEST(MultiClass){
   arr X_grid = grid(2,-2,3,50);
   Phi = makeFeatures(X_grid,readFromCfgFileFT,X);
   arr p_grid = exp(Phi*beta);
-  for(uint i=0; i<p_grid.d0; i++) p_grid[i]() /= sum(p_grid[i]);
+  for(uint i=0; i<p_grid.d0; i++) p_grid[i] /= sum(p_grid[i]);
   p_grid = ~p_grid;
   p_grid.reshape(p_grid.d0,51,51);
   

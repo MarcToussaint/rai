@@ -22,7 +22,7 @@ void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start=NoArr, uint iters=
   //  cout <<std::setprecision(2);
   cout <<"x0=" <<x <<endl;
 
-  system("rm -f z.opt_all");
+  rai::system("rm -f z.opt_all");
 
   uint evals=0;
   for(uint k=0;k<iters;k++){
@@ -51,7 +51,7 @@ void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start=NoArr, uint iters=
     newton.run();
     evals += newton.evals;
 
-    system("cat z.opt >> z.opt_all");
+    rai::system("cat z.opt >> z.opt_all");
     if(x.N==2){
       gnuplot("load 'plt'", false, true);
       rai::wait();
@@ -69,7 +69,7 @@ void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start=NoArr, uint iters=
   }
   cout <<std::setprecision(6) <<"\nf(x)=" <<lag.get_costs() <<"\nx_opt=" <<x <<"\nlambda=" <<lag.lambda <<endl;
 
-  system("mv z.opt_all z.opt");
+  rai::system("mv z.opt_all z.opt");
   if(x.N==2) gnuplot("load 'plt'", false, true);
 
 //  if(!!x_start) x_start = x;

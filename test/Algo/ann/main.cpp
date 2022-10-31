@@ -5,7 +5,7 @@ void TEST(ANN) {
   uint N=1000,dim=2;
 
   ANN ann;
-  doubleA x(dim),X(N,dim),Y;
+  arr x(dim),X(N,dim),Y;
   uintA idx;
   arr dists;
 
@@ -18,9 +18,9 @@ void TEST(ANN) {
   Y.resize(idx.N,x.N);
   for(uint i=0;i<Y.d0;i++) Y[i] = X[idx(i)];
   std::cout <<"build time (#" <<ann.X.N <<") = " <<rai::timerRead() <<"sec" <<std::endl;
-  write(LIST<arr>(X),"z.data");
-  write(LIST<arr>(x.reshape(1,x.N)),"z.query");
-  write(LIST<arr>(Y),"z.neighbors");
+  FILE("z.data") <<X.modRaw();
+  FILE("z.query") <<x.reshape(1,x.N).modRaw();
+  FILE("z.neighbors") <<Y.modRaw();
   gnuplot("set size square; plot 'z.data' w p,'z.query' w p,'z.neighbors' w p");
   rai::wait();
 }
@@ -30,7 +30,7 @@ void TEST(ANNIncremental) {
 
   ANN ann;
   ann.bufferSize=20;
-  doubleA x(dim),q(dim),Q;
+  arr x(dim),q(dim),Q;
   intA idx;
   
   rndUniform(q,0.,1.,false); //constant query point
@@ -45,7 +45,7 @@ void TEST(ANNIncremental) {
 }
 
 /*void TEST(ANNregression){
-  doubleA X,Y,Z;
+  arr X,Y,Z;
   uint i,j;
   X.setGrid(1,-3.,3.,100);
   Y.resize(X.d0,1);
@@ -54,7 +54,7 @@ void TEST(ANNIncremental) {
   gnuplot("plot 'z.Y'");
 
   ANN ann;
-  doubleA x,y;
+  arr x,y;
 
   for(i=0;i<500;i++){
     j=rnd(X.N);

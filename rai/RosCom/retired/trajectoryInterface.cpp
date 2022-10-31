@@ -84,9 +84,9 @@ TrajectoryInterface::TrajectoryInterface(rai::Configuration& world_plan_, rai::C
     refs.KiFTL.clear();
     refs.J_ft_invL.clear();
     refs.u_bias = zeros(q.N);
-    refs.Kp = ARR(rai::getParameter<double>("controller/Kp", 1.5));
-    refs.Kd = ARR(rai::getParameter<double>("controller/Kd", 2.5));
-    refs.Ki = ARR(rai::getParameter<double>("controller/Ki", 0.));
+    refs.Kp = arr{rai::getParameter<double>("controller/Kp", 1.5)};
+    refs.Kd = arr{rai::getParameter<double>("controller/Kd", 2.5)};
+    refs.Ki = arr{rai::getParameter<double>("controller/Ki", 0.)};
     refs.fL_gamma = 1.;
     refs.velLimitRatio = .1;
     refs.effLimitRatio = 1.;
@@ -168,7 +168,7 @@ void TrajectoryInterface::executeTrajectory(arr& X_robot, double T, bool recordD
     /// logging
     if(recordData && (s<1.) && ((t-tPrev)>=dtLog)) {
       tPrev = t;
-      logT.append(ARR(t));
+      logT.append(arr{t});
       logXdes.append(~refs.q);
       if(useRos) {
         logX.append(~S->ctrl_obs.get()->q);
@@ -230,7 +230,7 @@ void TrajectoryInterface::gotoPosition(arr x_robot, double T, bool recordData, b
   t = MP.addTask("tra", new TM_Transition(*world_robot), OT_sos);
   ((TM_Transition*)&t->feat)->H_rate_diag = world_robot->getHmetric();
   t->feat->order=2;
-  t->setCostSpecs(0, MP.T, ARR(0.), 1e0);
+  t->setCostSpecs(0, MP.T, arr{0.}, 1e0);
 
   t =MP.addTask("posT", new TM_qItself(), OT_eq);
   t->setCostSpecs(MP.T-2, MP.T, x_robot, 1e0);
@@ -257,8 +257,8 @@ void TrajectoryInterface::recordDemonstration(arr& X_robot, double T, double dt,
   refs_zero.J_ft_invL.clear();
   refs_zero.u_bias = zeros(q.N);
   refs_zero.Kp = zeros(q.N, q.N);
-  refs_zero.Kd = ARR(0.);
-  refs_zero.Ki = ARR(0.);
+  refs_zero.Kd = arr{0.};
+  refs_zero.Ki = arr{0.};
   refs_zero.fL_gamma = 1.;
   refs_zero.velLimitRatio = .1;
   refs_zero.effLimitRatio = 1.;
@@ -360,9 +360,9 @@ void TrajectoryInterface::pauseMotion(bool sendZeroGains) {
   refs_zero.u_bias = zeros(q.N);
   if(sendZeroGains) {
     cout << "sending zero gains" << endl;
-    refs_zero.Kp = ARR(0.);
-    refs_zero.Kd = ARR(0.);
-    refs_zero.Ki = ARR(0.);
+    refs_zero.Kp = arr{0.};
+    refs_zero.Kd = arr{0.};
+    refs_zero.Ki = arr{0.};
   }
   refs_zero.fL_gamma = 1.;
   refs_zero.fR_gamma = 1.;
@@ -383,7 +383,7 @@ void TrajectoryInterface::logging(rai::String folder, rai::String name, uint id)
     filename = rai::String(STRING(folder<<"/"<<name<<"_"));
   } else {
     filename = rai::String(STRING(folder<<"/"<<id<<"_"<<name<<"_"));
-    write(LIST<arr>(ARR(id)), STRING(folder<<name<<"_id.dat"));
+    write(LIST<arr>(arr{id}), STRING(folder<<name<<"_id.dat"));
   }
 
   write(LIST<arr>(logT), STRING(filename<<"T.dat"));

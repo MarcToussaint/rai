@@ -29,7 +29,7 @@ struct Objective {
   ~Objective() { if(map) delete map; map=nullptr; }
 
   void setCostSpecs(int fromTime, int toTime,
-                    const arr& _target=ARR(0.),
+                    const arr& _target=arr{0.},
                     double _prec=1.);
   void setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T,
                     const arr& _target,

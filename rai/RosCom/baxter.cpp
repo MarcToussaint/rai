@@ -35,7 +35,7 @@ struct sBaxterInterface {
   Var<baxter_core_msgs::EndEffectorState> gripR;
   Var<baxter_core_msgs::EndEffectorState> gripL;
 
-  ptr<ros::NodeHandle> nh;
+  shared_ptr<ros::NodeHandle> nh;
   ros::Publisher pubL, pubR, pubLg, pubRg, pubHead, pubGripperR, pubGripperL;
   rai::Configuration baxterModel;
 

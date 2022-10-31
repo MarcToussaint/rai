@@ -143,7 +143,7 @@ arr conv_pose2transXYPhi(const geometry_msgs::PoseWithCovarianceStamped& pose) {
   double angle;
   rai::Vector rotvec;
   quat.getRad(angle, rotvec);
-  return ARR(pos(0), pos(1), rai::sign(rotvec(2)) * angle);
+  return arr{pos(0), pos(1), rai::sign(rotvec(2)) * angle};
 }
 
 timespec conv_time2timespec(const ros::Time& time) {
@@ -234,7 +234,7 @@ std::vector<geometry_msgs::Point> conv_arr2points(const arr& pts) {
 arr conv_wrench2arr(const geometry_msgs::WrenchStamped& msg) {
   auto& f=msg.wrench.force;
   auto& t=msg.wrench.torque;
-  return ARR(f.x, f.y, f.z, t.x, t.y, t.z);
+  return arr{f.x, f.y, f.z, t.x, t.y, t.z};
 }
 
 byteA conv_image2byteA(const sensor_msgs::Image& msg) {

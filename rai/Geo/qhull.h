@@ -9,7 +9,6 @@
 #pragma once
 
 #include "geo.h"
-#include "../Core/array.h"
 
 void plotQhullState(uint D);
 extern int QHULL_DEBUG_LEVEL;
@@ -36,7 +35,7 @@ double forceClosure(const arr& X,  //contact points (size Nx3)
                     double discountTorques=1.,   //friction coefficient
                     arr* dFdX=nullptr);    //optional: also compute gradient
 
-arr getHull(const arr& V, uintA& T=NoUintA);
+arr getHull(const arr& V, uintA& T=uintA().setNoArr());
 
 void getDelaunayEdges(uintA& E, const arr& V);
 

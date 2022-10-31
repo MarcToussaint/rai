@@ -23,12 +23,12 @@ void init_Camera(pybind11::module& m) {
 
   .def("getRgb", [](ry::RyCamera& self) {
     byteA rgb = self.rgb.get();
-    return pybind11::array_t<byte>(rgb.dim(), rgb.p);
+    return Array2numpy<byte>(rgb);
   })
 
   .def("getDepth", [](ry::RyCamera& self) {
     floatA depth = self.depth.get();
-    return pybind11::array_t<float>(depth.dim(), depth.p);
+    return Array2numpy<float>(depth);
   })
 
   .def("getPoints", [](ry::RyCamera& self, const std::vector<double>& Fxypxy) {
@@ -36,7 +36,7 @@ void init_Camera(pybind11::module& m) {
     arr _points;
     CHECK_EQ(Fxypxy.size(), 4, "I need 4 intrinsic calibration parameters")
     depthData2pointCloud(_points, _depth, Fxypxy[0], Fxypxy[1], Fxypxy[2], Fxypxy[3]);
-    return pybind11::array_t<double>(_points.dim(), _points.p);
+    return arr2numpy(_points);
   })
 
   .def("transform_image2world", [](ry::RyCamera& self, const std::vector<double>& pt, const char* cameraFrame, const std::vector<double>& Fxypxy) {

@@ -34,7 +34,7 @@ void Spline::clear() {
 void Spline::plotBasis(PlotModule& plt) {
   plt.Clear();
   arr b_sum(basis.d0);
-  tensorMarginal(b_sum, basis_trans, TUP(1u));
+  tensorMarginal(b_sum, basis_trans, uintA{1u)};
   plt.Function(b_sum, -1, 1);
   for(uint i=0; i<points.d0; i++) plt.Function(basis_trans[i], -1, 1);
   plt.update();

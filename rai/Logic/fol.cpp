@@ -375,7 +375,7 @@ NodeL getRuleSubstitutions2(Graph& KB, Graph& rule, int verbose) {
 /// check whether the precondition of a rule with substitution holds in the KB
 bool substitutedRulePreconditionHolds(Graph& KB, Node* rule, const NodeL& subst, int verbose) {
   //-- extract precondition
-  if(verbose>1) { cout <<"\n** precondition check for rule " <<*rule <<"\nwith substitution: "; listWrite(subst); cout <<endl; }
+  if(verbose>1) { cout <<"\n** precondition check for rule " <<*rule <<"\nwith substitution: "; rai::listWrite(subst, cout); cout <<endl; }
   Graph& Rule=rule->graph();
   Graph& precondition = getFirstNonSymbolOfScope(Rule)->graph();
   bool holds=allFactsHaveEqualsInKB(KB, precondition, subst, &Rule, true);
@@ -400,7 +400,7 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
   NodeL vars = getSymbolsOfScope(varScope);
 
   if(verbose>2) {
-    cout <<"Substitutions for literals "; listWrite(relations, cout); cout <<" with variables '"; listWrite(vars, cout); cout <<'\'' <<endl;
+    cout <<"Substitutions for literals "; rai::listWrite(relations, cout); cout <<" with variables '"; rai::listWrite(vars, cout); cout <<'\'' <<endl;
   }
 
   //-- collect #free variables of relations
@@ -450,7 +450,7 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
         if(verbose>3) {
           cout <<"Relation " <<*rel <<" allows for domains:" <<endl;
           for(Node* var:rel->parents) if(&var->container==&varScope) {
-              cout <<"'" <<*var <<"' {"; listWrite(domainsForThisRel(var->index), cout); cout <<" }" <<endl;
+              cout <<"'" <<*var <<"' {"; rai::listWrite(domainsForThisRel(var->index), cout); cout <<" }" <<endl;
             }
         }
         for(uint i=0; i<vars.N; i++) if(domainsForThisRel(i).N) {
@@ -461,18 +461,18 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
               domainIsConstrained(i)=true;
             }
             if(verbose>3) cout <<"domains after 'marginal domain collection':" <<endl;
-            if(verbose>3) for(Node* var:vars) { cout <<"'" <<*var <<"' constrained?" <<domainIsConstrained(var->index) <<" {"; listWrite(domainOf(var->index), cout); cout <<" }" <<endl; }
+            if(verbose>3) for(Node* var:vars) { cout <<"'" <<*var <<"' constrained?" <<domainIsConstrained(var->index) <<" {"; rai::listWrite(domainOf(var->index), cout); cout <<" }" <<endl; }
           }
       }
     }
 
   if(verbose>2) cout <<"final domains after 'marginal domain collection':" <<endl;
-  if(verbose>2) for(Node* var:vars) { cout <<"'" <<*var <<"' {"; listWrite(domainOf(var->index), cout); cout <<" }" <<endl; }
+  if(verbose>2) for(Node* var:vars) { cout <<"'" <<*var <<"' {"; rai::listWrite(domainOf(var->index), cout); cout <<" }" <<endl; }
 
   //-- check that every domain is constrained (that is, mentioned by at least SOME relation)
   for(uint i=0; i<vars.N; i++) if(!domainIsConstrained(i)) {
       cout <<"PRECOND:" <<endl;
-      listWrite(relations, cout);
+      rai::listWrite(relations, cout);
       HALT("The domain of variable " <<*vars(i) <<" is unconstrained (infinite, never mentioned,..)");
     }
 
@@ -480,9 +480,9 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
   for(Node* rel:relations) {
     if(nFreeVars(rel->index)==1 && rel->isOfType<bool>() && rel->get<bool>()==false) {
       Node* var = getFirstVariable(rel, &varScope);
-      if(verbose>3) cout <<"checking literal '" <<*rel <<"'" <<flush;
+      if(verbose>3) cout <<"checking literal '" <<*rel <<"'" <<std::flush;
       removeInfeasibleSymbolsFromDomain(KB, domainOf(var->index), rel, &varScope);
-      if(verbose>3) { cout <<" gives remaining domain for '" <<*var <<"' {"; listWrite(domainOf(var->index), cout); cout <<" }" <<endl; }
+      if(verbose>3) { cout <<" gives remaining domain for '" <<*var <<"' {"; rai::listWrite(domainOf(var->index), cout); cout <<" }" <<endl; }
       if(domainOf(var->index).N==0) {
         if(verbose>2) cout <<"NO POSSIBLE SUBSTITUTIONS" <<endl;
         return NodeL(); //early failure
@@ -496,7 +496,7 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
       constraints.append(rel);
     }
 
-  if(verbose>2) { cout <<"remaining constraint literals:" <<endl; listWrite(constraints, cout); cout <<endl; }
+  if(verbose>2) { cout <<"remaining constraint literals:" <<endl; rai::listWrite(constraints, cout); cout <<endl; }
 
   //-- naive CSP: loop through everything
   uint subN=0;
@@ -530,11 +530,11 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
           feasible = getEqualFactInKB(KB, literal, values, &varScope);
         }
         //         }
-        if(verbose>3) { cout <<"checking literal '" <<*literal <<"' with args "; listWrite(values, cout); cout <<(feasible?" -- good":" -- failed") <<endl; }
+        if(verbose>3) { cout <<"checking literal '" <<*literal <<"' with args "; rai::listWrite(values, cout); cout <<(feasible?" -- good":" -- failed") <<endl; }
         if(!feasible) break;
       }
       if(feasible) {
-        if(verbose>3) { cout <<"adding feasible substitution "; listWrite(values, cout); cout <<endl; }
+        if(verbose>3) { cout <<"adding feasible substitution "; rai::listWrite(values, cout); cout <<endl; }
         substitutions.append(values);
         subN++;
       }
@@ -582,7 +582,7 @@ bool forwardChaining_FOL(Graph& state, NodeL& rules, Node* query, Graph& changes
           //TODO: also return sampleProbability?
           effect = rule->graph().elem(-1-p.N+r);
         }
-        if(verbose>0) { cout <<"*** applying" <<*effect <<" SUBS"; listWrite(subs[s], cout); cout <<endl; }
+        if(verbose>0) { cout <<"*** applying" <<*effect <<" SUBS"; rai::listWrite(subs[s], cout); cout <<endl; }
         bool e = applyEffectLiterals(state, effect->graph(), subs[s], &rule->graph(), changes);
         if(verbose>1) {
           if(e) {

@@ -30,7 +30,7 @@ namespace rai {
   Array<SkeletonSymbol> modes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, };
 }
 
-ptr<KOMO_based_bound> skeleton2Bound(ptr<KOMO>& komo, BoundType boundType, const rai::Skeleton& S,
+shared_ptr<KOMO_based_bound> skeleton2Bound(shared_ptr<KOMO>& komo, BoundType boundType, const rai::Skeleton& S,
                                   const rai::Configuration& startKinematics,
                                   bool collisions, const arrA& waypoints) {
 
@@ -48,13 +48,13 @@ ptr<KOMO_based_bound> skeleton2Bound(ptr<KOMO>& komo, BoundType boundType, const
 
    HALT("should not be here!");
 
-  return ptr<KOMO_based_bound>();
+  return shared_ptr<KOMO_based_bound>();
 }
 
 
 //===========================================================================
 
-PoseBound::PoseBound(ptr<KOMO>& komo,
+PoseBound::PoseBound(shared_ptr<KOMO>& komo,
                      const rai::Skeleton& S, const rai::Configuration& startKinematics,
                      bool collisions)
   : KOMO_based_bound(komo) {
@@ -109,7 +109,7 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
   finalS.setKOMO(*komo);
 
   //-- deactivate all velocity objectives except for transition
-  for(ptr<Objective>& o:komo->objectives) {
+  for(shared_ptr<Objective>& o:komo->objectives) {
     if(o->feat->order>0
        && !std::dynamic_pointer_cast<F_qItself>(o->feat)
        && !std::dynamic_pointer_cast<F_Pose>(o->feat)
@@ -117,7 +117,7 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
       o->times={1e6};
     }
   }
-  for(ptr<GroundedObjective>& o:komo->objs) {
+  for(shared_ptr<GroundedObjective>& o:komo->objs) {
     if(o->feat->order>0
        && !std::dynamic_pointer_cast<F_qItself>(o->feat)
        && !std::dynamic_pointer_cast<F_Pose>(o->feat)
@@ -136,7 +136,7 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
   //      komo->setPairedTimes();
 }
 
-SeqBound::SeqBound(ptr<KOMO>& komo,
+SeqBound::SeqBound(shared_ptr<KOMO>& komo,
                    const rai::Skeleton& S, const rai::Configuration& startKinematics,
                    bool collisions)
   : KOMO_based_bound(komo) {
@@ -167,7 +167,7 @@ SeqBound::SeqBound(ptr<KOMO>& komo,
 
 }
 
-PathBound::PathBound(ptr<KOMO>& komo,
+PathBound::PathBound(shared_ptr<KOMO>& komo,
                      const rai::Skeleton& S, const rai::Configuration& startKinematics,
                      bool collisions)
   : KOMO_based_bound(komo) {
@@ -200,7 +200,7 @@ PathBound::PathBound(ptr<KOMO>& komo,
 
 }
 
-SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
+SeqPathBound::SeqPathBound(shared_ptr<KOMO>& komo,
                            const rai::Skeleton& S, const rai::Configuration& startKinematics,
                            bool collisions, const arrA& waypoints)
   : KOMO_based_bound(komo) {
@@ -229,7 +229,7 @@ SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
   CHECK_EQ(waypoints.N, waypointsStepsPerPhase * (T+1), "waypoint steps not clear");
 #if 0 //impose waypoint costs?
   for(uint i=0; i<waypoints.N-1; i++) {
-    komo->addObjective(ARR(conv_step2time(i, waypointsStepsPerPhase)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
+    komo->addObjective(arr{conv_step2time(i, waypointsStepsPerPhase)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i)};
   }
 #endif
 
@@ -247,7 +247,7 @@ SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
 
 }
 
-SeqVelPathBound::SeqVelPathBound(ptr<KOMO>& komo,
+SeqVelPathBound::SeqVelPathBound(shared_ptr<KOMO>& komo,
                                  const rai::Skeleton& S, const rai::Configuration& startKinematics,
                                  bool collisions, const arrA& waypoints)
   : KOMO_based_bound(komo) {
@@ -265,8 +265,8 @@ SeqVelPathBound::SeqVelPathBound(ptr<KOMO>& komo,
 
   CHECK_EQ(waypoints.N-1, floor(maxPhase+.5), "");
   for(uint i=0; i<waypoints.N-1; i++) {
-    komo->addObjective(ARR(double(i+1)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
-//        komo->addObjective(ARR(double(i+1)), FS_qItself, {}, OT_eq, {1e0}, waypoints(i));
+    komo->addObjective(arr{double(i+1)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i)};
+//        komo->addObjective(arr{double(i+1)), FS_qItself, {}, OT_eq, {1e0}, waypoints(i)};
   }
 //      uint O = komo->objectives.N;
 

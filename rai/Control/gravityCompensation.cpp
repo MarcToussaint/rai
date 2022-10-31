@@ -29,7 +29,7 @@ struct GravityCompensation::CV : public CrossValidation {
     }
     if(verbose) cout <<"10-fold CV:\n  costMeans= " << this->scoreMeans << "\n  costSDVs= " << this->scoreSDVs << endl;
 
-    uint bestIndex = this->scoreMeans.argmin();
+    uint bestIndex = argmin(this->scoreMeans);
 
     c = (1-scoreMeans(bestIndex)/scoreMeans.last())*100;
 
@@ -47,7 +47,7 @@ void GravityCompensation::learnGCModel() {
   arr qSign;
   qSign << FILE(rai::raiPath("examples/pr2/calibrateControl/logData/gcKugel_LW/qSign"));
 
-  arr lambdas = ARR(1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5);
+  arr lambdas = arr{1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5};
   lambdas.append(lambdas*5.0);
   lambdas.append(lambdas*7.0);
   lambdas.append(lambdas*3.0);
@@ -90,7 +90,7 @@ void GravityCompensation::learnFTModel() {
   arr PhiL = featuresFT(q, "endeffL");
   arr PhiR = featuresFT(q, "endeffR");
 
-  arr lambdas = ARR(1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5);
+  arr lambdas = arr{1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5};
   lambdas.append(lambdas*5.0);
   lambdas.append(lambdas*7.0);
   lambdas.append(lambdas*3.0);
@@ -524,7 +524,7 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
 
     return Phi;
   }
-  return ARR(0.0);
+  return arr{0.0};
 }
 
 struct CV : public CrossValidation {
@@ -593,7 +593,7 @@ void GravityCompensation::learnModels(bool verbose) {
 
   //cv.verbose = false;
 
-  arr lambdas = ARR(1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5);
+  arr lambdas = arr{1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5};
   lambdas.append(lambdas*5.0);
   lambdas.append(lambdas*7.0);
   lambdas.append(lambdas*3.0);

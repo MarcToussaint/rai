@@ -62,7 +62,7 @@ public:
   virtual void getFHessian(arr& H, const arr& x) { H.clear(); } //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
 
   //-- optional: return some info on the problem and the last evaluation, potentially with display
-  virtual void report(ostream& os, int verbose, const char* msg=0){ os <<"NLP of type '" <<rai::niceTypeidName(typeid(*this)) <<"' -- no reporting implemented"; }
+  virtual void report(ostream& os, int verbose, const char* msg=0);
 
   uint getDimension() const { return dimension; }
   void getBounds(arr& lo, arr& up) const { lo=bounds_lo; up=bounds_up; }
@@ -97,7 +97,7 @@ struct NLP_Factored : NLP {
   virtual void subSelect(const uintA& activeVariables, const uintA& conditionalVariables){ NIY }
   virtual uint numTotalVariables(){ NIY; return 0; }
 
-  virtual rai::String getVariableName(uint var_id){ return STRING("-dummy-"); }
+  virtual rai::String getVariableName(uint var_id);
 };
 
 //===========================================================================

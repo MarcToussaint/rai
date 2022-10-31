@@ -70,6 +70,7 @@ struct CubicSpline{
   void set(const arr& pts, const arr& vels, const arr& _times);
   void append(const arr& pts, const arr& vels, const arr& _times);
 
+  uint getPiece(double t) const;
   void eval(arr& x, arr& xDot, arr& xDDot, double t) const;
   arr eval(double t, uint diff=0) const;
   arr eval(const arr& T, uint diff=0) const;
@@ -81,8 +82,11 @@ struct CubicSpline{
 //==============================================================================
 
 arr CubicSplineLeapCost(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
+arr CubicSplineMaxJer(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
 arr CubicSplineMaxAcc(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
 arr CubicSplineMaxVel(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
+arr CubicSplineAcc0(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
+arr CubicSplineAcc1(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
 
 //===========================================================================
 

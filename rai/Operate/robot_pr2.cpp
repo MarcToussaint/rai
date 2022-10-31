@@ -120,7 +120,7 @@ void Robot_PR2_PathThread::step() {
   arr Kp = diag(Kp_base);  Kp *= kp_factor;
   arr Kd = diag(Kd_base);  Kd *= kd_factor;
   //  arr Ki = diag(Kp_base);  Ki *= ki_factor;
-  arr Ki = ARR(ki_factor);
+  arr Ki = arr{ki_factor};
 
   //  Kp = M*Kp; DANGER!!
   //  Kd = M*Kd;
@@ -137,9 +137,9 @@ void Robot_PR2_PathThread::step() {
     if(qref_dot.N) refs.qdot = qref_dot;
     else refs.qdot = zeros(q_ref.N);
     refs.fL_gamma = 1.;
-    refs.Kp = Kp; //ARR(1.);
-    refs.Kd = Kd; //ARR(1.);
-    refs.Ki = Ki; //ARR(.2);
+    refs.Kp = Kp; //arr{1.};
+    refs.Kd = Kd; //arr{1.};
+    refs.Ki = Ki; //arr{.2};
     refs.fL = zeros(6);
     refs.fR = zeros(6);
     refs.KiFTL.clear();

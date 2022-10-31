@@ -8,7 +8,6 @@
 
 #include "graph.h"
 #include "util.ipp"
-#include "array.ipp"
 
 #include <map>
 
@@ -82,10 +81,10 @@ Node::Node(const std::type_info& _type, Graph& _container, const char* _key, con
 }
 
 Node::~Node() {
-  if(container.isDoubleLinked) while(children.N) children.last()->removeParent(this);
+  if(container.isDoubleLinked) while(children.N) children.elem(-1)->removeParent(this);
   if(numChildren) LOG(-2) <<"It is not allowed to delete nodes that still have children";
-  while(parents.N) removeParent(parents.last());
-  if(this==container.last()) { //great: this is very efficient to remove without breaking indexing
+  while(parents.N) removeParent(parents.elem(-1));
+  if(this==container.elem(-1)) { //great: this is very efficient to remove without breaking indexing
     container.resizeCopy(container.N-1);
   } else {
     container.removeValue(this);
@@ -104,7 +103,7 @@ void Node::addParent(Node* p, bool prepend) {
 }
 
 void Node::removeParent(Node* p) {
-  if(p==parents.last()) parents.removeLast(); else parents.removeValue(p);
+  if(p==parents.elem(-1)) parents.removeLast(); else parents.removeValue(p);
   CHECK(p->numChildren, "");
   p->numChildren--;
   if(container.isDoubleLinked) p->children.removeValue(this);
@@ -154,7 +153,7 @@ void Node::write(std::ostream& os, bool yamlMode) const {
     //    if(keys.N) os <<' ';
     os <<'(';
     for(Node* it: parents) {
-      if(it!=parents.first()) os <<' ';
+      if(it!=parents.elem(0)) os <<' ';
       if(it->key.N) {
         os <<it->key;
       } else { //relative numerical reference
@@ -475,7 +474,7 @@ Node* Graph::edit(Node* ed) {
   for(Node* n : KVG) if(n!=ed) {
       CHECK(ed->type == n->type, "can't edit/merge nodes of different types!");
       if(ed->parents.N) { //replace parents
-        while(n->parents.N) n->removeParent(n->parents.last());
+        while(n->parents.N) n->removeParent(n->parents.elem(-1));
         for(Node* p:ed->parents) n->addParent(p);
       }
       if(n->isGraph()) { //merge the KVGs
@@ -494,9 +493,9 @@ Node* Graph::edit(Node* ed) {
 
 void Graph::collapse(Node* a, Node* b) {
   NodeL ab= {a, b}, ba= {b, a};
-//  cout <<"collapsing " <<a->keys.first() <<' ' <<b->keys.first() <<endl;
+//  cout <<"collapsing " <<a->keys.elem(0) <<' ' <<b->keys.elem(0) <<endl;
 //  cout <<"collapsing " <<*a <<listString(a->children) <<" and " <<*b <<listString(b->children) <<endl;
-//  a->keys.first() <<'_' <<b->keys.first();
+//  a->keys.elem(0) <<'_' <<b->keys.elem(0);
   for(Node* ch:a->children) if(ch->parents==ab || ch->parents==ba) delete ch;
   NodeL b_parentOf = b->children;
   for(Node* ch:b_parentOf) {
@@ -648,7 +647,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
     if(n->isGraph() && n->graph().findNode("%Edit")) edits.append(n);
   }
   for(Node* ed:edits) {
-//    CHECK_EQ(ed->key.first(), "Edit", "an edit node needs Edit as first key");
+//    CHECK_EQ(ed->key.elem(0), "Edit", "an edit node needs Edit as first key");
     ed->graph().delNode(ed->graph().findNode("%Edit"));
 //    ed->key.remove(0);
     edit(ed);
@@ -734,11 +733,11 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
   }
   DEBUG(checkConsistency());
 
-  if(verbose) { cout <<" tags:" <<tags <<flush; }
+  if(verbose) { cout <<" tags:" <<tags <<std::flush; }
 
   String key;
   if(!predeterminedKey) {
-    if(tags.N) key = tags.last();
+    if(tags.N) key = tags.elem(-1);
   } else {
     key = predeterminedKey;
   }
@@ -752,14 +751,14 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
   }
   DEBUG(checkConsistency());
 
-  if(verbose) { cout <<" parents:"; if(!parents.N) cout <<"none"; else listWrite(parents, cout, " ", "()"); cout <<flush; }
+  if(verbose) { cout <<" parents:"; if(!parents.N) cout <<"none"; else cout <<parents.modList() <<std::flush; }
 
   //-- read value
   Node* node=nullptr;
   pinfo.value_beg=(long int)is.tellg()-1;
   if(c=='=' || c==':' || c=='{' || c=='[' || c=='<' || c=='!' || c=='\'') {
     if(c=='=' || c==':') c=getNextChar(is, " \t");
-    if((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_') { //String or boolean
+    if((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_' || c=='/') { //String or boolean
       is.putback(c);
       str.read(is, "", " \n\r\t,;}", false);
       if(str=="true" || str=="True") node = newNode<bool>(key, parents, true);
@@ -887,9 +886,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
   if(!node) {
     cerr <<"FAILED reading node with keys ";
     tags.write(cerr, " ", nullptr, "()");
-    cerr <<" and parents ";
-    listWrite(parents, cerr, " ", "()");
-    cerr <<endl;
+    cerr <<" and parents " <<parents.modList() <<endl;
   }
 
   if(tags.N>1) {
@@ -960,9 +957,13 @@ void addJasonValues(Graph& G, const char* key, Json::Value& value) {
         cout <<value[0][0].type();
         NIY;
       }
+    } else if(value[0].type()==Json::objectValue) {
+        rai::Node* sub = new Node_typed<bool>(G, {key}, {}, true);
+        for(uint i=0; i<value.size(); i++){
+          Json2Graph(G.newSubgraph({STRING(key<<'_'<<i)}, {sub}), value[i]);
+        }
     } else {
-      cout <<value[0].type();
-      NIY
+      HALT("can't parse array of elems of unknown type '" <<value[0].type() <<"'");
     }
   } else {
     switch(value.type()) {
@@ -1049,36 +1050,19 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
     os << " ];" <<endl;
     os <<"node [ fontsize=9, width=.3, height=.3 ];" <<endl;
     os <<"edge [ arrowtail=dot, arrowsize=.5, fontsize=6 ];" <<endl;
-    index(true);
+//    index(true);
   } else {
     if(!isIndexed) index();
   }
   for(Node* n: list()) {
     if(hasRenderingInfo(n) && getRenderingInfo(n).skip) continue;
     String label;
-    if(n->key.N) {
-#if 0
-      bool newline=false;
-      for(String& k:n->key) {
-        if(newline) label <<"\\n";
-        label <<k;
-        newline=true;
-      }
-#else
-      label <<n->key;
-#endif
-    } else {
-//      if(n->parents.N) {
-//        label <<"(" <<n->parents(0)->keys.last();
-//        for(uint i=1; i<n->parents.N; i++) label <<' ' <<n->parents(i)->keys.last();
-//        label <<")";
-//      }
-    }
+    if(n->key.N) label <<n->key;
     if(label.N) label <<"\\n";
     n->writeValue(label);
 
     String shape;
-    if(n->key.contains("box")) shape <<", shape=box"; else shape <<", shape=ellipse";
+//    if(n->key.contains("box")) shape <<", shape=box"; else shape <<", shape=ellipse";
     if(focusIndex==(int)n->index) shape <<", color=red";
     if(hasRenderingInfo(n)) shape <<' ' <<getRenderingInfo(n).dotstyle;
 
@@ -1096,9 +1080,10 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
           os <<"}" <<endl;
           n->graph().writeDot(os, true, defaultEdges, -1);
         } else {
-          label <<'\n' <<n->graph();
+//          label <<'\n' <<n->graph();
           for(uint i=0; i<label.N; i++) if(label(i)=='"') label(i)='\'';
-          os <<n->index <<" [ label=\"" <<label <<"\" shape=box ];" <<endl;
+//          os <<n->index <<" [ label=\"" <<label <<"\" shape=box ];" <<endl;
+          os <<n->index <<" [ label=\"" <<label <<'"' <<shape <<" ];" <<endl;
         }
       } else { //normal node
         if(nodesOrEdges>=0) {
@@ -1109,11 +1094,8 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
         uint pa_COUNT=0;
         for(Node* pa: n->parents) {
           if(hasRenderingInfo(pa) && getRenderingInfo(pa).skip) continue;
-          //              if(pa->index<n->index)
           os <<pa->index <<" -> " <<n->index <<" [ ";
-          //              else
-          //                  os <<n->index <<" -> " <<pa->index <<" [ ";
-          os <<"label=" <<pa_COUNT++;
+          if(n->parents.N>1) os <<"label=" <<pa_COUNT++;
           os <<" ];" <<endl;
         }
       }
@@ -1121,7 +1103,7 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
   }
   if(!withoutHeader) {
     os <<"}" <<endl;
-    index(false);
+//    index(false);
   }
 }
 
@@ -1143,7 +1125,7 @@ void Graph::sortByDotOrder() {
 
 ParseInfo& Graph::getParseInfo(Node* n) {
   if(!pi) pi=new ArrayG<ParseInfo>(*this);
-  return pi->operator()(n);
+  return pi->nodeelem(n);
   //  if(pi.N!=N+1){
   //    listResizeCopy(pi, N+1);
   //    pi(0)->node=nullptr;
@@ -1157,7 +1139,7 @@ RenderingInfo& Graph::getRenderingInfo(Node* n) {
   CHECK(!n || &n->container==this, "");
 #if 1
   if(!ri) ri=new ArrayG<RenderingInfo>(*this);
-  return ri->operator()(n);
+  return ri->nodeelem(n);
 #else
   if(ri.N!=N+1) {
     ri.resizeCopy(N+1); //listResizeCopy(ri, N+1);
@@ -1279,8 +1261,8 @@ NodeL neighbors(Node* it) {
 int distance(NodeL A, NodeL B) {
   CHECK(A.N, "");
   CHECK(B.N, "");
-  Graph& G=A.first()->container;
-  CHECK_EQ(&B.first()->container, &G, "");
+  Graph& G=A.elem(0)->container;
+  CHECK_EQ(&B.elem(0)->container, &G, "");
 
   boolA doneA(G.N), doneB(G.N);
   doneA.setZero();

@@ -561,8 +561,8 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
   //resizing things:
   arr yi(T+1, di); //the part of y which will collect all node potentials
   arr yij(T, dij);  //the part of y which will collect all pair potentials
-  arr Ji;  Ji .resize(TUP(T+1, di, z.d0, z.d1)); //first indices as yi, last: gradient w.r.t. x
-  arr Jij; Jij.resize(TUP(T, dij, z.d0, z.d1));   //first indices as yi, last: gradient w.r.t. x
+  arr Ji;  Ji .resize(uintA{T+1, di, z.d0, z.d1}); //first indices as yi, last: gradient w.r.t. x
+  arr Jij; Jij.resize(uintA{T, dij, z.d0, z.d1});   //first indices as yi, last: gradient w.r.t. x
   Ji.setZero();
   Jij.setZero();
 
@@ -574,7 +574,7 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
     yi[t] = y_loc;
     if(!!J) {
       for(i=0; i<di; i++) for(j=0; j<z.d1; j++) //copy into the right place...
-          Ji.elem(TUP(t, i, t, j)) = J_loc(i, j);
+          Ji.elem(uintA{t, i, t, j}) = J_loc(i, j);
     }
   }
   //then collect all pair potentials
@@ -583,9 +583,9 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
     yij[t] = y_loc;
     if(!!J) {
       for(i=0; i<dij; i++) for(j=0; j<z.d1; j++) //copy into the right place...
-          Jij.elem(TUP(t, i, t, j)) = Ji_loc(i, j);
+          Jij.elem(uintA{t, i, t, j}) = Ji_loc(i, j);
       for(i=0; i<dij; i++) for(j=0; j<z.d1; j++) //copy into the right place...
-          Jij.elem(TUP(t, i, t+1, j)) = Jj_loc(i, j);
+          Jij.elem(uintA{t, i, t+1, j}) = Jj_loc(i, j);
     }
   }
   yi.reshape((T+1)*di);

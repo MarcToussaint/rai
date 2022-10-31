@@ -45,8 +45,8 @@ struct KOMO : NonCopyable {
   double tau=0.;               ///< real time duration of single step (used when evaluating feature space velocities/accelerations)
   uint k_order=0;              ///< the (Markov) order of the KOMO problem (default 2)
   ObjectiveL objectives;    ///< list of running objectives (each for a running interval of indexed time slices)
-  rai::Array<ptr<GroundedObjective>> objs;  ///< list of grounded objective (each for only a single tuple of frames (not running intervals))
-  rai::Array<ptr<rai::KinematicSwitch>> switches;  ///< list of kinematic switches along the motion -- only as record: they are applied immediately at addSwitch
+  rai::Array<shared_ptr<GroundedObjective>> objs;  ///< list of grounded objective (each for only a single tuple of frames (not running intervals))
+  rai::Array<shared_ptr<rai::KinematicSwitch>> switches;  ///< list of kinematic switches along the motion -- only as record: they are applied immediately at addSwitch
 
   //-- internals
   rai::Configuration world;       ///< original configuration; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
@@ -95,12 +95,12 @@ struct KOMO : NonCopyable {
    * they allow the user to add an objective, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary objectives/switches yourself */
-  ptr<struct Objective> addObjective(const arr& times, const ptr<Feature>& f, const StringA& frames,
-                                     ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
-  ptr<struct Objective> addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
-                                     ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0) {
+  shared_ptr<struct Objective> addObjective(const arr& times, const shared_ptr<Feature>& f, const StringA& frames,
+                                            ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
+  shared_ptr<struct Objective> addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
+                                            ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0) {
     return addObjective(times, symbols2feature(feat, frames, world),
-                        NoStringA, type, scale, target, order, deltaFromStep, deltaToStep);
+                        {}, type, scale, target, order, deltaFromStep, deltaToStep);
   }
   void clearObjectives(); ///< clear all objective
 
@@ -117,7 +117,7 @@ struct KOMO : NonCopyable {
   // mid-level ways to define objectives: typically adding one specific objective
   //
 
-  ptr<struct Objective> add_qControlObjective(const arr& times, uint order, double scale=1., const arr& target=NoArr, int deltaFromStep=0, int deltaToStep=0);
+  shared_ptr<struct Objective> add_qControlObjective(const arr& times, uint order, double scale=1., const arr& target=NoArr, int deltaFromStep=0, int deltaToStep=0);
   void addQuaternionNorms(const arr& times=NoArr, double scale=3e0, bool hard=true);
 
   void add_collision(bool hardConstraint=true, double margin=.0, double prec=1e1);
@@ -129,7 +129,7 @@ struct KOMO : NonCopyable {
   //-- core kinematic switch symbols of skeletons
 //protected:
   //low-level add dof switches
-  rai::Frame* addSwitch(const arr& times, bool before, const ptr<rai::KinematicSwitch>& sw);
+  rai::Frame* addSwitch(const arr& times, bool before, const shared_ptr<rai::KinematicSwitch>& sw);
   rai::Frame* addSwitch(const arr& times, bool before, bool stable, rai::JointType type, rai::SwitchInitializationType init,
                         const char* ref1, const char* ref2,
                         const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
@@ -198,6 +198,7 @@ public:
 
   int view(bool pause=false, const char* txt=nullptr);
   int view_play(bool pause=false, double delay=.2, const char* saveVideoPath=nullptr);
+  void view_close();
 
   void plotTrajectory();
   void plotPhaseTrajectory();
@@ -214,7 +215,7 @@ public:
   rai::Frame* applySwitch(const rai::KinematicSwitch& sw);
   void retrospectApplySwitches();
   void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);
-  void set_x(const arr& x, const uintA& selectedConfigurationsOnly=NoUintA);            ///< set the state trajectory of all configurations
+  void set_x(const arr& x, const uintA& selectedConfigurationsOnly={});            ///< set the state trajectory of all configurations
 
 
   //===========================================================================
@@ -242,39 +243,39 @@ public:
   void add_StableRelativePose(const std::vector<int>& confs, const char* gripper, const char* object) {
     DEPR;
     for(uint i=1; i<confs.size(); i++)
-      addObjective(ARR(confs[0], confs[i]), FS_poseRel, {gripper, object}, OT_eq);
+      addObjective(arr{(double)confs[0], (double)confs[i]}, FS_poseRel, {gripper, object}, OT_eq);
     world.makeObjectsFree({object});
   }
   void add_StablePose(const std::vector<int>& confs, const char* object) {
     DEPR;
     for(uint i=1; i<confs.size(); i++)
-      addObjective(ARR(confs[0], confs[i]), FS_pose, {object}, OT_eq);
+      addObjective(arr{(double)confs[0], (double)confs[i]}, FS_pose, {object}, OT_eq);
     world.makeObjectsFree({object});
   }
   void add_grasp(int conf, const char* gripper, const char* object) {
     DEPR;
-    addObjective(ARR(conf), FS_distance, {gripper, object}, OT_eq);
+    addObjective(arr{(double)conf}, FS_distance, {gripper, object}, OT_eq);
   }
   void add_place(int conf, const char* object, const char* table) {
     DEPR;
-    addObjective(ARR(conf), FS_aboveBox, {table, object}, OT_ineq);
-    addObjective(ARR(conf), FS_standingAbove, {table, object}, OT_eq);
-    addObjective(ARR(conf), FS_vectorZ, {object}, OT_sos, {}, {0., 0., 1.});
+    addObjective(arr{(double)conf}, FS_aboveBox, {table, object}, OT_ineq);
+    addObjective(arr{(double)conf}, FS_standingAbove, {table, object}, OT_eq);
+    addObjective(arr{(double)conf}, FS_vectorZ, {object}, OT_sos, {}, {0., 0., 1.});
   }
   void add_resting(int conf1, int conf2, const char* object) {
     DEPR;
-    addObjective(ARR(conf1, conf2), FS_pose, {object}, OT_eq);
+    addObjective(arr{(double)conf1, (double)conf2}, FS_pose, {object}, OT_eq);
   }
   void add_restingRelative(int conf1, int conf2, const char* object, const char* tableOrGripper) {
     DEPR;
-    addObjective(ARR(conf1, conf2), FS_poseRel, {tableOrGripper, object}, OT_eq);
+    addObjective(arr{(double)conf1, (double)conf2}, FS_poseRel, {tableOrGripper, object}, OT_eq);
   }
   void activateCollisions(const char* s1, const char* s2){ DEPR; HALT("see komo-21-03-06"); }
   void deactivateCollisions(const char* s1, const char* s2);
   arr getFrameStateX(int t){ DEPR; return getConfiguration_X(t); }
   arr getPath_qAll(int t){ DEPR; return getConfiguration_qOrg(t); }
   arr getConfiguration_q(int t) { DEPR; return getConfiguration_qAll(t); }
-  arr getPath_qOrg(uintA joints, const bool activesOnly){ DEPR; return getPath_qOrg(); }
+  //arr getPath_qOrg(uintA joints, const bool activesOnly){ DEPR; return getPath_qOrg(); }
 
 //private:
   void _addObjective(const std::shared_ptr<Objective>& ob, const intA& timeSlices);

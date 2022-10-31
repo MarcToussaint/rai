@@ -4,7 +4,9 @@
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
 #include <Geo/qhull.h>
-#include <Geo/analyticShapes.h>
+#include <Geo/signedDistanceFunctions.h>
+
+#include <math.h>
 
 void drawInit(void*, OpenGL& gl){
   glStandardLight(nullptr, gl);
@@ -127,9 +129,9 @@ void TEST(DistanceFunctions) {
   gl.add(m);
 
   rai::Array<ScalarFunction*> fcts = {
-    new DistanceFunction_Sphere(t, 1.),
-    new DistanceFunction_ssBox(t, 1., 2., 3., 1.),
-    new DistanceFunction_Cylinder(t, 2., 1.)
+    new SDF_Sphere(t, 1.),
+    new SDF_ssBox(t, arr{1., 2., 3.}, 1.),
+    new SDF_Cylinder(t, 2., 1.)
   };
 
   for(ScalarFunction* f: fcts){
@@ -163,7 +165,7 @@ void TEST(DistanceFunctions2) {
 
     bool suc=true;
     suc &= checkGradient(DistanceFunction_SSBox, x, 1e-6);
-//    suc &= checkHessian(DistanceFunction_SSBox, x, 1e-6);
+//    suc &= checkHessian(SDF_SSBox, x, 1e-6);
     if(!suc){
       arr g,H;
       cout <<"f=" <<DistanceFunction_SSBox(g,H,x); //set breakpoint here;
@@ -197,7 +199,7 @@ ScalarFunction sphere=[](arr&,arr&, const arr& X){
 
 ScalarFunction torus = [](arr&,arr&, const arr& X){
     double x=X(0), y=X(1), z=X(2);
-    double r=sqrt(x*x + y*y);
+    double r = sqrt(x*x + y*y);
     return z*z + (1.-r)*(1.-r) - .1;
   };
 

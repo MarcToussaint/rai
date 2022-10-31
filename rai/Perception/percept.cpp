@@ -86,7 +86,7 @@ void PercMesh::syncWith(rai::Configuration& K) {
   }
   f->setPose(pose);
   f->shape->mesh() = mesh;
-  f->shape->mesh().C = ARR(.5, 1., .5);
+  f->shape->mesh().C = arr{.5, 1., .5};
   f->ats->getNew<int>("label") = 0x80+id;
 }
 
@@ -215,7 +215,7 @@ void PercBox::syncWith(rai::Configuration& K) {
     shape->type() = rai::ST_box;
   }
   body->setPose(pose);
-  body->shape->size() = size;
+  body->shape->size = size;
   body->shape->mesh().C = color;
 }
 
@@ -268,13 +268,13 @@ void PercCluster::syncWith(rai::Configuration& K) {
     shape->type() = rai::ST_pointCloud;
     shape = new rai::Shape(*body);
     shape->type() = rai::ST_marker;
-    shape->size() = consts<double>(.2, 3);
+    shape->size = rai::consts(.2, 3);
 //    stored_clusters.append(id);
   }
   body->setPose(pose);
 
   pose = body->ensure_X();
-  //((Cluster*)cluster)->mean = ARR(cen.x, cen.y, cen.z);
+  //((Cluster*)cluster)->mean = arr{cen.x, cen.y, cen.z};
   /* If we change the mean, we compare the transformed mean to an untransformed mean later...*/
 }
 
@@ -290,7 +290,7 @@ void PercAlvar::syncWith(rai::Configuration& K) {
     body->name = alvar_name;
     rai::Shape* shape = new rai::Shape(*body);
     shape->type() = rai::ST_marker;
-    shape->size() = consts<double>(.2, 3);
+    shape->size = rai::consts(.2, 3);
 //    stored_alvars.append(id);
   }
 
@@ -307,7 +307,7 @@ void OptitrackBody::syncWith(rai::Configuration& K) {
     body->name = optitrackbody_name;
     rai::Shape* shape = new rai::Shape(*body);
     shape->type() = rai::ST_marker;
-    shape->size() = consts<double>(.1, 3);
+    shape->size = rai::consts(.1, 3);
 //    stored_optitrackbodies.append(id);
   }
 
@@ -324,7 +324,7 @@ void OptitrackMarker::syncWith(rai::Configuration& K) {
     body->name = optitrackmarker_name;
     rai::Shape* shape = new rai::Shape(*body);
     shape->type() = rai::ST_sphere;
-    shape->size() = consts<double>(.03, 3);
+    shape->size = rai::consts(.03, 3);
 //    stored_optitrackmarkers.append(id);
   }
 

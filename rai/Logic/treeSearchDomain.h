@@ -12,6 +12,7 @@
 #include <vector>
 #include <memory>
 #include <tuple>
+#include "../Core/array.h"
 
 namespace rai {
 
@@ -50,12 +51,12 @@ struct TreeSearchDomain {
 
   /// Perform a random action
   virtual TransitionReturn transition_randomly() {
-    std::vector<Handle> actions = get_actions();
-    return transition(actions[rand()%actions.size()]);
+    Array<Handle> actions = get_actions();
+    return transition(actions.rndElem());
   }
 
   /// Get the available actions in the current state
-  virtual const std::vector<Handle> get_actions() = 0;
+  virtual const Array<Handle> get_actions() = 0;
 
   /// Return whether action is feasible in current state
   virtual bool is_feasible_action(const Handle& action) { return true; }
@@ -89,8 +90,15 @@ extern std::shared_ptr<const TreeSearchDomain::SAO> NoHandle;
 //===========================================================================
 
 struct TreeSearchNode{
+  uint ID=0;
+  TreeSearchNode *parent=0;
+  //the derived constructor or compute() need to set these
+  bool isComplete = true;
+  bool isFeasible = true;
+  bool isTerminal = false;
   double f_prio=0.;
 
+  TreeSearchNode(TreeSearchNode *parent=0);
   virtual ~TreeSearchNode() {}
 
   //transition in new state
@@ -98,17 +106,17 @@ struct TreeSearchNode{
   virtual std::shared_ptr<TreeSearchNode> transition(int action) = 0;
   virtual std::shared_ptr<TreeSearchNode> transitionRandomly();
 
-  virtual bool refine() = 0; //return true, when f_prio changed;
-
-  //Astar heuristics
-  virtual bool isFailure() const{ return false; }
-  virtual bool isGoal() const{ return false; }
+  virtual bool compute() = 0; //return true, when f_prio changed;
 
   //access parent
-  virtual TreeSearchNode *getParent() const{ return 0; }
   virtual void write(std::ostream& os) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
   virtual void report(std::ostream& os, int verbose) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
 };
 inline std::ostream& operator<<(std::ostream& os, const TreeSearchNode& D) { D.write(os); return os; }
+
+//===========================================================================
+
+void printTree(const rai::Array<TreeSearchNode*>& T);
+void printTree(const rai::Array<std::shared_ptr<TreeSearchNode>>& T);
 
 } //namspace

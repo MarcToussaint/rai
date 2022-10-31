@@ -9,6 +9,8 @@
 #include "MLcourse.h"
 #include "../Core/util.h"
 
+#include <math.h>
+
 void CrossValidation::crossValidateSingleLambda(const arr& X, const arr& y, double lambda, uint k_fold, bool permute, arr* beta_k_fold, arr* beta_total, double* scoreMean, double* scoreSDV, double* scoreTrain) {
   arr Xtrain, Xtest, ytrain, ytest;
   uint n=X.d0;
@@ -69,9 +71,9 @@ void CrossValidation::crossValidateSingleLambda(const arr& X, const arr& y, doub
   if(beta_total) *beta_total = beta;
   if(verbose) cout <<" test: " <<costT <<endl;
 
-  if(scoreMean)  *scoreMean =costM; else scoreMeans =ARR(costM);
-  if(scoreSDV)   *scoreSDV  =costD; else scoreSDVs  =ARR(costD);
-  if(scoreTrain) *scoreTrain=costT; else scoreTrains=ARR(costT);
+  if(scoreMean)  *scoreMean =costM; else scoreMeans =arr{costM};
+  if(scoreSDV)   *scoreSDV  =costD; else scoreSDVs  =arr{costD};
+  if(scoreTrain) *scoreTrain=costT; else scoreTrains=arr{costT};
   if(verbose) cout <<"CV: lambda=" <<lambda <<" \tmean-on-rest=" <<costM <<" \tsdv=" <<costD <<" \ttrain-on-full=" <<costT <<endl;
   if(verbose) cout <<"cross validation results:";
   if(verbose) if(lambda!=-1) cout <<"\n  lambda = " <<lambda;
@@ -176,7 +178,7 @@ arr makeFeatures(const arr& X, FeatureType featureType, const arr& rbfCenters, a
   if(featureType==readFromCfgFileFT) featureType = (FeatureType)rai::getParameter<double>("modelFeatureType", 1);
   arr Z;
   switch(featureType) {
-    case constFT:     Z = consts<double>(1., X.d0, 1);  break;
+    case constFT:     Z = rai::consts<double>(1., X.d0, 1);  break;
     case linearFT:    linearFeatures(Z, X);  break;
     case quadraticFT: quadraticFeatures(Z, X);  break;
     case cubicFT:     cubicFeatures(Z, X);  break;
@@ -273,7 +275,7 @@ void artificialData_HastiesMultiClass(arr& X, arr& y) {
   arr means(M, 10, d), x(d);
 
   rndGauss(means);
-  for(uint c=0; c<M; c++)  means[c]() += ones(10, 1)*~consts((double)c, d);
+  for(uint c=0; c<M; c++)  means[c] += ones(10, 1)*~consts((double)c, d);
 
   X.resize(M*n, d);
   y.resize(M*n, M);
@@ -296,7 +298,7 @@ void artificialData_GaussianMixture(arr& X, arr& y) {
   rndGauss(means);
   rndGauss(V);
   //means.setZero();
-  //for(uint c=0;c<M;c++)  means[c]() += ARR(c, c);
+  //for(uint c=0;c<M;c++)  means[c]() += arr{c, c};
 
   X.resize(M*n, 2);
   y.resize(M*n, M);

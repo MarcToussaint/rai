@@ -23,7 +23,7 @@ struct ConvexGeometryData {
 };
 }
 
-rai::FclInterface::FclInterface(const rai::Array<ptr<Mesh>>& geometries, double _cutoff)
+rai::FclInterface::FclInterface(const rai::Array<shared_ptr<Mesh>>& geometries, double _cutoff)
   : cutoff(_cutoff) {
   convexGeometryData.resize(geometries.N);
   for(long int i=0; i<geometries.N; i++) {
@@ -116,7 +116,7 @@ bool rai::FclInterface::BroadphaseCallback(fcl::CollisionObject* o1, fcl::Collis
 }
 
 #else //RAI_FCL
-rai::FclInterface::FclInterface(const Array<ptr<Mesh>>& _geometries, double _cutoff) { NICO }
+rai::FclInterface::FclInterface(const Array<shared_ptr<Mesh>>& _geometries, double _cutoff) { NICO }
 rai::FclInterface::~FclInterface() { NICO }
 void rai::FclInterface::step(const arr& X) { NICO }
 #endif

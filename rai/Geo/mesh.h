@@ -9,8 +9,10 @@
 #pragma once
 
 #include "geo.h"
-#include "../Core/array.h"
 
+struct OpenGL;
+
+//fwd decl
 namespace rai { struct Mesh; }
 typedef rai::Array<rai::Mesh> MeshA;
 typedef rai::Array<rai::Mesh*> MeshL;
@@ -20,7 +22,7 @@ struct ANN;
 
 namespace rai {
 
-enum ShapeType { ST_none=-1, ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylinder, ST_marker, ST_pointCloud, ST_ssCvx, ST_ssBox, ST_ssCylinder, ST_ssBoxElip, ST_quad, ST_camera };
+enum ShapeType { ST_none=-1, ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylinder, ST_marker, ST_pointCloud, ST_ssCvx, ST_ssBox, ST_ssCylinder, ST_ssBoxElip, ST_quad, ST_camera, ST_sdf };
 
 //===========================================================================
 /// a mesh (arrays of vertices, triangles, colors & normals)
@@ -51,7 +53,7 @@ struct Mesh : GLDrawer {
 
   /// @name set or create
   void clear();
-  void setBox();
+  void setBox(bool edgesOnly=false);
   void setDot(); ///< an awkward mesh: just a single dot, not tris (e.g. cvx core of a sphere...)
   void setLine(double l); ///< an awkward mesh: just a single line, not tris (e.g. cvx core of a sphere...)
   void setQuad(double x_width=1., double y_width=1., const byteA& _texImg={}); ///< a quat, optionally with texture
@@ -67,6 +69,7 @@ struct Mesh : GLDrawer {
   void setImplicitSurface(ScalarFunction f, double lo=-10., double hi=+10., uint res=100);
   void setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res);
   void setImplicitSurface(const arr& gridValues, const arr& lo, const arr& hi);
+  void setImplicitSurface(const floatA& gridValues, const arr& lo, const arr& hi);
   void setImplicitSurfaceBySphereProjection(ScalarFunction f, double rad, uint fineness=3);
   Mesh& setRandom(uint vertices=10);
   void setGrid(uint X, uint Y);

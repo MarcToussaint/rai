@@ -272,7 +272,7 @@ void OdeInterface::clear() {
   world=dWorldCreate();
   space=dSimpleSpaceCreate(0);
   contactgroup=dJointGroupCreate(0);
-  //std::cout <<"default ERP=" <<dWorldGetERP(world) <<"default CFM=" <<dWorldGetCFM(world) <<std::endl;
+  //cout <<"default ERP=" <<dWorldGetERP(world) <<"default CFM=" <<dWorldGetCFM(world) <<endl;
   if(noGravity) {
     dWorldSetGravity(world, 0, 0, 0);
   } else {
@@ -396,7 +396,7 @@ void OdeInterface::step(double dtime) {
 }
 
 void OdeInterface::reportContacts() {
-  std::cout <<"contacts: " <<conts.N <<std::endl;
+  cout <<"contacts: " <<conts.N <<endl;
   dContactGeom* c;
   for(uint i=0; i<conts.N; i++) {
     c = conts(i);
@@ -404,12 +404,12 @@ void OdeInterface::reportContacts() {
     dBodyID b2 = dGeomGetBody(c->g2);
     rai::Body* db1 = b1?(rai::Body*)b1->userdata:0;
     rai::Body* db2 = b2?(rai::Body*)b2->userdata:0;
-    std::cout
+    cout
         <<i <<": " <<(b1?db1->name.p:"GROUND") <<'-' <<(b2?db2->name.p:"GROUND")
         <<"\nposition=" <<OUTv(c->pos)
         <<"\nnormal=" <<OUTv(c->normal)
         <<"\npenetration depth=" <<OUTs(c->depth)
-        <<std::endl;
+        <<endl;
   }
 }
 
@@ -441,7 +441,7 @@ void OdeInterface::penetration(rai::Vector& p) {
       if(touch1)((rai::Body*)b1->userdata)->touch = p;
       else((rai::Body*)b2->userdata)->touch = -p;
       //printf("%lf\n", d);
-      std::cout <<"contact " <<i <<": penetration: " <<OUTv(p.v) <<"\n";
+      cout <<"contact " <<i <<": penetration: " <<OUTv(p.v) <<"\n";
     }
   }
 #endif
@@ -483,7 +483,7 @@ void OdeInterface::contactForces() {
       if(b1) dBodyAddForceAtPos(b1, force*m1*normal.x, force*m1*normal.y, force*m1*normal.z, pos.x, pos.y, pos.z);
     }
 
-    if(!b2) std::cout <<"bodyForce = " <<force* normal <<std::endl;
+    if(!b2) cout <<"bodyForce = " <<force* normal <<endl;
 
 #if 1
     // ** parallel (slip) force:
@@ -499,8 +499,8 @@ void OdeInterface::contactForces() {
     force *= -1.;
     if(b1) dBodyAddForceAtPos(b1, force*m1*vrel.x, force*m1*vrel.y, force*m1*vrel.z, pos.x, pos.y, pos.z);
 
-    if(!b2) std::cout <<"bodyForce = " <<force* normal <<std::endl;
-    std::cout <<"slip force " <<force <<std::endl;
+    if(!b2) cout <<"bodyForce = " <<force* normal <<endl;
+    cout <<"slip force " <<force <<endl;
 #endif
   }
 }
@@ -718,7 +718,7 @@ void OdeInterface::unsetJointMotor(rai::Joint* e) {
 void OdeInterface::getJointMotorForce(rai::Joint* e, double& f) {
   dJointFeedback* fb=dJointGetFeedback(motors(e->index));
   CHECK(fb, "no feedback buffer set for this joint");
-  //std::cout <<OUTv(fb->f1) <<' ' <<OUTv(fb->t1) <<' ' <<OUTv(fb->f2) <<' ' <<OUTv(fb->t2) <<std::endl;
+  //cout <<OUTv(fb->f1) <<' ' <<OUTv(fb->t1) <<' ' <<OUTv(fb->f2) <<' ' <<OUTv(fb->t2) <<endl;
   rai::Vector t; t.x=fb->t1[0]; t.y=fb->t1[1]; t.z=fb->t1[2];
   f=t * (e->from->X.rot*(e->A.rot*rai::Vector(1, 0, 0)));
   f=-f;
@@ -748,7 +748,7 @@ void OdeInterface::pidJointPos(rai::Joint* e, double x0, double v0, double xGain
     f+=iGain* (*eInt);
     (*eInt) = .99*(*eInt) + .01 *(x0-x);
   }
-  std::cout <<"PID:" <<x0 <<' ' <<x <<' ' <<v <<" -> " <<f <<std::endl;
+  cout <<"PID:" <<x0 <<' ' <<x <<' ' <<v <<" -> " <<f <<endl;
   dJointSetAMotorParam(motors(e->index), dParamFMax, 0);
   dJointAddHingeTorque(joints(e->index), -f);
 }
@@ -759,7 +759,7 @@ void OdeInterface::pidJointVel(rai::Joint* e, double v0, double vGain) {
   v=-dJointGetHingeAngleRate(joints(e->index));
   f = vGain*(v0-v);
   if(fabs(f)>vGain) f=rai::sign(f)*vGain;
-  std::cout <<"PIDv:" <<v0 <<' ' <<v <<" -> " <<f <<std::endl;
+  cout <<"PIDv:" <<v0 <<' ' <<v <<" -> " <<f <<endl;
   dJointSetAMotorParam(motors(e->index), dParamFMax, 0);
   dJointAddHingeTorque(joints(e->index), -f);
 }
@@ -847,23 +847,23 @@ void OdeInterface::reportContacts2() {
   rai::Body* b;
   dContactGeom* c;
   rai::Vector x;
-  std::cout <<"contacts=" <<conts.N <<std::endl;
+  cout <<"contacts=" <<conts.N <<endl;
   for(i=0; i<conts.N; i++) {
     c = conts(i);
-    std::cout <<i <<' ';
+    cout <<i <<' ';
     b1=dGeomGetBody(c->g1);
     b2=dGeomGetBody(c->g2);
     if(b1) {
       b=(rai::Body*)b1->userdata;
-      std::cout <<b->name <<' ';
-    } else std::cout <<"NIL ";
+      cout <<b->name <<' ';
+    } else cout <<"NIL ";
     if(b2) {
       b=(rai::Body*)b2->userdata;
-      std::cout <<b->name <<' ';
-    } else std::cout <<"NIL ";
-    x.set(c->pos);    std::cout <<"pos=" <<x <<' ';
-    x.set(c->normal); std::cout <<"normal=" <<x <<' ';
-    std::cout <<"depth=" <<c->depth <<std::endl;
+      cout <<b->name <<' ';
+    } else cout <<"NIL ";
+    x.set(c->pos);    cout <<"pos=" <<x <<' ';
+    x.set(c->normal); cout <<"normal=" <<x <<' ';
+    cout <<"depth=" <<c->depth <<endl;
   }
 }
 
@@ -888,8 +888,8 @@ bool OdeInterface::inFloorContacts(rai::Vector& x) {
     }
   }
 
-  std::cout <<"\nfloor points: ";
-  for(i=0; i<v.N; i++) std::cout <<v(i) <<'\n';
+  cout <<"\nfloor points: ";
+  for(i=0; i<v.N; i++) cout <<v(i) <<'\n';
 
   if(!v.N) return false;
 
@@ -912,10 +912,10 @@ bool OdeInterface::inFloorContacts(rai::Vector& x) {
       if(k==v.N) bounds.append(b);
     }
 
-  std::cout <<"\nbounds: ";
-  for(i=0; i<bounds.N; i++) std::cout <<bounds(i).p <<' ' <<bounds(i).n <<'\n';
+  cout <<"\nbounds: ";
+  for(i=0; i<bounds.N; i++) cout <<bounds(i).p <<' ' <<bounds(i).n <<'\n';
 
-  std::cout <<"\nquery: " <<x <<std::endl;
+  cout <<"\nquery: " <<x <<endl;
   //check for internal
   for(i=0; i<bounds.N; i++) {
     if((x-bounds(i).p) * bounds(i).n < 0) return false;

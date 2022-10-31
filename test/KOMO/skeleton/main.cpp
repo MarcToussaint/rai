@@ -130,8 +130,8 @@ void testTouchAndRoll(rai::ArgWord pathOrSeq){
 
   //grasp
   rai::Skeleton S = {
-    { 1., 1., rai::SY_touch, {"palmB", "ball"} },
-    { 1., 1.2, rai::SY_contact, {"palmB", "ball"} },
+    { 1., 1., rai::SY_touch, {"handB", "ball"} },
+    { 1., 1.2, rai::SY_contact, {"handB", "ball"} },
     { 1., -1., rai::SY_dynamicOn, {"table", "ball"} },
     { 2., 2., rai::SY_touch, {"ball", "box"} },
   };
@@ -381,7 +381,7 @@ int main(int argc,char** argv){
 //  testWalking(rai::_sequence);
   testHandover(rai::_path);
 //  testHandover(rai::_sequence);
-  testStackAndBalance(rai::_path);
+  testStackAndBalance(rai::_path); //works rarely only - why?
 //  testStackAndBalance(rai::_sequence);
 
   return 0;

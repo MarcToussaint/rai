@@ -2,9 +2,9 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-OPTIM = debug#fast_debug
+OPTIM = fast_debug
 
-DEPEND = Core Geo GeoOptim Algo Gui 
+DEPEND = Core Geo Algo Gui
 
 GL = 1
 PHYSX = 1

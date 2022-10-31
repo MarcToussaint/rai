@@ -9,7 +9,9 @@
 #pragma once
 
 #include "array.h"
+#include "util.h"
 
+#include <math.h>
 #include <map>
 #include <memory>
 
@@ -91,8 +93,6 @@ struct Graph : NodeL {
   Node* isNodeOfGraph; ///< THIS is a subgraph of another graph; isNodeOfGraph points to the node that equals THIS graph
   bool isIndexed=true;
   bool isDoubleLinked=true;
-
-  GraphEditCallbackL callbacks; ///< list of callbacks that are informed about creation and destruction of nodes
 
   ArrayG<ParseInfo>* pi;     ///< optional annotation of nodes: when detailed file parsing is enabled
   ArrayG<RenderingInfo>* ri; ///< optional annotation of nodes: dot style commands
@@ -180,7 +180,7 @@ struct Graph : NodeL {
   void read(std::istream& is, bool parseInfo=false);
   Node* readNode(std::istream& is, StringA& tags, const char* predeterminedKey, bool verbose, bool parseInfo); //used only internally..
   void readJson(std::istream& is);
-  void write(std::ostream& os=std::cout, const char* ELEMSEP=",\n", const char* BRACKETS="{}", bool yamlMode=false) const;
+  void write(std::ostream& os=cout, const char* ELEMSEP=",\n", const char* BRACKETS="{}", bool yamlMode=false) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0, int focusIndex=-1, bool subGraphsAsNodes=false);
   void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
@@ -218,18 +218,22 @@ struct ArrayG : rai::Array<T*>, GraphEditCallback {
   ArrayG(Graph& _G):G(_G) {
     this->memMove=true;
     this->resize(G.N+1).setZero();
-    G.callbacks.append(this);
   }
   ~ArrayG() {
-    G.callbacks.removeValue(this);
     for(T* x:*this) if(x) { delete x; x=nullptr; }
     this->clear();
   }
-  T& operator()(Node* n) {
-    CHECK_EQ(this->N, G.N+1, "");
-//    if(this->N != G.N+1) listResizeCopy(*this, G.N+1); //redundant, given the callback mechanisms...
-    T*& x = (!n? this->elem(0) : this->elem(n->index+1)); //x is a reference!
-    if(!x) x = new T(); //...assigned here
+  T& nodeelem(Node* n) {
+//    CHECK_EQ(this->N, G.N+1, "");
+    while(this->N < G.N+1) this->append(0);
+    T* x = 0;
+    if(n) x = this->elem(n->index+1);
+    else x = this->elem(0);
+    if(!x){
+      x = new T(); //...assigned here
+      if(n) this->elem(n->index+1) = x;
+      else this->elem(0) = x;
+    }
     return *x;
   }
   virtual void cb_new(Node* n) { this->insert(n->index+1, (T*)nullptr); }
@@ -354,23 +358,19 @@ struct Node_typed : Node {
   Node_typed(Graph& container, const char* key)
     : Node(typeid(T), container, key, {}), value() {
     if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
-    if(!!container && container.callbacks.N) for(GraphEditCallback* cb:container.callbacks) cb->cb_new(this);
   }
 
   Node_typed(Graph& container, const char* key, const NodeL& parents)
     : Node(typeid(T), container, key, parents), value() {
     if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
-    if(!!container && container.callbacks.N) for(GraphEditCallback* cb:container.callbacks) cb->cb_new(this);
   }
 
   Node_typed(Graph& container, const char* key, const NodeL& parents, const T& _value)
     : Node(typeid(T), container, key, parents), value(_value) {
     if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
-    if(!!container && container.callbacks.N) for(GraphEditCallback* cb:container.callbacks) cb->cb_new(this);
   }
 
   virtual ~Node_typed() {
-    if(!!container && container.callbacks.N) for(GraphEditCallback* cb:container.callbacks) cb->cb_delete(this);
   }
 
   virtual void copyValue(Node* it) {
@@ -386,7 +386,7 @@ struct Node_typed : Node {
   }
 
   virtual void writeValue(std::ostream& os) const {
-    if(typeid(T)==typeid(NodeL)) listWrite(*getValue<NodeL>(), os, " ");
+    if(typeid(T)==typeid(NodeL)) os <<getValue<NodeL>()->modList();
     else os <<value;
   }
 

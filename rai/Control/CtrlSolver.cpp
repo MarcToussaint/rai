@@ -25,11 +25,11 @@ void CtrlSolver::set(const CtrlSet& CS) {
   objectives = CS.objectives;
 }
 
-void CtrlSolver::addObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
+void CtrlSolver::addObjectives(const rai::Array<shared_ptr<CtrlObjective>>& O) {
   objectives.append(O);
 }
 
-void CtrlSolver::delObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
+void CtrlSolver::delObjectives(const rai::Array<shared_ptr<CtrlObjective>>& O) {
   for(auto& o:O) {
     objectives.removeValue(o);
   }
@@ -37,11 +37,11 @@ void CtrlSolver::delObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
 
 #if 0
 std::shared_ptr<CtrlObjective> CtrlSolver::add_qControlObjective(uint order, double scale, const arr& target) {
-  ptr<Objective> o = komo.add_qControlObjective({}, order, scale, target);
+  shared_ptr<Objective> o = komo.add_qControlObjective({}, order, scale, target);
   return addObjective(o->feat, NoStringA, o->type);
 }
 
-ptr<CtrlObjective> CtrlSolver::addObjective(const ptr<Feature>& _feat, const StringA& frames, ObjectiveType _type) {
+shared_ptr<CtrlObjective> CtrlSolver::addObjective(const shared_ptr<Feature>& _feat, const StringA& frames, ObjectiveType _type) {
   std::shared_ptr<CtrlObjective> t = make_shared<CtrlObjective>();
   t->feat = _feat;
   t->type = _type;
@@ -53,7 +53,7 @@ ptr<CtrlObjective> CtrlSolver::addObjective(const ptr<Feature>& _feat, const Str
   return t;
 }
 
-ptr<CtrlObjective> CtrlSolver::addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order) {
+shared_ptr<CtrlObjective> CtrlSolver::addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order) {
   return addObjective(symbols2feature(feat, frames, komo.world, scale, target, order), NoStringA, type);
 }
 #endif

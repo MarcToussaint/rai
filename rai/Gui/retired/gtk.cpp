@@ -8,7 +8,6 @@
 
 #include "gtk.h"
 #include "../Core/util.ipp"
-#include "../Core/array.ipp"
 #include "../Core/thread.h"
 
 #include <sys/syscall.h>

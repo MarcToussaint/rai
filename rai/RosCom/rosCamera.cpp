@@ -13,9 +13,9 @@
 
 struct sRosCamera {
   RosCom ROS;
-  ptr<SubscriberConv<sensor_msgs::Image, byteA, &conv_image2byteA>> subRgb;
-  ptr<SubscriberConv<sensor_msgs::Image, floatA, &conv_imageFloat32_floatA>> subDepthFloat;
-  ptr<SubscriberConv<sensor_msgs::Image, floatA, &conv_imageu162floatA>> subDepthUint16;
+  shared_ptr<SubscriberConv<sensor_msgs::Image, byteA, &conv_image2byteA>> subRgb;
+  shared_ptr<SubscriberConv<sensor_msgs::Image, floatA, &conv_imageFloat32_floatA>> subDepthFloat;
+  shared_ptr<SubscriberConv<sensor_msgs::Image, floatA, &conv_imageu162floatA>> subDepthUint16;
 
   sRosCamera(const char* rosNodeName, Var<byteA>& rgb, Var<floatA>& depth, bool useUint) : ROS(rosNodeName) {
     if(rgb.name().N) ROS.subscribe(subRgb, rgb);

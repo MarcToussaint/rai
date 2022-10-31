@@ -19,10 +19,10 @@
 #include "featureSymbols.h"
 #include "viewer.h"
 #include "../Core/graph.h"
+#include "../Core/util.h"
 #include "../Geo/fclInterface.h"
 #include "../Geo/qhull.h"
 #include "../Geo/mesh_readAssimp.h"
-#include "../GeoOptim/geoOptim.h"
 #include "../Gui/opengl.h"
 #include "../Algo/algos.h"
 #include <iomanip>
@@ -152,7 +152,10 @@ void Configuration::copy(const Configuration& C, bool referenceSwiftOnCopy) {
 
   //copy frames; first each Frame/Link/Joint directly, where all links go to the origin K (!!!); then relink to itself
   for(Frame* f:C.frames) new Frame(*this, f);
-  for(Frame* f:C.frames) if(f->parent) frames.elem(f->ID)->setParent(frames.elem(f->parent->ID));
+  for(Frame* f:C.frames){
+    if(f->parent) frames.elem(f->ID)->setParent(frames.elem(f->parent->ID));
+    if(f->prev) frames.elem(f->ID)->prev = frames.elem(f->prev->ID);
+  }
 //  addFramesCopy(C.frames);
   frames.reshapeAs(C.frames);
 
@@ -266,7 +269,7 @@ Frame* Configuration::addObject(ShapeType shape, const arr& size, const arr& col
   Shape* s = new Shape(*f);
   s->type() = shape;
   if(col.N) s->mesh().C = col;
-  if(radius>0.) s->size() = ARR(radius);
+  if(radius>0.) s->size() = arr{radius};
   if(shape!=ST_mesh && shape!=ST_ssCvx) {
     if(size.N>=1) s->size() = size;
     s->createMeshes();
@@ -279,7 +282,7 @@ Frame* Configuration::addObject(ShapeType shape, const arr& size, const arr& col
       s->sscCore().V = size;
       s->sscCore().V.reshape(-1, 3);
       CHECK(radius>0., "radius must be greater zero");
-      s->size() = ARR(radius);
+      s->size() = arr{radius};
     }
   }
   return f;
@@ -335,13 +338,17 @@ Frame* Configuration::addCopies(const FrameL& F, const DofL& _dofs) {
   }
 
   //relink frames - special attention to mimic'ing
-  for(Frame* f:F) if(f->parent && f->parent->ID<=maxId && FId2thisId(f->parent->ID)!=-1) {
+  for(Frame* f:F) if(f->parent){
+    if(f->parent->ID>maxId || FId2thisId(f->parent->ID)==-1) {
+      LOG(-1) <<"can't relink frame '" <<*f <<"'";
+    }
     Frame* f_new = frames.elem(FId2thisId(f->ID));
     f_new->setParent(frames.elem(FId2thisId(f->parent->ID)));
     //take care of within-F mimic joints:
     if(f->joint && f->joint->mimic){
-      CHECK(f->joint && f->joint->mimic, "");
-      f_new->joint->setMimic(frames.elem(FId2thisId(f->joint->mimic->frame->ID))->joint, true);
+      if(f->joint->mimic->frame->ID<maxId && FId2thisId(f->joint->mimic->frame->ID)!=-1){
+        f_new->joint->setMimic(frames.elem(FId2thisId(f->joint->mimic->frame->ID))->joint, true);
+      }
     }
   }
 
@@ -484,7 +491,7 @@ uintA Configuration::getCtrlFramesAndScale(arr& scale) const {
   for(rai::Frame* f : frames) {
     rai::Joint *j = f->joint;
     if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau && (!f->ats || !(*f->ats)["constant"])) {
-      qFrames.append(TUP(f->ID, f->parent->ID));
+      qFrames.append(uintA{f->ID, f->parent->ID});
       if(!!scale) scale.append(j->H, j->dim);
     }
   }
@@ -1010,6 +1017,7 @@ void Configuration::clear() {
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
   while(frames.N) { delete frames.last(); /*checkConsistency();*/ }
   reset_q();
+  if(self->viewer) self->viewer->recopyMeshes(*this);
 
   _state_proxies_isGood=false;
 }
@@ -1309,7 +1317,7 @@ void exclude(uintA& ex, FrameL& F1, FrameL& F2) {
   for(Frame* f1:F1) {
     for(Frame* f2:F2) {
       if(f1->ID < f2->ID) {
-        ex.append(TUP(f1->ID, f2->ID));
+        ex.append(uintA{f1->ID, f2->ID});
       }
     }
   }
@@ -1341,7 +1349,9 @@ uintA Configuration::getCollisionExcludePairIDs(bool verbose) {
     if(F.N>1) {
       if(verbose) {
         LOG(0) <<"excluding intra-link collisions: ";
-        cout <<"           ";  listWriteNames(F, cout);  cout <<endl;
+        cout <<"           ";
+        for(Frame *ff:F) cout <<ff->name <<' ';
+        cout <<endl;
       }
       exclude(ex, F, F);
     }
@@ -1367,8 +1377,8 @@ uintA Configuration::getCollisionExcludePairIDs(bool verbose) {
         if(F.N && P.N) {
           if(verbose) {
             LOG(0) <<"excluding between-sets collisions: ";
-            cout <<"           ";  listWriteNames(F, cout);  cout <<endl;
-            cout <<"           ";  listWriteNames(P, cout);  cout <<endl;
+            cout <<"           ";  for(Frame *ff:F) cout <<ff->name <<' ';  cout <<endl;
+            cout <<"           ";  for(Frame *ff:P) cout <<ff->name <<' ';  cout <<endl;
           }
           exclude(ex, F, P);
         }
@@ -1877,7 +1887,7 @@ void Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO: all
     J.setNoArr();
     return;
   }
-  if(A.isSparse()) {
+  if(isSparse(A)) {
     J = A;
     J.sparse().reshape(4, A.d1);
     J.sparse().colShift(1);
@@ -2068,7 +2078,7 @@ std::shared_ptr<SwiftInterface> Configuration::swift() {
 
 std::shared_ptr<FclInterface> Configuration::fcl() {
   if(!self->fcl) {
-    Array<ptr<Mesh>> geometries(frames.N);
+    Array<shared_ptr<Mesh>> geometries(frames.N);
     for(Frame* f:frames) {
       if(f->shape && f->shape->cont) {
         CHECK(f->shape->type()!=rai::ST_marker, "collision object can't be a marker");
@@ -2257,8 +2267,8 @@ void Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double tau, d
   arr x1=cat(s->q, s->qdot).reshape(2, s->q.N);
 #else
   arr x1;
-  rk4_2ndOrder(x1, cat(q, qdot).reshape(2, q.N), eqn, tau);
-  if(dynamicNoise) rndGauss(x1[1](), ::sqrt(tau)*dynamicNoise, true);
+  rk4_2ndOrder(x1, (q, qdot).reshape(2, q.N), eqn, tau);
+  if(dynamicNoise) rndGauss(x1[1].noconst(), ::sqrt(tau)*dynamicNoise, true);
 #endif
 
   setJointState(x1[0]);
@@ -2340,7 +2350,7 @@ void Configuration::write(std::ostream& os, bool explicitlySorted) const {
     FrameL sorted = calc_topSort();
     for(Frame* f: sorted) f->write(os);
   }
-  os <<std::endl;
+  os <<endl;
 }
 
 void Configuration::write(Graph& G) const {
@@ -2361,7 +2371,7 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
   for(Frame* a:frames) {
     if(a->shape && a->shape->type()!=ST_mesh && a->shape->type()!=ST_marker) {
       os <<"  <visual>\n    <geometry>\n";
-      arr& size = a->shape->size();
+      arr& size = a->shape->size;
       switch(a->shape->type()) {
         case ST_box:       os <<"      <box size=\"" <<size({0, 2}) <<"\" />\n";  break;
         case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
@@ -2388,7 +2398,7 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
       for(Frame* b:shapes) {
         if(b->shape && b->shape->type()!=ST_mesh && b->shape->type()!=ST_marker) {
           os <<"  <visual>\n    <geometry>\n";
-          arr& size = b->shape->size();
+          arr& size = b->shape->size;
           switch(b->shape->type()) {
             case ST_box:       os <<"      <box size=\"" <<size({0, 2}) <<"\" />\n";  break;
             case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
@@ -2735,7 +2745,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     s->read(*f->ats);
 
     if(n->parents.N==1) {
-      Frame* b = listFindByName(frames, n->parents(0)->key);
+      Frame* b = getFrame(n->parents(0)->key);
       CHECK(b, "could not find frame '" <<n->parents(0)->key <<"'");
       f->setParent(b);
       if((*f->ats)["rel"]) f->ats->get(f->Q, "rel");
@@ -2749,8 +2759,8 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     CHECK(n->isGraph(), "joints must have value Graph: specs=" <<*n <<' ' <<n->index);
     CHECK(n->key=="joint" || n->graph().findNode("%joint"), "");
 
-    Frame* from=listFindByName(frames, n->parents(0)->key);
-    Frame* to=listFindByName(frames, n->parents(1)->key);
+    Frame* from = getFrame(n->parents(0)->key);
+    Frame* to  = getFrame(n->parents(1)->key);
     CHECK(from, "JOINT: from '" <<n->parents(0)->key <<"' does not exist ["<<*n <<"]");
     CHECK(to, "JOINT: to '" <<n->parents(1)->key <<"' does not exist ["<<*n <<"]");
 
@@ -2904,7 +2914,7 @@ void Configuration::kinematicsPenetration(arr& y, arr& J, double margin) const {
 /// set the jacMode flag to match with the type of the given J
 void Configuration::setJacModeAs(const arr& J){
   if(!isSpecial(J)) jacMode = JM_dense;
-  else if(J.isSparse()) jacMode = JM_sparse;
+  else if(isSparse(J)) jacMode = JM_sparse;
   else if(isNoArr(J)) jacMode = JM_noArr;
   else if(isEmptyShape(J)) jacMode = JM_emptyShape;
   else NIY;
@@ -3465,7 +3475,7 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
       double x=gl.mouseposx, y=gl.mouseposy, z=seld;
       gl.unproject(x, y, z, true);
       cout <<"x=" <<x <<" y=" <<y <<" z=" <<z <<" d=" <<seld <<endl;
-      movingBody->setPosition(selpos.getArr() + ARR(x-selx, y-sely, z-selz));
+      movingBody->setPosition(selpos.getArr() + arr{x-selx, y-sely, z-selz});
     }
     return true;
   }
@@ -3554,7 +3564,7 @@ void editConfiguration(const char* filename, Configuration& C) {
   C.gl()->ensure_gl().addClickCall(new EditConfigurationClickCall(C));
   Inotify ino(filename);
   for(; !exit;) {
-    cout <<"reloading `" <<filename <<"' ... " <<std::endl;
+    cout <<"reloading `" <<filename <<"' ... " <<endl;
     Configuration C_tmp;
     {
       FileToken file(filename, true);
@@ -3625,6 +3635,3 @@ void editConfiguration(const char* filename, Configuration& C) {
 #include "../Core/util.ipp"
 template rai::Array<rai::Shape*>::Array(uint);
 //template Shape* listFindByName(const Array<Shape*>&,const char*);
-
-#include "../Core/array.ipp"
-template rai::Array<rai::Joint*>::Array();

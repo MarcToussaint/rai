@@ -19,7 +19,7 @@ class BroadPhaseCollisionManager;
 namespace rai {
 
 struct FclInterface {
-  Array<ptr<struct ConvexGeometryData>> convexGeometryData;
+  Array<shared_ptr<struct ConvexGeometryData>> convexGeometryData;
   std::vector<fcl::CollisionObject*> objects;
   shared_ptr<fcl::BroadPhaseCollisionManager> manager;
 
@@ -27,7 +27,7 @@ struct FclInterface {
   uintA collisions; //return values!
   arr X_lastQuery;  //memory to check whether an object has moved in consecutive queries
 
-  FclInterface(const Array<ptr<Mesh>>& geometries, double _cutoff=0.);
+  FclInterface(const Array<shared_ptr<Mesh>>& geometries, double _cutoff=0.);
   ~FclInterface();
 
   void step(const arr& X);

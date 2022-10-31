@@ -25,7 +25,7 @@ struct TaskControlMethods {
 
   TaskControlMethods(const arr& _Hmetric);
 
-  CtrlObjective* addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> map);
+  CtrlObjective* addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, shared_ptr<Feature> map);
 
 //  void updateCtrlObjectives(double tau, const rai::Configuration& world);
 //  void resetCtrlObjectivesState();

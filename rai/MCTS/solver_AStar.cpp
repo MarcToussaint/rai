@@ -127,7 +127,7 @@ bool AStar::step() {
 void AStar::reportQueue() {
   cout <<"AStar QUEUE:" <<endl;
   for(const PriorityQueueEntry<AStar_Node*>& n:queue) {
-    cout <<"p=" <<n.p <<" f=" <<n.x->g+n.x->h <<" g=" <<n.x->g <<" h=" <<n.x->h <<" d=" <<n.x->d <<" a=" <<*n.x->action <<endl;
+    cout <<"p=" <<n.f_prio <<" f=" <<n.x->g+n.x->h <<" g=" <<n.x->g <<" h=" <<n.x->h <<" d=" <<n.x->d <<" a=" <<*n.x->action <<endl;
   }
 }
 

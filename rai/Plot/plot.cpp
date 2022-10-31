@@ -7,11 +7,12 @@
     --------------------------------------------------------------  */
 
 #include "plot.h"
-#include "../Core/array.ipp"
 #include "../Geo/geo.h"
 #include "../Geo/mesh.h"
 #include "../Gui/opengl.h"
 #include "../Gui/color.h"
+
+#include <math.h>
 
 void drawGnuplot(rai::sPlotModule& data);
 
@@ -280,7 +281,7 @@ void rai::PlotModule::Covariance(const arr& mean, const arr& cov) {
     }
     svd(U, w, V, Cov);
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
-    for(i=0; i<d.d0; i++) { d[i]()*=w; d[i]=V*d[i]; d(i, 0)+=mean(0); d(i, 1)+=mean(1); }
+    for(i=0; i<d.d0; i++) { d[i]*=w; d[i]=V*d[i]; d(i, 0)+=mean(0); d(i, 1)+=mean(1); }
 
     self->lines.append(d);
   }
@@ -305,7 +306,7 @@ void rai::PlotModule::Covariance(const arr& mean, const arr& cov) {
     //lapack_cholesky(V, cov);
     svd(U, w, V, cov);
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
-    for(i=0; i<d.d0; i++) { d[i]()*=w; d[i]=V*d[i]; d[i]()+=mean; }
+    for(i=0; i<d.d0; i++) { d[i]*=w; d[i]=V*d[i]; d[i]+=mean; }
     d.reshape(3, 101, 3);
     self->lines.append(d[0]);
     self->lines.append(d[1]);
@@ -356,8 +357,8 @@ void rai::PlotModule::VectorField(const arr& X, const arr& dX) {
   uint i;
   arr l(2, X.d1);
   for(i=0; i<X.d0; i++) {
-    l[0]() = X[i];
-    l[1]() = X[i]+dX[i];
+    l[0] = X[i];
+    l[1] = X[i]+dX[i];
     self->lines.append(l);
   }
 }
@@ -375,7 +376,7 @@ void rai::PlotModule::MatrixFlow(uintA& M, double len) {
   X.reshape(M.d0*M.d1, 3);
   dX.resize(M.d0*M.d1, 3);
   for(i=0; i<X.d0; i++) {
-    dX[i]() = X[M.elem(i)]-X[i];
+    dX[i] = X[M.elem(i)]-X[i];
   }
   dX *= len;
   VectorField(X, dX);

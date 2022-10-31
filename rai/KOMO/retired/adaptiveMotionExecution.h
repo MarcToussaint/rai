@@ -11,7 +11,6 @@
 
 #include "../Core/util.h"
 #include "../Core/array.h"
-#include "../Core/array.ipp"
 #include "../Kin/kin.h"
 #include "../Core/util.h"
 #include <stdlib.h>

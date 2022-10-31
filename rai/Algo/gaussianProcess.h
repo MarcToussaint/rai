@@ -11,6 +11,8 @@
 #include "../Core/array.h"
 #include "../Core/util.h"
 
+#include <math.h>
+
 //===========================================================================
 //
 /// @name Gaussian Process code
@@ -253,7 +255,7 @@ inline void randomFunction(GaussianProcess& gp, arr& Xbase, bool illustrate, boo
   //gp.X.resize(0, 1); gp.Y.resize(0); //clear current data
   for(i=0; i<Xbase.d0; i++) {
     if(illustrate && i>0 && !(i%10)) { //display
-      plotBelief(gp, Xbase.min(), Xbase.max());
+      plotBelief(gp, min(Xbase), max(Xbase));
     }
 
     x.referToDim(Xbase, i); //get next input point

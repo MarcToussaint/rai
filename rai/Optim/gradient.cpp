@@ -9,6 +9,7 @@
 #include "gradient.h"
 #include "optimization.h"
 #include <iomanip>
+#include <math.h>
 
 //===========================================================================
 
@@ -26,7 +27,7 @@ void OptGrad::reinit(const arr& _x) {
   if(o.verbose>1) cout <<"*** optGrad: starting point f(x)=" <<fx <<" alpha=" <<alpha <<endl;
   if(o.verbose>2) cout <<"             x=" <<x <<endl;
   if(o.verbose>0) fil.open("z.opt");
-  if(o.verbose>0) { fil <<0 <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;  if(x.N<=5) x.writeRaw(fil);  fil <<endl; }
+  if(o.verbose>0) { fil <<0 <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;  if(x.N<=5) fil <<x.modRaw();  fil <<endl; }
 }
 
 OptGrad::StopCriterion OptGrad::step() {
@@ -36,7 +37,7 @@ OptGrad::StopCriterion OptGrad::step() {
   if(!evals) reinit();
 
   it++;
-  if(o.verbose>1) cout <<"optGrad it=" <<std::setw(4) <<it <<flush;
+  if(o.verbose>1) cout <<"optGrad it=" <<std::setw(4) <<it <<std::flush;
 
   if(!(fx==fx)) HALT("you're calling a gradient step with initial function value = NAN");
 
@@ -49,7 +50,7 @@ OptGrad::StopCriterion OptGrad::step() {
     y = x + alpha*Delta;
     fy = f(gy, NoArr, y);  evals++;
     if(o.verbose>2) cout <<" \tprobing y=" <<y;
-    if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
+    if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<std::flush;
     bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta, gx));
     if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)it)) { //fy==fy is for NAN?
       //accept new point
@@ -66,15 +67,15 @@ OptGrad::StopCriterion OptGrad::step() {
       break;
     } else {
       //reject new point
-      if(o.verbose>1) cout <<" - reject" <<flush;
+      if(o.verbose>1) cout <<" - reject" <<std::flush;
       if(o.stopLineSteps>0 && lineSteps>(uint)o.stopLineSteps) break;
       if(o.stopEvals>0 && evals>(uint)o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
-      if(o.verbose>1) cout <<"\n  (line search)" <<flush;
+      if(o.verbose>1) cout <<"\n  (line search)" <<std::flush;
       alpha *= o.stepDec;
     }
   }
 
-  if(o.verbose>0) { fil <<evals <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;  if(x.N<=5) x.writeRaw(fil);  fil <<endl; }
+  if(o.verbose>0) { fil <<evals <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;  if(x.N<=5) fil <<x.modRaw();  fil <<endl; }
 
   //stopping criteria
 #define STOPIF(expr, code, ret) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
@@ -179,7 +180,7 @@ bool sRprop::step(arr& w, const arr& grad, uint* singleI) {
     }
   }
 
-  return stepSize.max() < incr*dMin;
+  return max(stepSize) < incr*dMin;
 }
 
 bool Rprop::step(arr& x, const ScalarFunction& f) {
@@ -213,7 +214,7 @@ uint Rprop::loop(arr& _x,
     //compute value and gradient at x
     fx = f(J, NoArr, x);  evals++;
 
-    if(verbose>0) { fil <<evals <<' ' <<eval_count <<' ' << fx <<' ' <<diff <<' '; x.writeRaw(fil); fil <<endl; }
+    if(verbose>0) { fil <<evals <<' ' <<eval_count <<' ' << fx <<' ' <<diff <<' ' <<x.modRaw() <<endl; }
     if(verbose>1) cout <<"optRprop " <<evals <<' ' <<eval_count <<" \tf(x)=" <<fx <<" \tdiff=" <<diff <<" \tx=" <<(x.N<20?x:arr()) <<endl;
 
     //infeasible point! undo the previous step

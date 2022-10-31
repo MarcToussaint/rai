@@ -58,7 +58,6 @@ PYBIND11_MODULE(libry, m) {
   init_CtrlSolver(m);
 
   init_Optim(m);
-
 }
 
 void init_enums(pybind11::module& m){
