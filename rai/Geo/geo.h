@@ -9,6 +9,7 @@
 #pragma once
 
 #include "../Core/array.h"
+#include "../Core/graph.h"
 
 #include <iostream>
 
