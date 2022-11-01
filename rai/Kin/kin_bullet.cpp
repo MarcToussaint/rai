@@ -330,16 +330,20 @@ void BulletInterface::motorizeMultiBody(rai::Frame* base){
   }
 }
 
-void BulletInterface::setMotorQ(const rai::Configuration& C){
+void BulletInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){
   CHECK(self->opt.multiBody, "");
-  arr q = C.getJointState();
+  if(qDot_ref.N){ CHECK_EQ(q_ref.N, qDot_ref.N, ""); }
   uint qIdx=0;
   for(MultiBodyInfo& mi:self->multibodies){
     for(uint i=0;i<mi.motors.N;i++){
-      mi.motors(i)->setPositionTarget(q(qIdx++), opt().motorKp);
-//    mi.motors(i)->setVelocityTarget(0., .1);
+      mi.motors(i)->setPositionTarget(q_ref.elem(qIdx), opt().motorKp);
+      if(qDot_ref.N){
+        mi.motors(i)->setVelocityTarget(qDot_ref.elem(i), opt().motorKd);
+      }
+      qIdx++;
     }
   }
+  CHECK_EQ(qIdx, q_ref.N, ""); //make this only a warning?
 }
 
 void BulletInterface::pushKinematicStates(const rai::Configuration& C) {
@@ -504,7 +508,7 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f) {
 }
 
 btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
-  CHECK(!base->parent || (base->joint && base->inertia), "");
+  CHECK(!base->parent || (base->joint && base->joint->type==rai::JT_rigid) || (base->joint && base->inertia), "base needs to be either rigid or with inertia");
   //-- collect all links for that root
   FrameL F = {base};
   base->getPartSubFrames(F);

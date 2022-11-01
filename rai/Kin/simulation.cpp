@@ -166,11 +166,24 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     C.setJointState(ucontrol);
   } else if(u_mode==_velocity) {
     arr q = C.getJointState();
-    q += tau * ucontrol;
+    qDot = ucontrol;
+    q += tau * qDot;
+    C.setJointState(q);
+  } else if(u_mode==_posVel) {
+    ucontrol.reshape(2,-1);
+//    C.setJointState(ucontrol[0]);
+//    qDot = ucontrol[1];
+  } else if(u_mode==_acceleration) {
+    arr q = C.getJointState();
+    if(!qDot.N) qDot = zeros(q.N);
+    q += .5 * tau * qDot;
+    qDot += tau * ucontrol;
+    q += .5 * tau * qDot;
     C.setJointState(q);
   } else if(u_mode==_spline) {
     arr q = C.getJointState();
-    self->ref.getReference(q, NoArr, NoArr, q, NoArr, time);
+    if(!qDot.N) qDot = zeros(q.N);
+    self->ref.getReference(q, qDot, NoArr, q, qDot, time);
     C.setJointState(q);
   } else NIY;
 
@@ -186,7 +199,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->physx->pullDynamicStates(C.frames, self->frameVelocities);
   } else if(engine==_bullet) {
     self->bullet->pushKinematicStates(C);
-    if(self->bullet->opt().multiBody) self->bullet->setMotorQ(C);
+    if(self->bullet->opt().multiBody) self->bullet->setMotorQ(ucontrol[0], ucontrol[1]); //C.getJointState(), qDot);
     self->bullet->step(tau);
     self->bullet->pullDynamicStates(C); //, self->frameVelocities);
 #ifdef BACK_BRIDGE
