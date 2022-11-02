@@ -1488,12 +1488,11 @@ void rai::Shape::write(std::ostream& os) const {
   os <<", shape:" <<_type;
   if(_type!=ST_mesh) os <<", size:" <<size;
 
-  if(frame.ats){
-    Node* n;
-    if((n=(*frame.ats)["color"])) os <<", " <<*n;
-    if((n=(*frame.ats)["mesh"])) os <<", " <<*n;
-    if((n=(*frame.ats)["meshscale"])) os <<", " <<*n;
-  }
+  Node* n;
+  if(frame.ats && (n=(*frame.ats)["color"])) os <<", " <<*n;
+  else if(_mesh && _mesh->C.N<=4) os <<", color:" <<_mesh->C;
+  if(frame.ats && (n=(*frame.ats)["mesh"])) os <<", " <<*n;
+  if(frame.ats && (n=(*frame.ats)["meshscale"])) os <<", " <<*n;
   if(cont) os <<", contact:" <<(int)cont;
 }
 

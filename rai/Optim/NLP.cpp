@@ -325,7 +325,7 @@ void NLP_Traced::report(std::ostream& os, int verbose, const char* msg){
 
 //===========================================================================
 
-void NLP_Viewer::display(){
+void NLP_Viewer::display(double mu){
   uint d = P->getDimension();
   CHECK_EQ(d, 2, "can only display 2D problems for now");
 
@@ -347,7 +347,7 @@ void NLP_Viewer::display(){
   std::shared_ptr<NLP> nlp_save;
   if(phi.N>1){
     lag = make_shared<LagrangianProblem>(P);
-    lag->mu = lag->nu = 1e3;
+    lag->mu = lag->nu = mu;
     nlp_save = P;
     P.reset();
     P = make_shared<Conv_ScalarProblem_NLP>(*lag, d);

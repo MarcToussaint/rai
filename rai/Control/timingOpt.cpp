@@ -234,7 +234,7 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
 
   {
     //to animate optimization
-//    report(cout, 2, 0);
+//    report(cout, 3, 0);
 //    rai::wait(.1);
   }
 }
@@ -256,9 +256,23 @@ void TimingProblem::report(std::ostream& fil, int verbose, const char* msg){
   arr vels = v;               vels.prepend(v0);  vels.append(zeros(vels.d1));
   arr times = integral(tau);  times.prepend(0.);
 
-  LOG(0) <<"TAUS: " <<tau <<"\nTIMES: " <<times <<"\nTOTAL: " <<times.last() <<endl;
+  if(verbose>0){
+    LOG(0) <<"TAUS: " <<tau <<"\nTIMES: " <<times <<"\nTOTAL: " <<times.last() <<endl;
+    {
+      //write
+      fil <<", " <<times(-1);
+      if(verbose>1){
+        fil <<"waypointTimes:" <<times <<endl;
+        fil <<"waypoints:" <<path <<endl;
+        fil <<"waypointVels:" <<vels <<endl;
+      }
+      //      arr T;
+      //      for(double t=0;t<=times(-1);t+=.002) T.append(t);
+      //      fil <<"fine500HzPath: " <<S.eval(T) <<endl;
+    }
+  }
 
-  if(verbose>1){
+  if(verbose>2){
     rai::CubicSpline S;
     S.set(path, vels, times);
 
@@ -286,17 +300,6 @@ void TimingProblem::report(std::ostream& fil, int verbose, const char* msg){
         rai::catCol({timeGrid, x, xd, xdd, xddd}).reshape(-1,5).modRaw(). write( FILE("z.dat") );
         gnuplot("plot [:][-1.1:1.1] 'z.dat' us 1:2 t 'x', ''us 1:3 t 'v', '' us 1:4 t 'a', '' us 1:5 t 'j'");
       }
-    }
-
-    {
-      //write
-      fil <<"totalTime: " <<times(-1) <<endl;
-      fil <<"waypointTimes:" <<times <<endl;
-      fil <<"waypoints:" <<path <<endl;
-      fil <<"waypointVels:" <<vels <<endl;
-//      arr T;
-//      for(double t=0;t<=times(-1);t+=.002) T.append(t);
-//      fil <<"fine500HzPath: " <<S.eval(T) <<endl;
     }
   }
 }

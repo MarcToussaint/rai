@@ -3,6 +3,7 @@
 #include <functional>
 #include <Optim/NLP_Solver.h>
 #include <Optim/lagrangian.h>
+#include <Optim/constrained.h>
 
 //===========================================================================
 
@@ -19,7 +20,8 @@ void TEST(Display) {
 void TEST(Solver) {
   std::shared_ptr<NLP> nlp = getBenchmarkFromCfg();
 
-//  displayNLP(nlp);
+  NLP_Viewer(nlp).display();
+  rai::wait();
 
 //  arr x = nlp->getInitializationSample();
 //  checkJacobianCP(*nlp, x, 1e-4);
@@ -31,7 +33,14 @@ void TEST(Solver) {
   S.setSolver(sid);
   S.setProblem(nlp);
   if(x_init.N) S.setInitialization(x_init);
-  S.solveStepping();
+  if(sid==NLPS_augmentedLag || sid==NLPS_squaredPenalty || sid==NLPS_logBarrier){
+    while(!S.step()){
+      NLP_Viewer(nlp, S.P). display(S.optCon->L.mu);
+      rai::wait(.1);
+    }
+  }else{
+    S.solve();
+  }
 
   arr path = catCol(S.getTrace_x(), S.getTrace_costs());
   FILE("z.path") <<path.modRaw();

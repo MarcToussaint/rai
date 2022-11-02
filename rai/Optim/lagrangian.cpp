@@ -357,8 +357,8 @@ void LagrangianProblem::aulaUpdate(const rai::OptOptions& opt, bool anyTimeVaria
   }
 
   //-- adapt mu as well?
-  if(opt.aulaMuInc>0. && mu<1e6) mu *= opt.aulaMuInc;
-  if(opt.aulaMuInc>0. && nu<1e6) nu *= opt.aulaMuInc;
+  if(opt.muInc>0. && mu<opt.muMax) mu *= opt.muInc;
+  if(opt.muInc>0. && nu<opt.muMax) nu *= opt.muInc;
   if(opt.muLBDec>0. && muLB>1e-8) muLB *= opt.muLBDec;
 
   //-- recompute the Lagrangian with the new parameters (its current value, gradient & hessian)
@@ -370,7 +370,7 @@ void LagrangianProblem::aulaUpdate(const rai::OptOptions& opt, bool anyTimeVaria
 
 void LagrangianProblem::autoUpdate(const rai::OptOptions& opt, double* L_x, arr& dL_x, arr& HL_x) {
   switch(opt.constrainedMethod) {
-//  case squaredPenalty: UCP.mu *= opt.aulaMuInc;  break;
+//  case squaredPenalty: UCP.mu *= opt.muInc;  break;
     case rai::squaredPenalty: aulaUpdate(opt, false, -1., L_x, dL_x, HL_x);  break;
     case rai::augmentedLag:   aulaUpdate(opt, false, 1., L_x, dL_x, HL_x);  break;
     case rai::anyTimeAula:    aulaUpdate(opt, true,  1., L_x, dL_x, HL_x);  break;

@@ -144,7 +144,7 @@ struct NLP_Viewer {
 
   NLP_Viewer(const shared_ptr<NLP>& P, const shared_ptr<NLP_Traced>& T={}) : P(P), T(T) {}
 
-  void display();
+  void display(double mu=1e3);
   void plotCostTrace();
 };
 
