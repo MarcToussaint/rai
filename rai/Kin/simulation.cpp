@@ -169,7 +169,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     qDot = ucontrol;
     q += tau * qDot;
     C.setJointState(q);
-  } else if(u_mode==_posVel) {
+  } else if(u_mode==_pdRef) {
     ucontrol.reshape(2,-1);
 //    C.setJointState(ucontrol[0]);
 //    qDot = ucontrol[1];
@@ -348,6 +348,18 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   imps.append(make_shared<Imp_CloseGripper>(gripper, fing1, fing2, obj, speed));
 }
 
+void Simulation::closeGripperGrasp(const char* gripperFrameName, const char* objectName, double width, double speed, double force){
+  rai::Frame* gripper, *fing1, *fing2;
+  getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
+  if(!gripper) return;
+
+  rai::Frame *finger1 = fing1, *finger2=fing2;
+  while(!finger1->shape || finger1->shape->type()!=ST_capsule) finger1=finger1->children.last();
+  while(!finger2->shape || finger2->shape->type()!=ST_capsule) finger2=finger2->children.last();
+
+  imps.append(make_shared<Imp_CloseGripper>(gripper, fing1, fing2, C.getFrame(objectName), speed));
+}
+
 shared_ptr<SimulationState> Simulation::getState() {
   arr qdot;
   if(engine==_physx) {
@@ -506,6 +518,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
     gl.add(*this);
     gl.camera.setDefault();
     gl.addClickCall(new MoveBallHereCallback());///added
+    gl.drawOptions.drawVisualsOnly=true;
 
     if(Ccopy.getFrame("camera_gl",false)) gl.camera.X = Ccopy["camera_gl"]->ensure_X();
 
