@@ -98,7 +98,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
                        .set_damping(1)
                        .set_maxStep(-1)
                        .set_constrainedMethod(rai::augmentedLag)
-                       .set_aulaMuInc(1.1)
+                       .set_muInc(1.1)
                      );
   opt.run();
 
@@ -262,7 +262,7 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
                        .set_damping(1.)
                        .set_maxStep(.1)
                        .set_constrainedMethod(rai::augmentedLag)
-                       .set_aulaMuInc(1.1)
+                       .set_muInc(1.1)
                        .set_verbose(3)
                      );
   opt.run();
@@ -589,7 +589,7 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
                        .set_damping(1)
                        .set_maxStep(-1)
                        .set_constrainedMethod(rai::augmentedLag)
-                       .set_aulaMuInc(1.1)
+                       .set_muInc(1.1)
                      );
 #else
   OptPrimalDual opt(x, NoArr, F, rai::OptOptions()

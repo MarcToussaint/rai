@@ -16,7 +16,6 @@
 #include "../Kin/forceExchange.h"
 #include "../Kin/kin_bullet.h"
 #include "../Kin/kin_physx.h"
-#include "../Operate/robotOperation.h"
 #include "../Kin/proxy.h"
 #include "../Kin/viewer.h"
 #include "../Kin/cameraview.h"

@@ -1,5 +1,5 @@
 BASE = ../../..
 
-DEPEND = Core Algo Gui Optim Plot
+DEPEND = Core Algo Gui Optim
 
 include $(BASE)/build/generic.mk

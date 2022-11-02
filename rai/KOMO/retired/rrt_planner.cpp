@@ -11,7 +11,7 @@
 #include "../Algo/rrt.h"
 #include "../KOMO/komo.h"
 #include "../Gui/opengl.h"
-#include "../Plot/plot.h"
+#include "../Gui/plot.h"
 
 namespace rai {
 struct sRRTPlanner {

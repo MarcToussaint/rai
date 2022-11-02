@@ -4,7 +4,7 @@
 #include <Algo/spline.h>
 #include <Algo/algos.h>
 #include <Gui/opengl.h>
-#include <Plot/plot.h>
+#include <Gui/plot.h>
 #include <GL/gl.h>
 #include <Optim/optimization.h>
 

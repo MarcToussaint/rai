@@ -1,5 +1,5 @@
 BASE = ../../..
 
-DEPEND = Core Algo Gui Plot Geo
+DEPEND = Core Algo Gui Geo
 
 include $(BASE)/build/generic.mk

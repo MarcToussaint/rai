@@ -12,7 +12,7 @@
 #include "kin_ode.h"
 #include "kin_actionInterface.h"
 #include "../Gui/opengl.h"
-#include "../Plot/plot.h"
+#include "../Gui/plot.h"
 
 #include <sstream>
 #include <limits.h>

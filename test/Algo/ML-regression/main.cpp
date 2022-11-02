@@ -1,5 +1,5 @@
 #include <Algo/MLcourse.h>
-#include <Plot/plot.h>
+#include <Gui/plot.h>
 #include <Optim/GlobalIterativeNewton.h>
 
 #include <math.h>

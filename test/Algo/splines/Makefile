@@ -1,6 +1,6 @@
 BASE = ../../..
 
-DEPEND = Core Algo Kin Plot
+DEPEND = Core Algo Kin
 
 include $(BASE)/build/generic.mk
 

@@ -1,9 +1,0 @@
-<package>
-  <name>rai_msgs</name>
-  <version>0.0.0</version>
-  <description>
-     rai_msgs messages
-  </description>
-  <maintainer email="mtoussai@mit.edu">Marc Toussaint</maintainer>
-  <license>MIT</license>
-</package>
