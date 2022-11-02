@@ -111,6 +111,13 @@ struct Imp_BlockJoints : SimulationImp {
   Imp_BlockJoints(const FrameL& _joints, Simulation& S);
   virtual void modConfiguration(Simulation& S, double tau);
 };
+//===========================================================================
+
+struct Imp_NoPenetrations : SimulationImp {
+  Imp_NoPenetrations() {when = _beforePhysics;};
+  virtual void modConfiguration(Simulation& S, double tau);
+};
+
 
 //===========================================================================
 
@@ -159,11 +166,24 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     C.setJointState(ucontrol);
   } else if(u_mode==_velocity) {
     arr q = C.getJointState();
-    q += tau * ucontrol;
+    qDot = ucontrol;
+    q += tau * qDot;
+    C.setJointState(q);
+  } else if(u_mode==_pdRef) {
+    ucontrol.reshape(2,-1);
+//    C.setJointState(ucontrol[0]);
+//    qDot = ucontrol[1];
+  } else if(u_mode==_acceleration) {
+    arr q = C.getJointState();
+    if(!qDot.N) qDot = zeros(q.N);
+    q += .5 * tau * qDot;
+    qDot += tau * ucontrol;
+    q += .5 * tau * qDot;
     C.setJointState(q);
   } else if(u_mode==_spline) {
     arr q = C.getJointState();
-    self->ref.getReference(q, NoArr, NoArr, q, NoArr, time);
+    if(!qDot.N) qDot = zeros(q.N);
+    self->ref.getReference(q, qDot, NoArr, q, qDot, time);
     C.setJointState(q);
   } else NIY;
 
@@ -179,7 +199,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->physx->pullDynamicStates(C.frames, self->frameVelocities);
   } else if(engine==_bullet) {
     self->bullet->pushKinematicStates(C);
-    if(self->bullet->opt().multiBody) self->bullet->setMotorQ(C);
+    if(self->bullet->opt().multiBody) self->bullet->setMotorQ(ucontrol[0], ucontrol[1]); //C.getJointState(), qDot);
     self->bullet->step(tau);
     self->bullet->pullDynamicStates(C); //, self->frameVelocities);
 #ifdef BACK_BRIDGE
@@ -198,9 +218,14 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 }
 
 void Simulation::setMoveTo(const arr& x, double t, bool append){
+  arr path = x;
+  if(x.nd==1) path.reshape(1,x.d0);
 
-  if(append) self->ref.append(~x, {t}, time, true);
-  else self->ref.overrideSmooth(~x, {t}, time);
+  arr times = {t};
+  if(x.nd==2) times.setGrid(1, t/(x.d0), t, x.d0-1);
+
+  if(append) self->ref.append(path, times, time, true);
+  else self->ref.overrideSmooth(path, times, time);
 }
 
 void Simulation::move(const arr& path, const arr& t){
@@ -259,6 +284,7 @@ void Simulation::openGripper(const char* gripperFrameName, double width, double 
   //reattach object to world frame, and make it physical
   if(obj) {
     C.attach(C.frames(0), obj);
+    obj->inertia->type = BT_dynamic;
     if(engine==_physx) {
       self->physx->changeObjectType(obj, rai::BT_dynamic);
     } else {
@@ -320,6 +346,18 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   }
 
   imps.append(make_shared<Imp_CloseGripper>(gripper, fing1, fing2, obj, speed));
+}
+
+void Simulation::closeGripperGrasp(const char* gripperFrameName, const char* objectName, double width, double speed, double force){
+  rai::Frame* gripper, *fing1, *fing2;
+  getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
+  if(!gripper) return;
+
+  rai::Frame *finger1 = fing1, *finger2=fing2;
+  while(!finger1->shape || finger1->shape->type()!=ST_capsule) finger1=finger1->children.last();
+  while(!finger2->shape || finger2->shape->type()!=ST_capsule) finger2=finger2->children.last();
+
+  imps.append(make_shared<Imp_CloseGripper>(gripper, fing1, fing2, C.getFrame(objectName), speed));
 }
 
 shared_ptr<SimulationState> Simulation::getState() {
@@ -414,6 +452,8 @@ void Simulation::addImp(Simulation::ImpType type, const StringA& frames, const a
     FrameL F = C.getFrames(frames);
     auto block = make_shared<Imp_BlockJoints>(F, *this);
     imps.append(block);
+  } else if(type==_noPenetrations){
+    imps.append(make_shared<Imp_NoPenetrations>());
   } else {
     NIY;
   }
@@ -478,6 +518,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
     gl.add(*this);
     gl.camera.setDefault();
     gl.addClickCall(new MoveBallHereCallback());///added
+    gl.drawOptions.drawVisualsOnly=true;
 
     if(Ccopy.getFrame("camera_gl",false)) gl.camera.X = Ccopy["camera_gl"]->ensure_X();
 
@@ -609,10 +650,10 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
     killMe = true;
   } else if(obj) {
     //      step({}, .01, _none);
-    auto d1 = coll1->eval(coll1->getFrames(S.C));
-    auto d2 = coll2->eval(coll2->getFrames(S.C));
+    double d1 = -coll1->eval(coll1->getFrames(S.C)).scalar();
+    double d2 = -coll2->eval(coll2->getFrames(S.C)).scalar();
     //  cout <<q <<" d1: " <<d1 <<"d2: " <<d2 <<endl;
-    if(-d1(0)<1e-3 && -d2(0)<1e-3) { //stop grasp by contact
+    if(d1< -5e-3 && d2< -5e-3) { //stop grasp by penetration
       //evaluate stability
       F_GraspOppose oppose;
       arr y = oppose.eval({finger1, finger2, obj});
@@ -621,6 +662,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
         // kinematically attach object to gripper
         obj = obj->getUpwardLink();
         S.C.attach(gripper, obj);
+        obj->inertia->type = BT_kinematic;
 
         // tell engine that object is now kinematic, not dynamic
         if(S.engine==S._physx) {
@@ -720,6 +762,61 @@ void Imp_BlockJoints::modConfiguration(Simulation& S, double tau) {
   }
   S.C.setJointState(q);
 }
+
+void Imp_NoPenetrations::modConfiguration(Simulation& S, double tau){
+
+  uintA dynamicFrames;
+  for(rai::Frame* f: S.C.getLinks()) {
+    if(f->inertia)
+        if(f->inertia->type == rai::BT_dynamic) {
+            FrameL parts = {f};
+            f->getRigidSubFrames(parts);
+            for(rai::Frame* p: parts) dynamicFrames.append(p->ID);
+//            cout << f->name.p << endl;
+        }
+  }
+
+  for(uint t=0;t<100;t++){
+
+    arr y, J;
+    S.C.kinematicsZero(y, J, 1);
+
+    // Check penetrations between robot vs. static objects
+    S.C.stepSwift();
+    for(rai::Proxy& p: S.C.proxies){
+      if(!(dynamicFrames.contains(p.a->ID) || dynamicFrames.contains(p.b->ID))) {
+        if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01) continue;
+        if(!p.collision) p.calc_coll();
+        if(p.collision->getDistance()>0.) continue;
+
+        arr Jp1, Jp2;
+        p.a->C.jacobian_pos(Jp1, p.a, p.collision->p1);
+        p.b->C.jacobian_pos(Jp2, p.b, p.collision->p2);
+
+        arr y_dist, J_dist;
+        p.collision->kinDistance(y_dist, J_dist, Jp1, Jp2);
+
+        if(y_dist.scalar()>0.) continue;
+        y -= y_dist.scalar();
+        J -= J_dist;
+      }
+    }
+
+
+    // Resolve penetration
+    arr q = S.C.getJointState();
+//    q -= 0.3*pseudoInverse(J, NoArr, 1e-2) * y;
+//    q -= 0.3*inverse((~J)*J+1e-2*eye(q.d0)) * (~J) * y;
+
+    arr vel = (~J) * y;
+    q -= 0.3*vel; //the above two cause an unknown error (only) in rai-python... why?
+    S.C.setJointState(q);
+    if(length(vel) < 1e-3) return;
+  }
+
+}
+
+//===========================================================================
 
 uint& Simulation::pngCount(){
   return self->display->pngCount;

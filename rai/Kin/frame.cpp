@@ -1549,7 +1549,9 @@ void rai::Shape::glDraw(OpenGL& gl) {
       }
     } else if(_type==rai::ST_camera){
       if(!gl.drawOptions.drawVisualsOnly) {
-        glDrawCamera(gl.camera);
+        rai::Camera cam;
+        cam.read(*frame.ats);
+        glDrawCamera(cam); //gl.camera);
       }
     } else {
       if(!mesh().V.N) {

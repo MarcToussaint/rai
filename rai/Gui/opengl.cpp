@@ -34,6 +34,18 @@
 #  include <unistd.h>
 #endif
 
+#define _SHIFT(mod) (mod&GLFW_MOD_SHIFT)
+#define _CTRL(mod) (mod&GLFW_MOD_CONTROL)
+#define _NONE(mod) ((!hideCameraControls && !mod) || (hideCameraControls && _SHIFT(mod) && _CTRL(mod)))
+
+#if 1
+#  define CALLBACK_DEBUG(gl, x) if(gl->reportEvents) { LOG(0) <<x; }
+#elif 1
+#  define CALLBACK_DEBUG(gl, x) { cout <<RAI_HERE <<':' <<x <<endl; }
+#else
+#  define CALLBACK_DEBUG(gl, x)
+#endif
+
 OpenGL& NoOpenGL = *((OpenGL*)(nullptr));
 
 OpenGLDrawOptions& GLDrawer::glDrawOptions(OpenGL& gl){ return gl.drawOptions; }
@@ -356,12 +368,19 @@ struct GlfwSpinner : Thread {
   }
 
   static void _Key(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    OpenGL* gl=(OpenGL*)glfwGetWindowUserPointer(window);
+//    gl->modifiers=mods;
+//    CALLBACK_DEBUG(gl, key <<' ' <<action <<' ' <<mods);
     if(action == GLFW_PRESS) {
-      OpenGL* gl=(OpenGL*)glfwGetWindowUserPointer(window);
       if(key==256) key=27;
       if(key==257) key=13;
+      if(key==GLFW_KEY_LEFT_CONTROL){ mods |= GLFW_MOD_CONTROL; key='%'; }
+      if(key==GLFW_KEY_LEFT_SHIFT){ mods |= GLFW_MOD_SHIFT; key='%'; }
       if(key>='A' && key<='Z') key += 'a' - 'A';
       gl->Key(key, mods);
+    }else if(action==GLFW_RELEASE) {
+      if(key==GLFW_KEY_LEFT_CONTROL){ gl->modifiers &= ~GLFW_MOD_CONTROL; }
+      if(key==GLFW_KEY_LEFT_SHIFT){ gl->modifiers &= ~GLFW_MOD_SHIFT; }
     }
   }
 
@@ -925,7 +944,7 @@ void glDrawCamera(const rai::Camera& cam) {
   double dxNear, dyNear, zNear;
   zNear = cam.zNear;
   zFar = cam.zFar;
-  if(zFar-zNear > 10.) zFar = zNear + .1;
+  if(zFar-zNear > 1.) zFar = zNear + .1;
   if(cam.focalLength) {
     dyNear = zNear * .5/cam.focalLength;
     dyFar = zFar * .5/cam.focalLength;
@@ -2149,14 +2168,6 @@ void OpenGL::about(std::ostream& os) { RAI_MSG("NICO"); }
 // callbacks
 //
 
-#if 1
-#  define CALLBACK_DEBUG(x) if(reportEvents) { LOG(0) <<x; }
-#elif 1
-#  define CALLBACK_DEBUG(x) { cout <<RAI_HERE <<':' <<x <<endl; }
-#else
-#  define CALLBACK_DEBUG(x)
-#endif
-
 void getSphereVector(rai::Vector& vec, int _x, int _y, int le, int ri, int bo, int to) {
   int w=ri-le, h=to-bo;
   int minwh = w<h?w:h;
@@ -2170,8 +2181,8 @@ void getSphereVector(rai::Vector& vec, int _x, int _y, int le, int ri, int bo, i
 }
 
 void OpenGL::Reshape(int _width, int _height) {
-  auto _dataLock = dataLock(RAI_HERE);
-  CALLBACK_DEBUG("Reshape Callback: " <<_width <<' ' <<_height);
+//  auto _dataLock = dataLock(RAI_HERE);
+  CALLBACK_DEBUG(this, "Reshape Callback: " <<_width <<' ' <<_height);
   width=_width;
   height=_height;
   if(width%4) width = 4*(width/4);
@@ -2185,8 +2196,8 @@ void OpenGL::Reshape(int _width, int _height) {
 }
 
 void OpenGL::Key(unsigned char key, int mods) {
-  auto _dataLock = dataLock(RAI_HERE);
-  CALLBACK_DEBUG("Keyboard Callback: " <<key <<"('" <<(char)key <<"')");
+//  auto _dataLock = dataLock(RAI_HERE);
+  CALLBACK_DEBUG(this, "Keyboard Callback: " <<key <<"('" <<(char)key <<"')");
   pressedkey = key;
   modifiers = mods;
 
@@ -2197,11 +2208,11 @@ void OpenGL::Key(unsigned char key, int mods) {
 }
 
 void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) {
-  auto _dataLock = dataLock(RAI_HERE);
+//  auto _dataLock = dataLock(RAI_HERE);
   int w=width, h=height;
   bool needsUpdate=false;
   _y = h-_y;
-  CALLBACK_DEBUG("Mouse Click Callback: " <<button <<' ' <<downPressed <<' ' <<_x <<' ' <<_y);
+  CALLBACK_DEBUG(this, "Mouse Click Callback: " <<button <<' ' <<downPressed <<' ' <<_x <<' ' <<_y);
   mouse_button=1+button;
   if(downPressed) mouse_button=-1-mouse_button;
   mouseposx=_x; mouseposy=_y;
@@ -2224,13 +2235,13 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
     getSphereVector(vec, _x, _y, 0, w, 0, h);
     v=0;
   }
-  CALLBACK_DEBUG("associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
+  CALLBACK_DEBUG(this, "associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
 
   if(!downPressed) {  //down press
     if(mouseIsDown) {  return; } //the button is already down (another button was pressed...)
     //CHECK(!mouseIsDown, "I thought the mouse is up...");
     mouseIsDown=true;
-    if(!hideCameraControls || ((modifiers&1) && (modifiers&2))) drawFocus = true;
+    if(_NONE(modifiers)) drawFocus = true;
   } else {
     if(!mouseIsDown) return; //the button is already up (another button was pressed...)
     //CHECK(mouseIsDown, "mouse-up event although the mouse is not down???");
@@ -2243,8 +2254,8 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   downPos=cam->X.pos;
   downFoc=cam->foc;
 
-  //-- ctrl-LEFT -> check object clicked on
-  if(mouse_button==1 && !(modifiers&1) && (modifiers&2)) {
+  //-- shift-ctrl-LEFT -> check object clicked on
+  if(mouse_button==1 && !hideCameraControls && _SHIFT(modifiers) && _CTRL(modifiers)) {
     drawFocus = false;
     if(!downPressed) {
       drawOptions.drawMode_idColor = true;
@@ -2273,7 +2284,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   if(mouse_button==5 && !hideCameraControls && !downPressed) cam->X.pos -= downRot*Vector_z * (.1 * (downPos-downFoc).length());
 
   //-- RIGHT -> focus on selected point
-  if(mouse_button==3 && (!hideCameraControls || ((modifiers&1) && (modifiers&2)))) {
+  if(mouse_button==3 && (_NONE(modifiers))) {
     double d = captureDepth(mouseposy, mouseposx);
     if(d<.001 || d==1.) {
       cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
@@ -2300,12 +2311,12 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
 }
 
 void OpenGL::Scroll(int wheel, int direction) {
-  auto _dataLock = dataLock(RAI_HERE);
-  CALLBACK_DEBUG("Mouse Wheel Callback: " <<wheel <<' ' <<direction);
+//  auto _dataLock = dataLock(RAI_HERE);
+  CALLBACK_DEBUG(this, "Mouse Wheel Callback: " <<wheel <<' ' <<direction);
   bool needsUpdate=false;
 
   //-- SCROLL -> zoom
-  if(!hideCameraControls || ((modifiers&1) && (modifiers&2))){
+  if(_NONE(modifiers)){
     rai::Camera* cam=&camera;
     for(mouseView=views.N; mouseView--;) {
       GLView* v = &views(mouseView);
@@ -2328,17 +2339,16 @@ void OpenGL::Scroll(int wheel, int direction) {
 }
 
 void OpenGL::WindowStatus(int status) {
-  auto _dataLock = dataLock(RAI_HERE);
-  CALLBACK_DEBUG("WindowStatus Callback: " <<status);
+//  auto _dataLock = dataLock(RAI_HERE);
+  CALLBACK_DEBUG(this, "WindowStatus Callback: " <<status);
   if(!status) closeWindow();
-
 }
 
 void OpenGL::MouseMotion(double _x, double _y) {
-  auto _dataLock = dataLock(RAI_HERE);
+//  auto _dataLock = dataLock(RAI_HERE);
   int w=width, h=height;
   _y = h-_y;
-  CALLBACK_DEBUG("Mouse Motion Callback: " <<_x <<' ' <<_y);
+  CALLBACK_DEBUG(this, "Mouse Motion Callback: " <<_x <<' ' <<_y);
   mouseposx=_x; mouseposy=_y;
   rai::Camera* cam;
   rai::Vector vec;
@@ -2349,14 +2359,14 @@ void OpenGL::MouseMotion(double _x, double _y) {
     cam=&views(mouseView).camera;
     getSphereVector(vec, _x, _y, views(mouseView).le*w, views(mouseView).ri*w, views(mouseView).bo*h, views(mouseView).to*h);
   }
-  CALLBACK_DEBUG("associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
+  CALLBACK_DEBUG(this, "associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
   lastEvent.set(mouse_button, -1, _x, _y, vec.x-downVec.x, vec.y-downVec.y);
   mouseposx=_x; mouseposy=_y;
 
   bool needsUpdate=false;
   
   //-- LEFT -> rotation
-  if(mouse_button==1 && ((!hideCameraControls && !modifiers) || (hideCameraControls && (modifiers&1) && (modifiers&2)))) {
+  if(mouse_button==1 && _NONE(modifiers)) {
     rai::Quaternion rot;
     if(downVec.z<.1) {
       //margin:
@@ -2373,7 +2383,7 @@ void OpenGL::MouseMotion(double _x, double _y) {
   }
   
   //-- shift-LEFT -> translation
-  if(mouse_button==1 && (!hideCameraControls && (modifiers&1) && !(modifiers&2))) {
+  if(mouse_button==1 && (!hideCameraControls && _SHIFT(modifiers) && !_CTRL(modifiers))) {
     rai::Vector trans = vec - downVec;
     trans.z = 0.;
     trans *= .1*(downFoc - downPos).length();

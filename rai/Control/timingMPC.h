@@ -36,12 +36,13 @@ struct TimingMPC{
 
   uint nPhases() const{ return waypoints.d0; }
   bool done() const{ return phase>=nPhases(); }
-  arr getWaypoints() const{ if(done()) return arr{}; return waypoints({phase, -1}).copy(); }
-  arr getTimes() const{ if(done()) return arr{}; return integral(tau({phase, -1})); }
+  arr getWaypoints() const{ if(done()) return waypoints[-1].copy().reshape(1,-1); return waypoints({phase, -1}).copy(); }
+  arr getTimes() const{ if(done()) return {.1}; return integral(tau({phase, -1})); }
   arr getVels() const;
 
-  bool update_progressTime(double gap);
-  void update_waypoints(const arr& _waypoints, bool setNextWaypointTangent);
+  bool set_progressedTime(double gap, double tauCutoff=0.);
+  void set_updatedWaypoints(const arr& _waypoints, bool setNextWaypointTangent);
+
   void update_backtrack();
   void update_setPhase(uint phaseTo);
 

@@ -9,7 +9,8 @@ TimingMPC::TimingMPC(const arr& _waypoints, double _timeCost, double _ctrlCost)
 
   tau = 10.*ones(waypoints.d0);
 
-  opt .set_maxStep(1e0)
+  opt .set_verbose(0)
+      .set_maxStep(1e0)
       .set_stopTolerance(1e-4)
       .set_damping(1e-2);
 }
@@ -53,7 +54,7 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
 }
 
 arr TimingMPC::getVels() const{
-  if(done()) return arr{};
+  if(done()) return zeros(1, waypoints.d1);
   arr _vels;
   if(!tangents.N){
     _vels = vels({phase, -1}).copy();
@@ -65,7 +66,7 @@ arr TimingMPC::getVels() const{
   return _vels;
 }
 
-bool TimingMPC::update_progressTime(double gap){
+bool TimingMPC::set_progressedTime(double gap, double tauCutoff){
   if(gap < tau(phase)){ //time still within phase
     tau(phase) -= gap; //change initialization of timeOpt
     return false;
@@ -76,7 +77,7 @@ bool TimingMPC::update_progressTime(double gap){
     tau(phase) = 0.; //change initialization of timeOpt
   }else{
     if(phase+1==nPhases() && neverDone){ //stay in last phase and reinit tau=.1
-      tau(phase)=.1;
+      tau(phase)=.1+tauCutoff;
       return false;
     }
     tau = 0.;
@@ -85,7 +86,7 @@ bool TimingMPC::update_progressTime(double gap){
   return true;
 }
 
-void TimingMPC::update_waypoints(const arr& _waypoints, bool setNextWaypointTangent){
+void TimingMPC::set_updatedWaypoints(const arr& _waypoints, bool setNextWaypointTangent){
   if(_waypoints.N!=waypoints.N){ //full reset
     waypoints = _waypoints;
     tau = 10.*ones(waypoints.d0);

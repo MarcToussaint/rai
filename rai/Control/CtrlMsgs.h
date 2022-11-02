@@ -40,6 +40,7 @@ struct RobotAbstraction{
   int writeData=0;
   RobotAbstraction() {}
   RobotAbstraction(const Var<rai::CtrlCmdMsg>& _cmd, const Var<rai::CtrlStateMsg>& _state) : cmd(_cmd), state(_state) {}
+  virtual ~RobotAbstraction() {}
 };
 
 struct GripperAbstraction {
@@ -48,6 +49,7 @@ struct GripperAbstraction {
   virtual void close(double force=.0, //relative to [min,max]
                      double width=.2, //relative to [min,max]
                      double speed=.2) = 0; //relative to [min,max]
+  virtual void close(const char* objName, double force=.0, double width=.2, double speed=.2){ close(force, width, speed); }
   virtual double pos() = 0;
   virtual bool isDone() = 0;
 };

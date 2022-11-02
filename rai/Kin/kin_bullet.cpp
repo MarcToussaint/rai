@@ -170,8 +170,12 @@ BulletInterface::BulletInterface(rai::Configuration& C, const rai::Bullet_Option
   if(opt.multiBody){
     FrameL parts = C.getParts();
     for(rai::Frame *f : parts){
-      self->addMultiBody(f);
-      if(f->ats && (*f->ats)["motors"]) motorizeMultiBody(f);
+      if(f->children.N){
+        self->addMultiBody(f);
+        if(f->ats && (*f->ats)["motors"]) motorizeMultiBody(f);
+      }else{
+        self->addLink(f);
+      }
     }
     //  self->addMultiBody(C(0), verbose);
     //  self->addExample();
@@ -330,16 +334,20 @@ void BulletInterface::motorizeMultiBody(rai::Frame* base){
   }
 }
 
-void BulletInterface::setMotorQ(const rai::Configuration& C){
+void BulletInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){
   CHECK(self->opt.multiBody, "");
-  arr q = C.getJointState();
+  if(qDot_ref.N){ CHECK_EQ(q_ref.N, qDot_ref.N, ""); }
   uint qIdx=0;
   for(MultiBodyInfo& mi:self->multibodies){
     for(uint i=0;i<mi.motors.N;i++){
-      mi.motors(i)->setPositionTarget(q(qIdx++), opt().motorKp);
-//    mi.motors(i)->setVelocityTarget(0., .1);
+      mi.motors(i)->setPositionTarget(q_ref.elem(qIdx), opt().motorKp);
+      if(qDot_ref.N){
+        mi.motors(i)->setVelocityTarget(qDot_ref.elem(i), opt().motorKd);
+      }
+      qIdx++;
     }
   }
+  CHECK_EQ(qIdx, q_ref.N, ""); //make this only a warning?
 }
 
 void BulletInterface::pushKinematicStates(const rai::Configuration& C) {
@@ -368,10 +376,10 @@ void BulletInterface::pushFullState(const rai::Configuration& C, const arr& fram
       if(!!frameVelocities && frameVelocities.N) {
         b->setLinearVelocity(btVector3(frameVelocities(f->ID, 0, 0), frameVelocities(f->ID, 0, 1), frameVelocities(f->ID, 0, 2)));
         b->setAngularVelocity(btVector3(frameVelocities(f->ID, 1, 0), frameVelocities(f->ID, 1, 1), frameVelocities(f->ID, 1, 2)));
-      } else {
+      } /*else {
         b->setLinearVelocity(btVector3(0., 0., 0.));
         b->setAngularVelocity(btVector3(0., 0., 0.));
-      }
+      }*/
     }
   }
   self->dynamicsWorld->stepSimulation(.01); //without this, two consequtive pushFullState won't work! (something active tag?)
@@ -482,15 +490,14 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f) {
       body->setFriction(friction);
     }
   }
-//  body->setRollingFriction(.01);
-//  body->setSpinningFriction(.01);
-  //cout <<body->getContactStiffness() <<' ' <<body->getContactDamping() <<endl;
-  body->setContactStiffnessAndDamping(opt.contactStiffness, opt.contactDamping);
+  body->setRollingFriction(.01);
+  body->setSpinningFriction(.01);
   {
     double restitution=opt.defaultRestitution;
     for(auto s:shapes) if(s->frame.ats) s->frame.ats->get<double>(restitution, "restitution");
     if(restitution>=0.) body->setRestitution(restitution);
   }
+  body->setContactStiffnessAndDamping(opt.contactStiffness, opt.contactDamping);
 
   dynamicsWorld->addRigidBody(body);
 
@@ -505,7 +512,7 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f) {
 }
 
 btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
-  CHECK(!base->parent || (base->joint && base->inertia), "");
+  CHECK(!base->parent || (base->joint && base->joint->type==rai::JT_rigid) || (base->joint && base->inertia), "base needs to be either rigid or with inertia");
   //-- collect all links for that root
   FrameL F = {base};
   base->getPartSubFrames(F);

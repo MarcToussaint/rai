@@ -9,6 +9,7 @@
 #pragma once
 
 #include "../Core/array.h"
+#include "../Core/graph.h"
 
 #include <iostream>
 
@@ -313,6 +314,7 @@ struct Camera {
   //retired
   void setCameraProjectionMatrix(const arr& P); //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
 
+  void read(Graph& ats);
   void report(std::ostream& os=std::cout);
 };
 

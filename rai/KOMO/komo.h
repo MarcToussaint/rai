@@ -275,7 +275,7 @@ public:
   arr getFrameStateX(int t){ DEPR; return getConfiguration_X(t); }
   arr getPath_qAll(int t){ DEPR; return getConfiguration_qOrg(t); }
   arr getConfiguration_q(int t) { DEPR; return getConfiguration_qAll(t); }
-  arr getPath_qOrg(uintA joints, const bool activesOnly){ DEPR; return getPath_qOrg(); }
+  //arr getPath_qOrg(uintA joints, const bool activesOnly){ DEPR; return getPath_qOrg(); }
 
 //private:
   void _addObjective(const std::shared_ptr<Objective>& ob, const intA& timeSlices);

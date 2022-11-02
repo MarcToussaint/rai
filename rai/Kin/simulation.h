@@ -16,15 +16,18 @@ namespace rai {
 struct SimulationState;
 struct SimulationImp;
 
+//a non-threaded simulation with direct interface and stepping -- in constrast to BotSim, which is threaded (emulating real time) and has
+//the default ctrl interface via low-level reference messages
 struct Simulation {
   enum SimulatorEngine { _physx, _bullet, _kinematic };
-  enum ControlMode { _none, _position, _velocity, _acceleration, _spline };
-  enum ImpType { _closeGripper, _openGripper, _depthNoise, _rgbNoise, _adversarialDropper, _objectImpulses, _blockJoints };
+  enum ControlMode { _none, _position, _velocity, _acceleration, _pdRef, _spline };
+  enum ImpType { _closeGripper, _openGripper, _depthNoise, _rgbNoise, _adversarialDropper, _objectImpulses, _blockJoints, _noPenetrations };
 
   std::unique_ptr<struct Simulation_self> self;
 
   Configuration& C;
   double time;
+  arr qDot;
   SimulatorEngine engine;
   Array<shared_ptr<SimulationImp>> imps; ///< list of (adversarial) imps doing things/perturbations/noise in addition to clean physics engine
   int verbose;
@@ -45,6 +48,7 @@ struct Simulation {
   //-- send a gripper command
   void openGripper(const char* gripperFrameName, double width=.075, double speed=.3);
   void closeGripper(const char* gripperFrameName, double width=.05, double speed=.3, double force=20.);
+  void closeGripperGrasp(const char* gripperFrameName, const char* objectName, double width=.05, double speed=.3, double force=20.);
 
   //-- get state information
   const arr& get_q() { return C.getJointState(); }

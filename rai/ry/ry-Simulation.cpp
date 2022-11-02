@@ -39,6 +39,15 @@ void init_Simulation(pybind11::module& m) {
        pybind11::arg("u_mode") = rai::Simulation::_velocity
       )
 
+  .def("setMoveto", &rai::Simulation::setMoveTo,
+       "set the spline reference to genreate motion",
+       pybind11::arg("path"),
+       pybind11::arg("t"),
+       pybind11::arg("append") = true
+       )
+
+  .def("getTimeToMove", &rai::Simulation::getTimeToMove)
+
   .def("get_q", &rai::Simulation::get_q)
 
   .def("get_qDot", &rai::Simulation::get_qDot)
