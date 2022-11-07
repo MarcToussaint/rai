@@ -968,7 +968,7 @@ void BulletInterface::step(double tau) { NICO }
 void BulletInterface::pushFullState(const rai::Configuration& C, const arr& vel) { NICO }
 void BulletInterface::pushKinematicStates(const rai::Configuration& C) { NICO }
 void BulletInterface::pullDynamicStates(rai::Configuration& C, arr& vel) { NICO }
-void BulletInterface::setMotorQ(const rai::Configuration& C) { NICO }
+void BulletInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){ NICO }
 void BulletInterface::saveBulletFile(const char* filename) { NICO }
 void BulletInterface::changeObjectType(rai::Frame* f, int _type, const arr& withVelocity) { NICO }
 rai::Bullet_Options& BulletInterface::opt(){ NICO; }

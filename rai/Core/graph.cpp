@@ -1014,8 +1014,8 @@ void Graph::displayDot(Node* highlight) {
   } else {
     writeDot(FILE("z.dot"), false, false, 0, -1, true);
   }
-  system("dot -Tpdf z.dot > z.pdf");
-  system("evince z.pdf &");
+  rai::system("dot -Tpdf z.dot > z.pdf");
+  rai::system("evince z.pdf &");
 }
 
 void Graph::writeHtml(std::ostream& os, std::istream& is) {

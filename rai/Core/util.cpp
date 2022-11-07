@@ -117,7 +117,7 @@ void system(const char* cmd) {
   cout <<"SYSTEM CMD: " <<cmd <<endl;
   int r = ::system(cmd);
   rai::wait(.1);
-  if(r) HALT("system return error " <<r);
+  if(r) LOG(-1) <<"system return error " <<r;
 }
 
 /// open an output-file with name '\c name'

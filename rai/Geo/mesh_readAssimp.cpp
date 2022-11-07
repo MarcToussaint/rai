@@ -9,6 +9,8 @@
 #include "mesh_readAssimp.h"
 #include "../Core/util.h"
 
+#ifdef RAI_ASSIMP
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -251,3 +253,13 @@ void writeAssimp(const rai::Mesh& M, const char* filename, const char* format){
   Assimp::Exporter exporter;
   exporter.Export(&scene, format, filename);
 }
+
+#else  //RAI_ASSIMP
+
+AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ, bool relativeMeshPoses) { NICO }
+AssimpLoader::AssimpLoader(const aiScene* scene) { NICO }
+rai::Mesh AssimpLoader::getSingleMesh() { NICO }
+void AssimpLoader::loadNode(const aiNode* node, const aiScene* scene, arr T, bool relativeMeshPoses) { NICO }
+rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) { NICO }
+
+#endif
