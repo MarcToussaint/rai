@@ -49,13 +49,13 @@ PYBIND11_MODULE(libry, m) {
   init_Frame(m);
   init_KOMO(m);
 //  init_LGP_Tree(m);
-//  init_Bullet(m);
+  init_Bullet(m);
 //  init_PhysX(m);
 //  init_Operate(m);
 //  init_Camera(m);
   init_Simulation(m);
-  init_CtrlSet(m);
-  init_CtrlSolver(m);
+//  init_CtrlSet(m);
+//  init_CtrlSolver(m);
 
   init_Optim(m);
 }

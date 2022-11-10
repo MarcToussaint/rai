@@ -210,7 +210,7 @@ void testFriction(){
     obj->addAttribute("friction", .02*i);
   }
 
-  C.addFile("../../../../rai-robotModels/scenarios/pandasTable.g");
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandasTable.g"));
 
   C["table"]->setQuaternion({1.,-.1,0.,0.}); //tilt the table!!
 
@@ -249,7 +249,7 @@ void testStackOfBlocks(){
 //    obj->addAttribute("restitution", .01);
   }
 
-  C.addFile("../../../../rai-robotModels/scenarios/pandasTable.g");
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandasTable.g"));
 
   rai::Simulation S(C, S._bullet, true);
   //rai::Simulation S(C, S._physx, true);
