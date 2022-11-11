@@ -3,5 +3,5 @@ BASE = ../../..
 LIBS += -lglut -lGL
 DEPEND = Core Gui
 
-include $(BASE)/build/generic.mk
+include $(BASE)/make/generic.mk
 

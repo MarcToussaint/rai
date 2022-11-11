@@ -62,14 +62,14 @@ $(BASE)/config.mk:: $(BASE)/../config.mk
 
 else
 
-$(BASE)/config.mk:: $(BASE)/build/config.mk.default
+$(BASE)/config.mk:: $(BASE)/make/config.mk.default
 	cp $< $@
 
 endif
 
 include $(BASE)/config.mk
 
-include $(BASE)/build/defines.mk
+include $(BASE)/make/defines.mk
 
 
 ################################################################################
@@ -325,6 +325,11 @@ pywrapper: $(OUTPUT) $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 	ar -crvs $@ $(OBJS)
 	cp $@ $(BASE)/lib
 
+#%.a: $(PREOBJS) $(BUILDS)
+#	$(CXX) $(CXXFLAGS) -c $(SRCS)
+#	ar -crvs $@ $*.o
+#	cp $@ $(BASE)/lib
+
 %.mexglx: $(PREOBJS) $(OBJS)
 	mex -cxx $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
@@ -384,30 +389,30 @@ z.unity.cxx: $(SRCS)
 ################################################################################
 
 inPath_makeLib/extern_%: % $(PREOBJS)
-	+@-$(BASE)/build/make-path.sh $< libextern_$*.a
+	+@-$(BASE)/make/make-path.sh $< libextern_$*.a
 
 inPath_makeLib/Hardware_%: $(BASE2)/Hardware/% $(PREOBJS)
-	+@-$(BASE)/build/make-path.sh $< libHardware_$*.so
+	+@-$(BASE)/make/make-path.sh $< libHardware_$*.so
 
 inPath_makeLib/%: $(BASE)/rai/% $(PREOBJS)
-	+@-$(BASE)/build/make-path.sh $< lib$*.so
+	+@-$(BASE)/make/make-path.sh $< lib$*.so
 
 inPath_makeLib/%: $(BASE)/rai/contrib/% $(PREOBJS)
-	+@-$(BASE)/build/make-path.sh $< lib$*.so
+	+@-$(BASE)/make/make-path.sh $< lib$*.so
 
 ifdef BASE2
 inPath_makeLib/%: $(BASE2)/% $(PREOBJS)
-	+@-$(BASE)/build/make-path.sh $< lib$*.so
+	+@-$(BASE)/make/make-path.sh $< lib$*.so
 endif
 
 inPath_make/%: % $(PREOBJS)
-	+@-$(BASE)/build/make-path.sh $< x.exe
+	+@-$(BASE)/make/make-path.sh $< x.exe
 
 inPath_makeTest/%: % $(PREOBJS)
-	+@-$(BASE)/build/make-path.sh $< x.exe RAI_TESTS=1
+	+@-$(BASE)/make/make-path.sh $< x.exe RAI_TESTS=1
 
 inPath_run/%: % $(PREOBJS)
-	+@-$(BASE)/build/run-path.sh $< x.exe
+	+@-$(BASE)/make/run-path.sh $< x.exe
 
 inPath_clean/%: %
 	@echo "                                                ***** clean " $*

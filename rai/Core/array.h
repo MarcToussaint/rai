@@ -257,7 +257,7 @@ template<class T> struct Array {
 
   /// @name I/O
   void write(std::ostream& os=std::cout, const char* ELEMSEP=nullptr, const char* LINESEP=nullptr, const char* BRACKETS=nullptr, bool dimTag=false, bool binary=false) const;
-  void read(std::istream& is);
+  Array<T>& read(std::istream& is);
   void writeTagged(std::ostream& os, const char* tag, bool binary=false) const;
   bool readTagged(std::istream& is, const char* tag);
   void writeDim(std::ostream& os=std::cout) const;
@@ -295,6 +295,7 @@ template<class T> bool operator==(const Array<T>& v, const Array<T>& w); //equal
 template<class T> Array<byte> operator==(const Array<T>& v, const T& w); //element-wise equal
 template<class T> bool operator!=(const Array<T>& v, const Array<T>& w);
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x);
+template<class T> Array<T>& operator>>(Array<T>& x, std::istream& is);
 template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x);
 
 template<class T> void operator+=(Array<T>& x, const Array<T>& y){

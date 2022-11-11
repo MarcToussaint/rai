@@ -3,4 +3,4 @@ BASE = ../../..
 GL=1
 DEPEND = Core Gui Geo Kin
 
-include $(BASE)/build/generic.mk
+include $(BASE)/make/generic.mk

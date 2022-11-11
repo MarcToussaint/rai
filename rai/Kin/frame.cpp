@@ -549,7 +549,11 @@ rai::Frame& rai::Frame::setMass(double mass) {
 
 rai::Frame& rai::Frame::addAttribute(const char* key, double value) {
   if(!ats) ats = make_shared<Graph>();
-  ats->newNode<double>(key, {}, value);
+//  if(ats->find<double>(key)){
+//    ats->get<double>(key) = value;
+//  }else{
+    ats->newNode<double>(key, {}, value);
+//  }
   return *this;
 }
 

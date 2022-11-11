@@ -7,4 +7,4 @@ CFLAGS += -O3 -fPIC -w
 SRCS = ply.c
 OBJS = ply.o 
 
-include $(BASE)/build/generic.mk
+include $(BASE)/make/generic.mk

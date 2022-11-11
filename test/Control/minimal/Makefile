@@ -2,4 +2,4 @@ BASE = ../../..
 
 DEPEND = KOMO Core Geo Kin Gui Optim Control
 
-include $(BASE)/build/generic.mk
+include $(BASE)/make/generic.mk

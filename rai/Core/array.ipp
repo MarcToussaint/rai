@@ -1550,7 +1550,7 @@ template<class T> void Array<T>::write(std::ostream& os, const char* ELEMSEP, co
 }
 
 /** @brief prototype for operator>>, if there is a dimensionality tag: fast reading of ascii (if there is brackets[]) or binary (if there is \\0\\0 brackets) data; otherwise slow ascii read */
-template<class T> void Array<T>::read(std::istream& is) {
+template<class T> Array<T>& Array<T>::read(std::istream& is) {
   bool expectBracket=false;
 
 #define PARSERR(x) HALT("Error in parsing Array of type '" <<typeid(T).name() <<"' (line=" <<lineCount <<"):\n" <<x)
@@ -1608,6 +1608,7 @@ template<class T> void Array<T>::read(std::istream& is) {
 
 #undef PARSERR
 
+  return *this;
 }
 
 /// write data with a name tag (convenient to write multiple data arrays into one file)

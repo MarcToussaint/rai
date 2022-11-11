@@ -2,4 +2,4 @@ BASE = ../../..
 
 DEPEND = Core Kin Gui Geo KOMO Logic LGP Optim
 
-include $(BASE)/build/generic.mk
+include $(BASE)/make/generic.mk

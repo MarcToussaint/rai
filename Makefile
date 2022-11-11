@@ -40,7 +40,7 @@ clean: $(src_paths:%=inPath_clean/%) cleanLocks
 cleanStart: force
 	@read -p " *** WARNING: This will rm ALL local files/changes (e.g. project/temporary/data files) - abort if you don't want to continue" yn
 	git clean -f -d -x
-	cp build/config.mk.default build/config.mk
+	cp make/config.mk.default make/config.mk
 
 paths: force
 	@echo; echo ----------------------------------------
@@ -73,11 +73,11 @@ install: src bin
 # test: setConfigFlag $(exa_paths:%=inPath_clean/%) cleanLocks $(exa_paths:%=inPath_make/%)
 
 # setConfigFlag: force
-# 	echo "RAI_TESTS = 1" > build/z.mk
+# 	echo "RAI_TESTS = 1" > make/z.mk
 
 runTests: tests
 	@rm -f z.test-report
-	@for p in $(test_paths); do build/run-path.sh $$p; done
+	@for p in $(test_paths); do make/run-path.sh $$p; done
 	+@-make -C test/ry run clean
 
 
@@ -88,4 +88,4 @@ deletePotentiallyNonfreeCode: force
 
 ################################################################################
 
-include $(BASE)/build/generic.mk
+include $(BASE)/make/generic.mk

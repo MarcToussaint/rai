@@ -5,5 +5,5 @@ PNG = 1
 
 DEPEND = Core Geo Gui
 
-include $(BASE)/build/generic.mk
+include $(BASE)/make/generic.mk
 

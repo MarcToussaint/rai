@@ -81,7 +81,7 @@ void Skeleton::setFromStateSequence(Array<Graph*>& states, const arr& times){
         if(extend) k_end++;
 
         Enum<SkeletonSymbol> sym(symstr);
-        if(k_end==states.N-1) {
+        if(k_end>=states.N-1) {
           S.append(SkeletonEntry({times(k), times.last(), sym, symbols({1, -1})}));
         } else {
           S.append(SkeletonEntry({times(k), times(k_end), sym, symbols({1, -1})}));
