@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "../Optim/optimization.h"
 #include "../Core/thread.h"
 #include "../Kin/kin.h"
+#include "../Optim/NLP.h"
 
 struct CtrlObjective;
 struct CtrlMovingTarget;

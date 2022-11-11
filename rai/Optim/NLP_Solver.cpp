@@ -1,6 +1,5 @@
 #include "NLP_Solver.h"
 
-#include "optimization.h"
 #include "gradient.h"
 #include "newton.h"
 #include "opt-nlopt.h"
@@ -8,6 +7,7 @@
 #include "opt-ceres.h"
 #include "NLP.h"
 #include "constrained.h"
+#include "utils.h"
 
 template<> const char* rai::Enum<NLP_SolverID>::names []= {
   "gradientDescent", "rprop", "LBFGS", "newton",

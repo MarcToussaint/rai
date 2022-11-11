@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include "optimization.h"
+#include "options.h"
+#include "newton.h"
 #include "lagrangian.h"
 
 struct PrimalDualProblem : ScalarFunction {

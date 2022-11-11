@@ -1,6 +1,5 @@
 #include <Kin/proxy.h>
 #include <Optim/constrained.h>
-#include <Optim/optimization.h>
 
 #include "ConfigurationProblem.h"
 

@@ -5,11 +5,11 @@
 #include <Optim/opt-ceres.h>
 #include <Optim/benchmarks.h>
 #include <Optim/constrained.h>
+#include <Optim/utils.h>
 
 //#include <Kin/kin.h>
 //#include <Gui/opengl.h>
 #include <KOMO/komo.h>
-//#include <Kin/TM_default.h>
 
 //#include <Optim/Graph_Problem.h>
 //#include <Optim/newOptim.h>

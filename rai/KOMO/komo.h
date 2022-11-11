@@ -11,7 +11,6 @@
 #include "objective.h"
 #include "skeletonSymbol.h"
 #include "../Kin/kin.h"
-#include "../Optim/optimization.h"
 #include "../Optim/constrained.h"
 #include "../Optim/NLP.h"
 #include "../Kin/switch.h"

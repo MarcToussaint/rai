@@ -82,12 +82,6 @@ inline void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& J
   }
 }
 
-// optimization algorithms declared separately:
-#include "newton.h"
-#include "gradient.h"
-//#include "lagrangian.h"
-//#include "convert.h"
-//uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions opt);
 
 //===========================================================================
 //
@@ -96,5 +90,3 @@ inline void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& J
 
 void displayFunction(const ScalarFunction& f, bool wait=false, double lo=-1.2, double hi=1.2);
 
-// function evaluation counter (used only for performance meassurements, global for simplicity)
-extern uint eval_count;

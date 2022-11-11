@@ -229,7 +229,7 @@ struct Joint : Dof, NonCopyable {
   Enum<JointType> type;   ///< joint type
 
   //attachments to the joint
-  struct Uncertainty* uncertainty=nullptr;
+  //struct Uncertainty* uncertainty=nullptr;
 
   Joint(Frame& f, JointType type);
   Joint(Frame& f, Joint* copyJoint=nullptr);

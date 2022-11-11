@@ -8,7 +8,7 @@
 
 #include "opt-nlopt.h"
 #include "NLP_Solver.h"
-#include "optimization.h"
+#include "utils.h"
 
 #ifdef RAI_NLOPT
 

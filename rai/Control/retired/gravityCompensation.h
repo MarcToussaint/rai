@@ -13,7 +13,6 @@
 
 #include "../Core/array.h"
 #include "../Kin/kin.h"
-#include "../Kin/TM_default.h"
 
 struct GravityCompensation {
 

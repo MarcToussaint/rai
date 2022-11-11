@@ -8,7 +8,6 @@
 
 #include "frame.h"
 #include "kin.h"
-#include "uncertainty.h"
 #include "forceExchange.h"
 #include "dof_particles.h"
 #include "../Geo/signedDistanceFunctions.h"
@@ -726,9 +725,9 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint) {
       }
     }
 
-    if(copyJoint->uncertainty) {
-      new Uncertainty(this, copyJoint->uncertainty);
-    }
+    //if(copyJoint->uncertainty) {
+    //  new Uncertainty(this, copyJoint->uncertainty);
+    //}
   }
 }
 

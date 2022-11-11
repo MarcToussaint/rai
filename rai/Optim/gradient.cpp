@@ -7,9 +7,11 @@
     --------------------------------------------------------------  */
 
 #include "gradient.h"
-#include "optimization.h"
 #include <iomanip>
 #include <math.h>
+
+// function evaluation counter (used only for performance meassurements, global for simplicity)
+uint eval_count=0;
 
 //===========================================================================
 

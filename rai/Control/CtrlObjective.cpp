@@ -14,7 +14,6 @@
 #include "../Core/graph.h"
 #include "../Kin/frame.h"
 #include "../Kin/kin_swift.h"
-#include "../Kin/TM_default.h"
 #include "../Kin/F_qFeatures.h"
 
 //===========================================================================

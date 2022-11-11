@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "geoOptim.h"
-#include "../Optim/optimization.h"
 #include "../Optim/constrained.h"
+#include "../Optim/utils.h"
 #include "../Geo/qhull.h"
 #include "../Gui/opengl.h"
 #include "../Algo/ann.h"

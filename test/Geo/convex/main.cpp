@@ -3,7 +3,6 @@
 #include <Algo/algos.h>
 #include <Gui/plot.h>
 #include <qhull/qhull_a.h>
-#include <Optim/optimization.h>
 #include <Geo/qhull.h>
 
 //===========================================================================

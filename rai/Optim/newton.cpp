@@ -7,7 +7,6 @@
     --------------------------------------------------------------  */
 
 #include "newton.h"
-#include "optimization.h"
 
 #include <iomanip>
 

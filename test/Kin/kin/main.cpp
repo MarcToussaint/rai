@@ -8,7 +8,6 @@
 #include <Gui/opengl.h>
 #include <Gui/plot.h>
 #include <GL/gl.h>
-#include <Optim/optimization.h>
 #include <Kin/feature.h>
 
 //===========================================================================

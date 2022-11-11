@@ -7,7 +7,6 @@
     --------------------------------------------------------------  */
 
 #include "komo.h"
-#include "komo-ext.h"
 #include "komo_NLP.h"
 
 #include "../Gui/opengl.h"
@@ -20,7 +19,6 @@
 #include "../Kin/kin_swift.h"
 #include "../Kin/kin_physx.h"
 #include "../Kin/F_qFeatures.h"
-#include "../Kin/TM_default.h"
 #include "../Kin/F_pose.h"
 #include "../Kin/F_collisions.h"
 #include "../Kin/F_geometrics.h"
@@ -28,7 +26,6 @@
 #include "../Kin/F_forces.h"
 #include "../Kin/viewer.h"
 
-#include "../Optim/optimization.h"
 #include "../Optim/primalDual.h"
 #include "../Optim/opt-nlopt.h"
 #include "../Optim/opt-ipopt.h"

@@ -1,6 +1,6 @@
-#include <Optim/optimization.h>
 #include <Optim/benchmarks.h>
 #include <Optim/constrained.h>
+#include <Optim/utils.h>
 
 #include <iomanip>
 

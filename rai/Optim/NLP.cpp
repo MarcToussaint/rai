@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "NLP.h"
-#include "optimization.h"
 #include "lagrangian.h"
+#include "utils.h"
 
 #include "../Core/util.h"
 

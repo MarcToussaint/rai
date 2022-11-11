@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "optimization.h"
 #include "NLP.h"
+#include "../Core/util.h"
 
 extern ScalarFunction RosenbrockFunction();
 extern ScalarFunction RastriginFunction();

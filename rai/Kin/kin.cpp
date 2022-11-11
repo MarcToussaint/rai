@@ -10,7 +10,6 @@
 #include "frame.h"
 #include "forceExchange.h"
 #include "dof_particles.h"
-#include "uncertainty.h"
 #include "proxy.h"
 #include "kin_swift.h"
 #include "kin_physx.h"
@@ -2807,20 +2806,20 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
       }
   }
 
-  NodeL ucs = G.getNodesWithTag("%Uncertainty");
-  ucs.append(G.getNodes("Uncertainty"));
-  for(Node* n: ucs) {
-    CHECK_EQ(n->parents.N, 1, "Uncertainties must have one parent");
-    CHECK(n->isGraph(), "Uncertainties must have value Graph");
-    CHECK(n->key=="Uncertainty" || n->graph().findNode("%Uncertainty"), "");
+  // NodeL ucs = G.getNodesWithTag("%Uncertainty");
+  // ucs.append(G.getNodes("Uncertainty"));
+  // for(Node* n: ucs) {
+  //   CHECK_EQ(n->parents.N, 1, "Uncertainties must have one parent");
+  //   CHECK(n->isGraph(), "Uncertainties must have value Graph");
+  //   CHECK(n->key=="Uncertainty" || n->graph().findNode("%Uncertainty"), "");
 
-    Frame* f = getFrame(n->parents(0)->key);
-    CHECK(f, "");
-    Joint* j = f->joint;
-    CHECK(j, "Uncertainty parent must be a joint");
-    Uncertainty* uc = new Uncertainty(j);
-    uc->read(n->graph());
-  }
+  //   Frame* f = getFrame(n->parents(0)->key);
+  //   CHECK(f, "");
+  //   Joint* j = f->joint;
+  //   CHECK(j, "Uncertainty parent must be a joint");
+  //   Uncertainty* uc = new Uncertainty(j);
+  //   uc->read(n->graph());
+  // }
 
   //-- clean up the graph
 //  calc_q();

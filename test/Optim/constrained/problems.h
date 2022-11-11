@@ -1,4 +1,4 @@
-#include <Optim/optimization.h>
+#include <Optim/NLP.h>
 
 #include <math.h>
 

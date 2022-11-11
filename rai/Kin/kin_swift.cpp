@@ -416,15 +416,16 @@ uint SwiftInterface::countObjects() {
 
 #include "../Core/util.h"
 
-SwiftInterface(const FrameL& frames, double _cutoff=.2, int verbose=0){ NICO }
-~SwiftInterface(){ NICO }
+SwiftInterface::SwiftInterface(const FrameL& frames, double _cutoff, int verbose){ NICO }
+SwiftInterface::~SwiftInterface(){ NICO }
 
-uintA step(const arr& X, bool dumpReport=false){ NICO }
+uintA SwiftInterface::step(const arr& X, bool dumpReport){ NICO }
 
-void pushToSwift(const arr& X){ NICO }
-uintA pullFromSwift(bool dumpReport){ NICO }
+void SwiftInterface::pushToSwift(const arr& X){ NICO }
+uintA SwiftInterface::pullFromSwift(bool dumpReport){ NICO }
 
-void deactivate(const uintA& collisionExcludePairIDs){ NICO }
+void SwiftInterface::deactivate(const uintA& collisionExcludePairIDs){ NICO }
+void SwiftInterface::deactivatePairs(const uintA& collisionExcludePairIDs){ NICO }
 
 
 

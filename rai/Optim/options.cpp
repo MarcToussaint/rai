@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "optimization.h"
+#include "options.h"
 
 namespace rai {
 

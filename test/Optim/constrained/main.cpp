@@ -1,7 +1,7 @@
-#include <Optim/optimization.h>
 #include <Optim/benchmarks.h>
 #include "problems.h"
 #include <Optim/constrained.h>
+#include <Optim/utils.h>
 
 //lecture.cpp:
 void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start=NoArr, uint iters=20);

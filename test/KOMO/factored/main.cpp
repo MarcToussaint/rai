@@ -1,9 +1,9 @@
 #include <KOMO/komo.h>
-#include <Kin/TM_default.h>
 #include <Kin/F_collisions.h>
 #include <Kin/viewer.h>
 #include <Kin/F_pose.h>
 #include <Optim/NLP_Solver.h>
+#include <Optim/utils.h>
 
 //===========================================================================
 

@@ -1,4 +1,3 @@
-#include <Optim/optimization.h>
 #include <Optim/benchmarks.h>
 #include <functional>
 #include <Optim/NLP_Solver.h>

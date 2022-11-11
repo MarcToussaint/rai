@@ -6,11 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "optimization.h"
+#include "utils.h"
+#include "../Core/util.h"
 
 #include <math.h>
-
-uint eval_count=0;
 
 //===========================================================================
 
@@ -158,6 +157,7 @@ void displayFunction(const ScalarFunction& f, bool wait, double lo, double hi) {
   gnuplot("reset; set xlabel 'x'; set ylabel 'y'; splot [-1:1][-1:1] 'z.fct' matrix us ($1/50-1):($2/50-1):3 w l", wait, true);
 }
 
+#if 0
 /// minimizes \f$f(x)\f$ using its gradient only
 uint optGradDescent(arr& x, const ScalarFunction& f, rai::OptOptions o) {
   uint evals=0;
@@ -200,6 +200,7 @@ uint optGradDescent(arr& x, const ScalarFunction& f, rai::OptOptions o) {
   if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", true);
   return evals;
 }
+#endif
 
 RUN_ON_INIT_BEGIN(optimization)
 ObjectiveTypeA::memMove=true;
