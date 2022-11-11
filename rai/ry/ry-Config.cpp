@@ -445,13 +445,6 @@ from broadphase collision computation)",
   "create an LGP solver"
       )
 
-  .def("bullet", [](shared_ptr<rai::Configuration>& self) {
-    return make_shared<BulletInterface>(*self);
-  },
-  "create a Bullet engine for physical simulation from the configuration: The configuration \
-  is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
-      )
-
   .def("physx", [](shared_ptr<rai::Configuration>& self) {
     return make_shared<PhysXInterface>(*self);
   },
@@ -460,6 +453,14 @@ from broadphase collision computation)",
       )
   */
 
+  .def("bullet", [](shared_ptr<rai::Configuration>& self) {
+    return make_shared<BulletInterface>(*self);
+  },
+  "create a Bullet engine for physical simulation from the configuration: The configuration \
+  is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
+      )
+
+  
   .def("simulation", [](shared_ptr<rai::Configuration>& self, rai::Simulation::SimulatorEngine engine, int verbose) {
     return make_shared<rai::Simulation>(*self, engine, verbose);
   },
