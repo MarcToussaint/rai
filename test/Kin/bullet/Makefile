@@ -4,4 +4,4 @@ DEPEND = Core Geo Kin Gui
 
 PHYSX = 1
 
-include $(BASE)/make/generic.mk
+include $(BASE)/makeutils/generic.mk

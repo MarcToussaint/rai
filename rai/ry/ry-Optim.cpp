@@ -22,26 +22,26 @@ void init_Optim(pybind11::module& m) {
   pybind11::class_<NLP, shared_ptr<NLP>> __mp(m, "NLP");
   __mp
 
-  .def("evaluate", [](std::shared_ptr<NLP>& self, const arr& x){
+  .def("evaluate", [](std::shared_ptr<NLP>& self, const arr& x) {
     arr phi, J;
     self->evaluate(phi, J, x);
-    return std::tuple<arr,arr>(phi, J);
+    return std::tuple<arr, arr>(phi, J);
   },
   "query the NLP at a point $x$; returns the tuple $(phi,J)$, which is the feature vector and its Jacobian; features define cost terms, sum-of-square (sos) terms, inequalities, and equalities depending on 'getFeatureTypes'"
-  )
+      )
 
-  .def("getFeatureTypes", [](std::shared_ptr<NLP>& self){
+  .def("getFeatureTypes", [](std::shared_ptr<NLP>& self) {
     return Array2vec<ObjectiveType>(self->featureTypes);
   },
-       "features (entries of $phi$) can be of one of (ry.OT.f, ry.OT.sos, ry.OT.ineq, ry.OT.eq), which means (cost, sum-of-square, inequality, equality). The total cost $f(x)$ is the sum of all f-terms plus sum-of-squares of sos-terms."
-  )
+  "features (entries of $phi$) can be of one of (ry.OT.f, ry.OT.sos, ry.OT.ineq, ry.OT.eq), which means (cost, sum-of-square, inequality, equality). The total cost $f(x)$ is the sum of all f-terms plus sum-of-squares of sos-terms."
+      )
 
   .def("getDimension", &NLP::getDimension, "return the dimensionality of $x$")
 
-  .def("getBounds", [](std::shared_ptr<NLP>& self){
-    arr lo,up;
+  .def("getBounds", [](std::shared_ptr<NLP>& self) {
+    arr lo, up;
     self->getBounds(lo, up);
-    return std::tuple<arr,arr>(lo, up);
+    return std::tuple<arr, arr>(lo, up);
   },
   "returns the tuple $(b_{lo},b_{up})$, where both vectors are of same dimensionality of $x$ (or size zero, if there are no bounds)")
 
@@ -51,21 +51,21 @@ void init_Optim(pybind11::module& m) {
        pybind11::arg("previousOptima") = arr()
       )
 
-  .def("getFHessian",  [](std::shared_ptr<NLP>& self, const arr& x){
+  .def("getFHessian",  [](std::shared_ptr<NLP>& self, const arr& x) {
     arr H;
     self->getFHessian(H, x);
     return H;
   },
   "returns Hessian of the sum of $f$-terms"
-  )
+      )
 
-  .def("report",  [](std::shared_ptr<NLP>& self, int verbose){
+  .def("report",  [](std::shared_ptr<NLP>& self, int verbose) {
     rai::String str;
     self->report(str, verbose);
     return std::string(str.p);
   },
   "displays semantic information on the last query"
-  )
+      )
 
   ;
 
@@ -80,11 +80,11 @@ void init_Optim(pybind11::module& m) {
       .def("setBounds", &NLP_Factory::setBounds)
       .def("setEvalCallback", &NLP_Factory::setEvalCallback2)
 
-  .def("testCallingEvalCallback", [](std::shared_ptr<NLP_Factory>& self, const arr& x){
+  .def("testCallingEvalCallback", [](std::shared_ptr<NLP_Factory>& self, const arr& x) {
     arr y, J;
     self->evaluate(y, J, x);
-    return std::tuple<arr,arr>(y, J);
-  } )
+    return std::tuple<arr, arr>(y, J);
+  })
 
   ;
 
@@ -141,31 +141,31 @@ void init_Optim(pybind11::module& m) {
       .def_readwrite("sos", &SolverReturn::sos)
       .def_readwrite("ineq", &SolverReturn::ineq)
       .def_readwrite("eq", &SolverReturn::eq)
-      .def("dict", [](std::shared_ptr<SolverReturn>& self){
-        return graph2dict(rai::Graph{
-                            {"evals", self->evals},
-                            {"time", self->time},
-                            {"done", self->done},
-                            {"feasible", self->feasible},
-                            {"f", self->f},
-                            {"sos", self->sos},
-                            {"ineq", self->ineq},
-                            {"eq", self->eq},
-                          });
-      })
+  .def("dict", [](std::shared_ptr<SolverReturn>& self) {
+    return graph2dict(rai::Graph{
+      {"evals", self->evals},
+      {"time", self->time},
+      {"done", self->done},
+      {"feasible", self->feasible},
+      {"f", self->f},
+      {"sos", self->sos},
+      {"ineq", self->ineq},
+      {"eq", self->eq},
+    });
+  })
 
-      ;
+  ;
 
   //===========================================================================
 
+#undef ENUMVAL
 #define ENUMVAL(pre, x) .value(#x, pre##_##x)
 
   pybind11::enum_<NLP_SolverID>(m, "NLP_SolverID")
-      ENUMVAL(NLPS, gradientDescent) ENUMVAL(NLPS, rprop) ENUMVAL(NLPS, LBFGS) ENUMVAL(NLPS, newton)
-      ENUMVAL(NLPS, augmentedLag) ENUMVAL(NLPS, squaredPenalty) ENUMVAL(NLPS, logBarrier) ENUMVAL(NLPS, singleSquaredPenalty)
-      ENUMVAL(NLPS, NLopt) ENUMVAL(NLPS, Ipopt) ENUMVAL(NLPS, Ceres)
-      .export_values();
-
+  ENUMVAL(NLPS, gradientDescent) ENUMVAL(NLPS, rprop) ENUMVAL(NLPS, LBFGS) ENUMVAL(NLPS, newton)
+  ENUMVAL(NLPS, augmentedLag) ENUMVAL(NLPS, squaredPenalty) ENUMVAL(NLPS, logBarrier) ENUMVAL(NLPS, singleSquaredPenalty)
+  ENUMVAL(NLPS, NLopt) ENUMVAL(NLPS, Ipopt) ENUMVAL(NLPS, Ceres)
+  .export_values();
 
   pybind11::enum_<ObjectiveType>(m, "OT")
   ENUMVAL(OT, none)

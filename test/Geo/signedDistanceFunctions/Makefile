@@ -4,4 +4,4 @@ LIBS += -lglut -lGL -lqhull
 
 DEPEND = Core Gui Geo Optim
 
-include $(BASE)/make/generic.mk
+include $(BASE)/makeutils/generic.mk

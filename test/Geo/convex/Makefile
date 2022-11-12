@@ -4,5 +4,5 @@ QHULL=1
 
 DEPEND = Core Geo Gui Optim
 
-include $(BASE)/make/generic.mk
+include $(BASE)/makeutils/generic.mk
 

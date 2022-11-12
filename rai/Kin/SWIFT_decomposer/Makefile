@@ -16,4 +16,4 @@ OBJS = $(SRCS:%.cpp=%.o)
 
 DEPEND = Geo
 
-include $(BASE)/make/generic.mk
+include $(BASE)/makeutils/generic.mk

@@ -51,12 +51,12 @@ arr NLP::getInitializationSample(const arr& previousOptima) {
   return blo + rand(n) % (bup - blo);
 }
 
-void NLP::report(std::ostream& os, int verbose, const char* msg){
+void NLP::report(std::ostream& os, int verbose, const char* msg) {
   os <<"NLP of type '" <<rai::niceTypeidName(typeid(*this)) <<"' -- no special reporting implemented";
   os <<"NLP signature:\n  dimension:" <<dimension <<"\n  featureTypes:" <<featureTypes <<"\n  bounds: " <<bounds_lo <<bounds_up;
 }
 
-double NLP::eval_scalar(arr& g, arr& H, const arr& x){
+double NLP::eval_scalar(arr& g, arr& H, const arr& x) {
   arr phi, J;
   evaluate(phi, J, x);
 
@@ -69,7 +69,7 @@ double NLP::eval_scalar(arr& g, arr& H, const arr& x){
     if(featureTypes.p[i]==OT_sos) f += rai::sqr(phi.p[i]);
     else if(featureTypes.p[i]==OT_f) f += phi.p[i];
     else HALT("this must be an unconstrained problem!")
-  }
+    }
 
   if(!!g) { //gradient
     arr coeff=zeros(phi.N);
@@ -138,12 +138,12 @@ void NLP_Factored::evaluate(arr& phi, arr& J, const arr& x) {
     phi({n, n+d-1}) = phi_i;
     if(!!J) {
       CHECK(!!J_i, "");
-      if(resetJ){
+      if(resetJ) {
         if(isSparse(J_i)) J.sparse().resize(phi.N, x.N, 0);
         else J.resize(phi.N, x.N).setZero();
         resetJ=false;
       }
-      if(J_i.d1 < x.N){ //-- shift the row index!
+      if(J_i.d1 < x.N) { //-- shift the row index!
         uint Jii=0;
         for(uint j=0; j<featureVariables(i).N; j++) {
           int varId = featureVariables(i)(j);
@@ -154,12 +154,12 @@ void NLP_Factored::evaluate(arr& phi, arr& J, const arr& x) {
           }
         }
         CHECK_EQ(Jii, J_i.d1, "");
-      }else{
-        if(isSparse(J)){
+      } else {
+        if(isSparse(J)) {
           J_i.sparse().reshape(J.d0, J.d1);
           J_i.sparse().colShift(n);
           J += J_i;
-        }else{
+        } else {
           J.setMatrixBlock(J_i, n, 0);
         }
       }
@@ -169,7 +169,7 @@ void NLP_Factored::evaluate(arr& phi, arr& J, const arr& x) {
   CHECK_EQ(n, phi.N, "");
 }
 
-rai::String NLP_Factored::getVariableName(uint var_id){ return STRING("-dummy-"); }
+rai::String NLP_Factored::getVariableName(uint var_id) { return STRING("-dummy-"); }
 
 //===========================================================================
 
@@ -289,7 +289,7 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
           //      for(int s=1;s<vars.N;s++){ xdim+=variableDimensions(t+s); CHECK_EQ(vars(s), t+s, ""); }
           //      CHECK_EQ(xdim, J_i.d1, "");
 
-          if(!isRowShifted(J_i(i))){
+          if(!isRowShifted(J_i(i))) {
             HALT("perhaps the below needs to be enabled!");
             //          for(uint j=n; j<n+d; j++) {
             //            if(t<=0) Jaux.rowShift(j) += 0;
@@ -311,13 +311,13 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
 void NLP_Traced::evaluate(arr& phi, arr& J, const arr& x) {
   evals++;
   P->evaluate(phi, J, x);
-  if(trace_x){ xTrace.append(x); xTrace.reshape(-1, x.N); }
-  if(trace_costs){ costTrace.append(summarizeErrors(phi, featureTypes)); costTrace.reshape(-1,3);  }
+  if(trace_x) { xTrace.append(x); xTrace.reshape(-1, x.N); }
+  if(trace_costs) { costTrace.append(summarizeErrors(phi, featureTypes)); costTrace.reshape(-1, 3);  }
   if(trace_phi && !!phi) { phiTrace.append(phi);  phiTrace.reshape(-1, phi.N); }
   if(trace_J && !!J) { JTrace.append(J);  JTrace.reshape(-1, phi.N, x.N); }
 }
 
-void NLP_Traced::report(std::ostream& os, int verbose, const char* msg){
+void NLP_Traced::report(std::ostream& os, int verbose, const char* msg) {
   os <<"TRACE: #evals: " <<evals;
   if(costTrace.N) os <<" costs: " <<costTrace[-1];
   if(xTrace.N && xTrace.d1<10) os <<" x: " <<xTrace[-1];
@@ -326,7 +326,7 @@ void NLP_Traced::report(std::ostream& os, int verbose, const char* msg){
 
 //===========================================================================
 
-void NLP_Viewer::display(double mu){
+void NLP_Viewer::display(double mu) {
   uint d = P->getDimension();
   CHECK_EQ(d, 2, "can only display 2D problems for now");
 
@@ -339,14 +339,14 @@ void NLP_Viewer::display(double mu){
   //-- make grid
   arr X, Y, phi;
   X.setGrid(2, 0., 1., 100);
-  for(uint i=0;i<X.d0;i++){ X[i] = lo + (up-lo)%X[i]; }
+  for(uint i=0; i<X.d0; i++) { X[i] = lo + (up-lo)%X[i]; }
   Y.resize(X.d0);
 
   //-- transform constrained problem to AugLag scalar function
   P->evaluate(phi, NoArr, X[0]);
   std::shared_ptr<LagrangianProblem> lag;
   std::shared_ptr<NLP> nlp_save;
-  if(phi.N>1){
+  if(phi.N>1) {
     lag = make_shared<LagrangianProblem>(P);
     lag->mu = lag->nu = mu;
     nlp_save = P;
@@ -371,15 +371,15 @@ void NLP_Viewer::display(double mu){
   cmd <<"reset; set contour; set cntrparam linear; set cntrparam levels incremental 0,.1,10; set xlabel 'x'; set ylabel 'y'; ";
   rai::String splot;
   splot <<"splot [" <<lo(0) <<':' <<up(0) <<"][" <<lo(1) <<':' <<up(1) <<"] "
-       <<"'z.fct' matrix us (" <<lo(0) <<"+(" <<up(0)-lo(0) <<")*$2/100):(" <<lo(1) <<"+(" <<up(1)-lo(1) <<")*$1/100):3 w l";
-  if(!T){
+        <<"'z.fct' matrix us (" <<lo(0) <<"+(" <<up(0)-lo(0) <<")*$2/100):(" <<lo(1) <<"+(" <<up(1)-lo(1) <<")*$1/100):3 w l";
+  if(!T) {
     cmd <<splot <<";";
-  }else{
+  } else {
     T->report(cout, 0);
-    if(false && T->costTrace.N){
+    if(false && T->costTrace.N) {
       FILE("z.trace") <<catCol(T->xTrace, T->costTrace.col(0)).modRaw();
       cmd <<splot <<", 'z.trace' us 1:2:3 w lp; ";
-    }else{
+    } else {
       FILE("z.trace") <<T->xTrace.modRaw();
       cmd <<"unset surface; set table 'z.table'; ";
       cmd <<splot <<"; ";
@@ -391,7 +391,7 @@ void NLP_Viewer::display(double mu){
   gnuplot(cmd);
 }
 
-void NLP_Viewer::plotCostTrace(){
+void NLP_Viewer::plotCostTrace() {
   CHECK(T, "");
   FILE("z.trace") <<T->costTrace.modRaw();
   rai::String cmd;

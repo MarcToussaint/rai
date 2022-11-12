@@ -2,4 +2,4 @@ BASE = ../../..
 
 DEPEND = Core Algo Gui Geo
 
-include $(BASE)/make/generic.mk
+include $(BASE)/makeutils/generic.mk

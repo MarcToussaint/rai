@@ -2,5 +2,5 @@ BASE = ../../..
 
 DEPEND = Core Algo Kin
 
-include $(BASE)/make/generic.mk
+include $(BASE)/makeutils/generic.mk
 

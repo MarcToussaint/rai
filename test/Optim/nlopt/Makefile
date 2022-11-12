@@ -9,4 +9,4 @@ CXXFLAGS += -DRAI_NLOPT `pkg-config --cflags nlopt`
 LIBS     += `pkg-config --libs nlopt`
 endif
 
-include $(BASE)/make/generic.mk
+include $(BASE)/makeutils/generic.mk

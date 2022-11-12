@@ -61,6 +61,8 @@ PYBIND11_MODULE(libry, m) {
 }
 
 void init_enums(pybind11::module& m){
+
+#undef ENUMVAL
 #define ENUMVAL(x) .value(#x, rai::_##x)
 
  pybind11::enum_<rai::ArgWord>(m, "arg")

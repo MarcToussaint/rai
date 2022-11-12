@@ -35,6 +35,8 @@ ry: inPath_makeLib/ry
 
 dependAll: $(src_paths:%=inPath_depend/%)
 
+unityAll: $(src_paths:%=inPath_unity/%)
+
 clean: $(src_paths:%=inPath_clean/%) cleanLocks
 
 cleanStart: force
@@ -88,4 +90,4 @@ deletePotentiallyNonfreeCode: force
 
 ################################################################################
 
-include $(BASE)/make/generic.mk
+include $(BASE)/makeutils/generic.mk

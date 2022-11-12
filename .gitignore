@@ -1,5 +1,7 @@
 /config.mk
 
+unity.cxx
+
 %% compile temporaries
 *.o
 *.a

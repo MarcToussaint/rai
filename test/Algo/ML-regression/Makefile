@@ -2,4 +2,4 @@ BASE = ../../..
 
 DEPEND = Core Algo Gui Optim
 
-include $(BASE)/make/generic.mk
+include $(BASE)/makeutils/generic.mk

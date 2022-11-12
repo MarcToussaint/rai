@@ -16,4 +16,4 @@ ASSIMP = 1
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
 OBJS = $(SRCS:%.cpp=%.o)
 
-include $(BASE)/make/generic.mk
+include $(BASE)/makeutils/generic.mk

@@ -2,4 +2,4 @@ BASE = ../..
 
 DEPEND = Core Logic Geo Kin KOMO LGP
 
-include $(BASE)/make/generic.mk
+include $(BASE)/makeutils/generic.mk

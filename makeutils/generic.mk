@@ -62,14 +62,14 @@ $(BASE)/config.mk:: $(BASE)/../config.mk
 
 else
 
-$(BASE)/config.mk:: $(BASE)/make/config.mk.default
+$(BASE)/config.mk:: $(BASE)/makeutils/config.mk.default
 	cp $< $@
 
 endif
 
 include $(BASE)/config.mk
 
-include $(BASE)/make/defines.mk
+include $(BASE)/makeutils/defines.mk
 
 
 ################################################################################
@@ -376,8 +376,8 @@ endif
 generate_Makefile.dep: $(SRCS)
 	-$(CXX) -MM $(SRCS) $(CFLAGS) $(CXXFLAGS) > Makefile.dep
 
-z.unity.cxx: $(SRCS)
-	@echo "$(SRCS:%=#include\"%\"\n)" > z.unity.cxx
+unity.cxx: $(SRCS)
+	@echo "$(SRCS:%=#include\"%\"\n)" > unity.cxx
 #	find . -maxdepth 1 -name '*.cpp' -fprintf z.unity.cxx '#include "%f"\n'
 
 
@@ -389,30 +389,30 @@ z.unity.cxx: $(SRCS)
 ################################################################################
 
 inPath_makeLib/extern_%: % $(PREOBJS)
-	+@-$(BASE)/make/make-path.sh $< libextern_$*.a
+	+@-$(BASE)/makeutils/make-path.sh $< libextern_$*.a
 
 inPath_makeLib/Hardware_%: $(BASE2)/Hardware/% $(PREOBJS)
-	+@-$(BASE)/make/make-path.sh $< libHardware_$*.so
+	+@-$(BASE)/makeutils/make-path.sh $< libHardware_$*.so
 
 inPath_makeLib/%: $(BASE)/rai/% $(PREOBJS)
-	+@-$(BASE)/make/make-path.sh $< lib$*.so
+	+@-$(BASE)/makeutils/make-path.sh $< lib$*.so
 
 inPath_makeLib/%: $(BASE)/rai/contrib/% $(PREOBJS)
-	+@-$(BASE)/make/make-path.sh $< lib$*.so
+	+@-$(BASE)/makeutils/make-path.sh $< lib$*.so
 
 ifdef BASE2
 inPath_makeLib/%: $(BASE2)/% $(PREOBJS)
-	+@-$(BASE)/make/make-path.sh $< lib$*.so
+	+@-$(BASE)/makeutils/make-path.sh $< lib$*.so
 endif
 
 inPath_make/%: % $(PREOBJS)
-	+@-$(BASE)/make/make-path.sh $< x.exe
+	+@-$(BASE)/makeutils/make-path.sh $< x.exe
 
 inPath_makeTest/%: % $(PREOBJS)
-	+@-$(BASE)/make/make-path.sh $< x.exe RAI_TESTS=1
+	+@-$(BASE)/makeutils/make-path.sh $< x.exe RAI_TESTS=1
 
 inPath_run/%: % $(PREOBJS)
-	+@-$(BASE)/make/run-path.sh $< x.exe
+	+@-$(BASE)/makeutils/run-path.sh $< x.exe
 
 inPath_clean/%: %
 	@echo "                                                ***** clean " $*
@@ -430,6 +430,10 @@ inPath_clean/%: $(BASE2)/%
 	@-rm -f $</Makefile.dep
 	@-$(MAKE) -C $< -f Makefile clean --no-print-directory
 endif
+
+inPath_unity/%: $(BASE)/rai/%
+	@echo "                                                ***** unity.cxx " $<
+	@-$(MAKE) -C $< -f Makefile unity.cxx --no-print-directory
 
 inPath_depend/%: %
 	@echo "                                                ***** depend " $<
