@@ -52,7 +52,8 @@ arr NLP::getInitializationSample(const arr& previousOptima) {
 }
 
 void NLP::report(std::ostream& os, int verbose, const char* msg){
-  os <<"NLP of type '" <<rai::niceTypeidName(typeid(*this)) <<"' -- no reporting implemented";
+  os <<"NLP of type '" <<rai::niceTypeidName(typeid(*this)) <<"' -- no special reporting implemented";
+  os <<"NLP signature:\n  dimension:" <<dimension <<"\n  featureTypes:" <<featureTypes <<"\n  bounds: " <<bounds_lo <<bounds_up;
 }
 
 double NLP::eval_scalar(arr& g, arr& H, const arr& x){

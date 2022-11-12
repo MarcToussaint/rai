@@ -8,9 +8,6 @@
  *  of the setting methods are perfectly analogous to the virtual methods of NLP */
 struct NLP_Factory : NLP {
   void *userData;
-  uint dim;
-  ObjectiveTypeA featureTypes;
-  arr bounds_lo, bounds_up;
 
   std::function<void(arr& y, arr& J, const arr& x, void* _userData)> eval;
   std::function<std::tuple<arr, arr> (const arr&)> eval2;
@@ -18,7 +15,7 @@ struct NLP_Factory : NLP {
 
   NLP_Factory() {}
 
-  void setDimension(uint _dim) { dim = _dim; }
+  void setDimension(uint _dim) { dimension = _dim; }
   void setFeatureTypes(const ObjectiveTypeA& _featureTypes){ featureTypes = _featureTypes; }
   void setBounds(const arr& _bounds_lo, const arr& _bounds_up) { bounds_lo=_bounds_lo; bounds_up=_bounds_up; }
 
@@ -31,7 +28,6 @@ struct NLP_Factory : NLP {
 
   //-- overloads of NLP virtuals
 
-  void getFeatureTypes(ObjectiveTypeA& _featureTypes){ _featureTypes=featureTypes; }
   void evaluate(arr& phi, arr& J, const arr& x){
     if(eval) eval(phi, J, x, userData);
     else if(eval2){
@@ -40,6 +36,4 @@ struct NLP_Factory : NLP {
       J = std::get<1>(ret);
     } else HALT("no evaluation method set");
   }
-  uint getDimension() { return dim; }
-  void getBounds(arr& _bounds_lo, arr& _bounds_up) { _bounds_lo=bounds_lo; _bounds_up = bounds_up; }
 };

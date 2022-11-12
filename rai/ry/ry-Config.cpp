@@ -135,7 +135,7 @@ void init_Config(pybind11::module& m) {
       )
 
   .def("getJointNames", [](shared_ptr<rai::Configuration>& self) {
-    return I_conv(self->getJointNames());
+    return StringA2strvec(self->getJointNames());
   },
   "get the list of joint names"
       )
@@ -154,7 +154,7 @@ void init_Config(pybind11::module& m) {
 //    return arr2numpy(q);
   },
   "get the joint state as a numpy vector, optionally only for a subset of joints specified as list of joint names",
-  pybind11::arg("joints") = ry::I_StringA()
+  pybind11::arg("joints") = std::vector<std::string>()
       )
 
 //  .def("setJointState", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& q, const uintA& joints) {
@@ -189,7 +189,7 @@ void init_Config(pybind11::module& m) {
   }, "")
 
   .def("getFrameNames", [](shared_ptr<rai::Configuration>& self) {
-    return I_conv(self->getFrameNames());
+    return StringA2strvec(self->getFrameNames());
   },
   "get the list of frame names"
       )
@@ -214,11 +214,11 @@ void init_Config(pybind11::module& m) {
     return arr2numpy(X);
   }, "TODO remove -> use individual frame!")
 
-  .def("setFrameState", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& X, const ry::I_StringA& frames) {
+  .def("setFrameState", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& X, const std::vector<std::string>& frames) {
     arr _X (X, true);
     _X.reshape(_X.N/7, 7);
     if(frames.size()){
-      self->setFrameState(_X, self->getFrames(I_conv(frames)));
+      self->setFrameState(_X, self->getFrames(strvec2StringA(frames)));
     }else{
       self->setFrameState(_X);
     }
@@ -226,14 +226,14 @@ void init_Config(pybind11::module& m) {
   },
   "set the frame state, optionally only for a subset of frames specified as list of frame names",
   pybind11::arg("X"),
-  pybind11::arg("frames") = ry::I_StringA()
+  pybind11::arg("frames") = std::vector<std::string>()
       )
 
-  .def("setFrameState", [](shared_ptr<rai::Configuration>& self, const pybind11::array& X, const ry::I_StringA& frames) {
+  .def("setFrameState", [](shared_ptr<rai::Configuration>& self, const pybind11::array& X, const std::vector<std::string>& frames) {
     arr _X = numpy2arr<double>(X);
     _X.reshape(_X.N/7, 7);
     if(frames.size()){
-      self->setFrameState(_X, self->getFrames(I_conv(frames)));
+      self->setFrameState(_X, self->getFrames(strvec2StringA(frames)));
     }else{
       self->setFrameState(_X);
     }
@@ -241,32 +241,32 @@ void init_Config(pybind11::module& m) {
   },
   "set the frame state, optionally only for a subset of frames specified as list of frame names",
   pybind11::arg("X"),
-  pybind11::arg("frames") = ry::I_StringA()
+  pybind11::arg("frames") = std::vector<std::string>()
       )
 
-  .def("feature", [](shared_ptr<rai::Configuration>& self, FeatureSymbol featureSymbol, const ry::I_StringA& frameNames, const std::vector<double>& scale, const std::vector<double>& target, int order) {
-    return symbols2feature(featureSymbol, I_conv(frameNames), *self, arr(scale, true), arr(target, true), order);
+  .def("feature", [](shared_ptr<rai::Configuration>& self, FeatureSymbol featureSymbol, const std::vector<std::string>& frameNames, const std::vector<double>& scale, const std::vector<double>& target, int order) {
+    return symbols2feature(featureSymbol, strvec2StringA(frameNames), *self, arr(scale, true), arr(target, true), order);
   },
   "create a feature (a differentiable map from joint state to a vector space), as they're typically used for IK or optimization. See the dedicated tutorial for details. \
 featureSymbol defines which mapping this is (position, vectors, collision distance, etc). \
 many mapping refer to one or several frames, which need to be specified using frameNames",
   pybind11::arg("featureSymbol"),
-  pybind11::arg("frameNames")=ry::I_StringA(),
+  pybind11::arg("frameNames")=std::vector<std::string>(),
     pybind11::arg("scale")=std::vector<double>(),
     pybind11::arg("target")=std::vector<double>(),
     pybind11::arg("order")=0
     )
 
-  .def("evalFeature", [](shared_ptr<rai::Configuration>& self, FeatureSymbol fs, const ry::I_StringA& frames) {
-    arr y = self->evalFeature(fs, I_conv(frames));
+  .def("evalFeature", [](shared_ptr<rai::Configuration>& self, FeatureSymbol fs, const std::vector<std::string>& frames) {
+    arr y = self->evalFeature(fs, strvec2StringA(frames));
     return pybind11::make_tuple(arr2numpy(y), arr2numpy(y.J()));
   }, "TODO remove -> use feature directly"
       )
 
-  .def("selectJoints", [](shared_ptr<rai::Configuration>& self, const ry::I_StringA& jointNames, bool notThose) {
+  .def("selectJoints", [](shared_ptr<rai::Configuration>& self, const std::vector<std::string>& jointNames, bool notThose) {
     // TODO: this is joint groups
     // TODO: maybe call joint groups just joints and joints DOFs
-    self->selectJointsByName(I_conv(jointNames), notThose);
+    self->selectJointsByName(strvec2StringA(jointNames), notThose);
   },
   "redefine what are considered the DOFs of this configuration: only joints listed in jointNames are considered \
 part of the joint state and define the number of DOFs",
@@ -274,8 +274,8 @@ part of the joint state and define the number of DOFs",
   pybind11::arg("notThose") = false
       )
 
-  .def("selectJointsByTag", [](shared_ptr<rai::Configuration>& self, const ry::I_StringA& jointGroups) {
-    self->selectJointsByAtt(I_conv(jointGroups));
+  .def("selectJointsByTag", [](shared_ptr<rai::Configuration>& self, const std::vector<std::string>& jointGroups) {
+    self->selectJointsByAtt(strvec2StringA(jointGroups));
     self->ensure_q();
   },
   "redefine what are considered the DOFs of this configuration: only joint that have a tag listed in jointGroups are considered \
@@ -283,8 +283,8 @@ part of the joint state and define the number of DOFs",
   pybind11::arg("jointGroups")
       )
 
-  .def("makeObjectsFree", [](shared_ptr<rai::Configuration>& self, const ry::I_StringA& objs) {
-    self->makeObjectsFree(I_conv(objs));
+  .def("makeObjectsFree", [](shared_ptr<rai::Configuration>& self, const std::vector<std::string>& objs) {
+    self->makeObjectsFree(strvec2StringA(objs));
     checkView(self);
   }, "TODO remove -> to frame")
 

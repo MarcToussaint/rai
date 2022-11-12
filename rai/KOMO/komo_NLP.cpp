@@ -120,8 +120,8 @@ void Conv_KOMO_NLP::getFHessian(arr& H, const arr& x) {
 void Conv_KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
   komo.reportProblem(os);
   if(verbose>1) os <<komo.getReport(verbose>3);
-  if(verbose>2) komo.view(verbose>3, "Conv_KOMO_SparseNonfactored - report");
-  if(verbose>4) while(komo.view_play(true));
+  if(verbose>2) komo.view(false/*verbose>3*/, "Conv_KOMO_SparseNonfactored - report");
+  if(verbose>4) komo.view_play(false);
   if(verbose>6){
     rai::system("mkdir -p z.vid");
     komo.view_play(false, .1, "z.vid/");

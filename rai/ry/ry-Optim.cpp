@@ -30,7 +30,9 @@ void init_Optim(pybind11::module& m) {
   "query the NLP at a point $x$; returns the tuple $(phi,J)$, which is the feature vector and its Jacobian; features define cost terms, sum-of-square (sos) terms, inequalities, and equalities depending on 'getFeatureTypes'"
   )
 
-  .def("getFeatureTypes", &NLP::getFeatureTypes,
+  .def("getFeatureTypes", [](std::shared_ptr<NLP>& self){
+    return Array2vec<ObjectiveType>(self->featureTypes);
+  },
        "features (entries of $phi$) can be of one of (ry.OT.f, ry.OT.sos, ry.OT.ineq, ry.OT.eq), which means (cost, sum-of-square, inequality, equality). The total cost $f(x)$ is the sum of all f-terms plus sum-of-squares of sos-terms."
   )
 
@@ -132,6 +134,30 @@ void init_Optim(pybind11::module& m) {
 
   //===========================================================================
 
+  pybind11::class_<SolverReturn, std::shared_ptr<SolverReturn>>(m, "SolverReturn", "return of nlp solve call")
+
+      .def(pybind11::init<>())
+      .def_readwrite("f", &SolverReturn::f)
+      .def_readwrite("sos", &SolverReturn::sos)
+      .def_readwrite("ineq", &SolverReturn::ineq)
+      .def_readwrite("eq", &SolverReturn::eq)
+      .def("dict", [](std::shared_ptr<SolverReturn>& self){
+        return graph2dict(rai::Graph{
+                            {"evals", self->evals},
+                            {"time", self->time},
+                            {"done", self->done},
+                            {"feasible", self->feasible},
+                            {"f", self->f},
+                            {"sos", self->sos},
+                            {"ineq", self->ineq},
+                            {"eq", self->eq},
+                          });
+      })
+
+      ;
+
+  //===========================================================================
+
 #define ENUMVAL(pre, x) .value(#x, pre##_##x)
 
   pybind11::enum_<NLP_SolverID>(m, "NLP_SolverID")
@@ -147,6 +173,8 @@ void init_Optim(pybind11::module& m) {
   ENUMVAL(OT, sos)
   ENUMVAL(OT, ineq)
   ENUMVAL(OT, eq)
+  ENUMVAL(OT, ineqB)
+  ENUMVAL(OT, ineqP)
   .export_values();
 
 #undef ENUMVAL

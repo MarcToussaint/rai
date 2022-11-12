@@ -50,7 +50,7 @@ void init_KOMO(pybind11::module& m) {
   .def("setModel", &KOMO::setModel)
   .def("setTiming", &KOMO::setTiming)
 
-//  .def("makeObjectsFree", [](std::shared_ptr<KOMO>& self, const ry::I_StringA& objs) {
+//  .def("makeObjectsFree", [](std::shared_ptr<KOMO>& self, const std::vector<std::string>& objs) {
 //    self->world.makeObjectsFree(I_conv(objs));
 //  })
 
@@ -86,12 +86,12 @@ void init_KOMO(pybind11::module& m) {
        pybind11::arg("deltaToStep")=0
        )
 #else
-  .def("addObjective", [](std::shared_ptr<KOMO>& self, const arr& times, const FeatureSymbol& feature, const ry::I_StringA& frames, const ObjectiveType& type, const arr& scale, const arr& target, int order) {
-        self->addObjective(times, feature, I_conv(frames), type, scale, target, order);
+  .def("addObjective", [](std::shared_ptr<KOMO>& self, const arr& times, const FeatureSymbol& feature, const std::vector<std::string>& frames, const ObjectiveType& type, const arr& scale, const arr& target, int order) {
+        self->addObjective(times, feature, strvec2StringA(frames), type, scale, target, order);
       }, "",
       pybind11::arg("times"),
       pybind11::arg("feature"),
-      pybind11::arg("frames")=ry::I_StringA(),
+      pybind11::arg("frames")=std::vector<std::string>(),
       pybind11::arg("type"),
       pybind11::arg("scale")=arr(),
       pybind11::arg("target")=arr(),
@@ -179,7 +179,7 @@ void init_KOMO(pybind11::module& m) {
   .def("getPath_qOrg", &KOMO::getPath_qOrg)
 
   .def("getPathFrames", &KOMO::getPath_X)
-//  .def("getPathFrames", [](std::shared_ptr<KOMO>& self, const ry::I_StringA& frames) {
+//  .def("getPathFrames", [](std::shared_ptr<KOMO>& self, const std::vector<std::string>& frames) {
 //    arr X = self->getPath_frames(I_conv(frames));
 //    return arr2numpy(X);
 //  })
