@@ -48,6 +48,18 @@ void F_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
+arr F_PositionDistance::phi(const FrameL& F){
+  if(order>0) return phi_finiteDifferenceReduce(F);
+  arr d = F_PositionDiff().eval(F);
+  arr y = ~d*d;
+  y.elem() = ::sqrt(y.elem());
+  y.J() *= .5/(y.elem()+1e-4);
+
+  return y;
+}
+
+//===========================================================================
+
 void F_Vector::phi2(arr& y, arr& J, const FrameL& F){
   if(order>0){  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 1, "");
@@ -360,3 +372,4 @@ void F_NoJumpFromParent_OBSOLETE::phi2(arr& y, arr& J, const FrameL& F) {
   if(!!J) J = y.J_reset();
   //J.setBlockMatrix(pos.J(), quat.J());
 }
+

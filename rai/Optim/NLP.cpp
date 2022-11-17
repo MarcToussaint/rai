@@ -349,6 +349,8 @@ void NLP_Viewer::display(double mu) {
   if(phi.N>1) {
     lag = make_shared<LagrangianProblem>(P);
     lag->mu = lag->nu = mu;
+    //lag->muLB = mu;
+    //lag->useLB = true;
     nlp_save = P;
     P.reset();
     P = make_shared<Conv_ScalarProblem_NLP>(*lag, d);

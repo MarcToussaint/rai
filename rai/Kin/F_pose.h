@@ -29,6 +29,13 @@ struct F_PositionRel : Feature {
 
 //===========================================================================
 
+struct F_PositionDistance : Feature {
+  virtual arr phi(const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F) { return 1; }
+};
+
+//===========================================================================
+
 struct F_Vector : Feature {
   rai::Vector vec;
   F_Vector(const rai::Vector& _vec) : vec(_vec) {}
