@@ -9,7 +9,7 @@
 .PRECIOUS: %.o
 
 BASE_ORIGINAL := $(BASE)
-BASE := $(shell realpath $(BASE))
+BASE := $(shell readlink -f $(BASE))
 
 
 ################################################################################

@@ -65,7 +65,7 @@ void init_enums(pybind11::module& m){
 #undef ENUMVAL
 #define ENUMVAL(x) .value(#x, rai::_##x)
 
- pybind11::enum_<rai::ArgWord>(m, "arg")
+ pybind11::enum_<rai::ArgWord>(m, "ArgWord")
     ENUMVAL(left)
     ENUMVAL(right)
     ENUMVAL(sequence)
