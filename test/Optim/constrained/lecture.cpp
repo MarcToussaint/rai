@@ -45,9 +45,9 @@ void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start=NoArr, uint iters=
 
     OptNewton newton(x, lag, options);
     lag.getBounds(newton.bounds_lo, newton.bounds_up);
-    newton.reinit(x);
     ofstream fil("z.opt");
     newton.simpleLog = &fil;
+    newton.reinit(x);
     newton.run();
     evals += newton.evals;
 

@@ -152,20 +152,23 @@ struct _ChoiceFunction : ScalarFunction {
     if(which==none) {
       which = (Which) rai::getParameter<double>("fctChoice");
     }
-    if(condition.N!=x.N) {
-      condition.resize(x.N);
-      double cond = rai::getParameter<double>("condition");
-      double curv = rai::getParameter<double>("curvature");
-      if(x.N>1) {
-        for(uint i=0; i<x.N; i++) condition(i) = curv*pow(cond, 0.5*i/(x.N-1));
-      } else {
-        condition = curv;
+    arr C = eye(x.N);
+    double cond = rai::getParameter<double>("condition");
+    if(cond>1.){
+      if(condition.N!=x.N) {
+        condition.resize(x.N);
+        double curv = rai::getParameter<double>("curvature");
+        if(x.N>1) {
+          for(uint i=0; i<x.N; i++) condition(i) = curv*pow(cond, 0.5*i/(x.N-1));
+        } else {
+          condition = curv;
+        }
       }
-    }
 
-    arr C = diag(condition);
-    C(0,1) = C(0,0);
-    C(1,0) = -C(1,1);
+      C = diag(condition);
+      C(0,1) = C(0,0);
+      C(1,0) = -C(1,1);
+    }
     arr y = C * x;
     double f;
     switch(which) {

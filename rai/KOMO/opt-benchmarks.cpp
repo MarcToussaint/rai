@@ -43,7 +43,7 @@ void OptBench_Skeleton::create(const char* modelFile, const rai::Skeleton& S, ra
   }
   komo->addQuaternionNorms();
 
-  S.setKOMO(*komo);
+  S.addObjectives(*komo);
 
   nlp = komo->nlp_SparseNonFactored();
 

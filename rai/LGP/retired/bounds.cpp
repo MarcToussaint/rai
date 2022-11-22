@@ -106,7 +106,7 @@ PoseBound::PoseBound(shared_ptr<KOMO>& komo,
   komo->add_qControlObjective({}, 0, 1e-2);
 #endif
 
-  finalS.setKOMO(*komo);
+  finalS.addObjectives(*komo);
 
   //-- deactivate all velocity objectives except for transition
   for(shared_ptr<Objective>& o:komo->objectives) {
@@ -157,7 +157,7 @@ SeqBound::SeqBound(shared_ptr<KOMO>& komo,
   komo->add_qControlObjective({}, 1, 1e-2);
   komo->add_qControlObjective({}, 0, 1e-2);
 #endif
-  S.setKOMO(*komo);
+  S.addObjectives(*komo);
 
   if(collisions) komo->add_collision(true);
 
@@ -191,7 +191,7 @@ PathBound::PathBound(shared_ptr<KOMO>& komo,
   komo->add_qControlObjective({}, 0, 1e-2);
 #endif
 
-  S.setKOMO(*komo);
+  S.addObjectives(*komo);
 
   if(collisions) komo->add_collision(true, 0., 1e1);
 
@@ -233,7 +233,7 @@ SeqPathBound::SeqPathBound(shared_ptr<KOMO>& komo,
   }
 #endif
 
-  S.setKOMO(*komo);
+  S.addObjectives(*komo);
   //delete all added objectives! -> only keep switches
   //      uint O = komo->objectives.N;
   //      for(uint i=O; i<komo->objectives.N; i++) delete komo->objectives(i);

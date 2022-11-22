@@ -93,7 +93,8 @@ int main(int argc,char** argv){
   ChoiceConstraintFunction F;
 //  RandomLPFunction F;
 //  SimpleConstraintFunction F;
-  lectureDemo(F.ptr(), {.2,.2});
+  arr x_init = rai::getParameter<arr>("x_init", {.3,.2});
+  lectureDemo(F.ptr(), x_init);
 //  testConstraint2(F);
 
 //  testCoveringSphere();

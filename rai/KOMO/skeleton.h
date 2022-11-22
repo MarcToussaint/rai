@@ -30,7 +30,6 @@ stdOutPipe(SkeletonEntry)
 struct SkeletonTranscription {
   std::shared_ptr<KOMO> komo;
   std::shared_ptr<NLP> nlp;
-  std::shared_ptr<NLP_Factored> fmp;
   std::shared_ptr<SolverReturn> ret;
 };
 
@@ -38,8 +37,10 @@ struct SkeletonTranscription {
 
 struct Skeleton {
   Array<SkeletonEntry> S;
-  const Configuration *C=0;
-  std::shared_ptr<KOMO> komo;
+  std::shared_ptr<KOMO> komoWaypoints;
+  std::shared_ptr<KOMO> komoPath;
+  std::shared_ptr<KOMO> komoFinal;
+  StringA collisionPairs;
   bool collisions=false;
   int verbose=1;
 
@@ -47,9 +48,12 @@ struct Skeleton {
   Skeleton(std::initializer_list<SkeletonEntry> entries) : S(entries) {}
 
   //-- set the skeleton
-  void setConfiguration(const Configuration& _C){ C=&_C; } //brittle..
   void setFromStateSequence(Array<Graph*>& states, const arr& times);
   void fillInEndPhaseOfModes();
+
+  //-- add objectives
+  void addExplicitCollisions(const StringA& collisions);
+  void addLiftPriors(const StringA& lift);
 
   //-- skeleton info
   double getMaxPhase() const;
@@ -57,35 +61,32 @@ struct Skeleton {
 
   //-- get NLP transcriptions
   //keyframes
-  SkeletonTranscription nlp(uint stepsPerPhase=1);
-  SkeletonTranscription nlp_finalSlice(); //"pose bound"
-  shared_ptr<NLP> nlp_timeConditional(const uintA& vars, const uintA& cond);
-  shared_ptr<NLP_Factored> nlp_timeFactored();
-  shared_ptr<NLP_Factored> nlp_fineFactored();
+  SkeletonTranscription nlp(const rai::Configuration& C);
+  SkeletonTranscription nlp_finalSlice(const rai::Configuration& C); //"pose bound"
+  shared_ptr<NLP> nlp_timeConditional(const rai::Configuration& C, const uintA& vars, const uintA& cond);
+  shared_ptr<NLP_Factored> nlp_timeFactored(const rai::Configuration& C);
+  shared_ptr<NLP_Factored> nlp_fineFactored(const rai::Configuration& C);
   //path
-  SkeletonTranscription nlp_path(const arrA& waypoints={});
+  SkeletonTranscription nlp_path(const Configuration& C, const arrA& waypoints={});
 
   //-- to be removed (call generic NLPsolver)
-  arr solve(rai::ArgWord sequenceOrPath, int verbose=2);
-  SkeletonTranscription solve2(int verbose=4);
-  shared_ptr<SolverReturn> solve3(bool useKeyframes, int verbose=4);
+  arr solve(const rai::Configuration& C, rai::ArgWord sequenceOrPath, int verbose=2);
+  shared_ptr<SolverReturn> solve2(const rai::Configuration& C, int verbose=4);
+  shared_ptr<SolverReturn> solve3(const rai::Configuration& C, bool useKeyframes, int verbose=4);
 
   //-- drivers
   void getKeyframeConfiguration(rai::Configuration& C, int step, int verbose=0); //get the Configuration (esp. correct switches/dofs) for given step
-  void solve_RRTconnectKeyframes(const arr& keyFrames_X);
+  static void getTwoWaypointProblem(int t2, Configuration& C, arr& q1, arr& q2, KOMO& komoWays);
 
   //not sure
   //void setKOMOBackground(const Animation& _A, const arr& times);
-  void setKOMO(KOMO& komo) const;
-  void setKOMO(KOMO& komo, ArgWord sequenceOrPath, uint stepsPerPhase=30, double accScale=1e0, double lenScale=1e-2, double homingScale=1e-2) const;
+  void addObjectives(KOMO& komoPath) const;
+  shared_ptr<KOMO> setupKOMO(const rai::Configuration& C, ArgWord sequenceOrPath, uint stepsPerPhase=30, double accScale=1e0, double lenScale=1e-2, double homingScale=1e-2) const;
 
   //-- I/O
   void read(istream& is);
   void read_old(istream& is);
   void write(ostream& is, const intA& switches= {}) const;
-
-private:
-  void ensure_komo();
 };
 stdPipes(Skeleton)
 
