@@ -11,7 +11,9 @@
 
 #ifdef RAI_ASSIMP
 
-#define STB_IMAGE_IMPLEMENTATION
+#ifndef RAI_NO_STB_IMPL
+#  define STB_IMAGE_IMPLEMENTATION
+#endif
 #include "stb_image.h"
 
 #include <assimp/scene.h>

@@ -212,7 +212,7 @@ cleanLibs: force
 
 cleanAll: cleanLocks cleanDepends force
 	@echo "   *** cleanAll   " $(PWD)
-	@find $(PWD) $(BASE) $(BASE2) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' -or -name 'x.exe' \) -delete -print
+	@find $(PWD) $(BASE) $(BASE2) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' -or -name 'x.exe' -or -name 'unity.cxx' \) -delete -print
 
 cleanDepends: force
 	@find $(BASE) $(BASE2) -type f -name 'Makefile.dep' -delete -print
@@ -377,8 +377,8 @@ generate_Makefile.dep: $(SRCS)
 	-$(CXX) -MM $(SRCS) $(CFLAGS) $(CXXFLAGS) > Makefile.dep
 
 unity.cxx: $(SRCS)
-	@echo "$(SRCS:%=#include\"%\"\n)" > unity.cxx
-#	find . -maxdepth 1 -name '*.cpp' -fprintf z.unity.cxx '#include "%f"\n'
+	@find . -maxdepth 1 -name '*.cpp' -fprintf unity.cxx '#include "%f"\n'
+#	@echo "$(SRCS:%=#include\"%\"\n)" > unity.cxx
 
 
 

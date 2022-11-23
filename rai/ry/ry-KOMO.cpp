@@ -146,10 +146,10 @@ void init_KOMO(pybind11::module& m) {
            pybind11::arg("elasticity") = .8,
            pybind11::arg("stickiness") = 0.)
 
-  .def("setSkeleton", [](std::shared_ptr<KOMO>& self, const pybind11::list& S, rai::ArgWord sequenceOrPath) {
-    auto SK = list2skeleton(S);
-    SK.setKOMO(*self, sequenceOrPath);
-  })
+    //  .def("setSkeleton", [](std::shared_ptr<KOMO>& self, const pybind11::list& S, rai::ArgWord sequenceOrPath) {
+    //    auto SK = list2skeleton(S);
+    //    SK.setKOMO(*self, sequenceOrPath);
+    //  })
 
 //-- run
 
