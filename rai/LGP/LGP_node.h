@@ -34,7 +34,7 @@ enum BoundType { BD_all=-1,
                  BD_max
                };
 
-rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S, const arrA& waypoints={});
+rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S, const Configuration& C, const arrA& waypoints={});
 
 //===========================================================================
 

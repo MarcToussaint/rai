@@ -92,7 +92,7 @@ namespace rai {
 /// An object that represents a log file and/or cout logging, together with log levels read from a cfg file
 struct LogObject {
   std::ofstream* fil=0;
-  void (*callback)(const char*,int) = 0;
+  bool (*callback)(const char*,int) = 0;
   const char* key;
   int logCoutLevel, logFileLevel;
   LogObject(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0);

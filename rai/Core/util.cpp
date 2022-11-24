@@ -101,9 +101,6 @@ bool IOraw=false;
 bool noLog=true;
 uint lineCount=1;
 int verboseLevel=-1;
-std::string startDir;
-
-std::chrono::system_clock::time_point startTime;
 double timerStartTime=0.;
 double timerPauseTime=-1.;
 bool timerUseRealTime=false;
@@ -111,6 +108,24 @@ bool timerUseRealTime=false;
 #ifdef RAI_QT
 QApplication* myApp=nullptr;
 #endif
+
+struct ProcessInfo {
+  std::string raiPath;
+  std::string startDir;
+  std::chrono::system_clock::time_point startTime;
+
+  ProcessInfo() {
+    raiPath = RAI_ROOT_PATH;
+    startDir = getcwd_string();
+    timerStartTime = cpuTime();
+    startTime = std::chrono::system_clock::now();
+  }
+
+  ~ProcessInfo() {
+  }
+};
+
+Singleton<rai::ProcessInfo> processInfo;
 
 /// running a system command and checking return value
 void system(const char* cmd) {
@@ -374,7 +389,7 @@ double clockTime() {
 /** @brief double time since start of the process in floating-point seconds
   (probably in micro second resolution) -- Windows checked! */
 double realTime() {
-  std::chrono::duration<double> duration = (std::chrono::system_clock::now() - startTime);
+  std::chrono::duration<double> duration = (std::chrono::system_clock::now() - processInfo()->startTime);
   return duration.count();
 }
 
@@ -544,8 +559,8 @@ void initCmdLine(int _argc, char* _argv[]) {
     LOG(1) <<msg;
   }
 
-  startDir = getcwd_string();
-  LOG(1) <<"** run path: '" <<startDir <<"'";
+  LOG(1) <<"** run path: '" <<processInfo()->startDir <<"'";
+  LOG(1) <<"** rai path: '" <<processInfo()->raiPath <<"'";
 
   initParameters(argc, argv, false);
 }
@@ -569,9 +584,13 @@ char* getCmdLineArgument(const char* tag) {
 }
 
 String raiPath(const char* rel) {
-  String path(RAI_ROOT_PATH);
+  String path(processInfo()->raiPath);
   path <<"/" <<rel;
   return path;
+}
+
+void setRaiPath(const char* path){
+  processInfo()->raiPath = path;
 }
 
 bool getInteractivity() {
@@ -596,26 +615,6 @@ double forsyth(double x, double a) {
 //
 // logging
 
-namespace rai {
-void handleSIGUSR2(int) {
-  int i=5;
-  i*=i;    //set a break point here, if you want to catch errors directly
-}
-
-struct ProcessInfo {
-  ProcessInfo() {
-    signal(SIGABRT, handleSIGUSR2);
-    timerStartTime = cpuTime();
-    startTime = std::chrono::system_clock::now();
-  }
-
-  ~ProcessInfo() {
-  }
-};
-
-Singleton<rai::ProcessInfo> processInfo;
-}
-
 rai::LogObject::LogObject(const char* key, int defaultLogCoutLevel, int defaultLogFileLevel)
   : key(key), logCoutLevel(defaultLogCoutLevel), logFileLevel(defaultLogFileLevel) {
   processInfo.getSingleton(); //just to ensure it was created
@@ -623,7 +622,7 @@ rai::LogObject::LogObject(const char* key, int defaultLogCoutLevel, int defaultL
     if(!fil) fil=new ofstream;
     (*fil).open("z.log.global");
     (*fil) <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
-    (*fil) <<"** execution start: " <<rai::date(rai::startTime, false) <<endl;
+    (*fil) <<"** execution start: " <<rai::date(processInfo()->startTime, false) <<endl;
   } else {
     logCoutLevel = rai::getParameter<int>(STRING("logCoutLevel_"<<key), logCoutLevel);
     logFileLevel = rai::getParameter<int>(STRING("logFileLevel_"<<key), logFileLevel);
@@ -657,9 +656,10 @@ rai::LogToken::~LogToken() {
     rai::errStringStream().clear();
     rai::errStringStream() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<(*msg);
     if(msg){ delete msg; msg=0; }
-    if(log.callback) log.callback(rai::errString(), log_level);
+    bool useCout=true;
+    if(log.callback) useCout = log.callback(rai::errString(), log_level);
     if(log_level>=0){
-      cout <<"** INFO:" <<rai::errString() <<endl; return;
+      if(useCout) cout <<"** INFO:" <<rai::errString() <<endl; return;
     } else {
 
 #ifndef RAI_MSVC
@@ -692,10 +692,10 @@ rai::LogToken::~LogToken() {
       }
 #endif
 
-      if(log_level==-1) { cout <<"** WARNING:" <<rai::errString() <<endl; return; }
-      else if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString() <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
+      if(log_level==-1) { if(useCout) cout <<"** WARNING:" <<rai::errString() <<endl; return; }
+      else if(log_level==-2) { if(useCout) cerr <<"** ERROR:" <<rai::errString() <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
       //INSERT BREAKPOINT HERE (or before and after this line)
-      else if(log_level>=-3) { cerr <<"** HARD EXIT! " <<rai::errString() <<endl;  exit(1); }
+      else if(log_level<=-3) { if(useCout) cerr <<"** HARD EXIT! " <<rai::errString() <<endl;  exit(1); }
 //      if(log_level<=-3) raise(SIGABRT);
     }
   }

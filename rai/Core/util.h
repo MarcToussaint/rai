@@ -43,6 +43,7 @@ void system(const char* cmd);
 void open(std::ofstream& fs, const char* name, const char* errmsg="");
 void open(std::ifstream& fs, const char* name, const char* errmsg="");
 String raiPath(const char* rel=nullptr);
+void setRaiPath(const char* path);
 
 //----- very basic ui
 int x11_getKey();
@@ -334,10 +335,10 @@ template<class T> struct ParameterInitEnum {
 // Testing
 //
 
-#ifndef EXAMPLES_AS_TESTS
+#ifndef RAI_REDEFINE_TESTS
 #  define TEST(name) test##name()
 #  define MAIN main
-#else
+#elif defined RAI_GTESTS
 #  define GTEST_DONT_DEFINE_TEST 1
 #  include <gtest/gtest.h>
 #  define TEST(name) test##name(){} GTEST_TEST(examples, name)

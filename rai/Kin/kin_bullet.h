@@ -20,8 +20,8 @@ namespace rai {
     RAI_PARAM("bullet/", bool, multiBody, false)
     RAI_PARAM("bullet/", double, defaultFriction, 1.)
     RAI_PARAM("bullet/", double, defaultRestitution, .1)
-    RAI_PARAM("bullet/", double, contactStiffness, 1e4)
-    RAI_PARAM("bullet/", double, contactDamping, 1e-1)
+    RAI_PARAM("bullet/", double, contactStiffness, 5000.)
+    RAI_PARAM("bullet/", double, contactDamping, 50.)
     RAI_PARAM("bullet/", double, motorKp, .1)
     RAI_PARAM("bullet/", double, motorKd, 1.)
   };

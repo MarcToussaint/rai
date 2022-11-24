@@ -9,7 +9,7 @@
 //===========================================================================
 
 void TEST(Easy){
-  rai::Configuration C("arm.g");
+  rai::Configuration C(rai::raiPath("../rai-robotModels/tests/arm.g"));
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
   
   KOMO komo;
@@ -42,7 +42,7 @@ void TEST(Easy){
 //===========================================================================
 
 void TEST(Align){
-  rai::Configuration C("arm.g");
+  rai::Configuration C(rai::raiPath("../rai-robotModels/tests/arm.g"));
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
 
   KOMO komo;
@@ -145,7 +145,7 @@ struct MyFeature : Feature {
 };
 
 void TEST(Thin){
-  rai::Configuration C("thin.g");
+  rai::Configuration C(rai::raiPath("../rai-robotModels/tests/thin.g"));
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
 
   KOMO komo;
@@ -180,7 +180,7 @@ void TEST(Thin){
 //===========================================================================
 
 void TEST(PR2){
-  rai::Configuration C("model.g");
+  rai::Configuration C(rai::raiPath("../rai-robotModels/tests/pr2Shelf.g"));
   C.optimizeTree(true);
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
   double rand = rai::getParameter<double>("KOMO/moveTo/randomizeInitialPose", .0);
@@ -253,7 +253,7 @@ void TEST(Threading) {
 
 //===========================================================================
 
-int main(int argc,char** argv){
+int MAIN(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
 //  rnd.clockSeed();

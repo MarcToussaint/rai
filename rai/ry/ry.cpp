@@ -22,16 +22,17 @@ void init_CfgFileParameters(){
 
 
 namespace pybind11{
-  void logCallback(const char* str, int log_level){
+  bool logCallback(const char* str, int log_level){
     std::string _str(str);
-    pybind11::print("**ry-c++-log**", str, "flush"_a=true);
-    pybind11::print("flush"_a=true);
+    pybind11::print("[rai]", str, "flush"_a=true);
+    //pybind11::print("flush"_a=true);
+    return false;
   }
 }
 
 void init_LogToPythonConsole(){
   rai::_log.callback = pybind11::logCallback;
-  LOG(0) <<"initializing ry log callback";
+  //LOG(0) <<"initializing ry log callback";
 }
 
 void init_enums(pybind11::module& m);
@@ -43,6 +44,8 @@ PYBIND11_MODULE(libry, m) {
   init_LogToPythonConsole();
   init_CfgFileParameters();
   init_enums(m);
+
+  m.def("setRaiPath", &rai::setRaiPath, "redefine the rai (or rai-robotModels) path");
 
   init_Config(m);
   init_Feature(m);
@@ -58,6 +61,7 @@ PYBIND11_MODULE(libry, m) {
 //  init_CtrlSolver(m);
 
   init_Optim(m);
+  init_tests(m);
 }
 
 void init_enums(pybind11::module& m){

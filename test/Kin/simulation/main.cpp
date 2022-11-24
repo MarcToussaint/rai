@@ -11,7 +11,9 @@
 
 void testPushes(){
   rai::Configuration C;
-  C.addFile("model.g");
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/liftRing.g"));
+  C["box"]->set_Q()->setText("<t(.3 -.1 .25) d(40 1 1 0)>");
+  C["stick"]->set_Q()->setText("<t(-.3 .6 1.1) d(90 1 0 0) d(20 1 1 0)>");
   C.watch(true);
 
   rai::Simulation S(C, S._bullet, true);
@@ -59,7 +61,9 @@ void testPushes(){
 
 void testGrasp(){
   rai::Configuration C;
-  C.addFile("model.g");
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/liftRing.g"));
+  C["box"]->set_Q()->setText("<t(.3 -.1 .25) d(40 1 1 0)>");
+  C["stick"]->set_Q()->setText("<t(-.3 .6 1.1) d(90 1 0 0) d(20 1 1 0)>");
 
   C.selectJointsByName({"finger1", "finger2"}, true);
 
@@ -117,12 +121,14 @@ void testGrasp(){
 
 void testOpenClose(){
   rai::Configuration RealWorld;
-  RealWorld.addFile("model.g"); //../../../../rai-robotModels/scenarios/pandasTable.g");
+  RealWorld.addFile(rai::raiPath("../rai-robotModels/scenarios/liftRing.g"));
+  RealWorld["box"]->set_Q()->setText("<t(.3 -.1 .25) d(40 1 1 0)>");
+  RealWorld["stick"]->set_Q()->setText("<t(-.3 .6 1.1) d(90 1 0 0) d(20 1 1 0)>");
   rai::Simulation S(RealWorld, S._bullet, true);
   //rai::Simulation S(RealWorld, S._physx, true);
 
   rai::Configuration C;
-  C.addFile("model.g"); //../../../../rai-robotModels/scenarios/pandasTable.g");
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/liftRing.g"));
   C.watch(false, "initial");
 
   double tau = .01;
@@ -154,7 +160,7 @@ void testOpenClose(){
 
 //===========================================================================
 
-void makeRndScene(){
+void testRndScene(){
   rai::Configuration C;
 
   for(uint i=0;i<30;i++){
@@ -270,7 +276,7 @@ void testStackOfBlocks(){
 
 void testCompound(){
   rai::Configuration C;
-  C.addFile("compound.g");
+  C.addFile(rai::raiPath("../rai-robotModels/tests/compound.g"));
 
   C.watch(true);
 
@@ -294,10 +300,10 @@ void testCompound(){
 
 //===========================================================================
 
-int main(int argc,char **argv){
+int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  makeRndScene();
+  testRndScene();
   testFriction();
   testStackOfBlocks();
   testCompound();

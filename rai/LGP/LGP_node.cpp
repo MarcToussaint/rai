@@ -39,20 +39,20 @@ template<> const char* rai::Enum<BoundType>::names []= {
   nullptr
 };
 
-rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S,
+rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S, const rai::Configuration& C,
                                            const arrA& waypoints) {
 
   if(boundType==BD_pose)
-    return S.nlp_finalSlice();
+    return S.nlp_finalSlice(C);
 
   if(boundType==BD_seq)
-    return S.nlp();
+    return S.nlp(C);
 
   if(boundType==BD_path)
-    return S.nlp_path();
+    return S.nlp_path(C);
 
   if(boundType==BD_seqPath)
-    return S.nlp_path(waypoints);
+    return S.nlp_path(C, waypoints);
 
   HALT("should not be here!");
 
@@ -131,7 +131,6 @@ void LGP_Node::expand(int verbose) {
 void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   if(tree.filComputes) (*tree.filComputes) <<id <<'-' <<step <<'-' <<bound <<endl;
   ensure_skeleton();
-  skeleton->setConfiguration(tree.kin);
   skeleton->collisions = collisions;
   skeleton->verbose = verbose;
 
@@ -143,7 +142,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
 #if 1
   try {
-    problem(bound) = skeleton2Bound2(bound, *skeleton, waypoints);
+    problem(bound) = skeleton2Bound2(bound, *skeleton, tree.kin, waypoints);
   } catch(std::runtime_error& err) {
     cout <<"CREATING KOMO FOR SKELETON CRASHED: " <<err.what() <<endl;
     if(tree.filComputes) (*tree.filComputes) <<"SKELETON->KOMO CRASHED:" <<*skeleton <<endl;
@@ -330,7 +329,6 @@ void LGP_Node::ensure_skeleton() {
   if(skeleton) return;
 
   skeleton = make_shared<Skeleton>();
-  skeleton->setConfiguration(tree.kin);
 
   Array<Graph*> states;
   arr times;
