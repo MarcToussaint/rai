@@ -376,7 +376,7 @@ endif
 generate_Makefile.dep: $(SRCS)
 	-$(CXX) -MM $(SRCS) $(CFLAGS) $(CXXFLAGS) > Makefile.dep
 
-unity.cxx: $(SRCS)
+unity.cxx: $(SRCS) force
 	@find . -maxdepth 1 -name '*.cpp' -fprintf unity.cxx '#include "%f"\n'
 #	@echo "$(SRCS:%=#include\"%\"\n)" > unity.cxx
 

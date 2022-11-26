@@ -659,7 +659,8 @@ rai::LogToken::~LogToken() {
     bool useCout=true;
     if(log.callback) useCout = log.callback(rai::errString(), log_level);
     if(log_level>=0){
-      if(useCout) cout <<"** INFO:" <<rai::errString() <<endl; return;
+      if(useCout) cout <<"** INFO:" <<rai::errString() <<endl;
+      return;
     } else {
 
 #ifndef RAI_MSVC
