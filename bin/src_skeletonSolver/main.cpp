@@ -31,7 +31,7 @@ int main(int argc,char **argv){
 
   rai::Configuration C;
   C.addFile(confFile);
-  C.watch();
+  C.view();
 
   rai::Skeleton S;
   S.read(FILE(sktFile));

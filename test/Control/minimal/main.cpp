@@ -10,7 +10,7 @@
 void testMinimal(){
   rai::Configuration C;
   C.addFile("scene.g");
-  C.watch(false, "start");
+  C.view(false, "start");
 
   double tau=.01;
 
@@ -36,7 +36,7 @@ void testMinimal(){
     C.stepSwift();
 
     ctrl.report();
-    C.watch(false, STRING("t:" <<t));
+    C.view(false, STRING("t:" <<t));
     rai::wait(.01);
     if(pos->status>AS_running) break;
 //    if(CS.isConverged(ctrl.komo.pathConfig)) break;
@@ -48,7 +48,7 @@ void testMinimal(){
 void testGrasp(){
   rai::Configuration C;
   C.addFile("pandas.g");
-  C.watch(true, "start");
+  C.view(true, "start");
 
   double tau=.01;
 
@@ -100,7 +100,7 @@ void testGrasp(){
     C.stepSwift();
 
     ctrl.report();
-    C.watch(false, STRING(txt <<"t:" <<t));
+    C.view(false, STRING(txt <<"t:" <<t));
     rai::wait(.01);
 //    if(c_pos->status>AS_running) break;
   }
@@ -111,7 +111,7 @@ void testGrasp(){
 void testIneqCarrot(){
   rai::Configuration C;
   C.addFile("pandas.g");
-  C.watch(true, "start");
+  C.view(true, "start");
 
   double tau=.01;
 
@@ -144,7 +144,7 @@ void testIneqCarrot(){
     C.setJointState(q);
 
     ctrl.report();
-    C.watch(false, STRING("mode: " <<mode <<" t:" <<t));
+    C.view(false, STRING("mode: " <<mode <<" t:" <<t));
     rai::wait(.01);
   }
 }

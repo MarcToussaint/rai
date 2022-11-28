@@ -115,6 +115,112 @@ void init_Optim(pybind11::module& m) {
 
   //===========================================================================
 
+  pybind11::class_<rai::OptOptions, std::shared_ptr<rai::OptOptions>>(m, "NLP_SolverOptions", "solver options")
+
+      .def(pybind11::init<>())
+    #define MEMBER(type, name, x) .def("set_" #name, &rai::OptOptions::set_##name)
+    MEMBER(int, verbose, 1)
+    MEMBER(double, stopTolerance, 1e-2)
+    MEMBER(double, stopFTolerance, -1.)
+    MEMBER(double, stopGTolerance, -1.)
+    MEMBER(int, stopEvals, 1000)
+    MEMBER(double, maxStep, .2)
+    MEMBER(double, damping, 1.)
+    MEMBER(double, stepInc, 1.5)
+    MEMBER(double, stepDec, .5)
+    MEMBER(double, wolfe, .01)
+    MEMBER(double, muInit, 1.)
+    MEMBER(double, muInc, 5.)
+    MEMBER(double, muMax, 1e4)
+    MEMBER(double, muLBInit, .1)
+    MEMBER(double, muLBDec, .2)
+    #undef MEMBER
+
+      .def("dict", [](std::shared_ptr<rai::OptOptions>& self) {
+        return graph2dict(rai::Graph{
+                    #define MEMBER(type, name, x) {#name, self->name},
+                    MEMBER(int, verbose, 1)
+                    MEMBER(double, stopTolerance, 1e-2)
+                    MEMBER(double, stopFTolerance, -1.)
+                    MEMBER(double, stopGTolerance, -1.)
+                    MEMBER(int, stopEvals, 1000)
+                    MEMBER(double, maxStep, .2)
+                    MEMBER(double, damping, 1.)
+                    MEMBER(double, stepInc, 1.5)
+                    MEMBER(double, stepDec, .5)
+                    MEMBER(double, wolfe, .01)
+                    MEMBER(double, muInit, 1.)
+                    MEMBER(double, muInc, 5.)
+                    MEMBER(double, muMax, 1e4)
+                    MEMBER(double, muLBInit, .1)
+                    MEMBER(double, muLBDec, .2)
+                    #undef MEMBER
+                          });
+
+        })
+  .def("set", [](std::shared_ptr<rai::OptOptions>& self
+     #define MEMBER(type, name, x) ,type name
+     MEMBER(int, verbose, 1)
+     MEMBER(double, stopTolerance, 1e-2)
+     MEMBER(double, stopFTolerance, -1.)
+     MEMBER(double, stopGTolerance, -1.)
+     MEMBER(int, stopEvals, 1000)
+     MEMBER(double, maxStep, .2)
+     MEMBER(double, damping, 1.)
+     MEMBER(double, stepInc, 1.5)
+     MEMBER(double, stepDec, .5)
+     MEMBER(double, wolfe, .01)
+     MEMBER(double, muInit, 1.)
+     MEMBER(double, muInc, 5.)
+     MEMBER(double, muMax, 1e4)
+     MEMBER(double, muLBInit, .1)
+     MEMBER(double, muLBDec, .2)
+     #undef MEMBER
+       ){
+(*self)
+#define MEMBER(type, name, x) .set_##name(name)
+MEMBER(int, verbose, 1)
+MEMBER(double, stopTolerance, 1e-2)
+MEMBER(double, stopFTolerance, -1.)
+MEMBER(double, stopGTolerance, -1.)
+MEMBER(int, stopEvals, 1000)
+MEMBER(double, maxStep, .2)
+MEMBER(double, damping, 1.)
+MEMBER(double, stepInc, 1.5)
+MEMBER(double, stepDec, .5)
+MEMBER(double, wolfe, .01)
+MEMBER(double, muInit, 1.)
+MEMBER(double, muInc, 5.)
+MEMBER(double, muMax, 1e4)
+MEMBER(double, muLBInit, .1)
+MEMBER(double, muLBDec, .2)
+#undef MEMBER
+    ;
+    return self;
+    }, "set solver options"
+#define MEMBER(type, name, x) , pybind11::arg(#name) = x
+MEMBER(int, verbose, 1)
+MEMBER(double, stopTolerance, 1e-2)
+MEMBER(double, stopFTolerance, -1.)
+MEMBER(double, stopGTolerance, -1.)
+MEMBER(int, stopEvals, 1000)
+MEMBER(double, maxStep, .2)
+MEMBER(double, damping, 1.)
+MEMBER(double, stepInc, 1.5)
+MEMBER(double, stepDec, .5)
+MEMBER(double, wolfe, .01)
+MEMBER(double, muInit, 1.)
+MEMBER(double, muInc, 5.)
+MEMBER(double, muMax, 1e4)
+MEMBER(double, muLBInit, .1)
+MEMBER(double, muLBDec, .2)
+#undef MEMBER
+)
+
+      ;
+
+  //===========================================================================
+
   pybind11::class_<NLP_Solver, std::shared_ptr<NLP_Solver>>(m, "NLP_Solver", "An interface to portfolio of solvers")
 
       .def(pybind11::init<>())
@@ -123,12 +229,17 @@ void init_Optim(pybind11::module& m) {
       .def("setSolver", &NLP_Solver::setSolver)
 
       .def("setTracing", &NLP_Solver::setTracing)
-      .def("solve", &NLP_Solver::solve)
+      .def("solve", &NLP_Solver::solve, "", pybind11::arg("resampleInitialization")=-1)
 
       .def("getTrace_x", &NLP_Solver::getTrace_x)
       .def("getTrace_costs", &NLP_Solver::getTrace_costs)
       .def("getTrace_phi", &NLP_Solver::getTrace_phi)
       .def("getTrace_J", &NLP_Solver::getTrace_J)
+
+      .def("setOptions", &NLP_Solver::setOptions)
+      .def("getOptions", [](std::shared_ptr<NLP_Solver>& self){
+        return self->opt;
+      })
 
       ;
 

@@ -14,7 +14,7 @@ void testPushes(){
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/liftRing.g"));
   C["box"]->set_Q()->setText("<t(.3 -.1 .25) d(40 1 1 0)>");
   C["stick"]->set_Q()->setText("<t(-.3 .6 1.1) d(90 1 0 0) d(20 1 1 0)>");
-  C.watch(true);
+  C.view(true);
 
   rai::Simulation S(C, S._bullet, true);
   //rai::Simulation S(C, S._physx, true);
@@ -129,7 +129,7 @@ void testOpenClose(){
 
   rai::Configuration C;
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/liftRing.g"));
-  C.watch(false, "initial");
+  C.view(false, "initial");
 
   double tau = .01;
 
@@ -139,7 +139,7 @@ void testOpenClose(){
 
     arr q = S.get_q();
     C.setJointState(q);
-    C.watch();
+    C.view();
 
     S.step({}, tau, S._none);
     if(S.getGripperIsClose("gripper")) break;
@@ -151,7 +151,7 @@ void testOpenClose(){
 
     arr q = S.get_q();
     C.setJointState(q);
-    C.watch();
+    C.view();
 
     S.step({}, tau, S._none);
     if(S.getGripperIsOpen("gripper")) break;
@@ -278,11 +278,11 @@ void testCompound(){
   rai::Configuration C;
   C.addFile(rai::raiPath("../rai-robotModels/tests/compound.g"));
 
-  C.watch(true);
+  C.view(true);
 
   rai::Simulation S(C, S._bullet, 4);
 
-  C.watch(true);
+  C.view(true);
 
   double tau=.01;
   Metronome tic(tau);

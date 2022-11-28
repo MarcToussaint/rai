@@ -33,10 +33,10 @@ void dropRandomScene(){
     rai::wait(.01);
     sim.step(.01);
     sim.pullDynamicStates(C);
-    C.watch(false, STRING("t="<<t));
+    C.view(false, STRING("t="<<t));
   }
 
-  C.watch(true);
+  C.view(true);
 }
 
 //===========================================================================
@@ -60,7 +60,7 @@ void simGfile(){
 //    for(auto& f:bots) if(f->ats && (*f->ats)["motors"]){
 //      bull_rai.motorizeMultiBody(f);
 //    }
-    C.watch(true);
+    C.view(true);
     C.gl()->resetPressedKey();
 
     double tau = .01;
@@ -71,7 +71,7 @@ void simGfile(){
       bull_rai.pullDynamicStates(C);
 
       if(tau>glTau || !(t%int(glTau/tau))){
-        int key = C.watch(false, STRING("time t="<<tau*t));
+        int key = C.view(false, STRING("time t="<<tau*t));
         if(key==13 || key==27 || key=='q') break;
       }
 

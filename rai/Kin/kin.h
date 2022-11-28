@@ -245,11 +245,11 @@ struct Configuration : GLDrawer {
   OdeInterface& ode();
   FeatherstoneInterface& fs();
   bool hasView();
-  int watch(bool pause=false, const char* txt=nullptr);
+  int view(bool pause=false, const char* txt=nullptr);
   void saveVideoPic(uint& t, const char* pathPrefix="vid/");
   void glAdd(void (*call)(void*, OpenGL&), void* classP);
   int glAnimate();
-  void glClose();
+  void view_close();
   void stepSwift();
   void stepFcl();
   void stepPhysx(double tau);

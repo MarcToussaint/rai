@@ -256,7 +256,7 @@ void rai::Configuration::glDraw(OpenGL& gl) {
 
 void displayState(const arr& x, rai::Configuration& G, const char* tag) {
   G.setJointState(x);
-  G.watch(true, tag);
+  G.view(true, tag);
 }
 
 void displayTrajectory(const arr& _x, int steps, rai::Configuration& G, const KinematicSwitchL& switches, const char* tag, double delay, uint dim_z, bool copyG) {
@@ -463,12 +463,12 @@ void animateConfiguration(rai::Configuration& C, Inotify* ino) {
       x(i) = center + (delta*(0.5*cos(RAI_2PI*t/steps + offset)));
       // Joint limits
       C.setJointState(x);
-      C.watch(false, STRING("DOF = " <<i), false, false, true);
+      C.view(false, STRING("DOF = " <<i), false, false, true);
       rai::wait(0.01);
     }
   }
   C.setJointState(x0);
-  C.watch(false, "", false, false, true);
+  C.view(false, "", false, false, true);
 }
 
 rai::Body* movingBody=nullptr;
@@ -630,10 +630,10 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
       C.gl().lock.unlock();
     } catch(const char* msg) {
       cout <<"line " <<rai::lineCount <<": " <<msg <<" -- please check the file and press ENTER" <<endl;
-      C.watch(true,);
+      C.view(true,);
       continue;
     }
-    C.watch(false,);
+    C.view(false,);
     cout <<"animating.." <<endl;
     //while(ino.pollForModification());
     animateConfiguration(C, &ino);
@@ -641,7 +641,7 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
 #if 0
     ino.waitForModification();
 #else
-    C.watch(true,);
+    C.view(true,);
 #endif
     if(!rai::getInteractivity()) {
       exit=true;
@@ -651,7 +651,7 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
 
 #if 0 //RAI_ODE
 void testSim(const char* filename, rai::Configuration* C, Ode* ode) {
-  C.watch(true,);
+  C.view(true,);
   uint t, T=200;
   arr x, v;
   createOde(*C, *ode);

@@ -572,7 +572,7 @@ struct CV : public CrossValidation {
         optimalBeta = catCol(optimalBeta, beta);
       }
 
-      if(verbose) world.watch(true, joints(i));
+      if(verbose) world.view(true, joints(i));
     }
     //cout << endl<< endl<< su << endl;
   }

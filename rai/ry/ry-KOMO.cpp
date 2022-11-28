@@ -40,7 +40,7 @@ rai::Skeleton list2skeleton(const pybind11::list& L) {
   return S;
 }
 
-void checkView(shared_ptr<KOMO>& self) { if(self->pathConfig.hasView()) self->pathConfig.watch(); }
+void checkView(shared_ptr<KOMO>& self) { if(self->pathConfig.hasView()) self->pathConfig.view(); }
 
 void init_KOMO(pybind11::module& m) {
   pybind11::class_<KOMO, std::shared_ptr<KOMO>>(m, "KOMO", "Constrained solver to optimize configurations or paths. (KOMO = k-order Markov Optimization)")
@@ -145,6 +145,8 @@ void init_KOMO(pybind11::module& m) {
            pybind11::arg("to"),
            pybind11::arg("elasticity") = .8,
            pybind11::arg("stickiness") = 0.)
+
+  .def("get_nlp", &KOMO::nlp_SparseNonFactored, "return the problem NLP")
 
     //  .def("setSkeleton", [](std::shared_ptr<KOMO>& self, const pybind11::list& S, rai::ArgWord sequenceOrPath) {
     //    auto SK = list2skeleton(S);

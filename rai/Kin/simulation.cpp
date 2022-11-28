@@ -204,7 +204,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->bullet->pullDynamicStates(C); //, self->frameVelocities);
 #ifdef BACK_BRIDGE
     self->bulletBridge->pullPoses(self->bridgeC, true);
-    self->bridgeC.watch(false, "bullet bridge");
+    self->bridgeC.view(false, "bullet bridge");
 #endif
   } else if(engine==_kinematic) {
   } else NIY;

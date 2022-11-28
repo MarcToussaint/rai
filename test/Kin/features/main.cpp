@@ -98,7 +98,7 @@ void testFeature() {
 
     arr y = F.first()->eval(F.first()->getFrames(pathConfig));
 
-    if(!succ) pathConfig.watch(true);
+    if(!succ) pathConfig.view(true);
   }
   cout <<"*** COMPUTE TIME: " <<rai::timerRead() <<"sec" <<endl;
 }

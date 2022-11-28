@@ -19,7 +19,7 @@
 void checkView(shared_ptr<rai::Frame>& self, bool recopyMeshes=false){
   if(self->C.hasView()){
     if(recopyMeshes) self->C.gl()->recopyMeshes(self->C);
-    self->C.watch();
+    self->C.view();
   }
 }
 

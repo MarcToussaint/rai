@@ -109,7 +109,7 @@ void MNode::solvePoseProblem() {
   opt.run();
   //  poseProblem->reportFeatures();
   poseProblem->costReport(false);
-  //    Problem->world.watch(true);
+  //    Problem->world.view(true);
 
   if(!pose.N || opt.newton.fx<poseCost) {
     poseCost = opt.newton.fx;

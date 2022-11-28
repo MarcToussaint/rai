@@ -23,7 +23,7 @@
 #include "../Gui/viewer.h"
 #include "../LGP/LGP_tree.h"
 
-void checkView(shared_ptr<rai::Configuration>& self){ if(self->hasView()) self->watch(); }
+void checkView(shared_ptr<rai::Configuration>& self){ if(self->hasView()) self->view(); }
 void null_deleter(rai::Frame*){}
 
 void init_Config(pybind11::module& m) {
@@ -333,10 +333,10 @@ To get really precise distances and penetrations use the FS.distance feature wit
   pybind11::arg("belowMargin") = 1.
       )
 
-  .def("view", [](shared_ptr<rai::Configuration>& self) {
-    self->gl()->setConfiguration(*self);
-  },
-  "create a viewer for this configuration. Optionally, specify a frame that is the origin of the viewer camera")
+  .def("view",  &rai::Configuration::view,
+       "open a view window for the configuration",
+       pybind11::arg("pause")=false,
+       pybind11::arg("message")=nullptr)
 
   .def("view_recopyMeshes", [](shared_ptr<rai::Configuration>& self) {
     self->gl()->recopyMeshes(*self);
@@ -354,9 +354,8 @@ To get really precise distances and penetrations use the FS.distance feature wit
    return Array2numpy<byte>(rgb);
   })
 
-  .def("view_close", [](shared_ptr<rai::Configuration>& self) {
-    self->gl().reset();
-  }, "close the view")
+  .def("view_close", &rai::Configuration::view_close,
+  "close the view")
 
   .def("cameraView", [](shared_ptr<rai::Configuration>& self) {
     ry::RyCameraView view;

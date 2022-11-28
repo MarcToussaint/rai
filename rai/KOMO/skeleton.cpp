@@ -274,10 +274,10 @@ void Skeleton::getTwoWaypointProblem(int t2, Configuration& C, arr& q1, arr& q2,
   }
   //  if(opt.verbose>1) LOG(0) <<C.getJointNames();
   q1 = C.getJointState();
-  //  FILE("z.g") <<C <<endl;  C.watch(true, "JETZT!");
+  //  FILE("z.g") <<C <<endl;  C.view(true, "JETZT!");
   C.setFrameState(komoWays.getConfiguration_X(t2), C.frames({0,komoWays.world.frames.N-1}));
   q2 = C.getJointState();
-  //  C.watch(true);
+  //  C.view(true);
 }
 
 shared_ptr<KOMO> Skeleton::setupKOMO(const rai::Configuration& C, ArgWord sequenceOrPath, uint stepsPerPhase, double accScale, double lenScale, double homingScale) const {

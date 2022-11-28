@@ -204,7 +204,7 @@ void setTasks(KOMO_ext& MP,
   target.shape->cont=false; //turn off contact penalization with the target
 
 //  MP.world.swift().initActivations(MP.world);
-  //MP.world.watch(false);
+  //MP.world.view(false);
 
   MP.setTiming(1., getParameter<uint>("timeSteps", 50), getParameter<double>("duration", 5.));
   if(timeSteps>=0) MP.setTiming(1., timeSteps, duration);

@@ -38,7 +38,7 @@ void KOMO::init(const Graph& specs) {
   if(glob["computeOptimalSSBoxes"]) {
     NIY;
     //for(Shape *s: world.shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
-    world.watch(true,);
+    world.view(true,);
   }
 
   if(glob["activateAllContacts"])

@@ -146,7 +146,7 @@ arr CtrlSolver::solve() {
 //      animate=2;
   }
 //  komo.checkGradients();
-//  komo.pathConfig.watch(false, "komo");
+//  komo.pathConfig.view(false, "komo");
   return komo.getConfiguration_qOrg(0);
 #else
   return solve_optim(*this);

@@ -265,7 +265,7 @@ void RRT_PathFinder::planForward(const arr& q0, const arr& qT){
     if (verbose > 2){
       if(!(i%100)){
         DISP.setJointState(rrt0->getLast());
-        DISP.watch(false);
+        DISP.view(false);
         std::cout <<"RRT samples=" <<i <<" tree size = " <<rrt0->getNumberNodes() <<std::endl;
       }
     }
@@ -290,8 +290,8 @@ void RRT_PathFinder::planForward(const arr& q0, const arr& qT){
 
     for(uint t=0;t<path.d0;t++){
       DISP.setJointState(path[t]);
-      //DISP.watch();
-      DISP.watch(false);
+      //DISP.view();
+      DISP.view(false);
       rai::wait(.1);
     }
   }
@@ -310,7 +310,7 @@ int RRT_PathFinder::stepConnect(){
   if(verbose>2){
     if(!(iters%100)){
       DISP.setJointState(rrt0->getLast());
-      DISP.watch(verbose>4, STRING("planConnect evals " <<P.evals));
+      DISP.view(verbose>4, STRING("planConnect evals " <<P.evals));
       std::cout <<"RRT queries=" <<P.evals <<" tree sizes = " <<rrt0->getNumberNodes()  <<' ' <<rrtT->getNumberNodes() <<std::endl;
     }
   }
@@ -341,10 +341,10 @@ int RRT_PathFinder::stepConnect(){
         DISP.proxies.clear();
         for(uint t=0;t<path.d0;t++){
           DISP.setJointState(path[t]);
-          DISP.watch(false, STRING("rrt result "<<t));
+          DISP.view(false, STRING("rrt result "<<t));
           rai::wait(.1);
         }
-        DISP.watch(true);
+        DISP.view(true);
         DISP.clear();
       }
     }

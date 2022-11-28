@@ -29,7 +29,7 @@ void generateProblem(rai::Configuration& C){
     C.kinematicsPenetration(y, J);
 //    cout <<"collision costs of config: " <<y.scalar() <<endl;
 //    K.reportProxies(cout, .1, true);
-//    K.watch();
+//    K.view();
     if(y.scalar()==0.) break;
   }
 

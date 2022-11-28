@@ -92,7 +92,7 @@ int main(int argc,char **argv){
 
   //-- continuously animate
   if(file.endsWith(".dae")){
-    C.watch(true);
+    C.view(true);
   }else{
     rai::editConfiguration(file, C);
   }

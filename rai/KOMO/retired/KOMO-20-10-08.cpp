@@ -30,13 +30,13 @@ void KOMO_ext::getPhysicsReference(uint subSteps, int display) {
   for(uint t=0; t<T; t++) {
     for(uint s=0; s<subSteps; s++) {
       px.step(tau/subSteps);
-      if(display) px.watch((display<0), STRING("t="<<t<<";"<<s));
+      if(display) px.view((display<0), STRING("t="<<t<<";"<<s));
     }
     x[t] = world.q;
 //      K.calc_fwdPropagateFrames();
-//    K.watch();
+//    K.view();
   }
-//  K.watch(true);
+//  K.view(true);
   world.setJointState(x[0]);
   if(configurations.N) {
     for(uint s=0; s<k_order; s++) {
@@ -52,7 +52,7 @@ void KOMO_ext::playInPhysics(uint subSteps, bool display) {
     NIY; //get the velocity from consequtive frames?
     px.pushFullState(configurations(k_order+t)->frames, NoArr, true);
     for(uint s=0; s<subSteps; s++) {
-      if(display) px.watch(false, STRING("t="<<t<<";"<<s));
+      if(display) px.view(false, STRING("t="<<t<<";"<<s));
       world.physx().step(tau/subSteps);
     }
     px.pullDynamicStates(configurations(k_order+t)->frames, vels);

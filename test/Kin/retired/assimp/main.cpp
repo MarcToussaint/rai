@@ -13,16 +13,16 @@ void TEST(LoadAssimp){
   const char* filename = "/home/mtoussai/git/bullet3/data/kuka_lwr/meshes_arm/arm_wrist.dae";
   if(rai::argc>1 && rai::argv[1][0]!='-') filename = rai::argv[1];
   K.addAssimp(filename);
-  K.watch(true);
+  K.view(true);
 
   for(auto *f:K.frames){
     f->shape->mesh().fuseNearVertices();
     f->shape->mesh().C = id2color(f->ID);
   }
-  K.watch(true);
+  K.view(true);
 
   makeConvexHulls(K.frames, false);
-  K.watch(true);
+  K.view(true);
 }
 
 // =============================================================================

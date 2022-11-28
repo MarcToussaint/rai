@@ -20,14 +20,14 @@ void TEST(Swift) {
 
     C.reportProxies();
 
-    C.watch(true);
+    C.view(true);
     rai::wait(.1);
   }
 }
 
 void TEST(FCL) {
   rai::Configuration C("../../../../rai-robotModels/pr2/pr2.g");
-  C.watch(true);
+  C.view(true);
 
   C.getCollisionExcludePairIDs(true);
 

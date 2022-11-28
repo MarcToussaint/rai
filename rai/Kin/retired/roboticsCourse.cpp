@@ -72,7 +72,7 @@ Simulator::~Simulator() {
 }
 
 void Simulator::watch(bool pause, const char* txt) {
-  self->G.watch(pause, txt);
+  self->G.view(pause, txt);
 }
 
 void Simulator::getJointAngles(arr& q) {
@@ -91,13 +91,13 @@ uint Simulator::getJointDimension() {
 void Simulator::setJointAngles(const arr& q, bool updateDisplay) {
   self->G.setJointState(q);
   self->G.stepSwift();
-  if(updateDisplay) self->G.watch(false);
+  if(updateDisplay) self->G.view(false);
 }
 
 void Simulator::setJointAnglesAndVels(const arr& q, const arr& qdot, bool updateDisplay) {
   self->G.setJointState(q, qdot);
   self->G.stepSwift();
-  if(updateDisplay) self->G.watch(false);
+  if(updateDisplay) self->G.view(false);
 }
 
 void Simulator::kinematicsPos(arr& y, const char* shapeName, const arr* rel) {

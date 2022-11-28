@@ -25,8 +25,8 @@ void TEST(LoadSave){
   C["panda_finger_joint1"]->ensure_X();
 
   rai::Configuration C2("z.g");
-  C.watch();
-  C2.watch(true);
+  C.view();
+  C2.view(true);
 }
 
 //===========================================================================
@@ -54,7 +54,7 @@ void testJacobianInFile(const char* filename, const char* shape){
 void TEST(ViewerUpdate){
 
   rai::Configuration C("../../../../rai-robotModels/pr2/pr2.g");
-  C.watch();
+  C.view();
 
   for(uint k=0;k<10;k++){
     C.setJointState(C.getJointState() + .1);
@@ -96,7 +96,7 @@ void TEST(Kinematics){
   rai::Configuration C("kinematicTests.g");
 //  rai::Configuration G("../../../../rai-robotModels/pr2/pr2.g");
 //  rai::Configuration G("../../../projects/17-LGP-push/quatJacTest.g");
-//  G.watch(true);
+//  G.view(true);
 
   C.jacMode = C.JM_sparse;
 
@@ -128,7 +128,7 @@ void TEST(Graph){
 //  rai::Configuration K("kinematicTests.g");
   rai::Configuration K("../../../../rai-robotModels/pr2/pr2.g");
 //  rai::Configuration G("../../../projects/17-LGP-push/quatJacTest.g");
-//  G.watch(true);
+//  G.view(true);
 
   K.prefixNames();
   {
@@ -168,7 +168,7 @@ void TEST(QuaternionKinematics){
       if(scalarProduct(conv_quat2arr(target),y)<0.) target.flipSign();
       x += 0.05 * Jinv * (conv_quat2arr(target)-y);                  //simulate a time step (only kinematically)
       G.setJointState(x);
-      G.watch(false, STRING("test quaternion task spaces -- time " <<t));
+      G.view(false, STRING("test quaternion task spaces -- time " <<t));
       rai::wait(.01);
     }
   }
@@ -216,7 +216,7 @@ void TEST(KinematicSpeed){
   for(uint k=0;k<NUM;k++){
     rndUniform(x,-.5,.5,false);
     K.setJointState(x);
-//    G.watch();
+//    G.view();
 //    rai::wait(.1);
   }
   cout <<"kinematics timing: "<< rai::timerRead() <<"sec" <<endl;
@@ -274,8 +274,8 @@ void TEST(Contacts){
     G.jacMode = G.JM_dense;
     G.kinematicsPenetration(con, grad, .2);
     cout <<"contact meassure = " <<con(0) <<endl;
-    //G.watch(true);
-    G.watch(false, STRING("t=" <<t <<"  movement along negative contact gradient (using SWIFT to get contacts)"));
+    //G.view(true);
+    G.view(false, STRING("t=" <<t <<"  movement along negative contact gradient (using SWIFT to get contacts)"));
     //x += inverse(grad)*(-.1*c);
     x -= 3e-3*grad; //.1 * (invJ * grad);
 
@@ -311,7 +311,7 @@ void TEST(Limits){
       x -= 1. * pseudoInverse(lim.J()) * lim;
       checkJacobian(F->vf2(F->getFrames(G)),x,1e-4);
       G.setJointState(x);
-      G.watch();
+      G.view();
     }
   }
 }
@@ -341,7 +341,7 @@ void TEST(PlayStateSequence){
   arr v(X.d1); v=0.;
   for(uint t=0;t<X.d0;t++){
     C.setJointState(X[t]);
-    C.watch(false, STRING("replay of a state sequence -- time " <<t));
+    C.view(false, STRING("replay of a state sequence -- time " <<t));
     rai::wait(.01);
   }
 }
@@ -367,7 +367,7 @@ void TEST(PlayTorqueSequenceInOde){
     G.ode().importStateFromOde();
     G.getJointState(Xt[t](),Vt[t]());
     G.gl()->text.clear() <<"play a random torque sequence [using ODE] -- time " <<t;
-    G.watch();
+    G.view();
   }
 }
 
@@ -406,7 +406,7 @@ void TEST(FollowRedundantSequence){
   for(t=0;t<T;t++) Z[t] += y; //adjust coordinates to be inside the arm range
   plot()->Line(Z);
   G.gl()->add(plot()());
-  G.watch(false);
+  G.view(false);
   //-- follow the trajectory kinematically
   for(t=0;t<T;t++){
     //Z[t] is the desired endeffector trajectory
@@ -417,7 +417,7 @@ void TEST(FollowRedundantSequence){
     x += ~J * lapack_Ainv_b_sym(J*~J, Z[t]-y);
     G.setJointState(x);
 //    cout <<J * invJ <<endl <<x <<endl <<"tracking error = " <<maxDiff(Z[t],y) <<endl;
-    G.watch(false, STRING("follow redundant trajectory -- time " <<t));
+    G.view(false, STRING("follow redundant trajectory -- time " <<t));
     //G.gl()->timedupdate(.01);
     rai::wait(.01);
   }
@@ -471,7 +471,7 @@ void TEST(Dynamics){
 
   ofstream z("z.dyn");
   rai::String text;
-  G.watch();
+  G.view();
 //  for(rai::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
 
   for(t=0;t<T;t++){
@@ -504,7 +504,7 @@ void TEST(Dynamics){
         text.clear() <<"t=" <<t <<"  free swing using RK4,  energy=" <<G.getEnergy(qd);
       }
     }
-    G.watch(false, text);
+    G.view(false, text);
   }
 }
 
@@ -557,7 +557,7 @@ void TEST(ContactDynamics){
     if(false && checkContacts(s)){
       dt=.001;
       addContactsToDynamics=true;
-      //G.watch(true);
+      //G.view(true);
     }else{
       dt=.01;
       addContactsToDynamics=false;
@@ -566,8 +566,8 @@ void TEST(ContactDynamics){
     //G.reportProxies();
     cout <<"*** s = " <<s <<endl;
     G.gl()->text.clear() <<"t=" <<t <<"  using RK4_switch,  energy=" <<G.getEnergy();
-    //if(cross) G.watch(true);
-    G.watch(false);
+    //if(cross) G.view(true);
+    G.view(false);
   }
 }*/
 
@@ -595,7 +595,7 @@ void TEST(BlenderImport){
   OpenGL gl;
   G.glAdd(glStandardScene, nullptr);
   G.glAdd(drawTrimesh,&mesh);
-  G.watch(true, "mesh only");
+  G.view(true, "mesh only");
   G.glAdd(rai::glDrawGraph,&bl);
   G.gl()->text="testing blender import";
   animateConfiguration(bl,gl);
@@ -614,12 +614,12 @@ void TEST(InverseKinematics) {
 
   cout << "destination: " << destination << endl;
   cout << "world state: " << world.q << endl;
-  world.watch(true, STRING("press key to continue"));
+  world.view(true, STRING("press key to continue"));
 
   world.inverseKinematicsPos(*drawer, destination);
   cout << "destination: " << destination << endl;
   cout << "world state: " << world.q << endl;
-  world.watch(true, STRING("press key to continue"));
+  world.view(true, STRING("press key to continue"));
 
   cout << "moving destination (can't be reached)" << endl;
   marker->set_X()->pos.set(2., 1., 1);
@@ -627,7 +627,7 @@ void TEST(InverseKinematics) {
   world.inverseKinematicsPos(*drawer, destination);
   cout << "destination: " << destination << endl;
   cout << "world state: " << world.q << endl;
-  world.watch(true, STRING("press key to continue"));
+  world.view(true, STRING("press key to continue"));
 
   cout << "moving destination (can't be reached)" << endl;
   marker->set_X()->pos.set(-2., 0.1, 1.2);
@@ -635,7 +635,7 @@ void TEST(InverseKinematics) {
   world.inverseKinematicsPos(*drawer, destination);
   cout << "destination: " << destination << endl;
   cout << "world state: " << world.q << endl;
-  world.watch(true, STRING("press key to continue"));
+  world.view(true, STRING("press key to continue"));
 }
 
 // =============================================================================

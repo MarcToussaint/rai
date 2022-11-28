@@ -46,7 +46,7 @@ arr PR2EndPoseProblem::getInitialization() {
 
 void PR2EndPoseProblem::report() {
   cout <<s.MP.getReport();
-  s.world.watch(true);
+  s.world.view(true);
 }
 
 void PR2EndPoseProblem::setState(const arr& x) {

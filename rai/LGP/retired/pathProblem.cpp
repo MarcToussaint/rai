@@ -35,7 +35,7 @@ PathProblem::PathProblem(const rai::Configuration& world_initial,
   //-- set up the KOMO
   MP.T=2*actions.N*microSteps;
   world.swift().initActivations(world);
-//  MP.world.watch(false);
+//  MP.world.view(false);
 
   //-- decide on pickAndPlace times
   uintA tPick(actions.N), tPlace(actions.N), idObject(actions.N);

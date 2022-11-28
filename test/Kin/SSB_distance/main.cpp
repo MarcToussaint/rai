@@ -159,7 +159,7 @@ void TEST(Distance){
     rai::Proxy p; p.a=&A, p.b=&B; p.posA=Pa; p.posB=Pb; p.colorCode=1;
     C.proxies.clear();
     C.proxies.append( p );
-    C.watch(true);
+    C.view(true);
   }
 }
 

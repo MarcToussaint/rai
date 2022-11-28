@@ -55,7 +55,7 @@ void TEST(Dynamics){
 
   ofstream z("z.dyn");
   rai::String text;
-  C.watch();
+  C.view();
 //  for(rai::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
 
   for(t=0;t<T;t++){
@@ -88,7 +88,7 @@ void TEST(Dynamics){
         text.clear() <<"t=" <<t <<"  free swing using RK4,  energy=" <<C.getEnergy(qd);
       }
     }
-    C.watch(false, text);
+    C.view(false, text);
   }
 }
 

@@ -61,7 +61,7 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
   }
   evals++;
 
-  //C.watch();
+  //C.view();
 
   shared_ptr<QueryResult> qr = make_shared<QueryResult>();
 
@@ -132,7 +132,7 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
   //display (link of last joint)
   qr->disp3d = C.activeDofs.elem(-1)->frame->getPosition();
 
-  if(verbose) C.watch(verbose>1, STRING("ConfigurationProblem query:\n" <<*qr));
+  if(verbose) C.view(verbose>1, STRING("ConfigurationProblem query:\n" <<*qr));
 
   return qr;
 }

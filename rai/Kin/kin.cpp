@@ -2119,7 +2119,7 @@ bool Configuration::hasView(){
   return !!self->viewer;
 }
 
-int Configuration::watch(bool pause, const char* txt) {
+int Configuration::view(bool pause, const char* txt) {
 //  gl()->resetPressedKey();
   int key = gl()->setConfiguration(*this, txt, pause);
 //  if(pause) {
@@ -2131,7 +2131,7 @@ int Configuration::watch(bool pause, const char* txt) {
   return key;
 }
 
-void Configuration::glClose() {
+void Configuration::view_close() {
   if(self && self->viewer) self->viewer.reset();
 }
 
@@ -3177,7 +3177,7 @@ double forceClosureFromProxies(Configuration& K, uint frameIndex, double distanc
 
 void displayState(const arr& x, Configuration& G, const char* tag) {
   G.setJointState(x);
-  G.watch(true, tag);
+  G.view(true, tag);
 }
 
 void displayTrajectory(const arr& _x, int steps, Configuration& G, const KinematicSwitchL& switches, const char* tag, double delay, uint dim_z, bool copyG) {
@@ -3394,7 +3394,7 @@ int animateConfiguration(Configuration& C, Inotify* ino) {
       // Joint limits
       checkNan(x);
       C.setJointState(x);
-      int key = C.watch(false, STRING("DOF = " <<i <<" : " <<jointNames(i) <<lim[i]));
+      int key = C.view(false, STRING("DOF = " <<i <<" : " <<jointNames(i) <<lim[i]));
 
       if(key==13 || key==27 || key=='q') {
         C.setJointState(x0);
@@ -3404,7 +3404,7 @@ int animateConfiguration(Configuration& C, Inotify* ino) {
     }
   }
   C.setJointState(x0);
-  return C.watch(true);
+  return C.view(true);
 }
 
 Frame* movingBody=nullptr;
@@ -3592,7 +3592,7 @@ void editConfiguration(const char* filename, Configuration& C) {
       key = C.gl()->setConfiguration(C, "waiting for file change ('h' for help)", false);
       if(key==13 || key==27 || key=='q') break;
       if(key=='h'){
-        C.watch(true, "HELP:\n"
+        C.view(true, "HELP:\n"
                       "RIGHT CLICK - set focus point (move view and set center of rotation)\n"
                       "LEFT CLICK - rotate (ball; or around z at view rim)\n"
                       "q - quit\n"
