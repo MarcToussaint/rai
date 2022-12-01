@@ -10,11 +10,7 @@
 
 #ifdef RAI_FCL
 
-#include <fcl/broadphase/broadphase.h>
-#include <fcl/BVH/BVH_model.h>
-#include <fcl/distance.h>
-#include <fcl/collision.h>
-#include <fcl/collision_data.h>
+#include <fcl/fcl.h>
 
 namespace rai {
 struct ConvexGeometryData {
