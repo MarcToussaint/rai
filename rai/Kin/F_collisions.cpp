@@ -307,7 +307,11 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
     d1 = (*func1)(g1, NoArr, x);
     d2 = (*func2)(g2, NoArr, x);
 
-  //  if(!!J) LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" iters:" <<newton.its;
+  //  if(!!J) LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" (g1+g2):" <<sumOfSqr(g1+g2) <<" iters:" <<newton.its;
+
+    rai::Proxy prox;
+    prox.a = F.elem(0); prox.b = F.elem(1); prox.posA=x-d1*g1; prox.posB=x-d2*g2; prox.normal=g1-g2; prox.d = d1+d2;
+    F.elem(0)->C.proxies.append(prox);
 
     y.resize(1).scalar() = -d1 -d2;
     if(!!J) {
@@ -319,7 +323,6 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
     }
   }
 }
-
 
 void F_PairFunctional::glDraw(OpenGL&) {
 #ifdef RAI_GL

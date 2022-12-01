@@ -1701,7 +1701,9 @@ shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates){
       return make_shared<SDF_ssBox>(pose, size);
     case rai::ST_sdf:
       CHECK(_sdf, "");
+      _sdf->pose = pose;
       return _sdf;
+//      return make_shared<SDF_Transformed>(pose, _sdf);
     default:
       return shared_ptr<ScalarFunction>();
   }

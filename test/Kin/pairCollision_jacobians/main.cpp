@@ -276,7 +276,7 @@ void TEST(Functional) {
 
     gl.clear();
     gl.add(glStandardScene);
-    gl.add(dist);
+//    gl.add(dist);
     gl.add(C);
     gl.update(STRING(t), true);
     /*if(!succ)*/ gl.watch();

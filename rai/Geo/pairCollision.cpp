@@ -149,7 +149,7 @@ PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const a
   double d1 = func1(g1, NoArr, x);
   double d2 = func2(g2, NoArr, x);
 
-  cout <<"d1^2+d2^2:" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<endl;
+//  cout <<"d1^2+d2^2:" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" (g1+g2):" <<sumOfSqr(g1+g2) <<endl;
 
 //  CHECK_ZERO(d1-d2, 1e-4, "point should have equal distance (pos or negative) to both surfaces!");
 //  CHECK_ZERO(sumOfSqr(g1+g2), 1e-4, "gradients should exactly oppose!");

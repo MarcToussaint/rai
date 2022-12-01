@@ -3044,9 +3044,9 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
     }
 
     //proxies
-//    if(orsDrawProxies) for(const Proxy& p: proxies) {
-//        ((Proxy*)&p)->glDraw(gl);
-//      }
+    if(gl.drawOptions.drawProxies) for(const Proxy& p: proxies) {
+        ((Proxy*)&p)->glDraw(gl);
+      }
 
     for(Frame* fr: F) for(ForceExchange* f:fr->forces) {
       if(f->sign(fr)>0.) f->glDraw(gl);

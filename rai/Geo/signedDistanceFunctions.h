@@ -79,6 +79,14 @@ struct SDF_Torus : SDF {
   double f(arr& g, arr& H, const arr& _x);
 };
 
+struct SDF_Transformed : SDF {
+  rai::Transformation pose;
+  std::shared_ptr<SDF> sdf;
+  SDF_Transformed(const rai::Transformation& _pose, const std::shared_ptr<SDF>& _sdf)
+    : pose(_pose), sdf(_sdf) {}
+  double f(arr& g, arr& H, const arr& x);
+};
+
 struct SDF_GridData : SDF {
   rai::Transformation pose=0;
   floatA gridData;

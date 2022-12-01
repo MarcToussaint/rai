@@ -327,6 +327,16 @@ SDF_GridData::SDF_GridData(SDF& f, const arr& _lo, const arr& _up, const uintA& 
   gridData.reshape({res(0)+1, res(1)+1, res(2)+1});
 }
 
+double SDF_Transformed::f(arr& g, arr& H, const arr& x){
+  arr rot = pose.rot.getArr();
+  arr x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
+
+  double f = sdf->f(g, H, x_rel);
+  g = rot*g;
+  H = rot*H*(~rot);
+  return f;
+}
+
 double SDF_GridData::f(arr& g, arr& H, const arr& x){
   arr rot = pose.rot.getArr();
   arr x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
