@@ -175,7 +175,7 @@ intA Skeleton::getSwitches(const rai::Configuration& C) const {
 }
 
 arr Skeleton::solve(const rai::Configuration& C, ArgWord sequenceOrPath, int verbose) {
-  komoPath = setupKOMO(C, sequenceOrPath);
+  komoPath = getKomo_path(C, sequenceOrPath);
   komoPath->optimize();
   //  komo->checkGradients();
 
@@ -190,7 +190,7 @@ arr Skeleton::solve(const rai::Configuration& C, ArgWord sequenceOrPath, int ver
 }
 
 shared_ptr<SolverReturn> Skeleton::solve2(const rai::Configuration& C, int verbose){
-  auto T = this->nlp(C);
+  auto T = this->nlp_waypoints(C);
 
   NLP_Solver sol;
   sol.setProblem(T.nlp);
@@ -203,7 +203,7 @@ shared_ptr<SolverReturn> Skeleton::solve2(const rai::Configuration& C, int verbo
 }
 
 shared_ptr<SolverReturn> Skeleton::solve3(const rai::Configuration& C, bool useKeyframes, int verbose){
-  auto waypointsT = this->nlp(C);
+  auto waypointsT = this->nlp_waypoints(C);
 
   shared_ptr<SolverReturn> ret;
   {
@@ -240,6 +240,7 @@ shared_ptr<SolverReturn> Skeleton::solve3(const rai::Configuration& C, bool useK
 }
 
 void Skeleton::getKeyframeConfiguration(Configuration& C, int step, int verbose){
+  DEPR;
   //note: the alternative would be to copy the frames komo.timeSlices[step] into a new config
   CHECK(komoPath, "");
   CHECK_EQ(komoPath->k_order, 1, "");
@@ -280,25 +281,16 @@ void Skeleton::getTwoWaypointProblem(int t2, Configuration& C, arr& q1, arr& q2,
   //  C.view(true);
 }
 
-shared_ptr<KOMO> Skeleton::setupKOMO(const rai::Configuration& C, ArgWord sequenceOrPath, uint stepsPerPhase, double accScale, double lenScale, double homingScale) const {
+shared_ptr<KOMO> Skeleton::getKomo_path(const rai::Configuration& C, uint stepsPerPhase, double accScale, double lenScale, double homingScale) const {
   shared_ptr<KOMO> komo=make_shared<KOMO>();
   komo->opt.verbose = verbose-2;
-
   komo->setModel(C, collisions);
-  //CHECK(komo->world.frames.N, "komo->setModel needs to be set before");
 
   double maxPhase = getMaxPhase();
-  if(sequenceOrPath==rai::_sequence) {
-    komo->setTiming(maxPhase, 1, 5., 1);
-    if(lenScale>0.) komo->add_qControlObjective({}, 1, lenScale);
-    if(homingScale>0.) komo->add_qControlObjective({}, 0, homingScale);
-  } else {
-    komo->setTiming(maxPhase, stepsPerPhase, 5., 2);
-    if(accScale>0.) komo->add_qControlObjective({}, 2, accScale);
-    if(homingScale>0.) komo->add_qControlObjective({}, 0, homingScale);
-  }
+  komo->setTiming(maxPhase, stepsPerPhase, 5., 2);
+  if(accScale>0.) komo->add_qControlObjective({}, 2, accScale);
+  if(homingScale>0.) komo->add_qControlObjective({}, 0, homingScale);
   komo->addQuaternionNorms();
-
   if(collisions) komo->add_collision(true);
 
   addObjectives(*komo);
@@ -307,43 +299,36 @@ shared_ptr<KOMO> Skeleton::setupKOMO(const rai::Configuration& C, ArgWord sequen
   return komo;
 }
 
-SkeletonTranscription Skeleton::nlp(const rai::Configuration& C){
-  SkeletonTranscription T;
-  T.komo = setupKOMO(C, rai::_sequence, 1, -1., 1e-2, 1e-2);
-  T.nlp = T.komo->nlp_SparseNonFactored();
-  return T;
-}
-
-SkeletonTranscription Skeleton::nlp_path(const rai::Configuration& C, const arrA& waypoints){
-  SkeletonTranscription T;
-  T.komo = make_shared<KOMO>();
-  uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
-  T.komo = setupKOMO(C, rai::_sequence, stepsPerPhase, 1., -1e-2, 1e-2);
-
-  if(waypoints.N){
-    T.komo->initWithWaypoints(waypoints, 1);
-//    komo->opt.animateOptimization = 2;
-  }else{
-    T.komo->run_prepare(.01);
-  }
-
-  T.nlp = T.komo->nlp_SparseNonFactored();
-  return T;
-}
-
-SkeletonTranscription Skeleton::nlp_finalSlice(const rai::Configuration& C){
-  SkeletonTranscription T;
-  T.komo = make_shared<KOMO>();
-  T.komo->opt.verbose=verbose;
+shared_ptr<KOMO> Skeleton::getKomo_waypoints(const Configuration& C, double lenScale, double homingScale) const {
+  shared_ptr<KOMO> komo=make_shared<KOMO>();
+  komo->opt.verbose = verbose-2;
+  komo->setModel(C, collisions);
 
   double maxPhase = getMaxPhase();
+  komo->setTiming(maxPhase, 1, 5., 1);
+  if(lenScale>0.) komo->add_qControlObjective({}, 1, lenScale);
+  if(homingScale>0.) komo->add_qControlObjective({}, 0, homingScale);
+  komo->addQuaternionNorms();
+  if(collisions) komo->add_collision(true);
+
+  //komo->copyObjectives(komoPath);
+  addObjectives(*komo);
+
+  komo->run_prepare(0.);
+  return komo;
+}
+
+shared_ptr<KOMO> Skeleton::getKOMO_finalSlice(const rai::Configuration& C, double lenScale, double homingScale){
+  shared_ptr<KOMO> komo=make_shared<KOMO>();
+  komo->opt.verbose = verbose-2;
 
   //-- prepare the komo problem
+  double maxPhase = getMaxPhase();
   double optHorizon=maxPhase;
   if(optHorizon<1.) optHorizon=maxPhase=1.;
   if(optHorizon>2.) optHorizon=2.;
 
-  //-- remove non-switches
+  //-- create another skeleton, with non-switches removed
   rai::Skeleton finalS;
   for(const rai::SkeletonEntry& s:S) {
     if(rai::skeletonModes.contains(s.symbol)
@@ -355,37 +340,23 @@ SkeletonTranscription Skeleton::nlp_finalSlice(const rai::Configuration& C){
       if(fs.phase1<0.) fs.phase1=0.;
     }
   }
-#if 0
-  //-- grep only the latest entries in the skeleton
-  Skeleton finalS;
-  for(const SkeletonEntry& s:S) if(s.phase0>=maxPhase) {
-      finalS.append(s);
-      finalS.last().phase0 -= maxPhase-1.;
-      finalS.last().phase1 -= maxPhase-1.;
-    }
-#endif
 
-  if(T.komo->opt.verbose>1) {
+  if(komo->opt.verbose>1) {
     cout <<"POSE skeleton:" <<endl;
     finalS.write(cout, finalS.getSwitches(C));
   }
 
-  T.komo->setModel(C, collisions);
-  T.komo->setTiming(optHorizon, 1, 10., 1);
+  komo->setModel(C, collisions);
+  komo->setTiming(optHorizon, 1, 10., 1);
+  if(lenScale>0.) komo->add_qControlObjective({}, 1, lenScale);
+  if(homingScale>0.) komo->add_qControlObjective({}, 0, homingScale);
+  komo->addQuaternionNorms();
+  if(collisions) komo->add_collision(false);
 
-  T.komo->addQuaternionNorms();
-#if 0
-  T.komo->setHoming(0., -1., 1e-2);
-  T.komo->setSquaredQVelocities(1., -1., 1e-1); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
-#else
-  T.komo->add_qControlObjective({}, 1, 1e-2);
-  T.komo->add_qControlObjective({}, 0, 1e-2);
-#endif
-
-  finalS.addObjectives(*T.komo);
+  finalS.addObjectives(*komo);
 
   //-- deactivate all velocity objectives except for transition
-  for(shared_ptr<Objective>& o:T.komo->objectives) {
+  for(shared_ptr<Objective>& o:komo->objectives) {
     if(o->feat->order>0
        && !std::dynamic_pointer_cast<F_qItself>(o->feat)
        && !std::dynamic_pointer_cast<F_Pose>(o->feat)
@@ -393,7 +364,7 @@ SkeletonTranscription Skeleton::nlp_finalSlice(const rai::Configuration& C){
       o->times={1e6};
     }
   }
-  for(shared_ptr<GroundedObjective>& o:T.komo->objs) {
+  for(shared_ptr<GroundedObjective>& o:komo->objs) {
     if(o->feat->order>0
        && !std::dynamic_pointer_cast<F_qItself>(o->feat)
        && !std::dynamic_pointer_cast<F_Pose>(o->feat)
@@ -401,19 +372,41 @@ SkeletonTranscription Skeleton::nlp_finalSlice(const rai::Configuration& C){
       o->feat.reset();
     }
   }
-  for(uint i=T.komo->objs.N;i--;) if(!T.komo->objs(i)->feat){
-    T.komo->objs.remove(i);
+  for(uint i=komo->objs.N;i--;) if(!komo->objs(i)->feat){
+    komo->objs.remove(i);
   }
 
-  if(collisions) T.komo->add_collision(false);
+  komo->run_prepare(.01);
+  return komo;
+}
 
-  T.komo->run_prepare(.01);
-  //      T.komo->setPairedTimes();
+SkeletonTranscription Skeleton::nlp_waypoints(const rai::Configuration& C){
+  SkeletonTranscription T;
+  T.komo = getKomo_waypoints(C, 1e-2, 1e-2);
+  T.nlp = T.komo->nlp_SparseNonFactored();
+  return T;
+}
+
+SkeletonTranscription Skeleton::nlp_path(const rai::Configuration& C, const arrA& initWaypoints){
+  SkeletonTranscription T;
+  uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
+  T.komo = getKomo_path(C, stepsPerPhase, 3e-1, -1e-2, 1e-2);
+
+  if(initWaypoints.N){
+    T.komo->initWithWaypoints(initWaypoints, 1);
+//    komo->opt.animateOptimization = 2;
+  }
 
   T.nlp = T.komo->nlp_SparseNonFactored();
   return T;
 }
 
+SkeletonTranscription Skeleton::nlp_finalSlice(const rai::Configuration& C){
+  SkeletonTranscription T;
+  T.komo = getKOMO_finalSlice(C, 1e-2, 1e-2);
+  T.nlp = T.komo->nlp_SparseNonFactored();
+  return T;
+}
 
 void Skeleton::addObjectives(KOMO& komo) const {
   //-- add objectives for mode switches

@@ -189,6 +189,17 @@ void KOMO::clearObjectives() {
   reset();
 }
 
+void KOMO::copyObjectives(KOMO& komoB, bool deepCopyFeatures){
+  for(const std::shared_ptr<Objective>& o: komoB.objectives){
+    std::shared_ptr<Feature> f = o->feat;
+    if(f->order==2 && k_order<=1) continue;
+    if(f->order==1 && (o->times.N==1 || o->times(1)-o->times(0)<1.)) continue;
+    if(deepCopyFeatures) f = f->deepCopy();
+    //std::shared_ptr<Objective> ocopy = make_shared<Objective>(f, o->type, o->name, o->times);
+    addObjective(o->times, f, {}, o->type);
+  }
+}
+
 void KOMO::_addObjective(const std::shared_ptr<Objective>& ob, const intA& timeSlices){
   objectives.append(ob);
 
@@ -226,11 +237,11 @@ shared_ptr<Objective> KOMO::addObjective(const arr& times,
 
   //-- create a (non-grounded) objective
   CHECK_GE(k_order, f->order, "task requires larger k-order: " <<f->shortTag(world));
-  std::shared_ptr<Objective> task = make_shared<Objective>(f, type, f->shortTag(world), times);
+  std::shared_ptr<Objective> o = make_shared<Objective>(f, type, f->shortTag(world), times);
 
   //-- create the grounded objectives
-  _addObjective(task, timeSlices);
-  return task;
+  _addObjective(o, timeSlices);
+  return o;
 }
 
 

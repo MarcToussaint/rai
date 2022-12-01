@@ -51,6 +51,11 @@ struct Skeleton {
   void setFromStateSequence(Array<Graph*>& states, const arr& times);
   void fillInEndPhaseOfModes();
 
+  //-- addEntry
+  void addEntry(const arr& timeInterval, SkeletonSymbol symbol, StringA frames){
+    S.append(SkeletonEntry(timeInterval(0), timeInterval(-1), symbol, frames));
+  }
+
   //-- add objectives
   void addExplicitCollisions(const StringA& collisions);
   void addLiftPriors(const StringA& lift);
@@ -59,34 +64,39 @@ struct Skeleton {
   double getMaxPhase() const;
   intA getSwitches(const Configuration& C) const;
 
-  //-- get NLP transcriptions
+  //-- get KOMO transcriptions (grab the NLP directly from KOMO)
+  shared_ptr<KOMO> getKomo_path(const rai::Configuration& C, uint stepsPerPhase=30, double accScale=1e0, double lenScale=1e-2, double homingScale=1e-2) const;
+  shared_ptr<KOMO> getKomo_waypoints(const rai::Configuration& C, double lenScale=1e-2, double homingScale=1e-2) const;
+  shared_ptr<KOMO> getKOMO_finalSlice(const rai::Configuration& C, double lenScale=1e-2, double homingScale=1e-2);
+
+  //-- get same as above, with "Transcription"
   //keyframes
-  SkeletonTranscription nlp(const rai::Configuration& C);
+  SkeletonTranscription nlp_waypoints(const rai::Configuration& C);
+  SkeletonTranscription nlp_path(const Configuration& C, const arrA& initWaypoints={});
   SkeletonTranscription nlp_finalSlice(const rai::Configuration& C); //"pose bound"
-  shared_ptr<NLP> nlp_timeConditional(const rai::Configuration& C, const uintA& vars, const uintA& cond);
-  shared_ptr<NLP_Factored> nlp_timeFactored(const rai::Configuration& C);
-  shared_ptr<NLP_Factored> nlp_fineFactored(const rai::Configuration& C);
-  //path
-  SkeletonTranscription nlp_path(const Configuration& C, const arrA& waypoints={});
 
-  //-- to be removed (call generic NLPsolver)
-  arr solve(const rai::Configuration& C, rai::ArgWord sequenceOrPath, int verbose=2);
-  shared_ptr<SolverReturn> solve2(const rai::Configuration& C, int verbose=4);
-  shared_ptr<SolverReturn> solve3(const rai::Configuration& C, bool useKeyframes, int verbose=4);
-
-  //-- drivers
-  void getKeyframeConfiguration(rai::Configuration& C, int step, int verbose=0); //get the Configuration (esp. correct switches/dofs) for given step
+  //-- get path finding problem between 2 waypoints
   static void getTwoWaypointProblem(int t2, Configuration& C, arr& q1, arr& q2, KOMO& komoWays);
 
-  //not sure
-  //void setKOMOBackground(const Animation& _A, const arr& times);
-  void addObjectives(KOMO& komoPath) const;
-  shared_ptr<KOMO> setupKOMO(const rai::Configuration& C, ArgWord sequenceOrPath, uint stepsPerPhase=30, double accScale=1e0, double lenScale=1e-2, double homingScale=1e-2) const;
 
   //-- I/O
   void read(istream& is);
   void read_old(istream& is);
   void write(ostream& is, const intA& switches= {}) const;
+
+  //lower level (used within getKomo_*): add skeleton's objective to KOMO
+  void addObjectives(KOMO& komoPath) const;
+
+  //-------- deprecated
+  void getKeyframeConfiguration(rai::Configuration& C, int step, int verbose=0); //get the Configuration (esp. correct switches/dofs) for given step
+  shared_ptr<NLP> nlp_timeConditional(const rai::Configuration& C, const uintA& vars, const uintA& cond);
+  shared_ptr<NLP_Factored> nlp_timeFactored(const rai::Configuration& C);
+  shared_ptr<NLP_Factored> nlp_fineFactored(const rai::Configuration& C);
+  //-- to be removed (call generic NLPsolver)
+  arr solve(const rai::Configuration& C, rai::ArgWord sequenceOrPath, int verbose=2);
+  shared_ptr<SolverReturn> solve2(const rai::Configuration& C, int verbose=4);
+  shared_ptr<SolverReturn> solve3(const rai::Configuration& C, bool useKeyframes, int verbose=4);
+
 };
 stdPipes(Skeleton)
 

@@ -46,7 +46,7 @@ rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S
     return S.nlp_finalSlice(C);
 
   if(boundType==BD_seq)
-    return S.nlp(C);
+    return S.nlp_waypoints(C);
 
   if(boundType==BD_path)
     return S.nlp_path(C);
@@ -219,6 +219,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   Graph result = komo->getReport((komo->opt.verbose>0 && bound>=2));
   DEBUG(FILE("z.problem.cost") <<result;);
 //  cout <<komo->getCollisionPairs() <<endl;
+  if(bound==BD_seqPath || bound==BD_path) cout <<result <<endl;
 
   double cost_here = komo->sos;
   double constraints_here = komo->ineq + komo->eq;
