@@ -95,6 +95,19 @@ inline std::vector<std::string> StringA2strvec(const StringA& x) {
   return y;
 }
 
+inline arrA npvec2arrA(const std::vector<pybind11::array_t<double>>& x) {
+  arrA y(x.size());
+  for(uint i=0; i<y.N; i++) y(i) = numpy2arr<double>(x[i]);
+  return y;
+}
+
+inline std::vector<pybind11::array_t<double>> arrA2npvec(const arrA& x) {
+  LOG(0) <<"converting";
+  std::vector<pybind11::array_t<double>> y;
+  for(const arr& z:x) y.push_back(arr2numpy(z));
+  return y;
+}
+
 inline rai::Graph map2Graph(const std::map<std::string, std::string>& x) {
   return rai::Graph(x);
 }
@@ -142,18 +155,36 @@ namespace detail {
   public:
     PYBIND11_TYPE_CASTER(StringA, _("StringA"));
 
-    /// Conversion part 1 (Python->C++): convert numpy array to rai::Array<T>
+    /// Python->C++
     bool load(pybind11::handle src, bool) {
       std::vector<std::string> strings = src.cast<std::vector<std::string>>();
       value = strvec2StringA(strings);
-      /* Ensure return code was OK (to avoid out-of-range errors etc) */
       return !PyErr_Occurred();
     }
 
-    /// Conversion part 2 (C++ -> Python): convert rai::Array<T> instance to numpy array
+    /// C++ -> Python
     static handle cast(const StringA& src, return_value_policy /* policy */, handle /* parent */) {
       std::vector<std::string> strings = StringA2strvec(src);
       return pybind11::cast(strings);
+    }
+  };
+
+  //** arrA <--> vector<numpy>
+  template <> struct type_caster<arrA> {
+  public:
+    PYBIND11_TYPE_CASTER(arrA, _("arrA"));
+
+    /// Python->C++
+    bool load(pybind11::handle src, bool) {
+      std::vector<pybind11::array_t<double>> arrs = src.cast<std::vector<pybind11::array_t<double>>>();
+      value = npvec2arrA(arrs);
+      return !PyErr_Occurred();
+    }
+
+    /// C++ -> Python
+    static handle cast(const arrA& src, return_value_policy /* policy */, handle /* parent */) {
+      std::vector<pybind11::array_t<double>> arrs = arrA2npvec(src);
+      return pybind11::cast(arrs);
     }
   };
 

@@ -178,7 +178,10 @@ void init_KOMO(pybind11::module& m) {
 
   .def("getFrameState", &KOMO::getConfiguration_X)
 
+  .def("initWithWaypoints", &KOMO::initWithWaypoints, "", pybind11::arg("waypoints"), pybind11::arg("waypointStepsPerPhase")=1, pybind11::arg("verbose")=-1 )
+
   .def("getPath_qOrg", &KOMO::getPath_qOrg)
+  .def("getPath_qAll", [](std::shared_ptr<KOMO>& self) { return arrA2npvec(self->getPath_qAll()); } )
 
   .def("getPathFrames", &KOMO::getPath_X)
 //  .def("getPathFrames", [](std::shared_ptr<KOMO>& self, const std::vector<std::string>& frames) {

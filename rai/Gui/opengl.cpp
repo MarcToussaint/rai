@@ -2299,7 +2299,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
         cam->unproject_fromPixelsAndGLDepth(x, width, height);
         cam->focus(x);
       }
-      LOG(1) <<"FOCUS: world coords: " <<x;
+      //LOG(1) <<"FOCUS: world coords: " <<x;
     }
     needsUpdate=true;
   }

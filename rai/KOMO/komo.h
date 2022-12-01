@@ -272,9 +272,9 @@ public:
   }
   void activateCollisions(const char* s1, const char* s2){ DEPR; HALT("see komo-21-03-06"); }
   void deactivateCollisions(const char* s1, const char* s2);
-  arr getFrameStateX(int t){ DEPR; return getConfiguration_X(t); }
-  arr getPath_qAll(int t){ DEPR; return getConfiguration_qOrg(t); }
-  arr getConfiguration_q(int t) { DEPR; return getConfiguration_qAll(t); }
+  //arr getFrameStateX(int t){ DEPR; return getConfiguration_X(t); }
+  //arr getPath_qAll(int t){ DEPR; return getConfiguration_qOrg(t); }
+  //arr getConfiguration_q(int t) { DEPR; return getConfiguration_qAll(t); }
   //arr getPath_qOrg(uintA joints, const bool activesOnly){ DEPR; return getPath_qOrg(); }
 
 //private:

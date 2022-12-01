@@ -51,6 +51,7 @@ PYBIND11_MODULE(libry, m) {
   init_Feature(m);
   init_Frame(m);
   init_KOMO(m);
+  init_Skeleton(m);
 //  init_LGP_Tree(m);
   init_Bullet(m);
 //  init_PhysX(m);
