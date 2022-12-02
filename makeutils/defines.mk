@@ -351,7 +351,7 @@ ifeq ($(EIGEN),1)
 DEPEND_UBUNTU += libeigen3-dev
 CXXFLAGS += -DRAI_EIGEN -fopenmp
 LDFLAGS += -fopenmp
-CPATH := $(CPATH):/usr/include/eigen3
+CPATH := $(CPATH):/usr/include/eigen3:/usr/local/include/eigen3
 endif
 
 ifeq ($(HYBRID_AUTOMATON),1)

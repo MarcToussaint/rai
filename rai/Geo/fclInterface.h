@@ -10,19 +10,11 @@
 
 #include "mesh.h"
 
-namespace fcl {
-class CollisionObject;
-class DynamicAABBTreeCollisionManager;
-class BroadPhaseCollisionManager;
-}
-
 namespace rai {
 
 struct FclInterface {
-  Array<shared_ptr<struct ConvexGeometryData>> convexGeometryData;
-  std::vector<fcl::CollisionObject*> objects;
-  shared_ptr<fcl::BroadPhaseCollisionManager> manager;
-
+  struct FclInterface_self* self=0;
+  
   double cutoff=0.; //0 -> perform fine boolean collision check; >0 -> perform fine distance computations; <0 -> only broadphase
   uintA collisions; //return values!
   arr X_lastQuery;  //memory to check whether an object has moved in consecutive queries
@@ -32,9 +24,9 @@ struct FclInterface {
 
   void step(const arr& X);
 
-private: //called by collision callback
+protected:
+  friend FclInterface_self;
   void addCollision(void* userData1, void* userData2);
-  static bool BroadphaseCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2, void* cdata_);
 };
 
 }

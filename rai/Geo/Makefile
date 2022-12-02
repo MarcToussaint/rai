@@ -6,6 +6,7 @@ OPTIM = fast_debug
 
 DEPEND = Core Optim Algo
 
+EIGEN = 1
 QHULL = 1
 GL = 1
 ASSIMP = 1

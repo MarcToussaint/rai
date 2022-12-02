@@ -10,26 +10,62 @@
 
 #ifdef RAI_FCL
 
-#include <fcl/fcl.h>
+#include <fcl/config.h>
+#if FCL_MINOR_VERSION >= 6
+#  include <fcl/fcl.h>
+typedef fcl::CollisionObject<float> CollObject;
+typedef fcl::Vector3<float> Vec3f;
+typedef fcl::Quaternionf Quaternionf;
+typedef fcl::BroadPhaseCollisionManager<float> BroadPhaseCollisionManager;
+typedef fcl::DynamicAABBTreeCollisionManager<float> DynamicAABBTreeCollisionManager;
+typedef fcl::CollisionRequest<float> CollisionRequest;
+typedef fcl::CollisionResult<float> CollisionResult;
+typedef fcl::DistanceRequest<float> DistanceRequest;
+typedef fcl::DistanceResult<float> DistanceResult;
+#else
+#  include <fcl/broadphase/broadphase.h>
+#  include <fcl/BVH/BVH_model.h>
+#  include <fcl/distance.h>
+#  include <fcl/collision.h>
+#  include <fcl/collision_data.h>
+typedef fcl::CollisionObject CollObject;
+typedef fcl::Vec3f Vec3f;
+typedef fcl::Quaternion3f Quaternionf;
+typedef fcl::BroadPhaseCollisionManager BroadPhaseCollisionManager;
+typedef fcl::DynamicAABBTreeCollisionManager DynamicAABBTreeCollisionManager;
+typedef fcl::CollisionRequest CollisionRequest;
+typedef fcl::CollisionResult CollisionResult;
+typedef fcl::DistanceRequest DistanceRequest;
+typedef fcl::DistanceResult DistanceResult;
+#endif
 
 namespace rai {
 struct ConvexGeometryData {
   arr plane_dis;
   intA polygons;
 };
-}
 
-rai::FclInterface::FclInterface(const rai::Array<shared_ptr<Mesh>>& geometries, double _cutoff)
+struct FclInterface_self{
+  Array<shared_ptr<struct ConvexGeometryData>> convexGeometryData;
+  std::vector<CollObject*> objects;
+  shared_ptr<BroadPhaseCollisionManager> manager;
+
+  static bool BroadphaseCallback(CollObject* o1, CollObject* o2, void* cdata_);
+};
+
+FclInterface::FclInterface(const Array<shared_ptr<Mesh>>& geometries, double _cutoff)
   : cutoff(_cutoff) {
-  convexGeometryData.resize(geometries.N);
+  self = new FclInterface_self;
+  
+  self->convexGeometryData.resize(geometries.N);
   for(long int i=0; i<geometries.N; i++) {
     if(geometries(i)) {
-      rai::Mesh& mesh = *geometries(i);
+      Mesh& mesh = *geometries(i);
 #if 0
       auto model = make_shared<fcl::BVHModel<fcl::OBBRSS>>();
       model->beginModel();
       for(uint i=0; i<mesh.T.d0; i++)
-        model->addTriangle(fcl::Vec3f(&mesh.V(mesh.T(i, 0), 0)), fcl::Vec3f(&mesh.V(mesh.T(i, 1), 0)), fcl::Vec3f(&mesh.V(mesh.T(i, 2), 0)));
+        model->addTriangle(Vec3f(&mesh.V(mesh.T(i, 0), 0)), Vec3f(&mesh.V(mesh.T(i, 1), 0)), Vec3f(&mesh.V(mesh.T(i, 2), 0)));
       model->endModel();
 #elif 1
       mesh.computeNormals();
@@ -38,53 +74,65 @@ rai::FclInterface::FclInterface(const rai::Array<shared_ptr<Mesh>>& geometries, 
       copy<int>(dat->polygons, mesh.T);
       dat->polygons.insColumns(0);
       for(uint i=0; i<dat->polygons.d0; i++) dat->polygons(i, 0) = 3;
+#if FCL_MINOR_VERSION >= 7
+      std::vector<fcl::Vector3<float>> verts(mesh.V.d0);
+      std::vector<int> faces(mesh.T.N) ;
+      for(uint i=0;i<verts.size();i++) verts[i] = {(float)mesh.V(i,0), (float)mesh.V(i,1), (float)mesh.V(i,2)};
+      for(uint i=0;i<faces.size();i++) faces[i] = mesh.T.elem(i);
+      auto model = make_shared<fcl::Convex<float>>(std::make_shared<const std::vector<fcl::Vector3<float>>>(std::move(verts)),
+						   mesh.T.d0,
+						   std::make_shared<const std::vector<int>>(std::move(faces)),
+						   true);
+#else
       auto model = make_shared<fcl::Convex>((fcl::Vec3f*)mesh.Tn.p, dat->plane_dis.p, mesh.T.d0, (fcl::Vec3f*)mesh.V.p, mesh.V.d0, (int*)dat->polygons.p);
-      convexGeometryData(i) = dat;
+#endif
+      self->convexGeometryData(i) = dat;
 #else
       auto model = make_shared<fcl::Sphere>(mesh.getRadius());
 #endif
-      fcl::CollisionObject* obj = new fcl::CollisionObject(model, fcl::Transform3f());
+      CollObject* obj = new CollObject(model, fcl::Transform3f());
       obj->setUserData((void*)(i));
-      objects.push_back(obj);
+      self->objects.push_back(obj);
     }
   }
 
 //  manager = make_shared<fcl::IntervalTreeCollisionManager>();
-  manager = make_shared<fcl::DynamicAABBTreeCollisionManager>();
+  self->manager = make_shared<DynamicAABBTreeCollisionManager>();
 //  manager = make_shared<fcl::SaPCollisionManager>();
 //  manager = make_shared<fcl::NaiveCollisionManager>();
 //  manager = new fcl::SpatialHashingCollisionManager();
-  manager->registerObjects(objects);
-  manager->setup();
+  self->manager->registerObjects(self->objects);
+  self->manager->setup();
 }
 
-rai::FclInterface::~FclInterface() {
-  for(size_t i = 0; i < objects.size(); ++i)
-    delete objects[i];
+FclInterface::~FclInterface() {
+  for(size_t i = 0; i < self->objects.size(); ++i)
+    delete self->objects[i];
+  delete self;
 }
 
-void rai::FclInterface::step(const arr& X) {
+void FclInterface::step(const arr& X) {
   CHECK_EQ(X.nd, 2, "");
-  CHECK_EQ(X.d0, convexGeometryData.N, "");
+  CHECK_EQ(X.d0, self->convexGeometryData.N, "");
   CHECK_EQ(X.d1, 7, "");
 
-  for(auto* obj:objects) {
+  for(auto* obj:self->objects) {
     uint i = (long int)obj->getUserData();
     if(i<X_lastQuery.d0 && maxDiff(X_lastQuery[i], X[i])<1e-8) continue;
-    obj->setTranslation(fcl::Vec3f(X(i, 0), X(i, 1), X(i, 2)));
-    obj->setQuatRotation(fcl::Quaternion3f(X(i, 3), X(i, 4), X(i, 5), X(i, 6)));
+    obj->setTranslation(Vec3f(X(i, 0), X(i, 1), X(i, 2)));
+    obj->setQuatRotation(Quaternionf(X(i, 3), X(i, 4), X(i, 5), X(i, 6)));
     obj->computeAABB();
   }
-  manager->update();
+  self->manager->update();
 
   collisions.clear();
-  manager->collide(this, BroadphaseCallback);
+  self->manager->collide(this, FclInterface_self::BroadphaseCallback);
   collisions.reshape(collisions.N/2, 2);
 
   X_lastQuery = X;
 }
 
-void rai::FclInterface::addCollision(void* userData1, void* userData2) {
+void FclInterface::addCollision(void* userData1, void* userData2) {
   uint a = (long int)userData1;
   uint b = (long int)userData2;
   collisions.resizeCopy(collisions.N+2);
@@ -92,27 +140,29 @@ void rai::FclInterface::addCollision(void* userData1, void* userData2) {
   collisions.elem(-1) = b;
 }
 
-bool rai::FclInterface::BroadphaseCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2, void* cdata_) {
-  rai::FclInterface* self = static_cast<rai::FclInterface*>(cdata_);
+bool FclInterface_self::BroadphaseCallback(CollObject* o1, CollObject* o2, void* cdata_) {
+  FclInterface* fcl = static_cast<FclInterface*>(cdata_);
 
-  if(self->cutoff==0.) { //fine boolean collision query
-    fcl::CollisionRequest request;
-    fcl::CollisionResult result;
+  if(fcl->cutoff==0.) { //fine boolean collision query
+    CollisionRequest request;
+    CollisionResult result;
     fcl::collide(o1, o2, request, result);
-    if(result.isCollision()) self->addCollision(o1->getUserData(), o2->getUserData());
-  } else if(self->cutoff>0.) { //fine distance query
-    fcl::DistanceRequest request;
-    fcl::DistanceResult result;
+    if(result.isCollision()) fcl->addCollision(o1->getUserData(), o2->getUserData());
+  } else if(fcl->cutoff>0.) { //fine distance query
+    DistanceRequest request;
+    DistanceResult result;
     fcl::distance(o1, o2, request, result);
-    if(result.min_distance<self->cutoff) self->addCollision(o1->getUserData(), o2->getUserData());
+    if(result.min_distance<fcl->cutoff) fcl->addCollision(o1->getUserData(), o2->getUserData());
   } else { //just broadphase
-    self->addCollision(o1->getUserData(), o2->getUserData());
+    fcl->addCollision(o1->getUserData(), o2->getUserData());
   }
   return false;
 }
+  
+}//namespace
 
 #else //RAI_FCL
-rai::FclInterface::FclInterface(const Array<shared_ptr<Mesh>>& _geometries, double _cutoff) { NICO }
+rai::FclInterface::FclInterface(const rai::Array<shared_ptr<Mesh>>& _geometries, double _cutoff) { NICO }
 rai::FclInterface::~FclInterface() { NICO }
 void rai::FclInterface::step(const arr& X) { NICO }
 #endif
