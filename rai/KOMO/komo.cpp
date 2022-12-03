@@ -102,7 +102,7 @@ KOMO::~KOMO() {
 }
 
 void KOMO::setModel(const Configuration& C, bool _computeCollisions) {
-  orgJointIndices = C.getJointIDs();
+  orgJointIndices = C.getDofIDs();
   if(&C!=&world) world.copy(C, _computeCollisions);
   computeCollisions = _computeCollisions;
   if(computeCollisions) {
@@ -802,7 +802,20 @@ void getDofsAndSignFromFramePairs(DofL& dofs, arr& signs, const FrameL& F){
   }
 }
 
-uintA KOMO::initWithWaypoints_pieceWiseConstant(const arrA& waypoints, uint waypointStepsPerPhase, int verbose) {
+void KOMO::initPhaseWithDofsPath(uint t_phase, const uintA& dofIDs, const arr& path_org, bool autoResamplePath){
+  arr path;
+  if(autoResamplePath && path_org.d0!=stepsPerPhase){
+    path = path_resampleLinear(path_org, stepsPerPhase);
+  }else{
+    path.referTo(path_org);
+  }
+  CHECK_EQ(path.d0, stepsPerPhase, "given path is of wrong length");
+  for(uint tt=0;tt<path.d0-1;tt++){
+    pathConfig.setJointState(path[tt], dofIDs + (k_order+stepsPerPhase*t_phase+tt)*timeSlices.d1);
+  }
+}
+
+uintA KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, bool interpolate, int verbose) {
 
   //compute in which steps (configuration time slices) the waypoints are imposed
   uintA steps(waypoints.N);
@@ -847,15 +860,13 @@ uintA KOMO::initWithWaypoints_pieceWiseConstant(const arrA& waypoints, uint wayp
     }
   }
 
-  return steps;
-}
-
-void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, int verbose) {
-
-  uintA steps = initWithWaypoints_pieceWiseConstant(waypoints, waypointStepsPerPhase, verbose);
-
   if(verbose>0){
     view(true, STRING("initWithWaypoints - after keyframes->constant"));
+  }
+
+  if(!interpolate){
+    run_prepare(0.);
+    return steps;
   }
 
   //then interpolate w.r.t. non-switching frames within the intervals
@@ -928,6 +939,8 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
   }
 
   run_prepare(0.);
+
+  return steps;
 }
 
 void KOMO::initWithPath_qOrg(const arr& q){
@@ -955,7 +968,7 @@ void KOMO::straightenCtrlFrames_mod2Pi(){
 
 void KOMO::addWaypointsInterpolationObjectives(const arrA& waypoints, uint waypointStepsPerPhase) {
 
-  uintA steps = initWithWaypoints_pieceWiseConstant(waypoints, waypointStepsPerPhase);
+  uintA steps = initWithWaypoints(waypoints, waypointStepsPerPhase, false);
 
   for(uint k=0; k<steps.N; k++) {
     uint t0=0; if(k) t0 = steps(k-1);

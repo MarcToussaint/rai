@@ -178,7 +178,12 @@ void init_KOMO(pybind11::module& m) {
 
   .def("getFrameState", &KOMO::getConfiguration_X)
 
-  .def("initWithWaypoints", &KOMO::initWithWaypoints, "", pybind11::arg("waypoints"), pybind11::arg("waypointStepsPerPhase")=1, pybind11::arg("verbose")=-1 )
+  .def("initOrg", &KOMO::initOrg, "" )
+  .def("initRandom", &KOMO::initRandom, "", pybind11::arg("verbose")=0 )
+  .def("initWithConstant", &KOMO::initWithConstant, "", pybind11::arg("q") )
+  .def("initWithPath_qOrg", &KOMO::initWithPath_qOrg, "", pybind11::arg("q") )
+  .def("initWithWaypoints", &KOMO::initWithWaypoints, "", pybind11::arg("waypoints"), pybind11::arg("waypointStepsPerPhase")=1, pybind11::arg("interpolate")=false, pybind11::arg("verbose")=-1 )
+  .def("initPhaseWithDofsPath", &KOMO::initPhaseWithDofsPath, "", pybind11::arg("t_phase"), pybind11::arg("dofIDs"), pybind11::arg("path"), pybind11::arg("autoResamplePath")=false )
 
   .def("getPath_qOrg", &KOMO::getPath_qOrg)
   .def("getPath_qAll", [](std::shared_ptr<KOMO>& self) { return arrA2npvec(self->getPath_qAll()); } )

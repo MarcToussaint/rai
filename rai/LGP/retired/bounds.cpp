@@ -242,7 +242,7 @@ SeqPathBound::SeqPathBound(shared_ptr<KOMO>& komo,
   if(collisions) komo->add_collision(true, 0., 1e1);
 
   komo->run_prepare(.01);
-  komo->initWithWaypoints(waypoints, waypointsStepsPerPhase);
+  komo->initWithWaypoints(waypoints, waypointsStepsPerPhase, true);
   //      cout <<komo->getPath_times() <<endl;
 
 }

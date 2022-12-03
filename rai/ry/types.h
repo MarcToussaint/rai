@@ -31,8 +31,8 @@ template<class T> std::vector<uint> vecdim(const rai::Array<T>& x){
 }
 
 template<class T> std::vector<T> Array2vec(const rai::Array<T>& x) {
-  std::vector<T> y;
-  for(const T& s:x) y.push_back(s);
+  std::vector<T> y(x.N);
+  for(uint i=0;i<x.N;i++) y[i] = x.elem(i);
   return y;
 }
 
@@ -102,7 +102,6 @@ inline arrA npvec2arrA(const std::vector<pybind11::array_t<double>>& x) {
 }
 
 inline std::vector<pybind11::array_t<double>> arrA2npvec(const arrA& x) {
-  LOG(0) <<"converting";
   std::vector<pybind11::array_t<double>> y;
   for(const arr& z:x) y.push_back(arr2numpy(z));
   return y;
@@ -216,12 +215,14 @@ namespace detail {
   public:
     PYBIND11_TYPE_CASTER(rai::Array<T>, _("Array<T>"));
 
+    /// Python->C++
     bool load(pybind11::handle src, bool) {
       std::vector<T> x = src.cast<std::vector<T>>();
       value = vec2Array<T>(x);
       return !PyErr_Occurred();
     }
 
+    /// C++ -> Python
     static handle cast(const rai::Array<T>& src, return_value_policy /* policy */, handle /* parent */) {
       std::vector<T> x = Array2vec<T>(src);
       return pybind11::cast(x);

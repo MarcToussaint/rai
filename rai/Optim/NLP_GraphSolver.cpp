@@ -118,6 +118,7 @@ bool NLP_GraphSolver::solveFull() {
   //checkJacobianCP(*P, subSolver.x, 1e-4);
   P->report(cout, 4, STRING("OPT full"));
   x = ret->x;
+  dual = ret->dual=dual;
   return ret->feasible;
 }
 

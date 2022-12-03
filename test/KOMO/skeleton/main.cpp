@@ -35,7 +35,7 @@ void testPickAndPlace(rai::ArgWord pathOrSeq){
     { 2., 2., rai::SY_poseEq, {"box2", "target2"} },
     { 2., -1., rai::SY_stable, {"table", "box2"} },
   };
-  S.setKOMO(komo);
+  S.addObjectives(komo);
 
   komo.optimize();
 
@@ -70,7 +70,7 @@ void testPickAndPush(rai::ArgWord pathOrSeq){
     {2., -1, rai::SY_contact, {"stick", "box"} },
     {3., 3., rai::SY_poseEq, {"box", "target"} },
   };
-  S.setKOMO(komo);
+  S.addObjectives(komo);
 
   komo.optimize();
 
@@ -109,7 +109,7 @@ void testPickAndThrow(rai::ArgWord pathOrSeq){
     { 4., 4., rai::SY_poseEq, {"box2", "target2"} },
     { 4., -1., rai::SY_stable, {"table", "box2"} },
   };
-  S.setKOMO(komo);
+  S.addObjectives(komo);
 
   komo.optimize();
 
@@ -124,10 +124,6 @@ void testTouchAndRoll(rai::ArgWord pathOrSeq){
   rai::Configuration C;
   C.addFile("model.g");
 
-  KOMO komo;
-
-  komo.setModel(C, false);
-
   //grasp
   rai::Skeleton S = {
     { 1., 1., rai::SY_touch, {"handB", "ball"} },
@@ -135,13 +131,16 @@ void testTouchAndRoll(rai::ArgWord pathOrSeq){
     { 1., -1., rai::SY_dynamicOn, {"table", "ball"} },
     { 2., 2., rai::SY_touch, {"ball", "box"} },
   };
-  S.setKOMO(komo, pathOrSeq);
 
-  komo.optimize();
+  std::shared_ptr<KOMO> komo;
+  if(pathOrSeq==rai::_path) komo = S.getKomo_path(C);
+  else komo=S.getKomo_waypoints(C);
 
-  komo.getReport(true);
-  komo.view(true, "optimized motion");
-  while(komo.view_play(true, 1.));
+  komo->optimize();
+
+  komo->getReport(true);
+  komo->view(true, "optimized motion");
+  while(komo->view_play(true, 1.));
 }
 
 //===========================================================================
@@ -181,7 +180,7 @@ void testWalkAndPick(rai::ArgWord pathOrSeq){
     { 4., 4., rai::SY_poseEq, {"box", "target"} },
     { 4., -1., rai::SY_stable, {"table", "box"} },
   };
-  S.setKOMO(komo);
+  S.addObjectives(komo);
 
   komo.optimize();
 
@@ -220,7 +219,7 @@ void testHandover(rai::ArgWord pathOrSeq){
     //touch something
     { 3., -1., rai::SY_touch, {"stick", "ball"} },
   };
-  S.setKOMO(komo);
+  S.addObjectives(komo);
 
   komo.optimize();
 
@@ -302,7 +301,7 @@ void testStackAndBalance(rai::ArgWord pathOrSeq){
     { 5., 5., rai::SY_contact, {"box1", "box3"} },
 
   };
-  S.setKOMO(komo);
+  S.addObjectives(komo);
 
   komo.optimize();
 
@@ -351,7 +350,7 @@ void testWalking(rai::ArgWord pathOrSeq){
     //touch something
     { 4., 4., rai::SY_touch, {"handA", "stick"} },
   };
-  S.setKOMO(komo);
+  S.addObjectives(komo);
 
   komo.optimize();
 

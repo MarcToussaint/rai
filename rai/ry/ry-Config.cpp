@@ -157,6 +157,11 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("joints") = std::vector<std::string>()
       )
 
+  .def("getDofIDs", [](shared_ptr<rai::Configuration>& self){
+      uintA dofIDs = self->getDofIDs();
+      return Array2vec<uint>(dofIDs);
+  }, "" )
+
 //  .def("setJointState", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& q, const uintA& joints) {
 //    if(joints.N) {
 //      self->setJointState(arr(q, true), joints);

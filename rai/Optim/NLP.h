@@ -152,6 +152,7 @@ struct NLP_Viewer {
 
 struct SolverReturn {
   arr x;
+  arr dual;
   uint evals=0;
   double time=0.;
   bool feasible=false;

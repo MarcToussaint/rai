@@ -393,7 +393,7 @@ SkeletonTranscription Skeleton::nlp_path(const rai::Configuration& C, const arrA
   T.komo = getKomo_path(C, stepsPerPhase, 3e-1, -1e-2, 1e-2);
 
   if(initWaypoints.N){
-    T.komo->initWithWaypoints(initWaypoints, 1);
+    T.komo->initWithWaypoints(initWaypoints, 1, true);
 //    komo->opt.animateOptimization = 2;
   }
 

@@ -257,6 +257,8 @@ MEMBER(double, muLBDec, .2)
       .def_readwrite("sos", &SolverReturn::sos)
       .def_readwrite("ineq", &SolverReturn::ineq)
       .def_readwrite("eq", &SolverReturn::eq)
+      .def("__str__", [](std::shared_ptr<SolverReturn>& self) {  rai::String str;  str <<(*self);  return std::string(str.p); } )
+
   .def("dict", [](std::shared_ptr<SolverReturn>& self) {
     return graph2dict(rai::Graph{
       {"evals", self->evals},

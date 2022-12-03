@@ -437,12 +437,15 @@ FrameL Configuration::getJointsSlice(const FrameL& slice, bool activesOnly) cons
 }
 
 /// get the frame IDs of all active joints
-uintA Configuration::getJointIDs() const {
+uintA Configuration::getDofIDs() const {
   ((Configuration*)this)->ensure_indexedJoints();
-  uintA joints(activeDofs.N);
+  uintA dofIDs(activeDofs.N);
   uint i=0;
-  for(Dof* j:activeDofs) joints(i++) = j->frame->ID;
-  return joints;
+  for(Dof* d:activeDofs){
+    CHECK(d->frame, "dof " <<*d <<" does not have frame!");
+    dofIDs.elem(i++) = d->frame->ID;
+  }
+  return dofIDs;
 }
 
 /// get the frame names of all active joints
