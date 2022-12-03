@@ -26,6 +26,7 @@
 #endif
 
 #ifdef RAI_GL
+#  include <GL/glew.h>
 #  include <GL/gl.h>
 #  include <GL/glu.h>
 #  ifdef RAI_CUDA

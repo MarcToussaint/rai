@@ -1,3 +1,5 @@
+#pragma once
+
 #include "komo.h"
 #include "skeleton.h"
 

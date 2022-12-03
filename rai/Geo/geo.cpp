@@ -15,6 +15,7 @@
 #include <math.h>
 
 #ifdef RAI_GL
+#  include <GL/glew.h>
 #  include <GL/glu.h>
 #endif
 

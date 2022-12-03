@@ -6,6 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#pragma once
+
 #include "../Core/array.h"
 
 struct Kalman {

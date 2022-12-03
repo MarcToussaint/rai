@@ -6,6 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#pragma once
+
 #include "NLP_Solver.h"
 
 struct NLP_GraphSolver : NonCopyable {

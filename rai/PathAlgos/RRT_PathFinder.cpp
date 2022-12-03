@@ -2,7 +2,6 @@
 
 #include "../Gui/opengl.h"
 #include "../Kin/viewer.h"
-#include "../GL/gl.h"
 
 double corput(uint n, uint base){
   double q=0;
