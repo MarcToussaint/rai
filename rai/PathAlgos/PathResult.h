@@ -6,10 +6,11 @@
 
 struct PathResult{
   arr path;
-  arr Xpath;
+  uint evals=0;
+  double time=0.;
   int feasible=-1;
-  double duration=-1.;
-  double cost=-1., ineq=-1., eq=-1.;
+  double duration=-1., f=-1., ineq=-1., eq=-1.;
+  bool done=false;
   bool ineqFeasible(double eps=1e-3){ return ineq<=eps && eq<=eps; }
 
   PathResult() {}
@@ -20,7 +21,7 @@ struct PathResult{
     if(path.N) os <<" path-dim:" <<path.dim();
     if(feasible>=0) os <<" feasible:" <<feasible;
     if(duration>=0) os <<" duration:" <<duration;
-    if(cost>=0) os <<" cost:" <<cost <<" ineq:" <<ineq <<" eq:" <<eq;
+    if(f>=0) os <<" cost:" <<f <<" ineq:" <<ineq <<" eq:" <<eq;
   }
 };
 stdOutPipe(PathResult)

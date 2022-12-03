@@ -372,8 +372,44 @@ void revertPath(arr& path){
   }
 }
 
-shared_ptr<PathResult> RRT_PathFinder::run(double timeBudget){
+arr RRT_PathFinder::run(double timeBudget){
   planConnect();
-  return make_shared<PathResult>(path);
+  return path;
 }
 
+namespace rai {
+
+PathFinder& PathFinder::setProblem(const Configuration& C, const arr& starts, const arr& goals){
+    problem = make_shared<ConfigurationProblem>(C, true, .01);
+    for(Frame *f:problem->C.frames) f->ensure_X();
+    rrtSolver = make_shared<RRT_PathFinder>(*problem, starts, goals, .05);
+    return *this;
+}
+
+PathFinder& PathFinder::setExplicitCollisionPairs(const StringA& collisionPairs){
+    problem->setExplicitCollisionPairs(collisionPairs);
+    return *this;
+}
+
+shared_ptr<SolverReturn> PathFinder::solve(){
+    while(!step());
+    return ret;
+}
+
+bool PathFinder::step(){
+    if(!ret) ret = make_shared<SolverReturn>();
+
+    ret->time -= rai::cpuTime();
+    int r = rrtSolver->stepConnect();
+    ret->time += rai::cpuTime();
+
+    ret->done = (r!=0);
+    ret->feasible = (r==1);
+    if(r==1) ret->x = rrtSolver->path;
+    if(r-=1) ret->x.clear();
+    ret->evals++;
+
+    return ret->done;
+}
+
+} //namespace

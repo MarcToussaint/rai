@@ -14,5 +14,6 @@
 
 void init_KOMO(pybind11::module& m);
 void init_Skeleton(pybind11::module& m);
+void init_PathAlgos(pybind11::module& m);
 
 #endif

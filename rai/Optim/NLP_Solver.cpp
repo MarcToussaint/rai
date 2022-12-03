@@ -95,7 +95,6 @@ shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
 
   time += rai::cpuTime();
   ret->x=x;
-  ret->dual=dual;
   ret->evals=P->evals;
   ret->time = time;
   return ret;
@@ -139,7 +138,6 @@ bool NLP_Solver::step(){
   ret->time += rai::cpuTime();
 
   ret->x=x;
-  ret->dual=dual;
   ret->evals=P->evals;
 
   arr feats = optCon->L.get_totalFeatures();

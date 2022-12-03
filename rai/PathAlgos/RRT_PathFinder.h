@@ -76,11 +76,33 @@ struct RRT_PathFinder {
   bool growTreeTowardsRandom(RRT_SingleTree& rrt);
   bool growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B);
 
-  virtual shared_ptr<PathResult> run(double timeBudget=1.); //obsolete
+  arr run(double timeBudget=1.); //obsolete
 
 
 private:
   rai::Configuration DISP;
 };
+
+//===========================================================================
+
+namespace rai {
+
+struct PathFinder : NonCopyable {
+  std::shared_ptr<ConfigurationProblem> problem;
+  std::shared_ptr<RRT_PathFinder> rrtSolver;
+  std::shared_ptr<SolverReturn> ret;
+
+  PathFinder& setProblem(const rai::Configuration& C, const arr& starts, const arr& goals);
+
+  PathFinder& setExplicitCollisionPairs(const StringA& collisionPairs);
+
+  shared_ptr<SolverReturn> solve();
+
+  bool step();
+};
+
+} //namespace
+
+//===========================================================================
 
 void revertPath(arr& path);

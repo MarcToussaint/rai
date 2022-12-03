@@ -25,21 +25,6 @@ enum NLopt_SolverOption { _NLopt_LD_SLSQP,
                           _NLopt_LD_TNEWTON_PRECOND_RESTART,
                         };
 
-struct SolverReturn {
-  arr x, dual;
-  uint evals=0;
-  double time=0.;
-  bool feasible=false;
-  double sos=-1., f=-1., ineq=-1., eq=-1.;
-  bool done=false;
-  void write(ostream& os) const{
-    os <<"SolverReturn: { time: " <<time <<", evals: " <<evals;
-    os <<", done: " <<done <<", feasible: " <<feasible;
-    os <<", sos: " <<sos <<", f: " <<f <<", ineq: " <<ineq <<", eq: " <<eq <<" }";
-  }
-};
-stdOutPipe(SolverReturn)
-
 /** User Interface: Meta class to call several different solvers in a unified manner. */
 struct NLP_Solver : NonCopyable {
   NLP_SolverID solverID=NLPS_augmentedLag;

@@ -11,6 +11,7 @@
 #include "types.h"
 
 #include "../KOMO/skeleton.h"
+#include "../KOMO/komo.h"
 
 void init_Skeleton(pybind11::module& m) {
   pybind11::class_<rai::Skeleton, std::shared_ptr<rai::Skeleton>>(m, "Skeleton")
