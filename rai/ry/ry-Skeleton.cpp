@@ -17,6 +17,7 @@ void init_Skeleton(pybind11::module& m) {
   pybind11::class_<rai::Skeleton, std::shared_ptr<rai::Skeleton>>(m, "Skeleton")
 
   .def(pybind11::init<>())
+
   .def("addEntry", &rai::Skeleton::addEntry, "", pybind11::arg("timeInterval"), pybind11::arg("symbol"), pybind11::arg("frames") )
   .def("addExplicitCollisions", &rai::Skeleton::addExplicitCollisions, "", pybind11::arg("collisions") )
   .def("addLiftPriors", &rai::Skeleton::addLiftPriors, "", pybind11::arg("lift") )
@@ -24,6 +25,10 @@ void init_Skeleton(pybind11::module& m) {
   .def("getKomo_path", &rai::Skeleton::getKomo_path, "", pybind11::arg("Configuration"), pybind11::arg("stepsPerPhase"), pybind11::arg("accScale"), pybind11::arg("lenScale"), pybind11::arg("homingScale") )
   .def("getKomo_waypoints", &rai::Skeleton::getKomo_waypoints, "", pybind11::arg("Configuration"), pybind11::arg("lenScale"), pybind11::arg("homingScale") )
   .def("getKOMO_finalSlice", &rai::Skeleton::getKOMO_finalSlice, "", pybind11::arg("Configuration"), pybind11::arg("lenScale"), pybind11::arg("homingScale") )
+
+  .def("enableAccumulatedCollisions", [](std::shared_ptr<rai::Skeleton>& self, bool enable){
+    self->collisions = enable;
+  }, "", pybind11::arg("enable")=true )
 
   .def("getTwoWaypointProblem", [](std::shared_ptr<rai::Skeleton>& self, int t2, KOMO& komoWays){
     auto C = make_shared<rai::Configuration>();
@@ -36,6 +41,55 @@ void init_Skeleton(pybind11::module& m) {
 
   ;
 
+  //===========================================================================
+
+#undef ENUMVAL
+#define ENUMVAL(pre, x) .value(#x, pre##_##x)
+
+  pybind11::enum_<rai::SkeletonSymbol>(m, "SY")
+  //geometric:
+  ENUMVAL(rai::SY,touch) ENUMVAL(rai::SY,above) ENUMVAL(rai::SY,inside) ENUMVAL(rai::SY,oppose) ENUMVAL(rai::SY,restingOn)
+
+  //pose constraints:
+  ENUMVAL(rai::SY,poseEq) ENUMVAL(rai::SY,positionEq) ENUMVAL(rai::SY,stableRelPose) ENUMVAL(rai::SY,stablePose)
+
+  //mode switches:
+  ENUMVAL(rai::SY,stable) ENUMVAL(rai::SY,stableOn) ENUMVAL(rai::SY,dynamic) ENUMVAL(rai::SY,dynamicOn) ENUMVAL(rai::SY,dynamicTrans) ENUMVAL(rai::SY,quasiStatic) ENUMVAL(rai::SY,quasiStaticOn) ENUMVAL(rai::SY,downUp) ENUMVAL(rai::SY,break) ENUMVAL(rai::SY,stableZero)
+
+  //interactions:
+  ENUMVAL(rai::SY,contact) ENUMVAL(rai::SY,contactStick) ENUMVAL(rai::SY,contactComplementary) ENUMVAL(rai::SY,bounce) ENUMVAL(rai::SY,push)
+
+  //mode switches:
+  ENUMVAL(rai::SY,magic) ENUMVAL(rai::SY,magicTrans)
+
+  //integrated:
+  ENUMVAL(rai::SY,pushAndPlace)
+
+  //grasps/placements:
+  ENUMVAL(rai::SY,topBoxGrasp) ENUMVAL(rai::SY,topBoxPlace)
+
+  ENUMVAL(rai::SY,dampMotion)
+
+  ENUMVAL(rai::SY,identical)
+
+  ENUMVAL(rai::SY,alignByInt)
+
+  ENUMVAL(rai::SY,makeFree) ENUMVAL(rai::SY,forceBalance)
+
+  ENUMVAL(rai::SY,relPosY)
+
+  ENUMVAL(rai::SY,touchBoxNormalX) ENUMVAL(rai::SY,touchBoxNormalY) ENUMVAL(rai::SY,touchBoxNormalZ)
+
+  ENUMVAL(rai::SY,boxGraspX) ENUMVAL(rai::SY,boxGraspY) ENUMVAL(rai::SY,boxGraspZ)
+
+  ENUMVAL(rai::SY,lift)
+
+  ENUMVAL(rai::SY,stableYPhi)
+  ENUMVAL(rai::SY,stableOnX)
+  ENUMVAL(rai::SY,stableOnY)
+
+  ENUMVAL(rai::SY,end)
+  .export_values();
 }
 
 #endif

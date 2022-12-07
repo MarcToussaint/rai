@@ -16,7 +16,7 @@
 void init_Bullet(pybind11::module& m) {
   pybind11::class_<BulletInterface, std::shared_ptr<BulletInterface>>(m, "BulletInterface")
 
-      .def("step", &BulletInterface::step)
+  .def("step", &BulletInterface::step)
 
   .def("step", [](BulletInterface& self, shared_ptr<rai::Configuration>& C) {
     self.pushKinematicStates(*C);

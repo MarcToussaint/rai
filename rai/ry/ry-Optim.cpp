@@ -158,64 +158,6 @@ void init_Optim(pybind11::module& m) {
                           });
 
         })
-  .def("set", [](std::shared_ptr<rai::OptOptions>& self
-     #define MEMBER(type, name, x) ,type name
-     MEMBER(int, verbose, 1)
-     MEMBER(double, stopTolerance, 1e-2)
-     MEMBER(double, stopFTolerance, -1.)
-     MEMBER(double, stopGTolerance, -1.)
-     MEMBER(int, stopEvals, 1000)
-     MEMBER(double, maxStep, .2)
-     MEMBER(double, damping, 1.)
-     MEMBER(double, stepInc, 1.5)
-     MEMBER(double, stepDec, .5)
-     MEMBER(double, wolfe, .01)
-     MEMBER(double, muInit, 1.)
-     MEMBER(double, muInc, 5.)
-     MEMBER(double, muMax, 1e4)
-     MEMBER(double, muLBInit, .1)
-     MEMBER(double, muLBDec, .2)
-     #undef MEMBER
-       ){
-(*self)
-#define MEMBER(type, name, x) .set_##name(name)
-MEMBER(int, verbose, 1)
-MEMBER(double, stopTolerance, 1e-2)
-MEMBER(double, stopFTolerance, -1.)
-MEMBER(double, stopGTolerance, -1.)
-MEMBER(int, stopEvals, 1000)
-MEMBER(double, maxStep, .2)
-MEMBER(double, damping, 1.)
-MEMBER(double, stepInc, 1.5)
-MEMBER(double, stepDec, .5)
-MEMBER(double, wolfe, .01)
-MEMBER(double, muInit, 1.)
-MEMBER(double, muInc, 5.)
-MEMBER(double, muMax, 1e4)
-MEMBER(double, muLBInit, .1)
-MEMBER(double, muLBDec, .2)
-#undef MEMBER
-    ;
-    return self;
-    }, "set solver options"
-#define MEMBER(type, name, x) , pybind11::arg(#name) = x
-MEMBER(int, verbose, 1)
-MEMBER(double, stopTolerance, 1e-2)
-MEMBER(double, stopFTolerance, -1.)
-MEMBER(double, stopGTolerance, -1.)
-MEMBER(int, stopEvals, 1000)
-MEMBER(double, maxStep, .2)
-MEMBER(double, damping, 1.)
-MEMBER(double, stepInc, 1.5)
-MEMBER(double, stepDec, .5)
-MEMBER(double, wolfe, .01)
-MEMBER(double, muInit, 1.)
-MEMBER(double, muInc, 5.)
-MEMBER(double, muMax, 1e4)
-MEMBER(double, muLBInit, .1)
-MEMBER(double, muLBDec, .2)
-#undef MEMBER
-)
 
       ;
 
@@ -236,10 +178,65 @@ MEMBER(double, muLBDec, .2)
       .def("getTrace_phi", &NLP_Solver::getTrace_phi)
       .def("getTrace_J", &NLP_Solver::getTrace_J)
 
-      .def("setOptions", &NLP_Solver::setOptions)
-      .def("getOptions", [](std::shared_ptr<NLP_Solver>& self){
-        return self->opt;
-      })
+      .def("getOptions", [](std::shared_ptr<NLP_Solver>& self){ return self->opt; } )
+      .def("setOptions", [](std::shared_ptr<NLP_Solver>& self
+         #define MEMBER(type, name, x) ,type name
+         MEMBER(int, verbose, 1)
+         MEMBER(double, stopTolerance, 1e-2)
+         MEMBER(double, stopFTolerance, -1.)
+         MEMBER(double, stopGTolerance, -1.)
+         MEMBER(int, stopEvals, 1000)
+         MEMBER(double, maxStep, .2)
+         MEMBER(double, damping, 1.)
+         MEMBER(double, stepInc, 1.5)
+         MEMBER(double, stepDec, .5)
+         MEMBER(double, wolfe, .01)
+         MEMBER(double, muInit, 1.)
+         MEMBER(double, muInc, 5.)
+         MEMBER(double, muMax, 1e4)
+         MEMBER(double, muLBInit, .1)
+         MEMBER(double, muLBDec, .2)
+         #undef MEMBER
+           ){
+    self->opt
+    #define MEMBER(type, name, x) .set_##name(name)
+    MEMBER(int, verbose, 1)
+    MEMBER(double, stopTolerance, 1e-2)
+    MEMBER(double, stopFTolerance, -1.)
+    MEMBER(double, stopGTolerance, -1.)
+    MEMBER(int, stopEvals, 1000)
+    MEMBER(double, maxStep, .2)
+    MEMBER(double, damping, 1.)
+    MEMBER(double, stepInc, 1.5)
+    MEMBER(double, stepDec, .5)
+    MEMBER(double, wolfe, .01)
+    MEMBER(double, muInit, 1.)
+    MEMBER(double, muInc, 5.)
+    MEMBER(double, muMax, 1e4)
+    MEMBER(double, muLBInit, .1)
+    MEMBER(double, muLBDec, .2)
+    #undef MEMBER
+        ;
+        return self;
+        }, "set solver options"
+    #define MEMBER(type, name, x) , pybind11::arg(#name) = x
+    MEMBER(int, verbose, 1)
+    MEMBER(double, stopTolerance, 1e-2)
+    MEMBER(double, stopFTolerance, -1.)
+    MEMBER(double, stopGTolerance, -1.)
+    MEMBER(int, stopEvals, 1000)
+    MEMBER(double, maxStep, .2)
+    MEMBER(double, damping, 1.)
+    MEMBER(double, stepInc, 1.5)
+    MEMBER(double, stepDec, .5)
+    MEMBER(double, wolfe, .01)
+    MEMBER(double, muInit, 1.)
+    MEMBER(double, muInc, 5.)
+    MEMBER(double, muMax, 1e4)
+    MEMBER(double, muLBInit, .1)
+    MEMBER(double, muLBDec, .2)
+    #undef MEMBER
+    )
 
       ;
 

@@ -40,285 +40,113 @@ rai::Skeleton list2skeleton(const pybind11::list& L) {
   return S;
 }
 
-void checkView(shared_ptr<KOMO>& self) { if(self->pathConfig.hasView()) self->pathConfig.view(); }
-
 void init_KOMO(pybind11::module& m) {
   pybind11::class_<KOMO, std::shared_ptr<KOMO>>(m, "KOMO", "Constrained solver to optimize configurations or paths. (KOMO = k-order Markov Optimization)")
 
-      .def(pybind11::init<>())
+    .def(pybind11::init<>())
 
-      .def("setModel", &KOMO::setModel)
-      .def("setTiming", &KOMO::setTiming)
+    .def("setModel", &KOMO::setModel)
+    .def("setTiming", &KOMO::setTiming)
 
-//  .def("makeObjectsFree", [](std::shared_ptr<KOMO>& self, const std::vector<std::string>& objs) {
-//    self->world.makeObjectsFree(I_conv(objs));
-//  })
+    .def("addTimeOptimization", &KOMO::addTimeOptimization)
 
-//  .def("activateCollisionPairs", [](std::shared_ptr<KOMO>& self, const std::vector<std::pair<std::string, std::string>>& collision_pairs) {
-//    for(const auto&  pair : collision_pairs) {
-//      self->activateCollisions(rai::String(pair.first), rai::String(pair.second));
-//    }
-//  })
+    .def("clearObjectives", &KOMO::clearObjectives)
 
-//  .def("deactivateCollisionPairs", [](std::shared_ptr<KOMO>& self, const std::vector<std::pair<std::string, std::string>>& collision_pairs) {
-//    for(const auto&  pair : collision_pairs) {
-//      self->deactivateCollisions(rai::String(pair.first), rai::String(pair.second));
-//    }
-//  })
+    .def("addObjective", [](std::shared_ptr<KOMO>& self, const arr& times, const FeatureSymbol& feature, const std::vector<std::string>& frames, const ObjectiveType& type, const arr& scale, const arr& target, int order) {
+	self->addObjective(times, feature, strvec2StringA(frames), type, scale, target, order);
+      }, "",
+      pybind11::arg("times"),
+      pybind11::arg("feature"),
+      pybind11::arg("frames")=std::vector<std::string>(),
+      pybind11::arg("type"),
+      pybind11::arg("scale")=arr(),
+      pybind11::arg("target")=arr(),
+      pybind11::arg("order")=-1)
 
-      .def("addTimeOptimization", &KOMO::addTimeOptimization)
+    .def("addQuaternionNorms", &KOMO::addQuaternionNorms, "", pybind11::arg("times")=arr(), pybind11::arg("scale")=3., pybind11::arg("hard")=true )
 
-      .def("clearObjectives", &KOMO::clearObjectives)
+    .def("add_qControlObjective", &KOMO::add_qControlObjective, "", pybind11::arg("times"), pybind11::arg("order"), pybind11::arg("scale")=1.,
+	 pybind11::arg("target")=arr(), pybind11::arg("deltaFromStep")=0, pybind11::arg("deltaToStep")=0 )
 
-#if 0
-      .def("addObjective",
-           pybind11::overload_cast<const arr&, const FeatureSymbol&, const StringA&, ObjectiveType, const arr&, const arr&, int, int, int>
-           (&KOMO::addObjective),
-           "",
-           pybind11::arg("times")=arr(),
-           pybind11::arg("feature"),
-           pybind11::arg("frames")=StringA(),
-           pybind11::arg("type"),
-           pybind11::arg("scale")=arr(),
-           pybind11::arg("target")=arr(),
-           pybind11::arg("order")=-1,
-           pybind11::arg("deltaFromStep")=0,
-           pybind11::arg("deltaToStep")=0
-          )
-#else
-  .def("addObjective", [](std::shared_ptr<KOMO>& self, const arr& times, const FeatureSymbol& feature, const std::vector<std::string>& frames, const ObjectiveType& type, const arr& scale, const arr& target, int order) {
-    self->addObjective(times, feature, strvec2StringA(frames), type, scale, target, order);
-  }, "",
-  pybind11::arg("times"),
-  pybind11::arg("feature"),
-  pybind11::arg("frames")=std::vector<std::string>(),
-  pybind11::arg("type"),
-  pybind11::arg("scale")=arr(),
-  pybind11::arg("target")=arr(),
-  pybind11::arg("order")=-1)
-#endif
+    .def("addModeSwitch", &KOMO::addModeSwitch, "", pybind11::arg("times"), pybind11::arg("newMode"), pybind11::arg("frames"), pybind11::arg("firstSwitch")=true )
+    .def("addInteraction_elasticBounce", &KOMO::addContact_elasticBounce, "", pybind11::arg("time"), pybind11::arg("from"), pybind11::arg("to"),
+	 pybind11::arg("elasticity") = .8, pybind11::arg("stickiness") = 0. )
 
-//      .def("add_qControlObjective", [](std::shared_ptr<KOMO>& self, const std::vector<double>& time, uint order, double scale, const std::vector<double>& target) {
-//        self->add_qControlObjective(arr(time, true), order, scale, arr(target, true));
-//      }, "", pybind11::arg("time")=std::vector<double>(),
-//      pybind11::arg("order"),
-//      pybind11::arg("scale")=double(1.),
-//      pybind11::arg("target")=std::vector<double>())
+    //-- initialize (=set state)
 
-      .def("addQuaternionNorms",
-           &KOMO::addQuaternionNorms,
-           "",
-           pybind11::arg("times")=arr(),
-           pybind11::arg("scale")=3.,
-           pybind11::arg("hard")=true
-          )
+    .def("initOrg", &KOMO::initOrg, "" )
+    .def("initRandom", &KOMO::initRandom, "", pybind11::arg("verbose")=0 )
+    .def("initWithConstant", &KOMO::initWithConstant, "", pybind11::arg("q") )
+    .def("initWithPath_qOrg", &KOMO::initWithPath_qOrg, "", pybind11::arg("q") )
+    .def("initWithWaypoints", &KOMO::initWithWaypoints, "", pybind11::arg("waypoints"), pybind11::arg("waypointStepsPerPhase")=1, pybind11::arg("interpolate")=false, pybind11::arg("verbose")=-1 )
+    .def("initPhaseWithDofsPath", &KOMO::initPhaseWithDofsPath, "", pybind11::arg("t_phase"), pybind11::arg("dofIDs"), pybind11::arg("path"), pybind11::arg("autoResamplePath")=false )
 
-      .def("add_qControlObjective",
-           &KOMO::add_qControlObjective,
-           "",
-           pybind11::arg("times"),
-           pybind11::arg("order"),
-           pybind11::arg("scale")=1.,
-           pybind11::arg("target")=arr(),
-           pybind11::arg("deltaFromStep")=0,
-           pybind11::arg("deltaToStep")=0
-          )
+    //-- solve
 
-      .def("addModeSwitch",
-           &KOMO::addModeSwitch,
-           "",
-           pybind11::arg("times"),
-           pybind11::arg("newMode"),
-           pybind11::arg("frames"),
-           pybind11::arg("firstSwitch")=true
-          )
+    .def("nlp", &KOMO::nlp_SparseNonFactored, "return the problem NLP")
 
-//  .def("addSwitch_magic", &KOMO::addSwitch_magic)
+    // .def("optimize", [](std::shared_ptr<KOMO>& self, double addInitializationNoise) {
+    // 	self->optimize(addInitializationNoise);
+    //   }, "",
+    //   pybind11::arg("addInitializationNoise")=0.01)
 
-//  .def("addSwitch_dynamicTrans", &KOMO::addSwitch_dynamicTrans)
+    // //-- reinitialize with configuration
+    // .def("setConfigurations", [](std::shared_ptr<KOMO>& self, shared_ptr<rai::Configuration>& C) {
+    // 	arr X = C->getFrameState();
+    // 	for(uint t=0; t<self->T; t++) {
+    // 	  self->pathConfig.setFrameState(X, self->timeSlices[t]);
+    // 	}
+    //   })
 
-      .def("addInteraction_elasticBounce",
-           &KOMO::addContact_elasticBounce,
-           "",
-           pybind11::arg("time"),
-           pybind11::arg("from"),
-           pybind11::arg("to"),
-           pybind11::arg("elasticity") = .8,
-           pybind11::arg("stickiness") = 0.)
+    //-- read out
 
-  .def("get_nlp", &KOMO::nlp_SparseNonFactored, "return the problem NLP")
+    .def("getT", [](std::shared_ptr<KOMO>& self) { return self->T; } )
 
-    //  .def("setSkeleton", [](std::shared_ptr<KOMO>& self, const pybind11::list& S, rai::ArgWord sequenceOrPath) {
-    //    auto SK = list2skeleton(S);
-    //    SK.setKOMO(*self, sequenceOrPath);
-    //  })
+    .def("getFrameState", &KOMO::getConfiguration_X)
+    .def("getPath_qOrg", &KOMO::getPath_qOrg)
+    .def("getPath_qAll", [](std::shared_ptr<KOMO>& self) { return arrA2npvec(self->getPath_qAll()); } )
+    .def("getPathFrames", &KOMO::getPath_X)
+    .def("getPathTau", &KOMO::getPath_tau)
 
-//-- run
+    .def("getForceInteractions", [](std::shared_ptr<KOMO>& self) {
+	rai::Graph G = self->pathConfig.reportForces();
+	return graph2list(G);
+      })
 
-  .def("optimize", [](std::shared_ptr<KOMO>& self, double addInitializationNoise) {
-    self->optimize(addInitializationNoise);
-    checkView(self);
-  }, "",
-  pybind11::arg("addInitializationNoise")=0.01)
+    .def("getReport", [](std::shared_ptr<KOMO>& self) {
+	rai::Graph R = self->getReport(true);
+	return graph2dict(R);
+      })
 
-//-- reinitialize with configuration
-  .def("setConfigurations", [](std::shared_ptr<KOMO>& self, shared_ptr<rai::Configuration>& C) {
-    arr X = C->getFrameState();
-    for(uint t=0; t<self->T; t++) {
-      self->pathConfig.setFrameState(X, self->timeSlices[t]);
-    }
-    checkView(self);
-  })
+    .def("reportProblem", [](std::shared_ptr<KOMO>& self) {
+	std::stringstream str;
+	self->reportProblem(str);
+	return str.str();
+      })
 
-//-- read out
+    .def("getConstraintViolations", [](std::shared_ptr<KOMO>& self) {
+	rai::Graph R = self->getReport(false);
+	return R.get<double>("ineq") + R.get<double>("eq");
+      })
 
-  .def("getT", [](std::shared_ptr<KOMO>& self) {
-    return self->T;
-  })
+    .def("getCosts", [](std::shared_ptr<KOMO>& self) {
+	rai::Graph R = self->getReport(false);
+	return R.get<double>("sos");
+      })
 
-  .def("getFrameState", &KOMO::getConfiguration_X)
+    //-- display
 
-  .def("initOrg", &KOMO::initOrg, "" )
-  .def("initRandom", &KOMO::initRandom, "", pybind11::arg("verbose")=0 )
-  .def("initWithConstant", &KOMO::initWithConstant, "", pybind11::arg("q") )
-  .def("initWithPath_qOrg", &KOMO::initWithPath_qOrg, "", pybind11::arg("q") )
-  .def("initWithWaypoints", &KOMO::initWithWaypoints, "", pybind11::arg("waypoints"), pybind11::arg("waypointStepsPerPhase")=1, pybind11::arg("interpolate")=false, pybind11::arg("verbose")=-1 )
-  .def("initPhaseWithDofsPath", &KOMO::initPhaseWithDofsPath, "", pybind11::arg("t_phase"), pybind11::arg("dofIDs"), pybind11::arg("path"), pybind11::arg("autoResamplePath")=false )
+    .def("view", &KOMO::view, "", pybind11::arg("pause") = false, pybind11::arg("txt") = nullptr)
+    .def("view_play", &KOMO::view_play, "", pybind11::arg("pause") = false, pybind11::arg("delay") = 0.1, pybind11::arg("saveVideoPath") = nullptr)
+    .def("view_close",  &KOMO::view_close)
 
-  .def("getPath_qOrg", &KOMO::getPath_qOrg)
-  .def("getPath_qAll", [](std::shared_ptr<KOMO>& self) { return arrA2npvec(self->getPath_qAll()); } )
-
-  .def("getPathFrames", &KOMO::getPath_X)
-//  .def("getPathFrames", [](std::shared_ptr<KOMO>& self, const std::vector<std::string>& frames) {
-//    arr X = self->getPath_frames(I_conv(frames));
-//    return arr2numpy(X);
-//  })
-
-  .def("getPathTau", [](std::shared_ptr<KOMO>& self) {
-    arr X = self->getPath_tau();
-    return arr2numpy(X);
-  })
-
-  .def("getForceInteractions", [](std::shared_ptr<KOMO>& self) {
-    rai::Graph G = self->pathConfig.reportForces();
-    return graph2list(G);
-  })
-
-  .def("getReport", [](std::shared_ptr<KOMO>& self) {
-    rai::Graph R = self->getReport(true);
-    return graph2dict(R);
-  })
-
-  .def("reportProblem", [](std::shared_ptr<KOMO>& self) {
-    std::stringstream str;
-    self->reportProblem(str);
-    return str.str();
-  })
-
-  .def("getConstraintViolations", [](std::shared_ptr<KOMO>& self) {
-    rai::Graph R = self->getReport(false);
-    return R.get<double>("ineq") + R.get<double>("eq");
-  })
-
-  .def("getCosts", [](std::shared_ptr<KOMO>& self) {
-    rai::Graph R = self->getReport(false);
-    return R.get<double>("sos");
-  })
-
-//-- display
-
-  .def("view", &KOMO::view,
-       "",
-       pybind11::arg("pause") = false,
-       pybind11::arg("txt") = nullptr)
-
-  .def("view_play", &KOMO::view_play,
-       "",
-       pybind11::arg("pause") = false,
-       pybind11::arg("delay") = 0.1,
-       pybind11::arg("saveVideoPath") = nullptr)
-
-  .def("view_close", [](shared_ptr<KOMO>& self) {
-    self->pathConfig.gl().reset();
-  }, "close the view")
-
-  ;
+    ;
 
 
   //===========================================================================
 
   //  pybind11::class_<ry::ConfigViewer>(m, "ConfigViewer");
   pybind11::class_<Objective, shared_ptr<Objective>>(m, "KOMO_Objective");
-
-  //===========================================================================
-
-#undef ENUMVAL
-#define ENUMVAL(pre, x) .value(#x, pre##_##x)
-
-  // pybind11::enum_<ObjectiveType>(m, "OT")
-  // ENUMVAL(OT, none)
-  // ENUMVAL(OT, f)
-  // ENUMVAL(OT, sos)
-  // ENUMVAL(OT, ineq)
-  // ENUMVAL(OT, eq)
-  // .export_values();
-
-//pybind11::enum_<BoundType>(m, "BT")
-//ENUMVAL(BD, all)
-//ENUMVAL(BD, symbolic)
-//ENUMVAL(BD, pose)
-//ENUMVAL(BD, seq)
-//ENUMVAL(BD, path)
-//ENUMVAL(BD, seqPath)
-//ENUMVAL(BD, max)
-//.export_values();
-
-  pybind11::enum_<rai::SkeletonSymbol>(m, "SY")
-  //geometric:
-  ENUMVAL(rai::SY, touch)
-  ENUMVAL(rai::SY, above)
-  ENUMVAL(rai::SY, inside)
-  ENUMVAL(rai::SY, oppose)
-
-  //pose constraints:
-  ENUMVAL(rai::SY, poseEq)
-  ENUMVAL(rai::SY, stableRelPose)
-  ENUMVAL(rai::SY, stablePose)
-
-  //mode switches:
-  ENUMVAL(rai::SY, stable)
-  ENUMVAL(rai::SY, stableOn)
-  ENUMVAL(rai::SY, dynamic)
-  ENUMVAL(rai::SY, dynamicOn)
-  ENUMVAL(rai::SY, dynamicTrans)
-  ENUMVAL(rai::SY, quasiStatic)
-  ENUMVAL(rai::SY, quasiStaticOn)
-  ENUMVAL(rai::SY, downUp) //old
-  ENUMVAL(rai::SY, break)
-
-  //interactions:
-  ENUMVAL(rai::SY, contact)
-  ENUMVAL(rai::SY, contactStick)
-  ENUMVAL(rai::SY, contactComplementary)
-  ENUMVAL(rai::SY, bounce)
-
-  //mode switches:
-  ENUMVAL(rai::SY, magic)
-  ENUMVAL(rai::SY, magicTrans)
-
-  //grasps/placements:
-  ENUMVAL(rai::SY, topBoxGrasp)
-  ENUMVAL(rai::SY, topBoxPlace)
-
-  ENUMVAL(rai::SY, dampMotion)
-
-  ENUMVAL(rai::SY, identical)
-
-  ENUMVAL(rai::SY, alignByInt)
-
-  ENUMVAL(rai::SY, makeFree)
-  ENUMVAL(rai::SY, forceBalance)
-  .export_values();
 
 }
 

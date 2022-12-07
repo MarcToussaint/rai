@@ -2,7 +2,7 @@
 
 #include "PathResult.h"
 #include "ConfigurationProblem.h"
-
+#include "../Optim/NLP.h"
 #include "../Algo/ann.h"
 
 /// just a data structure, no algorithms

@@ -3,6 +3,11 @@
 #include "../Gui/opengl.h"
 #include "../Kin/viewer.h"
 
+#ifdef RAI_GL
+#  include <GL/glew.h>
+#  include <GL/gl.h>
+#endif
+
 double corput(uint n, uint base){
   double q=0;
   double bk=(double)1/base;
