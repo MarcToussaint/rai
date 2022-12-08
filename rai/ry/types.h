@@ -83,6 +83,12 @@ template<class T> rai::Array<T> list2arr(const pybind11::list& X) {
   return Y;
 }
 
+template<class T> rai::Array<T> arr2list(const rai::Array<T>& X) {
+  pybind11::list Y(X.N);
+  for(uint i=0; i<X.N; i++) Y[i] = X.elem(i);
+  return Y;
+}
+
 inline StringA strvec2StringA(const std::vector<std::string>& x) {
   StringA y(x.size());
   for(uint i=0; i<y.N; i++) y(i) = x[i];
@@ -95,6 +101,12 @@ inline std::vector<std::string> StringA2strvec(const StringA& x) {
   return y;
 }
 
+inline pybind11::list StringA2strlist(const StringA& x) {
+  pybind11::list y(x.N);
+  for(uint i=0;i<x.N;i++) y[i] = pybind11::str(x(i).p, x(i).N);
+  return y;
+}
+
 inline arrA npvec2arrA(const std::vector<pybind11::array_t<double>>& x) {
   arrA y(x.size());
   for(uint i=0; i<y.N; i++) y(i) = numpy2arr<double>(x[i]);
@@ -104,6 +116,12 @@ inline arrA npvec2arrA(const std::vector<pybind11::array_t<double>>& x) {
 inline std::vector<pybind11::array_t<double>> arrA2npvec(const arrA& x) {
   std::vector<pybind11::array_t<double>> y;
   for(const arr& z:x) y.push_back(arr2numpy(z));
+  return y;
+}
+
+inline pybind11::list arrA2nplist(const arrA& x) {
+  pybind11::list y(x.N);
+  for(uint i=0;i<x.N;i++) y[i] = arr2numpy(x.elem(i));
   return y;
 }
 
@@ -135,17 +153,13 @@ namespace detail {
   public:
     PYBIND11_TYPE_CASTER(rai::String, _("rai::String"));
 
-    /// Conversion part 1 (Python->C++): convert numpy array to rai::Array<T>
     bool load(pybind11::handle src, bool) {
-      std::string str = src.cast<std::string>();
-      value = str;
+      value = src.cast<std::string>();
       return !PyErr_Occurred();
     }
 
-    /// Conversion part 2 (C++ -> Python): convert rai::Array<T> instance to numpy array
     static handle cast(const rai::String& src, return_value_policy, handle) {
-      std::string str(src.p);
-      return pybind11::cast(str);
+      return pybind11::str(src.p, src.N).release();
     }
   };
 
@@ -156,15 +170,14 @@ namespace detail {
 
     /// Python->C++
     bool load(pybind11::handle src, bool) {
-      std::vector<std::string> strings = src.cast<std::vector<std::string>>();
-      value = strvec2StringA(strings);
+      value = strvec2StringA( src.cast<std::vector<std::string>>() );
       return !PyErr_Occurred();
     }
 
     /// C++ -> Python
     static handle cast(const StringA& src, return_value_policy /* policy */, handle /* parent */) {
-      std::vector<std::string> strings = StringA2strvec(src);
-      return pybind11::cast(strings);
+      //LOG(0) <<"return " <<rai::niceTypeidName(typeid(src));
+      return StringA2strlist(src).release();
     }
   };
 
@@ -175,15 +188,14 @@ namespace detail {
 
     /// Python->C++
     bool load(pybind11::handle src, bool) {
-      std::vector<pybind11::array_t<double>> arrs = src.cast<std::vector<pybind11::array_t<double>>>();
-      value = npvec2arrA(arrs);
+      value = npvec2arrA( src.cast<std::vector<pybind11::array_t<double>>>() );
       return !PyErr_Occurred();
     }
 
     /// C++ -> Python
     static handle cast(const arrA& src, return_value_policy /* policy */, handle /* parent */) {
-      std::vector<pybind11::array_t<double>> arrs = arrA2npvec(src);
-      return pybind11::cast(arrs);
+      //LOG(0) <<"return " <<rai::niceTypeidName(typeid(src));
+      return arrA2nplist(src).release();
     }
   };
 
@@ -217,15 +229,14 @@ namespace detail {
 
     /// Python->C++
     bool load(pybind11::handle src, bool) {
-      std::vector<T> x = src.cast<std::vector<T>>();
-      value = vec2Array<T>(x);
+      value = vec2Array<T>( src.cast<std::vector<T>>() );
       return !PyErr_Occurred();
     }
 
     /// C++ -> Python
     static handle cast(const rai::Array<T>& src, return_value_policy /* policy */, handle /* parent */) {
       std::vector<T> x = Array2vec<T>(src);
-      return pybind11::cast(x);
+      return pybind11::cast(x).release();
     }
   };
 

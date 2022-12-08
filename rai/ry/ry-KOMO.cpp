@@ -104,7 +104,7 @@ void init_KOMO(pybind11::module& m) {
 
     .def("getFrameState", &KOMO::getConfiguration_X)
     .def("getPath_qOrg", &KOMO::getPath_qOrg)
-    .def("getPath_qAll", [](std::shared_ptr<KOMO>& self) { return arrA2npvec(self->getPath_qAll()); } )
+    .def("getPath_qAll",  &KOMO::getPath_qAll)
     .def("getPathFrames", &KOMO::getPath_X)
     .def("getPathTau", &KOMO::getPath_tau)
 

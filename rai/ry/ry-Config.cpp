@@ -128,11 +128,7 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("frameName")
       )
 
-  .def("getJointNames", [](shared_ptr<rai::Configuration>& self) {
-    return StringA2strvec(self->getJointNames());
-  },
-  "get the list of joint names"
-      )
+  .def("getJointNames", &rai::Configuration::getJointNames, "get the list of joint names" )
 
   .def("getJointDimension", [](shared_ptr<rai::Configuration>& self) {
     return self->getJointStateDimension();
