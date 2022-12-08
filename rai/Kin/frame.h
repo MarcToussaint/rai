@@ -117,7 +117,7 @@ struct Frame : NonCopyable {
 
   //structural operations
   Frame& setParent(Frame* _parent, bool keepAbsolutePose_and_adaptRelativePose=false, bool checkForLoop=false);
-  void unLink();
+  Frame& unLink();
   Frame* insertPreLink(const rai::Transformation& A=0);
   Frame* insertPostLink(const rai::Transformation& B=0);
 
@@ -126,6 +126,7 @@ struct Frame : NonCopyable {
   void getRigidSubFrames(FrameL& F, bool includeRigidJoints=false) const; ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
   void getPartSubFrames(FrameL& F) const; ///< recursively collect all frames of this part
   void getSubtree(FrameL& F) const;
+  FrameL getSubtree() const { FrameL F; getSubtree(F); return F; }
   Frame* getRoot();
   FrameL getPathToRoot();
   Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)

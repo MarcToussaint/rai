@@ -46,6 +46,7 @@ PYBIND11_MODULE(libry, m) {
   init_enums(m);
 
   m.def("setRaiPath", &rai::setRaiPath, "redefine the rai (or rai-robotModels) path");
+  m.def("raiPath", &rai::raiPath, "get a path relative to rai base path");
 
   init_Config(m);
   init_Feature(m);

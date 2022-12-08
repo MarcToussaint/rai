@@ -630,13 +630,14 @@ rai::Frame* rai::Frame::insertPostLink(const rai::Transformation& B) {
   return f;
 }
 
-void rai::Frame::unLink() {
+rai::Frame& rai::Frame::unLink() {
   CHECK(parent, "");
   ensure_X();
   parent->children.removeValue(this);
   parent=nullptr;
   Q.setZero();
   if(joint) {  delete joint;  joint=nullptr;  }
+  return *this;
 }
 
 rai::Frame& rai::Frame::setParent(rai::Frame* _parent, bool keepAbsolutePose_and_adaptRelativePose, bool checkForLoop) {

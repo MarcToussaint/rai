@@ -46,6 +46,8 @@ void init_Frame(pybind11::module& m) {
 
     .def("setShape", &rai::Frame::setShape, "", pybind11::arg("type"), pybind11::arg("size") )
 
+    .def("setParent", &rai::Frame::setParent )
+    .def("unLink", &rai::Frame::unLink )
 
     
     .def("addAttribute", &rai::Frame::addAttribute )
