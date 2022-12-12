@@ -120,7 +120,7 @@ void Conv_KOMO_NLP::getFHessian(arr& H, const arr& x) {
 void Conv_KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
   komo.reportProblem(os);
   if(verbose>1) os <<komo.getReport(verbose>3);
-  if(verbose>2) komo.view(false/*verbose>3*/, "Conv_KOMO_SparseNonfactored - report");
+  if(verbose>2) komo.view(false/*verbose>3*/, STRING("KOMO nlp report - " <<msg));
   if(verbose>4) komo.view_play(false);
   if(verbose>6){
     rai::system("mkdir -p z.vid");
@@ -390,8 +390,15 @@ void Conv_KOMO_FactoredNLP::evaluate(arr& phi, arr& J, const arr& x) {
 }
 
 void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose, const char* msg) {
-//  komo.reportProblem(os);
   komo.pathConfig.ensure_q();
+  komo.reportProblem(os);
+  if(verbose>1) os <<komo.getReport(verbose>3);
+  if(verbose>2) komo.view(false/*verbose>3*/, STRING("KOMO nlp_Factored report - " <<msg));
+  if(verbose>4) komo.view_play(false);
+  if(verbose>6){
+    rai::system("mkdir -p z.vid");
+    komo.view_play(false, .1, "z.vid/");
+  }
 
   if(verbose>4){
     for(uint i=0; i<varsN(); i++) {
@@ -429,14 +436,6 @@ void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose, const char* ms
   }
 
   if(msg) os <<" *** " <<msg <<" ***"<<endl;
-
-  if(verbose>3) komo.view(verbose>4, STRING("Conv_KOMO_FineStructuredProblem - " <<msg));
-  if(verbose>5) komo.view_play(true);
-  if(verbose>6){
-    rai::system("mkdir -p z.vid");
-    komo.view_play(false, .1, "z.vid/");
-    if(verbose>3) komo.view(true, "Conv_KOMO_SparseNonfactored - video saved in z.vid/");
-  }
 }
 
 }//namespace

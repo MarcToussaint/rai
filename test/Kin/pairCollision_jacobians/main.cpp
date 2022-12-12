@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <GL/gl.h>
 
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
@@ -117,7 +116,7 @@ void TEST(GJK_Jacobians) {
 
 void TEST(GJK_Jacobians2) {
   rai::Configuration C;
-  auto base = C.addFrame("base");
+  C.addFrame("base");
   for(uint i=0;i<20;i++){
     rai::Frame *a = C.addFrame(STRING("obj_" <<i), "base");
     a->setJoint(rai::JT_free);

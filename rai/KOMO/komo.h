@@ -223,7 +223,7 @@ public:
   // NLP transcriptions
   //
 
-  shared_ptr<NLP> nlp_SparseNonFactored();
+  shared_ptr<NLP> nlp();
   shared_ptr<NLP_Factored> nlp_Factored();
 
 

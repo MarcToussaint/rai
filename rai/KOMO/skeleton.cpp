@@ -333,7 +333,8 @@ shared_ptr<KOMO> Skeleton::getKOMO_finalSlice(const rai::Configuration& C, doubl
   for(const rai::SkeletonEntry& s:S) {
     if(rai::skeletonModes.contains(s.symbol)
         || s.phase0>=maxPhase) {
-      rai::SkeletonEntry& fs = finalS.S.append(s);
+      finalS.S.append(s);
+      rai::SkeletonEntry& fs = finalS.S(-1);
       fs.phase0 -= maxPhase-optHorizon;
       fs.phase1 -= maxPhase-optHorizon;
       if(fs.phase0<0.) fs.phase0=0.;
@@ -383,7 +384,7 @@ shared_ptr<KOMO> Skeleton::getKOMO_finalSlice(const rai::Configuration& C, doubl
 SkeletonTranscription Skeleton::nlp_waypoints(const rai::Configuration& C){
   SkeletonTranscription T;
   T.komo = getKomo_waypoints(C, 1e-2, 1e-2);
-  T.nlp = T.komo->nlp_SparseNonFactored();
+  T.nlp = T.komo->nlp();
   return T;
 }
 
@@ -397,14 +398,14 @@ SkeletonTranscription Skeleton::nlp_path(const rai::Configuration& C, const arrA
 //    komo->opt.animateOptimization = 2;
   }
 
-  T.nlp = T.komo->nlp_SparseNonFactored();
+  T.nlp = T.komo->nlp();
   return T;
 }
 
 SkeletonTranscription Skeleton::nlp_finalSlice(const rai::Configuration& C){
   SkeletonTranscription T;
   T.komo = getKOMO_finalSlice(C, 1e-2, 1e-2);
-  T.nlp = T.komo->nlp_SparseNonFactored();
+  T.nlp = T.komo->nlp();
   return T;
 }
 

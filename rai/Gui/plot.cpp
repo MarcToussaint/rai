@@ -227,7 +227,8 @@ void rai::PlotModule::ClearPoints() {
 }
 
 void rai::PlotModule::Line(const arr& X, bool closed) {
-  arr& app = self->lines.append(X);
+  self->lines.append(X);
+  arr& app = self->lines(-1);
   if(closed && app.d0) {
     arr x;
     x = app[0];

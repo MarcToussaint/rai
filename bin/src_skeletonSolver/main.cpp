@@ -38,9 +38,8 @@ int main(int argc,char **argv){
   S.collisions = collisions;
   cout <<S <<endl;
 
-  S.setConfiguration(C);
 //  S.solve(mode, rai::getParameter<int>("verbose", 3));
-  S.solve3(true, rai::getParameter<int>("verbose", 3));
+  S.solve3(C, true, rai::getParameter<int>("verbose", 3));
 
   rai::wait();
 

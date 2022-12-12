@@ -83,7 +83,7 @@ void init_KOMO(pybind11::module& m) {
 
     //-- solve
 
-    .def("nlp", &KOMO::nlp_SparseNonFactored, "return the problem NLP")
+    .def("nlp", &KOMO::nlp, "return the problem NLP")
 
     // .def("optimize", [](std::shared_ptr<KOMO>& self, double addInitializationNoise) {
     // 	self->optimize(addInitializationNoise);

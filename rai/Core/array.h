@@ -207,10 +207,10 @@ template<class T> struct Array {
 
   /// @name appending etc
   T& append();
-  T& append(const T& x);
-  void append(const T& x, uint multiple);
-  void append(const Array<T>& x);
-  void append(const T* p, uint n);
+  Array<T>& append(const T& x);
+  Array<T>& append(const T& x, uint multiple);
+  Array<T>& append(const Array<T>& x);
+  Array<T>& append(const T* p, uint n);
   Array<T>& prepend(const T& x) { insert(0, x); return *this; }
   void prepend(const Array<T>& x) { insert(0, x); }
   void replicate(uint copies);

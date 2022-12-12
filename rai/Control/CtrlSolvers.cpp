@@ -551,7 +551,8 @@ void TaskControlMethods::calcForceControl(CtrlObjectiveL& tasks, arr& K_ft, arr&
 CtrlProblem_NLP::CtrlProblem_NLP(CtrlSolver& _CP)
   : CP(_CP) {
   for(uint k=0; k<2; k++) {
-    rai::Configuration* C = Ctuple.append(new rai::Configuration());
+    rai::Configuration* C = new rai::Configuration();
+    Ctuple.append(C);
     C->copy(CP.komo.world, true);
     C->setTaus(CP.tau);
     C->ensure_q();

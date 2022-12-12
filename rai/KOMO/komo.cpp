@@ -147,8 +147,8 @@ void KOMO::clone(const KOMO& komo, bool deepCopyFeatures){
   for(const shared_ptr<GroundedObjective>& o:komo.objs){
     std::shared_ptr<Feature> f = o->feat;
     if(deepCopyFeatures) f = f->deepCopy();
-    auto ocopy = objs.append(make_shared<GroundedObjective>(f, o->type, o->timeSlices));
-    ocopy->frames = pathConfig.getFrames(framesToIndices(o->frames));
+    objs.append(make_shared<GroundedObjective>(f, o->type, o->timeSlices));
+    objs(-1)->frames = pathConfig.getFrames(framesToIndices(o->frames));
   }
 }
 
@@ -206,7 +206,8 @@ void KOMO::_addObjective(const std::shared_ptr<Objective>& ob, const intA& timeS
   CHECK_EQ(timeSlices.nd, 2, "");
   CHECK_EQ(timeSlices.d1, ob->feat->order+1, "");
   for(uint c=0;c<timeSlices.d0;c++){
-    shared_ptr<GroundedObjective> o = objs.append( make_shared<GroundedObjective>(ob->feat, ob->type, timeSlices[c]) );
+    shared_ptr<GroundedObjective> o = make_shared<GroundedObjective>(ob->feat, ob->type, timeSlices[c]);
+    objs.append(o);
     o->objId = objectives.N-1;
     o->frames.resize(timeSlices.d1, o->feat->frameIDs.N);
     for(uint i=0;i<timeSlices.d1;i++){
@@ -1512,7 +1513,7 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
   }
 }
 
-shared_ptr<NLP> KOMO::nlp_SparseNonFactored(){
+shared_ptr<NLP> KOMO::nlp(){
   return make_shared<Conv_KOMO_NLP>(*this, solver==rai::KS_sparse);
 }
 

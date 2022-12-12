@@ -394,7 +394,7 @@ template<class T> T& Array<T>::append() {
 }
 
 /// append an element to the array -- the array becomes 1D!
-template<class T> T& Array<T>::append(const T& x) {
+template<class T> Array<T>& Array<T>::append(const T& x) {
 #if 0
   reshape(N);
   vec_type::push_back(x);
@@ -404,20 +404,21 @@ template<class T> T& Array<T>::append(const T& x) {
   resizeCopy(N+1);
   p[N-1]=x;
 #endif
-  return p[N-1];
+  return *this;
 }
 
 /// append an element to the array -- the array becomes 1D!
-template<class T> void Array<T>::append(const T& x, uint multiple) {
+template<class T> Array<T>& Array<T>::append(const T& x, uint multiple) {
   uint i=N;
   resizeCopy(N+multiple);
   for(; i<N; i++) p[i]=x;
+  return *this;
 }
 
 /// append another array to the array (by copying it) -- the array might become 1D!
-template<class T> void Array<T>::append(const Array<T>& x) {
+template<class T> Array<T>& Array<T>::append(const Array<T>& x) {
   uint oldN=N, xN=x.N, i;
-  if(!xN) return;
+  if(!xN) return *this;
   if(!nd)
     resizeAs(x);
   else if(nd==2 && x.nd==1 && d1==x.d0)
@@ -430,10 +431,11 @@ template<class T> void Array<T>::append(const Array<T>& x) {
     resizeCopy(N+xN);
   if(memMove==1) memmove(p+oldN, x.p, sizeT*xN);
   else for(i=0; i<xN; i++) p[oldN+i]=x.p[i];
+  return *this;
 }
 
 /// append a C array to the array (by copying it) -- the array might become 1D!
-template<class T> void Array<T>::append(const T* q, uint n) {
+template<class T> Array<T>& Array<T>::append(const T* q, uint n) {
   uint oldN=N, i;
   if(nd==2 && d1==n)
     resizeCopy(d0+1, d1);
@@ -441,6 +443,7 @@ template<class T> void Array<T>::append(const T* q, uint n) {
     resizeCopy(N+n);
   if(memMove==1) memmove(p+oldN, q, sizeT*n);
   else for(i=0; i<n; i++) p[n+i]=q[i];
+  return *this;
 }
 
 /// append an element to the array if it is not included yet -- the array becomes 1D! [TL]

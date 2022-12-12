@@ -23,7 +23,7 @@ void testFactored(){
   KOMO komo;
 
   komo.setModel(C, false);
-  komo.setTiming(2.5, 3, 5., 2);
+  komo.setTiming(2.5, 10, 5., 2);
   komo.add_qControlObjective({}, 2);
   komo.addQuaternionNorms();
 
@@ -58,21 +58,25 @@ void testFactored(){
   }
 
   //== three equivalent options to solve the full problem:
-#if 0
-  komo.verbose = 4;
-  switch(0){
+#if 1
+  komo.opt.verbose = 4;
+  switch(2){
     case 0: { //old style
       komo.optimize();
     } break;
     case 1: { //generic solver with exact same transcription as old-style
+      auto nlp = komo.nlp();
       NLP_Solver()
-          .setProblem(*komo.nlp_SparseNonFactored())
+          .setProblem(nlp)
           .solve();
+      nlp->report(cout, 2);
     } break;
     case 2: { //generic solver with factored transcription
+      auto nlp = komo.nlp_Factored();
       NLP_Solver()
-          .setProblem(*komo.nlp_Factored())
+          .setProblem(nlp)
           .solve();
+      nlp->report(cout, 2);
     } break;
   }
 
@@ -93,6 +97,7 @@ void testFactored(){
 
   cout <<"======== SUBSELECT ==========" <<endl;
   nlp->report(cout, 3);
+  komo.view(true);
 
   checkJacobianCP(*nlp, komo.x, 1e-6);
 
@@ -101,20 +106,8 @@ void testFactored(){
       .solve();
 
   nlp->report(cout, 3);
-
-//  komo.checkGradients();
-//  komo.optimize();
-
-//  komo.view(true, "optimized motion");
-
-//  NLP_Solver()
-//      .setProblem(*nlp)
-//      .solve();
-
-//  komo.view(true, "optimized motion");
-
-//  checkJacobianCP(*nlp);
-
+  komo.reportProblem();
+  komo.view(true);
 }
 
 //===========================================================================

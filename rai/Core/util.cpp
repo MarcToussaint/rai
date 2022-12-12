@@ -1418,6 +1418,7 @@ template rai::String rai::getParameter<rai::String>(const char*);
 template rai::String rai::getParameter<rai::String>(const char*, const rai::String&);
 template StringA rai::getParameter<StringA>(const char*);
 template StringA rai::getParameter<StringA>(const char*, const StringA&);
+template rai::Graph rai::getParameter<rai::Graph>(const char*);
 
 template void rai::setParameter<double>(const char*, const double&);
 template void rai::setParameter<uint>(const char*, const uint&);

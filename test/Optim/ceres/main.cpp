@@ -166,7 +166,7 @@ void tutorialBasics(){
 
 #if 1
   komo.solver=rai::KS_dense;
-  auto P1 = komo.nlp_SparseNonFactored();
+  auto P1 = komo.nlp();
   auto P = make_shared<Conv_NLP_TrivialFactoreded>(P1);
 
   checkJacobianCP(*P, komo.x, 1e-4);

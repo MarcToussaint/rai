@@ -92,7 +92,7 @@ struct NLP_Factored : NLP {
   virtual void randomizeSingleVariable(uint var_id){ return; }
 
   //-- unstructured (batch) evaluation
-  virtual void evaluate(arr& phi, arr& J, const arr& x); //default implementation: loop using setSingleVariable and evaluateSingleFeature
+  virtual void evaluate(arr& phi, arr& J, const arr& x); //default implementation: loop through setSingleVariable and evaluateSingleFeature
 
   virtual void subSelect(const uintA& activeVariables, const uintA& conditionalVariables){ NIY }
   virtual uint numTotalVariables(){ NIY; return 0; }
