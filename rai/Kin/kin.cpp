@@ -635,36 +635,24 @@ void Configuration::setJointState(const arr& _q) {
 }
 
 /// set the DOFs (joints and forces) for the given subset of frames
-void Configuration::setDofState(const arr& _q, const DofL& dofs) {
+void Configuration::setDofState(const arr& _q, const DofL& dofs, bool mimicsIncludedInQ) {
   setJointStateCount++; //global counter
   ensure_q();
 
   uint nd=0;
   for(Dof* j:dofs) {
-//    Dof* j = f->joint;
-//    if(!j && !f->forces.N) HALT("frame '" <<f->name <<"' is not a joint and has no forces!");
-    if(!j->mimic) CHECK_LE(nd+j->dim,_q.N, "given q-vector too small");
     if(!j) continue;
+    if(mimicsIncludedInQ && j->mimic) j = j->mimic; //equivalent to setting state of mimic dof!!
+    if(!j->mimic) CHECK_LE(nd+j->dim,_q.N, "given q-vector too small");
     if(j->active){
-      if(!j->mimic){
-        for(uint ii=0; ii<j->dim; ii++) q.elem(j->qIndex+ii) = _q(nd+ii);
-      }
+      if(!j->mimic) for(uint ii=0; ii<j->dim; ii++) q.elem(j->qIndex+ii) = _q(nd+ii);
       j->setDofs(q, j->qIndex);
     }else{
-//      if(activesOnly) HALT("frame '" <<f->name <<"' is a joint, but INACTIVE!");
-      if(!j->mimic){
-        for(uint ii=0; ii<j->dim; ii++) qInactive.elem(j->qIndex+ii) = _q(nd+ii);
-      }
+      if(!j->mimic) for(uint ii=0; ii<j->dim; ii++) qInactive.elem(j->qIndex+ii) = _q(nd+ii);
       j->setDofs(qInactive, j->qIndex);
     }
     if(!j->mimic) nd += j->dim;
   }
-//  for(Frame* f:F) {
-//    for(ForceExchange* c: f->forces) if(&c->a==f){
-//      c->setDofs(q, c->qIndex);
-//      nd += c->getDimFromType();
-//    }
-//  }
   CHECK_EQ(_q.N, nd, "given q-vector has wrong size");
 
   proxies.clear();
@@ -728,7 +716,7 @@ void Configuration::setRandom(uint timeSlices_d1, int verbose){
       //mean: q0 or prev
       if(d->q0.N){ //has default mean
         d->setDofs(d->q0); //also sets it for all mimicers
-      }else{
+      }else if(d->frame->prev){
         CHECK(d->frame->prev, "");
         if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']'
                             <<"' pose-X-equal to prevSlice frame '" <<d->frame->prev->name <<"' relative to '" <<d->frame->parent->name <<"'";
@@ -766,7 +754,7 @@ void Configuration::setActiveDofs(const DofL& dofs){
   for(Dof *d:dofs){
     d->active = true;
     if(d->mimic) mimics.append(d->mimic); //activate also the joint mimic'ed
-    for(Dof *dd:d->mimicers) mimics.append(dd);; //activate also mimicing joints
+    for(Dof *dd:d->mimicers) mimics.append(dd); //activate also mimicing joints
   }
   reset_q();
   activeDofs = dofs;
@@ -1197,9 +1185,7 @@ bool Configuration::checkConsistency() const {
       if(j->active){
         for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
       }else{
-        if(!j->mimic){
-          for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - qInactive.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
-        }
+        for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - qInactive.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
       }
     }
   }
@@ -1518,21 +1504,8 @@ void Configuration::calc_Q_from_q() {
   for(Dof* j: activeDofs) {
     if(!j->mimic) CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
     j->setDofs(q, j->qIndex);
-    if(!j->mimic) {
-      n += j->dim;
-//      if(j->uncertainty) {
-//        j->uncertainty->sigma = q.sub(j->qIndex+j->dim, j->qIndex+2*j->dim-1);
-//        n += j->dim;
-//      }
-    }
+    if(!j->mimic) n += j->dim;
   }
-#if 0
-  for(ForceExchange* c: forces) {
-    CHECK_EQ(c->qIndex, n, "joint indexing is inconsistent");
-    c->setDofs(q, c->qIndex);
-    n += c->getDimFromType();
-  }
-#endif
   CHECK_EQ(n, q.N, "");
 }
 

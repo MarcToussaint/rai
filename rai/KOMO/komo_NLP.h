@@ -58,6 +58,7 @@ struct Conv_KOMO_FactoredNLP : NLP_Factored {
 
   void evaluate(arr& phi, arr& J, const arr& x);
   void report(ostream& os, int verbose, const char* msg=0);
+  void reportDetails(ostream& os, int verbose, const char* msg=0);
 };
 
 }//namespace

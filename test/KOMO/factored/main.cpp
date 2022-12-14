@@ -23,7 +23,7 @@ void testFactored(){
   KOMO komo;
 
   komo.setModel(C, false);
-  komo.setTiming(2.5, 10, 5., 2);
+  komo.setTiming(2.5, 3, 5., 2);
   komo.add_qControlObjective({}, 2);
   komo.addQuaternionNorms();
 
@@ -51,14 +51,16 @@ void testFactored(){
   komo.addObjective({2.}, FS_qItself, {}, OT_eq, {}, {}, 1);
   komo.addObjective({1.9,2.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
 
+  komo.reportProblem();
+
   //== get info from the factored problem
   {
     std::shared_ptr<NLP_Factored> nlp = komo.nlp_Factored();
-    nlp->report(cout, 3);
+    nlp->report(cout, 5);
   }
 
   //== three equivalent options to solve the full problem:
-#if 1
+#if 0
   komo.opt.verbose = 4;
   switch(2){
     case 0: { //old style
@@ -84,8 +86,8 @@ void testFactored(){
   while(komo.view_play(true));
 #endif
 
+  //== testing a partial problem
   std::shared_ptr<NLP_Factored> nlp = komo.nlp_Factored();
-  nlp->report(cout, 3);
 
   uintA gripperDUP_vars;
   for(uint i=0;i<nlp->variableDimensions.N;i++){
@@ -96,7 +98,7 @@ void testFactored(){
   nlp->subSelect(gripperDUP_vars, {});
 
   cout <<"======== SUBSELECT ==========" <<endl;
-  nlp->report(cout, 3);
+  nlp->report(cout, 5);
   komo.view(true);
 
   checkJacobianCP(*nlp, komo.x, 1e-6);

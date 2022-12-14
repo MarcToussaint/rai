@@ -40,7 +40,8 @@ struct Skeleton {
   std::shared_ptr<KOMO> komoWaypoints;
   std::shared_ptr<KOMO> komoPath;
   std::shared_ptr<KOMO> komoFinal;
-  StringA collisionPairs;
+  StringA explicitCollisions;
+  StringA explicitLiftPriors;
   bool collisions=false;
   int verbose=1;
 
@@ -48,7 +49,7 @@ struct Skeleton {
   Skeleton(std::initializer_list<SkeletonEntry> entries) : S(entries) {}
 
   //-- set the skeleton
-  void setFromStateSequence(Array<Graph*>& states, const arr& times);
+  void setFromStateSequence(const Array<Graph*>& states, const arr& times);
   void fillInEndPhaseOfModes();
 
   //-- addEntry
@@ -65,8 +66,8 @@ struct Skeleton {
   intA getSwitches(const Configuration& C) const;
 
   //-- get KOMO transcriptions (grab the NLP directly from KOMO)
-  shared_ptr<KOMO> getKomo_path(const rai::Configuration& C, uint stepsPerPhase=30, double accScale=1e0, double lenScale=1e-2, double homingScale=1e-2) const;
-  shared_ptr<KOMO> getKomo_waypoints(const rai::Configuration& C, double lenScale=1e-2, double homingScale=1e-2) const;
+  shared_ptr<KOMO> getKomo_path(const rai::Configuration& C, uint stepsPerPhase=30, double accScale=1e0, double lenScale=1e-2, double homingScale=1e-2);
+  shared_ptr<KOMO> getKomo_waypoints(const rai::Configuration& C, double lenScale=1e-2, double homingScale=1e-2);
   shared_ptr<KOMO> getKOMO_finalSlice(const rai::Configuration& C, double lenScale=1e-2, double homingScale=1e-2);
 
   //-- get same as above, with "Transcription"

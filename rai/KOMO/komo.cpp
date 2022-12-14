@@ -1443,7 +1443,7 @@ void KOMO::setupPathConfig() {
       if(!dof->mimicers.N) dof->active=false;
       else{
         bool act=false;
-        for(Dof* m:dof->mimicers) if(m->active){ act=true; break; }
+        for(Dof* m:dof->mimicers) if(m->active && m->frame->ID>=firstID){ act=true; break; }
         if(!act) dof->active=false;
       }
     }
@@ -1517,7 +1517,18 @@ shared_ptr<NLP> KOMO::nlp(){
   return make_shared<Conv_KOMO_NLP>(*this, solver==rai::KS_sparse);
 }
 
-shared_ptr<NLP_Factored> KOMO::nlp_Factored(){
+shared_ptr<NLP_Factored> KOMO::nlp_FactoredTime(){
+  rai::Array<DofL> dofs(T);
+  for(rai::Dof* d: pathConfig.activeDofs){ //goo through all active dofs and sort them in time slices
+    int t = int(d->frame->ID/timeSlices.d1) - int(k_order);
+    if(t>=int(T)) t = int(d->frame->parent->ID/timeSlices.d1) - int(k_order);
+    CHECK(t<int(T), "hmm");
+    if(t>=0) dofs(t).append(d);
+  }
+  return make_shared<Conv_KOMO_FactoredNLP>(*this, dofs);
+}
+
+shared_ptr<NLP_Factored> KOMO::nlp_FactoredParts(){
   rai::Array<DofL> dofs = pathConfig.getPartsDofs();
   return make_shared<Conv_KOMO_FactoredNLP>(*this, dofs);
 }
@@ -1567,7 +1578,7 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
       featuresOs <<" y^2=" <<err(time, i) <<endl;
     }
   }
-CHECK_EQ(M, featureValues.N, "");
+  CHECK_EQ(M, featureValues.N, "");
 
   //-- generate a report graph
   rai::Graph report;

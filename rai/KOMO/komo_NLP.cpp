@@ -119,7 +119,7 @@ void Conv_KOMO_NLP::getFHessian(arr& H, const arr& x) {
 
 void Conv_KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
   komo.reportProblem(os);
-  if(verbose>1) os <<komo.getReport(verbose>3);
+  if(verbose>1 && komo.featureValues.N) os <<komo.getReport(verbose>3);
   if(verbose>2) komo.view(false/*verbose>3*/, STRING("KOMO nlp report - " <<msg));
   if(verbose>4) komo.view_play(false);
   if(verbose>6){
@@ -184,8 +184,8 @@ Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo, const rai::Array<DofL>
 
     //variable name
     String name;
-    String A; A <<dofs(0)->frame->name <<'.' <<(dofs(0)->frame->ID/komo.timeSlices.d1 - komo.k_order);
-    String B; B <<dofs(-1)->frame->name <<'.' <<(dofs(-1)->frame->ID/komo.timeSlices.d1 - komo.k_order);
+    String A; A <<dofs(0)->frame->name <<'.' <<(int(dofs(0)->frame->ID/komo.timeSlices.d1) - int(komo.k_order));
+    String B; B <<dofs(-1)->frame->name <<'.' <<(int(dofs(-1)->frame->ID/komo.timeSlices.d1) - int(komo.k_order));
     if(dofs.N>1){
       name <<A <<"--" <<B;
     }else if(dofs(0)->fex()){
@@ -197,13 +197,15 @@ Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo, const rai::Array<DofL>
     }
     __variableIndex(i).name = name;
   }
-  CHECK_EQ(xDim, komo.pathConfig.getJointStateDimension(), "");
+  //the following check doesn't hold for shared (mimic) dofs
+  //CHECK_EQ(xDim, komo.pathConfig.getJointStateDimension(), "");
   CHECK_EQ(xDim, xIndex2varIndex.N, "");
 //  cout <<"xIndex2varIndex" <<xIndex2varIndex <<endl;
 
   //ensure that komo.pathConfig uses the same indexing -- that its activeJoint set is indexed exactly as consecutive variables
   komo.pathConfig.setActiveDofs(activeDofs);
-  komo.pathConfig.ensure_q();
+  komo.x = komo.pathConfig.getJointState();
+  komo.pathConfig.setJointState(komo.x);
   komo.pathConfig.checkConsistency();
 
   //NLP_Factored signature: features
@@ -375,7 +377,7 @@ arr Conv_KOMO_FactoredNLP::getSingleVariableInitSample(uint var_id){
 
 void Conv_KOMO_FactoredNLP::setSingleVariable(uint var_id, const arr& x) {
   CHECK_EQ(vars(var_id).dim, x.N, "");
-  komo.pathConfig.setDofState(x, vars(var_id).dofs);
+  komo.pathConfig.setDofState(x, vars(var_id).dofs, true);
 }
 
 void Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) {
@@ -390,9 +392,11 @@ void Conv_KOMO_FactoredNLP::evaluate(arr& phi, arr& J, const arr& x) {
 }
 
 void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose, const char* msg) {
+  reportDetails(os, verbose, msg); return;
+
   komo.pathConfig.ensure_q();
   komo.reportProblem(os);
-  if(verbose>1) os <<komo.getReport(verbose>3);
+  if(verbose>1 && komo.featureValues.N) os <<komo.getReport(verbose>3);
   if(verbose>2) komo.view(false/*verbose>3*/, STRING("KOMO nlp_Factored report - " <<msg));
   if(verbose>4) komo.view_play(false);
   if(verbose>6){
@@ -401,41 +405,46 @@ void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose, const char* ms
   }
 
   if(verbose>4){
-    for(uint i=0; i<varsN(); i++) {
-      os <<"Variable " <<i;
-      if(subVars.N) os <<"[" <<subVars(i) <<"]";
-      os <<" '" <<vars(i).name <<"' dim:" <<vars(i).dim  <<" dofs:" <<vars(i).dofs.N;
-      os <<" {";
-      if(vars(i).dofs.N<=2){
-        for(Dof *d:vars(i).dofs){
-          os <<" qIdx:" <<d->qIndex;
-          if(d->limits.N) os <<" limits:" <<d->limits;
-          if(d->isStable) os <<" STABLE";
-        }
-      }else{ os <<" ..."; }
-      os <<" }" <<endl;
-    }
-
-    arr y, J;
-    for(uint f=0; f<featsN(); f++) {
-      std::shared_ptr<GroundedObjective>& ob = feats(f).ob;
-      os <<"Feature " <<f;
-      if(subVars.N) os <<"[" <<subFeats(f) <<"]";
-      os <<" '" <<ob->feat->shortTag(komo.pathConfig) <<"' dim:" <<feats(f).ob->feat->dim(feats(f).ob->frames) <<" vars: " <<featureVariables(f) <<'=' <<feats(f).vars <<"=[ ";
-      for(uint& i:featureVariables(f)) if(i!=UINT_MAX) os <<vars(i).name <<' '; else os <<"% ";
-      os <<"]" ;
-      evaluateSingleFeature(f, y, J, NoArr);
-      os <<" y:" <<y.noJ() <<endl;
-//      os <<"J:" <<J <<endl;
-    }
-
-    os <<"NLP_Factored signature:"
-      <<"\n  variableDimensions: " <<variableDimensions
-     <<"\n  featureDimensions: " <<featureDimensions
-    <<"\n  featureVariables: " <<featureVariables <<endl;
   }
 
   if(msg) os <<" *** " <<msg <<" ***"<<endl;
+}
+
+void Conv_KOMO_FactoredNLP::reportDetails(std::ostream& os, int verbose, const char* msg){
+  os <<"=== NLP_Factored signature:"
+    <<"\n  variableDimensions: " <<variableDimensions
+   <<"\n  featureDimensions: " <<featureDimensions
+  <<"\n  featureVariables: " <<featureVariables <<endl;
+
+  for(uint i=0; i<varsN(); i++) {
+    os <<"Variable " <<i;
+    if(subVars.N) os <<"[" <<subVars(i) <<"]";
+    os <<" '" <<vars(i).name <<"' dim:" <<vars(i).dim  <<" dofs:" <<vars(i).dofs.N;
+    os <<" {";
+    if(vars(i).dofs.N<=2){
+      for(Dof *d:vars(i).dofs){
+        os <<" qIdx:" <<d->qIndex;
+        if(d->limits.N) os <<" limits:" <<d->limits;
+        if(d->isStable) os <<" STABLE";
+      }
+    }else{ os <<" ..."; }
+    os <<" }" <<endl;
+  }
+
+  arr y, J;
+  for(uint f=0; f<featsN(); f++) {
+    std::shared_ptr<GroundedObjective>& ob = feats(f).ob;
+    os <<"Feature " <<f;
+    if(subVars.N) os <<"[" <<subFeats(f) <<"]";
+    os <<" '" <<ob->feat->shortTag(komo.pathConfig) <<"' dim:" <<feats(f).ob->feat->dim(feats(f).ob->frames) <<" vars: " <<featureVariables(f) <<'=' <<feats(f).vars <<"=[ ";
+    for(uint& i:featureVariables(f)) if(i!=UINT_MAX) os <<vars(i).name <<' '; else os <<"% ";
+    os <<"]" ;
+    evaluateSingleFeature(f, y, J, NoArr);
+    os <<" y:" <<y.noJ() <<endl;
+//      os <<"J:" <<J <<endl;
+  }
+
+
 }
 
 }//namespace

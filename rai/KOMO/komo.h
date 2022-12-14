@@ -224,7 +224,8 @@ public:
   //
 
   shared_ptr<NLP> nlp();
-  shared_ptr<NLP_Factored> nlp_Factored();
+  shared_ptr<NLP_Factored> nlp_FactoredTime();
+  shared_ptr<NLP_Factored> nlp_FactoredParts();
 
 
   //===========================================================================

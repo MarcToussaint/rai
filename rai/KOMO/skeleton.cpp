@@ -34,7 +34,7 @@ void Skeleton::write(ostream& os, const intA& switches) const {
   }
 }
 
-void Skeleton::setFromStateSequence(Array<Graph*>& states, const arr& times){
+void Skeleton::setFromStateSequence(const Array<Graph*>& states, const arr& times){
   //setup a done marker array: which literal in each state is DONE
   uint maxLen=0;
   for(Graph* s:states) if(s->N>maxLen) maxLen = s->N;
@@ -42,7 +42,7 @@ void Skeleton::setFromStateSequence(Array<Graph*>& states, const arr& times){
   done = false;
 
   for(uint k=0; k<states.N; k++) {
-    Graph& G = *states(k);
+    const Graph& G = *states(k);
 //    cout <<G <<endl;
     for(uint i=0; i<G.N; i++) {
       if(!done(k, i)) {
@@ -120,7 +120,7 @@ void Skeleton::fillInEndPhaseOfModes(){
 }
 
 void Skeleton::addExplicitCollisions(const StringA& collisions){
-  collisionPairs = collisions;
+  explicitCollisions = collisions;
   for(uint i=0;i<collisions.N;i+=2){
     if(komoWaypoints) komoWaypoints->addObjective({}, FS_distance, {collisions.elem(i), collisions.elem(i+1)}, OT_ineq, {1e1});
     if(komoPath) komoPath->addObjective({}, FS_distance, {collisions.elem(i), collisions.elem(i+1)}, OT_ineq, {1e1});
@@ -128,10 +128,12 @@ void Skeleton::addExplicitCollisions(const StringA& collisions){
 }
 
 void Skeleton::addLiftPriors(const StringA& lift){
-  CHECK(komoPath, "");
-  for(uint i=0;i<lift.N;i++) if(komoPath->world[lift(i)]){
-    for(uint t=0;t<getMaxPhase();t++){
-      komoPath->addObjective({.3+t,.7+t}, FS_position, {lift(i)}, OT_ineqP, {{1,3},{0,0,-1e1}}, {0.,0.,.6});
+  explicitLiftPriors = lift;
+  if(komoPath){
+    for(uint i=0;i<lift.N;i++) if(komoPath->world[lift(i)]){
+      for(uint t=0;t<getMaxPhase();t++){
+        komoPath->addObjective({.3+t,.7+t}, FS_position, {lift(i)}, OT_ineqP, {{1,3},{0,0,-1e1}}, {0.,0.,.6});
+      }
     }
   }
 }
@@ -281,7 +283,7 @@ void Skeleton::getTwoWaypointProblem(int t2, Configuration& C, arr& q1, arr& q2,
   //  C.view(true);
 }
 
-shared_ptr<KOMO> Skeleton::getKomo_path(const rai::Configuration& C, uint stepsPerPhase, double accScale, double lenScale, double homingScale) const {
+shared_ptr<KOMO> Skeleton::getKomo_path(const rai::Configuration& C, uint stepsPerPhase, double accScale, double lenScale, double homingScale) {
   shared_ptr<KOMO> komo=make_shared<KOMO>();
   komo->opt.verbose = verbose-2;
   komo->setModel(C, collisions);
@@ -295,11 +297,21 @@ shared_ptr<KOMO> Skeleton::getKomo_path(const rai::Configuration& C, uint stepsP
 
   addObjectives(*komo);
 
+  for(uint i=0;i<explicitCollisions.N;i+=2){
+    komo->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
+  }
+  for(uint i=0;i<explicitLiftPriors.N;i++) if(komo->world[explicitLiftPriors(i)]){
+    for(uint t=0;t<maxPhase;t++){
+      komo->addObjective({.3+t,.7+t}, FS_position, {explicitLiftPriors(i)}, OT_ineqP, {{1,3},{0,0,-1e1}}, {0.,0.,.6});
+    }
+  }
+
   komo->run_prepare(0.);
+  komoPath = komo;
   return komo;
 }
 
-shared_ptr<KOMO> Skeleton::getKomo_waypoints(const Configuration& C, double lenScale, double homingScale) const {
+shared_ptr<KOMO> Skeleton::getKomo_waypoints(const Configuration& C, double lenScale, double homingScale) {
   shared_ptr<KOMO> komo=make_shared<KOMO>();
   komo->opt.verbose = verbose-2;
   komo->setModel(C, collisions);
@@ -311,10 +323,14 @@ shared_ptr<KOMO> Skeleton::getKomo_waypoints(const Configuration& C, double lenS
   komo->addQuaternionNorms();
   if(collisions) komo->add_collision(true);
 
-  //komo->copyObjectives(komoPath);
   addObjectives(*komo);
 
+  for(uint i=0;i<explicitCollisions.N;i+=2){
+    komo->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
+  }
+
   komo->run_prepare(0.);
+  komoWaypoints = komo;
   return komo;
 }
 
@@ -377,7 +393,12 @@ shared_ptr<KOMO> Skeleton::getKOMO_finalSlice(const rai::Configuration& C, doubl
     komo->objs.remove(i);
   }
 
+  for(uint i=0;i<explicitCollisions.N;i+=2){
+    komo->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
+  }
+
   komo->run_prepare(.01);
+  komoFinal = komo;
   return komo;
 }
 
