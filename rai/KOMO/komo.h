@@ -102,6 +102,7 @@ struct KOMO : NonCopyable {
                         {}, type, scale, target, order, deltaFromStep, deltaToStep);
   }
   void clearObjectives(); ///< clear all objective
+  void removeObjective(const Objective* ob);
   void copyObjectives(KOMO& komoB, bool deepCopyFeatures=true);
 
   void addContact_slide(double startTime, double endTime, const char* from, const char* to);

@@ -189,6 +189,13 @@ void KOMO::clearObjectives() {
   reset();
 }
 
+void KOMO::removeObjective(const Objective* ob){
+  for(const GroundedObjective* o:ob->groundings){
+    for(uint i=objs.N;i--;) if(objs(i).get()==o) objs.remove(i);
+  }
+  for(uint i=objectives.N;i--;) if(objectives(i).get()==ob) objectives.remove(i);
+}
+
 void KOMO::copyObjectives(KOMO& komoB, bool deepCopyFeatures){
   for(const std::shared_ptr<Objective>& o: komoB.objectives){
     std::shared_ptr<Feature> f = o->feat;
@@ -208,6 +215,7 @@ void KOMO::_addObjective(const std::shared_ptr<Objective>& ob, const intA& timeS
   for(uint c=0;c<timeSlices.d0;c++){
     shared_ptr<GroundedObjective> o = make_shared<GroundedObjective>(ob->feat, ob->type, timeSlices[c]);
     objs.append(o);
+    ob->groundings.append(o.get());
     o->objId = objectives.N-1;
     o->frames.resize(timeSlices.d1, o->feat->frameIDs.N);
     for(uint i=0;i<timeSlices.d1;i++){

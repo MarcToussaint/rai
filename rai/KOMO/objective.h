@@ -18,6 +18,7 @@ struct Objective {
   ObjectiveType type;  ///< element of {f, sumOfSqr, inequality, equality}
   rai::String name;
   arr times;
+  rai::Array<struct GroundedObjective*> groundings;
 
   Objective(const shared_ptr<Feature>& _feat, const ObjectiveType& _type, const rai::String& _name, const arr& _times)
     : feat(_feat), type(_type), name(_name), times(_times) {}
