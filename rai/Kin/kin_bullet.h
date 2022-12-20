@@ -17,7 +17,7 @@ namespace rai {
     RAI_PARAM("bullet/", int, verbose, 1)
     RAI_PARAM("bullet/", bool, yGravity, false)
     RAI_PARAM("bullet/", bool, softBody, false)
-    RAI_PARAM("bullet/", bool, multiBody, false)
+    RAI_PARAM("bullet/", bool, multiBody, true)
     RAI_PARAM("bullet/", double, defaultFriction, 1.)
     RAI_PARAM("bullet/", double, defaultRestitution, .1)
     RAI_PARAM("bullet/", double, contactStiffness, 5000.)

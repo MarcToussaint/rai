@@ -1200,7 +1200,7 @@ arr rai::Joint::get_h() const {
 }
 
 bool rai::Joint::isPartBreak() {
-  return !(type>=JT_hingeX && type<=JT_hingeZ);
+  return !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_transZ));
 //  return (type==JT_rigid || type==JT_free || type==JT_transY || mimic); // && !mimic;
   //    return (dim!=1 && !mimic) || type==JT_tau;
 }
