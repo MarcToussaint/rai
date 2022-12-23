@@ -170,7 +170,11 @@ BulletInterface::BulletInterface(rai::Configuration& C, const rai::Bullet_Option
   if(opt.multiBody){
     FrameL parts = C.getParts();
     for(rai::Frame *f : parts){
-      if(f->children.N){
+      bool asMultiBody=false;
+      FrameL sub = f->getSubtree();
+      for(rai::Frame *a:sub) if(a->joint){ asMultiBody=true; break; }
+
+      if(asMultiBody){
         self->addMultiBody(f);
         if(f->ats && (*f->ats)["motors"]) motorizeMultiBody(f);
       }else{
@@ -323,7 +327,7 @@ void BulletInterface::motorizeMultiBody(rai::Frame* base){
   auto world = dynamic_cast<btMultiBodyDynamicsWorld*>(self->dynamicsWorld);
   CHECK(world, "need a btMultiBodyDynamicsWorld");
   for(uint i=0;i<n;i++){
-     auto mot = new btMultiBodyJointMotor(mi.multibody, i, 0., 100000.);
+    auto mot = new btMultiBodyJointMotor(mi.multibody, i, 0., 100000.);
     if(!mi.links(i+1)->joint->mimic){
     world->addMultiBodyConstraint(mot);
     arr q = mi.links(i+1)->joint->calcDofsFromConfig();
@@ -440,15 +444,20 @@ btCollisionShape* BulletInterface_self::createLinkShape(ShapeL& shapes, rai::Bod
     }
 #endif
   }
+  if(f->inertia && !f->inertia->com.isZero){
+    LOG(-2) <<"DON'T DO THAT! Bullet can only properly handle (compound) inertias if transformed to zero com and diagonal tensor";
+  }
 
   //-- decide on the type
   type = rai::BT_static;
-  if(shapes.N) {
+//  if(shapes.N) {
     if(f->joint)   type = rai::BT_kinematic;
     if(f->inertia) type = f->inertia->type;
-  }
+//  }
   actorTypes(f->ID) = type;
-  if(opt.verbose>0) LOG(0) <<"adding shape anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
+  if(opt.verbose>0) LOG(0) <<"adding link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes";
+
+  if(!shapes.N) return 0;
 
   //-- create a bullet collision shape
   btCollisionShape* colShape=0;
@@ -472,8 +481,14 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f) {
   btScalar mass(1.0f);
   btVector3 localInertia(0, 0, 0);
   if(type==rai::BT_dynamic) {
-    if(f->inertia) mass = f->inertia->mass;
-    colShape->calculateLocalInertia(mass, localInertia);
+    if(f->inertia){
+      mass = f->inertia->mass;
+      CHECK(f->inertia->com.isZero, "need zero com");
+      CHECK(f->inertia->matrix.isDiagonal(), "need diagonal matrix");
+      localInertia.setValue(f->inertia->matrix.m00, f->inertia->matrix.m11, f->inertia->matrix.m22);
+    }else{
+      colShape->calculateLocalInertia(mass, localInertia);
+    }
   } else {
     mass=0.;
   }
@@ -562,19 +577,26 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
     if(i==0){
       linkJoint=0;
     } else {
-      CHECK(!linkJoint->inertia, "");
+//      CHECK(!linkJoint->inertia, "");
+      CHECK(linkMass->inertia, "");
       CHECK(linkJoint->joint, "");
     }
     ShapeL shapes;
     rai::BodyType type;
-    btCollisionShape* colShape=createLinkShape(shapes, type, linkMass);
+    btCollisionShape* colShape=createLinkShape(shapes, type, links(i));
     if(i>0) actorTypes(linkMass->ID) = rai::BT_dynamic;
 
     //get inertia
     btScalar mass(.1f);
     btVector3 localInertia(0.01, 0.01, 0.01);
-    if(linkMass->inertia) mass = linkMass->inertia->mass;
-    colShape->calculateLocalInertia(mass, localInertia);
+    if(linkMass->inertia){
+      mass = linkMass->inertia->mass;
+      CHECK(linkMass->inertia->com.isZero, "need zero com");
+      CHECK(linkMass->inertia->matrix.isDiagonal(), "need diagonal matrix");
+      localInertia.setValue(linkMass->inertia->matrix.m00, linkMass->inertia->matrix.m11, linkMass->inertia->matrix.m22);
+    }else{
+      if(colShape) colShape->calculateLocalInertia(mass, localInertia);
+    }
 
     if(!i){ //base!!
       bool fixedBase = actorTypes(linkMass->ID)!=rai::BT_dynamic;
@@ -590,11 +612,27 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
       switch(linkJoint->joint->type){
         case rai::JT_hingeX:{
           btVector3 axis(1,0,0);
-          multibody->setupRevolute(i-1, mass, localInertia, parents(i)-1,
-                                   conv_rot_btQuat(-relA.rot), axis, conv_vec_btVec3(relA.pos), conv_vec_btVec3(relB.pos), true);
+          multibody->setupRevolute(i-1, mass, localInertia, parents(i)-1, conv_rot_btQuat(-relA.rot), axis, conv_vec_btVec3(relA.pos), conv_vec_btVec3(relB.pos), true);
+        } break;
+        case rai::JT_transX:{
+          btVector3 axis(1,0,0);
+          CHECK(relA.pos.isZero, "offsets not handled properly - insert a pre-frame");
+          CHECK(relB.pos.isZero, "offsets not handled properly - insert a pre-frame");
+//          relA.pos.setZero(); relB.pos.setZero();
+          multibody->setupPrismatic(i-1, mass, localInertia, parents(i)-1, conv_rot_btQuat(-relA.rot), axis, conv_vec_btVec3(relA.pos), conv_vec_btVec3(relB.pos), true);
         } break;
         case rai::JT_transY:{
           btVector3 axis(0,1,0);
+          CHECK(relA.pos.isZero, "offsets not handled properly - insert a pre-frame");
+          CHECK(relB.pos.isZero, "offsets not handled properly - insert a pre-frame");
+//          relA.pos.setZero(); relB.pos.setZero();
+          multibody->setupPrismatic(i-1, mass, localInertia, parents(i)-1, conv_rot_btQuat(-relA.rot), axis, conv_vec_btVec3(relA.pos), conv_vec_btVec3(relB.pos), true);
+        } break;
+        case rai::JT_transZ:{
+          btVector3 axis(0,0,1);
+          CHECK(relA.pos.isZero, "offsets not handled properly - insert a pre-frame");
+          CHECK(relB.pos.isZero, "offsets not handled properly - insert a pre-frame");
+//          relA.pos.setZero(); relB.pos.setZero();
           multibody->setupPrismatic(i-1, mass, localInertia, parents(i)-1, conv_rot_btQuat(-relA.rot), axis, conv_vec_btVec3(relA.pos), conv_vec_btVec3(relB.pos), true);
         } break;
         default: NIY;
@@ -616,7 +654,7 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
     }
 
     //add collider
-    {
+    if(colShape) {
       btMultiBodyLinkCollider* col = new btMultiBodyLinkCollider(multibody, i-1); //-1 for root!
       col->setCollisionShape(colShape);
       col->setWorldTransform(conv_trans_btTrans(linkMass->ensure_X()));

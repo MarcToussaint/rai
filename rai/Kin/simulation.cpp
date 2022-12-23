@@ -199,7 +199,10 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->physx->pullDynamicStates(C.frames, self->frameVelocities);
   } else if(engine==_bullet) {
     self->bullet->pushKinematicStates(C);
-    if(self->bullet->opt().multiBody) self->bullet->setMotorQ(ucontrol[0], ucontrol[1]); //C.getJointState(), qDot);
+    if(self->bullet->opt().multiBody){
+      if(ucontrol.nd!=2) LOG(1) <<"stepping motorized bullet without ctrl reference";
+      else self->bullet->setMotorQ(ucontrol[0], ucontrol[1]); //C.getJointState(), qDot);
+    }
     self->bullet->step(tau);
     self->bullet->pullDynamicStates(C); //, self->frameVelocities);
 #ifdef BACK_BRIDGE
@@ -532,7 +535,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
   }
 
   void step() {
-    gl.update(STRING("t:" <<time), true);
+    gl.update(STRING("Kin/Simulation - time:" <<time), true);
     //write_png(gl.captureImage, STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"));
   }
 

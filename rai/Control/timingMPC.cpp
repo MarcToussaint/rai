@@ -38,9 +38,9 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
   auto ret = S.solve();
 
   if(verbose>1){
-    cout <<*ret <<endl;
-    cout <<"## vels:\n" <<nlp.v <<endl;
-    cout <<"## taus: " <<nlp.tau <<endl;
+    LOG(0) <<*ret <<endl
+          <<"## vels:\n" <<nlp.v <<endl
+         <<"## taus: " <<nlp.tau;
   }
 
   tau({phase, -1}) = nlp.tau;
@@ -48,7 +48,7 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
   warmstart_dual = ret->dual;
 
   if(verbose>0){
-    cout <<"phase: " <<phase <<" tau: " <<tau <<endl;
+    LOG(0) <<"phase: " <<phase <<" tau: " <<tau;
   }
   return ret;
 }

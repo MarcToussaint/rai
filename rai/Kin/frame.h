@@ -136,7 +136,7 @@ struct Frame : NonCopyable {
   Dof* getDof() const;
 
   void prefixSubtree(const char* prefix);
-  void computeCompoundInertia();
+  void computeCompoundInertia(bool clearChildInertias=true);
   void transformToDiagInertia();
 
   //I/O
