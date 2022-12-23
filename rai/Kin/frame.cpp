@@ -266,17 +266,17 @@ void rai::Frame::prefixSubtree(const char* prefix) {
   FrameL F = {this};
   getSubtree(F);
   for(auto* f:F) f->name.prepend(prefix);
-
 }
 
-void rai::Frame::computeCompoundInertia(){
+void rai::Frame::computeCompoundInertia(bool clearChildInertias){
   CHECK(!inertia, "this frame already has inertia");
   FrameL all = {};
   getRigidSubFrames(all, false);
   Inertia *I = new Inertia(*this);
   I->setZero();
-  for(rai::Frame *f:all){
-    if(f->inertia) I->add(*f->inertia, f->ensure_X() / ensure_X());
+  for(rai::Frame *f:all) if(f->inertia) {
+    I->add(*f->inertia, f->ensure_X() / ensure_X());
+    if(clearChildInertias) delete f->inertia;
   }
 }
 
@@ -303,7 +303,6 @@ void rai::Frame::transformToDiagInertia(){
     set_X()->appendTransformation(t);
     for(rai::Frame* ch:children) ch->set_Q() = -t * ch->get_Q();
   }
-
 }
 
 void rai::Frame::_state_setXBadinBranch() {
@@ -542,6 +541,7 @@ rai::Frame& rai::Frame::setMass(double mass) {
     if(inertia) delete inertia;
   } else {
     getInertia().mass = mass;
+    getInertia().defaultInertiaByShape();
   }
   return *this;
 }
@@ -1759,8 +1759,13 @@ void rai::Inertia::defaultInertiaByShape() {
 
 void rai::Inertia::write(std::ostream& os) const {
   os <<", mass:" <<mass;
+  if(!com.isZero){
+    os <<", com:" <<com;
+  }
   if(matrix.isDiagonal()){
     os <<", inertia:[" <<matrix.m00 <<' ' <<matrix.m11 <<' ' <<matrix.m22 <<']';
+  }else{
+    os <<", inertia:" <<matrix;
   }
 }
 

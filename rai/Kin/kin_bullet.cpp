@@ -170,7 +170,11 @@ BulletInterface::BulletInterface(rai::Configuration& C, const rai::Bullet_Option
   if(opt.multiBody){
     FrameL parts = C.getParts();
     for(rai::Frame *f : parts){
-      if(f->children.N){
+      bool asMultiBody=false;
+      FrameL sub = f->getSubtree();
+      for(rai::Frame *a:sub) if(a->joint){ asMultiBody=true; break; }
+
+      if(asMultiBody){
         self->addMultiBody(f);
         if(f->ats && (*f->ats)["motors"]) motorizeMultiBody(f);
       }else{
@@ -440,6 +444,9 @@ btCollisionShape* BulletInterface_self::createLinkShape(ShapeL& shapes, rai::Bod
     }
 #endif
   }
+  if(f->inertia && !f->inertia->com.isZero){
+    LOG(-2) <<"DON'T DO THAT! Bullet can only properly handle (compound) inertias if transformed to zero com and diagonal tensor";
+  }
 
   //-- decide on the type
   type = rai::BT_static;
@@ -474,8 +481,14 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f) {
   btScalar mass(1.0f);
   btVector3 localInertia(0, 0, 0);
   if(type==rai::BT_dynamic) {
-    if(f->inertia) mass = f->inertia->mass;
-    colShape->calculateLocalInertia(mass, localInertia);
+    if(f->inertia){
+      mass = f->inertia->mass;
+      CHECK(f->inertia->com.isZero, "need zero com");
+      CHECK(f->inertia->matrix.isDiagonal(), "need diagonal matrix");
+      localInertia.setValue(f->inertia->matrix.m00, f->inertia->matrix.m11, f->inertia->matrix.m22);
+    }else{
+      colShape->calculateLocalInertia(mass, localInertia);
+    }
   } else {
     mass=0.;
   }
@@ -576,8 +589,14 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
     //get inertia
     btScalar mass(.1f);
     btVector3 localInertia(0.01, 0.01, 0.01);
-    if(linkMass->inertia) mass = linkMass->inertia->mass;
-    if(colShape) colShape->calculateLocalInertia(mass, localInertia);
+    if(linkMass->inertia){
+      mass = linkMass->inertia->mass;
+      CHECK(linkMass->inertia->com.isZero, "need zero com");
+      CHECK(linkMass->inertia->matrix.isDiagonal(), "need diagonal matrix");
+      localInertia.setValue(linkMass->inertia->matrix.m00, linkMass->inertia->matrix.m11, linkMass->inertia->matrix.m22);
+    }else{
+      if(colShape) colShape->calculateLocalInertia(mass, localInertia);
+    }
 
     if(!i){ //base!!
       bool fixedBase = actorTypes(linkMass->ID)!=rai::BT_dynamic;

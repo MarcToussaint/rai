@@ -535,7 +535,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
   }
 
   void step() {
-    gl.update(STRING("t:" <<time), true);
+    gl.update(STRING("Kin/Simulation - time:" <<time), true);
     //write_png(gl.captureImage, STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"));
   }
 
