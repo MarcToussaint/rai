@@ -423,6 +423,26 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
   return f;
 }
 
+void SDF_GridData::resample(uint N){
+  arr X = grid(lo, up, {N,N,N});
+  gridData = evalFloat(X).reshape(N+1,N+1,N+1);
+}
+
+void SDF_GridData::smooth(uint width, uint iters){
+  arr dat = rai::convert<double>(gridData);
+  uint half = (width-1)/2;
+  for(uint i=0;i<iters;i++){
+    dat = integral(dat);
+    dat = differencing(dat, width);
+    dat.shift(half*(-1-dat.d2-dat.d1*dat.d2), false);
+    //overwrite padding
+    for(uint i=dat.d0-half;i<dat.d0;i++) for(uint j=0;j<dat.d1;j++) for(uint k=0;k<dat.d2;k++) dat(i,j,k) = gridData(i,j,k);
+    for(uint i=0;i<dat.d0;i++) for(uint j=dat.d1-half;j<dat.d1;j++) for(uint k=0;k<dat.d2;k++) dat(i,j,k) = gridData(i,j,k);
+    for(uint i=0;i<dat.d0;i++) for(uint j=0;j<dat.d1;j++) for(uint k=dat.d2-half;k<dat.d2;k++) dat(i,j,k) = gridData(i,j,k);
+  }
+  gridData = rai::convert<float>(dat);
+}
+
 void SDF_GridData::write(std::ostream& os) const {
   lo.writeTagged(os,"lo");
   up.writeTagged(os,"up");

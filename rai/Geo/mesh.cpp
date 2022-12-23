@@ -1445,11 +1445,12 @@ extern void glColor(float r, float g, float b, float alpha);
 
 /// GL routine to draw a rai::Mesh
 void rai::Mesh::glDraw(struct OpenGL& gl) {
+  GLboolean lightingEnabled=true;
+  glGetBooleanv(GL_LIGHTING, &lightingEnabled);
+
   if(glDrawOptions(gl).drawColors) {
     if(C.nd==1) {
       CHECK(C.N>=1 && C.N<=4, "need a basic color");
-      GLboolean light=true;
-      glGetBooleanv(GL_LIGHTING, &light);
       GLfloat col[4];
       if(C.N>=3){
         col[0] = C.elem(0);
@@ -1460,8 +1461,8 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
         col[0] = col[1] = col[2] = C.elem(0);
         col[3] = (C.N==2?C.elem(1):1.);
       }
-      glColor4fv(col);
-      if(light) glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
+      if(lightingEnabled) glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
+      else glColor4fv(col);
     }
   }
 
@@ -1533,7 +1534,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
   }
 
   //-- draw the mesh
-  if((!C.N || C.nd==1 || C.d0==V.d0)  //we have colors for each vertex
+  if((!C.N || C.nd==1 || (C.d0==V.d0 && !lightingEnabled))  //we have colors for each vertex
       && (!tex.N || !Tt.N)) { //we have no tex or tex coords for each vertex -> use index arrays
 
     //  glShadeModel(GL_FLAT);
@@ -1558,7 +1559,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
 
     glDrawElements(GL_TRIANGLES, T.N, GL_UNSIGNED_INT, T.p);
 
-    if(C.N) glEnable(GL_LIGHTING);
+    if(C.N==V.N) glEnable(GL_LIGHTING);
 
     if(tex.N) glDisable(GL_TEXTURE_2D);
 
@@ -1591,20 +1592,21 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
     if(tex.N) CHECK_EQ(Tt.d0, T.d0, "this needs tex coords for each tri");
     if(tex.N && glDrawOptions(gl).drawColors) glEnable(GL_TEXTURE_2D);
 
+    glShadeModel(GL_SMOOTH);
+
     glBegin(GL_TRIANGLES);
     for(i=0; i<T.d0; i++) {
       if(C.d0==T.d0) {
         if(C.d1==3) glColor(C(i, 0), C(i, 1), C(i, 2), 1.);
         if(C.d1==1) glColorId(C(i, 0));
       }
-      v=T(i, 0);  glNormal3dv(&Vn(v, 0));  if(C.nd==2 && C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));  glVertex3dv(&V(v, 0));
-      v=T(i, 1);  glNormal3dv(&Vn(v, 0));  if(C.nd==2 && C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 1), 0));  glVertex3dv(&V(v, 0));
-      v=T(i, 2);  glNormal3dv(&Vn(v, 0));  if(C.nd==2 && C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 2), 0));  glVertex3dv(&V(v, 0));
+      v=T(i, 0);  glNormal3dv(&Vn(v, 0));  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));  glVertex3dv(&V(v, 0));
+      v=T(i, 1);  glNormal3dv(&Vn(v, 0));  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 1), 0));  glVertex3dv(&V(v, 0));
+      v=T(i, 2);  glNormal3dv(&Vn(v, 0));  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 2), 0));  glVertex3dv(&V(v, 0));
     }
     glEnd();
     if(Tt.N && texImg.N && glDrawOptions(gl).drawColors) {
       glDisable(GL_TEXTURE_2D);
-      glEnable(GL_LIGHTING);
     }
 #if 0 //draw normals //simple with triangle normals
     glColor(.5, 1., .0);
@@ -1624,6 +1626,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
 
   if(glDrawOptions(gl).drawWires) { //on top of mesh
 #if 1
+    glColor(0,0,0,1);
     uint t;
     for(t=0; t<T.d0; t++) {
       glBegin(GL_LINE_LOOP);

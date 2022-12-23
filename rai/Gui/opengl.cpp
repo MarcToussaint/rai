@@ -586,11 +586,15 @@ arr id2color(uint id) {
 }
 
 #ifdef RAI_GL
-void glStandardLight(void*, OpenGL&) {
+void glStandardLight(void*, OpenGL& gl) {
   glEnable(GL_LIGHTING);
+  if(!gl.drawOptions.enableLighting){
+    glDisable(GL_LIGHTING);
+    return;
+  }
   static GLfloat ambient[]   = { .5, .5, .5, 1.0 };
-  static GLfloat diffuse[]   = { .2, .2, .2, 1.0 };
-  static GLfloat specular[]  = { .3, .3, .3, 1.0 };
+  static GLfloat diffuse[]   = { .3, .3, .3, 1.0 };
+  static GLfloat specular[]  = { .4, .4, .4, 1.0 };
   static GLfloat position[]  = { 100.0, -100.0, 100.0, 1.0 };
   static GLfloat direction[] = { -1.0, 1.0, -1.0 };
   glLightfv(GL_LIGHT0, GL_POSITION, position);
@@ -601,6 +605,21 @@ void glStandardLight(void*, OpenGL&) {
   glLightfv(GL_LIGHT0, GL_DIFFUSE,  diffuse);
   glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
   glEnable(GL_LIGHT0);
+  {
+    static GLfloat ambient2[]   = { .0, .0, .0, 1.0 };
+    static GLfloat diffuse2[]   = { .3, .3, .3, 1.0 };
+    static GLfloat specular2[]  = { .4, .4, .4, 1.0 };
+    static GLfloat position2[]  = { 0.0, 0.0, -100.0, 1.0 };
+    static GLfloat direction2[] = { .0, .0, 1.0 };
+    glLightfv(GL_LIGHT1, GL_POSITION, position2);
+    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, direction2);
+    glLighti(GL_LIGHT1, GL_SPOT_CUTOFF,   90);
+    glLighti(GL_LIGHT1, GL_SPOT_EXPONENT, 10);
+    glLightfv(GL_LIGHT1, GL_AMBIENT,  ambient2);
+    glLightfv(GL_LIGHT1, GL_DIFFUSE,  diffuse2);
+    glLightfv(GL_LIGHT1, GL_SPECULAR, specular2);
+    glEnable(GL_LIGHT1);
+  }
 }
 
 void glStandardScene(void*, OpenGL& gl) {
@@ -614,7 +633,7 @@ void glStandardScene(void*, OpenGL& gl) {
 }
 
 void glStandardOriginAxes(void*, OpenGL&) {
-  glDrawAxes(.1);
+  glDrawAxes(.1, true);
 }
 
 void glColor(int col) {
@@ -632,19 +651,24 @@ void glColor(int col) {
 }
 
 void glColor(float r, float g, float b, float alpha) {
-  float amb=1.f, diff=1.f, spec=.25f;
-  GLfloat ambient[4]  = { r*amb, g*amb, b*amb, alpha };
-  GLfloat diffuse[4]  = { r*diff, g*diff, b*diff, alpha };
-  GLfloat specular[4] = { spec* (1.f+r), spec* (1.f+g), spec* (1.f+b), alpha };
+  GLboolean lightingEnabled=true;
+  glGetBooleanv(GL_LIGHTING, &lightingEnabled);
+  if(lightingEnabled){
+    float amb=1.f, diff=1.f, spec=.25f;
+    GLfloat ambient[4]  = { r*amb, g*amb, b*amb, alpha };
+    GLfloat diffuse[4]  = { r*diff, g*diff, b*diff, alpha };
+    GLfloat specular[4] = { spec* (1.f+r), spec* (1.f+g), spec* (1.f+b), alpha };
 #if 0
-  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, diffuse);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, diffuse);
 #else
-  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular);
-  glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 1.0f);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 1.0f);
 #endif
-  glColor4f(r, g, b, alpha);
+  }else{
+    glColor4f(r, g, b, alpha);
+  }
 }
 
 void glColor(float* rgb) { glColor(rgb[0], rgb[1], rgb[2], 1.); }
@@ -1429,7 +1453,7 @@ int OpenGL::watchImage(const floatA& _img, bool wait, float _zoom) {
 }
 
 int OpenGL::watchImage(const byteA& _img, bool wait, float _zoom) {
-  if(!self->window) resize(_img.d1, _img.d0);
+  if(!self->window) resize(_img.d1*_zoom, _img.d0*_zoom);
   background=_img;
   backgroundZoom=_zoom;
   //resize(img->d1*zoom,img->d0*zoom);

@@ -100,6 +100,12 @@ struct SDF_GridData : SDF {
 
   double f(arr& g, arr& H, const arr& x);
 
+  //manipulations
+  void resample(uint N);
+
+  void smooth(uint width=3, uint iters=2);
+
+  //IO
   void write(std::ostream& os) const;
   void read(std::istream& is);
 };

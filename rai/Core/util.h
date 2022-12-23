@@ -548,6 +548,7 @@ struct OpenGLDrawOptions{
   bool drawJoints=false;
   bool drawFrameNames=false;
   bool drawZlines=false;
+  bool enableLighting=true;
 
   float pclPointSize=-1.;
 };

@@ -52,7 +52,7 @@ struct Transformation;
 // utility functions
 //
 
-void glStandardLight(void*, OpenGL&);
+void glStandardLight(void*, OpenGL& gl);
 void glStandardScene(void*, OpenGL&);
 void glStandardOriginAxes(void*, OpenGL&);
 
