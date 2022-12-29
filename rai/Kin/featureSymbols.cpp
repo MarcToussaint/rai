@@ -103,6 +103,7 @@ std::shared_ptr<Feature> Feature::deepCopy(){
   _cpy(F_ScalarProduct);
   _cpy(F_qItself);
   _cpy(F_qLimits);
+  _cpy(F_q0Bias);
   _cpy(F_qQuaternionNorms);
   _cpy(F_Pose);
   _cpy(F_PoseRel);

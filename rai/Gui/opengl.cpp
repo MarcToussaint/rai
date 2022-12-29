@@ -390,12 +390,13 @@ struct GlfwSpinner : Thread {
   }
 
   static void _Close(GLFWwindow* window) {
-//    OpenGL* gl=(OpenGL*)glfwGetWindowUserPointer(window);
+    OpenGL* gl=(OpenGL*)glfwGetWindowUserPointer(window);
 //    LOG(-1) <<"closing window";
 //      if (!time_to_close)
 //    OpenGL *gl=(OpenGL*)glfwSetWindowShouldClose(window, GLFW_FALSE);
 //    gl->WindowStatus(0);
     glfwHideWindow(window);
+    gl->watching.setStatus(0);
 //    gl->closeWindow();
   }
 
@@ -469,7 +470,7 @@ void OpenGL::openWindow() {
 
     fg->addGL(this);
   }else{
-    //glfwShowWindow(self->window);
+    glfwShowWindow(self->window);
   }
 }
 

@@ -706,7 +706,7 @@ void Configuration::setRandom(uint timeSlices_d1, int verbose){
         double up = d->limits.elem(2*k+1); //up
         if(up>=lo){
           q(k) = rnd.uni(lo,up);
-          d->q0(k) = q(k); //CRUCIAL to impose a bias to that random initialization
+          if(d->q0.N) d->q0(k) = q(k); //CRUCIAL to impose a bias to that random initialization
         }
       }
       d->setDofs(q);
