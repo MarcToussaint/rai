@@ -15,8 +15,8 @@ void reportAfterPhiComputation(KOMO& komo) {
   }
   if(komo.opt.animateOptimization>0) {
     komo.view(komo.opt.animateOptimization>1, "optAnim");
-    if(komo.opt.animateOptimization>2){
-      komo.view_play(komo.opt.animateOptimization>3);
+    if(komo.opt.animateOptimization>3){
+      komo.view_play(komo.opt.animateOptimization>4);
     }
     //  komo.plotPhaseTrajectory();
     //  wait();

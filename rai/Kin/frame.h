@@ -28,7 +28,8 @@ struct Shape;
 struct Inertia;
 struct ForceExchange;
 struct ParticleDofs;
-enum JointType { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_transYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_generic, JT_tau };
+struct PathDof;
+enum JointType { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_transYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_generic, JT_tau, JT_path };
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static, BT_soft };
 }
 
@@ -97,8 +98,10 @@ struct Frame : NonCopyable {
   Joint* joint=nullptr;          ///< this frame is an articulated joint
   Shape* shape=nullptr;          ///< this frame has a (collision or visual) geometry
   Inertia* inertia=nullptr;      ///< this frame has inertia (is a mass)
+  //TODO have a single list of all attached dofs (also joint)
   Array<ForceExchange*> forces;  ///< this frame exchanges forces with other frames
   ParticleDofs* particleDofs=nullptr; ///< this frame is a set of particles that are dofs themselves
+  PathDof* pathDof=nullptr; ///< this frame is a set of particles that are dofs themselves
 
   Frame(Configuration& _C, const Frame* copyFrame=nullptr);
   Frame(Frame* _parent);
@@ -206,6 +209,13 @@ struct Dof {
   arr getDofState();
   virtual String name() const = 0;
 
+  void copyParameters(Dof* copy){
+    qIndex=copy->qIndex; dim=copy->dim;
+    limits=copy->limits; q0=copy->q0;
+    active=copy->active;
+    isStable=copy->isStable;
+    sampleUniform=copy->sampleUniform;  sampleSdv=copy->sampleSdv;
+  }
   void setActive(bool _active);
 
   const Joint* joint() const;
@@ -219,7 +229,6 @@ stdOutPipe(Dof)
 
 /// for a Frame with Joint-Link, the relative transformation 'Q' is articulated
 struct Joint : Dof, NonCopyable {
-
   // joint information
   //  byte generator;    ///< (7bits), h in Featherstone's code (indicates basis vectors of the Lie algebra, but including the middle quaternion w)
   String code;       ///< for JT_generic: code "txyzwabc" to indicate transformations; dim==code.N

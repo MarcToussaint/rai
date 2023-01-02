@@ -437,6 +437,9 @@ void Skeleton::addObjectives(KOMO& komo) const {
     int j = switches(i, 0);
     int k = switches(i, 1);
     komo.addModeSwitch({S(k).phase0, S(k).phase1}, S(k).symbol, S(k).frames, j<0);
+    if(S(k).phase1!=-1. && S(k).phase0>=S(k).phase1){
+      LOG(-2) <<"are you sure this is only a single timeslice mode??:" <<S(k);
+    }
   }
   //-- add objectives for rest
   for(const SkeletonEntry& s:S) {
@@ -615,6 +618,10 @@ void Skeleton::addObjectives(KOMO& komo) const {
             komo.addSwitch({s.phase0}, true, false, JT_free, SWInit_copy, komo.world.frames.first()->name, s.frames(0));
 //            komo.addSwitch_magic(s.phase0, s.phase1, komo.world.frames.first()->name, s.frames(0), 0., 0.);  break;
         } break;
+      case SY_follow: {
+        komo.addObjective({s.phase0, s.phase1}, FS_positionDiff, s.frames, OT_sos, {1e1});
+        komo.addObjective({s.phase0, s.phase1}, FS_qItself, {s.frames(1)}, OT_f, {-1e1});
+      } break;
       default: HALT("undefined symbol: " <<s.symbol);
     }
   }

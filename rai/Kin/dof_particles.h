@@ -12,9 +12,9 @@ struct ParticleDofs : Dof, NonCopyable, GLDrawer {
   ParticleDofs(Frame& a, ParticleDofs* copy=nullptr);
   ~ParticleDofs();
 
-  void setDofs(const arr& q, uint n);
-  arr calcDofsFromConfig() const;
-  String name() const;
+  virtual void setDofs(const arr& q, uint n);
+  virtual arr calcDofsFromConfig() const;
+  virtual String name() const;
 
   void glDraw(OpenGL&){ NIY; }
   void write(ostream& os) const{

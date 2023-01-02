@@ -10,6 +10,7 @@
 #include "frame.h"
 #include "forceExchange.h"
 #include "dof_particles.h"
+#include "dof_path.h"
 #include "proxy.h"
 #include "kin_swift.h"
 #include "kin_physx.h"
@@ -1411,6 +1412,9 @@ void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
       if(f->particleDofs && f->particleDofs->active){
         activeDofs.append(f->particleDofs);
       }
+      if(f->pathDof && f->pathDof->active){
+        activeDofs.append(f->pathDof);
+      }
       for(rai::ForceExchange* fex:f->forces){
         if(fex->frame==f && fex->active){
           activeDofs.append(fex);
@@ -1699,6 +1703,19 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
         }
       }
     }
+    //above a->joint, now a->pathDof (TODO: systematic for any dof, as below)
+    PathDof* d=a->pathDof;
+    if(d && d->active) {
+      arr Jpos, Jang;
+      d->getJacobians(Jpos, Jang);
+      if(Jang.N){  //angular part: cross-product of rows with lever
+        Jang = crossProduct(Jang, conv_vec2arr(pos_world-a->getPosition()));
+        J.setMatrixBlock(Jang, 0, d->qIndex);
+      }
+      if(Jpos.N){  //translational part: direct
+        J.setMatrixBlock(Jpos, 0, d->qIndex);
+      }
+    }
     a = a->parent;
   }
 
@@ -1764,6 +1781,15 @@ void Configuration::jacobian_angular(arr& J, Frame* a) const {
 
         }
         //all other joints: J=0 !!
+      }
+    }
+    //above a->joint, now a->pathDof (TODO: systematic for any dof, as below)
+    PathDof* d=a->pathDof;
+    if(d && d->active) {
+      arr Jpos, Jang;
+      d->getJacobians(Jpos, Jang);
+      if(Jang.N){  //angular part: direct
+        J.setMatrixBlock(Jang, 0, d->qIndex);
       }
     }
     a = a->parent;

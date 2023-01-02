@@ -149,6 +149,7 @@ void KOMO::clone(const KOMO& komo, bool deepCopyFeatures){
     if(deepCopyFeatures) f = f->deepCopy();
     objs.append(make_shared<GroundedObjective>(f, o->type, o->timeSlices));
     objs(-1)->frames = pathConfig.getFrames(framesToIndices(o->frames));
+    objs(-1)->objId = o->objId;
   }
 }
 
@@ -1556,6 +1557,7 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
   for(shared_ptr<GroundedObjective>& ob:objs) {
     uint d = ob->feat->dim(ob->frames);
     int i = ob->objId;
+    CHECK_GE(i, 0, "");
     uint time = ob->timeSlices.last();
     //          for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), ob->type, "");
     if(d) {

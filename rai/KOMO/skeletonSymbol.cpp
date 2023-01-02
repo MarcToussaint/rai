@@ -20,6 +20,7 @@ template<> const char* rai::Enum<rai::SkeletonSymbol>::names []= {
   "stableYPhi",
   "stableOnX",
   "stableOnY",
+  "follow",
   "end",
   nullptr
 };

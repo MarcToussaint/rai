@@ -10,6 +10,7 @@
 #include "kin.h"
 #include "forceExchange.h"
 #include "dof_particles.h"
+#include "dof_path.h"
 #include "../Geo/signedDistanceFunctions.h"
 
 #include <climits>
@@ -21,7 +22,7 @@
 //===========================================================================
 
 template<> const char* rai::Enum<rai::JointType>::names []= {
-  "none", "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "transYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "generic", "tau", nullptr
+  "none", "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "transYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "generic", "tau", "path", nullptr
 };
 
 template<> const char* rai::Enum<rai::BodyType>::names []= {
@@ -59,6 +60,7 @@ rai::Frame::Frame(Configuration& _C, const Frame* copyFrame)
     if(copyFrame->shape) new Shape(*this, copyFrame->shape);
     if(copyFrame->inertia) new Inertia(*this, copyFrame->inertia);
     if(copyFrame->particleDofs) new ParticleDofs(*this, copyFrame->particleDofs);
+    if(copyFrame->pathDof) new PathDof(*this, copyFrame->pathDof);
   }
 }
 
@@ -259,6 +261,7 @@ rai::Dof* rai::Frame::getDof() const {
   if(joint) return joint;
   if(forces.N) return forces.first();
   if(particleDofs) return particleDofs;
+  if(pathDof) return pathDof;
   return 0;
 }
 
@@ -344,6 +347,9 @@ void rai::Frame::read(const Graph& ats) {
       this->setParent(f, false);
       new Joint(*f);
       f->joint->read(ats);
+    } else if(n->get<String>()=="path") {
+      new PathDof(*this);
+      pathDof->read(ats);
     } else if(n->get<String>()!="none") {
       new Joint(*this);
       joint->read(ats);

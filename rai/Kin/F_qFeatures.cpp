@@ -10,6 +10,7 @@
 
 #include "frame.h"
 #include "forceExchange.h"
+#include "dof_path.h"
 
 #include <climits>
 
@@ -112,12 +113,13 @@ void F_qItself::phi2(arr& q, arr& J, const FrameL& F) {
   FrameL FF = F[0];
 //  FF.reshape(-1,2);
   for(uint i=0; i<FF.d0; i++) {
-    rai::Joint* j=0;
+    rai::Dof* j=0;
     bool flipSign=false;
     if(FF.nd==1) {
       rai::Frame* f = FF.elem(i);
       j = f->joint;
-      CHECK(j, "selected frame " <<FF.elem(i) <<" ('" <<f->name <<"') is not a joint");
+      if(!j) j = f->pathDof;
+      CHECK(j, "selected frame " <<FF.elem(i) <<" ('" <<f->name <<"') is not a joint or pathDof");
     } else {
       rai::Frame* a = FF(i, 0);
       rai::Frame* b = FF(i, 1);
@@ -173,11 +175,12 @@ uint F_qItself::dim_phi2(const FrameL& F){
   uint m=0;
   FrameL FF = F[0];
   for(uint i=0; i<FF.d0; i++) {
-    rai::Joint* j=0;
+    rai::Dof* j=0;
     if(FF.nd==1) {
       rai::Frame* f = FF.elem(i);
       j = f->joint;
-      CHECK(j, "selected frame " <<FF.elem(i) <<" ('" <<f->name <<"') is not a joint");
+      if(!j) j = f->pathDof;
+      CHECK(j, "selected frame " <<FF.elem(i) <<" ('" <<f->name <<"') is not a joint or pathDof");
     } else {
       rai::Frame* a = FF(i, 0);
       rai::Frame* b = FF(i, 1);

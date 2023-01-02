@@ -459,6 +459,7 @@ void OpenGL::openWindow() {
         glfwSetInputMode(self->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 //        if (glfwRawMouseMotionSupported()) glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
       }
+      //glfwSetWindowAttrib(self->window, GLFW_FOCUS_ON_SHOW, GL_FALSE);
 
       glfwSwapInterval(1);
       glfwMakeContextCurrent(nullptr);
@@ -470,7 +471,9 @@ void OpenGL::openWindow() {
 
     fg->addGL(this);
   }else{
-    glfwShowWindow(self->window);
+    if(!glfwGetWindowAttrib(self->window, GLFW_VISIBLE)){
+      glfwShowWindow(self->window);
+    }
   }
 }
 
