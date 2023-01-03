@@ -314,7 +314,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
             -1.1,1.1, -1.1,1.1, -1.1,1.1, -1.1,1.1 }; //no limits on rotation
         }
         //sample heuristic
-        f->joint->sampleUniform=.5;
+        f->joint->sampleUniform=.0;
         f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
       }
     } else if(newMode==SY_stableZero) {

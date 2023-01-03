@@ -383,7 +383,7 @@ struct FileToken {
   operator std::istream& () { return getIs(); }
   operator std::ostream& () { return getOs(); }
 
-  rai::String absolutePathName() const;
+  rai::String fullPath() const;
 };
 template<class T> FileToken& operator>>(FileToken& fil, T& x) { fil.getIs() >>x;  return fil; }
 template<class T> std::ostream& operator<<(FileToken& fil, const T& x) { fil.getOs() <<x;  return fil.getOs(); }

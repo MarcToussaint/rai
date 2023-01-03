@@ -116,6 +116,8 @@ std::shared_ptr<Feature> Feature::deepCopy(){
   _cpy(F_fex_ForceIsPositive);
   _cpy(F_fex_Force);
   _cpy(F_fex_POA);
+  _cpy(F_InsideBox);
+  _cpy(F_AboveBox);
   _cpy(F_PushRadiusPrior);
 #undef _cpy
   HALT("deepCopy not registered for this type: " <<rai::niceTypeidName(typeid(*this)));

@@ -283,7 +283,7 @@ void Skeleton::getTwoWaypointProblem(int t2, Configuration& C, arr& q1, arr& q2,
   //  C.view(true);
 }
 
-shared_ptr<KOMO> Skeleton::getKomo_path(const rai::Configuration& C, uint stepsPerPhase, double accScale, double lenScale, double homingScale) {
+shared_ptr<KOMO> Skeleton::getKomo_path(const rai::Configuration& C, uint stepsPerPhase, double accScale, double lenScale, double homingScale, double collScale) {
   shared_ptr<KOMO> komo=make_shared<KOMO>();
   komo->opt.verbose = verbose-2;
   komo->setModel(C, collisions);
@@ -298,7 +298,7 @@ shared_ptr<KOMO> Skeleton::getKomo_path(const rai::Configuration& C, uint stepsP
   addObjectives(*komo);
 
   for(uint i=0;i<explicitCollisions.N;i+=2){
-    komo->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
+    komo->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {collScale});
   }
   for(uint i=0;i<explicitLiftPriors.N;i++) if(komo->world[explicitLiftPriors(i)]){
     for(uint t=0;t<maxPhase;t++){
@@ -311,7 +311,7 @@ shared_ptr<KOMO> Skeleton::getKomo_path(const rai::Configuration& C, uint stepsP
   return komo;
 }
 
-shared_ptr<KOMO> Skeleton::getKomo_waypoints(const Configuration& C, double lenScale, double homingScale) {
+shared_ptr<KOMO> Skeleton::getKomo_waypoints(const Configuration& C, double lenScale, double homingScale, double collScale) {
   shared_ptr<KOMO> komo=make_shared<KOMO>();
   komo->opt.verbose = verbose-2;
   komo->setModel(C, collisions);
@@ -326,7 +326,7 @@ shared_ptr<KOMO> Skeleton::getKomo_waypoints(const Configuration& C, double lenS
   addObjectives(*komo);
 
   for(uint i=0;i<explicitCollisions.N;i+=2){
-    komo->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
+    komo->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {collScale});
   }
 
   komo->run_prepare(0.);
@@ -334,7 +334,7 @@ shared_ptr<KOMO> Skeleton::getKomo_waypoints(const Configuration& C, double lenS
   return komo;
 }
 
-shared_ptr<KOMO> Skeleton::getKOMO_finalSlice(const rai::Configuration& C, double lenScale, double homingScale){
+shared_ptr<KOMO> Skeleton::getKOMO_finalSlice(const rai::Configuration& C, double lenScale, double homingScale, double collScale){
   shared_ptr<KOMO> komo=make_shared<KOMO>();
   komo->opt.verbose = verbose-2;
 
@@ -394,7 +394,7 @@ shared_ptr<KOMO> Skeleton::getKOMO_finalSlice(const rai::Configuration& C, doubl
   }
 
   for(uint i=0;i<explicitCollisions.N;i+=2){
-    komo->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
+    komo->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {collScale});
   }
 
   komo->run_prepare(.01);
