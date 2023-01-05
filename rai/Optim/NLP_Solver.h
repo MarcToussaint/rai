@@ -34,13 +34,13 @@ struct NLP_Solver : NonCopyable {
   std::shared_ptr<OptConstrained> optCon;
   std::shared_ptr<NLP_Traced> P;
 
-
   NLP_Solver& setSolver(NLP_SolverID _solverID){ solverID=_solverID; return *this; }
-  NLP_Solver& setProblem(const shared_ptr<NLP>& _P){ if(P){ CHECK_EQ(P->P.get(), _P.get(), ""); P->clear(); P->copySignature(*_P); }else{ P = make_shared<NLP_Traced>(_P); }return *this; }
+  NLP_Solver& setProblem(const shared_ptr<NLP>& _P);
   NLP_Solver& setOptions(const rai::OptOptions& _opt){ opt = _opt; return *this; }
   NLP_Solver& setInitialization(const arr& _x){ x=_x; return *this; }
   NLP_Solver& setWarmstart(const arr& _x, const arr& _dual){ x=_x; dual=_dual; return *this; }
   NLP_Solver& setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J){ P->setTracing(trace_x, trace_costs, trace_phi, trace_J); return *this; }
+  NLP_Solver& clear(){ P.reset(); optCon.reset(); ret.reset(); x.clear(); dual.clear(); return *this; }
 
   shared_ptr<SolverReturn> solve(int resampleInitialization=-1); ///< -1: only when not yet set
   shared_ptr<SolverReturn> solveStepping(int resampleInitialization=-1); ///< -1: only when not yet set

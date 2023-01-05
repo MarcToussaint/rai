@@ -15,6 +15,7 @@ struct NLP_GraphSolver : NonCopyable {
   arr x, dual;
   std::shared_ptr<NLP_Factored> P;
   rai::OptOptions opt;
+  std::shared_ptr<SolverReturn> ret;
 
   NLP_GraphSolver& setProblem(const shared_ptr<NLP_Factored>& _P){ CHECK(!P, "problem was already set!"); P = _P; return *this; }
 
@@ -33,8 +34,8 @@ struct NLP_GraphSolver : NonCopyable {
 
   bool run();
 
-  bool solveFull();
-  bool solveRandom();
-  bool solveInOrder(uintA order={});
+  std::shared_ptr<SolverReturn> solveFull();
+  std::shared_ptr<SolverReturn> solveRandom();
+  std::shared_ptr<SolverReturn> solveInOrder(uintA order={});
   void test();
 };

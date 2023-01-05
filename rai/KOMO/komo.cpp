@@ -1528,7 +1528,8 @@ shared_ptr<NLP> KOMO::nlp(){
 
 shared_ptr<NLP_Factored> KOMO::nlp_FactoredTime(){
   rai::Array<DofL> dofs(T);
-  for(rai::Dof* d: pathConfig.activeDofs){ //goo through all active dofs and sort them in time slices
+  for(rai::Dof* d: pathConfig.activeDofs){ //go through all active dofs and sort them in time slices
+    if(d->mimic) continue; //remove mimics
     int t = int(d->frame->ID/timeSlices.d1) - int(k_order);
     if(t>=int(T)) t = int(d->frame->parent->ID/timeSlices.d1) - int(k_order);
     CHECK(t<int(T), "hmm");

@@ -619,8 +619,8 @@ void Skeleton::addObjectives(KOMO& komo) const {
 //            komo.addSwitch_magic(s.phase0, s.phase1, komo.world.frames.first()->name, s.frames(0), 0., 0.);  break;
         } break;
       case SY_follow: {
-        komo.addObjective({s.phase0, s.phase1}, FS_positionDiff, s.frames, OT_sos, {1e1});
-        komo.addObjective({s.phase0, s.phase1}, FS_qItself, {s.frames(1)}, OT_f, {-1e1});
+        komo.addObjective({s.phase0, s.phase1}, FS_positionDiff, s.frames, OT_sos, {3.});
+        komo.addObjective({s.phase0, s.phase1}, FS_qItself, {s.frames(1)}, OT_f, {-3.});
       } break;
       default: HALT("undefined symbol: " <<s.symbol);
     }

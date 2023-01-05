@@ -28,6 +28,17 @@ template<> const char* rai::Enum<NLopt_SolverOption>::names []= {
     "LD_TNEWTON_PRECOND",
     "LD_TNEWTON_PRECOND_RESTART", nullptr };
 
+NLP_Solver& NLP_Solver::setProblem(const shared_ptr<NLP>& _P){
+  if(P){
+    CHECK_EQ(P->P.get(), _P.get(), "");
+    P->clear();
+    P->copySignature(*_P);
+  }else{
+    P = make_shared<NLP_Traced>(_P);
+  }
+  return *this;
+}
+
 shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
   ret = make_shared<SolverReturn>();
   double time = -rai::cpuTime();

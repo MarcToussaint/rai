@@ -42,9 +42,9 @@ bool NLP_GraphSolver::run() {
     X = {uint(next)};
     cout <<"** GraphSolver: solve (" <<X <<"|" <<Y <<")" <<endl;
     P->subSelect(X, Y);
-    std::shared_ptr<SolverReturn> ret = subSolver
-                                        .setProblem(P)
-                                        .solve();
+    ret = subSolver
+          .setProblem(P)
+          .solve();
     while(!ret->feasible) {
       return false;
 #if 0
@@ -106,23 +106,24 @@ void NLP_GraphSolver::test() {
   }
 }
 
-bool NLP_GraphSolver::solveFull() {
+std::shared_ptr<SolverReturn> NLP_GraphSolver::solveFull() {
   P->subSelect({}, {});
-  P->report(cout, 2);
+//  P->report(cout, 2);
   subSolver.x = P->getInitializationSample();
   subSolver.dual.clear();
-  P->report(cout, 4, STRING("INITIALIZATION full"));
-  std::shared_ptr<SolverReturn> ret = subSolver
-                                      .setProblem(P)
-                                      .solve(0);
+//  P->report(cout, 4, STRING("INITIALIZATION full"));
+  ret = subSolver
+        .setProblem(P)
+        .solve(0);
   //checkJacobianCP(*P, subSolver.x, 1e-4);
-  P->report(cout, 4, STRING("OPT full"));
+//  P->report(cout, 4, STRING("OPT full"));
   x = ret->x;
   dual = ret->dual=dual;
-  return ret->feasible;
+  ret->done = true;
+  return ret;
 }
 
-bool NLP_GraphSolver::solveRandom() {
+std::shared_ptr<SolverReturn> NLP_GraphSolver::solveRandom() {
   uintA A;
   A.setRandomPerm(P->numTotalVariables());
   uint i=rnd(A.N-1);
@@ -134,62 +135,60 @@ bool NLP_GraphSolver::solveRandom() {
   subSolver.x = P->getInitializationSample();
   subSolver.dual.clear();
   P->report(cout, 4, STRING("INITIALIZATION for " << X <<'|' <<Y));
-  std::shared_ptr<SolverReturn> ret = subSolver
-                                      .setProblem(P)
-                                      .solve(0);
+  ret = subSolver
+        .setProblem(P)
+        .solve(0);
   checkJacobianCP(*P, subSolver.x, 1e-4);
   P->report(cout, 4, STRING("OPT for " <<X <<'|' <<Y));
-  return ret->feasible;
+  ret->done = true;
+  return ret;
 }
 
-bool NLP_GraphSolver::solveInOrder(uintA order){
+std::shared_ptr<SolverReturn> NLP_GraphSolver::solveInOrder(uintA order){
   uintA X,Y;
-  std::shared_ptr<SolverReturn> ret;
   if(!order.N) order.setStraightPerm(P->numTotalVariables());
   for(uint i=0;i<order.N;i++){
-#if 0
-    Y = X;
+#if 1
+    if(i) Y = order({0,i-1});
     X = {order(i)};
     P->subSelect(X,Y);
-    P->report(cout, 2);
+//    P->report(cout, 2);
     if(P->featureDimensions.N){ //any features at all?
-      subSolver.x = P->getInitializationSample();
-      subSolver.dual.clear();
-      P->report(cout, 4, STRING("INITIALIZATION for " << X <<'|' <<Y));
+//      P->report(cout, 4, STRING("INITIALIZATION for " << X <<'|' <<Y));
       ret = subSolver
+            .clear()
             .setProblem(P)
-            .solve(0);
-      checkJacobianCP(*P, subSolver.x, 1e-4);
-      P->report(cout, 4, STRING("OPT for " <<X <<'|' <<Y));
+            .setInitialization(P->getInitializationSample())
+            .solve();
+//      checkJacobianCP(*P, subSolver.x, 1e-4);
+//      P->report(cout, 6, STRING("OPT for " <<X <<'|' <<Y));
     }
     //--
-    X = Y;
 #endif
-    X.append(order(i));
-    Y.clear();
     if(true){ //ret && !ret->feasible){
+      X = order({0,i});
+      Y.clear();
       P->subSelect(X,Y);
-      P->report(cout, 2);
-      //  P->getInitializationSample();
+//      P->report(cout, 2);
       if(P->featureDimensions.N){ //any features at all?
-        P->randomizeSingleVariable(i);
-//        subSolver.x = P->getInitializationSample();
-//        subSolver.dual.clear();
+//        P->randomizeSingleVariable(i);
 //        P->report(cout, 5, STRING("INITIALIZATION for " << X <<'|' <<Y));
         ret = subSolver
+              .clear()
               .setProblem(P)
-              .solve(1);
+              .setInitialization(P->getInitializationSample())
+              .solve();
 //        checkJacobianCP(*P, subSolver.x, 1e-4);
-//        P->report(cout, 5, STRING("OPT for " <<X <<'|' <<Y));
+//        P->report(cout, 6, STRING("OPT for " <<X <<'|' <<Y));
       }
     }
     //--reinit all other variables!
-    for(uint j=i+1;j<order.N;j++){
-      arr z = P->getSingleVariableInitSample(j);
+//    for(uint j=i+1;j<order.N;j++){
+//      arr z = P->getSingleVariableInitSample(j);
 //      P->setSingleVariable(j, z);
-    }
+//    }
     //P->report(cout, 5, STRING("POST INIT for " <<X <<'|' <<Y));
   }
-  return ret->feasible;
-
+  ret->done = true;
+  return ret;
 }

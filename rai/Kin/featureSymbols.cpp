@@ -109,6 +109,7 @@ std::shared_ptr<Feature> Feature::deepCopy(){
   _cpy(F_PoseRel);
   _cpy(F_LinAngVel);
   _cpy(F_PairCollision);
+  _cpy(F_AccumulatedCollisions);
   _cpy(F_NewtonEuler);
   _cpy(F_NewtonEuler_DampedVelocities);
   _cpy(F_fex_POASurfaceDistance);

@@ -30,7 +30,7 @@ struct Conv_KOMO_FactoredNLP : NLP_Factored {
   uintA subVars;
 
   //redundant to NLP_Factored::featureDims*  -- but sub can SUBSELECT!
-  struct FeatureIndexEntry { /*uint dim;*/ uintA vars; shared_ptr<GroundedObjective> ob; };
+  struct FeatureIndexEntry { uintA vars; shared_ptr<GroundedObjective> ob; };
   rai::Array<FeatureIndexEntry> __featureIndex;
   uintA subFeats;
 

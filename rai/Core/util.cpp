@@ -1057,6 +1057,8 @@ std::istream& rai::FileToken::getIs(bool change_dir) {
 }
 
 rai::String rai::FileToken::fullPath() const {
+  if(name[0]=='/') return name;
+  if(path.N && path[0]=='/') return path+'/'+name;
   rai::String str;
   str <<cwd;
   if(path.N) str <<'/' <<path;

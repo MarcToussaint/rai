@@ -299,9 +299,9 @@ void Conv_KOMO_FactoredNLP::subSelect(const uintA& activeVariables, const uintA&
 }
 
 arr Conv_KOMO_FactoredNLP::getInitializationSample(const arr& previousOptima) {
-#if 0
-  komo.run_prepare(0.01);
-  return komo.x;
+#if 1
+  komo.run_prepare(0.);
+  return komo.x; //pathConfig.getJointState();
 #else
   for(Dof *d:komo.pathConfig.activeDofs){
     if(false && d->limits.N && d->dim!=1){ //HACK!!
@@ -392,13 +392,13 @@ void Conv_KOMO_FactoredNLP::evaluate(arr& phi, arr& J, const arr& x) {
 }
 
 void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose, const char* msg) {
-  reportDetails(os, verbose, msg); return;
+  if(verbose<=2){ reportDetails(os, verbose, msg); return; }
 
   komo.pathConfig.ensure_q();
   komo.reportProblem(os);
   if(verbose>1 && komo.featureValues.N) os <<komo.getReport(verbose>3);
   if(verbose>2) komo.view(false/*verbose>3*/, STRING("KOMO nlp_Factored report - " <<msg));
-  if(verbose>4) komo.view_play(false);
+  if(verbose>4) komo.view_play(verbose>5);
   if(verbose>6){
     rai::system("mkdir -p z.vid");
     komo.view_play(false, .1, "z.vid/");
