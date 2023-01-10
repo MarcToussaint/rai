@@ -1472,12 +1472,12 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
     glDisable(GL_LIGHTING);
 
     glEnableClientState(GL_VERTEX_ARRAY);
-    if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+    if(C.d0==V.d0) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
     glVertexPointer(3, GL_DOUBLE, 0, V.p);
-    if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
+    if(C.d0==V.d0) glColorPointer(C.d1, GL_DOUBLE, 0, C.p);
 
     glDrawArrays(GL_POINTS, 0, V.d0);
 
@@ -1495,7 +1495,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
       glEnd();
     }
 
-    glEnable(GL_LIGHTING);
+    if(lightingEnabled) glEnable(GL_LIGHTING);
     return;
   }
 

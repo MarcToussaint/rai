@@ -1611,7 +1611,7 @@ OpenGL* OpenGL::newClone() const {
 
 void OpenGL::init() {
   drawFocus=false;
-  clearR=clearG=clearB=1.; clearA=0.;
+  clearColor={1.,1.,1.};
   pressedkey=0;
   mouseposx=mouseposy=0;
   mouse_button=0;
@@ -1748,7 +1748,7 @@ void OpenGL::Draw(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
   //clear bufferer
   GLint viewport[4] = {0, 0, w, h};
   glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-  glClearColor(clearR, clearG, clearB, clearA);
+  glClearColor(clearColor(0), clearColor(1), clearColor(2), 1.);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   //raster an image as background
@@ -1849,7 +1849,7 @@ void OpenGL::Draw(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
   if(text.N) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    if(clearR+clearG+clearB>1.) glColor(0.0, 0.0, 0.0, 1.0); else glColor(1.0, 1.0, 1.0, 1.0);
+    if(clearColor(0)+clearColor(1)+clearColor(2)>1.) glColor(0.0, 0.0, 0.0, 1.0); else glColor(1.0, 1.0, 1.0, 1.0);
     glMatrixMode(GL_MODELVIEW);
     glOrtho(0., (double)w, (double)h, .0, -1., 1.);
     glDrawText(text, 10, 20, 0);
@@ -1881,7 +1881,7 @@ void OpenGL::Draw(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
     if(vi->text.N) {
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
-      if(clearR+clearG+clearB>1.) glColor(0.0, 0.0, 0.0, 1.0); else glColor(1.0, 1.0, 1.0, 1.0);
+      if(clearColor(0)+clearColor(1)+clearColor(2)>1.) glColor(0.0, 0.0, 0.0, 1.0); else glColor(1.0, 1.0, 1.0, 1.0);
       glMatrixMode(GL_MODELVIEW);
       glLoadIdentity();
       glOrtho(0., (vi->ri-vi->le)*w, (vi->to-vi->bo)*h, .0, -1., 1.);
@@ -2069,11 +2069,6 @@ int OpenGL::timedupdate(double sec) {
   killTimer(i);
   return update();
 #endif
-}
-
-/// set the four clear colors
-void OpenGL::setClearColors(float r, float g, float b, float a) {
-  clearR=r; clearG=g; clearB=b; clearA=a;
 }
 
 /** @brief inverse projection: given a 2D+depth coordinates in the

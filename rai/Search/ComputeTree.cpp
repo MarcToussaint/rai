@@ -220,6 +220,7 @@ CT_Node* ComputeTree_Solver::getBestSample_UCT(){
 
     // pick the child with highest
     n = best;
+    if(!n) break;
   }
   return n;
 }

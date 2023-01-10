@@ -324,7 +324,7 @@ void PlotViewer::open() {
   gl = new OpenGL(STRING("PlotViewer: "<<data.name()));
   gl->add(*this);
 
-  gl->setClearColors(1., 1., 1., 1.);
+  gl->clearColor=1.;
   double xl=0., xh=1., yl=-.5, yh=+.5;
   gl->camera.setPosition(.5*(xh+xl), .5*(yh+yl), 5.);
   gl->camera.focus(.5*(xh+xl), .5*(yh+yl), .0);

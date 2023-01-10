@@ -113,7 +113,7 @@ void rai::PlotModule::Opengl(bool perspective, double xl, double xh, double yl, 
   if(!gl) {
     gl=new OpenGL("PlotModule", 400, 400);
     gl->add(*this);
-    gl->setClearColors(1., 1., 1., 1.);
+    gl->clearColor=1.;
   }
   gl->camera.setPosition(.5*(xh+xl), .5*(yh+yl), 5.);
   gl->camera.focus(.5*(xh+xl), .5*(yh+yl), .0);

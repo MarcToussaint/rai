@@ -143,7 +143,7 @@ struct OpenGL {
   bool offscreen;
   rai::Camera camera;     ///< the camera used for projection
   rai::String text;        ///< the text to be drawn as title within the opengl frame
-  float clearR, clearG, clearB, clearA;  ///< colors of the beackground (called in glClearColor(...))
+  floatA clearColor;  ///< colors of the beackground (called in glClearColor(...))
   bool reportEvents, reportSelects;    ///< flags for verbosity
   int pressedkey;         ///< stores the key pressed
   const char* exitkeys;   ///< additional keys to exit watch mode
@@ -209,7 +209,6 @@ struct OpenGL {
   int watch(const char* text=nullptr);
   int timedupdate(double sec);
   void resize(int w, int h);
-  void setClearColors(float r, float g, float b, float a);
   void unproject(double& x, double& y, double& z, bool resetCamera=false, int subView=-1);
   void project(double& x, double& y, double& z, bool resetCamera=false, int subView=-1);
 
