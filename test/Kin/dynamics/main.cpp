@@ -1,5 +1,4 @@
 #include <Kin/kin.h>
-#include <Kin/kin_swift.h>
 #include <Kin/kin_ode.h>
 #include <Algo/spline.h>
 #include <Algo/algos.h>

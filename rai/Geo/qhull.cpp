@@ -6,14 +6,15 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifdef RAI_QHULL
+#if defined RAI_QHULL || defined RAI_QHULL8
 
 #include "qhull.h"
 #include "mesh.h"
 #include "../Core/util.h"
 
 extern "C" {
-#ifdef RAI_MSVC
+#ifdef RAI_QHULL8
+#  define RAI_QHULL
 #  include <libqhull/qhull_a.h>
 #else
 #  include <qhull/qhull_a.h>

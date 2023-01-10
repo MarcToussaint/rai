@@ -2,8 +2,13 @@
 #include <Gui/opengl.h>
 #include <Algo/algos.h>
 #include <Gui/plot.h>
-#include <qhull/qhull_a.h>
 #include <Geo/qhull.h>
+
+#ifdef RAI_QHULL8
+#  include <libqhull/qhull_a.h>
+#else
+#  include <qhull/qhull_a.h>
+#endif
 
 //===========================================================================
 

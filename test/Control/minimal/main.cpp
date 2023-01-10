@@ -33,7 +33,7 @@ void testMinimal(){
     ctrl.update(q, {}, C);
     q = ctrl.solve();
     C.setJointState(q);
-    C.stepSwift();
+    C.stepFcl();
 
     ctrl.report();
     C.view(false, STRING("t:" <<t));
@@ -97,7 +97,7 @@ void testGrasp(){
     ctrl.update(q, {}, C);
     q = ctrl.solve();
     C.setJointState(q);
-    C.stepSwift();
+    C.stepFcl();
 
     ctrl.report();
     C.view(false, STRING(txt <<"t:" <<t));

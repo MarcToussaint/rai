@@ -282,7 +282,7 @@ void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
   bool penetration=false;
 
   if(method==_ccdMPRPenetration) {
-    int ret = ccdMPRPenetration(&m1, &m2, &ccd, &_depth, &_dir, &_pos, simplex);
+    int ret = ccdMPRPenetrationRai(&m1, &m2, &ccd, &_depth, &_dir, &_pos, simplex);
     if(ret<0) {
       LOG(0) <<"WARNING: called MPR penetration for non intersecting meshes...";
       m1._support_vertex = rnd(m1.V.d0);

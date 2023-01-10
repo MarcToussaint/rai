@@ -16,7 +16,7 @@
 
 struct OpenGL;
 struct PhysXInterface;
-struct SwiftInterface;
+//struct SwiftInterface;
 struct OdeInterface;
 struct FeatherstoneInterface;
 
@@ -83,13 +83,13 @@ struct Configuration : GLDrawer {
 
   /// @name constructors
   Configuration();
-  Configuration(const Configuration& other, bool referenceSwiftOnCopy=false) : Configuration() {  copy(other, referenceSwiftOnCopy);  } ///< same as copy()
+  Configuration(const Configuration& other, bool referenceFclOnCopy=false) : Configuration() {  copy(other, referenceFclOnCopy);  } ///< same as copy()
   Configuration(const char* filename) : Configuration() {  addFile(filename);  } ///< same as addFile()
   virtual ~Configuration();
 
   /// @name copy
   void operator=(const Configuration& K) { copy(K); } ///< same as copy()
-  void copy(const Configuration& K, bool referenceSwiftOnCopy=false);
+  void copy(const Configuration& K, bool referenceFclOnCopy=false);
   bool operator!() const;
 
   /// @name initializations, building configurations
@@ -194,7 +194,7 @@ struct Configuration : GLDrawer {
   /// @name ensure state consistencies
   void ensure_indexedJoints() {   if(!_state_indexedJoints_areGood) calc_indexedActiveJoints();  }
   void ensure_q() {  if(!_state_q_isGood) calcDofsFromConfig();  }
-  void ensure_proxies() {  if(!_state_proxies_isGood) stepSwift();  }
+  void ensure_proxies() {  if(!_state_proxies_isGood) stepFcl();  }
 
   /// @name Jacobians and kinematics (low level)
   void jacobian_pos(arr& J, Frame* a, const Vector& pos_world) const; //usually called internally with kinematicsPos
@@ -238,7 +238,7 @@ struct Configuration : GLDrawer {
 
   /// @name extensions on demand
   std::shared_ptr<ConfigurationViewer>& gl(const char* window_title=nullptr, bool offscreen=false);
-  std::shared_ptr<SwiftInterface> swift();
+  //std::shared_ptr<SwiftInterface> swift();
   std::shared_ptr<FclInterface> fcl();
   void swiftDelete();
   PhysXInterface& physx();
@@ -250,7 +250,6 @@ struct Configuration : GLDrawer {
   void glAdd(void (*call)(void*, OpenGL&), void* classP);
   int glAnimate();
   void view_close();
-  void stepSwift();
   void stepFcl();
   void stepPhysx(double tau);
   void stepOde(double tau);

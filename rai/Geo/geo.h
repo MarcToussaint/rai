@@ -9,9 +9,13 @@
 #pragma once
 
 #include "../Core/array.h"
-#include "../Core/graph.h"
 
 #include <iostream>
+
+//fwd declarations
+namespace rai {
+  struct Graph;
+}
 
 namespace rai {
 

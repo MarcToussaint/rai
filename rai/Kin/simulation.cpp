@@ -311,7 +311,7 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   while(!finger2->shape || finger2->shape->type()!=ST_capsule) finger2=finger2->children.last();
 
   //collect objects close to fing1 and fing2
-  C.stepSwift();
+  C.stepFcl();
   FrameL fing1close;
   FrameL fing2close;
   for(rai::Proxy& p:C.proxies) {
@@ -785,7 +785,7 @@ void Imp_NoPenetrations::modConfiguration(Simulation& S, double tau){
     S.C.kinematicsZero(y, J, 1);
 
     // Check penetrations between robot vs. static objects
-    S.C.stepSwift();
+    S.C.stepFcl();
     for(rai::Proxy& p: S.C.proxies){
       if(!(dynamicFrames.contains(p.a->ID) || dynamicFrames.contains(p.b->ID))) {
         if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01) continue;

@@ -16,7 +16,7 @@
 #include "../Kin/switch.h"
 #include "../Kin/proxy.h"
 #include "../Kin/forceExchange.h"
-#include "../Kin/kin_swift.h"
+//#include "../Kin/kin_swift.h"
 #include "../Kin/kin_physx.h"
 #include "../Kin/F_qFeatures.h"
 #include "../Kin/F_pose.h"
@@ -106,8 +106,8 @@ void KOMO::setModel(const Configuration& C, bool _computeCollisions) {
   if(&C!=&world) world.copy(C, _computeCollisions);
   computeCollisions = _computeCollisions;
   if(computeCollisions) {
-    if(!opt.useFCL) world.swift();
-    else world.fcl();
+    //if(!opt.useFCL) world.swift();
+    world.fcl();
   }
   world.ensure_q();
 }
@@ -130,7 +130,7 @@ void KOMO::clone(const KOMO& komo, bool deepCopyFeatures){
   k_order = komo.k_order;
 
   if(komo.fcl) fcl=komo.fcl;
-  if(komo.swift) swift=komo.swift;
+  //if(komo.swift) swift=komo.swift;
 
   //directly copy pathConfig instead of recreating it (including switches)
   pathConfig.copy(komo.pathConfig, false);
@@ -1427,9 +1427,9 @@ void KOMO::setupPathConfig() {
 
   if(computeCollisions) {
     CHECK(!fcl, "");
-    CHECK(!swift, "");
-    if(!opt.useFCL) swift = C.swift();
-    else fcl = C.fcl();
+    //CHECK(!swift, "");
+    //if(!opt.useFCL) swift = C.swift();
+    fcl = C.fcl();
   }
 
   for(uint s=0;s<k_order+T;s++) {
@@ -1508,9 +1508,9 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
     uintA collisionPairs;
     for(uint s=k_order;s<timeSlices.d0;s++){
       X = pathConfig.getFrameState(timeSlices[s]);
-      if(!opt.useFCL){
-        collisionPairs = swift->step(X);
-      }else{
+      //if(!opt.useFCL){
+      //  collisionPairs = swift->step(X);
+      {
         fcl->step(X);
         collisionPairs = fcl->collisions;
       }

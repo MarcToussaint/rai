@@ -604,7 +604,7 @@ arr CtrlProblem_NLP::getInitializationSample(const arr& previousOptima) {
 
 void CtrlProblem_NLP::evaluate(arr& phi, arr& J, const arr& x) {
   Ctuple(-1)->setJointState(x);
-  Ctuple(-1)->stepSwift();
+  Ctuple(-1)->stepFcl();
 
   if(!dimPhi) {
     ObjectiveTypeA featureTypes;

@@ -292,7 +292,7 @@ topological order from frame2 to the broken joint"
       )
 
   .def("computeCollisions", [](shared_ptr<rai::Configuration>& self) {
-    self->stepSwift();
+    self->stepFcl();
   },
   "call the broadphase collision engine (SWIFT++ or FCL) to generate the list of collisions (or near proximities) \
 between all frame shapes that have the collision tag set non-zero"

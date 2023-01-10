@@ -24,7 +24,7 @@ void generateProblem(rai::Configuration& C){
       f->setRelativePosition({rnd.uni(-.3, .3), rnd.uni(-1.,1.), .15});
       f->setRelativeQuaternion(rai::Quaternion(0).addZ(rnd.uni(-RAI_PI,RAI_PI)).getArr4d());
     }
-    C.stepSwift();
+    C.stepFcl();
     arr y, J;
     C.kinematicsPenetration(y, J);
 //    cout <<"collision costs of config: " <<y.scalar() <<endl;

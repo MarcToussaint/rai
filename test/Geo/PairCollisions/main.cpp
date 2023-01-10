@@ -50,7 +50,7 @@ void TEST(PairCollision){
 //      a->set_X()->pos *= 5.;
 //    }
 
-////    C.stepSwift();
+////    C.stepFcl();
 //    C.stepFcl();
 //    cout <<"#proxies: " <<C.proxies.N <<endl; //this also calls pair collisions!!
 //    cout <<"time: " <<rai::timerRead() <<endl;

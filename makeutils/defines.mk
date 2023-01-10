@@ -211,7 +211,12 @@ endif
 
 ifeq ($(QHULL),1)
 DEPEND_UBUNTU += libqhull-dev
+VAR = $(shell pkg-config qhull --silence-errors --modversion)
+ifeq ($(strip $(VAR)),)
 CXXFLAGS  += -DRAI_QHULL
+else
+CXXFLAGS  += -DRAI_QHULL8
+endif
 LIBS      += -lqhull
 endif
 

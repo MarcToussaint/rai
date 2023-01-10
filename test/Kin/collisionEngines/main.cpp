@@ -1,10 +1,10 @@
 #include <Kin/kin.h>
-#include <Kin/kin_swift.h>
+//#include <Kin/kin_swift.h>
 #include <Gui/opengl.h>
 #include <Kin/frame.h>
 #include <Kin/viewer.h>
 
-void TEST(Swift) {
+/*void TEST(Swift) {
   rai::Configuration C("swift_test.g");
 
   C.swift()->cutoff = 2.;
@@ -23,7 +23,7 @@ void TEST(Swift) {
     C.view(true);
     rai::wait(.1);
   }
-}
+  }*/
 
 void TEST(FCL) {
   rai::Configuration C("../../../../rai-robotModels/pr2/pr2.g");
@@ -31,10 +31,10 @@ void TEST(FCL) {
 
   C.getCollisionExcludePairIDs(true);
 
-  cout <<"** SWIFT: " <<endl;
-  C.stepSwift();
-  C.getTotalPenetration();
-  C.reportProxies();
+  // cout <<"** SWIFT: " <<endl;
+  // C.stepSwift();
+  // C.getTotalPenetration();
+  // C.reportProxies();
 
   cout <<"** FCL: " <<endl;
   C.stepFcl();
@@ -60,9 +60,9 @@ void TEST(CollisionTiming){
   rai::ConfigurationViewer V;
   V.setConfiguration(C);
 
-  rai::timerStart();
-  C.swift(); //.setCutoff(.);
-  cout <<" SWIFT initialization time: " <<rai::timerRead(true) <<endl;
+  //rai::timerStart();
+  //C.swift(); //.setCutoff(.);
+  //cout <<" SWIFT initialization time: " <<rai::timerRead(true) <<endl;
 
   rai::timerStart();
   C.fcl();
@@ -81,15 +81,15 @@ void TEST(CollisionTiming){
     rai::timerStart();
 
     cout <<"-------------------- t=" <<t <<" ---------" <<endl;
-    C.stepSwift();
-    cout <<"SWIFT:" <<endl;
-    cout <<"#proxies: " <<C.proxies.N <<endl; //this also calls pair collisions!!
-    cout <<"time: " <<rai::timerRead(true) <<endl;
-    cout <<"total penetration: " <<C.getTotalPenetration() <<endl; //this also calls pair collisions!!
-    cout <<"time: " <<rai::timerRead(true) <<endl;
-    C.reportProxies(FILE("z.col"), 0.);
-
-    V.setConfiguration(C, "SWIFT result", true);
+    
+    // C.stepSwift();
+    // cout <<"SWIFT:" <<endl;
+    // cout <<"#proxies: " <<C.proxies.N <<endl; //this also calls pair collisions!!
+    // cout <<"time: " <<rai::timerRead(true) <<endl;
+    // cout <<"total penetration: " <<C.getTotalPenetration() <<endl; //this also calls pair collisions!!
+    // cout <<"time: " <<rai::timerRead(true) <<endl;
+    // C.reportProxies(FILE("z.col"), 0.);
+    // V.setConfiguration(C, "SWIFT result", true);
 
     C.stepFcl();
     cout <<"FCL:" <<endl;
@@ -98,7 +98,6 @@ void TEST(CollisionTiming){
     cout <<"total penetration: " <<C.getTotalPenetration() <<endl; //this also calls pair collisions!!
     cout <<"time: " <<rai::timerRead(true) <<endl;
     C.reportProxies(FILE("z.col"), 0.);
-
     V.setConfiguration(C, "FCL result", true);
   }
   cout <<" query time: " <<rai::timerRead(true) <<"sec" <<endl;
@@ -107,8 +106,8 @@ void TEST(CollisionTiming){
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-//  testSwift();
-//  testFCL();
+  //  testSwift();
+  testFCL();
   testCollisionTiming();
 
   return 0;

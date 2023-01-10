@@ -5,7 +5,6 @@
 #include <Kin/kin.h>
 #include <Kin/frame.h>
 #include <Geo/pairCollision.h>
-#include <Kin/kin_swift.h>
 #include <Kin/F_collisions.h>
 #include <Kin/F_qFeatures.h>
 #include <Kin/viewer.h>
@@ -134,12 +133,12 @@ void TEST(GJK_Jacobians2) {
   V.setConfiguration(C, 0, true);
   V.ensure_gl().drawOptions.drawProxies=true;
 
-  C.stepSwift();
+  C.stepFcl();
 //  C.reportProxies();
 
   VectorFunction f = [&C](const arr& x) -> arr {
     C.setJointState(x);
-    C.stepSwift();
+    C.stepFcl();
     arr y;
     C.kinematicsPenetration(y, y.J(), .05);
     return y;
@@ -152,7 +151,7 @@ void TEST(GJK_Jacobians2) {
   double y_last=0.;
   for(uint t=0;t<1000;t++){
     C.setJointState(q);
-    C.stepSwift();
+    C.stepFcl();
 
 //    checkJacobian(f, q, 1e-4);
 
@@ -208,14 +207,14 @@ void TEST(GJK_Jacobians3) {
   V.setConfiguration(C, 0, true);
   V.ensure_gl().drawOptions.drawProxies=true;
 
-  C.stepSwift();
+  C.stepFcl();
   C.reportProxies();
 
   arr q = C.getJointState();
 
   for(uint t=0;t<100;t++){
     C.setJointState(q);
-    C.stepSwift();
+    C.stepFcl();
 //    C.stepFcl();
 //    K.reportProxies(cout, -1., false);
 

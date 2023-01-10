@@ -142,10 +142,14 @@ _ccd_export int ccdMPRIntersect(const void *obj1, const void *obj2,
  *
  * Returns 0 if obj1 and obj2 intersect, otherwise -1 is returned.
  */
-_ccd_export int ccdMPRPenetration(const void *obj1, const void *obj2,
+_ccd_export int ccdMPRPenetrationRai(const void *obj1, const void *obj2,
                                   const ccd_t *ccd, ccd_real_t *depth,
                                   ccd_vec3_t *dir, ccd_vec3_t *pos,
                                   ccd_vec3_t simplex[8]);
+
+_ccd_export int ccdMPRPenetration(const void *obj1, const void *obj2,
+                                  const ccd_t *ccd, ccd_real_t *depth,
+                                  ccd_vec3_t *dir, ccd_vec3_t *pos);
 
 #ifdef __cplusplus
 } /* extern "C" */

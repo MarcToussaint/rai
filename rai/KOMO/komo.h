@@ -54,7 +54,7 @@ struct KOMO : NonCopyable {
   FrameL timeSlices;              ///< the original timeSlices of the pathConfig (when switches add frames, pathConfig.frames might differ from timeSlices - otherwise not)
   bool computeCollisions;         ///< whether swift or fcl (collisions/proxies) is evaluated whenever new configurations are set (needed if features read proxy list)
   shared_ptr<rai::FclInterface> fcl;
-  shared_ptr<SwiftInterface> swift;
+  //shared_ptr<SwiftInterface> swift;
 
   //-- optimizer
   rai::KOMOsolver solver=rai::KS_sparse;

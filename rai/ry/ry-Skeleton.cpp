@@ -22,9 +22,9 @@ void init_Skeleton(pybind11::module& m) {
   .def("addExplicitCollisions", &rai::Skeleton::addExplicitCollisions, "", pybind11::arg("collisions") )
   .def("addLiftPriors", &rai::Skeleton::addLiftPriors, "", pybind11::arg("lift") )
   .def("getMaxPhase", &rai::Skeleton::getMaxPhase, "")
-  .def("getKomo_path", &rai::Skeleton::getKomo_path, "", pybind11::arg("Configuration"), pybind11::arg("stepsPerPhase"), pybind11::arg("accScale"), pybind11::arg("lenScale"), pybind11::arg("homingScale") )
-  .def("getKomo_waypoints", &rai::Skeleton::getKomo_waypoints, "", pybind11::arg("Configuration"), pybind11::arg("lenScale"), pybind11::arg("homingScale") )
-  .def("getKOMO_finalSlice", &rai::Skeleton::getKOMO_finalSlice, "", pybind11::arg("Configuration"), pybind11::arg("lenScale"), pybind11::arg("homingScale") )
+  .def("getKomo_path", &rai::Skeleton::getKomo_path, "", pybind11::arg("Configuration"), pybind11::arg("stepsPerPhase"), pybind11::arg("accScale"), pybind11::arg("lenScale"), pybind11::arg("homingScale"), pybind11::arg("collScale") )
+  .def("getKomo_waypoints", &rai::Skeleton::getKomo_waypoints, "", pybind11::arg("Configuration"), pybind11::arg("lenScale"), pybind11::arg("homingScale"), pybind11::arg("collScale") )
+  .def("getKOMO_finalSlice", &rai::Skeleton::getKOMO_finalSlice, "", pybind11::arg("Configuration"), pybind11::arg("lenScale"), pybind11::arg("homingScale"), pybind11::arg("collScale"))
 
   .def("enableAccumulatedCollisions", [](std::shared_ptr<rai::Skeleton>& self, bool enable){
     self->collisions = enable;

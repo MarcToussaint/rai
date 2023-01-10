@@ -55,7 +55,7 @@ void testFactored(){
 
   //== get info from the factored problem
   {
-    std::shared_ptr<NLP_Factored> nlp = komo.nlp_Factored();
+    std::shared_ptr<NLP_Factored> nlp = komo.nlp_FactoredParts();
     nlp->report(cout, 5);
   }
 
@@ -74,7 +74,7 @@ void testFactored(){
       nlp->report(cout, 2);
     } break;
     case 2: { //generic solver with factored transcription
-      auto nlp = komo.nlp_Factored();
+      auto nlp = komo.nlp_FactoredParts();
       NLP_Solver()
           .setProblem(nlp)
           .solve();
@@ -87,7 +87,7 @@ void testFactored(){
 #endif
 
   //== testing a partial problem
-  std::shared_ptr<NLP_Factored> nlp = komo.nlp_Factored();
+  std::shared_ptr<NLP_Factored> nlp = komo.nlp_FactoredParts();
 
   uintA gripperDUP_vars;
   for(uint i=0;i<nlp->variableDimensions.N;i++){

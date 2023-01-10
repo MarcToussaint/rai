@@ -246,7 +246,7 @@ void rai::CameraView::glDraw(OpenGL& gl) {
   }
 
   if(renderMode==seg) {
-    gl.setClearColors(1, 1, 1, 0);
+    gl.clearColor=1.;
     gl.background.clear();
     gl.drawOptions.drawMode_idColor = true;
     gl.drawOptions.drawColors=false;

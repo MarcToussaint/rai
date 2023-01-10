@@ -137,7 +137,7 @@ LGP_Tree::LGP_Tree()
 
 LGP_Tree::LGP_Tree(const Configuration& _kin, const char* folFileName) : LGP_Tree() {
   kin.copy(_kin);
-  if(collisions) kin.swift(); //initialize swift in root model (SwiftInterface is reference by all child models)
+  if(collisions) kin.fcl(); //initialize fcl in root model (SwiftInterface is reference by all child models)
   fol.init(folFileName);
   initFolStateFromKin(fol, kin);
   if(verbose>1) cout <<"INITIAL LOGIC STATE = " <<*fol.start_state <<endl;

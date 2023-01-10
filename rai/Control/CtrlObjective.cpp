@@ -13,7 +13,6 @@
 #include "../KOMO/komo.h"
 #include "../Core/graph.h"
 #include "../Kin/frame.h"
-#include "../Kin/kin_swift.h"
 #include "../Kin/F_qFeatures.h"
 
 //===========================================================================

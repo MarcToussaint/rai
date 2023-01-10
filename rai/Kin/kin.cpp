@@ -12,7 +12,7 @@
 #include "dof_particles.h"
 #include "dof_path.h"
 #include "proxy.h"
-#include "kin_swift.h"
+//#include "kin_swift.h"
 #include "kin_physx.h"
 #include "kin_ode.h"
 #include "kin_feather.h"
@@ -123,7 +123,7 @@ void computeMeshGraphs(FrameL& frames, bool force) {
 
 struct sConfiguration {
   shared_ptr<ConfigurationViewer> viewer;
-  shared_ptr<SwiftInterface> swift;
+  //shared_ptr<SwiftInterface> swift;
   shared_ptr<FclInterface> fcl;
   unique_ptr<PhysXInterface> physx;
   unique_ptr<OdeInterface> ode;
@@ -137,14 +137,14 @@ Configuration::Configuration() {
 Configuration::~Configuration() {
   //delete OpenGL and the extensions first!
   self->viewer.reset();
-  self->swift.reset();
+  //self->swift.reset();
   self->fcl.reset();
   clear();
   self.reset();
 }
 
 /// make this a copy of C (copying all frames, forces & proxies)
-void Configuration::copy(const Configuration& C, bool referenceSwiftOnCopy) {
+void Configuration::copy(const Configuration& C, bool referenceFclOnCopy) {
   CHECK(this != &C, "never copy C onto itself");
 
   clear();
@@ -170,9 +170,9 @@ void Configuration::copy(const Configuration& C, bool referenceSwiftOnCopy) {
     if(ex) new ForceExchange(*frames.elem(ex->a.ID), *frames.elem(ex->b.ID), ex->type, ex);
   }
 
-  //copy swift reference
-  if(referenceSwiftOnCopy) {
-    self->swift = C.self->swift;
+  //copy fcl reference
+  if(referenceFclOnCopy) {
+    //self->swift = C.self->swift;
     self->fcl = C.self->fcl;
   }
 
@@ -920,7 +920,7 @@ double Configuration::getEnergy(const arr& qdot) {
   return E;
 }
 
-/// get the sum of all shape penetrations -- PRECONDITION: proxies have been computed (with stepSwift() or stepFcl())
+/// get the sum of all shape penetrations -- PRECONDITION: proxies have been computed (with stepFcl())
 double Configuration::getTotalPenetration() {
   CHECK(_state_proxies_isGood, "");
 
@@ -2067,6 +2067,7 @@ std::shared_ptr<ConfigurationViewer>& Configuration::gl(const char* window_title
 }
 
 /// return a Swift extension
+/*
 std::shared_ptr<SwiftInterface> Configuration::swift() {
   if(self->swift && self->swift->swiftID.N != frames.N) self->swift.reset();
   if(!self->swift){
@@ -2076,6 +2077,7 @@ std::shared_ptr<SwiftInterface> Configuration::swift() {
   }
   return self->swift;
 }
+*/
 
 std::shared_ptr<FclInterface> Configuration::fcl() {
   if(!self->fcl) {
@@ -2091,10 +2093,6 @@ std::shared_ptr<FclInterface> Configuration::fcl() {
     self->fcl = make_shared<FclInterface>(geometries, .0); //-1.=broadphase only -> many proxies
   }
   return self->fcl;
-}
-
-void Configuration::swiftDelete() {
-  self->swift.reset();
 }
 
 /// return a PhysX extension
@@ -2207,6 +2205,7 @@ void Configuration::addProxies(const uintA& collisionPairs) {
   }
 }
 
+/*
 void Configuration::stepSwift() {
   arr X = getFrameState();
   uintA collisionPairs = swift()->step(X, false);
@@ -2218,6 +2217,7 @@ void Configuration::stepSwift() {
 
   _state_proxies_isGood=true;
 }
+*/
 
 void Configuration::stepFcl() {
   //-- get the frame state of collision objects
@@ -2877,7 +2877,7 @@ void Configuration::kinematicsPenetration(arr& y, arr& J, const Proxy& p, double
   CHECK(p.a->shape, "");
   CHECK(p.b->shape, "");
 
-  //early check: if swift is way out of collision, don't bother computing it precise
+  //early check: if estimate is way out of collision, don't bother computing it precise
   if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01 + margin) return;
 
   if(!p.collision)((Proxy*)&p)->calc_coll();

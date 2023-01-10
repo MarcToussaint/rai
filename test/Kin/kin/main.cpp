@@ -1,7 +1,6 @@
 #include <Kin/kin.h>
 #include <Kin/frame.h>
 #include <Kin/viewer.h>
-#include <Kin/kin_swift.h>
 #include <Kin/kin_ode.h>
 #include <Algo/spline.h>
 #include <Algo/algos.h>
@@ -254,11 +253,11 @@ void TEST(Contacts){
   arr x,con,grad;
   uint t;
 
-  G.swift()->cutoff =.5;
+  //G.swift()->cutoff =.5;
 
   VectorFunction f = [&G](const arr& x) -> arr {
     G.setJointState(x);
-    G.stepSwift();
+    G.stepFcl();
     arr y;
     G.kinematicsPenetration(y, y.J(), .2);
     return y;
@@ -267,7 +266,7 @@ void TEST(Contacts){
   x = G.getJointState();
   for(t=0;t<100;t++){
     G.setJointState(x);
-    G.stepSwift();
+    G.stepFcl();
 
     G.reportProxies();
 

@@ -10,6 +10,7 @@
 
 #include "../Core/array.h"
 #include "../Core/util.h"
+#include "../Core/graph.h"
 
 #include <algorithm>
 #include <math.h>
