@@ -94,6 +94,7 @@ struct Matrix {
   double diffZero() const;
 
   bool isDiagonal() const { return !m01 && !m02 && !m10 && !m12 && !m20 && !m21; }
+  void deleteOffDiagonal() { m01=m02=m10=m12=m20=m21=0.; }
 
   void write(std::ostream&) const;
   void read(std::istream&);

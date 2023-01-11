@@ -21,6 +21,7 @@ void dropRandomScene(){
       f->setConvexMesh(.2*randn(10,3), {}, .2);
     }
     f->setMass(1.);
+    f->inertia->matrix.deleteOffDiagonal();
     f->shape->cont=1;
     f->set_X()->setRandom();
     f->set_X()->pos.z += 2.;

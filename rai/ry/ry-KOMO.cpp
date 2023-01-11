@@ -16,30 +16,6 @@
 //#include "../LGP/bounds.h"
 #include "../Kin/viewer.h"
 
-rai::Skeleton list2skeleton(const pybind11::list& L) {
-  rai::Skeleton S;
-  for(uint i=0; i<L.size(); i+=3) {
-    std::vector<double> when = L[i].cast<std::vector<double>>();
-    CHECK(when.size()<=2, "Skeleton error entry " <<i/3 <<" time interval: interval needs no, 1, or 2 elements");
-    if(when.size()==0) when= {0., -1.};
-    if(when.size()==1) when= {when[0], when[0]};
-    rai::SkeletonSymbol symbol=rai::SY_none;
-    try {
-      symbol = L[i+1].cast<rai::SkeletonSymbol>();
-    } catch(std::runtime_error& err) {
-      LOG(-1) <<"Skeleton error line " <<i/3 <<" symbol: " <<err.what() <<endl;
-    }
-    StringA frames;
-    try {
-      frames = L[i+2].cast<StringA>();
-    } catch(std::runtime_error& err) {
-      LOG(-1) <<"Skeleton error line " <<i/3 <<" frames: " <<err.what() <<endl;
-    }
-    S.S.append(rai::SkeletonEntry(when[0], when[1], symbol, frames));
-  }
-  return S;
-}
-
 void init_KOMO(pybind11::module& m) {
   pybind11::class_<KOMO, std::shared_ptr<KOMO>>(m, "KOMO", "Constrained solver to optimize configurations or paths. (KOMO = k-order Markov Optimization)")
 

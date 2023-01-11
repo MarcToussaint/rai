@@ -278,11 +278,7 @@ void testCompound(){
   rai::Configuration C;
   C.addFile(rai::raiPath("../rai-robotModels/tests/compound.g"));
 
-  C.view(true);
-
   rai::Simulation S(C, S._bullet, 4);
-
-  C.view(true);
 
   double tau=.01;
   Metronome tic(tau);

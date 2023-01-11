@@ -1047,7 +1047,7 @@ double rai::Mesh::getArea() const {
   CHECK_EQ(T.d1, 3, "");
   double A=0.;
   for(uint i=0; i<T.d0; i++) A += getArea(i);
-  return .5*A;
+  return A;
 }
 
 double rai::Mesh::getArea(uint i) const {
@@ -1056,7 +1056,7 @@ double rai::Mesh::getArea(uint i) const {
   a.set(V.p+3*T.p[3*i+0]);
   b.set(V.p+3*T.p[3*i+1]);
   c.set(V.p+3*T.p[3*i+2]);
-  return ((b-a)^(c-a)).length();
+  return .5*((b-a)^(c-a)).length();
 }
 
 double rai::Mesh::getVolume() const {
@@ -1699,6 +1699,28 @@ void inertiaCylinder(double* I, double& mass, double density, double height, dou
   I[0]=mass/12.*(3.*r2+h2);
   I[4]=mass/12.*(3.*r2+h2);
   I[8]=mass/2.*r2;
+}
+
+void inertiaMesh(double *I, double& mass, double density, const rai::Mesh& m){
+  double area = m.getArea();
+  if(density) mass = density*m.getVolume();
+  //assume mass distributed on surface
+  arr vertexMass = zeros(m.V.d0);
+  for(uint i=0;i<m.T.d0;i++){
+    double mi = mass * m.getArea(i)/area;
+    for(uint v=0;v<3;v++) vertexMass(m.T(i,v)) += mi/3.; //area per vertex
+  }
+  cout <<sum(vertexMass) <<' ' <<mass <<endl;
+  for(uint i=0;i<m.V.d0;i++){
+    double mi = vertexMass(i);
+    double x=m.V(i,0), y=m.V(i,1), z=m.V(i,2);
+    I[0] += mi*(y*y+z*z);
+    I[4] += mi*(x*x+z*z);
+    I[8] += mi*(x*x+y*y);
+    I[1] -= mi*x*y;  I[3] -= mi*x*y;
+    I[2] -= mi*x*z;  I[6] -= mi*x*z;
+    I[5] -= mi*y*z;  I[7] -= mi*y*z;
+  }
 }
 
 //===========================================================================

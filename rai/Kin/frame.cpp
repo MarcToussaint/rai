@@ -1758,7 +1758,8 @@ void rai::Inertia::defaultInertiaByShape() {
     case ST_capsule:
     case ST_cylinder:
     case ST_ssCylinder: inertiaCylinder(matrix.p(), mass, (mass>0.?0.:1000.), frame.shape->size(0), frame.shape->size(1));  break;
-    case ST_mesh: break;
+    case ST_ssCvx:
+    case ST_mesh: inertiaMesh(matrix.p(), mass, (mass>0.?0.:1000.), frame.shape->mesh()); break;
     default: HALT("not implemented for this shape type");
   }
 }

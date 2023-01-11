@@ -430,9 +430,10 @@ btCollisionShape* BulletInterface_self::createLinkShape(ShapeL& shapes, rai::Bod
   bool shapesHaveInertia=false;
   for(rai::Shape *s:shapes) if(s->frame.inertia){ shapesHaveInertia=true; break; }
   if(shapesHaveInertia && !f->inertia){
-    DEPR;
+    LOG(-1) <<"computing compound inertia for object frame '" <<f->name <<"' -- this should have been done earlier?";
     f->computeCompoundInertia();
-#if 1 //we relocate that frame to have zero COM (bullet only accepts zero COM and diagonal inertia)
+    f->transformToDiagInertia();
+#if 0 //we relocate that frame to have zero COM (bullet only accepts zero COM and diagonal inertia)
     if(!f->inertia->com.isZero){
       CHECK(!f->shape || f->shape->type()==rai::ST_marker, "can't translate this frame if it has a shape attached");
       CHECK(!f->joint || f->joint->type==rai::JT_rigid || f->joint->type==rai::JT_free, "can't translate this frame if it has a joint attached");
@@ -577,8 +578,8 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
     if(i==0){
       linkJoint=0;
     } else {
-//      CHECK(!linkJoint->inertia, "");
-      CHECK(linkMass->inertia, "");
+      //CHECK(!linkJoint->inertia, "");
+      //CHECK(linkMass->inertia, "");
       CHECK(linkJoint->joint, "");
     }
     ShapeL shapes;
