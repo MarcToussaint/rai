@@ -700,4 +700,3 @@ void Skeleton::read(std::istream& is) {
 }
 
 } //namespace
-
