@@ -1724,6 +1724,7 @@ void OpenGL::clearSubView(uint v) {
 /// clear the list of all draw and callback routines
 void OpenGL::clear() {
   auto _dataLock = dataLock(RAI_HERE);
+  background.clear();
   views.clear();
   for(CstyleDrawer* d:toBeDeletedOnCleanup) delete d;
   toBeDeletedOnCleanup.clear();

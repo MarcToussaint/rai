@@ -91,8 +91,11 @@ struct SDF_GridData : SDF {
   rai::Transformation pose=0;
   floatA gridData;
   arr lo, up;
+
   SDF_GridData(const rai::Transformation& _pose, const floatA& _data, const arr& _lo, const arr& _up)
     : pose(_pose), gridData(_data), lo(_lo), up(_up) {}
+  SDF_GridData(uint N, const arr& _lo, const arr& _up)
+    : lo(_lo), up(_up) { gridData.resize(N,N,N).setZero(); }
 
   SDF_GridData(SDF& f, const arr& _lo, const arr& _up, const uintA& res);
   SDF_GridData() {}
@@ -105,11 +108,33 @@ struct SDF_GridData : SDF {
 
   void smooth(uint width=3, uint iters=2);
 
+  //helper
+  void getNeighborsAndWeights(uintA& neigh, arr& weights, const arr& x_rel);
+
+
   //IO
   void write(std::ostream& os) const;
   void read(std::istream& is);
 };
 stdPipes(SDF_GridData)
+
+struct PCL2Field {
+  SDF_GridData& field;
+  floatA source;
+
+  PCL2Field(SDF_GridData& _field):field(_field) {}
+
+  double stepDiffusion(const arr& pts, const arr& values);
+
+  double runDiffusion(const arr& pts, const arr& values, uint iters=30){
+    double err;
+    for(uint k=0;k<iters;k++){
+      err = stepDiffusion(pts, values);
+//      cout <<k <<" err: " <<err <<endl;
+    }
+    return err;
+  }
+};
 
 //===========================================================================
 

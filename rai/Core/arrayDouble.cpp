@@ -406,19 +406,31 @@ arr integral(const arr& x) {
 
 /// return the integral image, or vector
 arr differencing(const arr& x, uint w) {
+#define CLIP0(i) (i>=h0?i-h0:-1)
+#define CLIP1(i, d) (i+h1>d-1?d-1:i+h1)
+  uint h1=w/2, h0=w-h1; //central diff: h0=steps to left; h1=steps to right
+  arr y;
+  y.resizeAs(x);
   if(x.nd==1) {
-    arr y(x.N);
-    if(x.N) y.elem(0) = x.elem(0);
-    for(uint i=1; i<x.N; i++) { y.elem(i)=x.elem(i)-x.elem(i-1); }
+    for(uint i=0;i<y.d0; i++) {
+      double& v = y.elem(i);
+      int i0=CLIP0(i), i1=CLIP1(i,y.d0);
+      v = x.elem(i1);
+      if(i0>=0) v -= x.elem(i0);
+      v /= (double)(i1-i0);
+    }
     return y;
   }
   if(x.nd==2) {
-    arr y = x;
     for(uint i=y.d0; i--;) for(uint j=y.d1; j--;){
       double& v = y(i,j);
-      if(i>=w) v -= y(i-w,j);
-      if(j>=w) v -= y(i,j-w);
-      if(i>=w && j>=w) v += y(i-w,j-w);
+      int i0=CLIP0(i), i1=CLIP1(i,y.d0);
+      int j0=CLIP0(j), j1=CLIP1(j,y.d1);
+      v = x(i1,j1);
+      if(i0>=0) v -= x(i0,j1);
+      if(j0>=0) v -= x(i1,j0);
+      if(i0>=0 && j0>=0) v += x(i0,j0);
+      v /= (double)((i1-i0)*(j1-j0));
     }
     return y;
   }
@@ -426,25 +438,25 @@ arr differencing(const arr& x, uint w) {
     arr y = x;
     for(uint i=y.d0; i--;) for(uint j=y.d1; j--;) for(uint k=y.d2; k--;){
       double& v = y(i,j,k);
-//      if(i<w || j<w || k<w) continue;
-      if(i>=w) v -= y(i-w,j,k);
-      if(j>=w) v -= y(i,j-w,k);
-      if(k>=w) v -= y(i,j,k-w);
-      if(i>=w && j>=w) v += y(i-w,j-w,k);
-      if(i>=w && k>=w) v += y(i-w,j,k-w);
-      if(j>=w && k>=w) v += y(i,j-w,k-w);
-      if(i>=w && j>=w && k>=w) v -= y(i-w,j-w,k-w);
-
-      uint scale=1;
-      if(i>=w) scale *= w; else scale *= i+1;
-      if(j>=w) scale *= w; else scale *= j+1;
-      if(k>=w) scale *= w; else scale *= k+1;
-      v /= (double)scale;
+      int i0=CLIP0(i), i1=CLIP1(i,y.d0);
+      int j0=CLIP0(j), j1=CLIP1(j,y.d1);
+      int k0=CLIP0(k), k1=CLIP1(k,y.d2);
+      v = x(i1,j1,k1);
+      if(i0>=0) v -= x(i0,j1,k1);
+      if(j0>=0) v -= x(i1,j0,k1);
+      if(k0>=0) v -= x(i1,j1,k0);
+      if(i0>=0 && j0>=0) v += x(i0,j0,k1);
+      if(i0>=0 && k0>=0) v += x(i0,j1,k0);
+      if(j0>=0 && k0>=0) v += x(i1,j0,k0);
+      if(i0>=0 && j0>=0 && k0>=0) v -= x(i0,j0,k0);
+      v /= (double)((i1-i0)*(j1-j0)*(k1-k0));
     }
     return y;
   }
   NIY;
   return arr();
+#undef CLIP0
+#undef CLIP1
 }
 
 #ifdef RAI_CLANG

@@ -496,6 +496,23 @@ void TEST(Gnuplot){
 
 //===========================================================================
 
+void TEST(Integral){
+//  arr x = arr{{1,0,0,0,1,0,0,0,1}};
+//  arr x = arr{{3,3}, {1,0,0,0,1,0,0,0,1}};
+  arr x = arr{{3,3,3}, {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1}};
+  arr y = integral(x);
+  cout <<"x:\n" <<x <<"\nintegral:\n" <<y <<endl;
+  for(uint w=1;w<=5;w++){
+    arr z = differencing(y,w);
+    cout <<"diff w=" <<w <<":\n" <<z <<endl;
+    if(w==1){
+      CHECK_ZERO(maxDiff(x, z), 1e-10, "not equal!");
+    }
+  }
+}
+
+//===========================================================================
+
 void TEST(Determinant){
   cout <<"\n*** determinant computation\n";
   arr a = arr{1,1,2,1,1,0,0,-2,3};
@@ -919,6 +936,8 @@ void TEST(EigenValues){
 
 int MAIN(int argc, char **argv){
   rai::initCmdLine(argc, argv);
+
+  testIntegral(); return 0;
 
   testBasics();
   testIterators();

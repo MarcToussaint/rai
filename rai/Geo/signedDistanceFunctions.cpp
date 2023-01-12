@@ -430,17 +430,50 @@ void SDF_GridData::resample(uint N){
 
 void SDF_GridData::smooth(uint width, uint iters){
   arr dat = rai::convert<double>(gridData);
-  uint half = (width-1)/2;
+//  uint half = (width-1)/2;
   for(uint i=0;i<iters;i++){
     dat = integral(dat);
     dat = differencing(dat, width);
-    dat.shift(half*(-1-dat.d2-dat.d1*dat.d2), false);
-    //overwrite padding
-    for(uint i=dat.d0-half;i<dat.d0;i++) for(uint j=0;j<dat.d1;j++) for(uint k=0;k<dat.d2;k++) dat(i,j,k) = gridData(i,j,k);
-    for(uint i=0;i<dat.d0;i++) for(uint j=dat.d1-half;j<dat.d1;j++) for(uint k=0;k<dat.d2;k++) dat(i,j,k) = gridData(i,j,k);
-    for(uint i=0;i<dat.d0;i++) for(uint j=0;j<dat.d1;j++) for(uint k=dat.d2-half;k<dat.d2;k++) dat(i,j,k) = gridData(i,j,k);
+//    dat.shift(half*(-1-dat.d2-dat.d1*dat.d2), false);
+//    //overwrite padding
+//    for(uint i=dat.d0-half;i<dat.d0;i++) for(uint j=0;j<dat.d1;j++) for(uint k=0;k<dat.d2;k++) dat(i,j,k) = gridData(i,j,k);
+//    for(uint i=0;i<dat.d0;i++) for(uint j=dat.d1-half;j<dat.d1;j++) for(uint k=0;k<dat.d2;k++) dat(i,j,k) = gridData(i,j,k);
+//    for(uint i=0;i<dat.d0;i++) for(uint j=0;j<dat.d1;j++) for(uint k=dat.d2-half;k<dat.d2;k++) dat(i,j,k) = gridData(i,j,k);
   }
   gridData = rai::convert<float>(dat);
+}
+
+void SDF_GridData::getNeighborsAndWeights(uintA& neigh, arr& weights, const arr& x_rel){
+  arr res = arr{(double)gridData.d0-1, (double)gridData.d1-1, (double)gridData.d2-1};
+  res /= (up-lo);
+  arr fidx = (x_rel-lo) % res;
+
+  arr frac(3), idx(3);
+  for(uint i=0;i<3;i++) frac(i) = modf(fidx(i), &idx(i));
+
+  int _x = idx(0);
+  int _y = idx(1);
+  int _z = idx(2);
+  double dx = frac(0);
+  double dy = frac(1);
+  double dz = frac(2);
+
+  if(_x+1==(int)gridData.d0 && dx<1e-10){ _x--; dx=1.; }
+  if(_y+1==(int)gridData.d1 && dy<1e-10){ _y--; dy=1.; }
+  if(_z+1==(int)gridData.d2 && dz<1e-10){ _z--; dz=1.; }
+
+  arr wx = {1.-dx, dx};
+  arr wy = {1.-dy, dy};
+  arr wz = {1.-dz, dz};
+  weights = (wx ^ wy) ^ wz;
+  neigh = {((_x+0)*gridData.d1+_y+0)*gridData.d2+(_z+0),
+           ((_x+1)*gridData.d1+_y+0)*gridData.d2+(_z+0),
+           ((_x+0)*gridData.d1+_y+1)*gridData.d2+(_z+0),
+           ((_x+1)*gridData.d1+_y+1)*gridData.d2+(_z+0),
+           ((_x+0)*gridData.d1+_y+0)*gridData.d2+(_z+1),
+           ((_x+1)*gridData.d1+_y+0)*gridData.d2+(_z+1),
+           ((_x+0)*gridData.d1+_y+1)*gridData.d2+(_z+1),
+           ((_x+1)*gridData.d1+_y+1)*gridData.d2+(_z+1) };
 }
 
 void SDF_GridData::write(std::ostream& os) const {
@@ -507,4 +540,41 @@ double SDF_Torus::f(arr& g, arr& H, const arr& _x){
     double x=_x(0), y=_x(1), z=_x(2);
     double r=sqrt(x*x + y*y);
     return z*z + (1.-r)*(1.-r) - .1;
+}
+
+//===========================================================================
+
+double PCL2Field::stepDiffusion(const arr& pts, const arr& values){
+  if(!source.N) source.resizeAs(field.gridData).setZero();
+
+
+  //impose pcl values:
+  double err=0.;
+  for(uint i=0;i<values.N;i++){
+    double v = field.f(NoArr, NoArr, pts[i]);
+    double delta = values(i) - v;
+    err += delta*delta;
+    uintA neigh;
+    arr weights;
+    field.getNeighborsAndWeights(neigh, weights, pts[i]);
+    for(uint j=0;j<neigh.N;j++){
+      field.gridData.elem(neigh(j)) += 1.*weights.elem(j)*delta;
+      source.elem(neigh(j)) += .1*weights.elem(j)*delta;
+    }
+  }
+
+  //impose boundary values:
+  for(uint i=0;i<field.gridData.d0;i++) for(uint j=0;j<field.gridData.d1;j++){ field.gridData(i,j,0) = 1.; field.gridData(i,j,-1) = 1.; }
+  for(uint i=0;i<field.gridData.d0;i++) for(uint j=0;j<field.gridData.d2;j++){ field.gridData(i,0,j) = 1.; field.gridData(i,-1,j) = 1.; }
+  for(uint i=0;i<field.gridData.d1;i++) for(uint j=0;j<field.gridData.d2;j++){ field.gridData(0,i,j) = 1.; field.gridData(-1,i,j) = 1.; }
+
+  //add source
+  field.gridData += source;
+  for(float &s:source) s *= .99;
+
+  //smooth
+  field.smooth(3, 1);
+
+  return err/values.N;
+
 }

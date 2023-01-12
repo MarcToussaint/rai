@@ -38,7 +38,7 @@ cd rai
 
 # The following two commands depend on the config.mk -- see below
 make -j1 printUbuntuAll    # for your information: what the next step will install
-make -j1 installUbuntuAll  # calls sudo apt-get install; you can always interrupt
+make -j1 installUbuntuAll APTGETYES=--yes # calls sudo apt-get install; remove 'yes' to allow interrupting
 
 make -j4
 make -j4 tests bin
