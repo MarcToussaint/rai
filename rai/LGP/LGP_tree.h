@@ -19,8 +19,6 @@ struct LGP_Tree;
 struct DisplayThread;
 typedef Array<Transformation> TransformationA;
 
-void initFolStateFromKin(FOL_World& L, const Configuration& K);
-
 struct LGP_Tree_SolutionData : GLDrawer {
   LGP_Tree& tree;
   LGP_Node* node; ///< contains costs, constraints, and solutions for each level

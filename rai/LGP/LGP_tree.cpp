@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "LGP_tree.h"
+#include "initFol.h"
 
 #include "../Kin/kinViewer.h"
 #include "../Kin/viewer.h"
@@ -67,6 +68,7 @@ struct DisplayThread : Thread {
   }
 };
 
+#if 0
 void initFolStateFromKin(FOL_World& L, const Configuration& C) {
   boolA isSymbol;
   isSymbol.resize(C.frames.N) = false;
@@ -111,6 +113,7 @@ void initFolStateFromKin(FOL_World& L, const Configuration& C) {
     }
   }
 }
+#endif
 
 LGP_Tree::LGP_Tree()
   : verbose(1), numSteps(0) {

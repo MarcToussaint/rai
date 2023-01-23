@@ -117,7 +117,7 @@ int ccdMPRIntersect(const void *obj1, const void *obj2, const ccd_t *ccd)
 int ccdMPRPenetration(const void *obj1, const void *obj2, const ccd_t *ccd,
                       ccd_real_t *depth, ccd_vec3_t *dir, ccd_vec3_t *pos)
 {
-  ccdMPRPenetrationRai(obj1, obj2,
+  return ccdMPRPenetrationRai(obj1, obj2,
 		       ccd, depth,
 		       dir, pos, 0);
 }
