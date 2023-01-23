@@ -370,17 +370,18 @@ struct GlfwSpinner : Thread {
   static void _Key(GLFWwindow* window, int key, int scancode, int action, int mods) {
     OpenGL* gl=(OpenGL*)glfwGetWindowUserPointer(window);
 //    gl->modifiers=mods;
-//    CALLBACK_DEBUG(gl, key <<' ' <<action <<' ' <<mods);
+    CALLBACK_DEBUG(gl, key <<' ' <<action <<' ' <<mods);
     if(action == GLFW_PRESS) {
       if(key==256) key=27;
       if(key==257) key=13;
       if(key==GLFW_KEY_LEFT_CONTROL){ mods |= GLFW_MOD_CONTROL; key='%'; }
       if(key==GLFW_KEY_LEFT_SHIFT){ mods |= GLFW_MOD_SHIFT; key='%'; }
       if(key>='A' && key<='Z') key += 'a' - 'A';
-      gl->Key(key, mods);
+      gl->Key(key, mods, true);
     }else if(action==GLFW_RELEASE) {
-      if(key==GLFW_KEY_LEFT_CONTROL){ gl->modifiers &= ~GLFW_MOD_CONTROL; }
-      if(key==GLFW_KEY_LEFT_SHIFT){ gl->modifiers &= ~GLFW_MOD_SHIFT; }
+      if(key==GLFW_KEY_LEFT_CONTROL){ mods &= ~GLFW_MOD_CONTROL; key='%'; }
+      if(key==GLFW_KEY_LEFT_SHIFT){ mods &= ~GLFW_MOD_SHIFT; key='%'; }
+      gl->Key(key, mods, false);
     }
   }
 
@@ -1431,7 +1432,7 @@ void glRasterImage(float x, float y, byteA& img, float zoom) {
     if(!P) P=1;
     uint add=4-(img.d1%4);
     img.reshape(img.d0, img.d1*P);
-    img.insColumns(img.d1, add*P);
+    img.insColumns(-1, add*P);
     if(P>1) img.reshape(img.d0, img.d1/P, P);
   }
 
@@ -2202,7 +2203,12 @@ void getSphereVector(rai::Vector& vec, int _x, int _y, int le, int ri, int bo, i
   vec.y=y;
   vec.z=.5-(x*x+y*y);
   if(vec.z<0.) vec.z=0.;
+  vec.isZero=false;
 }
+
+bool OpenGL::modifiersNone(){ return _NONE(modifiers); }
+bool OpenGL::modifiersShift(){ return _SHIFT(modifiers); }
+bool OpenGL::modifiersCtrl(){ return _CTRL(modifiers); }
 
 void OpenGL::Reshape(int _width, int _height) {
 //  auto _dataLock = dataLock(RAI_HERE);
@@ -2219,11 +2225,12 @@ void OpenGL::Reshape(int _width, int _height) {
   }
 }
 
-void OpenGL::Key(unsigned char key, int mods) {
+void OpenGL::Key(unsigned char key, int mods, bool _keyIsDown) {
 //  auto _dataLock = dataLock(RAI_HERE);
-  CALLBACK_DEBUG(this, "Keyboard Callback: " <<key <<"('" <<(char)key <<"')");
+  CALLBACK_DEBUG(this, "Keyboard Callback: " <<key <<"('" <<(char)key <<"') mods:" <<mods <<" down:" <<_keyIsDown);
   pressedkey = key;
   modifiers = mods;
+  keyIsDown = _keyIsDown;
 
   bool cont=true;
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
@@ -2236,7 +2243,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   int w=width, h=height;
   bool needsUpdate=false;
   _y = h-_y;
-  CALLBACK_DEBUG(this, "Mouse Click Callback: " <<button <<' ' <<downPressed <<' ' <<_x <<' ' <<_y);
+  CALLBACK_DEBUG(this, "Mouse Click Callback: " <<button <<' ' <<_x <<' ' <<_y <<" down:" <<downPressed <<" mods:" <<mods);
   mouse_button=1+button;
   if(downPressed) mouse_button=-1-mouse_button;
   mouseposx=_x; mouseposy=_y;
@@ -2339,22 +2346,32 @@ void OpenGL::Scroll(int wheel, int direction) {
   CALLBACK_DEBUG(this, "Mouse Wheel Callback: " <<wheel <<' ' <<direction);
   bool needsUpdate=false;
 
+  double dz = (direction>0.? .1:-.1);
+
+  rai::Camera* cam=&camera;
+  for(mouseView=views.N; mouseView--;) {
+    GLView* v = &views(mouseView);
+    if(mouseposx<v->ri*width && mouseposx>v->le*width && mouseposy<v->to*height && mouseposy>v->bo*height) {
+      cam=&views(mouseView).camera;
+      break;
+    }
+  }
+
   //-- SCROLL -> zoom
   if(_NONE(modifiers)){
-    rai::Camera* cam=&camera;
-    for(mouseView=views.N; mouseView--;) {
-      GLView* v = &views(mouseView);
-      if(mouseposx<v->ri*width && mouseposx>v->le*width && mouseposy<v->to*height && mouseposy>v->bo*height) {
-        cam=&views(mouseView).camera;
-        break;
-      }
-    }
-
-    if(direction>0) cam->X.pos += cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
-    else            cam->X.pos -= cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
+    cam->X.pos += cam->X.rot*Vector_z * (dz * (cam->X.pos-cam->foc).length());
 
     needsUpdate=true;
   }
+
+  //-- shift-LEFT -> translation
+  if(_SHIFT(modifiers) && !_CTRL(modifiers)) {
+    cam->X.pos += cam->X.rot*Vector_z * (.1*dz);
+    cam->foc += cam->X.rot*Vector_z * (.1*dz);
+
+    needsUpdate=true;
+  }
+
 
   //step through all callbacks
   for(uint i=0; i<scrollCalls.N; i++) needsUpdate = needsUpdate || scrollCalls(i)->scrollCallback(*this, direction);
@@ -2390,7 +2407,7 @@ void OpenGL::MouseMotion(double _x, double _y) {
   bool needsUpdate=false;
   
   //-- LEFT -> rotation
-  if(mouse_button==1 && _NONE(modifiers)) {
+  if(mouse_button==1 && _NONE(modifiers) && !downVec.isZero) {
     rai::Quaternion rot;
     if(downVec.z<.1) {
       //margin:
@@ -2407,7 +2424,7 @@ void OpenGL::MouseMotion(double _x, double _y) {
   }
   
   //-- shift-LEFT -> translation
-  if(mouse_button==1 && (!hideCameraControls && _SHIFT(modifiers) && !_CTRL(modifiers))) {
+  if(mouse_button==1 && (!hideCameraControls && _SHIFT(modifiers) && !_CTRL(modifiers)) && !downVec.isZero) {
     rai::Vector trans = vec - downVec;
     trans.z = 0.;
     trans *= .1*(downFoc - downPos).length();

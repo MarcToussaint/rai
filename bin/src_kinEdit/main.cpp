@@ -85,6 +85,7 @@ int main(int argc,char **argv){
   LOG(0) <<"saving urdf and dae files";
   FILE("z.g") <<C;
   C.writeURDF(FILE("z.urdf"));
+  C.writeMesh("z.ply");
   C.writeCollada("z.dae");
   if(rai::checkParameter<bool>("dot")) C.displayDot();
 

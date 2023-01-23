@@ -50,6 +50,8 @@ extern "C" {
 #endif
 #endif //RAI_LAPACK
 
+#define maxRank 10
+
 namespace rai {
 //===========================================================================
 
@@ -1080,9 +1082,11 @@ void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
 bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps, bool verbose){
   bool good=true;
   if(bound_lo.N && bound_up.N) {
-    for(uint i=0; i<x.N; i++) if(bound_up.elem(i)>=bound_lo.elem(i)) {
-      if(x.elem(i) < bound_lo.elem(i)-eps){ good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.elem(i) <<" violates lower bound " <<bound_lo.elem(i); else break; }
-      if(x.elem(i) > bound_up.elem(i)+eps){ good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.elem(i) <<" violates upper bound " <<bound_up.elem(i); else break; }
+    CHECK_EQ(x.N, bound_lo.N, "");
+    CHECK_EQ(x.N, bound_up.N, "");
+    for(uint i=0; i<x.N; i++) if(bound_up.p[i]>=bound_lo.p[i]) {
+      if(x.p[i] < bound_lo.p[i]-eps){ good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.p[i] <<" violates lower bound " <<bound_lo.p[i]; else break; }
+      if(x.p[i] > bound_up.p[i]+eps){ good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.p[i] <<" violates upper bound " <<bound_up.p[i]; else break; }
     }
   }
   return good;
@@ -2668,7 +2672,7 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
 
 //===========================================================================
 //
-// explicit instantiations for double
+// numerical methods also for non-double arrays
 //
 
 namespace rai {
@@ -2713,6 +2717,50 @@ uintA differencing(const uintA& x, uint w) {
   NIY;
   return uintA();
 }
+
+//index and limit are w.r.t is the GLOBAL indexing!, j_stride w.r.t. the permuted
+inline void multiDimIncrement(uint& Ycount, uint* index, uint* limit, uint* Yinc, uint* Ydec, uint nd) {
+  uint k;
+  for(k=nd; k--;) {
+    Ycount+=Yinc[k];
+    index[k]++;
+    if(index[k]<limit[k]) break;  //we need the index only to decide when to overflow -- is there a more efficient way?
+    index[k]=0;
+    Ycount-=Ydec[k];
+  }
+}
+
+inline void getMultiDimIncrement(const uintA& Xdim, const uintA& Yid, uint* Ydim, uint* Yinc, uint* Ydec) {
+  uint i;
+  memset(Ydim, 0, sizeof(uint)*maxRank);  for(i=0; i<Xdim.N; i++) if(i<Yid.N) Ydim[i]=Xdim(Yid.p[i]);    //dimension of Y
+  memset(Yinc, 0, sizeof(uint)*maxRank);  Yinc[Yid.p[Yid.N-1]]=1;  for(i=Yid.N-1; i--;) Yinc[Yid.p[i]] = Ydim[i+1] * Yinc[Yid.p[i+1]];  //stride of Y
+  for(i=Xdim.N; i--;) Ydec[i] = Xdim(i)*Yinc[i];
+  //cout <<"Xdim=" <<Xdim <<"\nYid =" <<Yid <<"\nYdim=" <<uintA(Ydim, Yid.N) <<"\nYinc=" <<uintA(Yinc, Xdim.N) <<"\nYdec=" <<uintA(Ydec, Xdim.N) <<endl;
+}
+
+/** \f$Y_{i_Yid(0), i_Yid(1)} = \sum_{i_1} X_{i_0, i_1, i_2}\f$. Get the marginal Y
+  from X, where Y will share the slots `Yid' with X */
+template<class T>
+void tensorPermutation(Array<T>& Y, const Array<T>& X, const uintA& Yid) {
+  uint Xcount, Ycount;
+  CHECK_EQ(Yid.N, X.nd, "can't take slots " <<Yid <<" from " <<X.nd <<"D tensor");
+
+  //initialize looping
+  uint I[maxRank];     memset(I, 0, sizeof(uint)*maxRank);  //index on X
+  uint Ydim[maxRank], Yinc[maxRank], Ydec[maxRank];
+  getMultiDimIncrement(X.dim(), Yid, Ydim, Yinc, Ydec);
+  Y.resize(Yid.N, Ydim);
+
+  //loop
+  for(Xcount=0, Ycount=0; Xcount<X.N; Xcount++) {
+    Y.p[Ycount] = X.p[Xcount];
+    multiDimIncrement(Ycount, I, X.d, Yinc, Ydec, X.nd);
+  }
+}
+
+//explicit instantiations
+template void tensorPermutation(Array<double>& Y, const Array<double>& X, const uintA& Yid);
+template void tensorPermutation(Array<float>& Y, const Array<float>& X, const uintA& Yid);
 
 }
 

@@ -322,7 +322,7 @@ stdOutPipe(RenderingInfo)
 
 /// global registry of parameters (taken from cmd line or file) as a singleton graph
 Mutex::TypedToken<rai::Graph> getParameters();
-void initParameters(int _argc, char* _argv[], bool forceReload=false);
+void initParameters(int _argc, char* _argv[], bool forceReload=false, bool verbose=true);
 
 //===========================================================================
 

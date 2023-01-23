@@ -41,6 +41,9 @@ struct TimingProblem : NLP {
   void smartInitVels();
   void getVels(arr& vel);
 
+  void getSpline(rai::CubicSpline& S);
+  arr getPosJacobian(const rai::CubicSpline& S, const arr& timeGrid);
+
 private:
   arr xJ(int k);
   arr vJ(int k);

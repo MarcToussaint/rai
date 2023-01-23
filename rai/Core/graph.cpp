@@ -1308,7 +1308,7 @@ Mutex::TypedToken<Graph> getParameters(){
   return parameterGraph();
 }
 
-void initParameters(int _argc, char*_argv[], bool forceReload){
+void initParameters(int _argc, char*_argv[], bool forceReload, bool verbose){
   static bool wasInitialized=false;
   if(wasInitialized&&!forceReload) return;
   wasInitialized=true;
@@ -1360,7 +1360,9 @@ void initParameters(int _argc, char*_argv[], bool forceReload){
   }
   fil.close();
 
-  LOG(1) <<"** parsed parameters:\n" <<P() <<'\n';
+  if(verbose){
+    LOG(1) <<"** parsed parameters:\n" <<P() <<'\n';
+  }
 }
 
 } //namespace

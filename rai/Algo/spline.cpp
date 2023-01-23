@@ -583,4 +583,31 @@ arr CubicSplineMaxVel(const arr& x0, const arr& v0, const arr& x1, const arr& v1
   return y;
 }
 
+arr CubicSplinePos(double t, const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ){
+  //position at time t:
+  // a t^3 + b t^2 + c t + d
+
+  CHECK_GE(t, 0., "");
+  CHECK_LE(t, tau+1e-6, "");
+
+  double tau2 = tau*tau;
+  double tau3 = tau2*tau;
+  double tau4 = tau2*tau2;
+  arr d = x0;
+  arr c = v0;
+  arr b = 1./tau2 * (  3.*(x1-x0) - tau*(v1+2.*v0) );
+  if(tauJ.N){
+    b.J() += -6./tau3 * (x1.noJ()-x0.noJ()) * tauJ;
+    b.J() -= -1./tau2 * (v1.noJ()+2.*v0.noJ()) * tauJ;
+  }
+  arr a = 1./tau3 * ( -2.*(x1-x0) + tau*(v1+v0) );
+  if(tauJ.N){
+    a.J() -= -6./tau4 * (x1.noJ()-x0.noJ()) * tauJ;
+    a.J() += -2./tau3 * (v1.noJ()+v0.noJ()) * tauJ;
+  }
+
+  arr p = (t*t*t)*a + (t*t)*b + t*c + d;
+  return p;
+}
+
 } //namespace rai

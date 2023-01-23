@@ -308,8 +308,20 @@ template<class T> void operator+=(Array<T>& x, const T& y){
   T *xp=x.p, *xstop=xp+x.N;
   for(; xp!=xstop; xp++) *xp += y;
 }
+template<class T> void operator-=(Array<T>& x, const Array<T>& y){
+  CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")");
+  T *xp=x.p, *xstop=xp+x.N;
+  const T *yp=y.p;
+  for(; xp!=xstop; xp++, yp++) *xp -= *yp;
+}
+template<class T> void operator-=(Array<T>& x, const T& y){
+  T *xp=x.p, *xstop=xp+x.N;
+  for(; xp!=xstop; xp++) *xp -= y;
+}
 template<class T> Array<T> operator+(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x+=z; return x; }
 template<class T> Array<T> operator+(const Array<T>& y, T z){                Array<T> x(y); x+=z; return x; }
+template<class T> Array<T> operator-(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x-=z; return x; }
+template<class T> Array<T> operator-(const Array<T>& y, T z){                Array<T> x(y); x-=z; return x; }
 
 //IO modifiers
 template <class T> struct ArrayModRaw{
@@ -415,7 +427,10 @@ template<class T, class S> void resizeCopyAs(Array<T>& x, const Array<S>& a);
 template<class T, class S> void reshapeAs(Array<T>& x, const Array<S>& a);
 template<class T, class S> void copy(Array<T>& x, const Array<S>& a) {
   resizeAs(x, a);
-  for(uint i=0; i<x.N; i++) x.elem(i)=(T)a.elem(i);
+  T* xp=x.p, *xstop = xp+x.N;;
+  S* ap=a.p;
+  for(;xp!=xstop;xp++,ap++) *xp = (T)*ap;
+  //for(uint i=0; i<x.N; i++) x.elem(i)=(T)a.elem(i);
 }
 template<class T, class S> Array<T> convert(const Array<S>& a) {
   Array<T> x;
@@ -581,6 +596,9 @@ template<class T> Array<T>& Array<T>::setNoArr() { special = new SpecialArray(Sp
 
 
 //===========================================================================
+//
+// numerical operations, also for non double arrays
+//
 
 namespace rai{
   uint product(const uintA& x);
@@ -588,6 +606,9 @@ namespace rai{
   uint sum(const uintA& x);
   uintA integral(const uintA& x);
   uintA differencing(const uintA& x, uint width=1);
+
+  template<class T>
+  void tensorPermutation(Array<T>& Y, const Array<T>& X, const uintA& Yid);
 }
 
 //===========================================================================

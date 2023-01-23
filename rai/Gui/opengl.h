@@ -146,6 +146,7 @@ struct OpenGL {
   floatA clearColor;  ///< colors of the beackground (called in glClearColor(...))
   bool reportEvents, reportSelects;    ///< flags for verbosity
   int pressedkey;         ///< stores the key pressed
+  bool keyIsDown;
   const char* exitkeys;   ///< additional keys to exit watch mode
   int modifiers;          ///< stores modifier keys
   int mouse_button;       ///< stores which button was pressed
@@ -216,6 +217,9 @@ struct OpenGL {
   void reportSelection();
   void saveEPS(const char* filename);
   void about(std::ostream& os=std::cout);
+  bool modifiersNone();
+  bool modifiersShift();
+  bool modifiersCtrl();
 
   /// @name to display image data (kind of misuse)
   int watchImage(const byteA& img, bool wait, float backgroundZoom=1.);
@@ -239,10 +243,10 @@ struct OpenGL {
   void init(); //initializes camera etc
 
   //general callbacks (used by all implementations)
- protected:
   rai::Vector downVec, downPos, downFoc;
   rai::Quaternion downRot;
-  void Key(unsigned char key, int mods);
+protected:
+  void Key(unsigned char key, int mods, bool released);
   void MouseButton(int button, int updown, int x, int y, int mods);
   void MouseMotion(double x, double y);
   void Reshape(int w, int h);

@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <sstream>
 
-#define maxRank 30
+#define maxRank 10
 /** @brief if flexiMem is true (which is default!) the resize method will
   (1) at the first call allocate the exact amount of memory, (2)
   at further calls of increasing memory allocate twice the memory
@@ -1539,25 +1539,6 @@ void tensorMarginal(arr& Y, const arr& X, const uintA& Yid) {
     CHECK_EQ(II, I, "not equal: " <<II <<uintA(I, X.nd));
 #endif
     Y.p[Ycount] += X.p[Xcount];
-    multiDimIncrement(Ycount, I, X.d, Yinc, Ydec, X.nd);
-  }
-}
-
-/** \f$Y_{i_Yid(0), i_Yid(1)} = \sum_{i_1} X_{i_0, i_1, i_2}\f$. Get the marginal Y
-  from X, where Y will share the slots `Yid' with X */
-void tensorPermutation(arr& Y, const arr& X, const uintA& Yid) {
-  uint Xcount, Ycount;
-  CHECK_EQ(Yid.N, X.nd, "can't take slots " <<Yid <<" from " <<X.nd <<"D tensor");
-
-  //initialize looping
-  uint I[maxRank];     memset(I, 0, sizeof(uint)*maxRank);  //index on X
-  uint Ydim[maxRank], Yinc[maxRank], Ydec[maxRank];
-  getMultiDimIncrement(X.dim(), Yid, Ydim, Yinc, Ydec);
-  Y.resize(Yid.N, Ydim);
-
-  //loop
-  for(Xcount=0, Ycount=0; Xcount<X.N; Xcount++) {
-    Y.p[Ycount] = X.p[Xcount];
     multiDimIncrement(Ycount, I, X.d, Yinc, Ydec, X.nd);
   }
 }

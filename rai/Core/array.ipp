@@ -1350,11 +1350,18 @@ Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
   }
   if(dim==3) {
     resize(uintA{steps+1, steps+1, steps+1, 3});
-    for(i=0; i<d0; i++) for(j=0; j<d1; j++) for(k=0; k<d2; k++) {
-          elem(uintA{i, j, k, 0})=lo+(hi-lo)*i/steps;
-          elem(uintA{i, j, k, 1})=lo+(hi-lo)*j/steps;
-          elem(uintA{i, j, k, 2})=lo+(hi-lo)*k/steps;
-        }
+    T dx = (hi-lo)/steps;
+    for(i=0; i<d0; i++) for(j=0; j<d1; j++){
+      T *p = &elem(uintA{i, j, 0, 0});
+      for(k=0; k<d2; k++) {
+        *(p++) = lo+dx*i;
+        *(p++) = lo+dx*j;
+        *(p++) = lo+dx*k;
+//        elem(uintA{i, j, k, 0}) = lo+dx*i;
+//        elem(uintA{i, j, k, 1}) = lo+dx*j;
+//        elem(uintA{i, j, k, 2}) = lo+dx*k;
+      }
+    }
     reshape(d0*d1*d2, 3);
     return;
   }

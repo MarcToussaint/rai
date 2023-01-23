@@ -547,7 +547,7 @@ void timerResume() {
 
 //COPY & PAST from graph.h
 Mutex::TypedToken<rai::Graph> getParameters();
-void initParameters(int _argc, char* _argv[], bool forceReload);
+void initParameters(int _argc, char* _argv[], bool forceReload, bool verbose);
 
 /// memorize the command line arguments and open a log file
 void initCmdLine(int _argc, char* _argv[]) {
@@ -562,7 +562,7 @@ void initCmdLine(int _argc, char* _argv[]) {
   LOG(1) <<"** run path: '" <<processInfo()->startDir <<"'";
   LOG(1) <<"** rai path: '" <<processInfo()->raiPath <<"'";
 
-  initParameters(argc, argv, false);
+  initParameters(argc, argv, false, true);
 }
 
 /// returns true if the tag was found on command line
@@ -907,6 +907,12 @@ bool rai::String::operator==(const String& s) const { if(!p && !s.p) return true
 bool rai::String::operator!=(const char* s) const { return !operator==(s); }
 bool rai::String::operator!=(const String& s) const { return !(operator==(s)); }
 bool rai::String::operator<=(const String& s) const { return p && s.p && strcmp(p, s.p)<=0; }
+
+int rai::String::find(char c) const {
+  if(!p) return false;
+  for(uint i=0;i<N;i++) if(p[i]==c) return i;
+  return -1;
+}
 
 bool rai::String::contains(char c) const {
   if(!p) return false;

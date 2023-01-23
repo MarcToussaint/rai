@@ -317,6 +317,39 @@ void TimingProblem::getVels(arr& vel){
   vel.reshape(waypoints.d0, waypoints.d1);
 }
 
+void TimingProblem::getSpline(rai::CubicSpline& S){
+  arr path = waypoints;       path.prepend(x0);
+  arr vels = v;               vels.prepend(v0);  vels.append(zeros(vels.d1));
+  arr times = integral(tau);  times.prepend(0.);
+  S.set(path, vels, times);
+}
+
+arr TimingProblem::getPosJacobian(const rai::CubicSpline& S, const arr& timeGrid){
+  arr times = integral(tau);  times.prepend(0.);
+  arr J;
+  for(uint i=0;i<timeGrid.N;i++){
+    double t = timeGrid(i);
+    uint k = S.getPiece(t);
+    CHECK_GE(t, times(k), "");
+    CHECK_LE(t, times(k+1)+1e-6, "");
+    double trel = t-times(k);
+
+    //get x0,v0,x1,v1,tau with (trivial) jacobians
+    arr _x0 = xJ((int)k-1);
+    arr _v0 = vJ((int)k-1);
+    arr _x1 = xJ(k);
+    arr _v1 = vJ(k);
+    arr tauJ = Jtau(k);
+
+    arr p = rai::CubicSplinePos(trel, _x0, _v0, _x1, _v1, tau(k), tauJ);
+    if(!J.N){
+      J.sparse().resize(timeGrid.N*p.N, p.J().d1, 0);
+    }
+    J.sparse().add(p.J(), i*p.N, 0);
+  }
+  return J;
+}
+
 arr TimingProblem::xJ(int k){
   if(k==-1) return x0;
 

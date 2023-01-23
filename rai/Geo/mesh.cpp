@@ -105,7 +105,7 @@ void rai::Mesh::setLine(double l) {
   V(1, 2) = +.5*l;
 }
 
-void rai::Mesh::setQuad(double x_width, double y_width, const byteA& _texImg){
+void rai::Mesh::setQuad(double x_width, double y_width, const byteA& _texImg, bool flipY, bool texByReference){
   clear();
   V = {
     -.5*x_width, -.5*y_width, 0,
@@ -118,10 +118,18 @@ void rai::Mesh::setQuad(double x_width, double y_width, const byteA& _texImg){
   V.reshape(4,3);
   T.reshape(2,3);
   if(_texImg.N){
-    texImg = _texImg;
+    if(texByReference){
+      texImg.referTo(_texImg);
+    }else{
+      texImg = _texImg;
+    }
 //    C = {1.,1.,1.}; //bright color
     Tt = T;
-    tex = {0.,1.,  1.,1.,  1.,0.,  0.,0.};
+    if(!flipY){
+      tex = {0.,1.,  1.,1.,  1.,0.,  0.,0.};
+    }else{
+      tex = {0.,0.,  1.,0.,  1.,1.,  0.,1.};
+    }
     tex.reshape(V.d0, 2);
   }
 }
@@ -1006,6 +1014,14 @@ void rai::Mesh::skin(uint start) {
   cout <<T <<endl;
 }
 
+void rai::Mesh::deleteGlTexture(){
+  if(texture!=-1){
+    GLuint texName = texture;
+    glDeleteTextures(1, &texName);
+  }
+  texture=-1;
+}
+
 arr rai::Mesh::getMean() const {
   return mean(V);
 }
@@ -1501,12 +1517,38 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
 
   if(T.d1==2) { //-- draw lines
 //    glLineWidth(3.f);
+    glShadeModel(GL_SMOOTH);
+#if 0
+    uint v;
     glBegin(GL_LINES);
-    for(uint t=0; t<T.d0; t++) {
-      glVertex3dv(&V(T(t, 0), 0));
-      glVertex3dv(&V(T(t, 1), 0));
+    for(uint i=0; i<T.d0; i++) {
+      if(C.d0==T.d0) {
+        if(C.d1==3) glColor(C(i, 0), C(i, 1), C(i, 2), 1.);
+        if(C.d1==1) glColorId(C(i, 0));
+      }
+      v=T(i, 0);  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  glVertex3dv(&V(v, 0));
+      v=T(i, 1);  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  glVertex3dv(&V(v, 0));
     }
     glEnd();
+#else
+    //  glShadeModel(GL_FLAT);
+    glShadeModel(GL_SMOOTH);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    if(glDrawOptions(gl).drawColors) {
+      if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+      if(C.N==V.N) glDisable(GL_LIGHTING); //because lighting requires ambiance colors to be set..., not just color..
+    }
+
+    glVertexPointer(3, GL_DOUBLE, 0, V.p);
+    if(glDrawOptions(gl).drawColors) {
+      if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
+    }
+
+    glDrawElements(GL_LINES, T.N, GL_UNSIGNED_INT, T.p);
+
+    if(C.N==V.N) glEnable(GL_LIGHTING);
+#endif
+
     return;
   }
 

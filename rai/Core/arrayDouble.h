@@ -573,7 +573,7 @@ void rndGauss(arr& a, double stdDev=1., bool add=false);
 //void rndGauss(arr& a, bool add=false);
 //arr& rndGauss(double stdDev, uint dim);
 uint softMax(const arr& a, arr& soft, double beta);
-inline arr sqr(const arr& y) { arr x; x.resizeAs(y); for(uint i=0; i<x.N; i++) x.elem(i)=y.elem(i)*y.elem(i); return x; }
+inline arr sqr(const arr& y) { arr x; x.resizeAs(y); for(uint i=0; i<x.N; i++) x.p[i]=y.p[i]*y.p[i]; return x; }
 
 //===========================================================================
 /// @}
@@ -588,7 +588,6 @@ void tensorCheckCondNormalization(const arr& X, uint left, double tol=1e-10);
 void tensorCheckCondNormalization_with_logP(const arr& X, uint left, double logP, double tol=1e-10);
 
 void tensorEquation(arr& X, const arr& A, const uintA& pickA, const arr& B, const uintA& pickB, uint sum=0);
-void tensorPermutation(arr& Y, const arr& X, const uintA& Yid);
 void tensorMarginal(arr& Y, const arr& X, const uintA& Yid);
 void tensorMaxMarginal(arr& Y, const arr& X, const uintA& Yid);
 void tensorMarginal_old(arr& y, const arr& x, const uintA& xd, const uintA& ids);

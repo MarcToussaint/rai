@@ -104,13 +104,18 @@ struct SDF_GridData : SDF {
   double f(arr& g, arr& H, const arr& x);
 
   //manipulations
-  void resample(uint N);
+  void resample(uint d0, int d1=-1, int d2=-1);
 
   void smooth(uint width=3, uint iters=2);
 
   //helper
   void getNeighborsAndWeights(uintA& neigh, arr& weights, const arr& x_rel);
-
+  arr getGridPosition(const uintA& idx){
+    arr res = (up-lo) / arr{(double)gridData.d0-1, (double)gridData.d1-1, (double)gridData.d2-1};
+    arr x(3);
+    for(uint i=0;i<3;i++) x(i) = lo(i) + idx(i)*res(i);
+    return x;
+  }
 
   //IO
   void write(std::ostream& os) const;

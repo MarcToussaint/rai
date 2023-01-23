@@ -202,6 +202,7 @@ struct String : public std::iostream {
   bool operator<=(const String& s) const;
 
   /// @name misc
+  int find(char c) const;
   bool contains(char c) const;
   bool contains(const String& substring) const;
   bool startsWith(const String& substring) const;

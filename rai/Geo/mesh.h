@@ -56,7 +56,7 @@ struct Mesh : GLDrawer {
   void setBox(bool edgesOnly=false);
   void setDot(); ///< an awkward mesh: just a single dot, not tris (e.g. cvx core of a sphere...)
   void setLine(double l); ///< an awkward mesh: just a single line, not tris (e.g. cvx core of a sphere...)
-  void setQuad(double x_width=1., double y_width=1., const byteA& _texImg={}); ///< a quat, optionally with texture
+  void setQuad(double x_width=1., double y_width=1., const byteA& _texImg={}, bool flipY=false, bool texByReference=false); ///< a quat, optionally with texture
   void setTetrahedron();
   void setOctahedron();
   void setDodecahedron();
@@ -117,6 +117,7 @@ struct Mesh : GLDrawer {
 
   //[preliminary]]
   void skin(uint i);
+  void deleteGlTexture();
 
   /// @name IO
   void write(std::ostream&) const; ///< only writes generic info

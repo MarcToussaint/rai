@@ -338,8 +338,13 @@ double SDF_Transformed::f(arr& g, arr& H, const arr& x){
 }
 
 double SDF_GridData::f(arr& g, arr& H, const arr& x){
-  arr rot = pose.rot.getArr();
-  arr x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
+  arr rot, x_rel;
+  if(pose.isZero()){
+    x_rel=x;
+  }else{
+    rot = pose.rot.getArr();
+    x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
+  }
 
   arr gBox, HBox;
   boolA clipped = {false, false, false};
@@ -361,9 +366,11 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
     CHECK(fBox>=0., "");
   }
 
-  arr res = arr{(double)gridData.d0-1, (double)gridData.d1-1, (double)gridData.d2-1};
-  res /= (up-lo);
-  arr fidx = (x_rel-lo) % res;
+  // float index
+  arr fidx = arr{(double)gridData.d0-1, (double)gridData.d1-1, (double)gridData.d2-1};
+  fidx /= (up-lo);
+  x_rel -= lo;
+  fidx *= x_rel;
 
   arr frac(3), idx(3);
   for(uint i=0;i<3;i++) frac(i) = modf(fidx(i), &idx(i));
@@ -405,8 +412,8 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
     if(!clipped(0)) g(0) = interpolate2D(v100,v110,v101,v111, dy,dz) - interpolate2D(v000,v010,v001,v011, dy,dz);
     if(!clipped(1)) g(1) = interpolate2D(v010,v110,v011,v111, dx,dz) - interpolate2D(v000,v100,v001,v101, dx,dz);
     if(!clipped(2)) g(2) = interpolate2D(v001,v101,v011,v111, dx,dy) - interpolate2D(v000,v100,v010,v110, dx,dy);
-    g *= res;
-    g = rot*g;
+    g *= fidx;
+    if(rot.N) g = rot*g;
   }
 
   if(!!H){
@@ -423,9 +430,11 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
   return f;
 }
 
-void SDF_GridData::resample(uint N){
-  arr X = grid(lo, up, {N,N,N});
-  gridData = evalFloat(X).reshape(N+1,N+1,N+1);
+void SDF_GridData::resample(uint d0, int d1, int d2){
+  if(d1<0) d1=d0;
+  if(d2<0) d2=d0;
+  arr X = grid(lo, up, {d0,d1,d2});
+  gridData = evalFloat(X).reshape(d0+1,d1+1,d2+1);
 }
 
 void SDF_GridData::smooth(uint width, uint iters){

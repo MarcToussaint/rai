@@ -2541,6 +2541,17 @@ void Configuration::writeMeshes(const char* pathPrefix) const {
   }
 }
 
+/// write meshes into a single ply file
+void Configuration::writeMesh(const char* filename) const {
+  rai::Mesh all;
+  for(Frame* f:frames) {
+    if(f->shape && f->shape->_mesh) {
+      all.addMesh(f->shape->mesh(), f->ensure_X());
+    }
+  }
+  all.writePLY(filename);
+}
+
 /// prototype for \c operator>>
 void Configuration::read(std::istream& is) {
   Graph G(is);
