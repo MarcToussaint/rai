@@ -72,6 +72,10 @@ struct Node {
   bool matches(const char* key); ///< return true, if 'key' is in keys
   bool matches(const StringA& query_keys); ///< return true, if all query_keys are in keys
 
+  void getSubtree(NodeL& N) const {
+    for(Node* child:children) { N.append(child); child->getSubtree(N); }
+  }
+
   void write(std::ostream& os, bool yamlMode=false) const;
 
   //-- virtuals implemented by Node_typed

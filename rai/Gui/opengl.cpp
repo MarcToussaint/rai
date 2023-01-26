@@ -2228,14 +2228,14 @@ void OpenGL::Reshape(int _width, int _height) {
 void OpenGL::Key(unsigned char key, int mods, bool _keyIsDown) {
 //  auto _dataLock = dataLock(RAI_HERE);
   CALLBACK_DEBUG(this, "Keyboard Callback: " <<key <<"('" <<(char)key <<"') mods:" <<mods <<" down:" <<_keyIsDown);
-  pressedkey = key;
+  if(_keyIsDown) pressedkey = key;
   modifiers = mods;
   keyIsDown = _keyIsDown;
 
   bool cont=true;
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
 
-  if(key==13 || key==27 || key=='q' || key=='r' || rai::contains(exitkeys, key)) watching.setStatus(0);
+  if(key==13 || key==27 || key=='q' || rai::contains(exitkeys, key)) watching.setStatus(0);
 }
 
 void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) {

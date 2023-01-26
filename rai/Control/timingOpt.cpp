@@ -260,11 +260,11 @@ void TimingProblem::report(std::ostream& fil, int verbose, const char* msg){
     LOG(0) <<"TAUS: " <<tau <<"\nTIMES: " <<times <<"\nTOTAL: " <<times.last() <<endl;
     {
       //write
-      fil <<", " <<times(-1);
       if(verbose>1){
-        fil <<"waypointTimes:" <<times <<endl;
-        fil <<"waypoints:" <<path <<endl;
-        fil <<"waypointVels:" <<vels <<endl;
+        fil <<"  totalTime: " <<times(-1) <<endl;
+        fil <<"  waypointTimes:" <<times <<endl;
+        fil <<"  waypoints:" <<path <<endl;
+        fil <<"  waypointVels:" <<vels <<endl;
       }
       //      arr T;
       //      for(double t=0;t<=times(-1);t+=.002) T.append(t);

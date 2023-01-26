@@ -633,6 +633,12 @@ void Graph::read(std::istream& is, bool parseInfo) {
 //      n->key.remove(0);
       NodeL dels = getNodes(n->key);
       for(Node* d: dels) { delete d; d=nullptr; }
+    } else if(tags.N && tags(0)=="DeleteBranch") {
+      //      n->key.remove(0);
+      NodeL dels = getNodes(n->key);
+      NodeL all = dels;
+      for(Node* d: dels) d->getSubtree(all);
+      for(Node* d: all) { delete d; d=nullptr; }
     }
   }
   if(parseInfo) getParseInfo(nullptr).end=is.tellg();

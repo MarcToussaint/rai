@@ -62,7 +62,7 @@ int rai::ConfigurationViewer::update(bool watch) {
   int ret=0;
   if(watch) {
     ret = gl->watch();
-    gl->text = drawText();
+    gl->text = drawText;
   }else{
     ret = gl->update(nullptr, false);
   }

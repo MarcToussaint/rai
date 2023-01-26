@@ -2526,9 +2526,9 @@ void Configuration::writeMeshes(const char* pathPrefix) const {
         (f->shape->type()==ST_mesh || f->shape->type()==ST_ssCvx)) {
       String filename = pathPrefix;
       if(!f->ats) f->ats = make_shared<Graph>();
-#if 0
+#if 1
       filename <<f->name <<".arr";
-      f->ats.getNew<String>("mesh") = filename;
+      f->ats->getNew<FileToken>("mesh").name = filename;
       if(f->shape->type()==ST_mesh) f->shape->mesh().writeArr(FILE(filename));
       if(f->shape->type()==ST_ssCvx) f->shape->sscCore().writeArr(FILE(filename));
 #else
@@ -3502,6 +3502,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   bool& exit;
   EditConfigurationKeyCall(Configuration& _C, bool& _exit): C(_C), exit(_exit) {}
   bool keyCallback(OpenGL& gl) {
+    if(!gl.keyIsDown) return true;
     if(gl.pressedkey==' ') { //grab a body
       gl.drawOptions.drawColors=false;
       gl.drawOptions.drawMode_idColor=true;
@@ -3574,8 +3575,48 @@ void editConfiguration(const char* filename, Configuration& C) {
   //  gl.addHoverCall(new EditConfigurationHoverCall(K));
   C.gl()->ensure_gl().addKeyCall(new EditConfigurationKeyCall(C,exit));
   C.gl()->ensure_gl().addClickCall(new EditConfigurationClickCall(C));
+  C.gl()->ensure_gl().reportEvents=true;
   Inotify ino(filename);
   for(; !exit;) {
+    cout <<"watching..." <<endl;
+    int key = -1;
+    C.gl()->recopyMeshes(C);
+    C.gl()->resetPressedKey();
+    C.gl()->drawText = "waiting for file change ('h' for help)";
+    for(;;) {
+      key = C.view(false);
+      if(key) cout <<"*** KEY:" <<key <<endl;
+      if(key==13 || key==27 || key=='q') break;
+      if(key=='h'){
+        C.gl()->drawText = "HELP:\n"
+                      "RIGHT CLICK - set focus point (move view and set center of rotation)\n"
+                      "LEFT CLICK - rotate (ball; or around z at view rim)\n"
+                      "q - quit\n"
+                      "[SPACE] - write object info\n"
+                      "SHIFT-LEFT CLICK - move view\n"
+                      "c - compute and write collisions\n"
+                      "r - random sample a new configuration\n"
+                      "1..7 - view options\n"
+                      "jkluio - keyboard move\n"
+                      "h - help";
+      }
+      if(ino.poll(false, true)) break;
+      wait(.2);
+    }
+    if(exit) break;
+    if(key==13) {
+      cout <<"animating.." <<endl;
+      //while(ino.pollForModification());
+      key = animateConfiguration(C, &ino);
+    }
+    if(key) cout <<"*** KEYout:" <<key <<endl;
+    if(key==27 || key=='q') break;
+    if(key==-1) continue;
+
+    if(!getInteractivity()) {
+      exit=true;
+    }
+
     cout <<"reloading `" <<filename <<"' ... " <<endl;
     Configuration C_tmp;
     {
@@ -3597,43 +3638,7 @@ void editConfiguration(const char* filename, Configuration& C) {
       }
       file.cd_start(); //important: also on crash - cd back to original
     }
-    cout <<"watching..." <<endl;
-    int key = -1;
-    C.gl()->recopyMeshes(C);
-    C.gl()->resetPressedKey();
-    for(;;) {
-      key = C.gl()->setConfiguration(C, "waiting for file change ('h' for help)", false);
-      if(key==13 || key==27 || key=='q') break;
-      if(key=='h'){
-        C.view(true, "HELP:\n"
-                      "RIGHT CLICK - set focus point (move view and set center of rotation)\n"
-                      "LEFT CLICK - rotate (ball; or around z at view rim)\n"
-                      "q - quit\n"
-                      "[SPACE] - write object info\n"
-                      "SHIFT-LEFT CLICK - move view\n"
-                      "CTRL-LEFT CLICK - write object ID\n"
-                      "c - compute and write collisions\n"
-                      "r - random sample a new configuration\n"
-                      "1..7 - view options\n"
-                      "jkluio - keyboard move\n"
-                      "as - keyboard rotate\n"
-                      "h - help");
-      }
-      if(ino.poll(false, true)) break;
-      wait(.2);
-    }
-    if(exit) break;
-    if(key==13) {
-      cout <<"animating.." <<endl;
-      //while(ino.pollForModification());
-      key = animateConfiguration(C, &ino);
-    }
-    if(key==27 || key=='q') break;
-    if(key==-1) continue;
 
-    if(!getInteractivity()) {
-      exit=true;
-    }
   }
 }
 

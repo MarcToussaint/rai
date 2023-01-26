@@ -1,6 +1,7 @@
 #include <Kin/kin.h>
 #include <Gui/opengl.h>
 #include <Core/graph.h>
+#include <Kin/frame.h>
 
 const char *USAGE =
     "\nUsage:  kinEdit <g-filename>"
@@ -82,11 +83,21 @@ int main(int argc,char **argv){
   }
 
   //-- save file in different formats
-  LOG(0) <<"saving urdf and dae files";
   FILE("z.g") <<C;
-  C.writeURDF(FILE("z.urdf"));
-  C.writeMesh("z.ply");
-  C.writeCollada("z.dae");
+  if(rai::checkParameter<bool>("convert")){
+    LOG(0) <<"saving urdf and dae files";
+    C.writeURDF(FILE("z.urdf"));
+    C.writeMesh("z.ply");
+    C.writeCollada("z.dae");
+  }
+  if(rai::checkParameter<double>("scale")){
+    for(rai::Frame *f:C.frames) if(f->shape){
+      f->shape->mesh().scale(rai::getParameter<double>("scale"));
+      f->shape->mesh().C = id2color(f->ID);
+    }
+    C.writeMeshes("meshes/");
+    FILE("z.ex.g") <<C;
+  }
   if(rai::checkParameter<bool>("dot")) C.displayDot();
 
   if(rai::checkParameter<bool>("cleanOnly")) return 0;

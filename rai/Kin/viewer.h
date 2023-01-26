@@ -42,19 +42,18 @@ struct ConfigurationViewer : GLDrawer {
   void add(GLDrawer& c);
   void resetPressedKey();
 
- private://draw data
+private://draw data
   Configuration C;
 
   arr framePath;
   FrameL drawSubFrames;
-  String drawText;
   int drawTimeSlice;
   bool drawFullPath;
   int tprefix;
   bool writeToFiles;
-  String text;
   uint pngCount=0;
 public:
+  String drawText;
   shared_ptr<struct OpenGL> gl;
   bool drawFrameLines=true;
 };
