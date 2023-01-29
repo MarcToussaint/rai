@@ -77,8 +77,9 @@ struct Mesh : GLDrawer {
   /// @name transform and modify
   void subDivide();
   void subDivide(uint tri);
-  void scale(double f);
+  void scale(double s);
   void scale(double sx, double sy, double sz);
+  void scale(const arr& s);
   void translate(double dx, double dy, double dz);
   void translate(const arr& d);
   void transform(const Transformation& t);
@@ -104,7 +105,7 @@ struct Mesh : GLDrawer {
   rai::Vector getCenter() const;
   arr getMean() const;
   void getBox(double& dx, double& dy, double& dz) const;
-  arr getBox() const;
+  arr getBounds() const;
   double getRadius() const;
   double getArea() const;
   double getArea(uint tri) const;

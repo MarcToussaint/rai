@@ -589,7 +589,7 @@ arr Configuration::getDofState(const DofL& dofs) const {
   for(Dof *dof:dofs) {
     if(!dof->mimic){
       if(dof->active){
-        for(uint ii=0; ii<dof->dim; ii++) x(n+ii) = q(dof->qIndex+ii);
+        for(uint ii=0; ii<dof->dim; ii++) x(n+ii) = q.elem(dof->qIndex+ii);
       }else{
         for(uint ii=0; ii<dof->dim; ii++) x(n+ii) = qInactive(dof->qIndex+ii);
       }
@@ -2550,6 +2550,7 @@ void Configuration::writeMesh(const char* filename) const {
     }
   }
   all.writePLY(filename);
+//  writeAssimp(all, filename, "ply");
 }
 
 /// prototype for \c operator>>
@@ -3522,6 +3523,9 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
       }
       cout <<"SELECTION id: " <<id <<" world coords:" <<x <<endl;
       if(id<C.frames.N) cout <<*C.frames.elem(id) <<endl;
+    } else if(gl.pressedkey=='i') {
+      LOG(0) <<"INFO:";
+      C.report(cout);
     } else if(gl.pressedkey=='c') { //compute collisions
       C.ensure_proxies();
       double p = C.getTotalPenetration();
@@ -3542,7 +3546,15 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
       }
 #endif
     } else if(gl.pressedkey=='r') { //random sample
+      LOG(0) <<"setting random config";
+      for(rai::Dof* d:C.activeDofs) d->sampleUniform=1.;
       C.setRandom();
+    } else if(gl.pressedkey=='x') { //export
+      LOG(0) <<"exporting";
+      FILE("z.g") <<C;
+      C.writeURDF(FILE("z.urdf"));
+      C.writeMesh("z.ply");
+      C.writeCollada("z.dae");
     } else switch(gl.pressedkey) {
         case '1':  gl.drawOptions.drawShapes^=1;  break;
         case '2':  gl.drawOptions.drawJoints^=1;  break;
@@ -3551,12 +3563,12 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
         case '5':  gl.reportSelects^=1;  break;
         case '6':  gl.reportEvents^=1;  break;
         case '7':  gl.drawOptions.drawMode_idColor^=1; gl.drawOptions.drawColors^=1;  break;
-        case 'o':  gl.camera.X.pos += gl.camera.X.rot*Vector(0, 0, .1);  break;
-        case 'u':  gl.camera.X.pos -= gl.camera.X.rot*Vector(0, 0, .1);  break;
-        case 'k':  gl.camera.X.pos += gl.camera.X.rot*Vector(0, .1, 0);  break;
-        case 'i':  gl.camera.X.pos -= gl.camera.X.rot*Vector(0, .1, 0);  break;
-        case 'j':  gl.camera.X.pos += gl.camera.X.rot*Vector(.1, 0, 0);  break; //right
-        case 'l':  gl.camera.X.pos -= gl.camera.X.rot*Vector(.1, 0, 0);  break; //left
+//        case 'o':  gl.camera.X.pos += gl.camera.X.rot*Vector(0, 0, .1);  break;
+//        case 'u':  gl.camera.X.pos -= gl.camera.X.rot*Vector(0, 0, .1);  break;
+//        case 'k':  gl.camera.X.pos += gl.camera.X.rot*Vector(0, .1, 0);  break;
+//        case 'i':  gl.camera.X.pos -= gl.camera.X.rot*Vector(0, .1, 0);  break;
+//        case 'j':  gl.camera.X.pos += gl.camera.X.rot*Vector(.1, 0, 0);  break; //right
+//        case 'l':  gl.camera.X.pos -= gl.camera.X.rot*Vector(.1, 0, 0);  break; //left
         case 'q' :
           cout <<"EXITING" <<endl;
           exit=true;
@@ -3575,7 +3587,7 @@ void editConfiguration(const char* filename, Configuration& C) {
   //  gl.addHoverCall(new EditConfigurationHoverCall(K));
   C.gl()->ensure_gl().addKeyCall(new EditConfigurationKeyCall(C,exit));
   C.gl()->ensure_gl().addClickCall(new EditConfigurationClickCall(C));
-  C.gl()->ensure_gl().reportEvents=true;
+  //  C.gl()->ensure_gl().reportEvents=true;
   Inotify ino(filename);
   for(; !exit;) {
     cout <<"watching..." <<endl;
@@ -3585,7 +3597,7 @@ void editConfiguration(const char* filename, Configuration& C) {
     C.gl()->drawText = "waiting for file change ('h' for help)";
     for(;;) {
       key = C.view(false);
-      if(key) cout <<"*** KEY:" <<key <<endl;
+      //if(key) cout <<"*** KEY:" <<key <<endl;
       if(key==13 || key==27 || key=='q') break;
       if(key=='h'){
         C.gl()->drawText = "HELP:\n"
@@ -3594,10 +3606,11 @@ void editConfiguration(const char* filename, Configuration& C) {
                       "q - quit\n"
                       "[SPACE] - write object info\n"
                       "SHIFT-LEFT CLICK - move view\n"
+                      "i - write info\n"
                       "c - compute and write collisions\n"
                       "r - random sample a new configuration\n"
+                      "x - export to multiple files (.g .urdf. ply. dae)\n"
                       "1..7 - view options\n"
-                      "jkluio - keyboard move\n"
                       "h - help";
       }
       if(ino.poll(false, true)) break;
@@ -3609,7 +3622,7 @@ void editConfiguration(const char* filename, Configuration& C) {
       //while(ino.pollForModification());
       key = animateConfiguration(C, &ino);
     }
-    if(key) cout <<"*** KEYout:" <<key <<endl;
+    //if(key) cout <<"*** KEYout:" <<key <<endl;
     if(key==27 || key=='q') break;
     if(key==-1) continue;
 

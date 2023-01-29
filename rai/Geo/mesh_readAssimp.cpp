@@ -203,6 +203,7 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
 
 void buildAiMesh(const rai::Mesh& M, aiMesh* pMesh) {
   pMesh->mVertices = new aiVector3D[ M.V.d0 ];
+  if(M.C.N==M.V.N) pMesh->mColors[0] = new aiColor4D[ M.V.d0 ];
 //  pMesh->mNormals = new aiVector3D[ M.V.d0 ];
   pMesh->mNumVertices = M.V.d0;
 
@@ -211,6 +212,7 @@ void buildAiMesh(const rai::Mesh& M, aiMesh* pMesh) {
 
   for(uint i=0; i<M.V.d0; i++) {
     pMesh->mVertices[i] = aiVector3D(M.V(i, 0), M.V(i, 1), M.V(i, 2));
+    if(M.C.N==M.V.N) pMesh->mColors[0][i] = aiColor4D(M.C(i, 0), M.C(i, 1), M.C(i, 2), 1.);
 //      pMesh->mNormals[ itr - vVertices.begin() ] = aiVector3D( normals[j].x, normals[j].y, normals[j].z );
 //      pMesh->mTextureCoords[0][ itr - vVertices.begin() ] = aiVector3D( uvs[j].x, uvs[j].y, 0 );
   }

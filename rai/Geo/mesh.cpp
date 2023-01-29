@@ -347,11 +347,15 @@ void rai::Mesh::subDivide(uint i) {
   T(t, 0)=v+2; T(t, 1)=v+1; T(t, 2)=c;   t++;
 }
 
-void rai::Mesh::scale(double f) {  V *= f; }
+void rai::Mesh::scale(double s) {  V *= s; }
 
 void rai::Mesh::scale(double sx, double sy, double sz) {
   uint i;
   for(i=0; i<V.d0; i++) {  V(i, 0)*=sx;  V(i, 1)*=sy;  V(i, 2)*=sz;  }
+}
+
+void rai::Mesh::scale(const arr& s){
+  scale(s.elem(0), s.elem(1), s.elem(2));
 }
 
 void rai::Mesh::translate(double dx, double dy, double dz) {
@@ -396,8 +400,16 @@ void rai::Mesh::box() {
 
 void rai::Mesh::addMesh(const Mesh& mesh2, const rai::Transformation& X) {
   uint n=V.d0, tn=tex.d0, t=T.d0, tt=Tt.d0;
+  if(V.N==C.N){
+    if(mesh2.V.N==mesh2.C.N) C.append(mesh2.C);
+    else if(mesh2.C.N==3) C.append(replicate(mesh2.C, mesh2.V.d0));
+    else if(mesh2.C.N==4) C.append(replicate(mesh2.C({0,2}), mesh2.V.d0));
+    else if(!mesh2.C.N) C.append(replicate(arr{.8,.8,.8}, mesh2.V.d0));
+  }else{
+    LOG(-1) <<"clearing colors";
+    C.clear();
+  }
   V.append(mesh2.V);
-  if(V.N==C.N && mesh2.V.N==mesh2.C.N) C.append(mesh2.C); else C.clear();
   tex.append(mesh2.tex);
   T.append(mesh2.T);
   for(; t<T.d0; t++) {  T(t, 0)+=n;  T(t, 1)+=n;  T(t, 2)+=n;  }
@@ -1039,7 +1051,7 @@ void rai::Mesh::getBox(double& dx, double& dy, double& dz) const {
   }
 }
 
-arr rai::Mesh::getBox() const {
+arr rai::Mesh::getBounds() const {
   arr a, b;
   a = b = V[0];
   for(uint i=0; i<V.d0; i++) {
@@ -1231,23 +1243,23 @@ void rai::Mesh::readPlyFile(std::istream& is) {
 
 #ifdef RAI_PLY
 void rai::Mesh::writePLY(const char* fn, bool bin) {
-  struct PlyFace { unsigned char nverts;  int* verts; };
-  struct Vertex { float x,  y,  z ;  };
-  uint _nverts = V.d0;
-  floatA Vfloat; copy(Vfloat, V);
-  Vertex* _vertices  = (Vertex*) Vfloat.p;
+  struct Face { unsigned char nverts;  int* verts; };
+  struct Vertex { float x, y, z;  byte r, g, b;  };
 
   PlyProperty vert_props[]  = { /* list of property information for a PlyVertex */
-    {"x", Float32, Float32, offsetof(Vertex, x), 0, 0, 0, 0},
-    {"y", Float32, Float32, offsetof(Vertex, y), 0, 0, 0, 0},
-    {"z", Float32, Float32, offsetof(Vertex, z), 0, 0, 0, 0}
+                                {"x", Float32, Float32, offsetof(Vertex, x), 0, 0, 0, 0},
+                                {"y", Float32, Float32, offsetof(Vertex, y), 0, 0, 0, 0},
+                                {"z", Float32, Float32, offsetof(Vertex, z), 0, 0, 0, 0},
+                                {"red", Uint8, Uint8, offsetof(Vertex, r), 0, 0, 0, 0},
+                                {"green", Uint8, Uint8, offsetof(Vertex, g), 0, 0, 0, 0},
+                                {"blue", Uint8, Uint8, offsetof(Vertex, b), 0, 0, 0, 0}
 //    {"nx", Float64, Float64, offsetof( Vertex,nx ), 0, 0, 0, 0},
 //    {"ny", Float64, Float64, offsetof( Vertex,ny ), 0, 0, 0, 0},
 //    {"nz", Float64, Float64, offsetof( Vertex,nz ), 0, 0, 0, 0}
   };
 
   PlyProperty face_props[]  = { /* list of property information for a PlyFace */
-    {"vertex_indices", Int32, Int32, offsetof(PlyFace, verts), 1, Uint8, Uint8, offsetof(PlyFace, nverts)},
+    {"vertex_indices", Int32, Int32, offsetof(Face, verts), 1, Uint8, Uint8, offsetof(Face, nverts)},
   };
 
   PlyFile*    ply;
@@ -1257,13 +1269,15 @@ void rai::Mesh::writePLY(const char* fn, bool bin) {
   ply = write_ply(fp, 2, elem_names, bin? PLY_BINARY_LE : PLY_ASCII);
 
   /* describe what properties go into the PlyVertex elements */
-  describe_element_ply(ply, "vertex", _nverts);
+  describe_element_ply(ply, "vertex", V.d0 );
   describe_property_ply(ply, &vert_props[0]);
   describe_property_ply(ply, &vert_props[1]);
   describe_property_ply(ply, &vert_props[2]);
-//  describe_property_ply(ply, &vert_props[3]);
-//  describe_property_ply(ply, &vert_props[4]);
-//  describe_property_ply(ply, &vert_props[5]);
+  if(C.N==V.N){
+    describe_property_ply(ply, &vert_props[3]);
+    describe_property_ply(ply, &vert_props[4]);
+    describe_property_ply(ply, &vert_props[5]);
+  }
 
   /* describe PlyFace properties (just list of PlyVertex indices) */
   describe_element_ply(ply, "face", T.d0);
@@ -1273,14 +1287,25 @@ void rai::Mesh::writePLY(const char* fn, bool bin) {
 
   //-- put vertices
   put_element_setup_ply(ply, "vertex");
-  for(uint i = 0; i < _nverts; i++)  put_element_ply(ply, (void*) &(_vertices[i]));
+  Vertex vertex;
+  for(uint i = 0; i < V.d0 ; i++){
+    vertex.x = V(i,0);
+    vertex.y = V(i,1);
+    vertex.z = V(i,2);
+    if(C.N==V.N){
+      vertex.r = 255.*C(i,0);
+      vertex.g = 255.*C(i,1);
+      vertex.b = 255.*C(i,2);
+    }
+    put_element_ply(ply, (void*) &vertex);
+  }
 
   //-- put tris
   put_element_setup_ply(ply, "face");
-  int verts[3] ;
-  PlyFace     face ;
-  face.nverts = 3 ;
-  face.verts  = verts ;
+  int verts[3];
+  Face face;
+  face.nverts = 3;
+  face.verts = verts;
   for(uint i = 0; i < T.d0; i++) {
     face.verts[0] = T(i, 0);
     face.verts[1] = T(i, 1);

@@ -213,7 +213,7 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
       arr y;
       if(k==K-1){
         y = rai::CubicSplineAcc1(_x0, _v0, _x1, _v1, tau(k), tauJ);
-        y*=10.;
+        y *= 10.;
       }else{
         y = rai::CubicSplineAcc1(_x0, _v0, _x1, _v1, tau(k), tauJ)
           - rai::CubicSplineAcc0(_x1, _v1, xJ(k+1), vJ(k+1), tau(k+1), Jtau(k+1));
@@ -262,6 +262,7 @@ void TimingProblem::report(std::ostream& fil, int verbose, const char* msg){
       //write
       if(verbose>1){
         fil <<"  totalTime: " <<times(-1) <<endl;
+        fil <<"  taus:" <<tau <<endl;
         fil <<"  waypointTimes:" <<times <<endl;
         fil <<"  waypoints:" <<path <<endl;
         fil <<"  waypointVels:" <<vels <<endl;

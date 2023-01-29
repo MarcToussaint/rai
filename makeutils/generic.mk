@@ -110,7 +110,7 @@ CFLAGS += -fPIC
 
 ifndef RAI_NO_CXX11
 #CXXFLAGS += -std=c++0x
-CXXFLAGS += -std=c++14
+CXXFLAGS += -std=c++17
 endif
 
 ifndef OPTIM

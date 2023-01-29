@@ -187,7 +187,7 @@ void skipOne(std::istream& is) {
 /// tell you about the next char (after skip()) but puts it back in the stream
 char getNextChar(std::istream& is, const char* skipSymbols, bool skipCommentLines) {
   char c;
-  skip(is, skipSymbols, nullptr, skipCommentLines);
+  if(skipSymbols) skip(is, skipSymbols, nullptr, skipCommentLines);
   is.get(c);
   if(!is.good()) return 0;
   return c;

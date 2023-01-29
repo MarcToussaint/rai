@@ -129,16 +129,9 @@ struct PCL2Field {
 
   PCL2Field(SDF_GridData& _field):field(_field) {}
 
-  double stepDiffusion(const arr& pts, const arr& values);
+  double stepDiffusion(const arr& pts, const arr& values, double alpha);
 
-  double runDiffusion(const arr& pts, const arr& values, uint iters=30){
-    double err;
-    for(uint k=0;k<iters;k++){
-      err = stepDiffusion(pts, values);
-//      cout <<k <<" err: " <<err <<endl;
-    }
-    return err;
-  }
+  double runDiffusion(const arr& pts, const arr& values, uint iters=30, double alpha=1.);
 };
 
 //===========================================================================

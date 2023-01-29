@@ -433,7 +433,7 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
 void SDF_GridData::resample(uint d0, int d1, int d2){
   if(d1<0) d1=d0;
   if(d2<0) d2=d0;
-  arr X = grid(lo, up, {d0,d1,d2});
+  arr X = grid(lo, up, {d0,(uint)d1,(uint)d2});
   gridData = evalFloat(X).reshape(d0+1,d1+1,d2+1);
 }
 
@@ -492,9 +492,18 @@ void SDF_GridData::write(std::ostream& os) const {
 }
 
 void SDF_GridData::read(std::istream& is){
-  lo.readTagged(is,"lo");
-  up.readTagged(is,"up");
-  gridData.readTagged(is, "sdf");
+  char c = rai::peerNextChar(is, " \n\r\t", true);
+  if(c=='l'){
+    lo.readTagged(is,"lo");
+    up.readTagged(is,"up");
+    gridData.readTagged(is, "sdf");
+  }else{
+    arr bounds;
+    bounds.readTagged(is, "bounds");
+    lo = bounds[0];
+    up = bounds[1];
+    gridData.readTagged(is, "field");
+  }
 }
 
 //===========================================================================
@@ -553,22 +562,23 @@ double SDF_Torus::f(arr& g, arr& H, const arr& _x){
 
 //===========================================================================
 
-double PCL2Field::stepDiffusion(const arr& pts, const arr& values){
+double PCL2Field::stepDiffusion(const arr& pts, const arr& values, double alpha){
   if(!source.N) source.resizeAs(field.gridData).setZero();
-
 
   //impose pcl values:
   double err=0.;
   for(uint i=0;i<values.N;i++){
     double v = field.f(NoArr, NoArr, pts[i]);
     double delta = values(i) - v;
-    err += delta*delta;
-    uintA neigh;
-    arr weights;
-    field.getNeighborsAndWeights(neigh, weights, pts[i]);
-    for(uint j=0;j<neigh.N;j++){
-      field.gridData.elem(neigh(j)) += 1.*weights.elem(j)*delta;
-      source.elem(neigh(j)) += .1*weights.elem(j)*delta;
+    if(fabs(delta)>1e-6){
+      err += delta*delta;
+      uintA neigh;
+      arr weights;
+      field.getNeighborsAndWeights(neigh, weights, pts[i]);
+      for(uint j=0;j<neigh.N;j++){
+        field.gridData.elem(neigh(j)) += alpha*weights.elem(j)*delta;
+        source.elem(neigh(j)) += .2*alpha*weights.elem(j)*delta;
+      }
     }
   }
 
@@ -586,4 +596,16 @@ double PCL2Field::stepDiffusion(const arr& pts, const arr& values){
 
   return err/values.N;
 
+}
+
+double PCL2Field::runDiffusion(const arr& pts, const arr& values, uint iters, double alpha){
+  double err=0.;
+  OpenGL gl;
+  for(uint k=0;k<iters;k++){
+    err = stepDiffusion(pts, values, alpha);
+    std::cout <<k <<" err: " <<err <<endl;
+    field.viewSlice(gl, 0, field.lo, field.up);
+    gl.watch();
+  }
+  return err;
 }
