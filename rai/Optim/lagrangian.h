@@ -24,8 +24,7 @@ struct LagrangianProblem : ScalarFunction, NLP {
 
   //-- parameters of the unconstrained (Lagrangian) scalar function
   double muLB;       ///< log barrier mu
-  double mu;         ///< penalty parameter for inequalities g
-  double nu;         ///< penalty parameter for equalities h
+  double mu;         ///< penalty parameter for inequalities g and equalities h
   arr lambda;        ///< lagrange multipliers for inequalities g and equalities h
   bool useLB;        ///< interpret ALL ineq as LG instead of penalty
 

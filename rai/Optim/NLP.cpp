@@ -348,7 +348,7 @@ void NLP_Viewer::display(double mu) {
   std::shared_ptr<NLP> nlp_save;
   if(phi.N>1) {
     lag = make_shared<LagrangianProblem>(P);
-    lag->mu = lag->nu = mu;
+    lag->mu = mu;
     //lag->muLB = mu;
     //lag->useLB = true;
     nlp_save = P;

@@ -18,7 +18,7 @@ struct OptNewton {
   ScalarFunction f;
   rai::OptOptions options;
 
-  enum StopCriterion { stopNone=0, stopDeltaConverge, stopTinyFSteps, stopTinyXSteps, stopCritEvals, stopStepFailed };
+  enum StopCriterion { stopNone=0, stopDeltaConverge, stopTinyFSteps, stopTinyXSteps, stopCritEvals, stopStepFailed, stopLineSearchSteps };
 
   OptNewton(arr& x, const ScalarFunction& f, rai::OptOptions options=NOOPT, ostream* _logFile=0);
   ~OptNewton();

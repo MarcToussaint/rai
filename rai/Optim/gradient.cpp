@@ -54,18 +54,14 @@ OptGrad::StopCriterion OptGrad::step() {
     if(o.verbose>2) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<std::flush;
     bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta, gx));
-    if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)it)) { //fy==fy is for NAN?
+    if(fy==fy && wolfe) { //fy==fy is for NAN?
       //accept new point
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
       if(fx-fy<o.stopFTolerance || alpha<o.stopTolerance) numTinySteps++; else numTinySteps=0;
       x = y;
       fx = fy;
       gx = gy;
-      if(wolfe) {
-        alpha *= o.stepInc;
-      } else {
-        alpha *= o.stepDec;
-      }
+      alpha *= o.stepInc;
       break;
     } else {
       //reject new point

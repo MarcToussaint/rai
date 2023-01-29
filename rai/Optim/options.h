@@ -30,12 +30,8 @@ struct OptOptions {
   RAI_PARAM("opt/", double, damping, 1.)
   RAI_PARAM("opt/", double, stepInc, 1.5)
   RAI_PARAM("opt/", double, stepDec, .5)
-  RAI_PARAM("opt/", double, dampingInc, -1.)
-  RAI_PARAM("opt/", double, dampingDec, -1.)
   RAI_PARAM("opt/", double, wolfe, .01)
-  RAI_PARAM("opt/", int,    nonStrictSteps, 0) //# of non-strict iterations
   RAI_PARAM("opt/", bool,   boundedNewton, true)
-  RAI_PARAM("opt/", bool,   allowOverstep, false)
   RAI_PARAM("opt/", double, muInit, 1.)
   RAI_PARAM("opt/", double, muInc, 5.)
   RAI_PARAM("opt/", double, muMax, 1e4)

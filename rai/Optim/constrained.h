@@ -23,8 +23,7 @@ struct OptConstrained {
   OptNewton newton;
   arr& dual;
   rai::OptOptions opt;
-  int its=0;
-  bool earlyPhase=false;
+  int its=0, numBadSteps=0;
   ostream* logFile=nullptr;
 
   OptConstrained(arr& x, arr& dual, const shared_ptr<NLP>& P, rai::OptOptions opt=NOOPT, ostream* _logFile=0);

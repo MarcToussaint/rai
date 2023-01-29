@@ -23,7 +23,7 @@ double I_lambda_x(uint i, arr& lambda, arr& g) {
 //==============================================================================
 
 LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOptions& opt, arr& lambdaInit)
-  : P(P), muLB(0.), mu(0.), nu(0.), useLB(false) {
+  : P(P), muLB(0.), mu(0.), useLB(false) {
 
   CHECK(P, "null problem given");
 
@@ -35,7 +35,6 @@ LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOpt
 
   //switch on penalty terms
   mu=opt.muInit;
-  nu=opt.muInit;
   muLB=opt.muLBInit;
 
   if(!!lambdaInit) lambda = lambdaInit;
@@ -89,7 +88,7 @@ void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
     if(            ot==OT_ineq) { if(lambda.N && lambda.p[i]>0.) phi.p[nphi++] = lambda.p[i] * phi_x.p[i]; else nphi++; }   //g-lagrange terms
     if(            ot==OT_ineqB){ if(phi_x.p[i]>0.) phi.p[nphi++] = NAN; else phi.p[nphi++] =  -muLB * ::log(-phi_x.p[i]); }                   //log barrier, check feasibility
     if(            ot==OT_ineqB){ if(lambda.N && lambda.p[i]>0.) phi.p[nphi++] = lambda.p[i] * phi_x.p[i]; else nphi++; }   //g-lagrange terms
-    if(            ot==OT_eq) phi.p[nphi++] =  sqrt(nu) * phi_x.p[i];            //h-penalty
+    if(            ot==OT_eq) phi.p[nphi++] =  sqrt(mu) * phi_x.p[i];            //h-penalty
     if(            ot==OT_eq) { if(lambda.N) phi.p[nphi++] =  lambda.p[i] * phi_x.p[i]; else nphi++; }           //h-lagrange terms
   }
   CHECK_EQ(nphi, phi.N, "");
@@ -115,7 +114,7 @@ void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
       if(            ot==OT_ineq) { if(lambda.N && lambda.p[i]>0.) J_setRow( lambda.p[i]* ) else nphi++; }             //g-lagrange terms
       if(            ot==OT_ineqB) J_setRow( (-muLB/phi_x.p[i])* )                    //log barrier, check feasibility
       if(            ot==OT_ineqB){ if(lambda.N && lambda.p[i]>0.) J_setRow( lambda.p[i]* ) else nphi++; }             //g-lagrange terms
-      if(            ot==OT_eq) J_setRow( sqrt(nu)* )                      //h-penalty
+      if(            ot==OT_eq) J_setRow( sqrt(mu)* )                      //h-penalty
       if(            ot==OT_eq) { if(lambda.N) J_setRow( lambda.p[i]* )  else nphi++; }                                 //h-lagrange terms
 #undef J_setRow
     }
@@ -357,8 +356,7 @@ void LagrangianProblem::aulaUpdate(const rai::OptOptions& opt, bool anyTimeVaria
   }
 
   //-- adapt mu as well?
-  if(opt.muInc>0. && mu<opt.muMax) mu *= opt.muInc;
-  if(opt.muInc>0. && nu<opt.muMax) nu *= opt.muInc;
+  if(opt.muInc>0.){ mu *= opt.muInc; if(mu>opt.muMax) mu=opt.muMax; }
   if(opt.muLBDec>0. && muLB>1e-8) muLB *= opt.muLBDec;
 
   //-- recompute the Lagrangian with the new parameters (its current value, gradient & hessian)
@@ -391,9 +389,9 @@ double LagrangianProblem::gpenalty_dd(double g) { g*=mu; if(g>0.) return mu*mu*(
 #endif
 
 #if 1
-double LagrangianProblem::hpenalty(double h) { return nu*h*h;  }
-double LagrangianProblem::hpenalty_d(double h) { return 2.*nu*h;  }
-double LagrangianProblem::hpenalty_dd(double h) { return 2.*nu;  }
+double LagrangianProblem::hpenalty(double h) { return mu*h*h;  }
+double LagrangianProblem::hpenalty_d(double h) { return 2.*mu*h;  }
+double LagrangianProblem::hpenalty_dd(double h) { return 2.*mu;  }
 #else
 double LagrangianProblem::hpenalty(double h) { h*=nu;  return (h*h + fabs(h)*h*h);  }
 double LagrangianProblem::hpenalty_d(double h) { h*=nu; return nu*(2.*h + 3.*fabs(h)*h);  }

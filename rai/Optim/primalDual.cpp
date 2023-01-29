@@ -13,7 +13,7 @@
 PrimalDualProblem::PrimalDualProblem(const arr& x, const shared_ptr<NLP>& P, rai::OptOptions opt, arr& lambdaInit)
   : L(P, opt, lambdaInit), mu(opt.muLBInit) {
 
-  L.mu = L.nu = L.muLB = 0.;
+  L.mu = L.muLB = 0.;
 
   L.lagrangian(NoArr, NoArr, x);
 //  cout <<"x=" <<x <<endl <<"L=" <<Lval <<endl;
@@ -44,7 +44,7 @@ double PrimalDualProblem::primalDual(arr& r, arr& R, const arr& x_lambda) {
   CHECK_EQ(x.N+n_eq+n_ineq, x_lambda.N, "");
 
   L.mu = 0.; //1e-2;
-  L.nu = L.muLB = 0.;
+  L.muLB = 0.;
 
   arr dL, HL;
   L.lagrangian(dL, HL, x);

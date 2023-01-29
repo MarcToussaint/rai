@@ -8,6 +8,7 @@
 
 #include "constrained.h"
 
+#include <iomanip>
 #include <math.h>
 
 //==============================================================================
@@ -78,10 +79,10 @@ OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<NLP>& P, ra
 
   newton.options.verbose = rai::MAX(opt.verbose-1, 0);
 
-  if(opt.verbose>0) cout <<"***** optConstrained: method=" <<MethodName[opt.constrainedMethod] <<" bounds: " <<(opt.boundedNewton?"yes":"no") <<endl;
+  if(opt.verbose>0) cout <<"====nlp==== method:" <<MethodName[opt.constrainedMethod] <<" bounded: " <<(opt.boundedNewton?"yes":"no") <<endl;
 
   if(logFile) {
-    (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.nu <<", L_x: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
+    (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.mu <<", L_x: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
   }
 
   newton.logFile = logFile;
@@ -89,7 +90,7 @@ OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<NLP>& P, ra
 
   //check for no constraints
   if(L.get_dimOfType(OT_ineq)==0 && L.get_dimOfType(OT_ineqB)==0 && L.get_dimOfType(OT_eq)==0) {
-    if(opt.verbose>0) cout <<"** optConstr. NO CONSTRAINTS -> run just Newton once" <<endl;
+    if(opt.verbose>0) cout <<"==nlp== NO CONSTRAINTS -> run just Newton once" <<endl;
     opt.constrainedMethod=rai::squaredPenaltyFixed;
   }
 
@@ -104,10 +105,10 @@ OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<NLP>& P, ra
   x_beforeNewton = newton.x;
 
   if(opt.verbose>0) {
-    cout <<"** optConstr. it=" <<its
-         <<"start evals:" <<newton.evals
-         <<" mu=" <<L.mu <<" nu=" <<L.nu <<" muLB=" <<L.muLB;
-    if(newton.x.N<5) cout <<" \tlambda=" <<L.lambda;
+    cout <<"==nlp== it:" <<its
+         <<" evals:" <<newton.evals
+         <<" mu:" <<L.mu <<" nu:" <<L.mu <<" muLB:" <<L.muLB;
+    if(newton.x.N<5) cout <<" \tlambda:" <<L.lambda;
     cout <<endl;
   }
 }
@@ -126,25 +127,33 @@ bool OptConstrained::ministep(){
   newton.step();
   if(L.lambda.N) CHECK_EQ(L.lambda.N, L.phi_x.N, "the evaluation (within newton) changed the phi-dimensionality");
 
-  //-- check end of Newton loop
-  bool endNewton=false;
-  if(newton.its>1000) endNewton=true;
-  if(newton.stopCriterion==OptNewton::stopStepFailed) endNewton=true;;
-  if(newton.stopCriterion>=OptNewton::stopDeltaConverge) endNewton=true;;
+  //-- if Newton loop not finished, return false to keep calling ministeps
+  if(newton.stopCriterion==OptNewton::stopNone) return false;
 
-  if(!endNewton) return false;
+  //-- Newton loop finished
 
-  //<< Newton loop ended
+  double f_cost = L.get_costs();
+  double g_err = L.get_sumOfGviolations();
+  double h_err = L.get_sumOfHviolations();
+  double step = absMax(x_beforeNewton-newton.x);
+  if(newton.stopCriterion>OptNewton::stopDeltaConverge){
+    numBadSteps++;
+  }else{
+    numBadSteps=0;
+  }
 
   if(opt.verbose>0) {
     //END of old Newton loop
-    cout <<"** optConstr. it=" <<its
-         <<"start evals:" <<newton.evals
-         <<" f(x)=" <<L.get_costs()
-         <<" \tg_compl=" <<L.get_sumOfGviolations()
-         <<" \th_compl=" <<L.get_sumOfHviolations()
-         <<" \t|x-x'|=" <<absMax(x_beforeNewton-newton.x);
-    if(newton.x.N<5) cout <<" \tx=" <<newton.x;
+    cout <<"==nlp== it:" <<std::setw(4) <<its
+         <<"  evals:" <<std::setw(4) <<newton.evals
+         <<"  A(x):" <<std::setw(11) <<newton.fx
+         <<"  f:" <<std::setw(11) <<f_cost
+         <<"  g:" <<std::setw(11) <<g_err
+         <<"  h:" <<std::setw(11) <<h_err
+         <<"  |x-x'|:" <<std::setw(11) <<step
+         <<" \tstop:" <<rai::Enum<OptNewton::StopCriterion>(newton.stopCriterion);
+    if(numBadSteps) cout <<" (bad:" <<numBadSteps <<")";
+    if(newton.x.N<5) cout <<" \tx:" <<newton.x;
     cout <<endl;
   }
 
@@ -152,89 +161,69 @@ bool OptConstrained::ministep(){
 
   //check for squaredPenaltyFixed method
   if(opt.constrainedMethod==rai::squaredPenaltyFixed) {
-    if(opt.verbose>0) cout <<"** optConstr. squaredPenaltyFixed stops after one outer iteration" <<endl;
-    return true;
-  }
-
-  //check for newtonOnce
-  if(opt.constrainedMethod==rai::squaredPenaltyFixed) {
-    return true;
-  }
-
-  //check for squaredPenaltyFixed method
-  if(opt.constrainedMethod==rai::squaredPenaltyFixed) {
-    if(opt.verbose>0) cout <<"** optConstr. squaredPenaltyFixed stops after one outer iteration" <<endl;
+    if(opt.verbose>0) cout <<"==nlp== squaredPenaltyFixed stops after one outer iteration" <<endl;
     return true;
   }
 
   //main stopping criteron
-  if(its>=1 && absMax(x_beforeNewton-newton.x) < (earlyPhase?5.:1.)*opt.stopTolerance) {
-    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion Delta<" <<opt.stopTolerance <<endl;
-    if(earlyPhase) earlyPhase=false;
-    else {
-      if(opt.stopGTolerance<0.
-          || L.get_sumOfGviolations() + L.get_sumOfHviolations() < opt.stopGTolerance)
+  if(its>=1 && step < opt.stopTolerance) {
+    if(opt.verbose>0) cout <<"==nlp== StoppingCriterion Delta<" <<opt.stopTolerance <<endl;
+    if(opt.stopGTolerance<0. || g_err+h_err<opt.stopGTolerance){
+      return true; //good: small step in last loop and err small
+    }else{
+      if(opt.verbose>0) cout <<"               -- but err too large " <<g_err+h_err <<'>' <<opt.stopGTolerance <<endl;
+      if(numBadSteps>4){
+        cout <<"               -- but numBadSteps > 4" <<endl;
         return true;
+      }
     }
   }
 
-  //  if(its>=2 && newtonStop==OptNewton::stopTinySteps) {
-  //    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion TinySteps<" <<opt.stopTolerance <<endl;
-  //    if(earlyPhase) earlyPhase=false;
-  //    else {
-  //      if(opt.stopGTolerance<0.
-  //          || L.get_sumOfGviolations() + L.get_sumOfHviolations() < opt.stopGTolerance)
-  //        return true;
-  //    }
-  //  }
-
   if(opt.stopEvals>0 && newton.evals>=opt.stopEvals) {
-    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX EVALS" <<endl;
+    if(opt.verbose>0) cout <<"==nlp== StoppingCriterion MAX EVALS" <<endl;
     return true;
   }
   if(opt.stopIters>0 && newton.its>=opt.stopIters) {
-    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX ITERS" <<endl;
+    if(opt.verbose>0) cout <<"==nlp== StoppingCriterion MAX ITERS" <<endl;
     return true;
   }
   if(opt.stopOuters>0 && its>=opt.stopOuters) {
-    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX OUTERS" <<endl;
+    if(opt.verbose>0) cout <<"==nlp== StoppingCriterion MAX OUTERS" <<endl;
     return true;
   }
 
   //-- CONTINUE WITH NEXT NEWTON LOOP
   its++;
 
-  double L_x_before = newton.fx;
-
   //upate Lagrange parameters
+  double L_x_before = newton.fx;
   L.autoUpdate(opt, &newton.fx, newton.gx, newton.Hx);
-
   if(!!dual) dual=L.lambda;
-
   if(logFile) {
-    (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.nu <<", L_x_beforeUpdate: " <<L_x_before <<", L_x_afterUpdate: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
+    (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.mu <<", L_x_beforeUpdate: " <<L_x_before <<", L_x_afterUpdate: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
   }
 
   if(opt.verbose>0) {
     //START of new Newton loop
-    cout <<"** optConstr. it=" <<its
-         <<"end   evals:" <<newton.evals
-         <<" mu=" <<L.mu <<" nu=" <<L.nu <<" muLB=" <<L.muLB;
-    if(newton.x.N<5) cout <<" \tlambda=" <<L.lambda;
+    cout <<"==nlp== it:" <<std::setw(4) <<its
+         <<"  evals:" <<std::setw(4) <<newton.evals
+        <<"  A(x):" <<std::setw(11) <<newton.fx
+       <<"  mu:" <<L.mu;
+    if(L.useLB) cout <<" muLB:" <<std::setw(11) <<L.muLB;
+    if(newton.x.N<5) cout <<" \tlambda:" <<L.lambda;
     cout <<endl;
   }
 
+  //newton.reinit(newton.x); //this would trigger a new evaluation; only to confirm that autoUpdate updates also fx correctly
+
+  //prepare next Newton loop
   x_beforeNewton = newton.x;
+  rai::clip(newton.alpha, 1e-2, 1.);
 
   if(L.lambda.N) CHECK_EQ(L.lambda.N, L.phi_x.N, "");
 
-  if(earlyPhase){
-    newton.options.stopTolerance = 10.*org_stopTol;
-    newton.options.stopGTolerance = 10.*org_stopGTol;
-  }else{
-    newton.options.stopTolerance = org_stopTol;
-    newton.options.stopGTolerance = org_stopGTol;
-  }
+  newton.options.stopTolerance = org_stopTol;
+  newton.options.stopGTolerance = org_stopGTol;
 
   return false;
 }
@@ -250,5 +239,5 @@ void evaluateNLP(const arr& x, NLP& P, std::ostream& os) {
     if(P.featureTypes(i)==OT_ineq && phi_x(i)>0.) Eg += phi_x(i);
     if(P.featureTypes(i)==OT_eq) Eh += fabs(phi_x(i));
   }
-  os <<"f=" <<Ef <<" sum([g>0]g)="<<Eg <<" sum(|h|)=" <<Eh <<std::endl;
+  os <<"f:" <<Ef <<" sum([g>0]g):"<<Eg <<" sum(|h|):" <<Eh <<std::endl;
 }

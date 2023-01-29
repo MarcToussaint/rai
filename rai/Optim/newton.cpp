@@ -10,6 +10,9 @@
 
 #include <iomanip>
 
+template<> const char* rai::Enum<OptNewton::StopCriterion>::names []= {
+ "None", "DeltaConverge", "TinyFSteps", "TinyXSteps", "CritEvals", "StepFailed", "LineSearchSteps", 0 };
+
 bool sanityCheck=false; //true;
 void updateBoundActive(intA& boundActive, const arr& x, const arr& bound_lo, const arr& bound_up);
 
@@ -42,8 +45,8 @@ void OptNewton::reinit(const arr& _x) {
   timeEval += rai::cpuTime();
 
   //startup verbose
-  if(options.verbose>1) cout <<"*** optNewton: initial point f(x)=" <<fx <<" alpha=" <<alpha <<" beta=" <<beta <<endl;
-  if(options.verbose>3){ if(x.N<5) cout <<"x=" <<x <<endl; }
+  if(options.verbose>1) cout <<"----newton---- initial point f(x):" <<fx <<" alpha:" <<alpha <<" beta:" <<beta <<endl;
+  if(options.verbose>3){ if(x.N<5) cout <<"x:" <<x <<endl; }
   if(logFile) {
     (*logFile) <<"{ newton: " <<its <<", evaluations: " <<evals <<", f_x: " <<fx <<", alpha: " <<alpha;
     if(options.verbose>3)(*logFile) <<", x: " <<x;
@@ -65,7 +68,7 @@ OptNewton::StopCriterion OptNewton::step() {
   arr y, gy, Hy, Delta;
 
   its++;
-  if(options.verbose>1) cout <<"optNewton it:" <<std::setw(4) <<its << "  beta:" <<std::setw(4) <<beta <<std::flush;
+  if(options.verbose>1) cout <<"--newton-- it:" <<std::setw(4) <<its <<std::flush;
 
   if(!(fx==fx)) HALT("you're calling a newton step with initial function value = NAN");
 
@@ -142,25 +145,18 @@ OptNewton::StopCriterion OptNewton::step() {
 #if 0 //increase beta to min eig value and repeat
       arr sig = lapack_kSmallestEigenValues_sym(R, 3);
       if(o.verbose>0) {
-        cout <<"** hessian inversion failed ... increasing damping **\neigenvalues=" <<sig <<endl;
+        cout <<"** hessian inversion failed ... increasing damping **\neigenvalues:" <<sig <<endl;
       }
       double sigmin = min(sig);
       if(sigmin>0.) THROW("Hessian inversion failed, but eigenvalues are positive???");
       beta = 2.*beta - sigmin;
       return stopCriterion=stopNone;
 #endif
-      //increase beta by betaInc
-      if(options.dampingInc>0.) beta*=options.dampingInc;
-
       //use gradient
       if(options.verbose>0) {
         cout <<"** hessian inversion failed ... using gradient descent direction" <<endl;
       }
       Delta = gx * (-options.maxStep/length(gx));
-    } else { //inversion successful
-      //decrease beta by betaDec
-      if(options.dampingDec>0.) beta *= options.dampingDec;
-      if(beta<options.damping) beta=options.damping;
     }
   }
 
@@ -173,7 +169,7 @@ OptNewton::StopCriterion OptNewton::step() {
   double alphaHiLimit = options.maxStep/maxDelta;
   //double alphaLoLimit = 1e-1*options.stopTolerance/maxDelta;
 
-  if(options.verbose>1) cout <<"  |Delta|:" <<std::setw(11) <<maxDelta <<std::flush;
+  if(options.verbose>1) cout <<"  |Delta|:" <<std::setw(11) <<maxDelta;
 
   //lazy stopping criterion: stop without any update
   if(absMax(Delta)<1e-1*options.stopTolerance) {
@@ -185,16 +181,17 @@ OptNewton::StopCriterion OptNewton::step() {
 
   //-- line search along Delta
   uint lineSearchSteps=0;
-  for(bool endLineSearch=false; !endLineSearch; lineSearchSteps++) {
-    if(!options.allowOverstep) if(alpha>1.) alpha=1.;
+  for(;;lineSearchSteps++) {
+    if(alpha>1.) alpha=1.;
     if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit;
+    if(options.verbose>1) cout <<"  alpha:" <<std::setw(11) <<alpha <<std::flush;
     y = x + alpha*Delta;
+    if(options.verbose>5) cout <<"  y:" <<y;
     boundClip(y, bounds_lo, bounds_up);
     timeEval -= rai::cpuTime();
     fy = f(gy, Hy, y);  evals++;
     timeEval += rai::cpuTime();
-    if(options.verbose>5) cout <<"  probing y:" <<y;
-    if(options.verbose>1) cout <<"  evals:" <<std::setw(4) <<evals <<"  alpha:" <<std::setw(11) <<alpha <<"  f(y):" <<fy <<std::flush;
+    if(options.verbose>1) cout <<"  evals:" <<std::setw(4) <<evals <<"  f(y):" <<std::setw(11) <<fy <<std::flush;
     if(simpleLog) {
       (*simpleLog) <<its <<' ' <<evals <<' ' <<fy <<' ' <<alpha;
       if(y.N<=5) (*simpleLog) <<y.modRaw();
@@ -203,9 +200,9 @@ OptNewton::StopCriterion OptNewton::step() {
 
     bool wolfe = (fy <= fx + options.wolfe*scalarProduct(y-x, gx));
     if(rootFinding) wolfe=true;
-    if(fy==fy && (wolfe || options.nonStrictSteps==-1 || options.nonStrictSteps>(int)its)) { //fy==fy is for !NAN
-      //accept new point
-      if(options.verbose>1) cout <<" - ACCEPT" <<endl;
+    if(fy==fy && wolfe) { //fy==fy is for !NAN
+      //== accept new point
+      if(options.verbose>1) cout <<"  ACCEPT" <<endl;
       if(logFile) {
         (*logFile) <<"{ lineSearch: " <<lineSearchSteps <<", alpha: " <<alpha <<", beta: " <<beta <<", f_x: " <<fx <<", f_y: " <<fy <<", wolfe: " <<wolfe <<", accept: True }," <<endl;
       }
@@ -215,46 +212,25 @@ OptNewton::StopCriterion OptNewton::step() {
       fx = fy;
       gx = gy;
       Hx = Hy;
-      if(wolfe) {
-        if(alpha>.9 && beta>options.damping) {
-          if(options.dampingDec>0.) beta *= options.dampingDec;
-          if(alpha>1.) alpha=1.;
-          endLineSearch=true;
-        }
-        alpha *= options.stepInc;
-      } else {
-        //this is the nonStrict case... weird, but well
-        if(alpha<.01 && options.dampingInc>0.) {
-          beta*=options.dampingInc;
-          alpha*=options.dampingInc*options.dampingInc;
-          endLineSearch=true;
-          if(options.verbose>1) cout <<"(line search stopped)" <<endl;
-        }
-        alpha *= options.stepDec;
-      }
-      break;
+      alpha *= options.stepInc;
+      break; //end line search
     } else {
-      //reject new point
-      if(options.verbose>1) cout <<" - reject (lineSearch:" <<lineSearchSteps <<")" <<std::flush;
+      //== reject new point
+      if(options.verbose>1) cout <<"  reject (lineSearch:" <<lineSearchSteps <<")";
       if(logFile) {
         (*logFile) <<"{ lineSearch: " <<lineSearchSteps <<", alpha: " <<alpha <<", beta: " <<beta <<", f_x: " <<fx <<", f_y: " <<fy <<", wolfe: " <<wolfe <<", accept: False }," <<endl;
       }
       if(evals>options.stopEvals) {
         if(options.verbose>1) cout <<" (evals>stopEvals)" <<endl;
-        break; //WARNING: this may lead to non-monotonicity -> make evals high!
+        numTinyXSteps++;
+        break; //end line search
       }
       if(lineSearchSteps>10) {
         if(options.verbose>1) cout <<" (lineSearchSteps>10)" <<endl;
-        break; //WARNING: this may lead to non-monotonicity -> make evals high!
+        numTinyXSteps++;
+        break; //end line search
       }
-      if(alpha<.01 && options.dampingInc>0.) {
-        beta*=options.dampingInc;
-        alpha*=options.dampingInc*options.dampingInc;
-        endLineSearch=true;
-        if(options.verbose>1) cout <<", stop & betaInc"<<endl;
-      } else {
-        if(options.verbose>1) cout <<"\n                                  (line search)  " <<std::flush;
-      }
+      if(options.verbose>1) cout <<"\n                    (line search)      ";
       alpha *= options.stepDec;
 //      if(alpha<alphaLoLimit) endLineSearch=true;
     }
@@ -268,7 +244,7 @@ OptNewton::StopCriterion OptNewton::step() {
 
   //stopping criteria
 
-#define STOPIF(expr, code, ret) if(expr){ if(options.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
+#define STOPIF(expr, code, ret) if(expr){ if(options.verbose>1) cout <<"--newton-- stopping: '" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
 
   STOPIF(absMax(Delta)<options.stopTolerance,, stopDeltaConverge);
   STOPIF(numTinyFSteps>4, numTinyFSteps=0, stopTinyFSteps);
@@ -276,6 +252,7 @@ OptNewton::StopCriterion OptNewton::step() {
 //  STOPIF(alpha*absMax(Delta)<1e-3*o.stopTolerance, stopCrit2);
   STOPIF(evals>=options.stopEvals,, stopCritEvals);
   STOPIF(its>=options.stopIters,, stopCritEvals);
+  STOPIF(lineSearchSteps>10,, stopLineSearchSteps);
 
 #undef STOPIF
 
@@ -286,7 +263,7 @@ OptNewton::~OptNewton() {
 #ifndef RAI_MSVC
 //  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
 #endif
-  if(options.verbose>1) cout <<"*** optNewtonStop: f(x)=" <<fx <<endl;
+  if(options.verbose>1) cout <<"----newton---- final f(x):" <<fx <<endl;
 }
 
 OptNewton& OptNewton::setBounds(const arr& _bounds_lo, const arr& _bounds_up){
