@@ -24,11 +24,11 @@
 #include <BulletDynamics/Featherstone/btMultiBodyJointLimitConstraint.h>
 #include <BulletDynamics/Featherstone/btMultiBodyGearConstraint.h>
 
-// ============================================================================
+//===========================================================================
 
 constexpr float gravity = -9.81f;
 
-// ============================================================================
+//===========================================================================
 
 void btTrans2raiTrans(rai::Transformation& f, const btTransform& pose) {
   const btQuaternion q = pose.getRotation();
@@ -60,7 +60,7 @@ btQuaternion conv_rot_btQuat(const rai::Quaternion& rot) {
   return btQuaternion(rot.x, rot.y, rot.z, rot.w);
 }
 
-// ============================================================================
+//===========================================================================
 
 struct MultiBodyInfo{
   btMultiBody* multibody;
@@ -95,10 +95,12 @@ struct BulletInterface_self {
   btMultiBody* addMultiBody(rai::Frame* base);
   void addExample();
 
-  btCollisionShape* createCollisionShape(rai::Shape* s);
+  btCollisionShape* createSingleShape(rai::Shape* s);
   btCollisionShape* createCompoundCollisionShape(rai::Frame* link, ShapeL& shapes);
   btCollisionShape* createLinkShape(ShapeL& shapes, rai::BodyType& type, rai::Frame* f);
 };
+
+//===========================================================================
 
 void BulletInterface_self::initPhysics(){
   if(opt.verbose>0) LOG(0) <<"starting bullet engine ...";
@@ -151,244 +153,6 @@ void BulletInterface_self::initPhysics2(){
   dynamicsWorld->setGravity(btVector3(0, -9.81, 0));
 }
 
-// ============================================================================
-
-BulletInterface::BulletInterface(rai::Configuration& C, const rai::Bullet_Options& opt) : self(nullptr) {
-  self = new BulletInterface_self;
-
-  self->opt = opt;
-
-  self->initPhysics();
-
-  self->addGround();
-
-  if(opt.verbose>0) LOG(0) <<"creating Configuration within bullet ...";
-
-  self->actors.resize(C.frames.N); self->actors.setZero();
-  self->actorTypes.resize(C.frames.N); self->actorTypes.setZero();
-
-  if(opt.multiBody){
-    FrameL parts = C.getParts();
-    for(rai::Frame *f : parts){
-      bool asMultiBody=false;
-      FrameL sub = f->getSubtree();
-      for(rai::Frame *a:sub) if(a->joint){ asMultiBody=true; break; }
-
-      if(asMultiBody){
-        self->addMultiBody(f);
-        if(f->ats && (*f->ats)["motors"]) motorizeMultiBody(f);
-      }else{
-        self->addLink(f);
-      }
-    }
-    //  self->addMultiBody(C(0), verbose);
-    //  self->addExample();
-  } else {
-    FrameL links = C.getLinks();
-    for(rai::Frame* a : links){
-      if(a->inertia && a->inertia->type==rai::BT_soft){
-        CHECK(opt.softBody, "");
-        self->addSoft(a);
-      }else{
-        self->addLink(a);
-      }
-    }
-  }
-
-  if(opt.verbose>0) LOG(0) <<"... done creating Configuration within bullet";
-}
-
-BulletInterface::~BulletInterface() {
-  for(int i = self->dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; --i) {
-    btCollisionObject* obj = self->dynamicsWorld->getCollisionObjectArray()[i];
-    btRigidBody* body = dynamic_cast<btRigidBody*>(obj);
-    if(body && body->getMotionState()) {
-      delete body->getMotionState();
-    }
-    self->dynamicsWorld->removeCollisionObject(obj);
-    delete obj;
-  }
-  for(int i = 0; i < self->collisionShapes.size(); ++i) {
-    delete self->collisionShapes[i];
-  }
-  delete self->dynamicsWorld;
-  delete self->solver;
-  delete self->broadphase;
-  delete self->dispatcher;
-  delete self->collisionConfiguration;
-  self->collisionShapes.clear();
-}
-
-void BulletInterface::step(double tau) {
-  self->stepCount++;
-  self->dynamicsWorld->stepSimulation(tau, 10, 1. / 240.f);
-}
-
-void pullPoses(rai::Configuration& C, const rai::Array<btCollisionObject*>& actors, const rai::Array<MultiBodyInfo>& multibodies, arr& frameVelocities, bool alsoStaticAndKinematic){
-  if(!!frameVelocities) frameVelocities.resize(C.frames.N, 2, 3).setZero();
-
-  for(rai::Frame* f : C.frames) {
-    if(actors.N <= f->ID) continue;
-
-    btCollisionObject* obj = actors(f->ID);
-    if(!obj) continue;
-    btRigidBody* body = dynamic_cast<btRigidBody*>(obj);
-    btMultiBodyLinkCollider* multibodycoll = dynamic_cast<btMultiBodyLinkCollider*>(obj);
-    btMultibodyLink* link=0;
-    if(multibodycoll) link = &multibodycoll->m_multiBody->getLink(multibodycoll->m_link);
-    btSoftBody* softbody = dynamic_cast<btSoftBody*>(obj);
-
-    if(body || link){
-      if(link || alsoStaticAndKinematic || !body->isStaticOrKinematicObject()){
-        rai::Transformation X;
-        btTransform pose;
-        if(body && body->getMotionState()) {
-          body->getMotionState()->getWorldTransform(pose);
-          btTrans2raiTrans(X, pose);
-          f->set_X() = X;
-        } else {
-#if 1 //pull poses of multibody links -> indirectly defines joint transformations (redundant for non-floating roots!)
-          pose = obj->getWorldTransform();
-          btTrans2raiTrans(X, pose);
-          if(f->parent && f->parent->joint){
-            f->parent->set_X() = X * (-f->get_Q());
-          }else{
-            f->set_X() = X;
-          }
-#endif
-        }
-        if(!!frameVelocities) {
-          frameVelocities(f->ID, 0, {}) = conv_btVec3_arr(body->getLinearVelocity());
-          frameVelocities(f->ID, 1, {}) = conv_btVec3_arr(body->getAngularVelocity());
-        }
-      }
-    } else if(softbody){
-      rai::Mesh &m = f->shape->mesh();
-      CHECK_EQ((int)m.V.d0, softbody->m_nodes.size(), "");
-      for(int i=0; i<softbody->m_nodes.size(); i++){
-        m.V[i] = conv_btVec3_arr(softbody->m_nodes[i].m_x);
-      }
-    } else {
-      //is ok: compound or multi piece
-    }
-  }
-
-  //-- pull joint state directly
-  if(multibodies.N){
-    arr q = C.getJointState();
-    for(const MultiBodyInfo& mi:multibodies){
-      uint n = mi.multibody->getNumLinks();
-      for(uint i=0;i<n;i++){
-        q(mi.links(i+1)->joint->qIndex) = mi.multibody->getJointPos(i);
-      }
-    }
-    C.setJointState(q);
-  }
-}
-
-void BulletInterface::pullDynamicStates(rai::Configuration& C, arr& frameVelocities) {
-  pullPoses(C, self->actors, self->multibodies, frameVelocities, false);
-}
-
-void BulletInterface::changeObjectType(rai::Frame* f, int _type, const arr& withVelocity) {
-  rai::Enum<rai::BodyType> type((rai::BodyType)_type);
-  if(self->actorTypes(f->ID) == type) {
-    //LOG(-1) <<"frame " <<*f <<" is already of type " <<type;
-  }
-
-  btRigidBody* a = dynamic_cast<btRigidBody*>(self->actors(f->ID));
-  if(!a) HALT("frame " <<*f <<"is not an actor");
-
-  if(type==rai::BT_kinematic) {
-    a->setCollisionFlags(a->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
-    a->setActivationState(DISABLE_DEACTIVATION);
-  } else if(type==rai::BT_dynamic) {
-    a->setCollisionFlags(a->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
-    a->setActivationState(DISABLE_DEACTIVATION);
-    if(withVelocity.N){
-      a->setLinearVelocity(btVector3(withVelocity(0), withVelocity(1), withVelocity(2)));
-    }
-  } else NIY;
-  self->actorTypes(f->ID) = type;
-}
-
-void BulletInterface::motorizeMultiBody(rai::Frame* base){
-  if(opt().verbose>0) LOG(0) <<"motorizing multibody with base '" <<base->name <<"'";
-  CHECK(self->opt.multiBody, "");
-  uint i=0;
-  for(;i<self->multibodies.N;i++){
-    if(self->multibodies(i).links.first()==base) break;
-  }
-  CHECK(i<self->multibodies.N, "");
-  MultiBodyInfo& mi = self->multibodies(i);
-  uint n = mi.multibody->getNumLinks();
-  CHECK(!mi.motors.N, "");
-  mi.motors.resize(n) = 0;
-  auto world = dynamic_cast<btMultiBodyDynamicsWorld*>(self->dynamicsWorld);
-  CHECK(world, "need a btMultiBodyDynamicsWorld");
-  for(uint i=0;i<n;i++){
-    auto mot = new btMultiBodyJointMotor(mi.multibody, i, 0., 100000.);
-    if(!mi.links(i+1)->joint->mimic){
-    world->addMultiBodyConstraint(mot);
-    arr q = mi.links(i+1)->joint->calcDofsFromConfig();
-    mot->setPositionTarget(q.scalar(), opt().motorKp);
-    mot->setVelocityTarget(0., opt().motorKd);
-    }
-    mi.motors(i) = mot;
-  }
-}
-
-void BulletInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){
-  CHECK(self->opt.multiBody, "");
-  if(qDot_ref.N){ CHECK_EQ(q_ref.N, qDot_ref.N, ""); }
-  uint qIdx=0;
-  for(MultiBodyInfo& mi:self->multibodies){
-    for(uint i=0;i<mi.motors.N;i++){
-      mi.motors(i)->setPositionTarget(q_ref.elem(qIdx), opt().motorKp);
-      if(qDot_ref.N){
-        mi.motors(i)->setVelocityTarget(qDot_ref.elem(i), opt().motorKd);
-      }
-      qIdx++;
-    }
-  }
-  CHECK_EQ(qIdx, q_ref.N, ""); //make this only a warning?
-}
-
-void BulletInterface::pushKinematicStates(const rai::Configuration& C) {
-  for(rai::Frame* f: C.frames) {
-    if(self->actors.N <= f->ID) continue;
-    if(self->actorTypes(f->ID)==rai::BT_kinematic) {
-      btRigidBody* b = dynamic_cast<btRigidBody*>(self->actors(f->ID));
-      if(!b) continue; //f is not an actor
-
-      CHECK(b->getMotionState(), "");
-      b->getMotionState()->setWorldTransform(conv_trans_btTrans(f->ensure_X()));
-    }
-  }
-}
-
-void BulletInterface::pushFullState(const rai::Configuration& C, const arr& frameVelocities) {
-  for(rai::Frame* f : C.frames) {
-    if(self->actors.N <= f->ID) continue;
-    btRigidBody* b = dynamic_cast<btRigidBody*>(self->actors(f->ID));
-    if(!b) continue; //f is not an actor
-
-    b->setWorldTransform(conv_trans_btTrans(f->ensure_X()));
-    b->setActivationState(ACTIVE_TAG);
-    if(self->actorTypes(f->ID)==rai::BT_dynamic) {
-      b->clearForces();
-      if(!!frameVelocities && frameVelocities.N) {
-        b->setLinearVelocity(btVector3(frameVelocities(f->ID, 0, 0), frameVelocities(f->ID, 0, 1), frameVelocities(f->ID, 0, 2)));
-        b->setAngularVelocity(btVector3(frameVelocities(f->ID, 1, 0), frameVelocities(f->ID, 1, 1), frameVelocities(f->ID, 1, 2)));
-      } /*else {
-        b->setLinearVelocity(btVector3(0., 0., 0.));
-        b->setAngularVelocity(btVector3(0., 0., 0.));
-      }*/
-    }
-  }
-  self->dynamicsWorld->stepSimulation(.01); //without this, two consequtive pushFullState won't work! (something active tag?)
-}
-
 btRigidBody* BulletInterface_self::addGround() {
   btTransform groundTransform;
   groundTransform.setIdentity();
@@ -409,67 +173,6 @@ btRigidBody* BulletInterface_self::addGround() {
   body->setContactStiffnessAndDamping(opt.contactStiffness, opt.contactDamping);
   dynamicsWorld->addRigidBody(body, 1, 1+2);
   return body;
-}
-
-btCollisionShape* BulletInterface_self::createLinkShape(ShapeL& shapes, rai::BodyType& type, rai::Frame* f) {
-  //-- collect all shapes of that link
-
-  {
-    rai::Frame* link=f->getUpwardLink();
-    FrameL tmp = {link};
-    link->getRigidSubFrames(tmp, false);
-    for(rai::Frame* p: tmp){
-      if(p->shape
-         && p->getShape().type()!=rai::ST_marker
-         && p->getShape().type()!=rai::ST_camera
-         && p->getShape().alpha()==1.) shapes.append(p->shape);
-    }
-  }
-
-  //-- check inertia
-  bool shapesHaveInertia=false;
-  for(rai::Shape *s:shapes) if(s->frame.inertia){ shapesHaveInertia=true; break; }
-  if(shapesHaveInertia && !f->inertia){
-    LOG(-1) <<"computing compound inertia for object frame '" <<f->name <<"' -- this should have been done earlier?";
-    f->computeCompoundInertia();
-    f->transformToDiagInertia();
-#if 0 //we relocate that frame to have zero COM (bullet only accepts zero COM and diagonal inertia)
-    if(!f->inertia->com.isZero){
-      CHECK(!f->shape || f->shape->type()==rai::ST_marker, "can't translate this frame if it has a shape attached");
-      CHECK(!f->joint || f->joint->type==rai::JT_rigid || f->joint->type==rai::JT_free, "can't translate this frame if it has a joint attached");
-      LOG(0) <<"translating frame '" <<f->name <<"' to accomodate for centered compound inertia for bullet";
-      f->set_X()->pos += f->ensure_X().rot * f->inertia->com;
-      for(rai::Frame* ch:f->children) ch->set_Q()->pos -= f->inertia->com;
-      f->inertia->com.setZero();
-//MISSING HERE: ALSO TRANSFORM THE INERTIA MATRIX TO BECOME DIAG!
-    }
-#endif
-  }
-  if(f->inertia && !f->inertia->com.isZero){
-    LOG(-2) <<"DON'T DO THAT! Bullet can only properly handle (compound) inertias if transformed to zero com and diagonal tensor";
-  }
-
-  //-- decide on the type
-  type = rai::BT_static;
-//  if(shapes.N) {
-    if(f->joint)   type = rai::BT_kinematic;
-    if(f->inertia) type = f->inertia->type;
-//  }
-  actorTypes(f->ID) = type;
-  if(opt.verbose>0) LOG(0) <<"adding link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes";
-
-  if(!shapes.N) return 0;
-
-  //-- create a bullet collision shape
-  btCollisionShape* colShape=0;
-  if(shapes.N==1 && f == &shapes.scalar()->frame) {
-    colShape = createCollisionShape(shapes.scalar());
-  } else {
-    colShape = createCompoundCollisionShape(f, shapes);
-  }
-  collisionShapes.push_back(colShape);
-
-  return colShape;
 }
 
 btRigidBody* BulletInterface_self::addLink(rai::Frame* f) {
@@ -807,33 +510,7 @@ btSoftBody* BulletInterface_self::addSoft(rai::Frame* f) {
   return softbody;
 }
 
-void BulletInterface::saveBulletFile(const char* filename) {
-  //adapted from PhysicsServerCommandProcessor::processSaveBulletCommand
-
-  FILE* f = fopen(filename, "wb");
-  if(f) {
-    btDefaultSerializer* ser = new btDefaultSerializer();
-    int currentFlags = ser->getSerializationFlags();
-    ser->setSerializationFlags(currentFlags); // | BT_SERIALIZE_CONTACT_MANIFOLDS);
-
-    self->dynamicsWorld->serialize(ser);
-    fwrite(ser->getBufferPointer(), ser->getCurrentBufferSize(), 1, f);
-    fclose(f);
-    delete ser;
-  } else {
-    HALT("could not open file '" <<filename <<"' for writing");
-  }
-}
-
-btDiscreteDynamicsWorld*BulletInterface::getDynamicsWorld(){
-  return self->dynamicsWorld;
-}
-
-rai::Bullet_Options& BulletInterface::opt(){
-  return self->opt;
-}
-
-btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape* s) {
+btCollisionShape* BulletInterface_self::createSingleShape(rai::Shape* s) {
   btCollisionShape* colShape=0;
   arr& size = s->size;
   switch(s->type()) {
@@ -877,10 +554,335 @@ btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape* s) {
 btCollisionShape* BulletInterface_self::createCompoundCollisionShape(rai::Frame* link, ShapeL& shapes) {
   btCompoundShape* colShape = new btCompoundShape;
   for(rai::Shape* s:shapes) {
-    colShape->addChildShape(conv_trans_btTrans(s->frame.ensure_X()/link->ensure_X()), createCollisionShape(s));
+    colShape->addChildShape(conv_trans_btTrans(s->frame.ensure_X()/link->ensure_X()), createSingleShape(s));
   }
   return colShape;
 }
+
+btCollisionShape* BulletInterface_self::createLinkShape(ShapeL& shapes, rai::BodyType& type, rai::Frame* f) {
+  //-- collect all shapes of that link
+  {
+    rai::Frame* link=f->getUpwardLink();
+    FrameL tmp = {link};
+    link->getRigidSubFrames(tmp, false);
+    for(rai::Frame* p: tmp){
+      if(p->shape
+         && p->getShape().type()!=rai::ST_marker
+         && p->getShape().type()!=rai::ST_camera
+         && p->getShape().alpha()==1.) shapes.append(p->shape);
+    }
+  }
+
+  //-- check inertia
+  bool shapesHaveInertia=false;
+  for(rai::Shape *s:shapes) if(s->frame.inertia){ shapesHaveInertia=true; break; }
+  if(shapesHaveInertia && !f->inertia){
+    LOG(-1) <<"computing compound inertia for object frame '" <<f->name <<"' -- this should have been done earlier?";
+    f->computeCompoundInertia();
+    f->transformToDiagInertia();
+#if 0 //we relocate that frame to have zero COM (bullet only accepts zero COM and diagonal inertia)
+    if(!f->inertia->com.isZero){
+      CHECK(!f->shape || f->shape->type()==rai::ST_marker, "can't translate this frame if it has a shape attached");
+      CHECK(!f->joint || f->joint->type==rai::JT_rigid || f->joint->type==rai::JT_free, "can't translate this frame if it has a joint attached");
+      LOG(0) <<"translating frame '" <<f->name <<"' to accomodate for centered compound inertia for bullet";
+      f->set_X()->pos += f->ensure_X().rot * f->inertia->com;
+      for(rai::Frame* ch:f->children) ch->set_Q()->pos -= f->inertia->com;
+      f->inertia->com.setZero();
+//MISSING HERE: ALSO TRANSFORM THE INERTIA MATRIX TO BECOME DIAG!
+    }
+#endif
+  }
+  if(f->inertia && !f->inertia->com.isZero){
+    LOG(-2) <<"DON'T DO THAT! Bullet can only properly handle (compound) inertias if transformed to zero com and diagonal tensor";
+  }
+
+  //-- decide on the type
+  type = rai::BT_static;
+//  if(shapes.N) {
+    if(f->joint)   type = rai::BT_kinematic;
+    if(f->inertia) type = f->inertia->type;
+//  }
+  actorTypes(f->ID) = type;
+  if(opt.verbose>0) LOG(0) <<"adding link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes";
+
+  if(!shapes.N) return 0;
+
+  //-- create a bullet collision shape
+  btCollisionShape* colShape=0;
+  if(shapes.N==1 && f == &shapes.scalar()->frame) {
+    colShape = createSingleShape(shapes.scalar());
+  } else {
+    colShape = createCompoundCollisionShape(f, shapes);
+  }
+  collisionShapes.push_back(colShape);
+
+  return colShape;
+}
+
+//===========================================================================
+
+BulletInterface::BulletInterface(rai::Configuration& C, const rai::Bullet_Options& opt) : self(nullptr) {
+  self = new BulletInterface_self;
+
+  self->opt = opt;
+
+  self->initPhysics();
+
+  self->addGround();
+
+  if(opt.verbose>0) LOG(0) <<"creating Configuration within bullet ...";
+
+  self->actors.resize(C.frames.N).setZero();
+  self->actorTypes.resize(C.frames.N).setZero();
+
+  if(opt.multiBody){
+    FrameL parts = C.getParts();
+    for(rai::Frame *f : parts){
+      bool asMultiBody=false;
+      FrameL sub = f->getSubtree();
+      for(rai::Frame *a:sub) if(a->joint){ asMultiBody=true; break; }
+
+      if(asMultiBody){
+        self->addMultiBody(f);
+        if(f->ats && (*f->ats)["motors"]) motorizeMultiBody(f);
+      }else{
+        self->addLink(f);
+      }
+    }
+    //  self->addMultiBody(C(0), verbose);
+    //  self->addExample();
+  } else {
+    FrameL links = C.getLinks();
+    for(rai::Frame* a : links){
+      if(a->inertia && a->inertia->type==rai::BT_soft){
+        CHECK(opt.softBody, "");
+        self->addSoft(a);
+      }else{
+        self->addLink(a);
+      }
+    }
+  }
+
+  if(opt.verbose>0) LOG(0) <<"... done creating Configuration within bullet";
+}
+
+BulletInterface::~BulletInterface() {
+  for(int i = self->dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; --i) {
+    btCollisionObject* obj = self->dynamicsWorld->getCollisionObjectArray()[i];
+    btRigidBody* body = dynamic_cast<btRigidBody*>(obj);
+    if(body && body->getMotionState()) {
+      delete body->getMotionState();
+    }
+    self->dynamicsWorld->removeCollisionObject(obj);
+    delete obj;
+  }
+  for(int i = 0; i < self->collisionShapes.size(); ++i) {
+    delete self->collisionShapes[i];
+  }
+  delete self->dynamicsWorld;
+  delete self->solver;
+  delete self->broadphase;
+  delete self->dispatcher;
+  delete self->collisionConfiguration;
+  self->collisionShapes.clear();
+}
+
+void BulletInterface::step(double tau) {
+  self->stepCount++;
+  self->dynamicsWorld->stepSimulation(tau, 10, 1. / 240.f);
+}
+
+void pullPoses(rai::Configuration& C, const rai::Array<btCollisionObject*>& actors, const rai::Array<MultiBodyInfo>& multibodies, arr& frameVelocities, bool alsoStaticAndKinematic){
+  if(!!frameVelocities) frameVelocities.resize(C.frames.N, 2, 3).setZero();
+
+  for(rai::Frame* f : C.frames) {
+    if(actors.N <= f->ID) continue;
+
+    btCollisionObject* obj = actors(f->ID);
+    if(!obj) continue;
+    btRigidBody* body = dynamic_cast<btRigidBody*>(obj);
+    btMultiBodyLinkCollider* multibodycoll = dynamic_cast<btMultiBodyLinkCollider*>(obj);
+    btMultibodyLink* link=0;
+    if(multibodycoll && multibodycoll->m_link>=0) link = &multibodycoll->m_multiBody->getLink(multibodycoll->m_link);
+    btSoftBody* softbody = dynamic_cast<btSoftBody*>(obj);
+
+    if(body || link){
+      if(link || alsoStaticAndKinematic || !body->isStaticOrKinematicObject()){
+        rai::Transformation X;
+        btTransform pose;
+        if(body && body->getMotionState()) {
+          body->getMotionState()->getWorldTransform(pose);
+          btTrans2raiTrans(X, pose);
+          f->set_X() = X;
+        } else {
+#if 1 //pull poses of multibody links -> indirectly defines joint transformations (redundant for non-floating roots!)
+          pose = obj->getWorldTransform();
+          btTrans2raiTrans(X, pose);
+          if(f->parent && f->parent->joint){
+            f->parent->set_X() = X * (-f->get_Q());
+          }else{
+            f->set_X() = X;
+          }
+#endif
+        }
+        if(!!frameVelocities) {
+          frameVelocities(f->ID, 0, {}) = conv_btVec3_arr(body->getLinearVelocity());
+          frameVelocities(f->ID, 1, {}) = conv_btVec3_arr(body->getAngularVelocity());
+        }
+      }
+    } else if(softbody){
+      rai::Mesh &m = f->shape->mesh();
+      CHECK_EQ((int)m.V.d0, softbody->m_nodes.size(), "");
+      for(int i=0; i<softbody->m_nodes.size(); i++){
+        m.V[i] = conv_btVec3_arr(softbody->m_nodes[i].m_x);
+      }
+    } else {
+      //is ok: compound or multi piece
+    }
+  }
+
+  //-- pull joint state directly
+  if(multibodies.N){
+    arr q = C.getJointState();
+    for(const MultiBodyInfo& mi:multibodies){
+      uint n = mi.multibody->getNumLinks();
+      for(uint i=0;i<n;i++){
+        q(mi.links(i+1)->joint->qIndex) = mi.multibody->getJointPos(i);
+      }
+    }
+    C.setJointState(q);
+  }
+}
+
+void BulletInterface::pullDynamicStates(rai::Configuration& C, arr& frameVelocities) {
+  pullPoses(C, self->actors, self->multibodies, frameVelocities, false);
+}
+
+void BulletInterface::changeObjectType(rai::Frame* f, int _type, const arr& withVelocity) {
+  rai::Enum<rai::BodyType> type((rai::BodyType)_type);
+  if(self->actorTypes(f->ID) == type) {
+    //LOG(-1) <<"frame " <<*f <<" is already of type " <<type;
+  }
+
+  btRigidBody* a = dynamic_cast<btRigidBody*>(self->actors(f->ID));
+  if(!a) HALT("frame " <<*f <<"is not an actor");
+
+  if(type==rai::BT_kinematic) {
+    a->setCollisionFlags(a->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+    a->setActivationState(DISABLE_DEACTIVATION);
+  } else if(type==rai::BT_dynamic) {
+    a->setCollisionFlags(a->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
+    a->setActivationState(DISABLE_DEACTIVATION);
+    if(withVelocity.N){
+      a->setLinearVelocity(btVector3(withVelocity(0), withVelocity(1), withVelocity(2)));
+    }
+  } else NIY;
+  self->actorTypes(f->ID) = type;
+}
+
+void BulletInterface::motorizeMultiBody(rai::Frame* base){
+  if(opt().verbose>0) LOG(0) <<"motorizing multibody with base '" <<base->name <<"'";
+  CHECK(self->opt.multiBody, "");
+  uint i=0;
+  for(;i<self->multibodies.N;i++){
+    if(self->multibodies(i).links.first()==base) break;
+  }
+  CHECK(i<self->multibodies.N, "");
+  MultiBodyInfo& mi = self->multibodies(i);
+  uint n = mi.multibody->getNumLinks();
+  CHECK(!mi.motors.N, "");
+  mi.motors.resize(n) = 0;
+  auto world = dynamic_cast<btMultiBodyDynamicsWorld*>(self->dynamicsWorld);
+  CHECK(world, "need a btMultiBodyDynamicsWorld");
+  for(uint i=0;i<n;i++){
+    auto mot = new btMultiBodyJointMotor(mi.multibody, i, 0., 100000.);
+    if(!mi.links(i+1)->joint->mimic){
+    world->addMultiBodyConstraint(mot);
+    arr q = mi.links(i+1)->joint->calcDofsFromConfig();
+    mot->setPositionTarget(q.scalar(), opt().motorKp);
+    mot->setVelocityTarget(0., opt().motorKd);
+    }
+    mi.motors(i) = mot;
+  }
+}
+
+void BulletInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){
+  CHECK(self->opt.multiBody, "");
+  if(qDot_ref.N){ CHECK_EQ(q_ref.N, qDot_ref.N, ""); }
+  uint qIdx=0;
+  for(MultiBodyInfo& mi:self->multibodies){
+    for(uint i=0;i<mi.motors.N;i++){
+      mi.motors(i)->setPositionTarget(q_ref.elem(qIdx), opt().motorKp);
+      if(qDot_ref.N){
+        mi.motors(i)->setVelocityTarget(qDot_ref.elem(i), opt().motorKd);
+      }
+      qIdx++;
+    }
+  }
+  CHECK_EQ(qIdx, q_ref.N, ""); //make this only a warning?
+}
+
+void BulletInterface::pushKinematicStates(const rai::Configuration& C) {
+  for(rai::Frame* f: C.frames) {
+    if(self->actors.N <= f->ID) continue;
+    if(self->actorTypes(f->ID)==rai::BT_kinematic) {
+      btRigidBody* b = dynamic_cast<btRigidBody*>(self->actors(f->ID));
+      if(!b) continue; //f is not an actor
+
+      CHECK(b->getMotionState(), "");
+      b->getMotionState()->setWorldTransform(conv_trans_btTrans(f->ensure_X()));
+    }
+  }
+}
+
+void BulletInterface::pushFullState(const rai::Configuration& C, const arr& frameVelocities) {
+  for(rai::Frame* f : C.frames) {
+    if(self->actors.N <= f->ID) continue;
+    btRigidBody* b = dynamic_cast<btRigidBody*>(self->actors(f->ID));
+    if(!b) continue; //f is not an actor
+
+    b->setWorldTransform(conv_trans_btTrans(f->ensure_X()));
+    b->setActivationState(ACTIVE_TAG);
+    if(self->actorTypes(f->ID)==rai::BT_dynamic) {
+      b->clearForces();
+      if(!!frameVelocities && frameVelocities.N) {
+        b->setLinearVelocity(btVector3(frameVelocities(f->ID, 0, 0), frameVelocities(f->ID, 0, 1), frameVelocities(f->ID, 0, 2)));
+        b->setAngularVelocity(btVector3(frameVelocities(f->ID, 1, 0), frameVelocities(f->ID, 1, 1), frameVelocities(f->ID, 1, 2)));
+      } /*else {
+        b->setLinearVelocity(btVector3(0., 0., 0.));
+        b->setAngularVelocity(btVector3(0., 0., 0.));
+      }*/
+    }
+  }
+  self->dynamicsWorld->stepSimulation(.01); //without this, two consequtive pushFullState won't work! (something active tag?)
+}
+
+void BulletInterface::saveBulletFile(const char* filename) {
+  //adapted from PhysicsServerCommandProcessor::processSaveBulletCommand
+
+  FILE* f = fopen(filename, "wb");
+  if(f) {
+    btDefaultSerializer* ser = new btDefaultSerializer();
+    int currentFlags = ser->getSerializationFlags();
+    ser->setSerializationFlags(currentFlags); // | BT_SERIALIZE_CONTACT_MANIFOLDS);
+
+    self->dynamicsWorld->serialize(ser);
+    fwrite(ser->getBufferPointer(), ser->getCurrentBufferSize(), 1, f);
+    fclose(f);
+    delete ser;
+  } else {
+    HALT("could not open file '" <<filename <<"' for writing");
+  }
+}
+
+btDiscreteDynamicsWorld*BulletInterface::getDynamicsWorld(){
+  return self->dynamicsWorld;
+}
+
+rai::Bullet_Options& BulletInterface::opt(){
+  return self->opt;
+}
+
 
 BulletBridge::BulletBridge(btDiscreteDynamicsWorld* _dynamicsWorld) : dynamicsWorld(_dynamicsWorld) {
   btCollisionObjectArray& collisionObjects = dynamicsWorld->getCollisionObjectArray();
@@ -904,7 +906,7 @@ void BulletBridge::getConfiguration(rai::Configuration& C){
     btRigidBody* body = dynamic_cast<btRigidBody*>(obj);
     btMultiBodyLinkCollider* multibodycoll = dynamic_cast<btMultiBodyLinkCollider*>(obj);
     btMultibodyLink* link=0;
-    if(multibodycoll) link = &multibodycoll->m_multiBody->getLink(multibodycoll->m_link);
+    if(multibodycoll && multibodycoll->m_link>=0) link = &multibodycoll->m_multiBody->getLink(multibodycoll->m_link);
 
     if(body || link){
       rai::Transformation X;

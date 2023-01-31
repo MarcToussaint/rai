@@ -406,8 +406,7 @@ void rai::Mesh::addMesh(const Mesh& mesh2, const rai::Transformation& X) {
     else if(mesh2.C.N==4) C.append(replicate(mesh2.C({0,2}), mesh2.V.d0));
     else if(!mesh2.C.N) C.append(replicate(arr{.8,.8,.8}, mesh2.V.d0));
   }else{
-    LOG(-1) <<"clearing colors";
-    C.clear();
+    if(C.nd==2) C.clear();
   }
   V.append(mesh2.V);
   tex.append(mesh2.tex);

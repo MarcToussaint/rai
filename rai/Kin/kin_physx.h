@@ -10,9 +10,20 @@
 
 #include "kin.h"
 
-namespace physx {
-class PxMaterial;
-}
+namespace rai {
+  struct PhysX_Options {
+    RAI_PARAM("physx/", int, verbose, 1)
+    RAI_PARAM("physx/", bool, yGravity, false)
+    RAI_PARAM("physx/", bool, softBody, false)
+    RAI_PARAM("physx/", bool, multiBody, true)
+    RAI_PARAM("physx/", bool, jointedBodies, false)
+    RAI_PARAM("physx/", double, angularDamping, .1)
+    RAI_PARAM("physx/", double, defaultFriction, 1.)
+    RAI_PARAM("physx/", double, defaultRestitution, .1)
+    RAI_PARAM("physx/", double, motorKp, .1)
+    RAI_PARAM("physx/", double, motorKd, 1.)
+  };
+}//namespace
 
 struct PhysXInterface : GLDrawer {
   struct PhysXInterface_self* self=0;
@@ -24,7 +35,9 @@ struct PhysXInterface : GLDrawer {
 
   void pushKinematicStates(const FrameL& frames);
   void pushFullState(const FrameL& frames, const arr& frameVelocities=NoArr, bool onlyKinematic=false);
-  void pullDynamicStates(FrameL& frames, arr& frameVelocities=NoArr);
+  void pullDynamicStates(rai::Configuration& C, arr& frameVelocities=NoArr);
+
+  void setMotorQ(const arr& q_ref, const arr& qDot_ref);
 
   void changeObjectType(rai::Frame* f, int type);
   void postAddObject(rai::Frame* f);
@@ -36,4 +49,6 @@ struct PhysXInterface : GLDrawer {
 
   void addForce(rai::Vector& force, rai::Frame* b);
   void addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos);
+
+  rai::PhysX_Options& opt();
 };

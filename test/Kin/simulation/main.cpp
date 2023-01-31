@@ -16,8 +16,7 @@ void testPushes(){
   C["stick"]->set_Q()->setText("<t(-.3 .6 1.1) d(90 1 0 0) d(20 1 1 0)>");
   C.view(true);
 
-  rai::Simulation S(C, S._bullet, true);
-  //rai::Simulation S(C, S._physx, true);
+  rai::Simulation S(C, S._physx, 2);
 
   double tau=.01;
   Metronome tic(tau);
@@ -67,8 +66,7 @@ void testGrasp(){
 
   C.selectJointsByName({"finger1", "finger2"}, true);
 
-  rai::Simulation S(C, S._bullet, true);
-  //rai::Simulation S(C, S._physx, true);
+  rai::Simulation S(C, S._physx, 2);
 
   byteA rgb;
   floatA depth;
@@ -124,8 +122,7 @@ void testOpenClose(){
   RealWorld.addFile(rai::raiPath("../rai-robotModels/scenarios/liftRing.g"));
   RealWorld["box"]->set_Q()->setText("<t(.3 -.1 .25) d(40 1 1 0)>");
   RealWorld["stick"]->set_Q()->setText("<t(-.3 .6 1.1) d(90 1 0 0) d(20 1 1 0)>");
-  rai::Simulation S(RealWorld, S._bullet, true);
-  //rai::Simulation S(RealWorld, S._physx, true);
+  rai::Simulation S(RealWorld, S._physx, 2);
 
   rai::Configuration C;
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/liftRing.g"));
@@ -180,8 +177,7 @@ void testRndScene(){
 
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandasTable.g"));
 
-  rai::Simulation S(C, S._bullet, true);
-  //rai::Simulation S(C, S._physx, true);
+  rai::Simulation S(C, S._physx, 2);
   S.cameraview().addSensor("camera");
 
   byteA rgb;
@@ -220,8 +216,7 @@ void testFriction(){
 
   C["table"]->setQuaternion({1.,-.1,0.,0.}); //tilt the table!!
 
-  rai::Simulation S(C, S._bullet, true);
-  //rai::Simulation S(C, S._physx, true);
+  rai::Simulation S(C, S._physx, 2);
   S.cameraview().addSensor("camera");
 
   double tau=.01;
@@ -257,8 +252,7 @@ void testStackOfBlocks(){
 
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandasTable.g"));
 
-  rai::Simulation S(C, S._bullet, true);
-  //rai::Simulation S(C, S._physx, true);
+  rai::Simulation S(C, S._physx, 2);
 
   double tau=.01;  //jumps a bit for tau=.01
   Metronome tic(tau);
@@ -278,7 +272,7 @@ void testCompound(){
   rai::Configuration C;
   C.addFile(rai::raiPath("../rai-robotModels/tests/compound.g"));
 
-  rai::Simulation S(C, S._bullet, 4);
+  rai::Simulation S(C, S._physx, 4);
 
   double tau=.01;
   Metronome tic(tau);
@@ -296,8 +290,37 @@ void testCompound(){
 
 //===========================================================================
 
+void testMotors(){
+  rai::Configuration C;
+  C.addFile("../bullet/bots.g");
+//  C.addFile("../kin/arm3.g");
+  arr q0 = C.getJointState();
+  arr v0 = zeros(q0.N);
+
+  rai::Simulation S(C, S._physx, 4);
+  rai::wait();
+
+  double tau=.01;
+  Metronome tic(tau);
+
+  for(uint t=0;t<4./tau;t++){
+    tic.waitForTic();
+
+    S.step((q0,v0).reshape(2,-1), tau, S._pdRef);
+
+    write_ppm(S.getScreenshot(), STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
+  }
+
+  rai::wait();
+
+}
+
+//===========================================================================
+
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
+
+  testMotors(); return 0;
 
   testRndScene();
   testFriction();

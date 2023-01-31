@@ -443,7 +443,7 @@ LIBS += -lFreeSOLID
 endif
 
 ifeq ($(DART),1)
-CXXFLAGS += -DRAI_DART -std=c++14
+CXXFLAGS += -DRAI_DART
 CPATH := $(CPATH):$(HOME)/git/dart/build:$(HOME)/git/dart
 LPATHS += $(HOME)/git/dart/build/lib
 LIBS += -ldart-gui -ldart-utils-urdf -ldart-utils -ldart -lboost_system
@@ -451,11 +451,10 @@ endif
 
 ifeq ($(PHYSX),1)
 CXXFLAGS += -DRAI_PHYSX -D_DEBUG -DPX_DISABLE_FLUIDS -DCORELIB -DPX32 -DLINUX
-CPATH := $(CPATH):$(HOME)/opt/physx3.4/include:$(HOME)/opt/physx3.4/include/physx
-#PhysX/Include:$(RAI_LIBPATH)/PhysX/Include/extensions:$(RAI_LIBPATH)/PhysX/Include/foundation:$(RAI_LIBPATH)/PhysX/Include/deprecated
-LPATHS += $(HOME)/opt/physx3.4/lib
+CPATH := $(CPATH):$(HOME)/opt/PhysX5/include:$(HOME)/opt/PhysX5/include/physx
+#LPATHS += $(HOME)/opt/PhysX5/lib
 LIBS += -lpthread -lrt\
--lPhysX3Extensions -lPhysX3_x64 -lPhysX3Cooking_x64 -lPhysX3Common_x64 -lPxFoundation_x64
+-lPhysXExtensions_static_64 -lPhysX_64 -lPhysXCooking_64 -lPhysXCommon_64 -lPhysXFoundation_64
 
 #Physx-3.3:
 #-lLowLevel \

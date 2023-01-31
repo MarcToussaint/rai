@@ -1,5 +1,6 @@
 #include <Kin/frame.h>
 #include <Kin/kin_bullet.h>
+#include <Kin/kin_physx.h>
 #include <Kin/viewer.h>
 #include <Core/thread.h>
 
@@ -56,7 +57,8 @@ void simGfile(){
     SimInteract sim(C);
     sim.loop();
 #else
-    BulletInterface bull_rai(C);
+//    BulletInterface bull_rai(C);
+    PhysXInterface bull_rai(C);
 //    FrameL bots = C.getParts();
 //    for(auto& f:bots) if(f->ats && (*f->ats)["motors"]){
 //      bull_rai.motorizeMultiBody(f);
@@ -70,6 +72,7 @@ void simGfile(){
     for(uint t=0;t<5./tau;t++){
       bull_rai.step(tau);
       bull_rai.pullDynamicStates(C);
+      cout <<C.getJointState() <<endl;
 
       if(tau>glTau || !(t%int(glTau/tau))){
         int key = C.view(false, STRING("time t="<<tau*t));
@@ -87,7 +90,7 @@ void simGfile(){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  dropRandomScene();
+//  dropRandomScene();
   simGfile();
 
   return 0;

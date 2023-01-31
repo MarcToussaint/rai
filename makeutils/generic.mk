@@ -109,8 +109,7 @@ CXXFLAGS += -Wno-terminate -Wno-pragmas -fPIC
 CFLAGS += -fPIC
 
 ifndef RAI_NO_CXX11
-#CXXFLAGS += -std=c++0x
-CXXFLAGS += -std=c++17
+CXXFLAGS += -std=c++2a
 endif
 
 ifndef OPTIM

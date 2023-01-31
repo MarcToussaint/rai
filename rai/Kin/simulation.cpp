@@ -127,6 +127,7 @@ Simulation::Simulation(Configuration& _C, Simulation::SimulatorEngine _engine, i
     time(0.),
     engine(_engine),
     verbose(_verbose) {
+  C.ensure_indexedJoints();
   if(engine==_physx) {
     self->physx = make_shared<PhysXInterface>(C, verbose-1);
   } else if(engine==_bullet) {
@@ -195,8 +196,12 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   //-- call the physics ending
   if(engine==_physx) {
     self->physx->pushKinematicStates(C.frames);
+    if(self->physx->opt().jointedBodies){
+      if(ucontrol.nd!=2) LOG(1) <<"stepping motorized PhysX without ctrl reference";
+      else self->physx->setMotorQ(ucontrol[0], ucontrol[1]); //C.getJointState(), qDot);
+    }
     self->physx->step(tau);
-    self->physx->pullDynamicStates(C.frames, self->frameVelocities);
+    self->physx->pullDynamicStates(C, self->frameVelocities);
   } else if(engine==_bullet) {
     self->bullet->pushKinematicStates(C);
     if(self->bullet->opt().multiBody){
@@ -366,7 +371,7 @@ void Simulation::closeGripperGrasp(const char* gripperFrameName, const char* obj
 shared_ptr<SimulationState> Simulation::getState() {
   arr qdot;
   if(engine==_physx) {
-    self->physx->pullDynamicStates(C.frames, qdot);
+    self->physx->pullDynamicStates(C, qdot);
   } else if(engine==_bullet) {
     self->bullet->pullDynamicStates(C, qdot);
   } else NIY;
