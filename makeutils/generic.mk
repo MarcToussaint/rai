@@ -436,6 +436,10 @@ inPath_unity/%: $(BASE)/rai/%
 	@echo "                                                ***** unity.cxx " $<
 	@-$(MAKE) -C $< -f Makefile unity.cxx --no-print-directory
 
+inPath_unity/%: $(BASE2)/%
+	@echo "                                                ***** unity.cxx " $<
+	@-$(MAKE) -C $< -f Makefile unity.cxx --no-print-directory
+
 inPath_depend/%: %
 	@echo "                                                ***** depend " $<
 	@-$(MAKE) -C $< -f Makefile depend --no-print-directory

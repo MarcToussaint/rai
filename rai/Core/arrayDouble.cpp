@@ -1490,7 +1490,7 @@ inline void getStrides(uintA& stride, uintA& dim) {
 }
 
 //index and limit are w.r.t is the GLOBAL indexing!, j_stride w.r.t. the permuted
-inline void multiDimIncrement(uint& Ycount, uint* index, uint* limit, uint* Yinc, uint* Ydec, uint nd) {
+void multiDimIncrement(uint& Ycount, uint* index, uint* limit, uint* Yinc, uint* Ydec, uint nd) {
   uint k;
   for(k=nd; k--;) {
     Ycount+=Yinc[k];
@@ -1501,7 +1501,7 @@ inline void multiDimIncrement(uint& Ycount, uint* index, uint* limit, uint* Yinc
   }
 }
 
-inline void getMultiDimIncrement(const uintA& Xdim, const uintA& Yid, uint* Ydim, uint* Yinc, uint* Ydec) {
+void getMultiDimIncrement(const uintA& Xdim, const uintA& Yid, uint* Ydim, uint* Yinc, uint* Ydec) {
   uint i;
   memset(Ydim, 0, sizeof(uint)*maxRank);  for(i=0; i<Xdim.N; i++) if(i<Yid.N) Ydim[i]=Xdim(Yid.p[i]);    //dimension of Y
   memset(Yinc, 0, sizeof(uint)*maxRank);  Yinc[Yid.p[Yid.N-1]]=1;  for(i=Yid.N-1; i--;) Yinc[Yid.p[i]] = Ydim[i+1] * Yinc[Yid.p[i+1]];  //stride of Y

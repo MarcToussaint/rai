@@ -70,6 +70,10 @@ const char* arrayBrackets="[]";
 //===========================================================================
 }
 
+//declarations implemented in arrayDouble.cpp
+void multiDimIncrement(uint& Ycount, uint* index, uint* limit, uint* Yinc, uint* Ydec, uint nd);
+void getMultiDimIncrement(const uintA& Xdim, const uintA& Yid, uint* Ydim, uint* Yinc, uint* Ydec);
+
 
 arr& getNoArr(){
   static arr __noArr;
@@ -2718,25 +2722,6 @@ uintA differencing(const uintA& x, uint w) {
   return uintA();
 }
 
-//index and limit are w.r.t is the GLOBAL indexing!, j_stride w.r.t. the permuted
-inline void multiDimIncrement(uint& Ycount, uint* index, uint* limit, uint* Yinc, uint* Ydec, uint nd) {
-  uint k;
-  for(k=nd; k--;) {
-    Ycount+=Yinc[k];
-    index[k]++;
-    if(index[k]<limit[k]) break;  //we need the index only to decide when to overflow -- is there a more efficient way?
-    index[k]=0;
-    Ycount-=Ydec[k];
-  }
-}
-
-inline void getMultiDimIncrement(const uintA& Xdim, const uintA& Yid, uint* Ydim, uint* Yinc, uint* Ydec) {
-  uint i;
-  memset(Ydim, 0, sizeof(uint)*maxRank);  for(i=0; i<Xdim.N; i++) if(i<Yid.N) Ydim[i]=Xdim(Yid.p[i]);    //dimension of Y
-  memset(Yinc, 0, sizeof(uint)*maxRank);  Yinc[Yid.p[Yid.N-1]]=1;  for(i=Yid.N-1; i--;) Yinc[Yid.p[i]] = Ydim[i+1] * Yinc[Yid.p[i+1]];  //stride of Y
-  for(i=Xdim.N; i--;) Ydec[i] = Xdim(i)*Yinc[i];
-  //cout <<"Xdim=" <<Xdim <<"\nYid =" <<Yid <<"\nYdim=" <<uintA(Ydim, Yid.N) <<"\nYinc=" <<uintA(Yinc, Xdim.N) <<"\nYdec=" <<uintA(Ydec, Xdim.N) <<endl;
-}
 
 /** \f$Y_{i_Yid(0), i_Yid(1)} = \sum_{i_1} X_{i_0, i_1, i_2}\f$. Get the marginal Y
   from X, where Y will share the slots `Yid' with X */

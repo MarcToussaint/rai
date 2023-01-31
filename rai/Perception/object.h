@@ -6,8 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef OBJECT_H
-#define OBJECT_H
+#pragma once
+
+#ifdef RAI_PCL
 
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/point_cloud.h>
