@@ -867,6 +867,9 @@ btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape* s) {
       floatA V = rai::convert<float>(s->mesh().V);
 #endif
       colShape = new btConvexHullShape(V.p, V.d0, V.sizeT*V.d1);
+//      rai::Mesh& m = s->mesh();
+//      colShape = new btTriangleMeshShape();
+//      colShape = new btTriangleIndexVertexArray(m.T.d0, m.T.p, 3*m.T.sizeT, V.d0, V.p, 3*V.sizeT);
       colShape->setMargin(0.);
     } break;
     default: HALT("NIY" <<s->type());

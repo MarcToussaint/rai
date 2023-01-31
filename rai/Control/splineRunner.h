@@ -6,6 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#pragma once
+
 #include "../Algo/spline.h"
 
 namespace rai {

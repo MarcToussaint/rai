@@ -6,6 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#pragma once
+
+#ifdef RAI_PCL
+
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -36,3 +40,5 @@ void planeDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::ModelCoefficients:
 void planeDetectorWithNormals(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane);
 
 void substractPlane(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointIndices::Ptr inInliersPlane, pcl::PointCloud<PointT>::Ptr outCloud);
+
+#endif
