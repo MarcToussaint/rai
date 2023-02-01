@@ -33,7 +33,7 @@ struct PhysXInterface : GLDrawer {
 
   void step(double tau=.01);
 
-  void pushKinematicStates(const FrameL& frames);
+  void pushKinematicStates(const rai::Configuration& C);
   void pushFullState(const FrameL& frames, const arr& frameVelocities=NoArr, bool onlyKinematic=false);
   void pullDynamicStates(rai::Configuration& C, arr& frameVelocities=NoArr);
 
@@ -42,7 +42,6 @@ struct PhysXInterface : GLDrawer {
   void changeObjectType(rai::Frame* f, int type);
   void postAddObject(rai::Frame* f);
   void setArticulatedBodiesKinematic(const rai::Configuration& C);
-  void ShutdownPhysX();
 
   void glDraw(OpenGL&);
   void watch(bool pause=false, const char* txt=nullptr);

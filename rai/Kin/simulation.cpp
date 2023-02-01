@@ -127,7 +127,7 @@ Simulation::Simulation(Configuration& _C, Simulation::SimulatorEngine _engine, i
     time(0.),
     engine(_engine),
     verbose(_verbose) {
-  C.ensure_indexedJoints();
+  C.ensure_q();
   if(engine==_physx) {
     self->physx = make_shared<PhysXInterface>(C, verbose-1);
   } else if(engine==_bullet) {
@@ -160,32 +160,34 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
       imp->modControl(*this, ucontrol, tau, u_mode);
     }
 
-  //-- perform control using C
+  //-- define a reference depending on control mode (size zero means no reference)
+  arr q_ref, qDot_ref;
   time += tau;
   if(u_mode==_none) {
   } else if(u_mode==_position) {
-    C.setJointState(ucontrol);
+    q_ref = ucontrol;
   } else if(u_mode==_velocity) {
     arr q = C.getJointState();
     qDot = ucontrol;
     q += tau * qDot;
-    C.setJointState(q);
-  } else if(u_mode==_pdRef) {
+    q_ref = q;
+    qDot_ref = ucontrol;
+  } else if(u_mode==_posVel) {
     ucontrol.reshape(2,-1);
-//    C.setJointState(ucontrol[0]);
-//    qDot = ucontrol[1];
+    q_ref = ucontrol[0];
+    qDot_ref = ucontrol[1];
   } else if(u_mode==_acceleration) {
     arr q = C.getJointState();
     if(!qDot.N) qDot = zeros(q.N);
     q += .5 * tau * qDot;
     qDot += tau * ucontrol;
     q += .5 * tau * qDot;
-    C.setJointState(q);
+    q_ref = q;
+    qDot_ref = qDot;
   } else if(u_mode==_spline) {
     arr q = C.getJointState();
     if(!qDot.N) qDot = zeros(q.N);
-    self->ref.getReference(q, qDot, NoArr, q, qDot, time);
-    C.setJointState(q);
+    self->ref.getReference(q_ref, qDot_ref, NoArr, q, qDot, time);
   } else NIY;
 
   //-- imps before physics
@@ -195,10 +197,13 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   //-- call the physics ending
   if(engine==_physx) {
-    self->physx->pushKinematicStates(C.frames);
-    if(self->physx->opt().jointedBodies){
-      if(ucontrol.nd!=2) LOG(1) <<"stepping motorized PhysX without ctrl reference";
-      else self->physx->setMotorQ(ucontrol[0], ucontrol[1]); //C.getJointState(), qDot);
+    if(self->physx->opt().jointedBodies || self->physx->opt().multiBody){
+      self->physx->pushKinematicStates(C); //usually none anyway
+      self->physx->setMotorQ(q_ref, qDot_ref); //motor control
+    }else{
+      if(q_ref.N) C.setJointState(q_ref); //kinematic control
+      if(qDot_ref.N) qDot = qDot_ref;
+      self->physx->pushKinematicStates(C);
     }
     self->physx->step(tau);
     self->physx->pullDynamicStates(C, self->frameVelocities);
@@ -828,6 +833,10 @@ void Imp_NoPenetrations::modConfiguration(Simulation& S, double tau){
 
 uint& Simulation::pngCount(){
   return self->display->pngCount;
+}
+
+std::shared_ptr<PhysXInterface> Simulation::hidden_physx(){
+  return self->physx;
 }
 
 } //namespace rai

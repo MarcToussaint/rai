@@ -20,7 +20,7 @@ struct SimulationImp;
 //the default ctrl interface via low-level reference messages
 struct Simulation {
   enum SimulatorEngine { _physx, _bullet, _kinematic };
-  enum ControlMode { _none, _position, _velocity, _acceleration, _pdRef, _spline };
+  enum ControlMode { _none, _position, _velocity, _acceleration, _posVel, _spline };
   enum ImpType { _closeGripper, _openGripper, _depthNoise, _rgbNoise, _adversarialDropper, _objectImpulses, _blockJoints, _noPenetrations };
 
   std::unique_ptr<struct Simulation_self> self;
@@ -97,6 +97,8 @@ struct Simulation {
 
   //allow writing pics for video
   uint& pngCount();
+
+  std::shared_ptr<struct PhysXInterface> hidden_physx();
 };
 
 }

@@ -4,6 +4,7 @@
 #include <Kin/simulation.h>
 #include <Kin/viewer.h>
 #include <Kin/F_geometrics.h>
+#include <Kin/kin_physx.h>
 
 #include <iomanip>
 
@@ -64,9 +65,11 @@ void testGrasp(){
   C["box"]->set_Q()->setText("<t(.3 -.1 .25) d(40 1 1 0)>");
   C["stick"]->set_Q()->setText("<t(-.3 .6 1.1) d(90 1 0 0) d(20 1 1 0)>");
 
-  C.selectJointsByName({"finger1", "finger2"}, true);
+  arr q = C.getJointState();
 
   rai::Simulation S(C, S._physx, 2);
+
+//  OpenGL gl;  gl.add(glStandardScene);  gl.add(*S.hidden_physx());
 
   byteA rgb;
   floatA depth;
@@ -82,7 +85,7 @@ void testGrasp(){
 
     if(!(t%10)) S.getImageAndDepth(rgb, depth); //we don't need images with 100Hz, rendering is slow
 
-    arr q = C.getJointState();
+    //q = C.getJointState();
 
     //some good old fashioned IK
     if(t<=500){
@@ -112,6 +115,7 @@ void testGrasp(){
     }
 
     S.step(q, tau, S._position);
+    //gl.update();
   }
 }
 
@@ -306,7 +310,7 @@ void testMotors(){
   for(uint t=0;t<4./tau;t++){
     tic.waitForTic();
 
-    S.step((q0,v0).reshape(2,-1), tau, S._pdRef);
+    S.step((q0,v0).reshape(2,-1), tau, S._posVel);
 
     write_ppm(S.getScreenshot(), STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
   }
@@ -320,8 +324,7 @@ void testMotors(){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  testMotors(); return 0;
-
+//  testMotors();
   testRndScene();
   testFriction();
   testStackOfBlocks();
