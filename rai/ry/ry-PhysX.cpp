@@ -12,6 +12,7 @@
 #include "ry-Config.h"
 #include "types.h"
 
+#include "../Core/util.h"
 #include "../Kin/kin_physx.h"
 
 void init_PhysX(pybind11::module& m) {
@@ -20,14 +21,14 @@ void init_PhysX(pybind11::module& m) {
       .def("step", &PhysXInterface::step)
 
   .def("step", [](PhysXInterface& self, shared_ptr<rai::Configuration>& C) {
-    self.pushKinematicStates(C->frames);
+    self.pushKinematicStates(*C);
     self.step();
-    self.pullDynamicStates(C->frames);
+    self.pullDynamicStates(*C);
   })
 
   .def("getState", [](PhysXInterface& self, shared_ptr<rai::Configuration>& C) {
     arr V;
-    self.pullDynamicStates(C->frames, V);
+    self.pullDynamicStates(*C, V);
     return arr2numpy(V);
   })
 

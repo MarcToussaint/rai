@@ -8,7 +8,6 @@
 
 #include "audio.h"
 #include <iostream>
-using namespace std;
 
 #include "../Core/util.h"
 

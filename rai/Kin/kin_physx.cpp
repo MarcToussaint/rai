@@ -238,6 +238,8 @@ void PhysXInterface_self::addLink(rai::Frame* f) {
 
   addShapesAndInertia(actor, shapes, type, f);
 
+  actor->setAngularDamping(opt.angularDamping);
+
   gScene->addActor(*actor);
 
   actor->userData = f;
@@ -557,8 +559,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     case rai::ST_capsule:
     case rai::ST_cylinder:
     case rai::ST_ssBox:
-    case rai::ST_ssCvx:
-    case rai::ST_mesh: {
+    case rai::ST_ssCvx: {
       // Note: physx can't decompose meshes itself.
       // Physx doesn't support triangle meshes in dynamic objects! See:
       // file:///home/mtoussai/lib/PhysX/Documentation/PhysXGuide/Manual/Shapes.html
@@ -574,6 +575,32 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
                                      PxConvexFlag::eCOMPUTE_CONVEX);
       geometry = new PxConvexMeshGeometry(triangleMesh);
     } break;
+    case rai::ST_mesh: {
+      rai::Mesh &M = s->mesh();
+      CHECK(M.cvxParts.N, "needs to be decomposed");
+      floatA Vfloat;
+      for(uint i=0;i<M.cvxParts.N;i++){
+        Vfloat.clear();
+        int start = M.cvxParts(i);
+        int end = i+1<M.cvxParts.N ? M.cvxParts(i+1) : -1;
+        copy(Vfloat, M.V({start, end}));
+        PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
+                                       *core->mPhysics, *core->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
+                                       PxConvexFlag::eCOMPUTE_CONVEX);
+        geometry = new PxConvexMeshGeometry(triangleMesh);
+        PxShape* shape = core->mPhysics->createShape(*geometry, *defaultMaterial);
+        actor->attachShape(*shape);
+        if(&s->frame!=f) {
+          if(s->frame.parent==f) {
+            shape->setLocalPose(conv_Transformation2PxTrans(s->frame.get_Q()));
+          } else {
+            rai::Transformation rel = s->frame.ensure_X() / f->ensure_X();
+            shape->setLocalPose(conv_Transformation2PxTrans(rel));
+          }
+        }
+      }
+      geometry=0;
+    }
     case rai::ST_camera:
     case rai::ST_marker: {
       geometry = nullptr;
@@ -612,20 +639,19 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes
 
   //-- set inertia
   if(type != rai::BT_static) {
-    if(f->inertia && f->inertia->mass>0.) {
+    if(false && f->inertia && f->inertia->mass>0.) {
       //PxRigidBodyExt::updateMassAndInertia(*actor, f->inertia->mass);
       actor->setMass(f->inertia->mass);
       actor->setMassSpaceInertiaTensor({float(f->inertia->matrix.m00), float(f->inertia->matrix.m11), float(f->inertia->matrix.m22)});
       //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
     } else {
       PxRigidBodyExt::updateMassAndInertia(*actor, 1000.f);
-      new rai::Inertia(*f);
+      if(!f->inertia) new rai::Inertia(*f);
       f->inertia->mass = actor->getMass();
       f->inertia->matrix.setDiag(conv_PxVec3_arr( actor->getMassSpaceInertiaTensor() ));
       f->inertia->com = conv_PxVec3_arr( actor->getCMassLocalPose().p );
       cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
     }
-    actor->setAngularDamping(opt.angularDamping);
   }
 }
 

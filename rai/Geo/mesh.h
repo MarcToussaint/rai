@@ -39,6 +39,7 @@ struct Mesh : GLDrawer {
   byteA texImg;         ///< texture image
   int texture=-1;       ///< GL texture name created with glBindTexture
 
+  uintA cvxParts;
   uintAA graph;         ///< for every vertex, the set of neighboring vertices
   shared_ptr<ANN> ann;
 
@@ -86,9 +87,13 @@ struct Mesh : GLDrawer {
   Vector center();
   void box();
   void addMesh(const rai::Mesh& mesh2, const rai::Transformation& X=0);
+  void addConvex(const arr& points, const arr& color=NoArr);
   void makeConvexHull();
   void makeTriangleFan();
   void makeLineStrip();
+
+  /// @name convex decomposition
+  rai::Mesh decompose();
 
   /// @name support function
   uint support(const double* dir);

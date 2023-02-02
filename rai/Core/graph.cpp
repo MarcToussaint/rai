@@ -130,7 +130,7 @@ bool Node::matches(const StringA& query_keys) {
   return true;
 }
 
-void Node::write(std::ostream& os, bool yamlMode) const {
+void Node::write(std::ostream& os, bool yamlMode, bool binary) const {
   if(!container.isIndexed) container.index();
 
   //-- write keys
@@ -203,13 +203,13 @@ void Node::write(std::ostream& os, bool yamlMode) const {
   } else if(isOfType<FileToken>()) {
     os <<'\'' <<getValue<FileToken>()->fullPath() <<'\'';
   } else if(isOfType<arr>()) {
-    getValue<arr>()->write(os, ", ", nullptr, "[]");
+    getValue<arr>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(isOfType<intA>()) {
-    getValue<intA>()->write(os, ", ", nullptr, "[]");
+    getValue<intA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(isOfType<intAA>()) {
     getValue<intAA>()->write(os, ", ", nullptr, "[]");
   } else if(isOfType<uintA>()) {
-    getValue<uintA>()->write(os, ", ", nullptr, "[]");
+    getValue<uintA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(isOfType<StringA>()) {
     os <<"[";
     for(const String& s:get<StringA>()) os <<'\"' <<s <<"\", ";
@@ -593,6 +593,13 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
 }
 
 void Graph::read(std::istream& is, bool parseInfo) {
+  bool expectBraces=false;
+  char c=peerNextChar(is, " \n\r\t", true);
+  if(c=='{') {
+    is >>PARSE("{");
+    expectBraces=true;
+  }
+
   uint Nbefore = N;
   if(parseInfo) getParseInfo(nullptr).beg=is.tellg();
   String namePrefix;
@@ -641,6 +648,11 @@ void Graph::read(std::istream& is, bool parseInfo) {
       for(Node* d: all) { delete d; d=nullptr; }
     }
   }
+
+  if(expectBraces) {
+    is >>PARSE("}");
+  }
+
   if(parseInfo) getParseInfo(nullptr).end=is.tellg();
 
   DEBUG(checkConsistency());
@@ -804,7 +816,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
           }else if(type=='i'){ //intA
             is.putback('[');
             newNode<intA>(key, parents)->value.read(is);
-          }else if(type=='u'){ //uintA
+          }else if(type=='j'){ //uintA
             is.putback('[');
             newNode<uintA>(key, parents)->value.read(is);
           }else if(type=='b'){ //byteA
@@ -1017,11 +1029,11 @@ void Graph::readJson(std::istream& is) {
 
 #undef PARSERR
 
-void Graph::write(std::ostream& os, const char* ELEMSEP, const char* BRACKETS, bool yamlMode) const {
+void Graph::write(std::ostream& os, const char* ELEMSEP, const char* BRACKETS, bool yamlMode, bool binary) const {
   uint BRACKETSlength=0;
   if(BRACKETS) BRACKETSlength=strlen(BRACKETS);
   for(uint b=0; b<BRACKETSlength/2; b++) os <<BRACKETS[b];
-  for(uint i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) elem(i)->write(os, yamlMode); else os <<"<nullptr>"; }
+  for(uint i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) elem(i)->write(os, yamlMode, binary); else os <<"<nullptr>"; }
   for(uint b=BRACKETSlength/2; b<BRACKETSlength; b++) os <<BRACKETS[b];
   os <<std::flush;
 }

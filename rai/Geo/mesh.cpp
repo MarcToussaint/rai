@@ -11,6 +11,7 @@
 #include "mesh_readAssimp.h"
 
 #include "../Optim/newton.h"
+#include "../Core/graph.h"
 
 #include <limits>
 #include <algorithm>
@@ -23,6 +24,11 @@
 #ifdef RAI_GL
 #  include <GL/glew.h>
 #  include <GL/gl.h>
+#endif
+
+#ifdef RAI_VHACD
+#  define ENABLE_VHACD_IMPLEMENTATION 1
+#  include "vhacd/VHACD.h"
 #endif
 
 extern void glColorId(uint id);
@@ -409,22 +415,31 @@ void rai::Mesh::addMesh(const Mesh& mesh2, const rai::Transformation& X) {
     if(C.nd==2) C.clear();
   }
   V.append(mesh2.V);
-  tex.append(mesh2.tex);
   T.append(mesh2.T);
   for(; t<T.d0; t++) {  T(t, 0)+=n;  T(t, 1)+=n;  T(t, 2)+=n;  }
+
   if(mesh2.Tt.N){
+    tex.append(mesh2.tex);
     Tt.append(mesh2.Tt);
     for(; tt<Tt.d0; tt++) {  Tt(tt, 0)+=tn;  Tt(tt, 1)+=tn;  Tt(tt, 2)+=tn;  }
-  }else{
+  }else if(Tt.N){
     Tt.append(consts<uint>(0, mesh2.T.d0, 3));
-  }
-  if(!X.isZero()) {
-    X.applyOnPointArray(V({n, -1}).noconst());
   }
   if(mesh2.texImg.N){
 //    CHECK(!texImg.N, "can't append texture images");
     texImg = mesh2.texImg;
   }
+  if(!X.isZero()) {
+    X.applyOnPointArray(V({n, -1}).noconst());
+  }
+}
+
+void rai::Mesh::addConvex(const arr& points, const arr& color){
+  rai::Mesh sub;
+  sub.V = getHull(points, sub.T);
+  if(!!color) sub.C = color;
+  cvxParts.append(V.d0);
+  addMesh(sub);
 }
 
 void rai::Mesh::makeConvexHull() {
@@ -476,6 +491,33 @@ void rai::Mesh::makeLineStrip() {
   for(uint i=1; i<V.d0; i++) {
     T[i-1] = {i-1, i};
   }
+}
+
+arr id2color(uint id);
+
+rai::Mesh rai::Mesh::decompose(){
+  rai::Mesh M;
+#ifdef RAI_VHACD
+  VHACD::IVHACD::Parameters p;
+  VHACD::IVHACD *iface = VHACD::CreateVHACD();
+  iface->Compute(V.p, V.d0, T.p, T.d0, p);
+
+  rai::Mesh c;
+  VHACD::IVHACD::ConvexHull ch;
+  for(uint i=0; i<iface->GetNConvexHulls(); i++){
+    iface->GetConvexHull(i,ch);
+    c.clear();
+    c.V.referTo(ch.m_points, 3*ch.m_nPoints).reshape(-1,3);
+    c.T.referTo(ch.m_triangles, 3*ch.m_nTriangles).reshape(-1,3);
+    c.C = id2color(i);
+    M.cvxParts.append(M.V.d0);
+    M.addMesh(c);
+  }
+  iface->Release();
+#else
+  NICO
+#endif
+  return M;
 }
 
 void rai::Mesh::setSSCvx(const arr& core, double r, uint fineness) {
@@ -1420,19 +1462,24 @@ void rai::Mesh::readPLY(const char* fn) { NICO }
 #endif
 
 void rai::Mesh::writeArr(std::ostream& os) {
-  V.writeTagged(os, "V", true);
-  T.writeTagged(os, "T", true);
-  C.writeTagged(os, "C", true);
-  tex.writeTagged(os, "tex", true);
-  texImg.writeTagged(os, "texImg", true);
+  rai::Graph G;
+  G.add(V, "V");
+  G.add(T, "T");
+  if(C.N) G.add(C, "C");
+  if(cvxParts.N) G.add(cvxParts, "cvxParts");
+  if(tex.N) G.add(tex, "tex");
+  if(texImg.N) G.add(texImg.N, "texImg");
+  G.write(os, ",\n","{\n\n}", false, true);
 }
 
 void rai::Mesh::readArr(std::istream& is) {
-  V.readTagged(is, "V");
-  T.readTagged(is, "T");
-  C.readTagged(is, "C");
-  tex.readTagged(is, "tex");
-  texImg.readTagged(is, "texImg");
+  rai::Graph G(is);
+  G.get(V, "V");
+  G.get(T, "T");
+  G.get(C, "C");
+  G.get(cvxParts, "cvxParts");
+  G.get(tex, "tex");
+  G.get(texImg, "texImg");
 }
 
 

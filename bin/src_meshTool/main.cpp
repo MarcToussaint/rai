@@ -8,9 +8,9 @@
 
 const char *USAGE=
 "\n\
-Usage:  meshTools file.[tri|obj|off|ply|stl|dea] <tags...>\n\
+Usage:  meshTools file.* <tags...>\n\
 \n\
-Tags can be -view, -box, -fuse, -clean, -center, -scale, -save, -qhull, -flip \n";
+Tags can be -hide, -box, -fuse, -clean, -center, -scale, -save, -qhull, -flip \n";
 
 void drawInit(void*, OpenGL& gl){
   glStandardLight(nullptr, gl);
@@ -25,20 +25,28 @@ void TEST(MeshTools) {
   if(rai::argc>=2) file=rai::argv[1];
   else HALT("the first argument needs to be a mesh file");
 
-  cout <<"FILE=" <<file <<endl;
+  cout <<"== mesh file: " <<file <<endl;
+
   OpenGL *gl=nullptr;
 
   rai::Mesh mesh;
   mesh.readFile(file);
 
-  cout <<"#vertices = " <<mesh.V.d0 <<" #triangles=" <<mesh.T.d0 <<"bounding box: = " <<max(mesh.V, 0) <<'-' <<min(mesh.V, 0) <<endl;
-//  mesh.C.clear();
-
+  bool edited=false;
   file(file.N-4)=0; //replace . by 0
 
   //modify
-  if(rai::checkCmdLineTag("view")){
-    cout <<"viewing..." <<endl;
+  if(!rai::checkCmdLineTag("hide")){
+    cout <<"== mesh info ==";
+    cout <<"  #vertices: " <<mesh.V.d0
+        <<"\n  #triangles: " <<mesh.T.d0
+       <<"\n  bounds: " <<mesh.getBounds()
+      <<"\n  center: " <<mesh.getMean()
+     <<"\n  area: " <<mesh.getArea()
+    <<"\n  volume: " <<mesh.getVolume()
+    <<"\n  cvxParts: " <<mesh.cvxParts.N
+    <<endl;
+
     if(!gl) gl=new OpenGL;
     gl->clear();
     gl->text = "before operations";
@@ -46,83 +54,80 @@ void TEST(MeshTools) {
     gl->add(mesh);
     gl->watch();
   }
-  if(rai::checkCmdLineTag("box")){
-    cout <<"box" <<endl;
-    mesh.box();
-  }
+
   if(rai::checkCmdLineTag("scale")){
     double s;
     rai::getParameter(s,"scale");
-    cout <<"scale " <<s <<endl;
+    cout <<"  scaling.. " <<s <<endl;
     mesh.scale(s);
+    edited=true;
   }
+
   if(rai::checkCmdLineTag("qhull")){
-    cout <<"qhull..." <<endl;
+    cout <<"  making convex.." <<endl;
     mesh.deleteUnusedVertices();
 #ifdef RAI_QHULL
     getTriangulatedHull(mesh.T,mesh.V);
 #else
     RAI_MSG("can'd use qhull - compiled without RAI_QHULL flag");
 #endif
+    edited=true;
   }
+
   if(rai::checkCmdLineTag("fuse")){
     double f = rai::getParameter<double>("fuse");
-    cout <<"fuse near vertices " <<f <<endl;
+    cout <<"  fusing near vertices.. " <<f <<endl;
     mesh.fuseNearVertices(f);
+    edited=true;
   }
-  if(rai::checkCmdLineTag("clean")){
-    cout <<"clean" <<endl;
-    mesh.clean();
-  }
-  if(rai::checkCmdLineTag("flip")){
-    cout <<"flip flaces" <<endl;
-    mesh.flipFaces();
-  }
-  if(rai::checkCmdLineTag("center")){
-    cout <<"center" <<endl;
-    mesh.center();
-  }
-  // if(rai::checkCmdLineTag("swift")){
-  //   mesh.writeTriFile(STRING(file<<"_x.tri"));
-  //   rai::String cmd;
-  //   cmd <<"decomposer_c-vs6d.exe -df " <<file <<"_x.dcp -hf " <<file <<"_x.chr " <<file <<"_x.tri";
-  //   cout <<"swift: " <<cmd <<endl;
-  //   if(::system(cmd)) RAI_MSG("system call failed");
-  // }
-  // if(rai::checkCmdLineTag("decomp")){
-  //   NIY;
-  //   // cout <<"decomposing..." <<endl;
-  //   // intA triangleAssignments;
-  //   // rai::Array<rai::Array<uint> > shapes;
-  //   // decompose(mesh, STRING(file<<"_x.dcp"), triangleAssignments, shapes);
-  //   // mesh.C.resize(mesh.T.d0,3);
-  //   // for(uint t=0;t<mesh.T.d0;t++){
-  //   //   rai::Color col;
-  //   //   col.setIndex(triangleAssignments(t));
-  //   //   mesh.C(t,0) = col.r;  mesh.C(t,1) = col.g;  mesh.C(t,2) = col.b;
-  //   // }
-  // }
-  cout <<"#vertices = " <<mesh.V.d0 <<" #triangles=" <<mesh.T.d0 <<endl;
 
-  if(rai::checkCmdLineTag("view")){
-    cout <<"viewing..." <<endl;
+  if(rai::checkCmdLineTag("clean")){
+    cout <<"  cleaning.. " <<endl;
+    mesh.clean();
+    edited=true;
+  }
+
+  if(rai::checkCmdLineTag("flip")){
+    cout <<"  flipping flaces.. " <<endl;
+    mesh.flipFaces();
+    edited=true;
+  }
+
+  if(rai::checkCmdLineTag("center")){
+    cout <<"  centering.." <<endl;
+    mesh.center();
+    edited=true;
+  }
+
+   if(rai::checkCmdLineTag("decomp")){
+     cout <<"  decomposing..." <<endl;
+     rai::Mesh M = mesh.decompose();
+     mesh = M;
+     edited=true;
+   }
+
+  if(edited && !rai::checkCmdLineTag("hide")){
+    cout <<"== after edit ==";
+    cout <<"  #vertices: " <<mesh.V.d0
+        <<"\n  #triangles: " <<mesh.T.d0
+       <<"\n  bounds: " <<mesh.getBounds()
+      <<"\n  center: " <<mesh.getMean()
+     <<"\n  area: " <<mesh.getArea()
+    <<"\n  volume: " <<mesh.getVolume()
+    <<"\n  cvxParts: " <<mesh.cvxParts.N
+    <<endl;
+
     if(!gl) gl=new OpenGL;
     gl->clear();
     gl->text = "after operations";
     gl->add(drawInit);
     gl->add(mesh);
     gl->watch();
-  }
-  if(rai::checkCmdLineTag("save")){
-    cout <<"saving..." <<endl;
-    cout << "\tto " << file <<"_x.tri" << endl;
-    mesh.writeTriFile(STRING(file<<"_x.tri"));
-    cout << "\tto " << file <<"_x.off" << endl;
-    mesh.writeOffFile(STRING(file<<"_x.off"));
-    cout << "\tto " << file <<"_x.ply" << endl;
-    mesh.writePLY(STRING(file<<"_x.ply"), true);
-  }
 
+    cout <<"  saving.. to z.*" <<endl;
+    mesh.writePLY("z.ply", true);
+    mesh.writeArr(FILE("z.arr"));
+  }
 }
 
 int MAIN(int argc, char** argv){
@@ -130,5 +135,5 @@ int MAIN(int argc, char** argv){
 
   testMeshTools();
 
-  return 1;
+  return 0;
 }

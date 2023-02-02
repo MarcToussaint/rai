@@ -1167,16 +1167,17 @@ template<class T> void Array<T>::setRandomPerm(int n) {
 }
 
 /// 'this' becomes a copy (not reference to!) of the 1D C array
-template<class T> void Array<T>::setCarray(const T* buffer, uint D0) {
+template<class T> Array<T>& Array<T>::setCarray(const T* buffer, uint D0) {
   if(N!=D0) resize(D0);
   uint i;
   if(memMove && typeid(T)==typeid(T))
     memmove(p, buffer, sizeT*d0);
   else for(i=0; i<d0; i++) operator()(i)=(T)buffer[i];
+  return *this;
 }
 
 /// 'this' becomes a copy (not reference to!) of the 2D C array
-template<class T> void Array<T>::setCarray(const T** buffer, uint D0, uint D1) {
+template<class T> Array<T>& Array<T>::setCarray(const T** buffer, uint D0, uint D1) {
   resize(D0, D1);
   uint i, j;
   for(i=0; i<d0; i++) {
@@ -1184,6 +1185,7 @@ template<class T> void Array<T>::setCarray(const T** buffer, uint D0, uint D1) {
       memmove(p+i*d1, buffer[i], sizeT*d1);
     else for(j=0; j<d1; j++) operator()(i, j)=(T)buffer[i][j];
   }
+  return *this;
 }
 
 /// make this array a reference to the array \c a
@@ -1519,7 +1521,9 @@ template<class T> void Array<T>::write(std::ostream& os, const char* ELEMSEP, co
   if(!LINESEP) LINESEP=arrayLinesep;
   if(!BRACKETS) BRACKETS=arrayBrackets;
 
+  if(BRACKETS[0]) os <<BRACKETS[0];
   if(binary) {
+    os <<typeid(T).name();
     writeDim(os);
     os <<endl;
     os.put(0);
@@ -1527,7 +1531,6 @@ template<class T> void Array<T>::write(std::ostream& os, const char* ELEMSEP, co
     os.put(0);
     os <<endl;
   } else {
-    if(BRACKETS[0]) os <<BRACKETS[0];
     if(dimTag || nd>3) { os <<' '; writeDim(os); if(nd==2) os <<'\n'; else os <<' '; }
     if(nd>=3) os <<'\n';
     if(nd==0 && N==1) {
@@ -1555,8 +1558,8 @@ template<class T> void Array<T>::write(std::ostream& os, const char* ELEMSEP, co
         os <<(i?ELEMSEP:"") <<elem(i);
       }
     }
-    if(BRACKETS[1]) os <<BRACKETS[1];
   }
+  if(BRACKETS[1]) os <<BRACKETS[1];
 }
 
 /** @brief prototype for operator>>, if there is a dimensionality tag: fast reading of ascii (if there is brackets[]) or binary (if there is \\0\\0 brackets) data; otherwise slow ascii read */
