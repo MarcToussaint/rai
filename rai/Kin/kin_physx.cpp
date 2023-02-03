@@ -809,8 +809,8 @@ void PhysXInterface::pushKinematicStates(const rai::Configuration& C) {
   }
 }
 
-void PhysXInterface::pushFullState(const FrameL& frames, const arr& frameVelocities, bool onlyKinematic) {
-  for(rai::Frame* f : frames) {
+void PhysXInterface::pushFullState(const rai::Configuration& C, const arr& frameVelocities, bool onlyKinematic) {
+  for(rai::Frame* f : C.frames) {
     if(self->actors.N <= f->ID) continue;
     PxRigidActor* a = self->actors(f->ID);
     if(!a) continue; //f is not an actor
@@ -965,20 +965,22 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose) : self(
 PhysXInterface::~PhysXInterface() { NICO }
 
 void PhysXInterface::step(double tau) { NICO }
-void PhysXInterface::pushKinematicStates(const FrameL& frames) { NICO }
-void PhysXInterface::pushFullState(const FrameL& frames, const arr& vels, bool onlyKinematic) { NICO }
-void PhysXInterface::pullDynamicStates(FrameL& frames, arr& vels) { NICO }
+void PhysXInterface::pushKinematicStates(const rai::Configuration& C) { NICO }
+void PhysXInterface::pushFullState(const rai::Configuration& C, const arr& vels, bool onlyKinematic) { NICO }
+void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& vels) { NICO }
+void PhysXInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){ NICO }
 void PhysXInterface::postAddObject(rai::Frame* f) { NICO }
 
 void PhysXInterface::changeObjectType(rai::Frame* f, int _type) { NICO }
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) { NICO }
-void PhysXInterface::ShutdownPhysX() { NICO }
 void PhysXInterface::watch(bool pause, const char* txt) { NICO }
 void PhysXInterface::glDraw(OpenGL&) { NICO }
 void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b) { NICO }
 void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos) { NICO }
 
 void glPhysXInterface(void* classP) { NICO }
+
+rai::PhysX_Options& PhysXInterface::opt(){ NICO }
 
 #endif
 

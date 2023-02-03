@@ -34,7 +34,7 @@ struct PhysXInterface : GLDrawer {
   void step(double tau=.01);
 
   void pushKinematicStates(const rai::Configuration& C);
-  void pushFullState(const FrameL& frames, const arr& frameVelocities=NoArr, bool onlyKinematic=false);
+  void pushFullState(const rai::Configuration& C, const arr& frameVelocities=NoArr, bool onlyKinematic=false);
   void pullDynamicStates(rai::Configuration& C, arr& frameVelocities=NoArr);
 
   void setMotorQ(const arr& q_ref, const arr& qDot_ref);

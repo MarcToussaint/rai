@@ -390,7 +390,7 @@ void Simulation::setState(const arr& frameState, const arr& frameVelocities) {
 
 void Simulation::pushConfigurationToSimulator(const arr& frameVelocities) {
   if(engine==_physx) {
-    self->physx->pushFullState(C.frames, frameVelocities);
+    self->physx->pushFullState(C, frameVelocities);
   } else if(engine==_bullet) {
     self->bullet->pushFullState(C, frameVelocities);
   } else NIY;
