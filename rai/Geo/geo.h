@@ -83,6 +83,7 @@ struct Matrix {
   void setRandom(double range=1.);
   void setId();
   void setDiag(const arr& diag);
+  void setSymmetric(const arr& entries6);
   void setFrame(Vector&, Vector&, Vector&);
   void setInvFrame(Vector&, Vector&, Vector&);
   void setXrot(double);

@@ -1005,8 +1005,8 @@ void FeatherstoneInterface::fwdDynamics_MF(arr& qdd,
 
   arr M, Minv, F;
   equationOfMotion(M, F, qd);
-  inverse(Minv, M);
-//  inverse_SymPosDef(Minv, M);
+//  inverse(Minv, M);
+  inverse_SymPosDef(Minv, M);
 
   qdd = Minv * (u - F);
 }

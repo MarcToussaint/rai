@@ -732,8 +732,8 @@ struct SparseMatrix : SpecialArray {
   void rowShift(int shift); //shift all rows to the right
   void colShift(int shift); //shift all cols downward
   //computations
-  arr At_x(const arr& x);
-  arr At_A();
+  arr At_x(const arr& x, bool transpose=true) const;
+  arr At_A() const;
   arr A_B(const arr& B) const;
   arr B_A(const arr& B) const;
   void transpose();

@@ -342,13 +342,87 @@ arr TimingProblem::getPosJacobian(const rai::CubicSpline& S, const arr& timeGrid
     arr _v1 = vJ(k);
     arr tauJ = Jtau(k);
 
-    arr p = rai::CubicSplinePos(trel, _x0, _v0, _x1, _v1, tau(k), tauJ);
+    arr pk;
+    rai::CubicSplinePosVel(pk, NoArr, trel, _x0, _v0, _x1, _v1, tau(k), tauJ);
     if(!J.N){
-      J.sparse().resize(timeGrid.N*p.N, p.J().d1, 0);
+      J.sparse().resize(timeGrid.N*pk.N, pk.J().d1, 0);
     }
-    J.sparse().add(p.J(), i*p.N, 0);
+    J.sparse().add(pk.J(), i*pk.N, 0);
   }
   return J;
+}
+
+arr TimingProblem::getAccJacobian(const rai::CubicSpline& S, const arr& timeGrid, const arr& a_check){
+  arr times = integral(tau);  times.prepend(0.);
+  arr J;
+  CHECK_EQ(a_check.d0, timeGrid.N, "");
+  for(uint i=0;i<timeGrid.N;i++){
+    double t = timeGrid(i);
+    uint k = S.getPiece(t);
+    CHECK_GE(t, times(k), "");
+    CHECK_LE(t, times(k+1)+1e-6, "");
+    double trel = t-times(k);
+
+    //get x0,v0,x1,v1,tau with (trivial) jacobians
+    arr _x0 = xJ((int)k-1);
+    arr _v0 = vJ((int)k-1);
+    arr _x1 = xJ(k);
+    arr _v1 = vJ(k);
+    arr tauJ = Jtau(k);
+
+    arr a = rai::CubicSplineAcc(trel, _x0, _v0, _x1, _v1, tau(k), tauJ);
+    CHECK_ZERO(maxDiff(a_check[i], a), 1e-6, STRING(a_check[i]<<" vs  "<< a));
+    if(!J.N){
+      J.sparse().resize(timeGrid.N*a.N, a.J().d1, 0);
+    }
+    J.sparse().add(a.J(), i*a.N, 0);
+  }
+  return J;
+}
+
+void TimingProblem::getDiffAcc(arr& pos, arr& vel, arr& acc, uint pieceSubSamples){
+  CHECK_EQ(pieceSubSamples, 1, "");
+
+  //-- read the decision variables tau, v, refine-waypoints from x
+  uint K = waypoints.d0;
+  uint d = waypoints.d1;
+
+  //output variables
+  pos.resize(K*d*pieceSubSamples).setZero();
+  pos.J().sparse().resize(pos.N, dimension, 0);
+
+  vel.resize(K*d*pieceSubSamples).setZero();
+  vel.J().sparse().resize(vel.N, dimension, 0);
+
+  acc.resize(K*d*pieceSubSamples).setZero();
+  acc.J().sparse().resize(acc.N, dimension, 0);
+  uint m=0;
+
+  // loop through segments for other objectives
+  for(uint k=0;k<K;k++){
+    //get x0,v0,x1,v1,tau with (trivial) jacobians
+    arr _x0 = xJ((int)k-1);
+    arr _v0 = vJ((int)k-1);
+    arr _x1 = xJ(k);
+    arr _v1 = vJ(k);
+    arr tauJ = Jtau(k);
+
+    arr pk, vk;
+    rai::CubicSplinePosVel(pk, vk, 0., _x0, _v0, _x1, _v1, tau(k), tauJ);
+    pos.setVectorBlock(pk, m); //also sets J
+    vel.setVectorBlock(vk, m);
+
+    arr ak = rai::CubicSplineAcc(0., _x0, _v0, _x1, _v1, tau(k), tauJ);
+    acc.setVectorBlock(ak, m);
+
+    m += ak.N;
+  }
+  CHECK_EQ(m, pos.N, "");
+  CHECK_EQ(m, acc.N, "");
+
+  pos.reshape(K*pieceSubSamples, -1);
+  vel.reshape(K*pieceSubSamples, -1);
+  acc.reshape(K*pieceSubSamples, -1);
 }
 
 arr TimingProblem::xJ(int k){

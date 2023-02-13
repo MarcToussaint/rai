@@ -26,7 +26,6 @@ void TEST(Dynamics){
 //  rai::Configuration C("mypr2.g");
   C.optimizeTree(true);
   C.sortFrames();
-  cout <<C <<endl;
 
   arr u;
   bool friction=false;

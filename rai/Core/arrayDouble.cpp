@@ -896,9 +896,9 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
         else x.J() = y.noJ() * (*z.jac) + ~z.noJ() * (*y.jac);
       }
     }else{
-      if(rai::useLapack && typeid(double)==typeid(double)) {
-        blas_Mv(x, y, z);
-      }else{
+      if(isSparseMatrix(y)) { x = y.sparse().At_x(z, false); }
+      else if(rai::useLapack){ blas_MM(x, y, z); }
+      else{
         uint i, d0=y.d0, dk=y.d1;
         double* a, *astop, *b, *c;
         x.resize(d0); x.setZero();
@@ -913,7 +913,7 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
       }
       if(y.jac || z.jac){
         if(y.jac) NIY;
-        x.J() = y.noJ() * (*z.jac);
+        x.J() = y * (*z.jac);
       }
     }
     return;

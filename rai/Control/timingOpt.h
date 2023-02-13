@@ -43,6 +43,8 @@ struct TimingProblem : NLP {
 
   void getSpline(rai::CubicSpline& S);
   arr getPosJacobian(const rai::CubicSpline& S, const arr& timeGrid);
+  arr getAccJacobian(const rai::CubicSpline& S, const arr& timeGrid, const arr& a_check);
+  void getDiffAcc(arr& pos, arr& vel, arr& acc, uint pieceSubSamples);
 
 private:
   arr xJ(int k);

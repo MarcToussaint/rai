@@ -894,6 +894,20 @@ arr Configuration::getLimits(const DofL& dofs) const {
   return limits;
 }
 
+arr Configuration::getTorqueLimits(const DofL& dofs, uint index) const {
+  uint N=0;
+  for(Dof* d:dofs) if(!d->mimic) N += d->dim;
+  arr limits(N);
+  limits=-1.;
+  N=0;
+  for(Dof* d:dofs) if(!d->mimic) {
+    CHECK_EQ(d->dim, 1, "");
+    if(d->limits.N>index) limits(N) = d->limits.elem(index);
+    N += d->dim;
+  }
+  return limits;
+}
+
 /// get the total energy of the configuration
 double Configuration::getEnergy(const arr& qdot) {
   double m, v, E;
@@ -1184,9 +1198,9 @@ bool Configuration::checkConsistency() const {
       arr jq = j->calcDofsFromConfig();
       CHECK_EQ(jq.N, j->dim, "");
       if(j->active){
-        for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
+        for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - q.elem(j->qIndex+i), RAI_2PI), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
       }else{
-        for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - qInactive.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
+        for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - qInactive.elem(j->qIndex+i), RAI_2PI), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
       }
     }
   }
@@ -2668,6 +2682,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
   node2frame.setZero();
 
   //all the special cases with %body %joint %shape is only for backward compatibility. New: just frames
+  Node *qAngles=0;
 
   NodeL bs = G.getNodesWithTag("%body");
   for(Node* n:  bs) {
@@ -2684,9 +2699,12 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
 
   //-- normal case! just normal frames or edges
   for(Node* n: G) {
-    CHECK(n->isGraph(), "frame must have value Graph");
-    if(n->graph().findNode("%body") || n->graph().findNode("%shape") || n->graph().findNode("%joint")
-        || n->key=="joint" || n->key=="shape") continue;
+    if(!n->isGraph()){
+      CHECK_EQ(n->key,"q", "only non-graph node is q:[joint angles]!");
+      qAngles=n;
+      continue;
+    }
+    if(n->graph().findNode("%body") || n->graph().findNode("%shape") || n->graph().findNode("%joint")) continue;
     //    CHECK_EQ(n->keys(0),"frame","");
     CHECK_LE(n->parents.N, 2, "frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
 
@@ -2713,29 +2731,39 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
       CHECK(to, "JOINT: to '" <<n->parents(1)->key <<"' does not exist ["<<*n <<"]");
       CHECK(!from->isChildOf(to, INT32_MAX), "you can't insert joint in loops!");
 
+#if 0
       //generate a pre node?
-      Frame* pre = from;
-      if(n->graph().findNode("A")) {
+      rai::Frame *pre=from;
+      rai::Transformation A=0, B=0;
+      n->graph().get(A, "A");
+      n->graph().get(A, "pre");
+      if(!A.isZero()) {
         pre = new Frame(from);
         pre->name = n->key;
         pre->name <<"_pre";
-        pre->set_Q()->read(n->graph().get<String>("A"));
-        n->graph().delNode(n->graph().findNode("A"));
-        n->graph().index();
+        pre->set_Q()=A; //->read(preT->get<String>());
+        //n->graph().delNode(preT);
+        //n->graph().index();
       }
+#endif
 
       //generate a new 'between' frame
-      Frame* b = new Frame(pre);
+      Frame* b = new Frame(from);
       node2frame(n->index) = b;
       b->name=n->key;
 
       //connect the new frame and optionally impose the post node relative transform
       to->setParent(b, false);
-      if(n->graph().findNode("B")) {
-        to->set_Q()->read(n->graph().get<String>("B"));
-        n->graph().delNode(n->graph().findNode("B"));
-        n->graph().index();
+
+#if 0
+      n->graph().get(B, "B");
+      n->graph().get(B, "post");
+      if(!B.isZero()) {
+        to->set_Q()=B;
+        //n->graph().delNode(n->graph().findNode("B"));
+        //n->graph().index();
       }
+#endif
 
       b->ats = make_shared<Graph>();
       b->ats->copy(n->graph(), false, true);
@@ -2744,11 +2772,10 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
   }
 
   NodeL ss = G.getNodesWithTag("%shape");
-  ss.append(G.getNodes("shape"));
   for(Node* n: ss) {
     CHECK_LE(n->parents.N, 1, "shapes must have no or one parent");
     CHECK(n->isGraph(), "shape must have value Graph");
-    CHECK(n->key=="shape" || n->graph().findNode("%shape"), "");
+    CHECK(n->graph().findNode("%shape"), "");
 
     Frame* f = new Frame(*this);
     f->name=n->key;
@@ -2766,11 +2793,10 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
   }
 
   NodeL js = G.getNodesWithTag("%joint");
-  js.append(G.getNodes("joint"));
   for(Node* n: js) {
     CHECK_EQ(n->parents.N, 2, "joints must have two parents: specs=" <<*n <<' ' <<n->index);
     CHECK(n->isGraph(), "joints must have value Graph: specs=" <<*n <<' ' <<n->index);
-    CHECK(n->key=="joint" || n->graph().findNode("%joint"), "");
+    CHECK(n->graph().findNode("%joint"), "");
 
     Frame* from = getFrame(n->parents(0)->key);
     Frame* to  = getFrame(n->parents(1)->key);
@@ -2778,7 +2804,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     CHECK(to, "JOINT: to '" <<n->parents(1)->key <<"' does not exist ["<<*n <<"]");
 
     Frame* f=new Frame(*this);
-    if(n->key.N && n->key!="joint") {
+    if(n->key.N) {
       f->name=n->key;
     } else {
       f->name <<'|' <<to->name; //the joint frame is actually the link frame of all child frames
@@ -2838,6 +2864,11 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
   //-- clean up the graph
 //  calc_q();
 //  calc_fwdPropagateFrames();
+
+  if(qAngles){
+    setJointState(qAngles->get<arr>());
+  }
+
   checkConsistency();
 }
 

@@ -2228,18 +2228,22 @@ void SparseMatrix::colShift(int shift) {
 
 #ifdef RAI_EIGEN
 
-arr SparseMatrix::At_x(const arr& x) {
+arr SparseMatrix::At_x(const arr& x, bool transpose) const {
   Eigen::SparseMatrix<double> A_eig = conv_sparseArr2sparseEigen(*this);
   Eigen::MatrixXd x_eig = conv_arr2eigen(x);
 
-  x_eig = A_eig.transpose() * x_eig;
+  if(transpose){
+    x_eig = A_eig.transpose() * x_eig;
+  }else{
+    x_eig = A_eig * x_eig;
+  }
 
   arr y(x_eig.rows());
   for(uint i = 0; i<y.d0; i++) y(i) = x_eig(i, 0);
   return y;
 }
 
-arr SparseMatrix::At_A() {
+arr SparseMatrix::At_A() const {
   Eigen::SparseMatrix<double> s = conv_sparseArr2sparseEigen(*this);
 
   Eigen::SparseMatrix<double> W(Z.d1, Z.d1);

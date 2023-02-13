@@ -76,7 +76,7 @@ struct Node {
     for(Node* child:children) { N.append(child); child->getSubtree(N); }
   }
 
-  void write(std::ostream& os, bool yamlMode=false, bool binary=false) const;
+  void write(std::ostream& os, int indent=-1, bool yamlMode=false, bool binary=false) const;
 
   //-- virtuals implemented by Node_typed
   virtual void copyValue(Node*) {NIY}
@@ -119,7 +119,7 @@ struct Graph : NodeL {
   void copy(const Graph& G, bool appendInsteadOfClear=false, bool enforceCopySubgraphToNonsubgraph=false);
 
   //-- adding nodes
-  template<class T> Graph& add(const T& x, const char* key, bool asReference=false); ///<exactly equivalent to calling a Node_typed constructor
+  template<class T> Graph& add(const char* key, const T& x, bool asReference=false); ///<exactly equivalent to calling a Node_typed constructor
   template<class T> Node_typed<T>* newNode(const char* key, const NodeL& parents, const T& x); ///<exactly equivalent to calling a Node_typed constructor
   template<class T> Node_typed<T>* newNode(const char* key, const NodeL& parents); ///<exactly equivalent to calling a Node_typed constructor
   template<class T> Node_typed<T>* newNode(const char* key); ///<exactly equivalent to calling a Node_typed constructor
@@ -185,9 +185,10 @@ struct Graph : NodeL {
   void read(std::istream& is, bool parseInfo=false);
   Node* readNode(std::istream& is, StringA& tags, const char* predeterminedKey, bool verbose, bool parseInfo); //used only internally..
   void readJson(std::istream& is);
-  void write(std::ostream& os=cout, const char* ELEMSEP=",\n", const char* BRACKETS="{  }", bool yamlMode=false, bool binary=false) const;
+  void write(std::ostream& os=cout, const char* ELEMSEP=",\n", const char* BRACKETS="{  }", int indent=-1, bool yamlMode=false, bool binary=false) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0, int focusIndex=-1, bool subGraphsAsNodes=false);
   void writeHtml(std::ostream& os, std::istream& is);
+  void writeYaml(std::ostream& os);
   void writeParseInfo(std::ostream& os);
 
   void displayDot(Node* highlight=nullptr);
@@ -533,7 +534,7 @@ template<class T> rai::Array<T*> Graph::getValuesOfType(const char* key) {
   return ret;
 }
 
-template<class T> Graph& Graph::add(const T& x, const char* key, bool asReference) {
+template<class T> Graph& Graph::add(const char* key, const T& x, bool asReference) {
   if(asReference){
     new Node_typed<T&>(*this, key, NodeL(), (T&)x);
   }else{

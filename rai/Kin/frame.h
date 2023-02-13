@@ -270,7 +270,7 @@ struct Joint : Dof, NonCopyable {
   void setGeneric(const char* _code);
   void flip();
 
-  void read(const Graph& G);
+  void read(const Graph& ats);
   void write(Graph& g);
   void write(std::ostream& os) const;
 };

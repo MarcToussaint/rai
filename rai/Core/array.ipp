@@ -1573,6 +1573,9 @@ template<class T> Array<T>& Array<T>::read(std::istream& is) {
     is >>PARSE("[");
     expectBracket=true;
     c=peerNextChar(is, " \n\r\t", true);
+    if(c==typeid(T).name()[0]){ //c is a type indicator - swallow it
+      c=peerNextChar(is, " \n\r\t", true);
+    }
   }
 
   if(c=='<') {
@@ -1634,6 +1637,7 @@ template<class T> void Array<T>::writeTagged(std::ostream& os, const char* tag, 
 /// read data with a name tag (convenient to read multiple data arrays from one file)
 template<class T> bool Array<T>::readTagged(std::istream& is, const char* tag) {
   if(tag) parse(is, tag, false);
+  skip(is, " :\r\t", NULL, true);
   read(is);
   return true;
 }

@@ -394,6 +394,13 @@ template<class T> Array<T*> getCarray(const Array<T>& data){
   return Cpointers;
 }
 
+template<class T> Array<Array<T>> getArrayArray(const Array<T>& data){
+  CHECK_EQ(data.nd, 2, "only 2D array gives C-array of type T**");
+  Array<Array<T>> xx(data.d0);
+  for(uint i=0; i<data.d0; i++) xx(i).referTo(data.p+i*data.d1, data.d1);
+  return xx;
+}
+
 }
 
 //===========================================================================

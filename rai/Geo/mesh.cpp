@@ -1463,13 +1463,13 @@ void rai::Mesh::readPLY(const char* fn) { NICO }
 
 void rai::Mesh::writeArr(std::ostream& os) {
   rai::Graph G;
-  G.add(V, "V");
-  G.add(T, "T");
-  if(C.N) G.add(C, "C");
-  if(cvxParts.N) G.add(cvxParts, "cvxParts");
-  if(tex.N) G.add(tex, "tex");
-  if(texImg.N) G.add(texImg.N, "texImg");
-  G.write(os, ",\n","{\n\n}", false, true);
+  G.add("V", V);
+  G.add("T", T);
+  if(C.N) G.add("C", C);
+  if(cvxParts.N) G.add("cvxParts", cvxParts);
+  if(tex.N) G.add("tex", tex);
+  if(texImg.N) G.add("texImg", texImg);
+  G.write(os, ",\n","{\n\n}", 0, false, true);
 }
 
 void rai::Mesh::readArr(std::istream& is) {

@@ -2372,6 +2372,12 @@ void OpenGL::Scroll(int wheel, int direction) {
     needsUpdate=true;
   }
 
+  //-- ctrl -> focal length
+  if(!_SHIFT(modifiers) && _CTRL(modifiers)) {
+    if(direction<0.) cam->focalLength *= 1.1;
+    else cam->focalLength /= 1.1;
+    needsUpdate=true;
+  }
 
   //step through all callbacks
   for(uint i=0; i<scrollCalls.N; i++) needsUpdate = needsUpdate || scrollCalls(i)->scrollCallback(*this, direction);

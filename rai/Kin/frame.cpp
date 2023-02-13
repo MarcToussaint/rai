@@ -315,44 +315,41 @@ void rai::Frame::_state_setXBadinBranch() {
   }
 }
 
+bool transFromAts(rai::Transformation& X, const rai::Graph& ats, const char* key){
+  rai::Node* n = ats[key];
+  if(!n) return false;
+  if(n->isOfType<rai::String>()) X.read(n->get<rai::String>().resetIstream());
+  else if(n->isOfType<arr>()) X.set(n->get<arr>());
+  else NIY;
+  if(!X.isZero()) X.rot.normalize();
+  return true;
+}
+
 void rai::Frame::read(const Graph& ats) {
   //interpret some of the attributes
-  Node* n;
-  if((n=ats["X"])) {
-    if(n->isOfType<String>()) set_X()->read(n->get<String>().resetIstream());
-    else if(n->isOfType<arr>()) set_X()->set(n->get<arr>());
-    else NIY;
-    set_X()->rot.normalize();
-  }
-  if((n=ats["pose"])) {
-    if(n->isOfType<String>()) set_X()->read(n->get<String>().resetIstream());
-    else if(n->isOfType<arr>()) set_X()->set(n->get<arr>());
-    else NIY;
-    set_X()->rot.normalize();
-  }
-  if((n=ats["Q"])) {
-    if(n->isOfType<String>()) set_Q()->read(n->get<String>().resetIstream());
-    else if(n->isOfType<arr>()) set_Q()->set(n->get<arr>());
-    else LOG(-2) <<"can't parse '" <<*n <<"' as Q transformation";
-    set_Q()->rot.normalize();
-  }
+  Transformation tmp;
+  if(transFromAts(tmp, ats, "X")) set_X() = tmp;
+  if(transFromAts(tmp, ats, "pose")) set_X() = tmp;
+  if(transFromAts(tmp, ats, "Q")) set_Q() = tmp;
 
   if(ats["type"]) ats["type"]->key = "shape"; //compatibility with old convention: 'body { type... }' generates shape
 
+  Node *n;
   if((n=ats["joint"])) {
-    if(ats["B"]) { //there is an extra transform from the joint into this frame -> create an own joint frame
-      Frame* f = new Frame(parent);
-      f->name <<'|' <<name; //the joint frame is actually the link frame of all child frames
-      this->unLink();
-      this->setParent(f, false);
-      new Joint(*f);
-      f->joint->read(ats);
-    } else if(n->get<String>()=="path") {
+    if(n->get<String>()=="path") {
       new PathDof(*this);
       pathDof->read(ats);
     } else if(n->get<String>()!="none") {
       new Joint(*this);
       joint->read(ats);
+    } else {
+        //if(ats["B"]) { //there is an extra transform from the joint into this frame -> create an own joint frame
+//        Frame* f = new Frame(parent);
+//        f->name <<'|' <<name; //the joint frame is actually the link frame of all child frames
+//        this->unLink();
+//        this->setParent(f, false);
+//        new Joint(*f);
+//        f->joint->read(ats);
     }
   }
   if(ats["shape"] || ats["mesh"] || ats["sdf"]) { shape = new Shape(*this); shape->read(ats); }
@@ -392,7 +389,7 @@ void rai::Frame::write(Graph& G) {
   if(shape) shape->write(G);
   if(inertia) inertia->write(G);
 
-  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
+  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
   for(Node* n : *ats) {
     if(!n->key.startsWith("%") && !avoid.contains(n->key)) {
       n->newClone(G);
@@ -418,7 +415,7 @@ void rai::Frame::write(std::ostream& os) const {
   if(shape) shape->write(os);
   if(inertia) inertia->write(os);
 
-  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
+  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
   if(ats) for(Node* n : *ats) {
     if(!n->key.startsWith("%") && !avoid.contains(n->key)) os <<", " <<*n;
   }
@@ -1248,21 +1245,21 @@ void rai::Joint::flip() {
   frame->C.reset_q();
 }
 
-void rai::Joint::read(const Graph& G) {
+void rai::Joint::read(const Graph& ats) {
   double d=0.;
   rai::String str;
 
   rai::Transformation A=0, B=0;
 
-  G.get(A, "A");
-  G.get(A, "from");
-  if(G["BinvA"]) B.setInverse(A);
-  G.get(B, "B");
-  G.get(B, "to");
+  transFromAts(A, ats, "A");
+  transFromAts(A, ats, "pre");
+  if(ats["BinvA"]) B.setInverse(A);
+  transFromAts(B, ats, "B");
+  transFromAts(B, ats, "post");
 
   //axis
   arr axis;
-  if(G.get(axis, "axis")) {
+  if(ats.get(axis, "axis")) {
     CHECK_EQ(axis.N, 3, "");
     Vector ax(axis);
     Transformation f;
@@ -1287,16 +1284,16 @@ void rai::Joint::read(const Graph& G) {
   }
 
   Node* n;
-  if((n=G["Q"])) {
+  if((n=ats["Q"])) {
     if(n->isOfType<String>()) frame->set_Q()->read(n->get<String>().resetIstream());
     else if(n->isOfType<arr>()) frame->set_Q()->set(n->get<arr>());
     else NIY;
     frame->set_Q()->rot.normalize();
   }
-  G.get(H, "ctrl_H");
-  G.get(scale, "joint_scale");
-  if(G.get(d, "joint"))        type=(JointType)d;
-  else if(G.get(str, "joint")) {
+  ats.get(H, "ctrl_H");
+  ats.get(scale, "joint_scale");
+  if(ats.get(d, "joint"))        type=(JointType)d;
+  else if(ats.get(str, "joint")) {
     if(str[0]=='_'){
       type=JT_generic;
       code.set(&str(1),str.N-1);
@@ -1304,13 +1301,13 @@ void rai::Joint::read(const Graph& G) {
       type=str;
     }
   }
-  else if(G.get(d, "type"))    type=(JointType)d;
-  else if(G.get(str, "type"))  { str >>type; }
+  else if(ats.get(d, "type"))    type=(JointType)d;
+  else if(ats.get(str, "type"))  { str >>type; }
   else type=JT_rigid;
 
   dim = getDimFromType();
 
-  if(G.get(d, "q")) {
+  if(ats.get(d, "q")) {
     if(!dim) { //HACK convention
       frame->set_Q()->rot.setRad(d, 1., 0., 0.);
     } else {
@@ -1319,7 +1316,7 @@ void rai::Joint::read(const Graph& G) {
       q0 = consts<double>(d, dim);
       setDofs(q0, 0);
     }
-  } else if(G.get(q0, "q")) {
+  } else if(ats.get(q0, "q")) {
     CHECK_EQ(q0.N, dim, "given q (in config file) does not match dim");
     setDofs(q0, 0);
   } else {
@@ -1329,11 +1326,11 @@ void rai::Joint::read(const Graph& G) {
 
   //limit
   arr ctrl_limits;
-  G.get(limits, "limits");
+  ats.get(limits, "limits");
   if(limits.N && type!=JT_rigid && !mimic) {
     CHECK(limits.N>=2*dim/* || limits.N==2*qDim()+3*/, "parsed limits have wrong dimension: either lo-hi or lo-hi-vel-eff-acc PER DOF");
   }
-  G.get(ctrl_limits, "ctrl_limits");
+  ats.get(ctrl_limits, "ctrl_limits");
   if(ctrl_limits.N && type!=JT_rigid) {
     if(!limits.N) limits.resizeAs(ctrl_limits).setZero();
     CHECK_EQ(3, ctrl_limits.N, "parsed ctrl_limits have wrong dimension");
@@ -1341,10 +1338,10 @@ void rai::Joint::read(const Graph& G) {
   }
 
   //sampling
-  G.get(sampleUniform, "sampleUniform");
+  ats.get(sampleUniform, "sampleUniform");
 
   //coupled to another joint requires post-processing by the Graph::read!!
-  if(G["mimic"]) {
+  if(ats["mimic"]) {
     mimic=(Joint*)1;
   }
 }
@@ -1789,7 +1786,10 @@ void rai::Inertia::read(const Graph& G) {
     if(frame.shape && frame.shape->type()!=ST_marker) defaultInertiaByShape();
   }
   if(G["inertia"]) {
-    matrix.setDiag(G.get<arr>("inertia"));
+    arr& I = G.get<arr>("inertia");
+    if(I.N==3) matrix.setDiag(I);
+    else if(I.N==6) matrix.setSymmetric(I);
+    else{ CHECK_EQ(I.N, 9, "") matrix.set(I.p); }
   }
   if(G["fixed"])       type=BT_static;
   if(G["static"])      type=BT_static;

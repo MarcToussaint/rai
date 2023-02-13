@@ -130,7 +130,7 @@ bool Node::matches(const StringA& query_keys) {
   return true;
 }
 
-void Node::write(std::ostream& os, bool yamlMode, bool binary) const {
+void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const {
   if(!container.isIndexed) container.index();
 
   //-- write keys
@@ -179,7 +179,11 @@ void Node::write(std::ostream& os, bool yamlMode, bool binary) const {
 
   //-- write value
   if(isGraph()) {
-    graph().write(os, ", ", "{  }", yamlMode);
+    if(yamlMode){
+      graph().write(os, ",\n", "{}", indent, true);
+    }else{
+      graph().write(os, ", ", "{  }", indent, false);
+    }
   } else if(isOfType<NodeL>()) {
     os <<"(";
     for(Node* it: (*getValue<NodeL>())) os <<' ' <<it->key;
@@ -1029,13 +1033,27 @@ void Graph::readJson(std::istream& is) {
 
 #undef PARSERR
 
-void Graph::write(std::ostream& os, const char* ELEMSEP, const char* BRACKETS, bool yamlMode, bool binary) const {
+void Graph::write(std::ostream& os, const char* ELEMSEP, const char* BRACKETS, int indent, bool yamlMode, bool binary) const {
   uint BRACKETSlength=0;
-  if(BRACKETS) BRACKETSlength=strlen(BRACKETS);
-  for(uint b=0; b<BRACKETSlength/2; b++) os <<BRACKETS[b];
-  for(uint i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) elem(i)->write(os, yamlMode, binary); else os <<"<nullptr>"; }
-  for(uint b=BRACKETSlength/2; b<BRACKETSlength; b++) os <<BRACKETS[b];
+  if(BRACKETS){
+    BRACKETSlength=strlen(BRACKETS);
+    for(uint b=0; b<BRACKETSlength/2; b++) os <<BRACKETS[b];
+  }
+  if(indent>=0) indent += 2;
+  for(uint i=0; i<N; i++) {
+    if(indent>=0){ os <<'\n'; for(int i=0;i<indent;i++) os <<' '; }
+    else if(i) os <<ELEMSEP;
+    if(elem(i)) elem(i)->write(os, indent, yamlMode, binary); else os <<"<nullptr>";
+  }
+  if(BRACKETS){
+    if(indent>=0){ os <<'\n'; for(int i=0;i<indent-2;i++) os <<' '; }
+    for(uint b=BRACKETSlength/2; b<BRACKETSlength; b++) os <<BRACKETS[b];
+  }
   os <<std::flush;
+}
+
+void Graph::writeYaml(std::ostream& os){
+  write(os, ",\n", "{}", 0, true, false);
 }
 
 void Graph::writeParseInfo(std::ostream& os) {
@@ -1077,7 +1095,7 @@ void Graph::writeHtml(std::ostream& os, std::istream& is) {
   }
   while(g<getParseInfo(nullptr).end)GO
 #undef GO
-  }
+}
 
 void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, int nodesOrEdges, int focusIndex, bool subGraphsAsNodes) {
   if(!withoutHeader) {

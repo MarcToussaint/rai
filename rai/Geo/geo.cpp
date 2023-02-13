@@ -355,6 +355,17 @@ void Matrix::setDiag(const arr& diag){
   m22=diag.elem(2);
 }
 
+void Matrix::setSymmetric(const arr& entries6){
+  CHECK_EQ(entries6.N, 6, "");
+  setZero();
+  m00=entries6.elem(0);
+  m11=entries6.elem(3);
+  m22=entries6.elem(5);
+  m01=m10=entries6.elem(1);
+  m02=m20=entries6.elem(2);
+  m12=m21=entries6.elem(4);
+}
+
 /// set the matrix
 void Matrix::set(double* p) {
   m00=p[0]; m01=p[1]; m02=p[2];
