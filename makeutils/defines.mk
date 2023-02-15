@@ -451,7 +451,7 @@ endif
 
 ifeq ($(PHYSX),1)
 CXXFLAGS += -DRAI_PHYSX -D_DEBUG -DPX_DISABLE_FLUIDS -DCORELIB -DPX32 -DLINUX
-CPATH := $(CPATH):$(HOME)/opt/PhysX5/include:$(HOME)/opt/PhysX5/include/physx
+CPATH := $(CPATH):$(HOME)/opt/PhysX5/include
 #LPATHS += $(HOME)/opt/PhysX5/lib
 LIBS += -lpthread -lrt\
 -lPhysXExtensions_static_64 -lPhysX_64 -lPhysXCooking_64 -lPhysXCommon_64 -lPhysXFoundation_64

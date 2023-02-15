@@ -659,7 +659,7 @@ rai::LogToken::~LogToken() {
     bool useCout=true;
     if(log.callback) useCout = log.callback(rai::errString(), log_level);
     if(log_level>=0){
-      if(useCout) cout <<"** INFO:" <<rai::errString() <<endl;
+      if(useCout) cout <<"-- " <<rai::errString() <<endl;
       return;
     } else {
 
@@ -693,10 +693,10 @@ rai::LogToken::~LogToken() {
       }
 #endif
 
-      if(log_level==-1) { if(useCout) cout <<"** WARNING:" <<rai::errString() <<endl; return; }
-      else if(log_level==-2) { if(useCout) cerr <<"** ERROR:" <<rai::errString() <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
+      if(log_level==-1) { if(useCout) cout <<"-- WARNING:" <<rai::errString() <<endl; return; }
+      else if(log_level==-2) { if(useCout) cerr <<"== ERROR:" <<rai::errString() <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
       //INSERT BREAKPOINT HERE (or before and after this line)
-      else if(log_level<=-3) { if(useCout) cerr <<"** HARD EXIT! " <<rai::errString() <<endl;  exit(1); }
+      else if(log_level<=-3) { if(useCout) cerr <<"== HARD EXIT! " <<rai::errString() <<endl;  exit(1); }
 //      if(log_level<=-3) raise(SIGABRT);
     }
   }

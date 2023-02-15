@@ -29,7 +29,7 @@
 
 //===========================================================================
 
-constexpr float gravity = -9.81f;
+constexpr float px_gravity = -9.81f;
 using namespace physx;
 
 //===========================================================================
@@ -62,31 +62,51 @@ PxConvexMesh* createConvexMesh(PxPhysics& physics, PxCooking& cooking, const PxV
   convexDesc.points.data      = verts;
   convexDesc.flags            = flags;
 
-  PxDefaultMemoryOutputStream buf;
-  if(!cooking.cookConvexMesh(convexDesc, buf))
-    return nullptr;
-
-  PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
-  return physics.createConvexMesh(input);
+  return cooking.createConvexMesh(convexDesc); //, physics.getPhysicsInsertionCallback());
+//  PxDefaultMemoryOutputStream buf;
+//  if(!cooking.cookConvexMesh(convexDesc, buf)) return nullptr;
+//  PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+//  return physics.createConvexMesh(input);
 }
 
 PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, const PxVec3* verts, PxU32 vertCount, const PxU32* indices32, PxU32 triCount) {
   PxTriangleMeshDesc meshDesc;
   meshDesc.points.count     = vertCount;
-  meshDesc.points.stride      = 3*sizeof(float);
+  meshDesc.points.stride    = 3*sizeof(float);
   meshDesc.points.data      = verts;
 
   meshDesc.triangles.count    = triCount;
   meshDesc.triangles.stride   = 3*sizeof(uint);
   meshDesc.triangles.data     = indices32;
 
-  PxDefaultMemoryOutputStream writeBuffer;
-  bool status = cooking.cookTriangleMesh(meshDesc, writeBuffer);
-  if(!status)
-    return nullptr;
+  PxTolerancesScale scale;
 
-  PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
-  return physics.createTriangleMesh(readBuffer);
+  PxCookingParams params(scale);
+  params.meshWeldTolerance = 0.001f;
+  params.meshPreprocessParams = PxMeshPreprocessingFlags(PxMeshPreprocessingFlag::eWELD_VERTICES);
+  params.buildTriangleAdjacencies = false;
+  params.buildGPUData = true;
+
+  params.meshPreprocessParams |= PxMeshPreprocessingFlag::eENABLE_INERTIA;
+  params.meshWeldTolerance = 1e-7f;
+
+  PxSDFDesc sdfDesc;
+
+  float sdfSpacing=.01;
+  if (sdfSpacing > 0.f){
+    sdfDesc.spacing = sdfSpacing;
+    sdfDesc.subgridSize = 6; //sdfSubgridSize;
+    sdfDesc.bitsPerSubgridPixel = PxSdfBitsPerSubgridPixel::e16_BIT_PER_PIXEL; //bitsPerSdfSubgridPixel;
+    sdfDesc.numThreadsForSdfConstruction = 16;
+    meshDesc.sdfDesc = &sdfDesc;
+  }
+
+  return PxCreateTriangleMesh(params, meshDesc, physics.getPhysicsInsertionCallback());
+  //return cooking.createTriangleMesh(meshDesc); //, physics.getPhysicsInsertionCallback());
+//  PxDefaultMemoryOutputStream writeBuffer;
+//  if(!cooking.cookTriangleMesh(meshDesc, writeBuffer)) return nullptr;
+//  PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
+//  return physics.createTriangleMesh(readBuffer);
 }
 }
 
@@ -127,6 +147,7 @@ struct PhysXInterface_self {
   PxScene* gScene = nullptr;
   rai::Array<PxRigidActor*> actors;
   rai::Array<rai::BodyType> actorTypes;
+  rai::Array<PxArticulationAxis::Enum> jointAxis;
   rai::Array<PxRevoluteJoint*> joints;
 
   rai::PhysX_Options opt;
@@ -170,8 +191,13 @@ void PhysXInterface_self::initPhysics(){
 
   //-- Create the scene
   PxSceneDesc sceneDesc(core->mPhysics->getTolerancesScale());
-  sceneDesc.gravity = PxVec3(0.f, 0.f, gravity);
+  sceneDesc.gravity = PxVec3(0.f, 0.f, px_gravity);
   sceneDesc.bounceThresholdVelocity = 10.;
+  sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
+  sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
+  sceneDesc.broadPhaseType = PxBroadPhaseType::eGPU;
+  sceneDesc.gpuMaxNumPartitions = 8;
+  sceneDesc.solverType = PxSolverType::eTGS;
 
   if(!sceneDesc.cpuDispatcher) {
     PxDefaultCpuDispatcher* mCpuDispatcher = PxDefaultCpuDispatcherCreate(1);
@@ -460,22 +486,36 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
       joint->setChildPose(conv_Transformation2PxTrans(relB));
       joint->setJointPosition(PxArticulationAxis::eTWIST, f->joint->getQ());
 
+      PxArticulationAxis::Enum axis = PxArticulationAxis::eCOUNT;
       switch(f->joint->type){
         case rai::JT_hingeX:{
           joint->setJointType(PxArticulationJointType::eREVOLUTE);
-          // revolute joint that rotates about the z axis (eSWING2) of the joint frames
-          joint->setMotion(PxArticulationAxis::eTWIST, PxArticulationMotion::eFREE); //eLIMITED
-          //        PxArticulationLimit limits;
-          //        limits.low = -PxPiDivFour;  // in rad for a rotational motion
-          //        limits.high = PxPiDivFour;
-          //        joint->setLimitParams(PxArticulationAxis::eSWING2, limits);
+          axis = PxArticulationAxis::eTWIST;
+          joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
         } break;
-         defaut: NIY;
+        case rai::JT_transX:{
+          joint->setJointType(PxArticulationJointType::ePRISMATIC);
+          axis = PxArticulationAxis::eX;
+          joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
+        } break;
+        case rai::JT_transY:{
+          joint->setJointType(PxArticulationJointType::ePRISMATIC);
+          axis = PxArticulationAxis::eY;
+          joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
+        } break;
+        case rai::JT_transZ:{
+          joint->setJointType(PxArticulationJointType::ePRISMATIC);
+          axis = PxArticulationAxis::eZ;
+          joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
+        } break;
+        defaut: NIY;
       }
-      //    if(f ->joint->limits.N){
-      //        btMultiBodyConstraint* limitCons = new btMultiBodyJointLimitConstraint(multibody, i-1, f ->joint->limits(0), f ->joint->limits(1));
-      //        world->addMultiBodyConstraint(limitCons);
-      //      }
+      jointAxis(f->ID) = axis;
+
+//      if(f->joint->limits.N){
+//        joint->setLimitParams(axis, {(float)f->joint->limits(0), (float)f->joint->limits(1)});
+//      }
+
       if(f->joint->mimic){
         NIY;
         //        btVector3 pivot(0,1,0);
@@ -488,15 +528,16 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
         //        world->addMultiBodyConstraint(gearCons);
       }
 
+
       if(true){
         PxArticulationDrive posDrive;
         posDrive.stiffness = opt.motorKp;                      // the spring constant driving the joint to a target position
         posDrive.damping = opt.motorKd;                        // the damping coefficient driving the joint to a target velocity
         posDrive.maxForce = PX_MAX_F32; //1e10f;                              // force limit for the drive
         posDrive.driveType = PxArticulationDriveType::eFORCE;  // make the drive output be a force/torque (default)
-        joint->setDriveParams(PxArticulationAxis::eTWIST, posDrive);
-        joint->setDriveVelocity(PxArticulationAxis::eTWIST, 0.);
-        joint->setDriveTarget(PxArticulationAxis::eTWIST, f->joint->getQ());
+        joint->setDriveParams(axis, posDrive);
+        joint->setDriveVelocity(axis, 0.);
+        joint->setDriveTarget(axis, f->joint->getQ());
       }
     }
   }
@@ -560,29 +601,28 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     case rai::ST_cylinder:
     case rai::ST_ssBox:
     case rai::ST_ssCvx: {
-      // Note: physx can't decompose meshes itself.
-      // Physx doesn't support triangle meshes in dynamic objects! See:
-      // file:///home/mtoussai/lib/PhysX/Documentation/PhysXGuide/Manual/Shapes.html
-      // We have to decompose the meshes "by hand" and feed them to PhysX.
-
-      // PhysX uses float for the vertices
-      floatA Vfloat;
-
-      Vfloat.clear();
-      copy(Vfloat, s->mesh().V); //convert vertices from double to float array..
+      floatA Vfloat = rai::convert<float>(s->mesh().V);
       PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
                                      *core->mPhysics, *core->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
                                      PxConvexFlag::eCOMPUTE_CONVEX);
       geometry = new PxConvexMeshGeometry(triangleMesh);
     } break;
     case rai::ST_mesh: {
+#if 0
+      floatA Vfloat = rai::convert<float>(s->mesh().V);
+      uintA& T = s->mesh().T;
+      PxTriangleMesh* triangleMesh =  PxToolkit::createTriangleMesh32(*core->mPhysics, *core->mCooking,
+                                                                      (PxVec3*)Vfloat.p, Vfloat.d0,
+                                                                      T.p, T.d0);
+      geometry = new PxTriangleMeshGeometry(triangleMesh);
+#else
       rai::Mesh &M = s->mesh();
       CHECK(M.cvxParts.N, "needs to be decomposed");
       floatA Vfloat;
       for(uint i=0;i<M.cvxParts.N;i++){
         Vfloat.clear();
         int start = M.cvxParts(i);
-        int end = i+1<M.cvxParts.N ? M.cvxParts(i+1) : -1;
+        int end = i+1<M.cvxParts.N ? M.cvxParts(i+1)-1 : -1;
         copy(Vfloat, M.V({start, end}));
         PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
                                        *core->mPhysics, *core->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
@@ -600,7 +640,8 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
         }
       }
       geometry=0;
-    }
+#endif
+    } break;
     case rai::ST_camera:
     case rai::ST_marker: {
       geometry = nullptr;
@@ -669,8 +710,10 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose): self(n
   self->addGround();
 
   //-- create Configuration equivalent in PhysX
-  self->actors.resize(C.frames.N); self->actors.setZero();
-  self->actorTypes.resize(C.frames.N); self->actorTypes.setZero();
+  self->actors.resize(C.frames.N).setZero();
+  self->actorTypes.resize(C.frames.N).setZero();
+  self->jointAxis.resize(C.frames.N) = PxArticulationAxis::eCOUNT;
+
   for(rai::Frame* a : C.frames) a->ensure_X();
 
   if(self->opt.multiBody){
@@ -780,8 +823,10 @@ void PhysXInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){
       if(!joint) continue;
       CHECK_EQ(f->joint->qIndex, qIdx, "inconsistent q indexing");
 
-      if(q_ref.N) joint->setDriveTarget(PxArticulationAxis::eTWIST, q_ref(qIdx));
-      if(qDot_ref.N) joint->setDriveVelocity(PxArticulationAxis::eTWIST, qDot_ref(qIdx));
+      auto axis = self->jointAxis(f->ID);
+      CHECK_LE(axis, self->jointAxis(0)-1, "");
+      if(q_ref.N) joint->setDriveTarget(axis, q_ref(qIdx));
+      if(qDot_ref.N) joint->setDriveVelocity(axis, qDot_ref(qIdx));
       qIdx++;
     }
   }else if(self->opt.jointedBodies){
@@ -907,6 +952,22 @@ void DrawActor(PxRigidActor* actor, rai::Frame* frame, OpenGL& gl) {
 #else
         self->mesh.glDraw();
 #endif
+      } break;
+      case PxGeometryType::eTRIANGLEMESH: {
+        PxTriangleMeshGeometry g;
+        shape->getTriangleMeshGeometry(g);
+        floatA Vfloat;
+        Vfloat.referTo((float*)g.triangleMesh->getVertices(), 3*g.triangleMesh->getNbVertices()).reshape(-1,3);
+        rai::Mesh mesh;
+        mesh.V = rai::convert<double>(Vfloat);
+        if(g.triangleMesh->getTriangleMeshFlags()&PxTriangleMeshFlag::e16_BIT_INDICES){
+          rai::Array<uint16_t> T16;
+          T16.referTo((uint16_t*)g.triangleMesh->getTriangles(), 3*g.triangleMesh->getNbTriangles()).reshape(-1, 3);
+          mesh.T = rai::convert<uint>(T16);
+        }else{
+          mesh.T.referTo((uint*)g.triangleMesh->getTriangles(), 3*g.triangleMesh->getNbTriangles()).reshape(-1, 3);
+        }
+        mesh.glDraw(gl);
       } break;
 
       default:
