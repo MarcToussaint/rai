@@ -583,18 +583,19 @@ arr CubicSplineMaxVel(const arr& x0, const arr& v0, const arr& x1, const arr& v1
   return y;
 }
 
-void CubicSplinePosVel(arr& pos, arr& vel, double t, const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ){
+void CubicSplinePosVelAcc(arr& pos, arr& vel, arr& acc, double trel, const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ){
   //position at time t:
   // a t^3 + b t^2 + c t + d
 
-  CHECK_GE(t, 0., "");
-  CHECK_LE(t, tau+1e-6, "");
+  CHECK_GE(trel, 0., "");
+  CHECK_LE(trel, 1., "");
 
   double tau2 = tau*tau;
   double tau3 = tau2*tau;
   double tau4 = tau2*tau2;
   arr d = x0;
   arr c = v0;
+#if 0
   arr b = 1./tau2 * (  3.*(x1-x0) - tau*(v1+2.*v0) );
   if(tauJ.N){
     b.J() += -6./tau3 * (x1.noJ()-x0.noJ()) * tauJ;
@@ -605,34 +606,39 @@ void CubicSplinePosVel(arr& pos, arr& vel, double t, const arr& x0, const arr& v
     a.J() -= -6./tau4 * (x1.noJ()-x0.noJ()) * tauJ;
     a.J() += -2./tau3 * (v1.noJ()+v0.noJ()) * tauJ;
   }
+#endif
+  arr c_tau = tau*c;
+  if(tauJ.N){ if(c_tau.jac) c_tau.J() += (c) * tauJ; else c_tau.J() = c*tauJ; }
 
-  pos = (t*t*t)*a + (t*t)*b + t*c + d;
-  if(!!vel) vel = (3*t*t)*a + (2*t*t)*b + c;
-}
+  arr b_tau2 = (  3.*(x1-x0) - tau*(v1+2.*v0) );
+  if(tauJ.N) b_tau2.J() -= (v1.noJ()+2.*v0.noJ()) * tauJ;
 
-arr CubicSplineAcc(double t, const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ){
-  //acceleration at time t:
-  // 6 a t + 2 b
+  arr b_tau1 = 1./tau * b_tau2;
+  if(tauJ.N) b_tau1.J() += (-1./tau2) * b_tau2.noJ() * tauJ;
 
-  CHECK_GE(t, 0., "");
-  CHECK_LE(t, tau+1e-6, "");
+  arr b_tau0 = 1./tau2 * b_tau2;
+  if(tauJ.N) b_tau0.J() += (-2./tau3) * b_tau2.noJ() * tauJ;
 
-  double tau2 = tau*tau;
-  double tau3 = tau2*tau;
-  double tau4 = tau2*tau2;
-  arr b = 1./tau2 * (  3.*(x1-x0) - tau*(v1+2.*v0) );
-  if(tauJ.N){
-    b.J() += -6./tau3 * (x1.noJ()-x0.noJ()) * tauJ;
-    b.J() -= -1./tau2 * (v1.noJ()+2.*v0.noJ()) * tauJ;
-  }
-  arr a = 1./tau3 * ( -2.*(x1-x0) + tau*(v1+v0) );
-  if(tauJ.N){
-    a.J() -= -6./tau4 * (x1.noJ()-x0.noJ()) * tauJ;
-    a.J() += -2./tau3 * (v1.noJ()+v0.noJ()) * tauJ;
-  }
+  arr a_tau3 = ( -2.*(x1-x0) + tau*(v1+v0) );
+  if(tauJ.N) a_tau3.J() += (v1+v0) * tauJ;
 
-  arr y = 6.*t*a + 2.*b;
-  return y;
+  arr a_tau2 = 1./tau * a_tau3;
+  if(tauJ.N) a_tau2.J() += (-1./tau2) * a_tau3.noJ() * tauJ;
+
+  arr a_tau1 = 1./tau2 * a_tau3;
+  if(tauJ.N) a_tau1.J() += (-2./tau3) * a_tau3.noJ() * tauJ;
+
+  //arr a_tau0 = 1./tau3 * a_tau3;
+  //if(tauJ.N) a_tau0.J() += (-3./tau4) * a_tau3.noJ() * tauJ;
+
+  if(!!pos) pos = (trel*trel*trel)*a_tau3 + (trel*trel)*b_tau2 + trel*c_tau + d;
+  if(!!vel) vel = (3.*trel*trel)*a_tau2 + (2.*trel)*b_tau1 + c;
+  if(!!acc) acc = (6.*trel)*a_tau1 + (2.)*b_tau0;
+#if 0
+  if(!!pos) pos = (t*t*t)*a + (t*t)*b + t*c + d;
+  if(!!vel) vel = (3.*t*t)*a + (2.*t)*b + c;
+  if(!!acc) acc = (6.*t)*a + (2.)*b;
+#endif
 }
 
 } //namespace rai

@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Logic/treeSearchDomain.h>
-#include <Algo/priorityQueue.h>
+#include "TreeSearchNode.h"
+#include "../Algo/priorityQueue.h"
 
 //===========================================================================
 
@@ -23,6 +23,7 @@ struct AStar {
   rai::Array<TreeSearchNode*> solutions;
   uint iters=0;
   int verbose=1;
+  double currentLevel=0.;
 
   AStar(const std::shared_ptr<TreeSearchNode>& _root);
 

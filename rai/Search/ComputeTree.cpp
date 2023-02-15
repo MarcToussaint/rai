@@ -9,8 +9,8 @@ static uint CT_Node_ID=0;
 template<> const char* rai::Enum<ComputeTree_SolverOptions::SolverMethod>::names [] = {
   "noMethod", "SCE_Thresholded", "SCE_RoundRobin", "SCE_IterativeLimited", nullptr };
 
-CT_Node::CT_Node(CT_Node* _parent, shared_ptr<rai::ComputeNode> _comp)
-  : parent(_parent), comp(_comp) {
+CT_Node::CT_Node(CT_Node* _parent, shared_ptr<rai::TreeSearchNode> _comp)
+  : parent(_parent), comp(std::dynamic_pointer_cast<rai::ComputeNode>(_comp)) {
   comp->ID = CT_Node_ID++;
   comp->name.prepend(STRING('#' <<comp->ID <<'_'));
 }
@@ -36,7 +36,7 @@ void ComputeTree_Solver::query(CT_Node *n){
 
   //== complete & non-terminal -> create new child, then query it directly
   if(n->comp->isComplete && !n->comp->isTerminal){
-    shared_ptr<CT_Node> child = make_shared<CT_Node>(n, n->comp->getNewChild(n->R));
+    shared_ptr<CT_Node> child = make_shared<CT_Node>(n, n->comp->transition(n->R));
     child->c_soFar = n->c_soFar+n->comp->c;
     n->R++;
     n->children.append(child);
@@ -50,9 +50,9 @@ void ComputeTree_Solver::query(CT_Node *n){
   //== incomplete -> compute
   if(!n->comp->isComplete){
 
-    double time = n->comp->timedCompute();
-    c_now = time;
-    n->comp->c += time;
+    n->comp->compute();
+    //c_now = time;
+    //n->comp->c += time;
     n->comp_n += 1.;
     n->parent->c_children++;
 
@@ -82,7 +82,7 @@ void ComputeTree_Solver::query(CT_Node *n){
     //backup compute costs
     CT_Node* p=n->parent;
     while(p){
-      p->c_tot += time;
+      p->c_tot += n->comp->c_now;
       p=p->parent;
     }
 

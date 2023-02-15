@@ -89,34 +89,4 @@ extern std::shared_ptr<const TreeSearchDomain::SAO> NoHandle;
 
 //===========================================================================
 
-struct TreeSearchNode{
-  uint ID=0;
-  TreeSearchNode *parent=0;
-  //the derived constructor or compute() need to set these
-  bool isComplete = true;
-  bool isFeasible = true;
-  bool isTerminal = false;
-  double f_prio=0.;
-
-  TreeSearchNode(TreeSearchNode *parent=0);
-  virtual ~TreeSearchNode() {}
-
-  //transition in new state
-  virtual const uint getNumActions() = 0;
-  virtual std::shared_ptr<TreeSearchNode> transition(int action) = 0;
-  virtual std::shared_ptr<TreeSearchNode> transitionRandomly();
-
-  virtual bool compute() = 0; //return true, when f_prio changed;
-
-  //access parent
-  virtual void write(std::ostream& os) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
-  virtual void report(std::ostream& os, int verbose) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
-};
-inline std::ostream& operator<<(std::ostream& os, const TreeSearchNode& D) { D.write(os); return os; }
-
-//===========================================================================
-
-void printTree(const rai::Array<TreeSearchNode*>& T);
-void printTree(const rai::Array<std::shared_ptr<TreeSearchNode>>& T);
-
 } //namspace

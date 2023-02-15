@@ -29,7 +29,7 @@ struct CT_Node {
 
   rai::Array<shared_ptr<CT_Node>> children;
 
-  CT_Node(CT_Node* _parent, shared_ptr<rai::ComputeNode> _comp);
+  CT_Node(CT_Node* _parent, shared_ptr<rai::TreeSearchNode> _comp);
 
   void write(ostream& os) const;
 };

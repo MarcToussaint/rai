@@ -617,9 +617,19 @@ void FOL_World::addDecisionSequence(std::istream& is) {
   cout <<"CREATED DECISION SEQUENCE:" <<*seq.isNodeOfGraph <<endl;
 }
 
+FOL_World_State::FOL_World_State(FOL_World& L, TreeSearchNode* _parent, bool _isTerminal)
+  : L(L), state(L.createStateCopy()), T_step(L.T_step), T_real(L.T_real), R_total(L.R_total){
+  parent = _parent;
+  isTerminal = _isTerminal;
+  isFeasible = true;
+  isComplete = true;
+  actions = L.get_actions();
+}
+
 std::shared_ptr<TreeSearchNode> FOL_World_State::transition(int action){
   if(L.state!=state) L.setState(state, T_step);
   L.T_real = T_real;
+  CHECK_LE(1+(uint)action, actions.N, "that action doesn't exist");
   TreeSearchDomain::TransitionReturn ret = L.transition(actions(action));
   CHECK(L.state!=state, "");
   std::shared_ptr<FOL_World_State> s = make_shared<FOL_World_State>(L, this, L.is_terminal_state());

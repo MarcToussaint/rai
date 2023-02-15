@@ -1,31 +1,49 @@
 #pragma once
 
 #include <Core/util.h>
+#include <Search/TreeSearchNode.h>
+#include <math.h>
 
 namespace rai {
 
-  struct ComputeNode {
-    uint ID=0;
-    rai::String name;
-    bool isComplete = false;
-    bool isTerminal = false;
+  struct NodeGlobal{
+    RAI_PARAM("CT/", int, verbose, 1)
+    RAI_PARAM("LGP/", double, level_pc, 1.)
+    RAI_PARAM("LGP/", double, level_pw, 1.)
+    RAI_PARAM("LGP/", double, level_c0, 1.)
+    RAI_PARAM("LGP/", double, level_w0, 1.)
+    RAI_PARAM("LGP/", double, level_eps, 0.)
+  };
+
+  NodeGlobal& info();
+
+  struct ComputeNode : TreeSearchNode {
+//    uint ID=0;
+//    rai::String name;
+//    bool isComplete = false;
+//    bool isTerminal = false;
     double c=0.;     //cost invested into completion of THIS node
     double l=-1.;    //lower bound (also feasibility) computed at completion -> f_prio
+    double c_now=0.;
+    double baseLevel=0.;
 
-    virtual void compute(){ HALT("need to overload");  }
+    //-- core Astar methods
+    virtual void compute();
+    virtual void untimedCompute() = 0;
+
     virtual int getNumDecisions() = 0;
-    virtual std::shared_ptr<ComputeNode> getNewChild(uint i) = 0;
+    std::shared_ptr<TreeSearchNode> transition(int i);
+
+    virtual std::shared_ptr<ComputeNode> createNewChild(int i) = 0;
 
     virtual double effortHeuristic(){ return 0.; }        //expected effort-to-go (FULL DOWN-STREAM TO LEAF NODE)
     virtual double branchingHeuristic(){ return 1.; }
     virtual double sample(){ HALT("need to overload"); }  //get a value (at a leaf)
 
-    virtual double timedCompute(){
-      double time = -rai::cpuTime();
-      compute();
-      time += rai::cpuTime();
-      return time;
+    double level(){
+      return baseLevel + ::pow(c/info().level_c0, info().level_pc);
     }
+
     virtual void write(ostream& os) const{ os <<name; }
     virtual void store(const char* path) const {}
   };

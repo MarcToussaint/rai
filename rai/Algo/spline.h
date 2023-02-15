@@ -87,8 +87,7 @@ arr CubicSplineMaxAcc(const arr& x0, const arr& v0, const arr& x1, const arr& v1
 arr CubicSplineMaxVel(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
 arr CubicSplineAcc0(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
 arr CubicSplineAcc1(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
-void CubicSplinePosVel(arr& pos, arr& vel, double t, const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ);
-arr CubicSplineAcc(double t, const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ);
+void CubicSplinePosVelAcc(arr& pos, arr& vel, arr& acc, double trel, const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ);
 
 //===========================================================================
 

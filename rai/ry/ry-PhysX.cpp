@@ -33,7 +33,7 @@ void init_PhysX(pybind11::module& m) {
   })
 
   .def("setState", [](PhysXInterface& self, shared_ptr<rai::Configuration>& C, const pybind11::array_t<double>& velocities) {
-    self.pushFullState(C->frames, numpy2arr(velocities));
+    self.pushFullState(*C, numpy2arr(velocities));
   })
   ;
 }

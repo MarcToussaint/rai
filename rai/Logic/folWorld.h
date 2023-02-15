@@ -9,6 +9,7 @@
 #pragma once
 
 #include "treeSearchDomain.h"
+#include "../Search/TreeSearchNode.h"
 #include "../Core/array.h"
 #include "../Core/graph.h"
 
@@ -158,19 +159,14 @@ struct FOL_World_State : TreeSearchNode {
   Array<FOL_World::Handle> actions;
   rai::String name;
 
-  FOL_World_State(FOL_World& L, TreeSearchNode* _parent, bool _isTerminal)
-    : L(L), state(L.createStateCopy()), T_step(L.T_step), T_real(L.T_real), R_total(L.R_total){
-    parent = _parent;
-    isTerminal = _isTerminal;
-    actions = L.get_actions();
-  }
+  FOL_World_State(FOL_World& L, TreeSearchNode* _parent, bool _isTerminal);
 
   //transition in new state
-  virtual const uint getNumActions(){ return actions.N; }
+  virtual int getNumDecisions(){ return actions.N; }
 
   virtual std::shared_ptr<TreeSearchNode> transition(int action);
 
-  virtual bool compute(){ return true; }
+  virtual void compute(){ HALT("shouldn't be here"); }
 
   //access parent
   virtual void write(std::ostream& os) const;

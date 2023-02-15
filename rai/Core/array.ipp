@@ -216,7 +216,7 @@ template<class T> Array<T>& Array<T>::reshape(std::initializer_list<uint> dim) {
 
 template<class T> Array<T>& Array<T>::resizeAs(const Array<T>& a) {
   CHECK(this!=&a, "never do this!!!");
-  CHECK(!isReference || N==a.N, "resize of a reference (e.g. subarray) is not allowed! (only a resize without changing memory size)");
+  if(isReference) CHECK_EQ(N, a.N, "resize of a reference (e.g. subarray) is not allowed! (only a resize without changing memory size)");
   nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2;
   resetD();
   if(nd>3) { d=new uint[nd];  memmove(d, a.d, nd*sizeof(uint)); }

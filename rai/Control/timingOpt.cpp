@@ -343,7 +343,7 @@ arr TimingProblem::getPosJacobian(const rai::CubicSpline& S, const arr& timeGrid
     arr tauJ = Jtau(k);
 
     arr pk;
-    rai::CubicSplinePosVel(pk, NoArr, trel, _x0, _v0, _x1, _v1, tau(k), tauJ);
+    rai::CubicSplinePosVelAcc(pk, NoArr, NoArr, trel, _x0, _v0, _x1, _v1, tau(k), tauJ);
     if(!J.N){
       J.sparse().resize(timeGrid.N*pk.N, pk.J().d1, 0);
     }
@@ -370,7 +370,8 @@ arr TimingProblem::getAccJacobian(const rai::CubicSpline& S, const arr& timeGrid
     arr _v1 = vJ(k);
     arr tauJ = Jtau(k);
 
-    arr a = rai::CubicSplineAcc(trel, _x0, _v0, _x1, _v1, tau(k), tauJ);
+    arr a;
+    rai::CubicSplinePosVelAcc(NoArr, NoArr, a, trel, _x0, _v0, _x1, _v1, tau(k), tauJ);
     CHECK_ZERO(maxDiff(a_check[i], a), 1e-6, STRING(a_check[i]<<" vs  "<< a));
     if(!J.N){
       J.sparse().resize(timeGrid.N*a.N, a.J().d1, 0);
@@ -381,7 +382,7 @@ arr TimingProblem::getAccJacobian(const rai::CubicSpline& S, const arr& timeGrid
 }
 
 void TimingProblem::getDiffAcc(arr& pos, arr& vel, arr& acc, uint pieceSubSamples){
-  CHECK_EQ(pieceSubSamples, 1, "");
+//  CHECK_EQ(pieceSubSamples, 1, "");
 
   //-- read the decision variables tau, v, refine-waypoints from x
   uint K = waypoints.d0;
@@ -407,17 +408,17 @@ void TimingProblem::getDiffAcc(arr& pos, arr& vel, arr& acc, uint pieceSubSample
     arr _v1 = vJ(k);
     arr tauJ = Jtau(k);
 
-    arr pk, vk;
-    rai::CubicSplinePosVel(pk, vk, 0., _x0, _v0, _x1, _v1, tau(k), tauJ);
-    pos.setVectorBlock(pk, m); //also sets J
-    vel.setVectorBlock(vk, m);
-
-    arr ak = rai::CubicSplineAcc(0., _x0, _v0, _x1, _v1, tau(k), tauJ);
-    acc.setVectorBlock(ak, m);
-
-    m += ak.N;
+    for(uint j=0;j<pieceSubSamples;j++){
+      arr pk, vk, ak;
+      rai::CubicSplinePosVelAcc(pk, vk, ak, double(j)/double(pieceSubSamples), _x0, _v0, _x1, _v1, tau(k), tauJ);
+      pos.setVectorBlock(pk, m); //also sets J
+      vel.setVectorBlock(vk, m);
+      acc.setVectorBlock(ak, m);
+      m += pk.N;
+    }
   }
   CHECK_EQ(m, pos.N, "");
+  CHECK_EQ(m, vel.N, "");
   CHECK_EQ(m, acc.N, "");
 
   pos.reshape(K*pieceSubSamples, -1);

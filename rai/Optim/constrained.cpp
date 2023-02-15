@@ -214,7 +214,19 @@ bool OptConstrained::ministep(){
     cout <<endl;
   }
 
-  //newton.reinit(newton.x); //this would trigger a new evaluation; only to confirm that autoUpdate updates also fx correctly
+#if 0 //this would trigger a new evaluation; only to confirm that autoUpdate updates also fx correctly
+  newton.reinit(newton.x);
+  if(opt.verbose>0) {
+    //START of new Newton loop
+    cout <<"==nlp== it:" <<std::setw(4) <<its
+         <<"  evals:" <<std::setw(4) <<newton.evals
+        <<"  A(x):" <<std::setw(11) <<newton.fx
+       <<"  mu:" <<L.mu;
+    if(L.useLB) cout <<" muLB:" <<std::setw(11) <<L.muLB;
+    if(newton.x.N<5) cout <<" \tlambda:" <<L.lambda;
+    cout <<endl;
+  }
+#endif
 
   //prepare next Newton loop
   x_beforeNewton = newton.x;
