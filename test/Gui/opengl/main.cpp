@@ -8,7 +8,6 @@
 #include <GL/gl.h>
 #include <GL/glut.h>
 #include <Core/thread.h>
-using namespace std;
 
 /************ first test ************/
 

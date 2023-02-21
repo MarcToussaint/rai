@@ -63,7 +63,7 @@ void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start=NoArr, uint iters=
     cout <<k <<' ' <<evals <<" f(x)=" <<lag.get_costs()
          <<" \tg_compl=" <<lag.get_sumOfGviolations()
          <<" \th_compl=" <<lag.get_sumOfHviolations()
-      <<" \tmu=" <<lag.mu <<" \tnu=" <<lag.nu <<" \tmuLB=" <<lag.muLB;
+      <<" \tmu=" <<lag.mu <<" \tmuLB=" <<lag.muLB;
     if(x.N<5) cout <<" \tx=" <<x <<" \tlambda=" <<lag.lambda /*<<" \tg=" <<UCP.g_x <<" \th=" <<UCP.h_x*/;
     cout <<endl;
   }

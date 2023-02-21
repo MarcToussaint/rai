@@ -244,6 +244,75 @@ arr LagrangianProblem::get_totalFeatures(){
   return feat;
 }
 
+void LagrangianProblem::reportGradients(const StringA& featureNames){
+  CHECK_EQ(featureNames.N, phi_x.N, "");
+
+  //-- build feature -> entry map
+  struct Entry{ rai::String name; double grad=0.; double err=0.; ObjectiveType ot=OT_none; };
+  intA idx2Entry(phi_x.N);
+  rai::Array<Entry> entries;
+
+  idx2Entry = -1;
+
+  for(uint i=0;i<featureNames.N;i++){
+    rai::String& s = featureNames.elem(i);
+    if(!s.N) continue;
+    for(uint j=0;j<entries.N;j++){
+      if(entries(j).name == s){
+        idx2Entry(i) = j;
+        break;
+      }
+    }
+    if(idx2Entry(i)==-1){
+      idx2Entry(i) = entries.N;
+      entries.append( { s, 0., 0.} );
+    }
+  }
+
+  //-- collect all gradients
+  J_x.sparse().setupRowsCols();
+  for(uint i=0; i<phi_x.N; i++) {
+    int j = idx2Entry(i);
+    if(j>=0){
+      double l=0., g=0.;
+      double r = sqrt(sumOfSqr(J_x.sparse().getSparseRow(i)));
+      double lambda_i = lambda.N?lambda.p[i]:0.;
+      double phi_i = phi_x.p[i];
+      ObjectiveType ot = P->featureTypes.p[i];
+
+      if(ot==OT_f)        l += fabs(phi_i);
+      else if(ot==OT_sos) l += phi_i*phi_i;
+      else if(ot==OT_eq)  l += fabs(phi_i);
+      else if(ot==OT_ineq && phi_i>0.)  l += phi_i;
+      else if(ot==OT_ineqB && phi_i>0.) l += phi_i;
+      else if(ot==OT_ineqP && phi_i>0.) l += phi_i;
+
+      if(            ot==OT_f)     g += r;
+      if(            ot==OT_sos)   g += 2.*fabs(phi_i) * r;
+      if(useLB    && ot==OT_ineq)  g += muLB/fabs(phi_i) * r;
+      if(!useLB   && ot==OT_ineq)  if(phi_i>0. || lambda_i>0.) g += mu* 2.*fabs(phi_i) * r;
+      if(            ot==OT_ineqP) if(phi_i>0.) g += mu* 2.*fabs(phi_i) * r;
+      if(            ot==OT_ineq)  if(lambda.N && lambda_i>0.) g += lambda_i * r;
+      if(            ot==OT_ineqB) NIY; //J_setRow( (-muLB/phi_i)* )
+      if(            ot==OT_ineqB) NIY; //{ if(lambda.N && lambda_i>0.) J_setRow( lambda_i* ) else nphi++; }
+      if(            ot==OT_eq)    g += mu * 2.*fabs(phi_i) * r;
+      if(            ot==OT_eq)    if(lambda.N) g += fabs(lambda_i) * r;
+
+      Entry& e = entries(j);
+      e.grad += g;
+      e.err += l;
+      if(e.ot==OT_none) e.ot = ot; else CHECK_EQ(ot, e.ot, "");
+    }
+  }
+
+  entries.sort( [](const Entry& a, const Entry& b) -> bool{ return a.grad > b.grad; } );
+
+  for(Entry& e: entries){
+    if(!e.err) continue;
+    cout <<"  " <<e.name <<" err: " <<e.err <<" grad: " <<e.grad <<" type: " <<rai::Enum<ObjectiveType>(e.ot) <<endl;
+  }
+}
+
 double LagrangianProblem::get_cost_f() {
   double S=0.;
   for(uint i=0; i<phi_x.N; i++) {

@@ -663,7 +663,7 @@ void glColor(float r, float g, float b, float alpha) {
     GLfloat ambient[4]  = { r*amb, g*amb, b*amb, alpha };
     GLfloat diffuse[4]  = { r*diff, g*diff, b*diff, alpha };
     GLfloat specular[4] = { spec* (1.f+r), spec* (1.f+g), spec* (1.f+b), alpha };
-#if 0
+#if 1
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, diffuse);
 #else
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);

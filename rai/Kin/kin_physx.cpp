@@ -617,29 +617,38 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       geometry = new PxTriangleMeshGeometry(triangleMesh);
 #else
       rai::Mesh &M = s->mesh();
-      CHECK(M.cvxParts.N, "needs to be decomposed");
-      floatA Vfloat;
-      for(uint i=0;i<M.cvxParts.N;i++){
-        Vfloat.clear();
-        int start = M.cvxParts(i);
-        int end = i+1<M.cvxParts.N ? M.cvxParts(i+1)-1 : -1;
-        copy(Vfloat, M.V({start, end}));
-        PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
-                                       *core->mPhysics, *core->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
-                                       PxConvexFlag::eCOMPUTE_CONVEX);
-        geometry = new PxConvexMeshGeometry(triangleMesh);
-        PxShape* shape = core->mPhysics->createShape(*geometry, *defaultMaterial);
-        actor->attachShape(*shape);
-        if(&s->frame!=f) {
-          if(s->frame.parent==f) {
-            shape->setLocalPose(conv_Transformation2PxTrans(s->frame.get_Q()));
-          } else {
-            rai::Transformation rel = s->frame.ensure_X() / f->ensure_X();
-            shape->setLocalPose(conv_Transformation2PxTrans(rel));
+      if(M.cvxParts.N){
+        floatA Vfloat;
+        for(uint i=0;i<M.cvxParts.N;i++){
+          Vfloat.clear();
+          int start = M.cvxParts(i);
+          int end = i+1<M.cvxParts.N ? M.cvxParts(i+1)-1 : -1;
+          copy(Vfloat, M.V({start, end}));
+          PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
+                                         *core->mPhysics, *core->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
+                                         PxConvexFlag::eCOMPUTE_CONVEX);
+          geometry = new PxConvexMeshGeometry(triangleMesh);
+          PxShape* shape = core->mPhysics->createShape(*geometry, *defaultMaterial);
+          actor->attachShape(*shape);
+          if(&s->frame!=f) {
+            if(s->frame.parent==f) {
+              shape->setLocalPose(conv_Transformation2PxTrans(s->frame.get_Q()));
+            } else {
+              rai::Transformation rel = s->frame.ensure_X() / f->ensure_X();
+              shape->setLocalPose(conv_Transformation2PxTrans(rel));
+            }
           }
         }
+        geometry=0;
+      }else{
+        LOG(0) <<"using cvx hull of mesh as no decomposition (M.cvsParts) is available";
+        floatA Vfloat = rai::convert<float>(s->mesh().V);
+        uintA& T = s->mesh().T;
+        PxTriangleMesh* triangleMesh =  PxToolkit::createTriangleMesh32(*core->mPhysics, *core->mCooking,
+                                                                        (PxVec3*)Vfloat.p, Vfloat.d0,
+                                                                        T.p, T.d0);
+        geometry = new PxTriangleMeshGeometry(triangleMesh);
       }
-      geometry=0;
 #endif
     } break;
     case rai::ST_camera:

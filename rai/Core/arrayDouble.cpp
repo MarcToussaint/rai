@@ -441,14 +441,14 @@ arr differencing(const arr& x, uint w) {
       int i0=CLIP0(i), i1=CLIP1(i,y.d0);
       int j0=CLIP0(j), j1=CLIP1(j,y.d1);
       int k0=CLIP0(k), k1=CLIP1(k,y.d2);
-      v = x(i1,j1,k1);
-      if(i0>=0) v -= x(i0,j1,k1);
-      if(j0>=0) v -= x(i1,j0,k1);
-      if(k0>=0) v -= x(i1,j1,k0);
-      if(i0>=0 && j0>=0) v += x(i0,j0,k1);
-      if(i0>=0 && k0>=0) v += x(i0,j1,k0);
-      if(j0>=0 && k0>=0) v += x(i1,j0,k0);
-      if(i0>=0 && j0>=0 && k0>=0) v -= x(i0,j0,k0);
+      v = x.p[(i1*x.d1+j1)*x.d2+k1]; //x(i1,j1,k1);
+      if(i0>=0) v -= x.p[(i0*x.d1+j1)*x.d2+k1]; //x(i0,j1,k1);
+      if(j0>=0) v -= x.p[(i1*x.d1+j0)*x.d2+k1]; //x(i1,j0,k1);
+      if(k0>=0) v -= x.p[(i1*x.d1+j1)*x.d2+k0]; //x(i1,j1,k0);
+      if(i0>=0 && j0>=0) v += x.p[(i0*x.d1+j0)*x.d2+k1]; //x(i0,j0,k1);
+      if(i0>=0 && k0>=0) v += x.p[(i0*x.d1+j1)*x.d2+k0]; //x(i0,j1,k0);
+      if(j0>=0 && k0>=0) v += x.p[(i1*x.d1+j0)*x.d2+k0]; //x(i1,j0,k0);
+      if(i0>=0 && j0>=0 && k0>=0) v -= x.p[(i0*x.d1+j0)*x.d2+k0]; //x(i0,j0,k0);
       v /= (double)((i1-i0)*(j1-j0)*(k1-k0));
     }
     return y;

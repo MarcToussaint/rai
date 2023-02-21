@@ -99,7 +99,6 @@ shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
     ret->sos = optCon->L.get_cost_sos();
     ret->f = optCon->L.get_cost_f();
     ret->feasible = (ret->ineq<.5) && (ret->eq<.5);
-    optCon.reset();
   }
 
   //checkJacobianCP(*P, x, 1e-4);

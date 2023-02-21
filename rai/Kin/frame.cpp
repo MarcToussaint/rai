@@ -415,7 +415,7 @@ void rai::Frame::write(std::ostream& os) const {
   if(shape) shape->write(os);
   if(inertia) inertia->write(os);
 
-  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
+  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
   if(ats) for(Node* n : *ats) {
     if(!n->key.startsWith("%") && !avoid.contains(n->key)) os <<", " <<*n;
   }
@@ -1769,7 +1769,7 @@ void rai::Inertia::write(std::ostream& os) const {
   if(matrix.isDiagonal()){
     os <<", inertia:[" <<matrix.m00 <<' ' <<matrix.m11 <<' ' <<matrix.m22 <<']';
   }else{
-    os <<", inertia:" <<matrix;
+    os <<", inertia:[" <<matrix.m00 <<' ' <<matrix.m01 <<' ' <<matrix.m02 <<' ' <<matrix.m11 <<' ' <<matrix.m12 <<' ' <<matrix.m22 <<']';
   }
 }
 

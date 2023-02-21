@@ -64,45 +64,64 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents,
   if(accCont) m += (K+1)*d; //acc continuity
   if(tauBarrier) m += K;
   featureTypes.resize(m);
+  featureNames.clear();
 
   m=0;
   featureTypes(m) = OT_f;
+  featureNames.append("tauSum");
   m++;
   for(uint k=0;k<K;k++){
     if(timeCost2>0.){
       featureTypes({m,m}) = OT_sos; //control costs
+      featureNames.append("tauSquares");
       m += 1;
     }
     if(ctrlCost>0.){
       featureTypes({m,m+2*d-1}) = OT_sos; //control costs
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("leapCost_" <<i)); }
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("leapCost_" <<i)); }
       m += 2*d;
     }
     if(maxVel.N){
       featureTypes({m,m+4*d-1}) = OT_ineq; //maxVel
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("maxVel" <<i)); }
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("maxVel" <<i)); }
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("maxVel" <<i)); }
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("maxVel" <<i)); }
       m += 4*d;
     }
     if(maxAcc.N){
       featureTypes({m,m+4*d-1}) = OT_ineq; //maxAcc
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("maxAcc" <<i)); }
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("maxAcc" <<i)); }
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("maxAcc" <<i)); }
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("maxAcc" <<i)); }
       m += 4*d;
     }
     if(maxJer.N){
       featureTypes({m,m+2*d-1}) = OT_ineq; //maxJer
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("maxJer" <<i)); }
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("maxJer" <<i)); }
       m += 2*d;
     }
     if(accCont){
       if(k==0){
         featureTypes({m,m+d-1}) = OT_eq; //acc continuity
+        for(uint i=0;i<d;i++){ featureNames.append(STRING("accCont" <<i)); }
         m += d;
       }
       featureTypes({m,m+d-1}) = OT_eq; //acc continuity
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("accCont" <<i)); }
       m += d;
     }
     if(tauBarrier){
       featureTypes(m) = OT_ineqB; //tau barrier
+      featureNames.append("tauBarrier");
       m += 1;
     }
   }
   CHECK_EQ(m, featureTypes.N, "");
+  CHECK_EQ(m, featureNames.N, "");
 }
 
 void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){

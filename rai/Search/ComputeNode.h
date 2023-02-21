@@ -9,9 +9,7 @@ namespace rai {
   struct NodeGlobal{
     RAI_PARAM("CT/", int, verbose, 1)
     RAI_PARAM("LGP/", double, level_pc, 1.)
-    RAI_PARAM("LGP/", double, level_pw, 1.)
     RAI_PARAM("LGP/", double, level_c0, 1.)
-    RAI_PARAM("LGP/", double, level_w0, 1.)
     RAI_PARAM("LGP/", double, level_eps, 0.)
   };
 
@@ -38,10 +36,18 @@ namespace rai {
 
     virtual double effortHeuristic(){ return 0.; }        //expected effort-to-go (FULL DOWN-STREAM TO LEAF NODE)
     virtual double branchingHeuristic(){ return 1.; }
+
+    virtual double computePenalty(){
+      return ::pow(c/info().level_c0, info().level_pc);
+    }
+    virtual double branchingPenalty_child(int i){
+      if(getNumDecisions()>=0) return 0;
+      HALT("need to overload this");
+    }
     virtual double sample(){ HALT("need to overload"); }  //get a value (at a leaf)
 
     double level(){
-      return baseLevel + ::pow(c/info().level_c0, info().level_pc);
+      return baseLevel + computePenalty();
     }
 
     virtual void write(ostream& os) const{ os <<name; }

@@ -55,31 +55,8 @@ void rai::printTree(std::ostream& os, const rai::Array<std::shared_ptr<TreeSearc
         sub.newNode<double>("n_children", {}, n->n_children);
         if(n->needsWidening) sub.newNode<bool>("needsWidening");
 
-//        sub.newNode<double>("c", {}, n->c);
-//        sub.newNode<double>("comp_n", {}, n->comp_n);
-//        //    sub.newNode<double>("c_children", {}, n->c_children);
-//        if(n->l>=0.){
-//            sub.newNode<double>("l", {}, n->l);
-//        }
-//        //    sub.newNode<double>("R", {}, n->R);
-//        if(n->l<1e9){
-//            if(n->y_num){
-//                sub.newNode<double>("y_mean", {}, n->y_tot/n->y_num);
-//                sub.newNode<double>("y_num", {}, n->y_num);
-//            }
-//            //    sub.newNode<double>("y_ucb", {}, n->y_ucb);
-//            //    sub.newNode<double>("C_ucb", {}, n->mean_ucb);
-//            //    sub.newNode<double>("C_eff", {}, n->eff);
-//            if(n->c_tot){
-//                sub.newNode<double>("c_tot", {}, n->c_tot);
-//            }
-//            if(n->childrenComplete) sub.newNode<bool>("childrenCpl");
-//            if(n->branchComplete) sub.newNode<bool>("branchCpl");
-//        }
-
-        //    if(n->D.N) sub.newNode<arr>("data", {}, n->D);
+        if(n->isTerminal) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", shape=box"; //, style=rounded
         if(!n->isComplete) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", style=dashed";
-        else if(n->isTerminal) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", shape=box, style=rounded";
         if(!n->isFeasible) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", color=red";
 //        else if(n->isBest) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", color=orange";
     }

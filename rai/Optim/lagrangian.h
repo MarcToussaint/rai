@@ -51,6 +51,8 @@ struct LagrangianProblem : ScalarFunction, NLP {
   double get_sumOfHviolations(); ///< info on the terms from last call
   uint get_dimOfType(const ObjectiveType& ot); ///< info on the terms from last call
 
+  void reportGradients(const StringA& featureNames);
+
   void aulaUpdate(const rai::OptOptions& opt, bool anyTimeVariant, double lambdaStepsize=1., double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
   void autoUpdate(const rai::OptOptions& opt, double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
 

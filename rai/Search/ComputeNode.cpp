@@ -1,5 +1,12 @@
 #include "ComputeNode.h"
 
+namespace rai{
+NodeGlobal& info(){
+  static NodeGlobal singleton;
+  return singleton;
+}
+}
+
 void rai::ComputeNode::compute(){
   if(info().verbose>0){
     LOG(0) <<"compute at " <<name <<" ...";
@@ -9,7 +16,7 @@ void rai::ComputeNode::compute(){
   c_now += rai::cpuTime();
   c += c_now;
   if(l>1e9) isFeasible=false;
-  f_prio = level();
+  f_prio = baseLevel + computePenalty();
   if(info().verbose>0){
     if(isComplete) LOG(0) <<"computed " <<name <<" -> complete with c:" <<c <<" l:" <<l <<" level:" <<f_prio;
     else LOG(0) <<"computed " <<name <<" -> still incomplete with c:" <<c;
@@ -24,12 +31,13 @@ std::shared_ptr<rai::TreeSearchNode> rai::ComputeNode::transition(int i){
     CHECK_EQ((uint)i, n_children, "really?")
     n_children++;
   }
-  child->baseLevel = level();
+  child->baseLevel = baseLevel + computePenalty();
   child->baseLevel += info().level_eps;
-  if(getNumDecisions()==-1){//infinite branching
-    child->baseLevel += ::pow(double(i)/info().level_w0, info().level_pw);
-  }
-  child->f_prio = child->level();
+  child->baseLevel += branchingPenalty_child(i);
+//  if(getNumDecisions()==-1){//infinite branching
+//    child->baseLevel += ::pow(double(i)/info().level_w0, info().level_pw);
+//  }
+  child->f_prio = child->baseLevel;
   if(info().verbose>0){
     LOG(0) <<"created node '" <<child->name <<"' ID:" <<child->ID <<" type: '" <<rai::niceTypeidName(typeid(*child)) <<"' baseLevel:" <<child->baseLevel;
   }

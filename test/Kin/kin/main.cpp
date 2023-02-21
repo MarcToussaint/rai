@@ -52,13 +52,13 @@ void testJacobianInFile(const char* filename, const char* shape){
 
 void TEST(ViewerUpdate){
 
-  rai::Configuration C("../../../../rai-robotModels/pr2/pr2.g");
-  C.view();
+  rai::Configuration C(rai::raiPath("../rai-robotModels/pr2/pr2.g"));
+  C.view(true);
 
-  for(uint k=0;k<10;k++){
-    C.setJointState(C.getJointState() + .1);
-    rai::wait();
-  }
+//  for(uint k=0;k<10;k++){
+//    C.setJointState(C.getJointState() + .1);
+//    rai::wait();
+//  }
 }
 
 //===========================================================================
@@ -96,6 +96,8 @@ void TEST(Kinematics){
 //  rai::Configuration G("../../../../rai-robotModels/pr2/pr2.g");
 //  rai::Configuration G("../../../projects/17-LGP-push/quatJacTest.g");
 //  G.view(true);
+
+  C.calc_indexedActiveJoints();
 
   C.jacMode = C.JM_sparse;
 

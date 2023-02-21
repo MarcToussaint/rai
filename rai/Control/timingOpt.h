@@ -26,6 +26,8 @@ struct TimingProblem : NLP {
   arr v;   //velocities at way points
   arr tau; //timing
 
+  StringA featureNames;
+
   TimingProblem(const arr& _waypoints, const arr& _tangents, const arr& _x0, const arr& _v0,
                 double _timeCost, double _ctrlCost,
                 bool _optTau=true,  bool _optLastVel=false,

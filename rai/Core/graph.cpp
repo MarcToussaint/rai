@@ -895,9 +895,9 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
           node = newNode<NodeL>(key, parents, par);
         } break;
         case '{': { // sub graph
+          is.putback(c);
           Graph& subgraph = this->newSubgraph(key, parents);
           subgraph.read(is);
-          parse(is, "}");
           node = subgraph.isNodeOfGraph;
           if(tags.N>1) {
             for(uint i=0; i<tags.N-1; i++) subgraph.newNode<bool>(STRING('%' <<tags.elem(i)));

@@ -217,7 +217,10 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps) {
     if(steps(0)) delta = (hi(0)-lo(0))/steps(0);
 
     X.resize(steps(0)+1, 1);
-    for(i=0; i<X.d0; i++) X.operator()(i, 0)=lo(0)+delta*i;
+    double *Xp = X.p;
+    for(i=0; i<X.d0; i++){
+      *(Xp++) = lo.p[0]+delta*i;
+    }
     return X;
   }
   if(lo.N==2) {
@@ -225,9 +228,10 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps) {
     for(uint i=0; i<2; i++) if(steps(i)) delta(i) = (hi(i)-lo(i))/steps(i);
 
     X.resize(steps(0)+1, steps(1)+1, 2);
+    double *Xp = X.p;
     for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) {
-        X.operator()(i, j, 0)=lo(0)+delta(0)*i;
-        X.operator()(i, j, 1)=lo(1)+delta(1)*j;
+      *(Xp++) = lo.p[0]+delta.p[0]*i;
+      *(Xp++) = lo.p[1]+delta.p[1]*j;
       }
     X.reshape(X.d0*X.d1, 2);
     return X;
@@ -237,10 +241,11 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps) {
     for(uint i=0; i<3; i++) if(steps(i)) delta(i) = (hi(i)-lo(i))/steps(i);
 
     X.resize(uintA{steps(0)+1, steps(1)+1, steps(2)+1, 3});
+    double *Xp = X.p;
     for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) for(k=0; k<X.d2; k++) {
-      X.elem(uintA{i, j, k, 0})=lo(0)+delta(0)*i;
-      X.elem(uintA{i, j, k, 1})=lo(1)+delta(1)*j;
-      X.elem(uintA{i, j, k, 2})=lo(2)+delta(2)*k;
+      *(Xp++) = lo.p[0]+delta.p[0]*i;
+      *(Xp++) = lo.p[1]+delta.p[1]*j;
+      *(Xp++) = lo.p[2]+delta.p[2]*k;
     }
     X.reshape(X.d0*X.d1*X.d2, 3);
     return X;

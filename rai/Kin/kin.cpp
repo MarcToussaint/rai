@@ -1443,14 +1443,13 @@ void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
 
   //-- count active DOFs
   uint qcount=0;
-  for(Dof* d: activeDofs) {
-    if(!d->mimic) {
+  for(Dof* d: activeDofs) if(!d->mimic) {
       d->qIndex = qcount;
       qcount += d->dim;
-    } else {
-      CHECK(d->mimic->active, "active dof '" << d->frame->name <<"' mimics inactive dof '" <<d->mimic->frame->name <<"'");
-      d->qIndex = d->mimic->qIndex;
-    }
+  }
+  for(Dof* d: activeDofs) if(d->mimic) {
+    CHECK(d->mimic->active, "active dof '" << d->frame->name <<"' mimics inactive dof '" <<d->mimic->frame->name <<"'");
+    d->qIndex = d->mimic->qIndex;
   }
 
   //-- resize q
@@ -1462,14 +1461,13 @@ void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
   for(Frame* f:frames) if(f->joint && !f->joint->active) inactiveDofs.append(f->joint);
   for(Dof* d:otherDofs) if(!d->active) inactiveDofs.append(d);
   qcount=0;
-  for(Dof *d:inactiveDofs){ //include counting mimic'ing!
-    if(!d->mimic) {
-      d->qIndex = qcount;
-      qcount += d->dim;
-    } else {
-      //CHECK(!d->mimic->active, "inactive dof'" << d->frame->name <<"'[" <<d->frame->ID <<"] mimics active dof'" <<d->mimic->frame->name <<"'[" <<d->mimic->frame->ID <<']');
-      d->qIndex = d->mimic->qIndex;
-    }
+  for(Dof *d:inactiveDofs) if(!d->mimic) {
+    d->qIndex = qcount;
+    qcount += d->dim;
+  }
+  for(Dof *d:inactiveDofs) if(d->mimic) {
+    //CHECK(!d->mimic->active, "inactive dof'" << d->frame->name <<"'[" <<d->frame->ID <<"] mimics active dof'" <<d->mimic->frame->name <<"'[" <<d->mimic->frame->ID <<']');
+    d->qIndex = d->mimic->qIndex;
   }
 
   //-- resize qInactive
