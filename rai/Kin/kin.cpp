@@ -960,11 +960,11 @@ Graph Configuration::reportForces() {
     const ForceExchange* ex = dof->fex();
     if(ex){
       Graph& g = G.newSubgraph();
-      g.newNode<String>({"from"}, {}, ex->a.name);
-      g.newNode<String>({"to"}, {}, ex->b.name);
-      g.newNode<arr>({"force"}, {}, ex->force);
-      g.newNode<arr>({"torque"}, {}, ex->torque);
-      g.newNode<arr>({"poa"}, {}, ex->poa);
+      g.add<String>("from", ex->a.name);
+      g.add<String>("to", ex->b.name);
+      g.add<arr>("force", ex->force);
+      g.add<arr>("torque", ex->torque);
+      g.add<arr>("poa", ex->poa);
     }
   }
   return G;
@@ -2578,7 +2578,7 @@ Graph Configuration::getGraph() const {
 #if 1
   Graph G;
   //first just create nodes
-  for(Frame* f: frames) G.newNode<bool>({STRING(f->name <<" [" <<f->ID <<']')}, {});
+  for(Frame* f: frames) G.add<bool>({STRING(f->name <<" [" <<f->ID <<']')}, {});
   for(Frame* f: frames) {
     Node* n = G.elem(f->ID);
     if(f->parent) {
@@ -2603,18 +2603,18 @@ Graph Configuration::getGraph() const {
   for(Frame* f: frames) {
     Graph& ats = G.elem(f->ID)->graph();
 
-    ats.newNode<Transformation>({"X"}, {}, f->X);
+    ats.newNode<Transformation>({"X"}, f->X);
 
     if(f->shape) {
-      ats.newNode<int>({"shape"}, {}, f->shape->type);
+      ats.newNode<int>({"shape"}, f->shape->type);
     }
 
     if(f->link) {
       G.elem(f->ID)->addParent(G.elem(f->link->from->ID));
       if(f->link->joint) {
-        ats.newNode<int>({"joint"}, {}, f->joint()->type);
+        ats.newNode<int>({"joint"}, f->joint()->type);
       } else {
-        ats.newNode<Transformation>({"Q"}, {}, f->link->Q);
+        ats.newNode<Transformation>({"Q"}, f->link->Q);
       }
     }
   }
@@ -2823,9 +2823,9 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     for(Frame* f: frames) if((j=f->joint) && j->mimic==(Joint*)1) {
         Node* mim = (*f->ats)["mimic"];
         String jointName;
-        if(mim->isOfType<String>()) jointName = mim->get<String>();
-        else if(mim->isOfType<NodeL>()) {
-          NodeL nodes = mim->get<NodeL>();
+        if(mim->is<String>()) jointName = mim->as<String>();
+        else if(mim->is<NodeL>()) {
+          NodeL nodes = mim->as<NodeL>();
           jointName = nodes.scalar()->key;
         } else {
           HALT("could not retrieve minimick frame for joint '" <<f->name <<"' from ats '" <<f->ats <<"'");
@@ -2864,7 +2864,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
 //  calc_fwdPropagateFrames();
 
   if(qAngles){
-    setJointState(qAngles->get<arr>());
+    setJointState(qAngles->as<arr>());
   }
 
   checkConsistency();

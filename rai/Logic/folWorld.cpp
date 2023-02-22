@@ -68,9 +68,9 @@ void FOL_World::init(const Graph& _KB) {
   Quit_keyword = KB["QUIT"];            CHECK(Quit_keyword, "You need to declare the QUIT keyword");
   Wait_keyword = KB["WAIT"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
   Subgoal_keyword = KB["SubgoalDone"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
-  Quit_literal = KB.newNode<bool>({}, {Quit_keyword}, true);
+  Quit_literal = KB.add<bool>(0, true,{Quit_keyword});
   if(Subgoal_keyword) {
-    Subgoal_literal = KB.newNode<bool>({"tmp"}, {Subgoal_keyword}, true);
+    Subgoal_literal = KB.add<bool>("tmp", true, {Subgoal_keyword});
   }
 
   Graph* params = KB.find<Graph>("FOL_World");
@@ -144,8 +144,8 @@ TreeSearchDomain::TransitionReturn FOL_World::transition(const Handle& action) {
     //-- find minimal wait time
     double w=1e10;
     for(Node* i:*state) {
-      if(i->isOfType<double>()) {
-        double wi = i->get<double>();
+      if(i->is<double>()) {
+        double wi = i->as<double>();
         if(w>wi) w=wi;
       }
     }
@@ -158,8 +158,8 @@ TreeSearchDomain::TransitionReturn FOL_World::transition(const Handle& action) {
       //-- subtract w from all times and collect all activities with minimal wait time
       NodeL terminatingActivities;
       for(Node* i:*state) {
-        if(i->isOfType<double>()) {
-          double& wi = i->get<double>(); //this is a double reference!
+        if(i->is<double>()) {
+          double& wi = i->as<double>(); //this is a double reference!
           wi -= w;
           if(fabs(wi)<1e-10) terminatingActivities.append(i);
         }
@@ -180,9 +180,9 @@ TreeSearchDomain::TransitionReturn FOL_World::transition(const Handle& action) {
     Node* effect = getSecondNonSymbolOfScope(d->rule->graph());
     Node* probabilities = d->rule->graph().last();
 
-    if(probabilities->isOfType<arr>()) {
+    if(probabilities->is<arr>()) {
       HALT("probs in decision rules not properly implemented (observation id is not...)");
-      arr p = probabilities->get<arr>();
+      arr p = probabilities->as<arr>();
       uint r = sampleMultinomial(p);
       lastStepProbability = p(r);
       lastStepObservation = lastStepObservation*p.N + r; //raise previous observations to the factor p.N and add current decision
@@ -450,7 +450,7 @@ void FOL_World::writePDDLdomain(std::ostream& os, const char* domainName) const 
     os <<")\n      :precondition (and";
     for(Node* n:precond) {
       if(n->key.N) continue; //no temporary facts
-      bool neg = n->isOfType<bool>() && !n->get<bool>();
+      bool neg = n->is<bool>() && !n->as<bool>();
       if(neg) os <<" (not";
       os <<" (" <<n->parents(0)->key;
       for(uint i=1; i<n->parents.N; i++) os <<" ?" <<n->parents(i)->key;
@@ -461,7 +461,7 @@ void FOL_World::writePDDLdomain(std::ostream& os, const char* domainName) const 
     os <<")\n      :effect (and";
     for(Node* n:effect) {
       if(n->key.N) continue; //no temporary facts
-      bool neg = n->isOfType<bool>() && !n->get<bool>();
+      bool neg = n->is<bool>() && !n->as<bool>();
       if(neg) os <<" (not";
       os <<" (" <<n->parents(0)->key;
       for(uint i=1; i<n->parents.N; i++) os <<" ?" <<n->parents(i)->key;
@@ -506,7 +506,7 @@ void FOL_World::writePDDLproblem(std::ostream& os, const char* domainName, const
   uint numGoals=0;
   for(Node* rule:worldRules) {
     Graph& Rule = rule->graph();
-    if(Rule.elem(-1)->isOfType<arr>()) continue; //this is a probabilistic rule!
+    if(Rule.elem(-1)->is<arr>()) continue; //this is a probabilistic rule!
     Graph& precond = getFirstNonSymbolOfScope(Rule)->graph(); //Rule.elem(-2)->graph();
     Graph& effect = getSecondNonSymbolOfScope(Rule)->graph(); //Rule.elem(-1)->graph();
 
@@ -515,7 +515,7 @@ void FOL_World::writePDDLproblem(std::ostream& os, const char* domainName, const
       CHECK(!numGoals, "downward (in standard config) doesnt work for multiple goals!");
       numGoals++;
       for(Node* n:precond) {
-        bool neg = n->isOfType<bool>() && !n->get<bool>();
+        bool neg = n->is<bool>() && !n->as<bool>();
         if(neg) os <<" (not";
         os <<' ' <<*n;
 //        os <<" (";
@@ -559,7 +559,7 @@ String FOL_World::callPDDLsolver() {
 }
 
 Node* FOL_World::addSymbol(const char* name) {
-  return KB.newNode<bool>({name}, {}, true);
+  return KB.add<bool>(name, true);
 }
 
 void FOL_World::addFact(const StringA& symbols) {
@@ -570,7 +570,7 @@ void FOL_World::addFact(const StringA& symbols) {
     parents.append(sym);
     CHECK(parents.last(), "Node '" <<s <<"' was not declared");
   }
-  start_state->newNode<bool>({}, parents, true);
+  start_state->add<bool>(0, true, parents);
 }
 
 void FOL_World::addAgent(const char* name) {
@@ -588,7 +588,7 @@ void FOL_World::addTerminalRule(const char* literals) {
   worldRules.append(rule.isNodeOfGraph);
   Graph& preconditions = rule.newSubgraph({}, {});
   Graph& effect = rule.newSubgraph({}, {});
-  effect.newNode<bool>({}, {Quit_keyword}, true); //adds the (QUIT) to the effect
+  effect.add<bool>(0, true, {Quit_keyword}); //adds the (QUIT) to the effect
 
   preconditions.read(STRING(literals));
 //  LOG(0) <<"CREATED TERMINATION RULE:" <<*rule.isNodeOfGraph;
@@ -600,12 +600,12 @@ void FOL_World::addTerminalRule(const StringAA& literals) {
   worldRules.append(rule.isNodeOfGraph);
   Graph& preconditions = rule.newSubgraph({}, {});
   Graph& effect = rule.newSubgraph({}, {});
-  effect.newNode<bool>({}, {Quit_keyword}, true); //adds the (QUIT) to the effect
+  effect.add<bool>(0, true, {Quit_keyword}); //adds the (QUIT) to the effect
 
   for(const StringA& lit:literals) {
     NodeL parents;
     for(const String& s:lit) parents.append(KB[s]);
-    preconditions.newNode<bool>({}, parents, true);
+    preconditions.add<bool>(0, true, parents);
   }
 
   cout <<"CREATED RULE NODE:" <<*rule.isNodeOfGraph <<endl;

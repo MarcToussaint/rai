@@ -75,7 +75,7 @@ template<class T> void setParameter(const char* key, const T& x){
   T* y = getParameters()->find<T>(key);
   if(y) *y = x;
   else{
-    getParameters()->newNode<T>(key, {}, x);
+    getParameters()->add<T>(key, x);
   }
 }
 

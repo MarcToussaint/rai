@@ -18,7 +18,7 @@ namespace rai {
 
 /// any node that has a key, no parents, and is bool, is a symbol declaration
 bool isSymbol(Node* n) {
-  return n->key.N>0 && n->parents.N==0 && n->isOfType<bool>() && n->key(0)!='%';
+  return n->key.N>0 && n->parents.N==0 && n->is<bool>() && n->key(0)!='%';
 }
 
 /// given a scope (a subGraph, e.g. the full KB, or a rule or so), return all literals (defined by degree>0, keys.N=0)
@@ -92,8 +92,8 @@ bool tuplesAreEqual(NodeL& tuple0, NodeL& tuple1) {
 
 bool valuesAreEqual(Node* fact0, Node* fact1, bool booleanMeansExistance) {
   if(booleanMeansExistance) {
-    if(fact0->isBoolAndTrue() && !fact1->isOfType<bool>()) return true;
-    if(fact1->isBoolAndTrue() && !fact0->isOfType<bool>()) return true;
+    if(fact0->isBoolAndTrue() && !fact1->is<bool>()) return true;
+    if(fact1->isBoolAndTrue() && !fact0->is<bool>()) return true;
   }
   if(fact0->type!=fact1->type) return false;
   if(!fact0->hasEqualValue(fact1)) return false;
@@ -133,7 +133,7 @@ bool getEqualFactInKB(Graph& KB, Node* fact, bool checkAlsoValue) {
     if(fact->key=="aggregate") {
       NodeL subs = getRuleSubstitutions2(KB, fact->graph(), 0);
       if(graph.last()->key=="count") {
-        if(subs.d0 == graph.last()->get<double>()) return true;
+        if(subs.d0 == graph.last()->as<double>()) return true;
         else return false;
       } else HALT("unknown aggregate mode '" <<graph.last()->key <<"'");
     } else HALT("unknown special literal key'" <<fact->key <<"'");
@@ -215,7 +215,7 @@ NodeL getPotentiallyEqualFactsInKB(Graph& KB, Node* tuple, const Graph& varScope
 /// check if all facts can be matched with one in scope
 bool allFactsHaveEqualsInKB(Graph& KB, NodeL& facts, bool checkAlsoValue) {
   for(Node* fact:facts) {
-    if(!fact->isOfType<bool>() || fact->get<bool>()==true) { //normal
+    if(!fact->is<bool>() || fact->as<bool>()==true) { //normal
       if(!getEqualFactInKB(KB, fact, checkAlsoValue)) return false;
     } else { //negated, return false if such a fact exists, independent of its value
       if(getEqualFactInKB(KB, fact, false)) return false;
@@ -227,7 +227,7 @@ bool allFactsHaveEqualsInKB(Graph& KB, NodeL& facts, bool checkAlsoValue) {
 /// check if all facts can be matched with one in scope
 bool allFactsHaveEqualsInKB(Graph& KB, NodeL& literals, const NodeL& subst, const Graph* subst_scope, bool checkAlsoValue) {
   for(Node* literal:literals) {
-    if(!literal->isOfType<bool>() || literal->get<bool>()==true) { //normal
+    if(!literal->is<bool>() || literal->as<bool>()==true) { //normal
       if(!getEqualFactInKB(KB, literal, subst, subst_scope, checkAlsoValue)) return false;
     } else { //negated, return false if such a fact exists, independent of its value
       if(getEqualFactInKB(KB, literal, subst, subst_scope, false)) return false;
@@ -260,7 +260,7 @@ void removeInfeasibleSymbolsFromDomain(Graph& facts, NodeL& domain, Node* litera
         else if(lit_arg!=fact_arg) { match=false; break; }
       }
     }
-    if(match && !literal->isOfType<bool>()) { //if the literal is boolean, we don't YET check the value (see below)
+    if(match && !literal->is<bool>()) { //if the literal is boolean, we don't YET check the value (see below)
       if(fact->type!=literal->type) match=false;
       match = fact->hasEqualValue(literal);
     }
@@ -281,7 +281,7 @@ void removeInfeasibleSymbolsFromDomain(Graph& facts, NodeL& domain, Node* litera
 
 /// directly create a new fact
 Node* createNewFact(Graph& facts, const NodeL& symbols) {
-  return facts.newNode<bool>({}, symbols, true);
+  return facts.add<bool>(0, true, symbols);
 }
 
 /// create a new fact by substituting all variables with subst(var->index) (if non-nullptr)
@@ -347,7 +347,7 @@ bool applySubstitutedLiteral(Graph& facts, Node* literal, const NodeL& subst, Gr
     //delete all matching facts!
     for(Node* fact:matches) {
       hasEffects=true;
-      if(!!changes) { Node* it=fact->newClone(changes); if(it->isOfType<bool>()) it->get<bool>()=false; }
+      if(!!changes) { Node* it=fact->newClone(changes); if(it->is<bool>()) it->as<bool>()=false; }
       delete fact;
     }
   }
@@ -409,7 +409,7 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
 
   //-- for relations with 0 free variable, simply check
   for(Node* rel:relations) if(nFreeVars(rel->index)==0) {
-      if(!rel->isOfType<bool>() || rel->get<bool>()==true) { //normal
+      if(!rel->is<bool>() || rel->as<bool>()==true) { //normal
         if(!getEqualFactInKB(KB, rel)) {
           if(verbose>2) cout <<"NO POSSIBLE SUBSTITUTIONS (" <<*rel <<" not true)" <<endl;
           return NodeL(); //early failure
@@ -433,7 +433,7 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
   if(vars.N) domainIsConstrained = false;
 
   for(Node* rel:relations) if(nFreeVars(rel->index)>0) { //first go through all (non-negated) relations...
-      if(!rel->isOfType<bool>() || rel->get<bool>()==true) { //normal (not negated boolean)
+      if(!rel->is<bool>() || rel->as<bool>()==true) { //normal (not negated boolean)
         for(auto& d:domainsForThisRel) d.clear();
         NodeL matches = getPotentiallyEqualFactsInKB(KB, rel, varScope, true);
         if(!matches.N) {
@@ -478,7 +478,7 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
 
   //-- for negative relations with 1 variable, delete from the domain
   for(Node* rel:relations) {
-    if(nFreeVars(rel->index)==1 && rel->isOfType<bool>() && rel->get<bool>()==false) {
+    if(nFreeVars(rel->index)==1 && rel->is<bool>() && rel->as<bool>()==false) {
       Node* var = getFirstVariable(rel, &varScope);
       if(verbose>3) cout <<"checking literal '" <<*rel <<"'" <<std::flush;
       removeInfeasibleSymbolsFromDomain(KB, domainOf(var->index), rel, &varScope);
@@ -575,8 +575,8 @@ bool forwardChaining_FOL(Graph& state, NodeL& rules, Node* query, Graph& changes
         Node* effect = getSecondNonSymbolOfScope(rule->graph());
         Node* probabilities = rule->graph().last();
 
-        if(probabilities->isOfType<arr>()) { //TODO: THIS IS SAMPLING!!! SOMEHOW MAKE THIS CLEAR/transparent/optional or so
-          arr p = probabilities->get<arr>();
+        if(probabilities->is<arr>()) { //TODO: THIS IS SAMPLING!!! SOMEHOW MAKE THIS CLEAR/transparent/optional or so
+          arr p = probabilities->as<arr>();
           uint r = sampleMultinomial(p);
           if(samplingObservation) *samplingObservation = (*samplingObservation)*p.N + r; //raise previous samplings to the factor p.N and add current sampling
           //TODO: also return sampleProbability?
@@ -659,15 +659,15 @@ double evaluateFunction(Graph& func, Graph& state, int verbose) {
       NodeL subs = getRuleSubstitutions2(state, leafG, 0); //a leaf is like a rule -> can be tested for substitutions
       if(subs.d0) {
 //        cout <<"STATE=" <<state <<endl;
-        CHECK(leafG.last()->isOfType<double>(), "");
-        double fleaf = leafG.last()->get<double>(); //the last attribute is the reward
+        CHECK(leafG.last()->is<double>(), "");
+        double fleaf = leafG.last()->as<double>(); //the last attribute is the reward
         ftree += fleaf;
         if(verbose>0) LOG(0) <<"tree leaf HIT " <<leafG <<" with f-value " <<fleaf <<endl;
         break; //if a leaf evaluates true, no further leafs are considered
       }
     }
-    CHECK(treeG.last()->isOfType<double>(), "");
-    f += treeG.last()->get<double>() * ftree; //the last attribute is a weight of the whole tree
+    CHECK(treeG.last()->is<double>(), "");
+    f += treeG.last()->as<double>() * ftree; //the last attribute is a weight of the whole tree
   }
   return f;
 }

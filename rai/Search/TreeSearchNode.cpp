@@ -21,9 +21,9 @@ void rai::printTree(const rai::Array<rai::TreeSearchNode*>& T){
     name <<*n;
     rai::Graph& sub = G.newSubgraph(name, par, {});
 
-    sub.newNode<bool>("complete", {}, n->isComplete);
-    sub.newNode<bool>("feasible", {}, n->isFeasible);
-    sub.newNode<double>("f_prio", {}, n->f_prio);
+    sub.add<bool>("complete", n->isComplete);
+    sub.add<bool>("feasible", n->isFeasible);
+    sub.add<double>("f_prio", n->f_prio);
 
     if(n->isTerminal){
       G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", shape=box";
@@ -51,9 +51,9 @@ void rai::printTree(std::ostream& os, const rai::Array<std::shared_ptr<TreeSearc
         if(n->parent) par.append(G.elem(n->parent->ID));
         rai::Graph& sub = G.newSubgraph(n->name, par, {});
 
-        sub.newNode<double>("level", {}, n->f_prio);
-        sub.newNode<double>("n_children", {}, n->n_children);
-        if(n->needsWidening) sub.newNode<bool>("needsWidening");
+        sub.add<double>("level", n->f_prio);
+        sub.add<double>("n_children", n->n_children);
+        if(n->needsWidening) sub.add<bool>("needsWidening", true);
 
         if(n->isTerminal) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", shape=box"; //, style=rounded
         if(!n->isComplete) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", style=dashed";

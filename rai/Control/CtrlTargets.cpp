@@ -251,12 +251,12 @@ CtrlTarget_PD::CtrlTarget_PD(const rai::Graph& params)
   : CtrlTarget_PD() {
   rai::Node* it;
   if((it=params["PD"])) {
-    arr pd=it->get<arr>();
+    arr pd=it->as<arr>();
     setGainsAsNatural(pd(0), pd(1));
     maxVel = pd(2);
     maxAcc = pd(3);
   }
-  if((it=params["target"])) y_target = it->get<arr>();
+  if((it=params["target"])) y_target = it->as<arr>();
 }
 
 void CtrlTarget_PD::setGains(double _kp, double _kd) {

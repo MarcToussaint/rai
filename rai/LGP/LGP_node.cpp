@@ -282,7 +282,7 @@ void LGP_Node::labelInfeasible() {
     for(Node* fact:branchNode->folState->list()) {
       if(fact->key=="block") {
         if(tuplesAreEqual(fact->parents, symbols)) {
-          CHECK(fact->isOfType<bool>() && fact->key=="block", "");
+          CHECK(fact->is<bool>() && fact->key=="block", "");
           stop=true;
           break;
         }
@@ -296,7 +296,7 @@ void LGP_Node::labelInfeasible() {
   if(!branchNode->folAddToState) {
     branchNode->folAddToState = &fol.KB.newSubgraph({"ADD"}, {branchNode->folState->isNodeOfGraph});
   }
-  branchNode->folAddToState->newNode<bool>({}, symbols, true);
+  branchNode->folAddToState->add<bool>(0, true, symbols);
 
   //  MNode *root=getRoot();
   branchNode->recomputeAllFolStates();
@@ -453,21 +453,21 @@ void LGP_Node::write(ostream& os, bool recursive, bool path) const {
 
 Graph LGP_Node::getInfo() const {
   Graph G;
-  if(decision) G.newNode<String>({"decision"}, {}, STRING(*decision));
-  else         G.newNode<String>({"decision"}, {}, "<ROOT>");
-  G.newNode<String>({"state"}, {}, STRING(*folState->isNodeOfGraph));
-  G.newNode<String>({"path"}, {}, getTreePathString());
-  G.newNode<arr>({"boundsCost"}, {}, cost);
-  G.newNode<arr>({"boundsConstraints"}, {}, constraints);
-  G.newNode<boolA>({"boundsFeasible"}, {}, feasible);
+  if(decision) G.add<String>("decision", STRING(*decision));
+  else         G.add<String>("decision", "<ROOT>");
+  G.add<String>("state", STRING(*folState->isNodeOfGraph));
+  G.add<String>("path", getTreePathString());
+  G.add<arr>("boundsCost", cost);
+  G.add<arr>("boundsConstraints", constraints);
+  G.add<boolA>("boundsFeasible", feasible);
   return G;
 }
 
 void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
   if(!n) {
-    n = G.newNode<bool>({"a:<ROOT>"}, NodeL(), true);
+    n = G.add<bool>("a:<ROOT>", NodeL(), true);
   } else {
-    n = G.newNode<bool>({STRING("a:"<<*decision)}, {n}, true);
+    n = G.add<bool>({STRING("a:"<<*decision)}, {n}, true);
   }
 
   if(!brief) {

@@ -1597,21 +1597,21 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
   for(uint i=0; i<objectives.N; i++) {
     shared_ptr<Objective> c = objectives(i);
     Graph& g = report.newSubgraph({c->name}, {});
-    g.newNode<double>({"order"}, {}, c->feat->order);
-    g.newNode<String>({"type"}, {}, Enum<ObjectiveType>(c->type).name());
-    if(taskC(i)) g.newNode<double>("sos", {}, taskC(i));
-    if(taskG(i)) g.newNode<double>("ineq", {}, taskG(i));
-    if(taskH(i)) g.newNode<double>("eq", {}, taskH(i));
-    if(taskF(i)) g.newNode<double>("f", {}, taskF(i));
+    g.add<double>("order", c->feat->order);
+    g.add<String>("type", Enum<ObjectiveType>(c->type).name());
+    if(taskC(i)) g.add<double>("sos", taskC(i));
+    if(taskG(i)) g.add<double>("ineq", taskG(i));
+    if(taskH(i)) g.add<double>("eq", taskH(i));
+    if(taskF(i)) g.add<double>("f", taskF(i));
     totalC += taskC(i);
     totalG += taskG(i);
     totalH += taskH(i);
     totalF += taskF(i);
   }
-  report.newNode<double>("sos", {}, totalC);
-  report.newNode<double>("ineq", {}, totalG);
-  report.newNode<double>("eq", {}, totalH);
-  report.newNode<double>("f", {}, totalF);
+  report.add<double>("sos", totalC);
+  report.add<double>("ineq", totalG);
+  report.add<double>("eq", totalH);
+  report.add<double>("f", totalF);
 
   if(gnuplt) {
     //-- write a nice gnuplot file
@@ -1654,34 +1654,34 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
   //header
 #if 1
   Graph& g = K.newSubgraph({"KOMO_specs"});
-  g.newNode<uint>({"x_dim"}, {}, x.N);
-  g.newNode<uint>({"T"}, {}, T);
-  g.newNode<uint>({"k_order"}, {}, k_order);
-  g.newNode<double>({"tau"}, {}, tau);
+  g.add<uint>("x_dim", x.N);
+  g.add<uint>("T", T);
+  g.add<uint>("k_order", k_order);
+  g.add<double>("tau", tau);
   //  uintA dims(configurations.N);
   //  for(uint i=0; i<configurations.N; i++) dims(i)=configurations(i)->q.N;
-  //  g.newNode<uintA>({"q_dims"}, {}, dims);
+  //  g.newNode<uintA>({"q_dims"}, dims);
   //  arr times(configurations.N);
   //  for(uint i=0; i<configurations.N; i++) times(i)=configurations(i)->frames.first()->time;
-  //  g.newNode<double>({"times"}, {}, times);
-  g.newNode<bool>({"computeCollisions"}, {}, computeCollisions);
+  //  g.newNode<double>({"times"}, times);
+  g.add<bool>("computeCollisions", computeCollisions);
 #endif
 
   if(includeSolution) {
     //full configuration paths
-    g.newNode<arr>({"X"}, {}, getPath_X());
-    g.newNode<arrA>({"x"}, {}, getPath_qAll());
-    g.newNode<arr>({"dual"}, {}, dual);
+    g.add<arr>("X", getPath_X());
+    g.add<arrA>("x", getPath_qAll());
+    g.add<arr>("dual", dual);
   }
 
   //objectives
   for(shared_ptr<GroundedObjective>& ob:objs) {
 
     Graph& g = K.newSubgraph({ob->feat->shortTag(pathConfig)});
-    g.newNode<double>({"order"}, {}, ob->feat->order);
-    g.newNode<String>({"type"}, {}, STRING(ob->type));
-    g.newNode<String>({"feature"}, {}, ob->feat->shortTag(pathConfig));
-    if(ob->timeSlices.N) g.newNode<intA>({"vars"}, {}, ob->timeSlices);
+    g.add<double>("order", ob->feat->order);
+    g.add<String>("type", STRING(ob->type));
+    g.add<String>("feature", ob->feat->shortTag(pathConfig));
+    if(ob->timeSlices.N) g.add<intA>("vars", ob->timeSlices);
 //    g.copy(task->feat->getSpec(world), true);
     if(includeValues) {
       arr y;
@@ -1695,20 +1695,20 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
         V.append(y);
         J.append(y.J());
       }
-      g.newNode<arrA>({"y"}, {}, V);
-      g.newNode<arrA>({"J"}, {}, J);
+      g.add<arrA>("y", V);
+      g.add<arrA>("J", J);
 
       arr Vflat;
       for(arr& v: V) Vflat.append(v);
 
       if(ob->type==OT_sos) {
-        g.newNode<double>({"sos_sumOfSqr"}, {}, sumOfSqr(Vflat));
+        g.add<double>("sos_sumOfSqr", sumOfSqr(Vflat));
       } else if(ob->type==OT_eq) {
-        g.newNode<double>({"eq_sumOfAbs"}, {}, sumOfAbs(Vflat));
+        g.add<double>("eq_sumOfAbs", sumOfAbs(Vflat));
       } else if(ob->type==OT_ineq) {
         double c=0.;
         for(double& v:Vflat) if(v>0) c+=v;
-        g.newNode<double>({"inEq_sumOfPos"}, {}, c);
+        g.add<double>("inEq_sumOfPos", c);
       }
     }
   }

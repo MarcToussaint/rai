@@ -32,9 +32,9 @@ void testFolLoadFile(){
   G.checkConsistency();
   rai::Graph& sub = G.newSubgraph({}, {});
   G.checkConsistency();
-  sub.newNode<bool>({}, {s, consts(0)}, true);
+  sub.add<bool>(0, true, {s, consts(0)});
   G.checkConsistency();
-  sub.newNode<bool>({}, {s, consts(2)}, true);
+  sub.add<bool>(0, true, {s, consts(2)});
   G.checkConsistency();
 }
 
@@ -174,8 +174,8 @@ void testMonteCarlo(){
         //-- find minimal wait time
         double w=1e10;
         for(Node *i:state){
-          if(i->isOfType<double>()){
-            double wi = i->get<double>();
+          if(i->is<double>()){
+            double wi = i->as<double>();
             if(w>wi) w=wi;
           }
         }
@@ -187,8 +187,8 @@ void testMonteCarlo(){
           //-- subtract w from all times and collect all activities with minimal wait time
           NodeL activities;
           for(Node *i:state){
-            if(i->isOfType<double>()){
-              double &wi = i->get<double>();
+            if(i->is<double>()){
+              double &wi = i->as<double>();
               wi -= w;
               if(fabs(wi)<1e-10) activities.append(i);
             }

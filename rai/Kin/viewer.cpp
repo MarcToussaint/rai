@@ -32,11 +32,11 @@ void rai::ConfigurationViewer::setCamera(rai::Frame* camF){
     cam.X = camF->ensure_X();
 
     rai::Node *at=0;
-    if((at=camF->ats->getNode("focalLength"))) cam.setFocalLength(at->get<double>());
-    if((at=camF->ats->getNode("orthoAbsHeight"))) cam.setHeightAbs(at->get<double>());
-    if((at=camF->ats->getNode("zRange"))){ arr z=at->get<arr>(); cam.setZRange(z(0), z(1)); }
-    if((at=camF->ats->getNode("width"))) gl->width=at->get<double>();
-    if((at=camF->ats->getNode("height"))) gl->height=at->get<double>();
+    if((at=camF->ats->getNode("focalLength"))) cam.setFocalLength(at->as<double>());
+    if((at=camF->ats->getNode("orthoAbsHeight"))) cam.setHeightAbs(at->as<double>());
+    if((at=camF->ats->getNode("zRange"))){ arr z=at->as<arr>(); cam.setZRange(z(0), z(1)); }
+    if((at=camF->ats->getNode("width"))) gl->width=at->as<double>();
+    if((at=camF->ats->getNode("height"))) gl->height=at->as<double>();
 //    cam.setWHRatio((double)gl->width/gl->height);
   }
   gl->resize(gl->width, gl->height);

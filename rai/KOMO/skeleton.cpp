@@ -632,7 +632,7 @@ void Skeleton::read_old(std::istream& is) {
   for(rai::Node* n:G) {
     cout <<"ENTRY: " << *n <<endl;
     rai::Graph& entry = n->graph();
-    arr& when = entry.elem(0)->get<arr>();
+    arr& when = entry.elem(0)->as<arr>();
     CHECK(when.N<=2, "Skeleton error entry " <<n->index <<" time interval: interval needs no, 1, or 2 elements");
     if(when.N==0) when= {0., -1.};
     if(when.N==1) when= {when.scalar(), when.scalar()};
@@ -644,10 +644,10 @@ void Skeleton::read_old(std::istream& is) {
     }
     StringA frames;
     try {
-      if(entry.elem(2)->isOfType<arr>()) {
-        CHECK(!entry.elem(2)->get<arr>().N, "");
+      if(entry.elem(2)->is<arr>()) {
+        CHECK(!entry.elem(2)->as<arr>().N, "");
       } else {
-        frames = entry.elem(2)->get<StringA>();
+        frames = entry.elem(2)->as<StringA>();
       }
     } catch(std::runtime_error& err) {
       LOG(-1) <<"Skeleton error line " <<n->index <<" frames: " <<err.what() <<endl;
@@ -666,7 +666,7 @@ void Skeleton::read(std::istream& is) {
     for(rai::Node* lit:stepG) {
       StringA frames;
       try {
-        frames = lit->get<StringA>();
+        frames = lit->as<StringA>();
       } catch(std::runtime_error& err) {
         LOG(-1) <<"Skeleton error step" <<phase0 <<" literal: " <<*lit <<" err: " <<err.what() <<endl;
       }

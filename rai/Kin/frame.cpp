@@ -318,8 +318,8 @@ void rai::Frame::_state_setXBadinBranch() {
 bool transFromAts(rai::Transformation& X, const rai::Graph& ats, const char* key){
   rai::Node* n = ats[key];
   if(!n) return false;
-  if(n->isOfType<rai::String>()) X.read(n->get<rai::String>().resetIstream());
-  else if(n->isOfType<arr>()) X.set(n->get<arr>());
+  if(n->is<rai::String>()) X.read(n->as<rai::String>().resetIstream());
+  else if(n->is<arr>()) X.set(n->as<arr>());
   else NIY;
   if(!X.isZero()) X.rot.normalize();
   return true;
@@ -336,10 +336,10 @@ void rai::Frame::read(const Graph& ats) {
 
   Node *n;
   if((n=ats["joint"])) {
-    if(n->get<String>()=="path") {
+    if(n->as<String>()=="path") {
       new PathDof(*this);
       pathDof->read(ats);
-    } else if(n->get<String>()!="none") {
+    } else if(n->as<String>()!="none") {
       new Joint(*this);
       joint->read(ats);
     } else {
@@ -377,12 +377,12 @@ void rai::Frame::read(const Graph& ats) {
 }
 
 void rai::Frame::write(Graph& G) {
-  if(parent) G.newNode<rai::String>({"parent"}, {}, parent->name);
+  if(parent) G.add<rai::String>("parent", parent->name);
 
   if(parent) {
-    if(!Q.isZero()) G.newNode<arr>({"Q"}, {}, Q.getArr7d());
+    if(!Q.isZero()) G.add<arr>("Q", Q.getArr7d());
   } else {
-    if(!X.isZero()) G.newNode<arr>({"X"}, {}, X.getArr7d());
+    if(!X.isZero()) G.add<arr>("X", X.getArr7d());
   }
 
   if(joint) joint->write(G);
@@ -554,7 +554,7 @@ rai::Frame& rai::Frame::addAttribute(const char* key, double value) {
 //  if(ats->find<double>(key)){
 //    ats->get<double>(key) = value;
 //  }else{
-    ats->newNode<double>(key, {}, value);
+    ats->add<double>(key, value);
 //  }
   return *this;
 }
@@ -1285,8 +1285,8 @@ void rai::Joint::read(const Graph& ats) {
 
   Node* n;
   if((n=ats["Q"])) {
-    if(n->isOfType<String>()) frame->set_Q()->read(n->get<String>().resetIstream());
-    else if(n->isOfType<arr>()) frame->set_Q()->set(n->get<arr>());
+    if(n->is<String>()) frame->set_Q()->read(n->as<String>().resetIstream());
+    else if(n->is<arr>()) frame->set_Q()->set(n->as<arr>());
     else NIY;
     frame->set_Q()->rot.normalize();
   }
@@ -1347,11 +1347,11 @@ void rai::Joint::read(const Graph& ats) {
 }
 
 void rai::Joint::write(Graph& g) {
-  g.newNode<Enum<JointType>>({"joint"}, {}, type);
-  if(H!=1.) g.newNode<double>({"ctrl_H"}, {}, H);
-  if(scale!=1.) g.newNode<double>({"joint_scale"}, {}, scale);
-  if(limits.N) g.newNode<arr>({"limits"}, {}, limits);
-  if(mimic) g.newNode<rai::String>({"mimic"}, {}, STRING('(' <<mimic->frame->name <<')'));
+  g.add<Enum<JointType>>("joint", type);
+  if(H!=1.) g.add<double>("ctrl_H", H);
+  if(scale!=1.) g.add<double>("joint_scale", scale);
+  if(limits.N) g.add<arr>("limits", limits);
+  if(mimic) g.add<rai::String>("mimic", STRING('(' <<mimic->frame->name <<')'));
 }
 
 void rai::Joint::write(std::ostream& os) const {
@@ -1483,7 +1483,7 @@ void rai::Shape::read(const Graph& ats) {
     }
     //    if(c.length()>1e-8 && !ats["rel_includes_mesh_center"]){
     //      frame.link->Q.addRelativeTranslation(c);
-    //      frame.ats.newNode<bool>({"rel_includes_mesh_center"}, {}, true);
+    //      frame.ats.newNode<bool>({"rel_includes_mesh_center"}, true);
     //    }
   }
 
@@ -1504,12 +1504,12 @@ void rai::Shape::write(std::ostream& os) const {
 }
 
 void rai::Shape::write(Graph& g) {
-  g.newNode<rai::Enum<ShapeType>>({"shape"}, {}, type());
+  g.add<rai::Enum<ShapeType>>("shape", type());
   if(type()!=ST_mesh)
-    g.newNode<arr>({"size"}, {}, size);
+    g.add<arr>("size", size);
   if(mesh().C.N>0 && mesh().C.N<=4)
-    g.newNode<arr>({"color"}, {}, mesh().C);
-  if(cont) g.newNode<int>({"contact"}, {}, cont);
+    g.add<arr>("color", mesh().C);
+  if(cont) g.add<int>("contact", cont);
 }
 
 void rai::Shape::glDraw(OpenGL& gl) {
@@ -1774,7 +1774,7 @@ void rai::Inertia::write(std::ostream& os) const {
 }
 
 void rai::Inertia::write(Graph& g) {
-  g.newNode<double>({"mass"}, {}, mass);
+  g.add<double>("mass", mass);
 }
 
 void rai::Inertia::read(const Graph& G) {

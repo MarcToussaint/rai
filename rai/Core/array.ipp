@@ -273,17 +273,17 @@ template<class T> void Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
     Mnew = Mforce;
     CHECK_LE(n, Mnew, "Mforce is smaller than required!");
   } else { //automatic
-    if(!ARRAY_flexiMem) {
-      Mnew=n;
+#if 0 //non flexi mem
+    Mnew=n;
+#else //flexi mem
+    if(Mold==0 && n>0) {
+      Mnew=n;      //first time: exact allocation
+    } else if(n>Mold || 10+2*n<Mold/4) {
+      Mnew=10+2*n; //big down-or-up-resize: allocate with some extra space
     } else {
-      if(n>0 && Mold==0) {
-        Mnew=n;      //first time: exact allocation
-      } else if(n>Mold || 10+2*n<Mold/4) {
-        Mnew=10+2*n; //big down-or-up-resize: allocate with some extra space
-      } else {
-        Mnew=Mold;   //small down-size: don't really resize memory
-      }
+      Mnew=Mold;   //small down-size: don't really resize memory
     }
+#endif
   }
 
 #ifdef RAI_USE_STDVEC
@@ -461,7 +461,7 @@ template<class T> void Array<T>::setAppend(const Array<T>& x) {
 template<class T> T Array<T>::popFirst() { T x; x=elem(0); remove(0);   return x; }
 
 /// remove and return the last element of the array (must have size>1)
-template<class T> T Array<T>::popLast() { T x=elem(N-1); resizeCopy(N-1); return x; }
+template<class T> T Array<T>::popLast() { T x=elem(N-1); CHECK_EQ(nd, 1, ""); d0--; N--;/*resizeCopy(N-1);*/ return x; }
 
 /// remove and return the last element of the array (must have size>1)
 template<class T> void Array<T>::removeLast() { resizeCopy(N-1); }

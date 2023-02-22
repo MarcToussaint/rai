@@ -425,27 +425,27 @@ void printTree(std::ostream& os, CT_Node& root){
     if(n->parent) par.append(G.elem(n->parent->comp->ID));
     rai::Graph& sub = G.newSubgraph(n->comp->name, par, {});
 
-    sub.newNode<double>("score", {}, n->score);
-    sub.newNode<double>("c", {}, n->comp->c);
-    sub.newNode<double>("comp_n", {}, n->comp_n);
+    sub.add<double>("score", n->score);
+    sub.add<double>("c", n->comp->c);
+    sub.add<double>("comp_n", n->comp_n);
 //    sub.newNode<double>("c_children", {}, n->c_children);
     if(n->comp->l>=0.){
-      sub.newNode<double>("l", {}, n->comp->l);
+      sub.add<double>("l", n->comp->l);
     }
 //    sub.newNode<double>("R", {}, n->R);
     if(n->comp->l<1e9){
       if(n->y_num){
-        sub.newNode<double>("y_mean", {}, n->y_tot/n->y_num);
-        sub.newNode<double>("y_num", {}, n->y_num);
+        sub.add<double>("y_mean", n->y_tot/n->y_num);
+        sub.add<double>("y_num", n->y_num);
       }
         //    sub.newNode<double>("y_ucb", {}, n->y_ucb);
         //    sub.newNode<double>("C_ucb", {}, n->mean_ucb);
         //    sub.newNode<double>("C_eff", {}, n->eff);
       if(n->c_tot){
-        sub.newNode<double>("c_tot", {}, n->c_tot);
+        sub.add<double>("c_tot", n->c_tot);
       }
-      if(n->childrenComplete) sub.newNode<bool>("childrenCpl");
-      if(n->branchComplete) sub.newNode<bool>("branchCpl");
+      if(n->childrenComplete) sub.add<bool>("childrenCpl", true);
+      if(n->branchComplete) sub.add<bool>("branchCpl", true);
     }
 
 //    if(n->D.N) sub.newNode<arr>("data", {}, n->D);

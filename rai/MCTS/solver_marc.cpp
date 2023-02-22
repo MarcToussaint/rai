@@ -147,6 +147,6 @@ void MCTS::writeToGraph(rai::Graph& G, MCTS_Node* n) {
   rai::NodeL par;
   if(!n) n=&root; else par.append((rai::Node*)(n->parent->data));
   double q=-10.;  if(n->N) q=n->Q/n->N;
-  n->data = G.newNode<double>({STRING("t"<<n->t <<'N' <<n->N <<'[' <<n->Qlo <<',' <<n->Qme <<',' <<n->Qup <<']')}, par, q);
+  n->data = G.add<double>({STRING("t"<<n->t <<'N' <<n->N <<'[' <<n->Qlo <<',' <<n->Qme <<',' <<n->Qup <<']')}, par, q);
   for(MCTS_Node* c:n->children) writeToGraph(G, c);
 }

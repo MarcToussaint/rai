@@ -130,7 +130,7 @@ struct FOL_World : TreeSearchDomain {
   template<class T> void addValuedFact(const StringA& symbols, const T& x) {
     NodeL parents;
     for(const String& s:symbols) parents.append(KB[s]);
-    start_state->newNode<T>({}, parents, x);
+    start_state->add<T>(0,  x, parents);
   }
   void addTerminalRule(const char* literals);
   void addTerminalRule(const StringAA& literals);
