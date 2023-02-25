@@ -66,7 +66,6 @@ struct Node {
   template<class T> bool getFromArr(T& x) const; ///< return value = false means parsing object of type T from the string failed
   bool isBoolAndTrue() const { if(type!=typeid(bool)) return false; return *getValue<bool>() == true; }
   bool isBoolAndFalse() const { if(type!=typeid(bool)) return false; return *getValue<bool>() == false; }
-  bool isGraph() const;//{ return type==typeid(Graph); }
 
   //-- get sub-value assuming this is a graph
   Graph& graph() { return as<Graph>(); }
@@ -125,7 +124,7 @@ struct Graph : NodeL {
   template<class T> Node_typed<T&>* addRef(const char* key, const T& x);
 
   Node_typed<int>* add(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
-  Graph& newSubgraph(const char* key=NULL, const NodeL& parents= {}, const Graph& x=NoGraph);
+  Graph& addSubgraph(const char* key=NULL, const NodeL& parents={});
   void appendDict(const std::map<std::string, std::string>& dict);
   Graph& add(const NodeInitializer& ni); ///< (internal) append a node initializer
 
@@ -200,8 +199,6 @@ struct Graph : NodeL {
 
 bool operator==(const Graph& A, const Graph& B);
 stdPipes(Graph)
-
-inline bool Node::isGraph() const { return type==typeid(Graph); }
 
 //===========================================================================
 
@@ -362,18 +359,18 @@ struct Node_typed : Node {
 
   Node_typed(Graph& container, const char* key)
     : Node(typeid(T), container, key), value() {
-    if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
+    if(is<Graph>()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
   }
 
   Node_typed(Graph& container, const char* key, const T& _value)
     : Node(typeid(T), container, key), value(_value) {
-    if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
+    if(is<Graph>()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
   }
 
   Node_typed(Graph& container, const char* key, const T& _value, const NodeL& parents)
     : Node(typeid(T), container, key), value(_value) {
-    if(parents.N) for(Node* p: parents) addParent(p);
-    if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
+    if(parents.N) setParents(parents);
+    if(is<Graph>()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
   }
 
   virtual ~Node_typed() {
@@ -405,8 +402,8 @@ struct Node_typed : Node {
   }
 
   virtual Node* newClone(Graph& container) const {
-    if(isGraph()) {
-      Graph& g = container.newSubgraph(key, parents);
+    if(is<Graph>()) {
+      Graph& g = container.addSubgraph(key, parents);
       g.copy(graph());
       return g.isNodeOfGraph;
     }

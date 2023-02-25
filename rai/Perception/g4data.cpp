@@ -97,8 +97,8 @@ void G4ID::load(const char* meta) {
       self->kvg_sublimbs.add<StringA>({name_limb}, StringA());
       self->kvg_sublimbs.get<StringA>(name_agent).append(name_limb);
 
-      self->kvg_digitsof.add({name_limb}, {}, StringA());
-      self->kvg_sensorsof.add({name_limb}, {}, StringA());
+      self->kvg_digitsof.add({name_limb}, StringA());
+      self->kvg_sensorsof.add({name_limb}, StringA());
 
       kvg_digits = l->getValuesOfType<rai::Graph>("digit");
       for(rai::Graph* d: kvg_digits) {
@@ -108,16 +108,16 @@ void G4ID::load(const char* meta) {
         self->sensors.append(name_digit);
         self->unstruct_sensors.append(name_digit);
 
-        self->kvg_suplimbs.add({name_digit}, {}, rai::String(name_limb));
-        self->kvg_sublimbs.add({name_digit}, {}, StringA());
+        self->kvg_suplimbs.add({name_digit}, rai::String(name_limb));
+        self->kvg_sublimbs.add({name_digit}, StringA());
         self->kvg_sublimbs.get<StringA>(name_limb).append(name_digit);
 
-        self->kvg_digitsof.add({name_digit}, {}, StringA());
+        self->kvg_digitsof.add({name_digit}, StringA());
         self->kvg_digitsof.get<StringA>(name_digit).append(name_digit);
         self->kvg_digitsof.get<StringA>(name_limb).append(name_digit);
         self->kvg_digitsof.get<StringA>(name_agent).append(name_digit);
 
-        self->kvg_sensorsof.add({name_digit}, {}, StringA());
+        self->kvg_sensorsof.add({name_digit}, StringA());
         self->kvg_sensorsof.get<StringA>(name_digit).append(name_digit);
         self->kvg_sensorsof.get<StringA>(name_limb).append(name_digit);
         self->kvg_sensorsof.get<StringA>(name_agent).append(name_digit);
@@ -135,7 +135,7 @@ void G4ID::load(const char* meta) {
     self->objects.append(name_object);
     if(o->get(structured, "structured") && structured) {
       kvg_parts = o->getValuesOfType<rai::Graph>("part");
-      self->kvg_sensorsof.add({name_object}, {}, StringA());
+      self->kvg_sensorsof.add({name_object}, StringA());
       for(rai::Graph* p: kvg_parts) {
         p->get(name_part, "name");
         self->struct_sensors.append(name_part);
@@ -151,7 +151,7 @@ void G4ID::load(const char* meta) {
       self->sensors.append(name_object);
 
       self->kvg_sensors.add<rai::Graph*>({name_object}, o);
-      self->kvg_sensorsof.add({name_object}, {}, StringA());
+      self->kvg_sensorsof.add({name_object}, StringA());
       self->kvg_sensorsof.get<StringA>(name_object).append(name_object);
 
       readNode(o, self->hsitoi, self->itohsi, i++);
@@ -215,8 +215,8 @@ void G4Rec::setDefaultParams() {
   params.clear();
   // params.append("wlen", new uint(120u));
   // params.append("thinning", new uint(12u));
-  params.add({"wlen"}, {}, uint(120u));
-  params.add({"thinning"}, {}, uint(12u));
+  params.add({"wlen"}, uint(120u));
+  params.add({"thinning"}, uint(12u));
 }
 
 void G4Rec::load(const char* recdir, bool interpolate) {
@@ -369,7 +369,7 @@ void G4Rec::appendBam(const char* bam, const arr& data) {
   rai::Node* i = kvg.getNode(bam);
 
   if(!i)
-    kvg.add(bam, {}, arr(data));
+    kvg.add(bam, arr(data));
   else
     i->as<arr>() = data; // replacing
 }
@@ -680,7 +680,7 @@ rai::String& G4Data::base() { return basedir; }
 void G4Data::load(const char* recdir, bool interpolate) {
   G4Rec* g4rec = new G4Rec();
   g4rec->load(STRING(basedir << recdir << "/"), interpolate);
-  kvg.add({recdir}, {}, g4rec);
+  kvg.add({recdir}, g4rec);
 }
 
 G4Rec& G4Data::rec(const char* recdir) {

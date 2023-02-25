@@ -959,7 +959,7 @@ Graph Configuration::reportForces() {
   for(Dof *dof : otherDofs) {
     const ForceExchange* ex = dof->fex();
     if(ex){
-      Graph& g = G.newSubgraph();
+      Graph& g = G.addSubgraph();
       g.add<String>("from", ex->a.name);
       g.add<String>("to", ex->b.name);
       g.add<arr>("force", ex->force);
@@ -2368,7 +2368,7 @@ void Configuration::write(std::ostream& os, bool explicitlySorted) const {
 
 void Configuration::write(Graph& G) const {
   for(Frame* f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
-  for(Frame* f: frames) f->write(G.newSubgraph({f->name}));
+  for(Frame* f: frames) f->write(G.addSubgraph(f->name));
 }
 
 /// write a URDF file
@@ -2684,7 +2684,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
 
   NodeL bs = G.getNodesWithTag("%body");
   for(Node* n:  bs) {
-    CHECK(n->isGraph(), "bodies must have value Graph");
+    CHECK(n->is<Graph>(), "bodies must have value Graph");
     CHECK(n->graph().findNode("%body"), "");
 
     Frame* b=new Frame(*this);
@@ -2697,7 +2697,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
 
   //-- normal case! just normal frames or edges
   for(Node* n: G) {
-    if(!n->isGraph()){
+    if(!n->is<Graph>()){
       CHECK_EQ(n->key,"q", "only non-graph node is q:[joint angles]!");
       qAngles=n;
       continue;
@@ -2772,7 +2772,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
   NodeL ss = G.getNodesWithTag("%shape");
   for(Node* n: ss) {
     CHECK_LE(n->parents.N, 1, "shapes must have no or one parent");
-    CHECK(n->isGraph(), "shape must have value Graph");
+    CHECK(n->is<Graph>(), "shape must have value Graph");
     CHECK(n->graph().findNode("%shape"), "");
 
     Frame* f = new Frame(*this);
@@ -2793,7 +2793,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
   NodeL js = G.getNodesWithTag("%joint");
   for(Node* n: js) {
     CHECK_EQ(n->parents.N, 2, "joints must have two parents: specs=" <<*n <<' ' <<n->index);
-    CHECK(n->isGraph(), "joints must have value Graph: specs=" <<*n <<' ' <<n->index);
+    CHECK(n->is<Graph>(), "joints must have value Graph: specs=" <<*n <<' ' <<n->index);
     CHECK(n->graph().findNode("%joint"), "");
 
     Frame* from = getFrame(n->parents(0)->key);

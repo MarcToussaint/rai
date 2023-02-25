@@ -1241,10 +1241,10 @@ Mutex::Mutex() {
 }
 
 Mutex::~Mutex() {
-    if (state) {
-        cerr << "Mutex destroyed without unlocking first" <<endl;
-        exit(1);
-    }
+  if (state) {
+    cerr << "Mutex destroyed without unlocking first" <<endl;
+    exit(1);
+  }
 }
 
 void Mutex::lock(const char* _lockInfo) {

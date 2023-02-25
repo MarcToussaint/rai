@@ -26,7 +26,7 @@ template<class T>
 void G4Rec::set(const char* key, const T& value) {
   rai::Node* i = params.getNode(key);
   if(i)
-    i->get<T>() = value;
+    i->as<T>() = value;
   else
     params.append(key, new T(value));
 }

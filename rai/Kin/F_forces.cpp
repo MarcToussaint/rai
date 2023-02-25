@@ -374,22 +374,19 @@ void F_NewtonEuler_DampedVelocities::phi2(arr& y, arr& J, const FrameL& F) {
   }
 
   //collect mass info (assume diagonal inertia matrix!!)
-  double mass=1.;
-  arr Imatrix = diag(.02, 3);
   rai::Frame* a = F.elem(-2);
-  if(a->inertia) {
-    mass = a->inertia->mass;
-    Imatrix = conv_mat2arr(a->inertia->matrix);
-  }
+  CHECK(a->inertia, "F_NewtonEuler needs inertia defined for '" <<a->name <<"'");
+  CHECK(a->inertia->matrix.isDiagonal(), "can only handle diagonal");
   arr mass_diag(6);
-  for(uint i=0; i<3; i++) mass_diag(i) = mass;
-  for(uint i=0; i<3; i++) mass_diag(i+3) = Imatrix(i, i);
+  mass_diag({0,2}) = a->inertia->mass;
+  mass_diag({3,5}) = a->inertia->matrix.getDiag();
 
   //collect total contact forces
   arr fo = F_TotalForce(true)
              .eval({F.elem(-2)});
 
-  double friction = .3;
+  double friction = .1;
+  a->ats->get<double>(friction, "friction");
 #if 1
   arr one_over_mass = ones(6);
   one_over_mass /= mass_diag;

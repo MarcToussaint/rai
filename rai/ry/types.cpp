@@ -20,30 +20,30 @@ pybind11::dict graph2dict(const rai::Graph& G) {
     else key <<n->index;
 
     //-- write value
-    if(n->isGraph()) {
-      dict[key.p] = graph2dict(n->get<rai::Graph>());
-    } else if(n->isOfType<rai::String>()) {
-      dict[key.p] = n->get<rai::String>().p;
-    } else if(n->isOfType<arr>()) {
-      dict[key.p] = n->get<arr>().vec();
-    } else if(n->isOfType<arrA>()) {
-      dict[key.p] = Array2vec(n->get<arrA>());
-    } else if(n->isOfType<intA>()) {
-      dict[key.p] = Array2vec(n->get<intA>());
-    } else if(n->isOfType<uintA>()) {
-      dict[key.p] = Array2vec(n->get<uintA>());
-    } else if(n->isOfType<boolA>()) {
-      dict[key.p] = Array2vec(n->get<boolA>());
-    } else if(n->isOfType<double>()) {
-      dict[key.p] = n->get<double>();
-    } else if(n->isOfType<int>()) {
-      dict[key.p] = n->get<int>();
-    } else if(n->isOfType<uint>()) {
-      dict[key.p] = n->get<uint>();
-    } else if(n->isOfType<bool>()) {
-      dict[key.p] = n->get<bool>();
-    } else if(n->isOfType<rai::Enum<rai::ShapeType>>()) {
-      dict[key.p] = n->get<rai::Enum<rai::ShapeType>>().name();
+    if(n->is<rai::Graph>()) {
+      dict[key.p] = graph2dict(n->as<rai::Graph>());
+    } else if(n->is<rai::String>()) {
+      dict[key.p] = n->as<rai::String>().p;
+    } else if(n->is<arr>()) {
+      dict[key.p] = n->as<arr>().vec();
+    } else if(n->is<arrA>()) {
+      dict[key.p] = Array2vec(n->as<arrA>());
+    } else if(n->is<intA>()) {
+      dict[key.p] = Array2vec(n->as<intA>());
+    } else if(n->is<uintA>()) {
+      dict[key.p] = Array2vec(n->as<uintA>());
+    } else if(n->is<boolA>()) {
+      dict[key.p] = Array2vec(n->as<boolA>());
+    } else if(n->is<double>()) {
+      dict[key.p] = n->as<double>();
+    } else if(n->is<int>()) {
+      dict[key.p] = n->as<int>();
+    } else if(n->is<uint>()) {
+      dict[key.p] = n->as<uint>();
+    } else if(n->is<bool>()) {
+      dict[key.p] = n->as<bool>();
+    } else if(n->is<rai::Enum<rai::ShapeType>>()) {
+      dict[key.p] = n->as<rai::Enum<rai::ShapeType>>().name();
     } else {
       LOG(-1) <<"can't convert node of type " <<n->type.name() <<" to dictionary";
     }
@@ -55,20 +55,20 @@ pybind11::list graph2list(const rai::Graph& G) {
   pybind11::list list;
   for(rai::Node* n:G) {
     //-- write value
-    if(n->isGraph()) {
-      list.append(graph2dict(n->get<rai::Graph>()));
-    } else if(n->isOfType<rai::String>()) {
-      list.append(n->get<rai::String>().p);
-    } else if(n->isOfType<arr>()) {
-      list.append(n->get<arr>().vec());
-    } else if(n->isOfType<double>()) {
-      list.append(n->get<double>());
-    } else if(n->isOfType<int>()) {
-      list.append(n->get<int>());
-    } else if(n->isOfType<uint>()) {
-      list.append(n->get<uint>());
-    } else if(n->isOfType<bool>()) {
-      list.append(n->get<bool>());
+    if(n->is<rai::Graph>()) {
+      list.append(graph2dict(n->as<rai::Graph>()));
+    } else if(n->is<rai::String>()) {
+      list.append(n->as<rai::String>().p);
+    } else if(n->is<arr>()) {
+      list.append(n->as<arr>().vec());
+    } else if(n->is<double>()) {
+      list.append(n->as<double>());
+    } else if(n->is<int>()) {
+      list.append(n->as<int>());
+    } else if(n->is<uint>()) {
+      list.append(n->as<uint>());
+    } else if(n->is<bool>()) {
+      list.append(n->as<bool>());
     } else {
     }
   }

@@ -289,7 +289,7 @@ bool FOL_World::is_terminal_state() const {
 }
 
 void FOL_World::make_current_state_new_start() {
-  if(!start_state) start_state = &KB.newSubgraph({"START_STATE"}, state->isNodeOfGraph->parents);
+  if(!start_state) start_state = &KB.addSubgraph("START_STATE", state->isNodeOfGraph->parents);
   state->index();
   start_state->copy(*state);
   start_state->isNodeOfGraph->key="START_STATE";
@@ -384,7 +384,7 @@ void FOL_World::setState(Graph* s, int setT_step) {
   if(state) {
     CHECK(s->isNodeOfGraph != state->isNodeOfGraph, "you are setting the state to itself");
   }
-  if(!state) state = &KB.newSubgraph({"STATE"}, {s->isNodeOfGraph});
+  if(!state) state = &KB.addSubgraph("STATE", {s->isNodeOfGraph});
   state->copy(*s);
   DEBUG(KB.checkConsistency();) {
     //the old state hat a parent: its predecessor; this was copied to the new state
@@ -400,7 +400,7 @@ void FOL_World::setState(Graph* s, int setT_step) {
 }
 
 Graph* FOL_World::createStateCopy() {
-  Graph* new_state = &KB.newSubgraph({STRING("STATE_"<<count++)}, state->isNodeOfGraph->parents);
+  Graph* new_state = &KB.addSubgraph(STRING("STATE_"<<count++), state->isNodeOfGraph->parents);
   state->index();
   new_state->copy(*state);
   return new_state;
@@ -584,10 +584,10 @@ void FOL_World::addObject(const char* name) {
 
 void FOL_World::addTerminalRule(const char* literals) {
   //first create a new rule
-  Graph& rule = KB.newSubgraph({"Rule"}, {});
+  Graph& rule = KB.addSubgraph("Rule");
   worldRules.append(rule.isNodeOfGraph);
-  Graph& preconditions = rule.newSubgraph({}, {});
-  Graph& effect = rule.newSubgraph({}, {});
+  Graph& preconditions = rule.addSubgraph();
+  Graph& effect = rule.addSubgraph();
   effect.add<bool>(0, true, {Quit_keyword}); //adds the (QUIT) to the effect
 
   preconditions.read(STRING(literals));
@@ -596,10 +596,10 @@ void FOL_World::addTerminalRule(const char* literals) {
 
 void FOL_World::addTerminalRule(const StringAA& literals) {
   //first create a new rule
-  Graph& rule = KB.newSubgraph({"Rule"}, {});
+  Graph& rule = KB.addSubgraph("Rule");
   worldRules.append(rule.isNodeOfGraph);
-  Graph& preconditions = rule.newSubgraph({}, {});
-  Graph& effect = rule.newSubgraph({}, {});
+  Graph& preconditions = rule.addSubgraph();
+  Graph& effect = rule.addSubgraph();
   effect.add<bool>(0, true, {Quit_keyword}); //adds the (QUIT) to the effect
 
   for(const StringA& lit:literals) {
@@ -612,7 +612,7 @@ void FOL_World::addTerminalRule(const StringAA& literals) {
 }
 
 void FOL_World::addDecisionSequence(std::istream& is) {
-  Graph& seq = KB.newSubgraph({"Decisions"}, {});
+  Graph& seq = KB.addSubgraph("Decisions");
   seq.read(is);
   cout <<"CREATED DECISION SEQUENCE:" <<*seq.isNodeOfGraph <<endl;
 }

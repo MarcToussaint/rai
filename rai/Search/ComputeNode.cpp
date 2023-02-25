@@ -1,4 +1,5 @@
 #include "ComputeNode.h"
+#include "../Core/graph.h"
 
 namespace rai{
 NodeGlobal& info(){
@@ -42,4 +43,9 @@ std::shared_ptr<rai::TreeSearchNode> rai::ComputeNode::transition(int i){
     LOG(0) <<"created node '" <<child->name <<"' ID:" <<child->ID <<" type: '" <<rai::niceTypeidName(typeid(*child)) <<"' baseLevel:" <<child->baseLevel;
   }
   return child;
+}
+
+void rai::ComputeNode::data(rai::Graph& g){
+  if(c>0.) g.add<double>("c", c);
+  if(l>0.) g.add<double>("l", l);
 }

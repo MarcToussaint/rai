@@ -1446,12 +1446,15 @@ void rai::Mesh::readPLY(const char* fn) {
 
         free(face.verts) ;
       }
-    } else /* all non-PlyVertex and non-PlyFace elements are grabbed here */
-      get_other_element_ply(ply);
+    } else {
+      /* all non-PlyVertex and non-PlyFace elements are grabbed here */
+      PlyOtherElems *other = get_other_element_ply(ply);
+      free_other_elements_ply(other);
+    }
   }
 
-  close_ply(ply); //calls fclose
   free_ply(ply);
+  fclose(fp);
 }
 
 #else

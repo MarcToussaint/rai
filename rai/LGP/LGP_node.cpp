@@ -21,12 +21,6 @@
 
 namespace rai {
 
-uint COUNT_kin=0;
-uint COUNT_node=0;
-uintA COUNT_opt=consts<uint>(0, BD_max);
-double COUNT_time=0.;
-String OptLGPDataPath;
-
 template<> const char* rai::Enum<BoundType>::names []= {
   "symbolic",
   "pose",
@@ -72,7 +66,7 @@ void LGP_Node::resetData() {
 }
 
 LGP_Node::LGP_Node(LGP_Tree& _tree, uint levels)
-  : parent(nullptr), tree(_tree), step(0), time(0.), id(COUNT_node++),
+  : parent(nullptr), tree(_tree), step(0), time(0.), id(tree.COUNT_node++),
     fol(tree.fol),
     L(levels) {
   //this is the root node!
@@ -85,7 +79,7 @@ LGP_Node::LGP_Node(LGP_Tree& _tree, uint levels)
 }
 
 LGP_Node::LGP_Node(LGP_Node* parent, TreeSearchDomain::Handle& a)
-  : parent(parent), tree(parent->tree), step(parent->step+1), id(COUNT_node++),
+  : parent(parent), tree(parent->tree), step(parent->step+1), id(tree.COUNT_node++),
     fol(parent->fol),
     L(parent->L) {
   parent->children.append(this);
@@ -170,7 +164,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
       cout <<"########## OPTIM lev " <<bound <<endl;
     }
 
-    komo->logFile = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
+    komo->logFile = new ofstream(tree.OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
 
 
     if(komo->logFile){
@@ -210,16 +204,16 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     labelInfeasible();
     return;
   }
-  COUNT_kin += Configuration::setJointStateCount;
-  COUNT_opt(bound)++;
-  COUNT_time += komo->timeTotal;
+  tree.COUNT_kin += Configuration::setJointStateCount;
+  tree.COUNT_opt(bound)++;
+  tree.COUNT_time += komo->timeTotal;
   count(bound)++;
 
   DEBUG(komo->getReport(false, 1, FILE("z.problem")););
   Graph result = komo->getReport((komo->opt.verbose>0 && bound>=2));
   DEBUG(FILE("z.problem.cost") <<result;);
 //  cout <<komo->getCollisionPairs() <<endl;
-  if(bound==BD_seqPath || bound==BD_path) cout <<result <<endl;
+  //if(bound==BD_seqPath || bound==BD_path) cout <<result <<endl;
 
   double cost_here = komo->sos;
   double constraints_here = komo->ineq + komo->eq;
@@ -294,7 +288,7 @@ void LGP_Node::labelInfeasible() {
 
   //add the infeasible-literal as an 'ADD' command to the branch node
   if(!branchNode->folAddToState) {
-    branchNode->folAddToState = &fol.KB.newSubgraph({"ADD"}, {branchNode->folState->isNodeOfGraph});
+    branchNode->folAddToState = &fol.KB.addSubgraph("ADD", {branchNode->folState->isNodeOfGraph});
   }
   branchNode->folAddToState->add<bool>(0, true, symbols);
 
@@ -465,9 +459,9 @@ Graph LGP_Node::getInfo() const {
 
 void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
   if(!n) {
-    n = G.add<bool>("a:<ROOT>", NodeL(), true);
+    n = G.add<bool>("a:<ROOT>", true);
   } else {
-    n = G.add<bool>({STRING("a:"<<*decision)}, {n}, true);
+    n = G.add<bool>({STRING("a:"<<*decision)}, true, {n});
   }
 
   if(!brief) {

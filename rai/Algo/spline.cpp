@@ -592,7 +592,6 @@ void CubicSplinePosVelAcc(arr& pos, arr& vel, arr& acc, double trel, const arr& 
 
   double tau2 = tau*tau;
   double tau3 = tau2*tau;
-  double tau4 = tau2*tau2;
   arr d = x0;
   arr c = v0;
 #if 0

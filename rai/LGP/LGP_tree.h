@@ -53,6 +53,12 @@ struct LGP_Tree : GLDrawer {
   arr cameraFocus;
   bool firstTimeDisplayTree=true;
 
+  uint COUNT_kin=0;
+  uint COUNT_node=0;
+  uintA COUNT_opt=consts<uint>(0, BD_max);
+  double COUNT_time=0.;
+  String OptLGPDataPath;
+
   Array<std::shared_ptr<KinPathViewer>> views; //displays for the 3 different levels
 
   //-- these are lists or queues; I don't maintain them sorted because their evaluation (e.g. f(n)=g(n)+h(n)) changes continuously

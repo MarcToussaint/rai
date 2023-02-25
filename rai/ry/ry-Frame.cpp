@@ -66,10 +66,10 @@ void init_Frame(pybind11::module& m) {
 
     .def("info", [](shared_ptr<rai::Frame>& self) {
 	rai::Graph G;
-	G.newNode<rai::String>("name", {}, self->name);
-	G.newNode<int>("ID", {}, self->ID);
+	G.add<rai::String>("name", self->name);
+	G.add<int>("ID", self->ID);
 	self->write(G);
-	if(!G["X"]) G.newNode<arr>("X", {}, self->ensure_X().getArr7d());
+	if(!G["X"]) G.add<arr>("X", self->ensure_X().getArr7d());
 	return graph2dict(G);
       })
 

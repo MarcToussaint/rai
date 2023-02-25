@@ -127,7 +127,7 @@ bool factsAreEqual(Node* fact, Node* literal, const NodeL& subst, const Graph* s
 /// try to find a fact within 'KB' that is exactly equal to 'fact'
 bool getEqualFactInKB(Graph& KB, Node* fact, bool checkAlsoValue) {
   if(!fact->parents.N) {
-    CHECK(fact->isGraph(), "special literals need Graph type");
+    CHECK(fact->is<Graph>(), "special literals need Graph type");
     Graph& graph=fact->graph();
     //assume this is a special parent!
     if(fact->key=="aggregate") {
@@ -649,7 +649,7 @@ bool forwardChaining_propositional(Graph& KB, Node* q) {
 double evaluateFunction(Graph& func, Graph& state, int verbose) {
   double f=0.;
   for(Node* tree:func) { //trees are additive; within a tree, only one leaf contributes
-    if(!tree->isGraph()) continue; //just some annotation
+    if(!tree->is<Graph>()) continue; //just some annotation
     double ftree=0.;
     Graph& treeG = tree->graph();
     for(Node* leaf:treeG) { //every tree is a list of leafs (terms), each leaf a graph

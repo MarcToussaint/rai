@@ -15,8 +15,8 @@ void generateProblem(rai::Configuration& C){
     C.selectJointsByAtt({"base","armL","armR"});
     C.pruneInactiveJoints();
     C.optimizeTree();
-    C["pr2L"]->ats->newNode<rai::Graph>({"logical"}, {}, {{"gripper", true}});
-    C["pr2R"]->ats->newNode<rai::Graph>({"logical"}, {}, {{"gripper", true}});
+    C["pr2L"]->ats->add<rai::Graph>({"logical"}, {{"gripper", true}});
+    C["pr2R"]->ats->add<rai::Graph>({"logical"}, {{"gripper", true}});
     C["worldTranslationRotation"]->joint->H = 1e-0;
     C.addFile("../../../../rai-robotModels/objects/tables.g");
     for(uint i=0;i<numObj;i++){

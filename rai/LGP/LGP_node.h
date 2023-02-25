@@ -20,11 +20,6 @@ struct LGP_Node;
 struct LGP_Tree;
 typedef Array<LGP_Node*> LGP_NodeL;
 
-extern uint COUNT_kin, COUNT_node;
-extern uintA COUNT_opt;
-extern double COUNT_time;
-extern String OptLGPDataPath;
-
 enum BoundType { BD_all=-1,
                  BD_symbolic=0,
                  BD_pose,

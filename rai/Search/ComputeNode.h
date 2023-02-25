@@ -52,6 +52,7 @@ namespace rai {
 
     virtual void write(ostream& os) const{ os <<name; }
     virtual void store(const char* path) const {}
+    virtual void data(Graph& g);
   };
   stdOutPipe(ComputeNode)
 

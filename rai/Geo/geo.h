@@ -77,6 +77,7 @@ struct Matrix {
   Matrix(const Matrix& m) : m00(m.m00), m01(m.m01), m02(m.m02), m10(m.m10), m11(m.m11), m12(m.m12), m20(m.m20), m21(m.m21), m22(m.m22) {}
   double* p() { return &m00; }
   arr getArr() const { return arr(&m00, 9, true).reshape(3,3); }
+  arr getDiag() const { return arr{m00,m11,m22}; }
 
   void set(double* m);
   void setZero();

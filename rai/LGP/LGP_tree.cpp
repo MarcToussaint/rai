@@ -369,7 +369,7 @@ void LGP_Tree::player() {
 
 LGP_Node* LGP_Tree::walkToNode(const String& seq) {
   init();
-  Graph& tmp = root->fol.KB.newSubgraph({"TMP"}, {});
+  Graph& tmp = root->fol.KB.addSubgraph("TMP", {});
   String tmpseq(seq);
   tmp.read(tmpseq);
   cout <<"decision sequence:" <<*tmp.isNodeOfGraph <<endl;
@@ -551,12 +551,13 @@ String LGP_Tree::report(bool detailed) {
   LGP_Node* bpath = getBest(fringe_solved, 3);
 
   String out;
-  out <<"TIME= " <<cpuTime() <<" TIME= " <<COUNT_time <<" KIN= " <<COUNT_kin << " TREE= " <<COUNT_node
+  out /*<<"TIME= " <<cpuTime()*/
+      <<" TIME= " <<COUNT_time <<" KIN= " <<COUNT_kin << " TREE= " <<COUNT_node
       <<" POSE= " <<COUNT_opt(BD_pose) <<" SEQ= " <<COUNT_opt(BD_seq) <<" PATH= " <<COUNT_opt(BD_path)+COUNT_opt(BD_seqPath)
       <<" bestPose= " <<(bpose?bpose->cost(1):100.)
       <<" bestSeq= " <<(bseq ?bseq ->cost(2):100.)
       <<" bestPath= " <<(bpath?bpath->cost(displayBound):100.)
-      <<" #solutions= " <<fringe_solved.N;
+      <<" #sol= " <<fringe_solved.N;
 
   //  if(bseq) displayFocus=bseq;
   //  if(bpath) displayFocus=bpath;

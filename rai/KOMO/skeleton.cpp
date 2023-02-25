@@ -47,7 +47,7 @@ void Skeleton::setFromStateSequence(const Array<Graph*>& states, const arr& time
     for(uint i=0; i<G.N; i++) {
       if(!done(k, i)) {
         Node* n = G(i);
-        if(n->isGraph() && n->graph().findNode("%decision")) continue; //don't pickup decision literals
+        if(n->is<Graph>() && n->graph().findNode("%decision")) continue; //don't pickup decision literals
         StringA symbols;
         for(Node* p:n->parents) symbols.append(p->key);
 
@@ -340,9 +340,8 @@ shared_ptr<KOMO> Skeleton::getKOMO_finalSlice(const rai::Configuration& C, doubl
 
   //-- prepare the komo problem
   double maxPhase = getMaxPhase();
-  double optHorizon=maxPhase;
-  if(optHorizon<1.) optHorizon=maxPhase=1.;
-  if(optHorizon>2.) optHorizon=2.;
+  double optHorizon=2.;
+  if(maxPhase<1.) optHorizon=maxPhase=1.;
 
   //-- create another skeleton, with non-switches removed
   rai::Skeleton finalS;
@@ -352,9 +351,11 @@ shared_ptr<KOMO> Skeleton::getKOMO_finalSlice(const rai::Configuration& C, doubl
       finalS.S.append(s);
       rai::SkeletonEntry& fs = finalS.S(-1);
       fs.phase0 -= maxPhase-optHorizon;
-      fs.phase1 -= maxPhase-optHorizon;
       if(fs.phase0<0.) fs.phase0=0.;
-      if(fs.phase1<0.) fs.phase1=0.;
+      if(fs.phase1!=-1){
+        fs.phase1 -= maxPhase-optHorizon;
+        if(fs.phase1<0.) fs.phase1=0.;
+      }
     }
   }
 
@@ -437,7 +438,10 @@ void Skeleton::addObjectives(KOMO& komo) const {
     int j = switches(i, 0);
     int k = switches(i, 1);
     komo.addModeSwitch({S(k).phase0, S(k).phase1}, S(k).symbol, S(k).frames, j<0);
-    if(S(k).phase1!=-1. && S(k).phase0>=S(k).phase1){
+    if(S(k).phase1!=-1.
+       && S(k).phase0>=S(k).phase1
+       && !(S(k).phase0==0. && S(k).phase1==0.)){ //this case happens in final slice skeletons, where several switches happen at step=0 to create effective dofs
+      cout <<*this <<endl;
       LOG(-2) <<"are you sure this is only a single timeslice mode??:" <<S(k);
     }
   }

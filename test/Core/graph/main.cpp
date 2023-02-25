@@ -29,7 +29,7 @@ void TEST(Read){
   cout <<*G["k"] <<endl;
   cout <<G["k"]->graph() <<endl;
 //  cout <<G["val"]->graph()(0)->get<double>() <<endl;
-  cout <<G["k"]->graph()["z"]->get<rai::String>() <<endl;
+  cout <<G["k"]->graph()["z"]->as<rai::String>() <<endl;
   cout <<"DONE" <<endl;
 
   G.writeHtml(FILE("z.html"), FILE("example.g"));
@@ -83,10 +83,10 @@ rai::NodeL rndParents(const rai::Graph& G){
 void rndModify(rai::Graph& G){
   switch(rnd(4)){
     case 0://add bool item
-      G.newNode<bool>(rai::String().setRandom(), rndParents(G), true);
+      G.add<bool>(rai::String().setRandom(), true, rndParents(G));
       break;
     case 1://add Subgraph item
-      G.newSubgraph(rai::String().setRandom(), rndParents(G));
+      G.addSubgraph(rai::String().setRandom(), rndParents(G));
       break;
     case 2://delete item
       if(G.N) delete G.rndElem();
@@ -107,7 +107,7 @@ void TEST(Random){
 
   for(uint k=0;k<10;k++){
     rndModify(rndSubgraph(A));
-    rai::Graph& C = rndSubgraph(A).newSubgraph({}, {});
+    rai::Graph& C = rndSubgraph(A).addSubgraph();
 
     rai::Graph& D = rndSubgraph(A);
     if(D.N){
@@ -155,7 +155,7 @@ bool operator==(const Something&, const Something&){ return false; }
 
 void TEST(Manual){
   rai::Graph G;
-  G.newNode<Something>({"hallo"}, {}, Something(3));
+  G.add<Something>("hallo", Something(3));
   cout <<G <<endl;
 }
 

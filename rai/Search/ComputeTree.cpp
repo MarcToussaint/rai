@@ -423,7 +423,7 @@ void printTree(std::ostream& os, CT_Node& root){
     CT_Node *n = T(i);
     rai::NodeL par;
     if(n->parent) par.append(G.elem(n->parent->comp->ID));
-    rai::Graph& sub = G.newSubgraph(n->comp->name, par, {});
+    rai::Graph& sub = G.addSubgraph(n->comp->name, par);
 
     sub.add<double>("score", n->score);
     sub.add<double>("c", n->comp->c);

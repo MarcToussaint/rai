@@ -59,7 +59,7 @@ void AStar_Node::getGraph(rai::Graph& G, rai::Node* n) {
   if(!n) {
     n = G.add<bool>("a:<ROOT>", true);
   } else {
-    n = G.add<bool>({STRING("a:"<<*action)}, {n}, true);
+    n = G.add<bool>({STRING("a:"<<*action)}, true, {n});
   }
   n->key <<STRING("d:" <<d <<" t:" <<time <<' ');
   n->key <<STRING("f:" <<g+h <<" g:" <<g <<" h:" <<h);

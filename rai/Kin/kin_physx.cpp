@@ -492,23 +492,27 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
           joint->setJointType(PxArticulationJointType::eREVOLUTE);
           axis = PxArticulationAxis::eTWIST;
           joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
-        } break;
+          break;
+        }
         case rai::JT_transX:{
           joint->setJointType(PxArticulationJointType::ePRISMATIC);
           axis = PxArticulationAxis::eX;
           joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
-        } break;
+          break;
+        }
         case rai::JT_transY:{
           joint->setJointType(PxArticulationJointType::ePRISMATIC);
           axis = PxArticulationAxis::eY;
           joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
-        } break;
+          break;
+        }
         case rai::JT_transZ:{
           joint->setJointType(PxArticulationJointType::ePRISMATIC);
           axis = PxArticulationAxis::eZ;
           joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
-        } break;
-        defaut: NIY;
+          break;
+        }
+        default: NIY;
       }
       jointAxis(f->ID) = axis;
 

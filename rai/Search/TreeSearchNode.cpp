@@ -19,7 +19,7 @@ void rai::printTree(const rai::Array<rai::TreeSearchNode*>& T){
     if(n->parent) par.append(G.elem(n->parent->ID));
     rai::String name;
     name <<*n;
-    rai::Graph& sub = G.newSubgraph(name, par, {});
+    rai::Graph& sub = G.addSubgraph(name, par);
 
     sub.add<bool>("complete", n->isComplete);
     sub.add<bool>("feasible", n->isFeasible);
@@ -44,25 +44,25 @@ void rai::printTree(const rai::Array<std::shared_ptr<rai::TreeSearchNode>>& T){
 
 void rai::printTree(std::ostream& os, const rai::Array<std::shared_ptr<TreeSearchNode> >& T){
 
-    rai::Graph G;
-    for(uint i=0;i<T.N;i++){
-        TreeSearchNode *n = T(i).get();
-        rai::NodeL par;
-        if(n->parent) par.append(G.elem(n->parent->ID));
-        rai::Graph& sub = G.newSubgraph(n->name, par, {});
+  rai::Graph G;
+  for(uint i=0;i<T.N;i++){
+    TreeSearchNode *n = T(i).get();
+    rai::NodeL par;
+    if(n->parent) par.append(G.elem(n->parent->ID));
+    rai::Graph& sub = G.addSubgraph(n->name, par);
 
-        sub.add<double>("level", n->f_prio);
-        sub.add<double>("n_children", n->n_children);
-        if(n->needsWidening) sub.add<bool>("needsWidening", true);
+    sub.add<double>("level", n->f_prio);
+    sub.add<double>("n_children", n->n_children);
+    if(n->needsWidening) sub.add<bool>("needsWidening", true);
+    n->data(sub);
 
-        if(n->isTerminal) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", shape=box"; //, style=rounded
-        if(!n->isComplete) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", style=dashed";
-        if(!n->isFeasible) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", color=red";
-//        else if(n->isBest) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", color=orange";
-    }
+    if(n->isTerminal) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", shape=box"; //, style=rounded
+    if(!n->isComplete) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", style=dashed";
+    if(!n->isFeasible) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", color=red";
+  }
 
-    G.checkConsistency();
-    G.write(FILE("z.tree"));
-    G.writeDot(FILE("z.dot"));
-    rai::system("dot -Tpdf z.dot > z.pdf");
+  G.checkConsistency();
+  G.write(FILE("z.tree"));
+  G.writeDot(FILE("z.dot"));
+  rai::system("dot -Tpdf z.dot > z.pdf");
 }

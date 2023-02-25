@@ -177,7 +177,7 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
   }
 
   //-- write value
-  if(isGraph()) {
+  if(is<Graph>()) {
     if(yamlMode){
       graph().write(os, ",\n", "{}", indent, true);
     }else{
@@ -299,7 +299,7 @@ void Graph::clear() {
     DEBUG(checkConsistency();)
   }
   //delete all subgraphs first to remove potential children
-  for(Node* n:*this) if(n->isGraph()) n->graph().clear();
+  for(Node* n:*this) if(n->is<Graph>()) n->graph().clear();
   while(N) {
     Node** n = NodeL::p+N-1; //last
     if(!isDoubleLinked) while((*n)->numChildren) { n--; CHECK_GE(n, p, "can't find a node without children"); }
@@ -318,10 +318,10 @@ Graph& Graph::add(const NodeInitializer& ni) {
   return *this;
 }
 
-Graph& Graph::newSubgraph(const char* key, const NodeL& parents, const Graph& x) {
-  Node_typed<Graph>* n = add<Graph>(key, Graph(), parents);
+Graph& Graph::addSubgraph(const char* key, const NodeL& parents) {
+  Node_typed<Graph>* n = add<Graph>(key);
+  if(parents.N) n->setParents(parents);
   DEBUG(CHECK(n->value.isNodeOfGraph && &n->value.isNodeOfGraph->container==this, ""))
-  if(!!x) n->value.copy(x);
   n->value.isDoubleLinked = isDoubleLinked;
   return n->value;
 }
@@ -347,7 +347,7 @@ Node* Graph::findNode(const char* key, bool recurseUp, bool recurseDown) const {
   if(recurseUp && isNodeOfGraph) ret = isNodeOfGraph->container.findNode(key, true, false);
   if(ret) return ret;
   if(recurseDown){
-    for(Node* n: (*this)) if(n->isGraph()) {
+    for(Node* n: (*this)) if(n->is<Graph>()) {
       ret = n->graph().findNode(key, false, true);
       if(ret) return ret;
     }
@@ -360,7 +360,7 @@ Node* Graph::findNodeOfType(const std::type_info& type, const char* key, bool re
   Node* ret=nullptr;
   if(recurseUp && isNodeOfGraph) ret = isNodeOfGraph->container.findNodeOfType(type, key, true, false);
   if(ret) return ret;
-  if(recurseDown) for(Node* n: (*this)) if(n->isGraph()) {
+  if(recurseDown) for(Node* n: (*this)) if(n->is<Graph>()) {
         ret = n->graph().findNodeOfType(type, key, false, true);
         if(ret) return ret;
       }
@@ -371,7 +371,7 @@ NodeL Graph::findNodes(const char* key, bool recurseUp, bool recurseDown) const 
   NodeL ret;
   for(Node* n: (*this)) if(n->key==key) ret.append(n);
   if(recurseUp && isNodeOfGraph) ret.append(isNodeOfGraph->container.findNodes(key, true, false));
-  if(recurseDown) for(Node* n: (*this)) if(n->isGraph()) ret.append(n->graph().findNodes(key, false, true));
+  if(recurseDown) for(Node* n: (*this)) if(n->is<Graph>()) ret.append(n->graph().findNodes(key, false, true));
   return ret;
 }
 
@@ -379,13 +379,13 @@ NodeL Graph::findNodesOfType(const std::type_info& type, const char* key, bool r
   NodeL ret;
   for(Node* n: (*this)) if(n->type==type && (!key || n->key==key)) ret.append(n);
   if(recurseUp && isNodeOfGraph) ret.append(isNodeOfGraph->container.findNodesOfType(type, key, true, false));
-  if(recurseDown) for(Node* n: (*this)) if(n->isGraph()) ret.append(n->graph().findNodesOfType(type, key, false, true));
+  if(recurseDown) for(Node* n: (*this)) if(n->is<Graph>()) ret.append(n->graph().findNodesOfType(type, key, false, true));
   return ret;
 }
 
 NodeL Graph::findGraphNodesWithTag(const char* tag) const {
   NodeL ret;
-  for(Node* n: (*this)) if(n->isGraph() && n->graph().findNode(tag)) ret.append(n);
+  for(Node* n: (*this)) if(n->is<Graph>() && n->graph().findNode(tag)) ret.append(n);
   return ret;
 }
 
@@ -452,7 +452,7 @@ NodeL Graph::getNodesOfDegree(uint deg) {
 NodeL Graph::getAllNodesRecursively() const {
   NodeL ret = *this;
   NodeL below;
-  for(Node* n:ret) if(n->isGraph()) below.append(n->graph().getAllNodesRecursively());
+  for(Node* n:ret) if(n->is<Graph>()) below.append(n->graph().getAllNodesRecursively());
   ret.append(below);
   return ret;
 }
@@ -479,7 +479,7 @@ Node* Graph::edit(Node* ed) {
         while(n->parents.N) n->removeParent(n->parents.elem(-1));
         for(Node* p:ed->parents) n->addParent(p);
       }
-      if(n->isGraph()) { //merge the KVGs
+      if(n->is<Graph>()) { //merge the KVGs
         n->graph().edit(ed->graph());
       } else { //overwrite the value
         n->copyValue(ed);
@@ -545,12 +545,12 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
   //-- first, just clone nodes with their values -- 'parents' still point to the origin nodes
   for(Node* n:G) {
     Node* newn=nullptr;
-    if(n->isGraph()) {
+    if(n->is<Graph>()) {
       // why we can't copy the subgraph yet:
       // copying the subgraph would require to fully rewire the subgraph (code below)
       // but if the subgraph refers to parents of this graph that are not create yet, requiring will fail
       // therefore we just insert an empty graph here; we then copy the subgraph once all nodes are created
-      newn = this->newSubgraph(n->key, n->parents).isNodeOfGraph;
+      newn = this->addSubgraph(n->key, n->parents).isNodeOfGraph;
     } else {
       newn = n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
     }
@@ -563,7 +563,7 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
 #endif
 
   //-- now copy subgraphs
-  for(Node* n:newNodes) if(n->isGraph()) {
+  for(Node* n:newNodes) if(n->is<Graph>()) {
       n->graph().copy(G.elem(n->index-indexOffset)->graph()); //you can only call the operator= AFTER assigning isNodeOfGraph
     }
 
@@ -664,7 +664,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
   NodeL edits;// = getNodesWithTag("%Edit");
   for(uint i=Nbefore; i<N; i++) {
     Node* n=elem(i);
-    if(n->isGraph() && n->graph().findNode("%Edit")) edits.append(n);
+    if(n->is<Graph>() && n->graph().findNode("%Edit")) edits.append(n);
   }
   for(Node* ed:edits) {
 //    CHECK_EQ(ed->key.elem(0), "Edit", "an edit node needs Edit as first key");
@@ -895,7 +895,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
         } break;
         case '{': { // sub graph
           is.putback(c);
-          Graph& subgraph = this->newSubgraph(key, parents);
+          Graph& subgraph = this->addSubgraph(key, parents);
           subgraph.read(is);
           node = subgraph.isNodeOfGraph;
           if(tags.N>1) {
@@ -932,7 +932,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
   if(tags.N>1) {
     if(node->is<bool>() && tags.N==2 && tags(0)=="Delete") {
       node->as<bool>() = false;
-    } else if(!node->isGraph()) {
+    } else if(!node->is<Graph>()) {
       LOG(-1) <<"you specified tags " <<tags <<" for node '" <<*node <<"', which is of non-graph type -- ignored";
     }
   }
@@ -1000,7 +1000,7 @@ void addJasonValues(Graph& G, const char* key, Json::Value& value) {
     } else if(value[0].type()==Json::objectValue) {
         rai::Node* sub = G.add<bool>(key, true);
         for(uint i=0; i<value.size(); i++){
-          Json2Graph(G.newSubgraph({STRING(key<<'_'<<i)}, {sub}), value[i]);
+          Json2Graph(G.addSubgraph({STRING(key<<'_'<<i)}, {sub}), value[i]);
         }
     } else {
       HALT("can't parse array of elems of unknown type '" <<value[0].type() <<"'");
@@ -1014,7 +1014,7 @@ void addJasonValues(Graph& G, const char* key, Json::Value& value) {
       case Json::stringValue: G.add<String>(key,value.asString().c_str()); break;
       case Json::booleanValue: G.add<bool>(key, value.asBool()); break;
       case Json::arrayValue: HALT("covered above"); break;
-      case Json::objectValue:  Json2Graph(G.newSubgraph({key}, {}), value);  break;
+      case Json::objectValue:  Json2Graph(G.addSubgraph({key}, {}), value);  break;
     }
   }
 }
@@ -1123,10 +1123,10 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
     if(defaultEdges && n->parents.N==2) { //an edge
       os <<n->parents(0)->index <<" -> " <<n->parents(1)->index <<" [ label=\"" <<label <<"\" ];" <<endl;
     } else {
-      if(n->isGraph()) {
+      if(n->is<Graph>()) {
         bool graphNodesInside=false;
         Graph& nG = n->graph();
-        for(Node* c:nG) if(c->parents.N || c->isGraph()) graphNodesInside=true;
+        for(Node* c:nG) if(c->parents.N || c->is<Graph>()) graphNodesInside=true;
         if(!subGraphsAsNodes && graphNodesInside) {
           os <<"subgraph cluster_" <<n->index <<" { " /*<<" rank=same"*/ <<endl;
           os <<n->index <<" [ label=\"" <<label <<"\" shape=box ];" <<endl;
@@ -1166,7 +1166,7 @@ void Graph::sortByDotOrder() {
   perm.setStraightPerm(N);
   uint it_COUNT=0;
   for(Node* it: list()) {
-    if(it->isGraph()) {
+    if(it->is<Graph>()) {
       double* order = it->graph().find<double>("dot_order");
       if(!order) { RAI_MSG("doesn't have dot_order attribute"); return; }
       perm(it_COUNT++) = (uint)*order;
@@ -1263,7 +1263,7 @@ bool Graph::checkConsistency() const {
       } else {
         //      CHECK(parent->index < node->index,"node refers to parent that sorts below the node");
       }
-    if(node->isGraph()) {
+    if(node->is<Graph>()) {
       Graph& G = node->graph();
       CHECK_EQ(G.isNodeOfGraph, node, "");
       G.checkConsistency();
@@ -1278,7 +1278,7 @@ uint Graph::index(bool subKVG, uint start) {
   for(Node* it: list()) {
     it->index=idx;
     idx++;
-    if(it->isGraph()) {
+    if(it->is<Graph>()) {
       Graph& G=it->graph();
       if(subKVG) idx = G.index(true, idx);
       else G.index(false, 0);

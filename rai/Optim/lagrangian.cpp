@@ -244,7 +244,7 @@ arr LagrangianProblem::get_totalFeatures(){
   return feat;
 }
 
-void LagrangianProblem::reportGradients(const StringA& featureNames){
+void LagrangianProblem::reportGradients(std::ostream& os, const StringA& featureNames){
   CHECK_EQ(featureNames.N, phi_x.N, "");
 
   //-- build feature -> entry map
@@ -301,7 +301,7 @@ void LagrangianProblem::reportGradients(const StringA& featureNames){
       Entry& e = entries(j);
       e.grad += g;
       e.err += l;
-      if(e.ot==OT_none) e.ot = ot; else CHECK_EQ(ot, e.ot, "");
+      if(e.ot==OT_none) e.ot = ot; //else CHECK_EQ(ot, e.ot, "");
     }
   }
 
@@ -309,7 +309,7 @@ void LagrangianProblem::reportGradients(const StringA& featureNames){
 
   for(Entry& e: entries){
     if(!e.err) continue;
-    cout <<"  " <<e.name <<" err: " <<e.err <<" grad: " <<e.grad <<" type: " <<rai::Enum<ObjectiveType>(e.ot) <<endl;
+    os <<"{ " <<e.name <<" err: " <<e.err <<" grad: " <<e.grad <<" type: " <<rai::Enum<ObjectiveType>(e.ot) <<" }" <<endl;
   }
 }
 

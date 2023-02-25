@@ -1251,9 +1251,15 @@ void KOMO::checkGradients() {
 #endif
 }
 
-int KOMO::view(bool pause, const char* txt){ pathConfig.gl()->recopyMeshes(pathConfig); return pathConfig.view(pause, txt); }
+int KOMO::view(bool pause, const char* txt){
+  pathConfig.gl()->recopyMeshes(pathConfig);
+  return pathConfig.view(pause, txt);
+}
 
-int KOMO::view_play(bool pause, double delay, const char* saveVideoPath){ view(false, 0); return pathConfig.gl()->playVideo(timeSlices.d0, timeSlices.d1, pause, delay*tau*T, saveVideoPath); }
+int KOMO::view_play(bool pause, double delay, const char* saveVideoPath){
+  view(false, 0);
+  return pathConfig.gl()->playVideo(timeSlices.d0, timeSlices.d1, pause, delay*tau*T, saveVideoPath);
+}
 
 void KOMO::view_close(){ pathConfig.view_close(); }
 
@@ -1596,7 +1602,7 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
   double totalC=0., totalG=0., totalH=0., totalF=0.;
   for(uint i=0; i<objectives.N; i++) {
     shared_ptr<Objective> c = objectives(i);
-    Graph& g = report.newSubgraph({c->name}, {});
+    Graph& g = report.addSubgraph(c->name);
     g.add<double>("order", c->feat->order);
     g.add<String>("type", Enum<ObjectiveType>(c->type).name());
     if(taskC(i)) g.add<double>("sos", taskC(i));
@@ -1653,7 +1659,7 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
   rai::Graph K;
   //header
 #if 1
-  Graph& g = K.newSubgraph({"KOMO_specs"});
+  Graph& g = K.addSubgraph("KOMO_specs");
   g.add<uint>("x_dim", x.N);
   g.add<uint>("T", T);
   g.add<uint>("k_order", k_order);
@@ -1677,7 +1683,7 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
   //objectives
   for(shared_ptr<GroundedObjective>& ob:objs) {
 
-    Graph& g = K.newSubgraph({ob->feat->shortTag(pathConfig)});
+    Graph& g = K.addSubgraph(ob->feat->shortTag(pathConfig));
     g.add<double>("order", ob->feat->order);
     g.add<String>("type", STRING(ob->type));
     g.add<String>("feature", ob->feat->shortTag(pathConfig));
