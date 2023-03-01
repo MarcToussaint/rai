@@ -2194,12 +2194,11 @@ void OpenGL::about(std::ostream& os) { RAI_MSG("NICO"); }
 // callbacks
 //
 
-void getSphereVector(rai::Vector& vec, int _x, int _y, int le, int ri, int bo, int to) {
+void getSphereVector(rai::Vector& vec, double x, double y, int le, int ri, int bo, int to) {
   int w=ri-le, h=to-bo;
   int minwh = w<h?w:h;
-  double x, y;
-  x=(double)_x;  x=x-le-.5*w;  x*= 2./minwh;
-  y=(double)_y;  y=y-bo-.5*h;  y*= 2./minwh;
+  x=x-le-.5*w;  x*= 2./minwh;
+  y=y-bo-.5*h;  y*= 2./minwh;
   vec.x=x;
   vec.y=y;
   vec.z=.5-(x*x+y*y);
@@ -2211,8 +2210,45 @@ bool OpenGL::modifiersNone(){ return _NONE(modifiers); }
 bool OpenGL::modifiersShift(){ return _SHIFT(modifiers); }
 bool OpenGL::modifiersCtrl(){ return _CTRL(modifiers); }
 
+arr OpenGL::get3dMousePos(arr& normal){
+  float d = captureDepth(mouseposy, mouseposx);
+  arr x = {mouseposx, mouseposy, d};
+  if(d<.01 || d==1.) {
+    cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
+  } else {
+    camera.unproject_fromPixelsAndGLDepth(x, width, height);
+  }
+  if(!!normal){
+    arr x1 = {mouseposx-1., mouseposy, captureDepth(mouseposy, mouseposx-1.)};
+    camera.unproject_fromPixelsAndGLDepth(x1, width, height);
+    arr x2 = {mouseposx+1., mouseposy, captureDepth(mouseposy, mouseposx+1.)};
+    camera.unproject_fromPixelsAndGLDepth(x2, width, height);
+    arr y1 = {mouseposx, mouseposy-1., captureDepth(mouseposy-1., mouseposx)};
+    camera.unproject_fromPixelsAndGLDepth(y1, width, height);
+    arr y2 = {mouseposx, mouseposy+1., captureDepth(mouseposy+1., mouseposx)};
+    camera.unproject_fromPixelsAndGLDepth(y2, width, height);
+
+    normal = crossProduct(x2-x1, y2-y1);
+    normal /= length(normal);
+  }
+  return x;
+}
+
+uint OpenGL::get3dMouseObjID(){
+  drawOptions.drawMode_idColor = true;
+  drawOptions.drawColors = false;
+  beginNonThreadedDraw(true);
+  Draw(width, height, nullptr, true);
+  endNonThreadedDraw(true);
+  drawOptions.drawMode_idColor = false;
+  drawOptions.drawColors = true;
+  uint id = color2id(&captureImage(mouseposy, mouseposx, 0));
+  LOG(1) <<"SELECTION: ID: " <<id;
+  return id;
+}
+
 void OpenGL::Reshape(int _width, int _height) {
-//  auto _dataLock = dataLock(RAI_HERE);
+  //  auto _dataLock = dataLock(RAI_HERE);
   CALLBACK_DEBUG(this, "Reshape Callback: " <<_width <<' ' <<_height);
   width=_width;
   height=_height;
@@ -2409,7 +2445,6 @@ void OpenGL::MouseMotion(double _x, double _y) {
   }
   CALLBACK_DEBUG(this, "associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
   lastEvent.set(mouse_button, -1, _x, _y, vec.x-downVec.x, vec.y-downVec.y);
-  mouseposx=_x; mouseposy=_y;
 
   bool needsUpdate=false;
   

@@ -520,6 +520,31 @@ rai::Mesh rai::Mesh::decompose(){
   return M;
 }
 
+uint rai::Mesh::getComponents(){
+  //usually we'd analyze connected components... here assume sorted vertices and triangles!
+  NIY;
+//  uint part=0;
+//  uint partStart=0;
+//  uint end=0;
+//  cvxParts = {0};
+//  for(uint i=0;i<T.d0;i++){
+//    uint* t = &T(i,0);
+//    if(t[0]>end && t[1]>end && t[2]>end){ //NEW COMPONENT!
+//      part++;
+//      cvxParts.append(end);
+//      partStart = end+1;
+//    }
+//    CHECK_GE(t[0], partStart, "");
+//    CHECK_GE(t[1], partStart, "");
+//    CHECK_GE(t[2], partStart, "");
+//    if(t[0]>end) end=t[0];
+//    if(t[1]>end) end=t[1];
+//    if(t[2]>end) end=t[2];
+//  }
+//  LOG(0) <<"parts:" <<cvxParts;
+  return cvxParts.N;
+}
+
 void rai::Mesh::setSSCvx(const arr& core, double r, uint fineness) {
   if(r>0.) {
     Mesh ball;

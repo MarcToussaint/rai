@@ -85,7 +85,7 @@ PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, con
   params.meshWeldTolerance = 0.001f;
   params.meshPreprocessParams = PxMeshPreprocessingFlags(PxMeshPreprocessingFlag::eWELD_VERTICES);
   params.buildTriangleAdjacencies = false;
-  params.buildGPUData = true;
+  //params.buildGPUData = true;
 
   params.meshPreprocessParams |= PxMeshPreprocessingFlag::eENABLE_INERTIA;
   params.meshWeldTolerance = 1e-7f;
@@ -193,9 +193,9 @@ void PhysXInterface_self::initPhysics(){
   PxSceneDesc sceneDesc(core->mPhysics->getTolerancesScale());
   sceneDesc.gravity = PxVec3(0.f, 0.f, px_gravity);
   sceneDesc.bounceThresholdVelocity = 10.;
-  sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
+  //sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
   sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
-  sceneDesc.broadPhaseType = PxBroadPhaseType::eGPU;
+  //sceneDesc.broadPhaseType = PxBroadPhaseType::eGPU;
   sceneDesc.gpuMaxNumPartitions = 8;
   sceneDesc.solverType = PxSolverType::eTGS;
 
@@ -621,8 +621,12 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       geometry = new PxTriangleMeshGeometry(triangleMesh);
 #else
       rai::Mesh &M = s->mesh();
+      if(!M.cvxParts.N){
+        M.getComponents();
+      }
       if(M.cvxParts.N){
         floatA Vfloat;
+        LOG(0) <<"creating " <<M.cvxParts.N <<" convex parts for shape " <<s->frame.name;
         for(uint i=0;i<M.cvxParts.N;i++){
           Vfloat.clear();
           int start = M.cvxParts(i);

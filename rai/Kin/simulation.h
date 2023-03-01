@@ -99,6 +99,7 @@ struct Simulation {
   uint& pngCount();
 
   std::shared_ptr<struct PhysXInterface> hidden_physx();
+  OpenGL& hidden_gl();
 };
 
 }

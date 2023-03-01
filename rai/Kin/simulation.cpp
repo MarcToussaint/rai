@@ -486,32 +486,7 @@ void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
 }
 
 //===========================================================================
-//added-------------------------
-struct MoveBallHereCallback:OpenGL::GLClickCall {
 
-  MoveBallHereCallback() { }
-  bool clickCallback(OpenGL& gl) {
-    if(gl.mouse_button==1 && gl.mouseIsDown)
-    {
-      float d = gl.captureDepth(gl.mouseposy, gl.mouseposx);
-      arr x = {double(gl.mouseposy), double(gl.mouseposy), d};
-//      cout <<" image coords: " <<x;
-      if(d<.01 || d==1.) {
-        cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<gl.camera.glConvertToTrueDepth(d) <<endl;
-      } else {
-        cout <<"pixel coords and depth " <<x <<endl;
-        gl.camera.unproject_fromPixelsAndGLDepth(x, gl.width, gl.height);
-      }
-
-      cout << "translation in world coords is " <<x <<endl;
-
-
-    }  
-   
-    return true;
-  }
-};
-//-------------------------
 struct Simulation_DisplayThread : Thread, GLDrawer {
   Configuration Ccopy;
   OpenGL gl;
@@ -530,8 +505,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
       gl("Simulation Display") {
     gl.add(*this);
     gl.camera.setDefault();
-    gl.addClickCall(new MoveBallHereCallback());///added
-    gl.drawOptions.drawVisualsOnly=true;
+//    gl.drawOptions.drawVisualsOnly=true;
 
     if(Ccopy.getFrame("camera_gl",false)) gl.camera.X = Ccopy["camera_gl"]->ensure_X();
 
@@ -594,9 +568,10 @@ void Simulation_self::updateDisplayData(double _time, const rai::Configuration& 
     display->Ccopy.copy(_C, false);
     //deep copy meshes!
     for(rai::Frame* f:display->Ccopy.frames) if(f->shape) {
-        shared_ptr<Mesh> org = f->shape->_mesh;
-        f->shape->_mesh = make_shared<Mesh> (*org.get());
-      }
+      shared_ptr<Mesh> org = f->shape->_mesh;
+      f->shape->_mesh = make_shared<Mesh> (*org.get());
+    }
+    LOG(0) <<"simulation frames changed: #frames: " <<display->Ccopy.frames.N <<" last: " <<display->Ccopy.frames(-1)->name;
   }
   display->Ccopy.setFrameState(_C.getFrameState());
   display->Ccopy.copyProxies(_C.proxies);
@@ -837,6 +812,10 @@ uint& Simulation::pngCount(){
 
 std::shared_ptr<PhysXInterface> Simulation::hidden_physx(){
   return self->physx;
+}
+
+OpenGL& Simulation::hidden_gl(){
+  return self->display->gl;
 }
 
 } //namespace rai

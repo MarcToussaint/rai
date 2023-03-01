@@ -94,6 +94,7 @@ struct Mesh : GLDrawer {
 
   /// @name convex decomposition
   rai::Mesh decompose();
+  uint getComponents();
 
   /// @name support function
   uint support(const double* dir);

@@ -220,6 +220,8 @@ struct OpenGL {
   bool modifiersNone();
   bool modifiersShift();
   bool modifiersCtrl();
+  arr get3dMousePos(arr& normal=NoArr);
+  uint get3dMouseObjID();
 
   /// @name to display image data (kind of misuse)
   int watchImage(const byteA& img, bool wait, float backgroundZoom=1.);

@@ -287,7 +287,7 @@ void rai::Frame::transformToDiagInertia(){
   CHECK(inertia, "");
   CHECK(!shape || shape->type()==rai::ST_marker, "can't translate this frame if it has a shape attached");
   CHECK(!joint || joint->type==rai::JT_rigid || joint->type==rai::JT_free, "can't translate this frame if it has a joint attached");
-  LOG(0) <<"translating frame '" <<name <<"' to accomodate for centered compound inertia for bullet";
+  LOG(0) <<"translating frame '" <<name <<"' to accomodate for centered compound inertia";
   rai::Transformation t=0;
   //transform COM
   if(!inertia->com.isZero){
