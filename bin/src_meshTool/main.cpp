@@ -10,7 +10,7 @@ const char *USAGE=
 "\n\
 Usage:  meshTools file.* <tags...>\n\
 \n\
-Tags can be -hide, -box, -fuse, -clean, -center, -scale, -save, -qhull, -flip \n";
+Tags can be -hide, -box, -fuse, -clean, -center, -scale, -qhull, -flip \n";
 
 void drawInit(void*, OpenGL& gl){
   glStandardLight(nullptr, gl);
@@ -19,7 +19,7 @@ void drawInit(void*, OpenGL& gl){
 }
 
 void TEST(MeshTools) {
-  cout <<USAGE <<endl;
+  if(!rai::checkCmdLineTag("hide")) cout <<USAGE <<endl;
 
   rai::String file;
   if(rai::argc>=2) file=rai::argv[1];
@@ -123,11 +123,13 @@ void TEST(MeshTools) {
     gl->add(drawInit);
     gl->add(mesh);
     gl->watch();
-
-    cout <<"  saving.. to z.*" <<endl;
-    mesh.writePLY("z.ply", true);
-    mesh.writeArr(FILE("z.arr"));
   }
+
+  cout <<"  saving.. to z.*" <<endl;
+  mesh.writePLY("z.ply", true);
+  mesh.writeArr(FILE("z.arr"));
+
+  cout <<"== bye bye ==" <<endl;
 }
 
 int MAIN(int argc, char** argv){

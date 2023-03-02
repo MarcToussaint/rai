@@ -552,17 +552,19 @@ void initParameters(int _argc, char* _argv[], bool forceReload, bool verbose);
 /// memorize the command line arguments and open a log file
 void initCmdLine(int _argc, char* _argv[]) {
   argc=_argc; argv=_argv;
-  {
+  bool quiet=false;
+  for(int i=0; i<argc; i++) if(!strcmp(argv[i],"-quiet")) quiet=true;
+  
+  if(!quiet){
     rai::String msg;
     msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
     msg <<"'";
     LOG(1) <<msg;
+    LOG(1) <<"** run path: '" <<processInfo()->startDir <<"'";
+    LOG(1) <<"** rai path: '" <<processInfo()->raiPath <<"'";
   }
 
-  LOG(1) <<"** run path: '" <<processInfo()->startDir <<"'";
-  LOG(1) <<"** rai path: '" <<processInfo()->raiPath <<"'";
-
-  initParameters(argc, argv, false, true);
+  initParameters(argc, argv, false, !quiet);
 }
 
 /// returns true if the tag was found on command line

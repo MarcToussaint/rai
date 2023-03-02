@@ -1373,6 +1373,7 @@ void initParameters(int _argc, char*_argv[], bool forceReload, bool verbose){
 
   //-- parse cmd line arguments into graph
   StringA tags;
+  int argn=0;
   for(int n=1; n<argc; n++) {
     if(rai::argv[n][0]=='-') {
       rai::String key(rai::argv[n]+1);
@@ -1385,7 +1386,8 @@ void initParameters(int _argc, char*_argv[], bool forceReload, bool verbose){
         P->add<bool>(key, true);
       }
     } else {
-      RAI_MSG("non-parsed cmd line argument:" <<rai::argv[n]);
+      P->add<rai::String>(rai::argv[n], STRING("arg"<<argn++));
+      //RAI_MSG("non-parsed cmd line argument:" <<rai::argv[n]);
     }
   }
 
