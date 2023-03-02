@@ -1,4 +1,4 @@
-#include "timingMPC.h"
+#include "TimingMPC.h"
 #include "timingOpt.h"
 #include "../Optim/NLP_Solver.h"
 

@@ -3,6 +3,7 @@
 unity.cxx
 
 %% compile temporaries
+/build
 *.o
 *.a
 *.so
@@ -43,7 +44,6 @@ tags
 *.pyc
 _*.py
 .ipynb_checkpoints
-
 
 # EXECUTION
 core
@@ -122,7 +122,6 @@ share/extern/esdcan-*
 %% QUESTIONABLE ???!!!
 *.zip
 *_doc
-html
 *.tgz
 
 
