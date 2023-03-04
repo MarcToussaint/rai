@@ -1573,7 +1573,8 @@ template<class T> Array<T>& Array<T>::read(std::istream& is) {
     is >>PARSE("[");
     expectBracket=true;
     c=peerNextChar(is, " \n\r\t", true);
-    if(c==typeid(T).name()[0]){ //c is a type indicator - swallow it
+    if(c==typeid(T).name()[0] && 0==typeid(T).name()[1]){ //c is a type indicator - swallow it
+      is.get(c); //eat c
       c=peerNextChar(is, " \n\r\t", true);
     }
   }
@@ -1603,14 +1604,19 @@ template<class T> Array<T>& Array<T>::read(std::istream& is) {
     for(;;) {
       skip(is, " ,\r\t", NULL, true);
       is.get(c);
-      if(c==']' || !is.good()) { is.clear(); break; }
+      if(expectBracket && c==']') { is.clear(); break; }
+      if(!expectBracket && is.eof()) { is.clear(); break; }
       if(c==';' || c=='\n') {  //set an array width
         if(!d) d=i; else if(d && i%d) PARSERR("mis-structured array in row " <<i/d);
         continue;
       }
       if(c!=',') is.putback(c);
       is >>x;
-      if(!is.good()) { is.clear(); break; }
+      if(!is.good()){
+        if(!expectBracket) is.clear(); //ok
+        else PARSERR("failed reading ending bracket ]");
+        break;
+      }
       if(i>=N) resizeCopy(i+1000/sizeT);
       elem(i)=x;
       i++;

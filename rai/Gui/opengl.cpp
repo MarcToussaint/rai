@@ -2379,11 +2379,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
 }
 
 void OpenGL::Scroll(int wheel, int direction) {
-//  auto _dataLock = dataLock(RAI_HERE);
   CALLBACK_DEBUG(this, "Mouse Wheel Callback: " <<wheel <<' ' <<direction);
-  bool needsUpdate=false;
-
-  double dz = (direction>0.? .1:-.1);
 
   rai::Camera* cam=&camera;
   for(mouseView=views.N; mouseView--;) {
@@ -2394,32 +2390,32 @@ void OpenGL::Scroll(int wheel, int direction) {
     }
   }
 
-  //-- SCROLL -> zoom
-  if(_NONE(modifiers)){
-    cam->X.pos += cam->X.rot*Vector_z * (dz * (cam->X.pos-cam->foc).length());
+  //-- user provided callbacks first
+  bool cont=true;
+  for(uint i=0; cont && i<scrollCalls.N; i++) cont = cont && scrollCalls(i)->scrollCallback(*this, direction);
 
-    needsUpdate=true;
+  if(cont){
+    double dz = (direction>0.? .1:-.1);
+
+    //-- SCROLL -> zoom
+    if(_NONE(modifiers)){
+      cam->X.pos += cam->X.rot*Vector_z * (dz * (cam->X.pos-cam->foc).length());
+    }
+
+    //-- shift-LEFT -> translation
+    if(_SHIFT(modifiers) && !_CTRL(modifiers)) {
+      cam->X.pos += cam->X.rot*Vector_z * (.1*dz);
+      cam->foc += cam->X.rot*Vector_z * (.1*dz);
+    }
+
+    //-- ctrl -> focal length
+    if(!_SHIFT(modifiers) && _CTRL(modifiers)) {
+      if(direction<0.) cam->focalLength *= 1.1;
+      else cam->focalLength /= 1.1;
+    }
   }
 
-  //-- shift-LEFT -> translation
-  if(_SHIFT(modifiers) && !_CTRL(modifiers)) {
-    cam->X.pos += cam->X.rot*Vector_z * (.1*dz);
-    cam->foc += cam->X.rot*Vector_z * (.1*dz);
-
-    needsUpdate=true;
-  }
-
-  //-- ctrl -> focal length
-  if(!_SHIFT(modifiers) && _CTRL(modifiers)) {
-    if(direction<0.) cam->focalLength *= 1.1;
-    else cam->focalLength /= 1.1;
-    needsUpdate=true;
-  }
-
-  //step through all callbacks
-  for(uint i=0; i<scrollCalls.N; i++) needsUpdate = needsUpdate || scrollCalls(i)->scrollCallback(*this, direction);
-
-  if(needsUpdate) postRedrawEvent(true);
+  postRedrawEvent(true);
 }
 
 void OpenGL::WindowStatus(int status) {

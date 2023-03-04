@@ -64,7 +64,7 @@ struct DisplayThread : Thread {
     lgp->solutions.deAccess();
     if(numSolutions)
       gl.update();
-    if(saveVideo) write_ppm(gl.captureImage, STRING(OptLGPDataPath <<"vid/" <<std::setw(4)<<std::setfill('0')<<t++<<".ppm"));
+    if(saveVideo) write_ppm(gl.captureImage, STRING(lgp->OptLGPDataPath <<"vid/" <<std::setw(4)<<std::setfill('0')<<t++<<".ppm"));
   }
 };
 

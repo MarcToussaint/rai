@@ -106,6 +106,7 @@ struct Mesh : GLDrawer {
   void buildGraph();
   void deleteUnusedVertices();
   void fuseNearVertices(double tol=1e-5);
+  void deleteVertices(uintA& delLabels);
   void clean();
   void flipFaces();
   rai::Vector getCenter() const;
@@ -118,6 +119,7 @@ struct Mesh : GLDrawer {
   double getCircum() const;
   double getCircum(uint tri) const;
   double getVolume() const;
+  uintA getVertexDegrees() const;
 
   /// Comparing two Meshes - static function
   static double meshMetric(const Mesh& trueMesh, const Mesh& estimatedMesh); // Haussdorf metric

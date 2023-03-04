@@ -727,10 +727,10 @@ void permuteVertices(rai::Mesh& m, uintA& p) {
     for(i=0; i<p.N; i++) { x(i, 0)=m.C(p(i), 0); x(i, 1)=m.C(p(i), 1); x(i, 2)=m.C(p(i), 2); }
     m.C=x;
   }
-  uintA y(m.T.d0, 3);
+  uintA y(m.T.d0, m.T.d1);
   uintA p2(p.N); //inverse permutation
   for(i=0; i<p.N; i++) p2(p(i))=i;
-  for(i=0; i<m.T.d0; i++) { y(i, 0)=p2(m.T(i, 0)); y(i, 1)=p2(m.T(i, 1)); y(i, 2)=p2(m.T(i, 2)); }
+  for(i=0; i<m.T.N; i++) y.elem(i)=p2(m.T.elem(i));
   m.T=y;
 }
 
@@ -812,6 +812,25 @@ void rai::Mesh::fuseNearVertices(double tol) {
   Tt.clear();
   tex.clear();
   texImg.clear();
+}
+
+void rai::Mesh::deleteVertices(uintA& delLabels){
+  CHECK_EQ(delLabels.N, V.d0, "");
+  uintA p;
+  p.setStraightPerm(V.d0);
+  uint N=p.N;
+  for(uint i=0; i<N; i++) if(delLabels(i)) { N--; p.permute(i, N); delLabels.permute(i, N); i--; }
+
+  permuteVertices(*this, p);
+  if(C.d0==V.d0) C.resizeCopy(N, 3);
+  V.resizeCopy(N, 3);
+
+  //remove tris..
+  for(uint i=T.d0;i--;){
+    bool del=false;
+    for(uint j=0;j<T.d1;j++) if(T(i,j)>=V.d0){ del=true; break; }
+    if(del) T.delRows(i);
+  }
 }
 
 void getVertexNeighorsList(const rai::Mesh& m, intA& Vt, intA& VT) {
@@ -1167,6 +1186,13 @@ double rai::Mesh::getVolume() const {
   return vol/6.;
 }
 
+uintA rai::Mesh::getVertexDegrees() const {
+  uintA deg(V.d0);
+  deg.setZero();
+  for(uint v:T) deg(v)++;
+  return deg;
+}
+
 double rai::Mesh::meshMetric(const rai::Mesh& trueMesh, const rai::Mesh& estimatedMesh) {
   //basically a Haussdorf metric, stupidly realized by brute force algorithm
   auto haussdorfDistanceOneSide = [](const arr& V1, const arr& V2)->double {
@@ -1497,7 +1523,7 @@ void rai::Mesh::writeArr(std::ostream& os) {
   if(cvxParts.N) G.add("cvxParts", cvxParts);
   if(tex.N) G.add("tex", tex);
   if(texImg.N) G.add("texImg", texImg);
-  G.write(os, ",\n","{\n\n}", 0, false, true);
+  G.write(os, ",\n", "{\n\n}", -1, false, true);
 }
 
 void rai::Mesh::readArr(std::istream& is) {
