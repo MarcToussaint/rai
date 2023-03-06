@@ -406,7 +406,7 @@ void TEST(FollowRedundantSequence){
   G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t] += y; //adjust coordinates to be inside the arm range
   plot()->Line(Z);
-  G.gl()->add(plot()());
+  G.viewer()->add(plot()());
   G.view(false);
   //-- follow the trajectory kinematically
   for(t=0;t<T;t++){

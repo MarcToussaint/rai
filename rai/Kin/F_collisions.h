@@ -10,6 +10,10 @@
 
 #include "feature.h"
 
+namespace rai{
+  struct PairCollision;
+}
+
 //===========================================================================
 
 struct F_PairCollision : Feature {
@@ -18,7 +22,7 @@ struct F_PairCollision : Feature {
   Type type;
   bool neglectRadii=false;
 
-  shared_ptr<struct PairCollision> coll;
+  shared_ptr<rai::PairCollision> coll;
 
   F_PairCollision(Type _type=_negScalar, bool _neglectRadii=false)
     : type(_type), neglectRadii(_neglectRadii) {

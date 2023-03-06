@@ -986,7 +986,7 @@ void BulletBridge::getConfiguration(rai::Configuration& C){
         for(int i=0; i<softbody->m_nodes.size(); i++){
           m.V[i] = conv_btVec3_arr(softbody->m_nodes[i].m_x);
         }
-        m.makeLineStrip();
+        m.makeLines();
       }
 
       f.setMass(softbody->getTotalMass());

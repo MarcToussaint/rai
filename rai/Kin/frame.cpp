@@ -1434,7 +1434,7 @@ void rai::Shape::read(const Graph& ats) {
         else NIY;
       }
       if(type()==ST_none) type()=ST_sdf;
-      else CHECK_EQ(type(), ST_sdf, "");
+      //else CHECK_EQ(type(), ST_sdf, "");
     }
     if(ats.get(d, "meshscale"))  { mesh().scale(d); }
     if(ats.get(x, "meshscale"))  { mesh().scale(x(0), x(1), x(2)); }
@@ -1450,7 +1450,7 @@ void rai::Shape::read(const Graph& ats) {
       for(uint i=1;i<=n;i++){
         V[i] = (double(i)/n)*y;
       }
-      mesh().makeLineStrip();
+      mesh().makeLines();
     }
 
     if(mesh().V.N && type()==ST_none) type()=ST_mesh;

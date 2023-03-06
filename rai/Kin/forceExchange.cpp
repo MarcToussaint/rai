@@ -169,7 +169,7 @@ void rai::ForceExchange::kinTorque(arr& y, arr& J) const {
   }else NIY;
 }
 
-PairCollision* rai::ForceExchange::coll() {
+rai::PairCollision* rai::ForceExchange::coll() {
   if(!__coll) {
     rai::Shape* s1 = a.shape;
     rai::Shape* s2 = b.shape;

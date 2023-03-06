@@ -1,5 +1,4 @@
 #include <Kin/kin.h>
-#include <Kin/viewer.h>
 #include <Kin/F_pose.h>
 #include <Kin/F_qFeatures.h>
 
@@ -47,8 +46,7 @@ void controlMobile(){
   rai::Configuration C;
   C.addFile("../../../../rai-robotModels/holoDrive/sketchBase.g");
 
-  rai::ConfigurationViewer V;
-  V.setConfiguration(C, "", true);
+  C.view(true);
 
   arr q_last = C.getJointState();
 
@@ -81,7 +79,7 @@ void controlMobile(){
       q = ctrl.solve();
       C.setJointState(q);
 
-      V.setConfiguration(C, STRING("t:" <<t), false);
+      C.view(false, STRING("t:" <<t));
       rai::wait(.05);
       arr err = ((C.q-q_last)({0,2})/tau - vstar);
       err.write(fil, 0, 0, "  "); fil<<endl;
@@ -91,7 +89,7 @@ void controlMobile(){
     }
   }
 
-  V.setConfiguration(C,"", true);
+  C.view(true);
 }
 
 //===========================================================================

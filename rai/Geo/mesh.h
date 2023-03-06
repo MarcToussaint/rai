@@ -16,8 +16,6 @@ struct OpenGL;
 namespace rai { struct Mesh; }
 typedef rai::Array<rai::Mesh> MeshA;
 typedef rai::Array<rai::Mesh*> MeshL;
-void glDrawMeshes(void*, OpenGL&);
-
 struct ANN;
 
 namespace rai {
@@ -55,7 +53,8 @@ struct Mesh : GLDrawer {
   /// @name set or create
   void clear();
   void setBox(bool edgesOnly=false);
-  void setDot(); ///< an awkward mesh: just a single dot, not tris (e.g. cvx core of a sphere...)
+  void setBox(const arr& lo, const arr& up, bool edgesOnly=true);
+  Mesh& setDot(); ///< an awkward mesh: just a single dot, not tris (e.g. cvx core of a sphere...)
   void setLine(double l); ///< an awkward mesh: just a single line, not tris (e.g. cvx core of a sphere...)
   void setQuad(double x_width=1., double y_width=1., const byteA& _texImg={}, bool flipY=false, bool texByReference=false); ///< a quat, optionally with texture
   void setTetrahedron();
@@ -90,7 +89,7 @@ struct Mesh : GLDrawer {
   void addConvex(const arr& points, const arr& color=NoArr);
   void makeConvexHull();
   void makeTriangleFan();
-  void makeLineStrip();
+  void makeLines();
 
   /// @name convex decomposition
   rai::Mesh decompose();
@@ -147,7 +146,7 @@ struct Mesh : GLDrawer {
 
 stdOutPipe(Mesh)
 
-} //END of namespace
+} //namespace
 
 //===========================================================================
 
@@ -168,16 +167,4 @@ void inertiaBox(double* Inertia, double& mass, double density, double dx, double
 void inertiaCylinder(double* Inertia, double& mass, double density, double height, double radius);
 void inertiaMesh(double *I, double& mass, double density, const rai::Mesh& m);
 
-
-//===========================================================================
-//
-// GJK interface
-//
-
-enum GJK_point_type { GJK_none=0, GJK_vertex, GJK_edge, GJK_face };
-extern GJK_point_type& NoPointType;
-double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
-                       const rai::Transformation& t1, const rai::Transformation& t2,
-                       rai::Vector& p1, rai::Vector& p2,
-                       rai::Vector& e1, rai::Vector& e2,
-                       GJK_point_type& pt1, GJK_point_type& pt2);
+void glDrawMeshes(void*, OpenGL&);

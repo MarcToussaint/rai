@@ -1252,13 +1252,13 @@ void KOMO::checkGradients() {
 }
 
 int KOMO::view(bool pause, const char* txt){
-  pathConfig.gl()->recopyMeshes(pathConfig);
+  pathConfig.viewer()->recopyMeshes(pathConfig);
   return pathConfig.view(pause, txt);
 }
 
 int KOMO::view_play(bool pause, double delay, const char* saveVideoPath){
   view(false, 0);
-  return pathConfig.gl()->playVideo(timeSlices.d0, timeSlices.d1, pause, delay*tau*T, saveVideoPath);
+  return pathConfig.viewer()->playVideo(timeSlices.d0, timeSlices.d1, pause, delay*tau*T, saveVideoPath);
 }
 
 void KOMO::view_close(){ pathConfig.view_close(); }
@@ -1549,7 +1549,7 @@ shared_ptr<NLP_Factored> KOMO::nlp_FactoredParts(){
   return make_shared<Conv_KOMO_FactoredNLP>(*this, dofs);
 }
 
-Camera& KOMO::displayCamera(){ DEPR; return pathConfig.gl()->displayCamera(); }
+Camera& KOMO::displayCamera(){ DEPR; return pathConfig.viewer()->displayCamera(); }
 
 rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs) {
   //-- collect all task costs and constraints

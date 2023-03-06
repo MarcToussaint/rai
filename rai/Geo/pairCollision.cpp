@@ -30,35 +30,89 @@ extern "C" {
 #  define FCLmode
 #endif
 
+namespace rai {
+
 PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Transformation& _t1, const rai::Transformation& _t2, double rad1, double rad2)
-  : mesh1(&_mesh1), mesh2(&_mesh2), t1(&_t1), t2(&_t2), rad1(rad1), rad2(rad2) {
+  : t1(&_t1), t2(&_t2), rad1(rad1), rad2(rad2) {
+
+  mesh1.V.referTo(_mesh1.V); mesh1.T.referTo(_mesh1.T);
+  mesh2.V.referTo(_mesh2.V); mesh2.T.referTo(_mesh2.T);
 
   distance=-1.;
 
-
   //-- special cases: point to pcl
-  if(_mesh1.V.d0==1 && _mesh2.V.d0>2 && !_mesh2.T.N){
+  if(mesh1.V.d0==1 && mesh2.V.d0>2 && !mesh2.T.N){
     CHECK(_t2.isZero(), "");
     if(!_mesh2.ann){
       _mesh2.ann = make_shared<ANN>();
       _mesh2.ann->setX(_mesh2.V);
     }
     uint K=1;
-    arr nn;
-    arr x = ~_mesh1.V;
-    t1->applyOnPoint(x);
-    _mesh2.ann->getkNN(nn,x,K);
-    p2 = mean(nn);
+    arr x = ~mesh1.V;
+    if(!t1->isZero()) t1->applyOnPoint(x);
+
+    arr sqrDists;
+    uintA idx;
+    _mesh2.ann->getkNN(sqrDists, idx, x, K);
+
+    p2 = zeros(3);
+    for(uint k=0;k<K;k++) p2 += _mesh2.V[idx(k)];
+    p2 /= double(K);
+
+    if(_mesh2.Vn.N){
+      normal = zeros(3);
+      for(uint k=0;k<K;k++) normal += _mesh2.Vn[idx(k)]; //points from obj2 to obj1, as desired
+      normal /= double(K);
+    }else{
+      normal.clear();
+    }
+
     p1 = x;
     p1.reshape(-1);
-    normal = p1-p2;
-    distance = length(normal);
+    arr del = p1-p2;
+    distance = length(del);
+    if(normal.N && scalarProduct(del,normal)<.0){
+      distance *= -1.; //devision by distance below also flips normal
+    }
+    normal = del;
     if(fabs(distance)>1e-10) normal/=distance;
+    CHECK_GE(rai::sign(distance) * scalarProduct(normal, p1-p2), -1e-10, ""); //just to check, as below
     simplex1 = ~p1;
     simplex2 = ~p2;
     return;
   }
 
+  //-- special cases: point to multiple cvx parts
+  if(mesh1.V.d0==1 && _mesh2.cvxParts.N){
+    //directly call gjk for each part to get nearest
+    Object_structure m1, m2;
+    rai::Array<double*> Vhelp1 = getCarray(mesh1.V);
+    rai::Array<double*> Vhelp2 = getCarray(mesh2.V);
+    CHECK(!!t1 && !!t2, "NIY - transform point only..");
+    double dmin=-1.;
+    int imin=0;
+    //LOG(0) <<_mesh2.cvxParts <<_mesh2.V.d0 <<endl;
+    for(uint i=0;i<_mesh2.cvxParts.N;i++){
+      int start = _mesh2.cvxParts(i);
+      int end = i+1<_mesh2.cvxParts.N ? _mesh2.cvxParts(i+1)-1 : _mesh2.V.d0-1;
+      CHECK_LE(start+1, end, "");
+      m1.numpoints = mesh1.V.d0;  m1.vertices = Vhelp1.p;  m1.rings=nullptr; //TODO: rings would make it faster
+      m2.numpoints = end-start;  m2.vertices = Vhelp2.p+start;  m2.rings=nullptr;
+
+      double d = gjk_distance(&m1, 0, &m2, 0, 0, 0, 0, 0);
+      //cout <<" part " <<i <<" d:" <<d <<endl;
+      if(d<dmin || dmin<0.){ imin=i; dmin=d; }
+    }
+    //cout <<" part " <<imin <<" is min" <<endl;
+    //imin is the closest part... do the below with imin..
+    int start = _mesh2.cvxParts(imin);
+    int end = imin+1<(int)_mesh2.cvxParts.N ? _mesh2.cvxParts(imin+1)-1 : _mesh2.V.d0-1;
+    mesh2.V.clear();
+    mesh2.T.clear();
+    mesh2.V = _mesh2.V({start, end});
+  }
+
+  //-- standard case
 
 #ifdef FCLmode
   //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
@@ -78,8 +132,8 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
 #ifndef FCLmode
   if(distance<1e-10) { //WARNING: Setting this to zero does not work when using
     //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
-    rai::Mesh M1(*mesh1); if(!t1->isZero()) t1->applyOnPointArray(M1.V);
-    rai::Mesh M2(*mesh2); if(!t2->isZero()) t2->applyOnPointArray(M2.V);
+    rai::Mesh M1(mesh1); if(!t1->isZero()) t1->applyOnPointArray(M1.V);
+    rai::Mesh M2(mesh2); if(!t2->isZero()) t2->applyOnPointArray(M2.V);
     libccd(M1, M2, _ccdMPRPenetration);
   }
 #else
@@ -438,10 +492,10 @@ void PairCollision::GJK_sqrDistance() {
 #ifdef RAI_GJK
   // convert meshes to 'Object_structures'
   Object_structure m1, m2;
-  rai::Array<double*> Vhelp1 = getCarray(mesh1->V);
-  rai::Array<double*> Vhelp2 = getCarray(mesh2->V);
-  m1.numpoints = mesh1->V.d0;  m1.vertices = Vhelp1.p;  m1.rings=nullptr; //TODO: rings would make it faster
-  m2.numpoints = mesh2->V.d0;  m2.vertices = Vhelp2.p;  m2.rings=nullptr;
+  rai::Array<double*> Vhelp1 = getCarray(mesh1.V);
+  rai::Array<double*> Vhelp2 = getCarray(mesh2.V);
+  m1.numpoints = mesh1.V.d0;  m1.vertices = Vhelp1.p;  m1.rings=nullptr; //TODO: rings would make it faster
+  m2.numpoints = mesh2.V.d0;  m2.vertices = Vhelp2.p;  m2.rings=nullptr;
 
   // convert transformations to affine matrices
   arr T1, T2;
@@ -740,8 +794,8 @@ void PairCollision::kinCenter(arr& y, arr& J, const arr& Jp1, const arr& Jp2, co
 }
 
 void PairCollision::nearSupportAnalysis(double eps) {
-  rai::Mesh M1(*mesh1); t1->applyOnPointArray(M1.V);
-  rai::Mesh M2(*mesh2); t2->applyOnPointArray(M2.V);
+  rai::Mesh M1(mesh1); t1->applyOnPointArray(M1.V);
+  rai::Mesh M2(mesh2); t2->applyOnPointArray(M2.V);
 
   //get the set of vertices that are maximal/minimal in normal direction
   //(these might be more than the simplex: esp 4 points for box)
@@ -911,3 +965,5 @@ double coll_3on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2
   p1.reshape(3);
   return d;
 }
+
+} //namespace

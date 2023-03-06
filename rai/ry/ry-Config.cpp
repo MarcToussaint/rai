@@ -325,18 +325,18 @@ To get really precise distances and penetrations use the FS.distance feature wit
        pybind11::arg("message")=nullptr)
 
   .def("view_recopyMeshes", [](shared_ptr<rai::Configuration>& self) {
-    self->gl()->recopyMeshes(*self);
+    self->viewer()->recopyMeshes(*self);
   })
 
   .def("view_playVideo", [](shared_ptr<rai::Configuration>& self, double delay, const char* saveVideoPath) {
-    self->gl()->playVideo(false, delay, saveVideoPath);
+    self->viewer()->playVideo(false, delay, saveVideoPath);
   }, "",
   pybind11::arg("delay")=double(1.),
   pybind11::arg("saveVideoPath")=nullptr
   )
 
   .def("view_getScreenshot", [](shared_ptr<rai::Configuration>& self) {
-    byteA rgb = self->gl()->getScreenshot();
+    byteA rgb = self->viewer()->getScreenshot();
    return Array2numpy<byte>(rgb);
   })
 

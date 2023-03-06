@@ -2069,13 +2069,17 @@ void Configuration::inverseDynamics(arr& tau, const arr& qd, const arr& qdd, boo
 
 
 /// return a OpenGL extension
-std::shared_ptr<ConfigurationViewer>& Configuration::gl(const char* window_title, bool offscreen) {
+std::shared_ptr<ConfigurationViewer>& Configuration::viewer(const char* window_title, bool offscreen) {
   if(!self->viewer) {
     self->viewer = make_shared<ConfigurationViewer>();
     rai::Frame *camF = getFrame("camera_gl", false);
     if(camF) self->viewer->setCamera(camF);
   }
   return self->viewer;
+}
+
+OpenGL& Configuration::gl(){
+  return viewer()->ensure_gl();
 }
 
 /// return a Swift extension
@@ -2133,7 +2137,7 @@ bool Configuration::hasView(){
 
 int Configuration::view(bool pause, const char* txt) {
 //  gl()->resetPressedKey();
-  int key = gl()->setConfiguration(*this, txt, pause);
+  int key = viewer()->setConfiguration(*this, txt, pause);
 //  if(pause) {
 //    if(!txt) txt="Config::watch";
 //    key = watch(true, txt);
@@ -3419,7 +3423,7 @@ int animateConfiguration(Configuration& C, Inotify* ino) {
 
   //  uint saveCount=0;
 
-  C.gl()->resetPressedKey();
+  C.viewer()->resetPressedKey();
   for(uint i=x0.N; i--;) {
     x=x0;
     double upper_lim = lim(i, 1);
@@ -3614,22 +3618,22 @@ void editConfiguration(const char* filename, Configuration& C) {
   //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
   //  gl.addHoverCall(new EditConfigurationHoverCall(K));
-  C.gl()->ensure_gl().addKeyCall(new EditConfigurationKeyCall(C,exit));
-  C.gl()->ensure_gl().addClickCall(new EditConfigurationClickCall(C));
+  C.gl().addKeyCall(new EditConfigurationKeyCall(C,exit));
+  C.gl().addClickCall(new EditConfigurationClickCall(C));
   //  C.gl()->ensure_gl().reportEvents=true;
   Inotify ino(filename);
   for(; !exit;) {
     cout <<"watching..." <<endl;
     int key = -1;
-    C.gl()->recopyMeshes(C);
-    C.gl()->resetPressedKey();
-    C.gl()->drawText = "waiting for file change ('h' for help)";
+    C.viewer()->recopyMeshes(C);
+    C.viewer()->resetPressedKey();
+    C.viewer()->drawText = "waiting for file change ('h' for help)";
     for(;;) {
       key = C.view(false);
       //if(key) cout <<"*** KEY:" <<key <<endl;
       if(key==13 || key==27 || key=='q') break;
       if(key=='h'){
-        C.gl()->drawText = "HELP:\n"
+        C.viewer()->drawText = "HELP:\n"
                       "RIGHT CLICK - set focus point (move view and set center of rotation)\n"
                       "LEFT CLICK - rotate (ball; or around z at view rim)\n"
                       "q - quit\n"

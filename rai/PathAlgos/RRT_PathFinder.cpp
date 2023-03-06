@@ -248,8 +248,8 @@ RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, con
   if(verbose>2){
     DISP.clear();
     DISP.copy(P.C);
-    DISP.gl()->add(*rrt0);
-    DISP.gl()->add(*rrtT);
+    DISP.gl().add(*rrt0);
+    DISP.gl().add(*rrtT);
   }
 }
 

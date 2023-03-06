@@ -102,8 +102,6 @@ void testBounds(){
   node->optBound(bound, true, 2);
   rai::ConfigurationViewer V;
   node->displayBound(V, bound);
-//  V.setPath(node->problem(bound).komo->getPath_X(), "", true);
-//  for(uint i=0;i<2;i++) V.playVideo(true, 3.);
 }
 
 int MAIN(int argc,char **argv){

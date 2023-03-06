@@ -10,17 +10,25 @@
 
 #include "mesh.h"
 
+namespace rai {
+
+/* A class to represent a basic function: distance between two objects
+ * The constructor compute things, the methods are just readouts
+ * The default is distance between two convex meshes
+ * Also distance between point (=mesh1) and points (=mesh2)
+ * Also distance between point (=mesh1) and decomposed mesh (=mesh2)
+ */
 struct PairCollision : GLDrawer, NonCopyable {
   //INPUTS
-  const rai::Mesh* mesh1=0;
-  const rai::Mesh* mesh2=0;
+  rai::Mesh mesh1; //V and T will typically be initialized by reference
+  rai::Mesh mesh2; //V and T will typically be initialized by reference
   const rai::Transformation* t1=0;
   const rai::Transformation* t2=0;
   double rad1=0., rad2=0.; ///< only kinVector and glDraw account for this; the basic collision geometry (OUTPUTS below) is computed neglecting radii!!
 
   //OUTPUTS
   double distance=0.; ///< negative=penetration
-  arr p1, p2;      ///< closest points on the shapes
+  arr p1, p2;      ///< witness points on the shapes
   arr normal;      ///< normal such that "<normal, p1-p2> = distance" is guaranteed (pointing from obj2 to obj1)
   arr simplex1;    ///< simplex on obj1 defining the collision geometry
   arr simplex2;    ///< simplex on obj2 defining the collision geometry
@@ -29,10 +37,13 @@ struct PairCollision : GLDrawer, NonCopyable {
 
   arr poly, polyNorm;
 
+  //mesh-to-mesh
   PairCollision(rai::Mesh& mesh1, rai::Mesh& mesh2,
                 const rai::Transformation& t1, const rai::Transformation& t2,
                 double rad1=0., double rad2=0.);
+  //sdf-to-sdf
   PairCollision(ScalarFunction func1, ScalarFunction func2, const arr& seed);
+
   ~PairCollision() {}
 
   void write(std::ostream& os) const;
@@ -41,27 +52,15 @@ struct PairCollision : GLDrawer, NonCopyable {
 
   double getDistance() { return distance-rad1-rad2; }
 
-  void kinDistance(arr& y, arr& J,
-                   const arr& Jp1, const arr& Jp2);
-  void kinNormal(arr& y, arr& J,
-                 const arr& Jp1, const arr& Jp2,
-                 const arr& Jx1, const arr& Jx2);
-  void kinVector(arr& y, arr& J,
-                 const arr& Jp1, const arr& Jp2,
-                 const arr& Jx1, const arr& Jx2);
-  void kinPointP1(arr& y, arr& J,
-                  const arr& Jp1, const arr& Jp2,
-                  const arr& Jx1, const arr& Jx2);
-  void kinPointP2(arr& y, arr& J,
-                  const arr& Jp1, const arr& Jp2,
-                  const arr& Jx1, const arr& Jx2);
-  void kinCenter(arr& y, arr& J,
-                 const arr& Jp1, const arr& Jp2,
-                 const arr& Jx1, const arr& Jx2);
+  // differentiable readout methods (Jp1 and Jx1 are linear and angular Jacobians of mesh1)
+  void kinDistance(arr& y, arr& J, const arr& Jp1, const arr& Jp2);
+  void kinNormal(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2);
+  void kinVector(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2);
+  void kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2);
+  void kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2);
+  void kinCenter(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2);
 
   void nearSupportAnalysis(double eps=1e-6); ///< analyses not only closest obj support (the simplex) but all points within a margin
-
-  void computeSupportPolygon();
 
  private:
   //wrappers of external libs
@@ -78,4 +77,6 @@ double coll_2on2(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2
 double coll_2on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2, const arr& center);
 double coll_3on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2, const arr& center);
 
-stdOutPipe(PairCollision)
+} //namespace
+
+stdOutPipe(rai::PairCollision)

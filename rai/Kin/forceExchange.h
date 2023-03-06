@@ -11,9 +11,9 @@
 #include "frame.h"
 #include "feature.h"
 
-struct PairCollision;
-
 namespace rai {
+
+struct PairCollision;
 
 //===========================================================================
 

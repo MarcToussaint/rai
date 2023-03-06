@@ -238,7 +238,8 @@ struct Configuration : GLDrawer {
   void addProxies(const uintA& collisionPairs);
 
   /// @name extensions on demand
-  std::shared_ptr<ConfigurationViewer>& gl(const char* window_title=nullptr, bool offscreen=false);
+  std::shared_ptr<ConfigurationViewer>& viewer(const char* window_title=nullptr, bool offscreen=false);
+  OpenGL& gl();
   //std::shared_ptr<SwiftInterface> swift();
   std::shared_ptr<FclInterface> fcl();
   void swiftDelete();
@@ -265,7 +266,7 @@ struct Configuration : GLDrawer {
   void writeMesh(const char* filename="z.ply") const;
   void read(std::istream& is);
   void glDraw(struct OpenGL&);
-  void glDraw_sub(struct OpenGL& gl, const FrameL& F, int drawOpaqueOrTransparanet=0);
+  void glDraw_sub(struct OpenGL& viewer, const FrameL& F, int drawOpaqueOrTransparanet=0);
   Graph getGraph() const;
   void displayDot();
 

@@ -3,7 +3,6 @@
 #include <map>
 #include <Core/graph.h>
 #include <Kin/switch.h>
-#include <Kin/viewer.h>
 
 using namespace std;
 
@@ -13,9 +12,6 @@ void TEST(Grasp){
   rai::Configuration C("model.g");
 //  K.optimizeTree();
   C.checkConsistency();
-
-  rai::ConfigurationViewer V;
-  V.setConfiguration(C, "initial model", false);
 
   KOMO komo;
 
@@ -43,8 +39,8 @@ void TEST(Grasp){
   rai::Graph result = komo.getReport(true);
 
 //  for(uint i=0;i<2;i++) if(!komo.displayTrajectory(.1, true)) break;
-  V.setPath(komo.getPath_X(), "optimized motion", true);
-  for(uint i=0;i<2;i++) V.playVideo(true);
+  komo.view(true, "optimized motion");
+  for(uint i=0;i<2;i++) komo.view_play(true);
 }
 
 //===========================================================================
@@ -96,17 +92,12 @@ void testPickAndPlace(bool keyframesOnly){
 
   komo.view(true, "optimized motion");
   for(uint i=0;i<2;i++) komo.view_play(true);
-//  V.setPath(komo.getPath_frames(), "optimized motion", true);
-//  for(uint i=0;i<2;i++) V.playVideo(true);
 }
 
 //===========================================================================
 
 void testPickAndPlace2(bool keyframesOnly){
   rai::Configuration C("model2.g");
-
-//  rai::ConfigurationViewer V;
-//  V.setConfiguration(C, "initial model", false);
 
   KOMO komo;
 
@@ -160,8 +151,6 @@ void testPickAndPlace2(bool keyframesOnly){
 
   komo.view(true, "optimized motion");
   for(uint i=0;i<2;i++) komo.view_play(true);
-//  V.setPath(komo.getPath_frames(), "optimized motion", true);
-//  for(uint i=0;i<2;i++) V.playVideo(true);
 }
 
 //===========================================================================

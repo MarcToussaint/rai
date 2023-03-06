@@ -68,7 +68,7 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     coll=make_shared<PairCollision>(*m1, *m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
   }
 #else
-  coll=make_shared<PairCollision>(*m1, *m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
+  coll=make_shared<rai::PairCollision>(*m1, *m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
 #endif
 
   if(neglectRadii) coll->rad1=coll->rad2=0.;

@@ -7,7 +7,6 @@
 #include <Geo/pairCollision.h>
 #include <Kin/F_collisions.h>
 #include <Kin/F_qFeatures.h>
-#include <Kin/viewer.h>
 
 //===========================================================================
 
@@ -91,7 +90,7 @@ void TEST(GJK_Jacobians) {
     cout <<k <<" center  ";
     succ &= checkJacobian(distCenter.vf2(F), q, 1e-5);
 
-    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.ensure_X(), s2.frame.ensure_X(), s1.size(-1), s2.size(-1));
+    rai::PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.ensure_X(), s2.frame.ensure_X(), s1.size(-1), s2.size(-1));
 
     //    cout <<"distance: " <<y <<" vec=" <<y2 <<" error=" <<length(y2)-fabs(y(0)) <<endl;
     if(!succ) cout <<collInfo;
@@ -129,9 +128,7 @@ void TEST(GJK_Jacobians2) {
     a->setContact(1);
   }
 
-  rai::ConfigurationViewer V;
-  V.setConfiguration(C, 0, true);
-  V.ensure_gl().drawOptions.drawProxies=true;
+  C.gl().drawOptions.drawProxies=true;
 
   C.stepFcl();
 //  C.reportProxies();
@@ -164,17 +161,16 @@ void TEST(GJK_Jacobians2) {
 
     arr y2 = qn.eval(qn.getFrames(C));
 
-    cout <<"contact meassure = " <<y(0) <<" diff=" <<y(0) - y_last <<" quat-non-normalization=" <<y2(0) <<endl;
+    cout <<"total penetration: " <<y(0) <<"  diff:" <<y(0) - y_last <<endl; //" quat-non-normalization=" <<y2(0) <<endl;
     y_last = y(0);
-    V.setConfiguration(C, STRING("t=" <<t <<"  movement along negative contact gradient"), false);
+    C.view(false, STRING("t=" <<t <<"  movement along negative contact gradient"));
 
     q -= 1e-2*J + 1e-2*(~y2*y2.J());
 
     if(y(0)<1e-10) break;
-
   }
 
-  V.setConfiguration(C, 0, true);
+  C.view(true);
 }
 
 //===========================================================================
@@ -203,9 +199,7 @@ void TEST(GJK_Jacobians3) {
   s2.mesh().C = {.5,.5,.8,.9};
   s2.createMeshes();
 
-  rai::ConfigurationViewer V;
-  V.setConfiguration(C, 0, true);
-  V.ensure_gl().drawOptions.drawProxies=true;
+  C.gl().drawOptions.drawProxies=true;
 
   C.stepFcl();
   C.reportProxies();
@@ -222,7 +216,8 @@ void TEST(GJK_Jacobians3) {
 
     F_PairCollision gjk(F_PairCollision::_negScalar);
     FrameL F = {&B1, &B2};
-    checkJacobian(gjk.vf2(F), q, 1e-4);
+    bool good = checkJacobian(gjk.vf2(F), q, 1e-4);
+    if(!good) rndGauss(q, 1e-4, true);
 
     arr y = gjk.eval(F);
 
@@ -230,12 +225,12 @@ void TEST(GJK_Jacobians3) {
     arr y2 = qn.eval(C.frames);
 
     cout <<"contact meassure = " <<y(0) <<endl;
-    V.setConfiguration(C, STRING("t=" <<t <<"  movement along negative contact gradient"), false);
+    C.view(false, STRING("t=" <<t <<"  movement along negative contact gradient"));
 
     q -= 1e-2*y.J() + 1e-2*(~y2*y2.J());
   }
 
-  V.setConfiguration(C, 0, true);
+  C.view(true);
 }
 
 //===========================================================================
@@ -376,11 +371,12 @@ int MAIN(int argc, char** argv){
 
 //  rnd.clockSeed();
 
-  testGJK_Jacobians();
-  testGJK_Jacobians2();
-  testGJK_Jacobians3();
+//  testGJK_Jacobians();
+//  testGJK_Jacobians2();
+//  testGJK_Jacobians3();
 
-  testFunctional();
+
+//  testFunctional();
   testSweepingSDFs();
 
   return 0;

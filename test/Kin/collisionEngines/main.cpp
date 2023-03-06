@@ -2,7 +2,6 @@
 //#include <Kin/kin_swift.h>
 #include <Gui/opengl.h>
 #include <Kin/frame.h>
-#include <Kin/viewer.h>
 
 /*void TEST(Swift) {
   rai::Configuration C("swift_test.g");
@@ -57,8 +56,7 @@ void TEST(CollisionTiming){
     a->setContact(1);
   }
 
-  rai::ConfigurationViewer V;
-  V.setConfiguration(C);
+  C.view();
 
   //rai::timerStart();
   //C.swift(); //.setCutoff(.);
@@ -98,7 +96,7 @@ void TEST(CollisionTiming){
     cout <<"total penetration: " <<C.getTotalPenetration() <<endl; //this also calls pair collisions!!
     cout <<"time: " <<rai::timerRead(true) <<endl;
     C.reportProxies(FILE("z.col"), 0.);
-    V.setConfiguration(C, "FCL result", true);
+    C.view(true, "FCL result");
   }
   cout <<" query time: " <<rai::timerRead(true) <<"sec" <<endl;
 }
