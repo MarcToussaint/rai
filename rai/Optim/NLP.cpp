@@ -401,3 +401,11 @@ void NLP_Viewer::plotCostTrace() {
   cmd <<"plot 'z.trace' us ($0+1):1 t 'f+sos', '' us ($0+1):2 t 'ineq', '' us ($0+1):3 t 'eq';";
   gnuplot(cmd);
 }
+
+//===========================================================================
+
+void SolverReturn::write(std::ostream& os) const{
+    os <<"{ time: " <<time <<", evals: " <<evals;
+    os <<", done: " <<done <<", feasible: " <<feasible;
+    os <<", sos: " <<sos <<", f: " <<f <<", ineq: " <<ineq <<", eq: " <<eq <<" }";
+}

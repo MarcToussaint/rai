@@ -158,11 +158,7 @@ struct SolverReturn {
   bool feasible=false;
   double sos=-1., f=-1., ineq=-1., eq=-1.;
   bool done=false;
-  void write(ostream& os) const{
-    os <<"{ time: " <<time <<", evals: " <<evals;
-    os <<", done: " <<done <<", feasible: " <<feasible;
-    os <<", sos: " <<sos <<", f: " <<f <<", ineq: " <<ineq <<", eq: " <<eq <<" }";
-  }
+  void write(ostream& os) const;
 };
 stdOutPipe(SolverReturn)
 

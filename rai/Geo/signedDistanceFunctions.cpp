@@ -319,6 +319,17 @@ double interpolate3D(double v000, double v100, double v010, double v110, double 
   return interpolate1D(s, t, z);
 }
 
+SDF_GridData::SDF_GridData(uint N, const arr& _lo, const arr& _up, bool isoGrid)
+  : lo(_lo), up(_up) {
+  if(isoGrid){
+    double vol = product(up-lo);
+    arr scale = (up-lo)/pow(vol, 1./3.);
+    gridData.resize(scale(0)*N, scale(1)*N, scale(2)*N).setZero();
+  }else{
+    gridData.resize(N,N,N);
+  }
+}
+
 SDF_GridData::SDF_GridData(SDF& f, const arr& _lo, const arr& _up, const uintA& res)
   : lo(_lo), up(_up) {
   //compute grid data
@@ -571,7 +582,7 @@ double SDF_Torus::f(arr& g, arr& H, const arr& _x){
 
 //===========================================================================
 
-double PCL2Field::stepDiffusion(const arr& pts, const arr& values, double alpha){
+double PCL2Field::stepDiffusion(const arr& pts, const arr& values, double boundValue){
   if(!source.N) source.resizeAs(field.gridData).setZero();
 
   //impose pcl values:
@@ -585,36 +596,48 @@ double PCL2Field::stepDiffusion(const arr& pts, const arr& values, double alpha)
       arr weights;
       field.getNeighborsAndWeights(neigh, weights, pts[i]);
       for(uint j=0;j<neigh.N;j++){
-        field.gridData.elem(neigh(j)) += alpha*weights.elem(j)*delta;
-        source.elem(neigh(j)) += .2*alpha*weights.elem(j)*delta;
+        field.gridData.elem(neigh(j)) += weights.elem(j)*delta;
+        source.elem(neigh(j)) += alpha*weights.elem(j)*delta;
       }
     }
   }
+  err /= values.N;
+
+  //adapt
+  if(err>lastErr && lastErr>0.){
+    //for(float &s:source) s *= .9;
+    arr tmp = rai::convert<double>(source);
+    tmp = integral(tmp);
+    tmp= differencing(tmp, 3);
+    source = rai::convert<float>(tmp);
+    //alpha *= .5;
+  }
+  lastErr = err;
 
   //impose boundary values:
-  for(uint i=0;i<field.gridData.d0;i++) for(uint j=0;j<field.gridData.d1;j++){ field.gridData(i,j,0) = 1.; field.gridData(i,j,-1) = 1.; }
-  for(uint i=0;i<field.gridData.d0;i++) for(uint j=0;j<field.gridData.d2;j++){ field.gridData(i,0,j) = 1.; field.gridData(i,-1,j) = 1.; }
-  for(uint i=0;i<field.gridData.d1;i++) for(uint j=0;j<field.gridData.d2;j++){ field.gridData(0,i,j) = 1.; field.gridData(-1,i,j) = 1.; }
+  for(uint i=0;i<field.gridData.d0;i++) for(uint j=0;j<field.gridData.d1;j++){ field.gridData(i,j,0) = boundValue; field.gridData(i,j,-1) = boundValue; }
+  for(uint i=0;i<field.gridData.d0;i++) for(uint j=0;j<field.gridData.d2;j++){ field.gridData(i,0,j) = boundValue; field.gridData(i,-1,j) = boundValue; }
+  for(uint i=0;i<field.gridData.d1;i++) for(uint j=0;j<field.gridData.d2;j++){ field.gridData(0,i,j) = boundValue; field.gridData(-1,i,j) = boundValue; }
 
   //add source
   field.gridData += source;
-  for(float &s:source) s *= .99;
+  for(float &s:source) s *= .98;
 
   //smooth
   field.smooth(3, 1);
 
-  return err/values.N;
+  return err;
 
 }
 
-double PCL2Field::runDiffusion(const arr& pts, const arr& values, uint iters, double alpha){
+double PCL2Field::runDiffusion(const arr& pts, const arr& values, uint iters, double boundValue){
   double err=0.;
   OpenGL gl;
   for(uint k=0;k<iters;k++){
-    err = stepDiffusion(pts, values, alpha);
-    std::cout <<k <<" err: " <<err <<endl;
+    err = stepDiffusion(pts, values, boundValue);
+    std::cout <<k <<" err: " <<err <<" alpha: " <<alpha <<endl;
     field.viewSlice(gl, 0, field.lo, field.up);
-    gl.watch();
+//    gl.watch();
   }
   return err;
 }
