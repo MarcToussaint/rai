@@ -207,12 +207,14 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
     os <<'\'' <<getValue<FileToken>()->fullPath() <<'\'';
   } else if(is<arr>()) {
     getValue<arr>()->write(os, ", ", nullptr, "[]", false, binary);
+  } else if(is<floatA>()) {
+    getValue<floatA>()->write(os, ", ", nullptr, "[]", false, binary);
+  } else if(is<uintA>()) {
+    getValue<uintA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<intA>()) {
     getValue<intA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<intAA>()) {
     getValue<intAA>()->write(os, ", ", nullptr, "[]");
-  } else if(is<uintA>()) {
-    getValue<uintA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<StringA>()) {
     os <<"[";
     for(const String& s:as<StringA>()) os <<'\"' <<s <<"\", ";

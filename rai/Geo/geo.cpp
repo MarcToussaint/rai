@@ -1098,6 +1098,10 @@ void mult(Vector& a, const Quaternion& b, const Vector& c, bool add) {
     if(!add) a.setZero();
     return;
   }
+  if(b.isZero) {
+    a=c;
+    return;
+  }
   double Bx=2.*b.x, By=2.*b.y, Bz=2.*b.z;
   double q11 = b.x*Bx;
   double q22 = b.y*By;

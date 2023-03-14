@@ -158,6 +158,7 @@ struct Frame : NonCopyable {
   Frame& setPointCloud(const arr& points, const byteA& colors= {});
   Frame& setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
   Frame& setMesh(const rai::Mesh& m);
+  Frame& setSdf(const SDF_GridData& sdf);
   Frame& setColor(const arr& color);
   Frame& setJoint(rai::JointType jointType);
   Frame& setContact(int cont);
@@ -313,9 +314,9 @@ struct Shape : NonCopyable, GLDrawer {
 
   double radius() { if(size.N) return size(-1); return 0.; }
   Enum<ShapeType>& type() { return _type; }
-  Mesh& mesh() { if(!_mesh) _mesh = make_shared<Mesh>();  return *_mesh; }
-  Mesh& sscCore() { if(!_sscCore) _sscCore = make_shared<Mesh>();  return *_sscCore; }
-  SDF_GridData& sdf() { if(!_sdf) _sdf = make_shared<SDF_GridData>();  return *_sdf; }
+  Mesh& mesh() { if(!_mesh){ if(_type==ST_none) _type=ST_mesh; _mesh = make_shared<Mesh>(); } return *_mesh; }
+  Mesh& sscCore() { if(!_sscCore){ if(_type==ST_none) _type=ST_ssCvx;  _sscCore = make_shared<Mesh>();  } return *_sscCore; }
+  SDF_GridData& sdf() { if(!_sdf){ if(_type==ST_none) _type=ST_sdf; _sdf = make_shared<SDF_GridData>(); } return *_sdf; }
   double alpha() { arr& C=mesh().C; if(C.N==4 || C.N==2) return C(-1); return 1.; }
 
   void createMeshes();

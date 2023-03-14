@@ -24,16 +24,20 @@ void WaypointMPC::solve(int verbose){
   //re-run KOMO
   rai::OptOptions opt;
   opt
-      .set_verbose(0)
-      .set_stopTolerance(1e-3)
-      .set_stopEvals(200);
+    .set_verbose(0)
+    .set_damping(1e1)
+    .set_maxStep(0.1)
+    .set_stopTolerance(1e-3)
+    .set_stopEvals(200);
   komo.opt.verbose=0;
   komo.timeTotal=0.;
   komo.pathConfig.setJointStateCount=0;
 //  komo.reportProblem();
 //  komo.initWithConstant(qHome);
+//  komo.opt.animateOptimization=2;
   komo.optimize(.0, opt);
-  //komo.checkGradients();
+//  komo.checkGradients();
+//  cout <<komo.getReport(false) <<endl;
 
   //is feasible?
   feasible=komo.sos<50. && komo.ineq<.1 && komo.eq<.1;

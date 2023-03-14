@@ -519,6 +519,13 @@ rai::Frame& rai::Frame::setMesh(const rai::Mesh& m) {
   return *this;
 }
 
+rai::Frame& rai::Frame::setSdf(const SDF_GridData& sdf) {
+  getShape().type() = ST_sdf;
+  getShape().sdf() = sdf;
+  getShape().createMeshes();
+  return *this;
+}
+
 rai::Frame& rai::Frame::setColor(const arr& color) {
   getShape().mesh().C = color;
   return *this;
@@ -1426,6 +1433,11 @@ void rai::Shape::read(const Graph& ats) {
       read_ppm(mesh().texImg, fil.name, true);
 //      cout <<"TEXTURE: " <<mesh().texImg.dim() <<endl;
     }
+    if(ats.get(fil, "core"))      {
+      fil.cd_file();
+      sscCore().read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
+      fil.cd_start();
+    }
     if(ats.get(str, "sdf"))      { sdf().read(FILE(str)); }
     else if(ats.get(fil, "sdf")) { sdf().read(fil); }
     if(_sdf){
@@ -1561,7 +1573,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
       }
     } else {
       if(!mesh().V.N) {
-        LOG(1) <<"trying to draw empty mesh";
+        LOG(1) <<"trying to draw empty mesh (shape type:" <<_type <<")";
       } else {
         mesh().glDraw(gl);
       }
@@ -1617,7 +1629,9 @@ void rai::Shape::createMeshes() {
 //      if(!mesh().V.N) LOG(-1) <<"mesh needs to be loaded";
       break;
     case rai::ST_sdf: {
-      mesh().setImplicitSurface(sdf().gridData, sdf().lo, sdf().up);
+      if(!mesh().V.N){
+        mesh().setImplicitSurface(sdf().gridData, sdf().lo, sdf().up);
+      }
     } break;
     case rai::ST_quad: {
       byteA tex = mesh().texImg;
@@ -1703,11 +1717,13 @@ shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates){
       return make_shared<SDF_Capsule>(pose, size(0), size(1));
     case rai::ST_ssBox:
       return make_shared<SDF_ssBox>(pose, size);
+    case rai::ST_mesh:
     case rai::ST_sdf:
-      CHECK(_sdf, "");
-      _sdf->pose = pose;
-      return _sdf;
-//      return make_shared<SDF_Transformed>(pose, _sdf);
+      if(_sdf){
+        _sdf->pose = pose;
+        return _sdf;
+      }
+      return shared_ptr<ScalarFunction>();
     default:
       return shared_ptr<ScalarFunction>();
   }

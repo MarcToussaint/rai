@@ -9,11 +9,12 @@
 #pragma once
 
 #include "mesh.h"
+#include "../Algo/ann.h"
 
 namespace rai {
 
 /* A class to represent a basic function: distance between two objects
- * The constructor compute things, the methods are just readouts
+ * The constructor compute the collision geometry, the methods are mostly readouts
  * The default is distance between two convex meshes
  * Also distance between point (=mesh1) and points (=mesh2)
  * Also distance between point (=mesh1) and decomposed mesh (=mesh2)
@@ -69,6 +70,20 @@ struct PairCollision : GLDrawer, NonCopyable {
   void GJK_sqrDistance(); //gjk_distance of libGJK
   bool simplexType(uint i, uint j) { return simplex1.d0==i && simplex2.d0==j; } //helper
 };
+
+//===========================================================================
+
+struct PclCollision{
+  //OUTPUTS
+  arr y, J;
+
+  PclCollision(const arr& x, ANN& ann,
+               const rai::Transformation& t1, const arr& Jp1, const arr& Jx1,
+               const rai::Transformation& t2, const arr& Jp2, const arr& Jx2,
+               double rad1=0., double rad2=0.);
+};
+
+//===========================================================================
 
 //return normals and closes points for 1-on-3 simplices or 2-on-2 simplices
 double coll_1on2(arr& p2, arr& normal, double& s, const arr& pts1, const arr& pts2);

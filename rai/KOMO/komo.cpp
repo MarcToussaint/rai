@@ -1019,6 +1019,7 @@ void KOMO::updateRootObjects(const Configuration& C){
   }
   uintA roots = framesToIndices(_roots);
   arr X0 = C.getFrameState(roots);
+  world.setFrameState(X0, roots);
   //set t=0..T to new frame state:
   for(uint t=0; t<T; t++) pathConfig.setFrameState(X0, roots+timeSlices(k_order+t,0)->ID);
   //shift the frame states within the prefix (t=-1 becomes equal to t=0, which is new state)
@@ -1524,6 +1525,7 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
       pathConfig.addProxies(collisionPairs);
     }
     pathConfig._state_proxies_isGood=true;
+    pathConfig.ensure_proxies(); //expensive!!
     timeCollisions += rai::cpuTime();
   }
 }

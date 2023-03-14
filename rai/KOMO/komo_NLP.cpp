@@ -14,7 +14,7 @@ void reportAfterPhiComputation(KOMO& komo) {
     cout <<komo.getReport(true) <<endl;
   }
   if(komo.opt.animateOptimization>0) {
-    komo.view(komo.opt.animateOptimization>1, "optAnim");
+    komo.view(komo.opt.animateOptimization>1, STRING("optAnim komoEvals: " <<komo.evalCount));
     if(komo.opt.animateOptimization>3){
       komo.view_play(komo.opt.animateOptimization>4);
     }
@@ -27,6 +27,8 @@ void reportAfterPhiComputation(KOMO& komo) {
 //===========================================================================
 
 void Conv_KOMO_NLP::evaluate(arr& phi, arr& J, const arr& x) {
+  komo.evalCount++;
+
   //-- set the trajectory
   komo.set_x(x);
   if(sparse){

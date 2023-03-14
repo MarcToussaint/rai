@@ -48,14 +48,33 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   dot.setDot();
   rai::Mesh *m1=&dot, *m2=&dot;
   if(f1->shape && f1->shape->type()!=rai::ST_marker){
-    r1=f1->shape->radius();
+    r1 = f1->shape->radius();
     m1 = &f1->shape->sscCore();  if(!m1->V.N) { m1 = &f1->shape->mesh(); r1=0.; }
     if(!m1->V.N) m1 = &dot;
   }
   if(f2->shape && f2->shape->type()!=rai::ST_marker){
-    r2=f2->shape->radius();
+    r2 = f2->shape->radius();
     m2 = &f2->shape->sscCore();  if(!m2->V.N) { m2 = &f2->shape->mesh(); r2=0.; }
     if(!m2->V.N) m2 = &dot;
+  }
+
+  if(m1->V.d0==1 && m2->V.d0>2 && !m2->T.N){ //PclCollision!
+    arr Jp1, Jp2, Jx1, Jx2;
+    if(!!J){
+      f1->C.jacobian_pos(Jp1, f1, f1->ensure_X().pos);
+      f2->C.jacobian_pos(Jp2, f2, f2->ensure_X().pos);
+      f1->C.jacobian_angular(Jx1, f1);
+      f2->C.jacobian_angular(Jx2, f2);
+    }
+    rai::PclCollision coll(m1->V, m2->ensure_ann(),
+                           f1->ensure_X(), Jp1, Jx1,
+                           f2->ensure_X(), Jp2, Jx2,
+                           r1, r2);
+    CHECK_EQ(type, _negScalar, "");
+    y = -coll.y;
+    if(!!J) J = -coll.J;
+    if(!!J) checkNan(J);
+    return;
   }
 
   coll.reset();

@@ -68,6 +68,10 @@ FclInterface::FclInterface(const Array<shared_ptr<Mesh>>& geometries, double _cu
         model->addTriangle(Vec3f(&mesh.V(mesh.T(i, 0), 0)), Vec3f(&mesh.V(mesh.T(i, 1), 0)), Vec3f(&mesh.V(mesh.T(i, 2), 0)));
       model->endModel();
 #elif 1
+      CHECK(!mesh.cvxParts.N, "NIY")
+      //rai::Mesh mesh;
+      //mesh.V = mesh_org.V;
+      //mesh.makeConvexHull();
       mesh.computeNormals();
       std::shared_ptr<ConvexGeometryData> dat = make_shared<ConvexGeometryData>();
       dat->plane_dis = mesh.computeTriDistances();
@@ -127,7 +131,7 @@ void FclInterface::step(const arr& X) {
 
   collisions.clear();
   self->manager->collide(this, FclInterface_self::BroadphaseCallback);
-  collisions.reshape(collisions.N/2, 2);
+  collisions.reshape(-1, 2);
 
   X_lastQuery = X;
 }

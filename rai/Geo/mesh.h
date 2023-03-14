@@ -120,6 +120,8 @@ struct Mesh : GLDrawer {
   double getVolume() const;
   uintA getVertexDegrees() const;
 
+  ANN& ensure_ann();
+
   /// Comparing two Meshes - static function
   static double meshMetric(const Mesh& trueMesh, const Mesh& estimatedMesh); // Haussdorf metric
 
@@ -140,6 +142,7 @@ struct Mesh : GLDrawer {
   void readPLY(const char* fn);
   void writeArr(std::ostream&);
   void readArr(std::istream&);
+  void readPts(std::istream&);
 
   void glDraw(struct OpenGL&);
 };

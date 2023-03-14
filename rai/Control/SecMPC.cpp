@@ -25,8 +25,10 @@ SecMPC::SecMPC(KOMO& komo, int subSeqStart, int subSeqStop, double timeCost, dou
 //    shortMPC.komo.addObjective({}, FS_distance, {"obst", s}, OT_ineqP, {5.}, {-.1});
 //  }
 
-  for(uint t=0;t<shortMPC.komo.T;t++){
-    shortMPC.komo.addObjective({0.}, FS_qItself, {}, OT_sos, {1.}, waypointMPC.qHome, 0, t+1, t+1);
+  if(waypointMPC.qHome.N){
+    for(uint t=0;t<shortMPC.komo.T;t++){
+      shortMPC.komo.addObjective({0.}, FS_qItself, {}, OT_sos, {1.}, waypointMPC.qHome, 0, t+1, t+1);
+    }
   }
 
   if(setNextWaypointTangent) timingMPC.set_updatedWaypoints(timingMPC.waypoints, true);
@@ -44,6 +46,7 @@ void SecMPC::updateWaypoints(const rai::Configuration& C){
 
   msg <<" WAY #" <<waypointMPC.komo.pathConfig.setJointStateCount;
   msg <<' ' <<waypointMPC.komo.sos <<'|' <<waypointMPC.komo.ineq + waypointMPC.komo.eq;
+  if(!waypointMPC.feasible) msg <<'!' <<wayInfeasible <<"\n  " <<waypointMPC.msg;
 }
 
 //===========================================================================
@@ -160,6 +163,7 @@ void SecMPC::updateShortPath(const rai::Configuration& C){
 
   msg <<" \tPATH #" <<shortMPC.komo.pathConfig.setJointStateCount;
   msg <<' ' <<shortMPC.komo.sos <<'|' <<shortMPC.komo.ineq + shortMPC.komo.eq;
+  if(!shortMPC.feasible) msg <<'!' <<wayInfeasible;
 }
 
 //===========================================================================

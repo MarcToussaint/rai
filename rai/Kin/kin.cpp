@@ -1093,18 +1093,10 @@ void Configuration::pruneInactiveJoints() {
 void Configuration::reconnectLinksToClosestJoints() {
   reset_q();
   for(Frame* f:frames) if(f->parent) {
-#if 0
-      Frame* link = f->parent;
-      Transformation Q=f->Q;
-      while(link->parent && !link->joint) { //walk down links until this is a joint
-        Q = link->Q * Q;                 //accumulate transforms
-        link = link->parent;
-      }
-#else
       Transformation Q;
       Frame* link = f->getUpwardLink(Q);
       Q.rot.normalize();
-#endif
+
       if(f->joint && !Q.rot.isZero) continue; //only when rot is zero you can subsume the Q transformation into the Q of the joint
       if(link!=f) { //there is a link's root
         if(link!=f->parent) { //we can rewire to the link's root
@@ -1576,6 +1568,11 @@ arr Configuration::calc_fwdPropagateVelocities(const arr& qdot) {
     }
   }
   return vel;
+}
+
+void Configuration::ensure_proxies() {
+  if(!_state_proxies_isGood) stepFcl(); //broadphase
+  for(Proxy& p: proxies) if(!p.collision) p.calc_coll(); //fine
 }
 
 //===========================================================================
@@ -2106,7 +2103,7 @@ std::shared_ptr<FclInterface> Configuration::fcl() {
         geometries(f->ID) = f->shape->_mesh;
       }
     }
-    self->fcl = make_shared<FclInterface>(geometries, .0); //-1.=broadphase only -> many proxies
+    self->fcl = make_shared<FclInterface>(geometries, .0); //-1.=broadphase only -> many proxies, 0.=binary, .1=exact margin (slow)
   }
   return self->fcl;
 }
@@ -2210,12 +2207,15 @@ void Configuration::addProxies(const uintA& collisionPairs) {
   proxies.resizeCopy(j+n);
   for(uint i=0; i<collisionPairs.d0; i++) {
     if(filter(i)) {
+      uint a = collisionPairs(i, 0);
+      uint b = collisionPairs(i, 1);
+      if(a<b){ uint z=a; a=b; b=z; }
       Proxy& p = proxies(j);
-      p.a = frames.elem(collisionPairs(i, 0));
-      p.b = frames.elem(collisionPairs(i, 1));
+      p.a = frames.elem(a);
+      p.b = frames.elem(b);
       p.d = -0.;
-      p.posA = frames.elem(collisionPairs(i, 0))->getPosition();
-      p.posB = frames.elem(collisionPairs(i, 1))->getPosition();
+      p.posA = frames.elem(a)->getPosition();
+      p.posB = frames.elem(b)->getPosition();
       j++;
     }
   }
@@ -2539,20 +2539,18 @@ void Configuration::writeCollada(const char* filename, const char* format) const
 void Configuration::writeMeshes(const char* pathPrefix) const {
   for(Frame* f:frames) {
     if(f->shape &&
-        (f->shape->type()==ST_mesh || f->shape->type()==ST_ssCvx)) {
+        (f->shape->type()==ST_mesh || f->shape->type()==ST_ssCvx || f->shape->type()==ST_sdf)) {
       String filename = pathPrefix;
       if(!f->ats) f->ats = make_shared<Graph>();
-#if 1
       filename <<f->name <<".arr";
       f->ats->getNew<FileToken>("mesh").name = filename;
       if(f->shape->type()==ST_mesh) f->shape->mesh().writeArr(FILE(filename));
       if(f->shape->type()==ST_ssCvx) f->shape->sscCore().writeArr(FILE(filename));
-#else
-      filename <<f->name <<".ply";
-      f->ats->getNew<FileToken>("mesh").name = filename;
-      if(f->shape->type()==ST_mesh) f->shape->mesh().writePLY(filename.p);
-      if(f->shape->type()==ST_ssCvx) f->shape->sscCore().writePLY(filename.p);
-#endif
+      if(f->shape->_sdf){
+        filename.clear() <<pathPrefix <<f->name <<".vol";
+        f->ats->getNew<FileToken>("sdf").name = filename;
+        f->shape->_sdf->write(FILE(filename));
+      }
     }
   }
 }

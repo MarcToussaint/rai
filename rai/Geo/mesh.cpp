@@ -10,6 +10,7 @@
 #include "qhull.h"
 #include "mesh_readAssimp.h"
 
+#include "../Algo/ann.h"
 #include "../Optim/newton.h"
 #include "../Core/graph.h"
 
@@ -462,6 +463,7 @@ void Mesh::makeConvexHull() {
 #if 1
   V = getHull(V, T);
   if(C.nd==2) C = mean(C);
+  cvxParts.clear();
   Vn.clear();
   Tn.clear();
   Tt.clear();
@@ -535,7 +537,7 @@ Mesh Mesh::decompose(){
 
 uint Mesh::getComponents(){
   //usually we'd analyze connected components... here assume sorted vertices and triangles!
-  NIY;
+  return 0;
 //  uint part=0;
 //  uint partStart=0;
 //  uint end=0;
@@ -1193,6 +1195,12 @@ uintA Mesh::getVertexDegrees() const {
   return deg;
 }
 
+ANN& Mesh::ensure_ann(){
+  if(!ann) ann = make_shared<ANN>();
+  if(ann->X.d0 != V.d0) ann->setX(V);
+  return *ann;
+}
+
 double Mesh::meshMetric(const Mesh& trueMesh, const Mesh& estimatedMesh) {
   //basically a Haussdorf metric, stupidly realized by brute force algorithm
   auto haussdorfDistanceOneSide = [](const arr& V1, const arr& V2)->double {
@@ -1244,6 +1252,7 @@ void Mesh::readFile(const char* filename) {
 
 void Mesh::read(std::istream& is, const char* fileExtension, const char* filename) {
   if(!strcmp(fileExtension, "arr")) { readArr(is); }
+  else if(!strcmp(fileExtension, "pts")) { readPts(is); }
   else if(!strcmp(fileExtension, "msh")) { readArr(is); }
   else if(!strcmp(fileExtension, "off")) { readOffFile(is); }
   else if(!strcmp(fileExtension, "ply")) { readPLY(filename); }
@@ -1536,6 +1545,19 @@ void Mesh::readArr(std::istream& is) {
   G.get(texImg, "texImg");
 }
 
+void Mesh::readPts(std::istream& is) {
+  floatA pts;
+  pts.read(is);
+  if(pts.d1==3){
+    rai::copy(V, pts);
+  }else{
+    CHECK_EQ(pts.d1, 6, "need only points (3D), or points and normals (6D)");
+    rai::copy(V, pts.sub(0,-1,0,2));
+    rai::copy(Vn, pts.sub(0,-1,3,5));
+  }
+  C = {0.,0.,.3};
+}
+
 
 //===========================================================================
 // Util
@@ -1710,7 +1732,7 @@ void Mesh::glDraw(struct OpenGL& gl) {
   }
 
   //-- draw the mesh
-  if((!C.N || C.nd==1 || (C.d0==V.d0 && !lightingEnabled))  //we have colors for each vertex
+  if((!C.N || C.nd==1 || !glDrawOptions(gl).drawColors || (C.d0==V.d0 && !lightingEnabled))  //we have colors for each vertex
       && (!tex.N || !Tt.N)) { //we have no tex or tex coords for each vertex -> use index arrays
 
     //  glShadeModel(GL_FLAT);

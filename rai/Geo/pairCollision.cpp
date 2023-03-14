@@ -42,17 +42,21 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
 
   //-- special cases: point to pcl
   if(mesh1.V.d0==1 && mesh2.V.d0>2 && !mesh2.T.N){
-    CHECK(_t2.isZero(), "");
     if(!_mesh2.ann){
       _mesh2.ann = make_shared<ANN>();
       _mesh2.ann->setX(_mesh2.V);
     }
-    uint K=1;
-    arr x = ~mesh1.V;
-    if(!t1->isZero()) t1->applyOnPoint(x);
+
+    arr x = mesh1.V;
+    x.reshape(3);
+    if(!t1->isZero() || !t2->isZero()){
+      rai::Transformation T = *t1 / *t2;
+      x += T.pos.getArr();
+    }
 
     arr sqrDists;
     uintA idx;
+    uint K=20;
     _mesh2.ann->getkNN(sqrDists, idx, x, K);
 
     p2 = zeros(3);
@@ -66,9 +70,16 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
     }else{
       normal.clear();
     }
+//    normal.clear();
 
     p1 = x;
-    p1.reshape(-1);
+
+    if(!t2->isZero()){ //we computed everything relative to t2
+      t2->applyOnPoint(p1);
+      t2->applyOnPoint(p2);
+      normal = t2->rot.getArr() * normal;
+    }
+
     arr del = p1-p2;
     distance = length(del);
     if(normal.N && scalarProduct(del,normal)<.0){
@@ -84,11 +95,16 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
 
   //-- special cases: point to multiple cvx parts
   if(mesh1.V.d0==1 && _mesh2.cvxParts.N){
+    arr x = mesh1.V;
     //directly call gjk for each part to get nearest
     Object_structure m1, m2;
-    rai::Array<double*> Vhelp1 = getCarray(mesh1.V);
+    rai::Array<double*> Vhelp1 = getCarray(x);
     rai::Array<double*> Vhelp2 = getCarray(mesh2.V);
-    CHECK(!!t1 && !!t2, "NIY - transform point only..");
+    if(!t1->isZero() || !t2->isZero()){
+      x.reshape(3);
+      rai::Transformation T = *t1 / *t2;
+      x += T.pos.getArr();
+    }
     double dmin=-1.;
     int imin=0;
     //LOG(0) <<_mesh2.cvxParts <<_mesh2.V.d0 <<endl;
@@ -96,7 +112,7 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
       int start = _mesh2.cvxParts(i);
       int end = i+1<_mesh2.cvxParts.N ? _mesh2.cvxParts(i+1)-1 : _mesh2.V.d0-1;
       CHECK_LE(start+1, end, "");
-      m1.numpoints = mesh1.V.d0;  m1.vertices = Vhelp1.p;  m1.rings=nullptr; //TODO: rings would make it faster
+      m1.numpoints = 1;  m1.vertices = Vhelp1.p;  m1.rings=nullptr; //TODO: rings would make it faster
       m2.numpoints = end-start;  m2.vertices = Vhelp2.p+start;  m2.rings=nullptr;
 
       double d = gjk_distance(&m1, 0, &m2, 0, 0, 0, 0, 0);
@@ -842,6 +858,8 @@ void PairCollision::nearSupportAnalysis(double eps) {
   }
 }
 
+//===========================================================================
+
 double coll_1on2(arr& p2, arr& normal, double& s, const arr& pts1, const arr& pts2) {
   CHECK(pts1.nd==2 && pts1.d0==1 && pts1.d1==3, "I need a set of 1 pts1");
   CHECK(pts2.nd==2 && pts2.d0==2 && pts2.d1==3, "I need a set of 2 pts2");
@@ -964,6 +982,53 @@ double coll_3on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2
   double d = coll_1on3(p2, normal, p1, pts2);
   p1.reshape(3);
   return d;
+}
+
+//===========================================================================
+
+PclCollision::PclCollision(const arr& _x, ANN& ann,
+                           const rai::Transformation& t1, const arr& Jp1, const arr& Jx1,
+                           const rai::Transformation& t2, const arr& Jp2, const arr& Jx2,
+                           double _rad1, double _rad2) {
+
+  Vector x(_x);
+
+  //-- transform x only relative to pcl
+  if(!t1.isZero() || !t2.isZero()){
+    rai::Transformation T = t1 / t2;
+    x = T * x;
+  }
+
+  arr sqrDists;
+  uintA idx;
+  uint K=50;
+  ann.getkNN(sqrDists, idx, x.getArr(), K);
+
+  arr normal;
+  double sumD=0;
+  arr Jz;
+  x = t2.rot * x; //relative to center2, but in world axes!
+  for(uint k=0;k<K;k++){
+    Vector z = ann.X[idx(k)];
+    z = t2.rot*z;
+    Vector del = x - z;
+    double d = del.length();
+    normal = del.getArr();
+    if(fabs(d)>1e-10) normal /= d;
+    if(!Jz.N){
+      Jz = ~normal * (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
+    }else{
+      Jz += ~normal * (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
+    }
+    sumD += d;
+  }
+  sumD /= double(K);
+  Jz /= double(K);
+
+  y = arr{sumD-_rad1-_rad2};
+  if(!!J) {
+    J = Jz;
+  }
 }
 
 } //namespace

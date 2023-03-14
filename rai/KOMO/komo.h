@@ -71,6 +71,7 @@ struct KOMO : NonCopyable {
   StringA featureNames;
   double timeTotal=0.;           ///< measured run time
   double timeCollisions=0., timeKinematics=0., timeNewton=0., timeFeatures=0.;
+  uint evalCount=0;
   ofstream* logFile=0;
 
   KOMO();

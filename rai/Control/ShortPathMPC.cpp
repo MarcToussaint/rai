@@ -7,7 +7,7 @@ ShortPathMPC::ShortPathMPC(rai::Configuration& C, uint steps, double _defaultTau
 {
   qHome = C.getJointState();
 
-  komo.setModel(C, true);
+  komo.setModel(C, false);
   komo.setTiming(1., steps, defaultTau*steps, 2);
   sliceOfConstraint=komo.T-1;
 

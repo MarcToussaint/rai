@@ -2,6 +2,7 @@
 
 #include "../Gui/opengl.h"
 #include "../Optim/newton.h"
+#include "../Core/graph.h"
 
 #include <math.h>
 
@@ -486,9 +487,17 @@ void SDF_GridData::getNeighborsAndWeights(uintA& neigh, arr& weights, const arr&
 }
 
 void SDF_GridData::write(std::ostream& os) const {
+#if 1
+  rai::Graph G;
+  G.add("lo", lo);
+  G.add("up", up);
+  G.add("field", gridData.ref());
+  G.write(os, "\n", 0, -1, false, true);
+#else
   lo.writeTagged(os,"lo");
   up.writeTagged(os,"up");
   gridData.writeTagged(os, "sdf", true);
+#endif
 }
 
 void SDF_GridData::read(std::istream& is){
@@ -496,7 +505,7 @@ void SDF_GridData::read(std::istream& is){
   if(c=='l'){
     lo.readTagged(is,"lo");
     up.readTagged(is,"up");
-    gridData.readTagged(is, "sdf");
+    gridData.readTagged(is, "field");
   }else{
     arr bounds;
     bounds.readTagged(is, "bounds");

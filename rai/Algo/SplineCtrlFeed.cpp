@@ -49,7 +49,7 @@ void SplineCtrlReference::overrideHard(const arr& x, const arr& t, double ctrlTi
   waitForInitialized();
 
   CHECK_LE(t.first(), .0, "");
-  CHECK_GE(t.first(), -.5, "you first time knot is more than 500msec ago!");
+  if(t.first()<-.5) LOG(0) <<"you first time knot is more than 500msec ago!";
 
   auto splineSet = spline.set();
 
@@ -62,8 +62,8 @@ void SplineCtrlReference::overrideHard(const arr& x, const arr& t, double ctrlTi
   //only saftey checks: evaluate the new spline
   arr x_new, xDot_new;
   splineSet->eval(x_new, xDot_new, NoArr, ctrlTime);
-  CHECK_LE(maxDiff(x_old,x_new), .1, "your first point knot is too far from the current spline");
-  CHECK_LE(maxDiff(xDot_old,xDot_new), .5, "your initial velocity is too far from the current spline");
+  if(maxDiff(x_old,x_new)>.1) LOG(0) <<"your first point knot is too far from the current spline";
+  if(maxDiff(xDot_old,xDot_new)>.5) LOG(0) <<"your initial velocity is too far from the current spline";
 }
 
 void SplineCtrlReference::report(double ctrlTime){

@@ -195,7 +195,7 @@ struct Configuration : GLDrawer {
   /// @name ensure state consistencies
   void ensure_indexedJoints() {   if(!_state_indexedJoints_areGood) calc_indexedActiveJoints();  }
   void ensure_q() {  if(!_state_q_isGood) calcDofsFromConfig();  }
-  void ensure_proxies() {  if(!_state_proxies_isGood) stepFcl();  }
+  void ensure_proxies(); //both, broadphase and fine!!
 
   /// @name Jacobians and kinematics (low level)
   void jacobian_pos(arr& J, Frame* a, const Vector& pos_world) const; //usually called internally with kinematicsPos
