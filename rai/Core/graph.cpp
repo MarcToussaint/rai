@@ -133,19 +133,7 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
   if(!container.isIndexed) container.index();
 
   //-- write keys
-#if 0
-  if(key.N) {
-    if(yamlMode) {
-      if(key.N!=1) os <<'"';
-      key.write(os, " ", "", "\0\0");
-//      keys.write(os, " ", "", "\"\"");
-      if(key.N!=1) os <<'"';
-    } else
-      key.write(os, " ", "", "\0\0");
-  }
-#else
   if(key.N) key.write(os);
-#endif
 
   //-- write parents
   if(parents.N) {
@@ -171,17 +159,14 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
   }
 
   //-- colon separator
-  if(key.N || parents.N) {
-    if(yamlMode) os <<": ";
-    else os <<':';
-  }
+  if(key.N || parents.N) os <<": ";
 
   //-- write value
   if(is<Graph>()) {
-    if(yamlMode){
-      graph().write(os, ",\n", "{}", indent, true);
+    if(yamlMode && indent>=0){
+      graph().write(os, ",\n", "{}", indent, yamlMode);
     }else{
-      graph().write(os, ", ", "{  }", indent, false);
+      graph().write(os, ", ", "{  }", indent, yamlMode);
     }
   } else if(is<NodeL>()) {
     os <<"(";

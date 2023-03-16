@@ -2360,6 +2360,7 @@ void Configuration::copyProxies(const ProxyA& _proxies) {
 
 /// prototype for \c operator<<
 void Configuration::write(std::ostream& os, bool explicitlySorted) const {
+#if 0
   for(Frame* f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
   if(!explicitlySorted){
     for(Frame* f: frames) f->write(os);
@@ -2368,11 +2369,19 @@ void Configuration::write(std::ostream& os, bool explicitlySorted) const {
     for(Frame* f: sorted) f->write(os);
   }
   os <<endl;
+#else
+  Graph G;
+  write(G);
+  G.write(os, "\n", 0, -1, true);
+#endif
 }
 
 void Configuration::write(Graph& G) const {
   for(Frame* f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
   for(Frame* f: frames) f->write(G.addSubgraph(f->name));
+  for(uint i=0;i<frames.N;i++) if(frames(i)->parent){
+    G.elem(i)->addParent(G.elem(frames(i)->parent->ID));
+  }
 }
 
 /// write a URDF file

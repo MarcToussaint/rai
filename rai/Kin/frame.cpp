@@ -377,12 +377,12 @@ void rai::Frame::read(const Graph& ats) {
 }
 
 void rai::Frame::write(Graph& G) {
-  if(parent) G.add<rai::String>("parent", parent->name);
+  //if(parent) G.add<rai::String>("parent", parent->name);
 
   if(parent) {
-    if(!Q.isZero()) G.add<arr>("Q", Q.getArr7d());
+    if(!Q.isZero()) G.add<arr>("rel", Q.getArr7d());
   } else {
-    if(!X.isZero()) G.add<arr>("X", X.getArr7d());
+    if(!X.isZero()) G.add<arr>("pose", X.getArr7d());
   }
 
   if(joint) joint->write(G);
@@ -402,14 +402,13 @@ void rai::Frame::write(std::ostream& os) const {
 
   if(parent) os <<" (" <<parent->name <<')';
 
-  os <<" \t{ ";
+  os <<": { ";
 
   if(parent) {
-    if(!Q.isZero()) os <<" Q:" <<Q;
+    if(!Q.isZero()) os <<" rel: " <<Q;
   } else {
-    if(!X.isZero()) os <<" X:" <<X;
+    if(!X.isZero()) os <<" pose: " <<X;
   }
-//  if(parent) os <<"parent:" <<parent->name;
 
   if(joint) joint->write(os);
   if(shape) shape->write(os);
@@ -417,7 +416,10 @@ void rai::Frame::write(std::ostream& os) const {
 
   StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
   if(ats) for(Node* n : *ats) {
-    if(!n->key.startsWith("%") && !avoid.contains(n->key)) os <<", " <<*n;
+    if(!n->key.startsWith("%") && !avoid.contains(n->key)){
+      os <<", ";
+      n->write(os, -1, true);
+    }
   }
 
   os <<" }\n";
@@ -1362,12 +1364,12 @@ void rai::Joint::write(Graph& g) {
 }
 
 void rai::Joint::write(std::ostream& os) const {
-  os <<", joint:" <<type;
-  if(H!=1.) os <<", ctrl_H:" <<H;
-  if(scale!=1.) os <<", joint_scale:" <<scale;
-  if(limits.N) os <<", limits:" <<limits;
+  os <<", joint: " <<type;
+  if(H!=1.) os <<", ctrl_H: " <<H;
+  if(scale!=1.) os <<", joint_scale: " <<scale;
+  if(limits.N) os <<", limits: " <<limits;
   if(mimic) {
-    os <<", mimic:(" <<mimic->frame->name <<')';
+    os <<", mimic: (" <<mimic->frame->name <<')';
   }
 }
 
@@ -1504,23 +1506,26 @@ void rai::Shape::read(const Graph& ats) {
 }
 
 void rai::Shape::write(std::ostream& os) const {
-  os <<", shape:" <<_type;
-  if(_type!=ST_mesh) os <<", size:" <<size;
+  os <<", shape: " <<_type;
+  if(_type!=ST_mesh) os <<", size: " <<size;
 
   Node* n;
-  if(frame.ats && (n=(*frame.ats)["color"])) os <<", " <<*n;
-  else if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4) os <<", color:" <<_mesh->C;
-  if(frame.ats && (n=(*frame.ats)["mesh"])) os <<", " <<*n;
-  if(frame.ats && (n=(*frame.ats)["meshscale"])) os <<", " <<*n;
-  if(cont) os <<", contact:" <<(int)cont;
+  if(frame.ats && (n=(*frame.ats)["color"])){ os <<", "; n->write(os, -1, true); }
+  else if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4) os <<", color: " <<_mesh->C;
+  if(frame.ats && (n=(*frame.ats)["mesh"])){ os <<", "; n->write(os, -1, true); }
+  if(frame.ats && (n=(*frame.ats)["meshscale"])){ os <<", "; n->write(os, -1, true); }
+  if(cont) os <<", contact: " <<(int)cont;
 }
 
 void rai::Shape::write(Graph& g) {
   g.add<rai::Enum<ShapeType>>("shape", type());
-  if(type()!=ST_mesh)
-    g.add<arr>("size", size);
-  if(mesh().C.N>0 && mesh().C.N<=4)
-    g.add<arr>("color", mesh().C);
+  if(type()!=ST_mesh) g.add<arr>("size", size);
+
+  Node* n;
+  if(frame.ats && (n=(*frame.ats)["color"])) n->newClone(g);
+  else if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4) g.add<arr>("color", mesh().C);
+  if(frame.ats && (n=(*frame.ats)["mesh"])) n->newClone(g);
+  if(frame.ats && (n=(*frame.ats)["meshscale"])) n->newClone(g);
   if(cont) g.add<int>("contact", cont);
 }
 
@@ -1778,19 +1783,27 @@ void rai::Inertia::defaultInertiaByShape() {
 }
 
 void rai::Inertia::write(std::ostream& os) const {
-  os <<", mass:" <<mass;
+  os <<", mass: " <<mass;
   if(!com.isZero){
-    os <<", com:" <<com;
+    os <<", com: " <<com;
   }
   if(matrix.isDiagonal()){
-    os <<", inertia:[" <<matrix.m00 <<' ' <<matrix.m11 <<' ' <<matrix.m22 <<']';
+    os <<", inertia: [" <<matrix.m00 <<' ' <<matrix.m11 <<' ' <<matrix.m22 <<']';
   }else{
-    os <<", inertia:[" <<matrix.m00 <<' ' <<matrix.m01 <<' ' <<matrix.m02 <<' ' <<matrix.m11 <<' ' <<matrix.m12 <<' ' <<matrix.m22 <<']';
+    os <<", inertia: [" <<matrix.m00 <<' ' <<matrix.m01 <<' ' <<matrix.m02 <<' ' <<matrix.m11 <<' ' <<matrix.m12 <<' ' <<matrix.m22 <<']';
   }
 }
 
 void rai::Inertia::write(Graph& g) {
   g.add<double>("mass", mass);
+  if(!com.isZero){
+    g.add<arr>("com", com.getArr());
+  }
+  if(matrix.isDiagonal()){
+    g.add<arr>("inertia", {matrix.m00, matrix.m11, matrix.m22});
+  }else{
+    g.add<arr>("inertia", {matrix.m00, matrix.m01, matrix.m02, matrix.m11, matrix.m12, matrix.m22});
+  }
 }
 
 void rai::Inertia::read(const Graph& G) {
