@@ -331,6 +331,7 @@ void rai::Frame::read(const Graph& ats) {
   if(transFromAts(tmp, ats, "X")) set_X() = tmp;
   if(transFromAts(tmp, ats, "pose")) set_X() = tmp;
   if(transFromAts(tmp, ats, "Q")) set_Q() = tmp;
+  if(transFromAts(tmp, ats, "rel")) set_Q() = tmp;
 
   if(ats["type"]) ats["type"]->key = "shape"; //compatibility with old convention: 'body { type... }' generates shape
 
@@ -390,7 +391,7 @@ void rai::Frame::write(Graph& G) {
   if(inertia) inertia->write(G);
 
   StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
-  for(Node* n : *ats) {
+  if(ats) for(Node* n : *ats) {
     if(!n->key.startsWith("%") && !avoid.contains(n->key)) {
       n->newClone(G);
     }
@@ -799,6 +800,10 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
   if(mimic) {
     if(type!=JT_tau){
       Q = mimic->frame->get_Q();
+      if(scale==-1.){
+        Q.pos = -Q.pos;
+        Q.rot.invert();
+      }
     }else{
       frame->tau = mimic->frame->tau;
     }
@@ -1360,7 +1365,7 @@ void rai::Joint::write(Graph& g) {
   if(H!=1.) g.add<double>("ctrl_H", H);
   if(scale!=1.) g.add<double>("joint_scale", scale);
   if(limits.N) g.add<arr>("limits", limits);
-  if(mimic) g.add<rai::String>("mimic", STRING('(' <<mimic->frame->name <<')'));
+  if(mimic) g.add<rai::String>("mimic", mimic->frame->name);
 }
 
 void rai::Joint::write(std::ostream& os) const {
@@ -1369,7 +1374,7 @@ void rai::Joint::write(std::ostream& os) const {
   if(scale!=1.) os <<", joint_scale: " <<scale;
   if(limits.N) os <<", limits: " <<limits;
   if(mimic) {
-    os <<", mimic: (" <<mimic->frame->name <<')';
+    os <<", mimic: " <<mimic->frame->name;
   }
 }
 

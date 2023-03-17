@@ -142,7 +142,7 @@ for joint in joints:
 
         elem = joint.find('mimic')
         if elem is not None:
-            dict['mimic'] = '(%s)' % elem.attrib['joint']
+            dict['mimic'] = elem.attrib['joint']
 
         #elem = joint.find('axis')
         #if elem is not None:

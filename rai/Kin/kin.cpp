@@ -1572,7 +1572,7 @@ arr Configuration::calc_fwdPropagateVelocities(const arr& qdot) {
 
 void Configuration::ensure_proxies() {
   if(!_state_proxies_isGood) stepFcl(); //broadphase
-  for(Proxy& p: proxies) if(!p.collision) p.calc_coll(); //fine
+  //for(Proxy& p: proxies) if(!p.collision) p.calc_coll(); //fine
 }
 
 //===========================================================================

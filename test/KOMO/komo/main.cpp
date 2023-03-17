@@ -30,7 +30,7 @@ void TEST(Easy){
 
 //  komo.setSpline(5);
   komo.optimize();
-  cout <<"TIME OPTIM: total=" <<sum(komo.getPath_times()) <<komo.getPath_times() <<endl;
+//  cout <<"TIME OPTIM: total=" <<sum(komo.getPath_times()) <<komo.getPath_times() <<endl;
   komo.plotTrajectory();
 //  komo.reportProxies();
 //  komo.checkGradients();
@@ -259,10 +259,10 @@ int MAIN(int argc,char** argv){
 //  rnd.clockSeed();
 
   testEasy();
-  testAlign();
-  testThin();
-  testPR2();
-  testThreading();
+//  testAlign();
+//  testThin();
+//  testPR2();
+//  testThreading();
 
   return 0;
 }

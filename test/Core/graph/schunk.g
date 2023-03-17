@@ -11,23 +11,23 @@ QlinFile='schunk.g.qlin'
 ## base
 ###########
 
-body base { X=<T t(0 0 .25)> }
+base { X=<T t(0 0 .25)> }
 
-shape world (base) { contact, shape:box, size=[.1 .1 .1 .1], color=[1 0 0], rel=<T t(0 0 -.25)> }
-#shape checkerBoard (base) { shape:box, color=[0 1 0], rel=<T t(
+world (base) { contact, shape:box, size=[.1 .1 .1 .1], color=[1 0 0], rel=<T t(0 0 -.25)> }
+#checkerBoard (base) { shape:box, color=[0 1 0], rel=<T t(
 
-shape platte (base) { contact, shape:box, size=[.7 .8 .03 .01], color=[.9 .85 .8] }
+platte (base) { contact, shape:box, size=[.7 .8 .03 .01], color=[.9 .85 .8] }
 
-shape wheelR  (base) { shape:cylinder, size=[.1 .1 .04 .1], color=[.5 .5 .5], rel=<T t(.35 -.3 -.15) d(90 0 1 0)> }
-shape wheelL  (base) { shape:cylinder, size=[.1 .1 .04 .1], color=[.5 .5 .5], rel=<T t(-.35 -.3 -.15) d(90 0 1 0)> }
-shape wheelB1 (base) { shape:cylinder, size=[.1 .1 .04 .1], color=[.5 .5 .5], rel=<T t(.0 .37 -.15) d(90 0 1 0)> }
+wheelR  (base) { shape:cylinder, size=[.1 .1 .04 .1], color=[.5 .5 .5], rel=<T t(.35 -.3 -.15) d(90 0 1 0)> }
+wheelL  (base) { shape:cylinder, size=[.1 .1 .04 .1], color=[.5 .5 .5], rel=<T t(-.35 -.3 -.15) d(90 0 1 0)> }
+wheelB1 (base) { shape:cylinder, size=[.1 .1 .04 .1], color=[.5 .5 .5], rel=<T t(.0 .37 -.15) d(90 0 1 0)> }
 
 
 ###########
 ## camera
 ###########
 
-shape camera(base){ contact, rel=<T t(.40 .10 .95) d(90 1 0 0) d(165 0 1 0) d(-35 1 0 0)>, shape:box, size=[.157 .035 .056 .01], color=[1 0 0] }
+camera(base){ contact, rel=<T t(.40 .10 .95) d(90 1 0 0) d(165 0 1 0) d(-35 1 0 0)>, shape:box, size=[.157 .035 .056 .01], color=[1 0 0] }
 
 
 
@@ -35,125 +35,125 @@ shape camera(base){ contact, rel=<T t(.40 .10 .95) d(90 1 0 0) d(165 0 1 0) d(-3
 ## schunk arm
 ###########
 
-body m3 {}
-body m4 {}
-body m5 {}
-body m6 {}
-body m7 {}
-body m8 {}
-body m9 {}
+m3 {}
+m4 {}
+m5 {}
+m6 {}
+m7 {}
+m8 {}
+m9 {}
 
-joint (base m3) { joint:hingeX A=<T t(0 .25 0) d(25 0 0 1) d(15 1 0 0) t(0 0 .85) d(180 0 0 1) t(0 0 0.120) d(90 0 1 0)> }
-joint (m3 m4)   { joint:hingeX A=<T d( 90 0 1 0)  t(-0.175 0 0)   d(-105 1 0 0)> }
-joint (m4 m5)   { joint:hingeX A=<T t(-0.175 0 0) d(-90 0 1 0)    d(  90 1 0 0)> }
-joint (m5 m6)   { joint:hingeX A=<T d( 90 0 1 0)  t(-0.1515 0 0)  d( -90 1 0 0)> }# Q=<T d(45 1 0 0)> }
-joint (m6 m7)   { joint:hingeX A=<T t(-0.1515 0 0) d(-90 0 1 0)   d( -90 1 0 0)> }
-joint (m7 m8)   { joint:hingeX A=<T d(-90 0 1 0)  t(-0.12575 0 0) d( -90 1 0 0)> }# Q=<T d(-120 1 0 0)> }
-joint (m8 m9)   { joint:hingeX A=<T t(-0.12575 0 0) d( 90 0 1 0)> }
+(base m3) { joint:hingeX A=<T t(0 .25 0) d(25 0 0 1) d(15 1 0 0) t(0 0 .85) d(180 0 0 1) t(0 0 0.120) d(90 0 1 0)> }
+(m3 m4)   { joint:hingeX A=<T d( 90 0 1 0)  t(-0.175 0 0)   d(-105 1 0 0)> }
+(m4 m5)   { joint:hingeX A=<T t(-0.175 0 0) d(-90 0 1 0)    d(  90 1 0 0)> }
+(m5 m6)   { joint:hingeX A=<T d( 90 0 1 0)  t(-0.1515 0 0)  d( -90 1 0 0)> }# Q=<T d(45 1 0 0)> }
+(m6 m7)   { joint:hingeX A=<T t(-0.1515 0 0) d(-90 0 1 0)   d( -90 1 0 0)> }
+(m7 m8)   { joint:hingeX A=<T d(-90 0 1 0)  t(-0.12575 0 0) d( -90 1 0 0)> }# Q=<T d(-120 1 0 0)> }
+(m8 m9)   { joint:hingeX A=<T t(-0.12575 0 0) d( 90 0 1 0)> }
 
-body knuck1 {}
-body knuck2 {}
-body knuck3 {}
-body fing1  {}
-body fing2  {}
-body fing3  {}
-body tip1   {}
-body tip2   {}
-body tip3   {}
+knuck1 {}
+knuck2 {}
+knuck3 {}
+fing1  {}
+fing2  {}
+fing3  {}
+tip1   {}
+tip2   {}
+tip3   {}
 
 # 107.4 to the root of the hand, then  98 (-10mm ring) to the finger joints
-joint (m9 knuck1) { joint:hingeX A=<T d(180 1 0 0) t(0 0 0.1074) d(-90 0 0 1) t(-.038105    0   .086) d(-90 0 1 0)>, B=<T d(90 0 1 0)>, Q=<T d(0 1 0 0)> }
-joint (m9 knuck2) { joint:hingeX A=<T d(180 1 0 0) t(0 0 0.1074) d(-90 0 0 1) t( .0190525  .033 .086) d(-90 0 1 0)>, B=<T d(90 0 1 0)>, Q=<T d( 5 1 0 0)>  }
-joint (m9 knuck3) { joint:hingeX A=<T d(180 1 0 0) t(0 0 0.1074) d(-90 0 0 1) t( .0190525 -.033 .086) d(-90 0 1 0)>, B=<T d(90 0 1 0)>, Q=<T d(-5 1 0 0)>  }
+(m9 knuck1) { joint:hingeX A=<T d(180 1 0 0) t(0 0 0.1074) d(-90 0 0 1) t(-.038105    0   .086) d(-90 0 1 0)>, B=<T d(90 0 1 0)>, Q=<T d(0 1 0 0)> }
+(m9 knuck2) { joint:hingeX A=<T d(180 1 0 0) t(0 0 0.1074) d(-90 0 0 1) t( .0190525  .033 .086) d(-90 0 1 0)>, B=<T d(90 0 1 0)>, Q=<T d( 5 1 0 0)>  }
+(m9 knuck3) { joint:hingeX A=<T d(180 1 0 0) t(0 0 0.1074) d(-90 0 0 1) t( .0190525 -.033 .086) d(-90 0 1 0)>, B=<T d(90 0 1 0)>, Q=<T d(-5 1 0 0)>  }
 
 ### THE ORDER IS IMPORTANT -- SHOULD CORRESPOND TO SCHUNK'S CONVENTION FOR ODERING!
-joint (knuck3 fing3) { joint:hingeX A=<T d(-90 0 0 1)> }
-joint (fing3 tip3)   { joint:hingeX A=<T t(0 0 .0865)> B=<T t(0 0 0.035)> }
+(knuck3 fing3) { joint:hingeX A=<T d(-90 0 0 1)> }
+(fing3 tip3)   { joint:hingeX A=<T t(0 0 .0865)> B=<T t(0 0 0.035)> }
 
-joint (knuck1 fing1) { joint:hingeX A=<T d( 90 0 0 1)> }
-joint (fing1 tip1)   { joint:hingeX A=<T t(0 0 .0865)> B=<T t(0 0 0.035)> }
+(knuck1 fing1) { joint:hingeX A=<T d( 90 0 0 1)> }
+(fing1 tip1)   { joint:hingeX A=<T t(0 0 .0865)> B=<T t(0 0 0.035)> }
 
-joint (knuck2 fing2) { joint:hingeX A=<T d(-90 0 0 1)> }
-joint (fing2 tip2)   { joint:hingeX A=<T t(0 0 .0865)> B=<T t(0 0 0.035)> }
+(knuck2 fing2) { joint:hingeX A=<T d(-90 0 0 1)> }
+(fing2 tip2)   { joint:hingeX A=<T t(0 0 .0865)> B=<T t(0 0 0.035)> }
 
 
 
 ### mesh shapes
-shape (base){ rel=<T t(0 .25 0) d(25 0 0 1) d(15 1 0 0) t(0 0 .85) d(180 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/3385031017_fus_120_x.tri' }
-shape (m3){ rel=<T d(90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/schunk_0306925_prl_12010_x.tri' color=[.5 .5 .5]}
-shape (m4){ rel=<T d(90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/schunk_0306925_prl_12010_x.tri' color=[.5 .5 .5] }
-shape (m5){ rel=<T d(90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/schunk_0306920_prl_10010_x.tri' color=[.5 .5 .5] }
-shape (m6){ rel=<T d(90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/schunk_0306920_prl_10010_x.tri' color=[.5 .5 .5] }
-shape (m7){ rel=<T d(90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/schunk_0306915_prl_8010_x.tri' color=[.5 .5 .5] }
-shape (m8){ rel=<T d(90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/schunk_0306915_prl_8010_x.tri' color=[.5 .5 .5] }
-shape (m9){ rel=<T d(90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/schunk_0306910_prl_6010_x.tri' color=[.5 .5 .5] }
+(base){ rel=<T t(0 .25 0) d(25 0 0 1) d(15 1 0 0) t(0 0 .85) d(180 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/3385031017_fus_120_x.tri' }
+(m3){ rel=<T d(90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/schunk_0306925_prl_12010_x.tri' color=[.5 .5 .5]}
+(m4){ rel=<T d(90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/schunk_0306925_prl_12010_x.tri' color=[.5 .5 .5] }
+(m5){ rel=<T d(90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/schunk_0306920_prl_10010_x.tri' color=[.5 .5 .5] }
+(m6){ rel=<T d(90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/schunk_0306920_prl_10010_x.tri' color=[.5 .5 .5] }
+(m7){ rel=<T d(90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/schunk_0306915_prl_8010_x.tri' color=[.5 .5 .5] }
+(m8){ rel=<T d(90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/schunk_0306915_prl_8010_x.tri' color=[.5 .5 .5] }
+(m9){ rel=<T d(90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/schunk_0306910_prl_6010_x.tri' color=[.5 .5 .5] }
 
-shape (m3){ rel=<T t(0 0 .11)    d(180 0 1 0)>, contact, shape:mesh, mesh='schunk_3d/3385031117_vbe_1212_x.tri' }
-shape (m4){ rel=<T t(-.08 .0 .0) d(-90 0 1 0)>, contact, shape:mesh, mesh='schunk_3d/3385038117_vbe_1210_x.tri' }
-shape (m5){ rel=<T t(0 0 .1)     d(180 0 1 0)>, contact, shape:mesh, mesh='schunk_3d/3385031317_vbe_1010_x.tri' }
-shape (m6){ rel=<T t(-.07 .0 .0) d(-90 0 1 0)>, contact, shape:mesh, mesh='schunk_3d/3385038417_vbe_1008_x.tri' }
-shape (m7){ rel=<T t(0 0 -.08)    d(180 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/3385031517_vbe_0808_x.tri' }
-shape (m8){ rel=<T t(-.055 .0 .00) d(90 0 1 0) d(180 1 0 0)>, contact, shape:mesh, mesh='schunk_3d/3385038717_vbe_0806_x.tri' }
-shape (m9){ rel=<T t(.0 .0 -.08)  d(180 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/3385031717_vbe_0606_x.tri' }
+(m3){ rel=<T t(0 0 .11)    d(180 0 1 0)>, contact, shape:mesh, mesh='schunk_3d/3385031117_vbe_1212_x.tri' }
+(m4){ rel=<T t(-.08 .0 .0) d(-90 0 1 0)>, contact, shape:mesh, mesh='schunk_3d/3385038117_vbe_1210_x.tri' }
+(m5){ rel=<T t(0 0 .1)     d(180 0 1 0)>, contact, shape:mesh, mesh='schunk_3d/3385031317_vbe_1010_x.tri' }
+(m6){ rel=<T t(-.07 .0 .0) d(-90 0 1 0)>, contact, shape:mesh, mesh='schunk_3d/3385038417_vbe_1008_x.tri' }
+(m7){ rel=<T t(0 0 -.08)    d(180 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/3385031517_vbe_0808_x.tri' }
+(m8){ rel=<T t(-.055 .0 .00) d(90 0 1 0) d(180 1 0 0)>, contact, shape:mesh, mesh='schunk_3d/3385038717_vbe_0806_x.tri' }
+(m9){ rel=<T t(.0 .0 -.08)  d(180 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/3385031717_vbe_0606_x.tri' }
 
 
-shape ring   (m9) { rel=<T d(180 1 0 0) t(0 0 0.1034) d(-90 0 0 1)>, contact, shape:cylinder, size=[0 0 .008 .04], color=[.1 .1 .1] }
+ring   (m9) { rel=<T d(180 1 0 0) t(0 0 0.1034) d(-90 0 0 1)>, contact, shape:cylinder, size=[0 0 .008 .04], color=[.1 .1 .1] }
 
-shape wrist  (m9) { rel=<T d(180 1 0 0) t(0 0 0.1525) d(-90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/SDH_Gehaeuse_x.tri' color=[.55 .55 .55] }
+wrist  (m9) { rel=<T d(180 1 0 0) t(0 0 0.1525) d(-90 0 0 1)>, contact, shape:mesh, mesh='schunk_3d/SDH_Gehaeuse_x.tri' color=[.55 .55 .55] }
 
-#shape (knuck1) { shape:mesh, rel=<T t(0 0  -.0175) d(90 1 0 0) d(90 0 1 0)>, mesh='schunk_3d/SDH_Gelenk_Finger1_x.tri' color=[.5 .5 .5] }
-#shape (knuck2) { shape:mesh, rel=<T t(0 0  -.0175) d(90 1 0 0) d(90 0 1 0)>, mesh='schunk_3d/SDH_Gelenk_Finger1_x.tri' color=[.5 .5 .5] }
-#shape (knuck3) { shape:mesh, rel=<T t(0 0  -.0175) d(90 1 0 0) d(90 0 1 0)>, mesh='schunk_3d/SDH_Gelenk_Finger1_x.tri' color=[.5 .5 .5] }
+#(knuck1) { shape:mesh, rel=<T t(0 0  -.0175) d(90 1 0 0) d(90 0 1 0)>, mesh='schunk_3d/SDH_Gelenk_Finger1_x.tri' color=[.5 .5 .5] }
+#(knuck2) { shape:mesh, rel=<T t(0 0  -.0175) d(90 1 0 0) d(90 0 1 0)>, mesh='schunk_3d/SDH_Gelenk_Finger1_x.tri' color=[.5 .5 .5] }
+#(knuck3) { shape:mesh, rel=<T t(0 0  -.0175) d(90 1 0 0) d(90 0 1 0)>, mesh='schunk_3d/SDH_Gelenk_Finger1_x.tri' color=[.5 .5 .5] }
 
-shape (fing1)  { contact, shape:mesh, rel=<T t(0 0  -.0175) d(90 1 0 0) d(180 0 1 0)>, mesh='schunk_3d/SDH_Mittelteil_Finger1_x.tri' color=[.55 .55 .55] }
-shape (fing2)  { contact, shape:mesh, rel=<T t(0 0  -.0175) d(90 1 0 0) d(180 0 1 0)>, mesh='schunk_3d/SDH_Mittelteil_Finger1_x.tri' color=[.55 .55 .55] }
-shape (fing3)  { contact, shape:mesh, rel=<T t(0 0  -.0175) d(90 1 0 0) d(180 0 1 0)>, mesh='schunk_3d/SDH_Mittelteil_Finger1_x.tri' color=[.55 .55 .55] }
+(fing1)  { contact, shape:mesh, rel=<T t(0 0  -.0175) d(90 1 0 0) d(180 0 1 0)>, mesh='schunk_3d/SDH_Mittelteil_Finger1_x.tri' color=[.55 .55 .55] }
+(fing2)  { contact, shape:mesh, rel=<T t(0 0  -.0175) d(90 1 0 0) d(180 0 1 0)>, mesh='schunk_3d/SDH_Mittelteil_Finger1_x.tri' color=[.55 .55 .55] }
+(fing3)  { contact, shape:mesh, rel=<T t(0 0  -.0175) d(90 1 0 0) d(180 0 1 0)>, mesh='schunk_3d/SDH_Mittelteil_Finger1_x.tri' color=[.55 .55 .55] }
 
-shape tip1Shape(tip1)   { contact, shape:mesh, rel=<T t(0 0 -.1385) d(90 1 0 0) d(180 0 1 0)>, mesh='schunk_3d/SDH_Kuppe_Finger1_x.tri'  color=[.5 .5 .5]}
-shape tip2Shape(tip2)   { contact, shape:mesh, rel=<T t(0 0 -.1385) d(90 1 0 0) d(180 0 1 0)>, mesh='schunk_3d/SDH_Kuppe_Finger1_x.tri'  color=[.5 .5 .5]}
-shape tip3Shape(tip3)   { contact, shape:mesh, rel=<T t(0 0 -.1385) d(90 1 0 0) d(180 0 1 0)>, mesh='schunk_3d/SDH_Kuppe_Finger1_x.tri' color=[.5 .5 .5] }
+tip1Shape(tip1)   { contact, shape:mesh, rel=<T t(0 0 -.1385) d(90 1 0 0) d(180 0 1 0)>, mesh='schunk_3d/SDH_Kuppe_Finger1_x.tri'  color=[.5 .5 .5]}
+tip2Shape(tip2)   { contact, shape:mesh, rel=<T t(0 0 -.1385) d(90 1 0 0) d(180 0 1 0)>, mesh='schunk_3d/SDH_Kuppe_Finger1_x.tri'  color=[.5 .5 .5]}
+tip3Shape(tip3)   { contact, shape:mesh, rel=<T t(0 0 -.1385) d(90 1 0 0) d(180 0 1 0)>, mesh='schunk_3d/SDH_Kuppe_Finger1_x.tri' color=[.5 .5 .5] }
 
 
 #basic shapes
-#shape (base){ contact, rel=<T t(0 .25 0) d(25 0 0 1) d(15 1 0 0) t(0 0 .85) d(180 0 0 1) t(0 0 .025) >, shape:cylinder, size=[0 0 .05 .10] }
-#shape (m3){ contact, rel=<T d(90 0 1 0)>, shape:cylinder, size=[0 0 .16 .08] }
-#shape (m4){ contact, rel=<T d(90 0 1 0)>, shape:cylinder, size=[0 0 .25 .08] }
-#shape (m5){ contact, rel=<T d(90 0 1 0)>, shape:cylinder, size=[0 0 .14 .07] }
-#shape (m6){ contact, rel=<T d(90 0 1 0)>, shape:cylinder, size=[0 0 .20 .07] }
-#shape (m7){ contact, rel=<T d(90 0 1 0)>, shape:cylinder, size=[0 0 .12 .06] }
-#shape (m8){ contact, rel=<T d(90 0 1 0)>, shape:cylinder, size=[0 0 .16 .06] }
-#shape (m9){ contact, rel=<T d(90 0 1 0)>, shape:cylinder, size=[0 0 .10 .05] }
+#(base){ contact, rel=<T t(0 .25 0) d(25 0 0 1) d(15 1 0 0) t(0 0 .85) d(180 0 0 1) t(0 0 .025) >, shape:cylinder, size=[0 0 .05 .10] }
+#(m3){ contact, rel=<T d(90 0 1 0)>, shape:cylinder, size=[0 0 .16 .08] }
+#(m4){ contact, rel=<T d(90 0 1 0)>, shape:cylinder, size=[0 0 .25 .08] }
+#(m5){ contact, rel=<T d(90 0 1 0)>, shape:cylinder, size=[0 0 .14 .07] }
+#(m6){ contact, rel=<T d(90 0 1 0)>, shape:cylinder, size=[0 0 .20 .07] }
+#(m7){ contact, rel=<T d(90 0 1 0)>, shape:cylinder, size=[0 0 .12 .06] }
+#(m8){ contact, rel=<T d(90 0 1 0)>, shape:cylinder, size=[0 0 .16 .06] }
+#(m9){ contact, rel=<T d(90 0 1 0)>, shape:cylinder, size=[0 0 .10 .05] }
 
 #laser 'looks' in positive y direction along x-y plane
-#shape lasershape (m8){ contact, rel=<T d(90 0 0 1) d(180 0 1 0) t(.0 .12 .08) d(-90 0 0 1)>, shape:box, size=[.05 .08 .02 .06] color=[1 0 0]}
+#lasershape (m8){ contact, rel=<T d(90 0 0 1) d(180 0 1 0) t(.0 .12 .08) d(-90 0 0 1)>, shape:box, size=[.05 .08 .02 .06] color=[1 0 0]}
 
-#shape wrist  (m9) { contact, rel=<T d(180 1 0 0) t(0 0 0.1074) d(-90 0 0 1)>, shape:cylinder, size=[0 0 .03 .05] }
-#shape (knuck1) { rel=<T d(90 1 0 0)>, shape:cylinder, size=[.03 .02 .06 .02] }
-#shape (knuck2) { rel=<T d(90 1 0 0)>, shape:cylinder, size=[.03 .02 .06 .02] }
-#shape (knuck3) { rel=<T d(90 1 0 0)>, shape:cylinder, size=[.03 .02 .06 .02] }
-#shape (fing1)  { contact, rel=<T t(0 0 .05)>, shape:box, size=[.03 .02 .06 .02] }
-#shape (fing2)  { contact, rel=<T t(0 0 .05)>, shape:box, size=[.03 .02 .06 .02] }
-#shape (fing3)  { contact, rel=<T t(0 0 .05)>, shape:box, size=[.03 .02 .06 .02] }
-#shape (tip1)   { contact, rel=<T t(0 0 .035)>, shape:box, size=[.03 .02 .06 .02] }
-#shape (tip2)   { contact, rel=<T t(0 0 .035)>, shape:box, size=[.03 .02 .06 .02] }
-#shape (tip3)   { contact, rel=<T t(0 0 .035)>, shape:box, size=[.03 .02 .06 .02] }
+#wrist  (m9) { contact, rel=<T d(180 1 0 0) t(0 0 0.1074) d(-90 0 0 1)>, shape:cylinder, size=[0 0 .03 .05] }
+#(knuck1) { rel=<T d(90 1 0 0)>, shape:cylinder, size=[.03 .02 .06 .02] }
+#(knuck2) { rel=<T d(90 1 0 0)>, shape:cylinder, size=[.03 .02 .06 .02] }
+#(knuck3) { rel=<T d(90 1 0 0)>, shape:cylinder, size=[.03 .02 .06 .02] }
+#(fing1)  { contact, rel=<T t(0 0 .05)>, shape:box, size=[.03 .02 .06 .02] }
+#(fing2)  { contact, rel=<T t(0 0 .05)>, shape:box, size=[.03 .02 .06 .02] }
+#(fing3)  { contact, rel=<T t(0 0 .05)>, shape:box, size=[.03 .02 .06 .02] }
+#(tip1)   { contact, rel=<T t(0 0 .035)>, shape:box, size=[.03 .02 .06 .02] }
+#(tip2)   { contact, rel=<T t(0 0 .035)>, shape:box, size=[.03 .02 .06 .02] }
+#(tip3)   { contact, rel=<T t(0 0 .035)>, shape:box, size=[.03 .02 .06 .02] }
 
 
 ###########
 ## grasp references
 ###########
 
-shape tipNormal1(tip1)   { rel=<T t(0 -.015 -.005) d(90 1 0 0)>, shape:cylinder, size=[.01 .0 .0 .0] color = [1 0 0] }
-shape tipNormal2(tip2)   { rel=<T t(0 -.015 -.005) d(90 1 0 0)>, shape:cylinder, size=[.01 .0 .0 .0] color = [1 0 0]}
-shape tipNormal3(tip3)   { rel=<T t(0 -.015 -.005) d(90 1 0 0)>, shape:cylinder, size=[.01 .0 .0 .0] color = [1 0 0] }
+tipNormal1(tip1)   { rel=<T t(0 -.015 -.005) d(90 1 0 0)>, shape:cylinder, size=[.01 .0 .0 .0] color = [1 0 0] }
+tipNormal2(tip2)   { rel=<T t(0 -.015 -.005) d(90 1 0 0)>, shape:cylinder, size=[.01 .0 .0 .0] color = [1 0 0]}
+tipNormal3(tip3)   { rel=<T t(0 -.015 -.005) d(90 1 0 0)>, shape:cylinder, size=[.01 .0 .0 .0] color = [1 0 0] }
 
-shape fingNormal1(fing1)   { rel=<T t(0 -.014 .055) d(90 1 0 0)>, shape:cylinder, size=[.01 .0 .0 .0] color = [1 0 0] }
-shape fingNormal2(fing2)   { rel=<T t(0 -.014 .055) d(90 1 0 0)>, shape:cylinder, size=[.01 .0 .0 .0] color = [1 0 0]}
-shape fingNormal3(fing3)   { rel=<T t(0 -.014 .055) d(90 1 0 0)>, shape:cylinder, size=[.01 .0 .0 .0] color = [1 0 0] }
+fingNormal1(fing1)   { rel=<T t(0 -.014 .055) d(90 1 0 0)>, shape:cylinder, size=[.01 .0 .0 .0] color = [1 0 0] }
+fingNormal2(fing2)   { rel=<T t(0 -.014 .055) d(90 1 0 0)>, shape:cylinder, size=[.01 .0 .0 .0] color = [1 0 0]}
+fingNormal3(fing3)   { rel=<T t(0 -.014 .055) d(90 1 0 0)>, shape:cylinder, size=[.01 .0 .0 .0] color = [1 0 0] }
 
-#shape fingNor(fing2)   { rel=<T t(0 -.016 .04) d(90 1 0 0)>, shape:sphere, size=[.0 .0 .05 .003] color = [0 0 0] }
+#fingNor(fing2)   { rel=<T t(0 -.016 .04) d(90 1 0 0)>, shape:sphere, size=[.0 .0 .05 .003] color = [0 0 0] }
 
-shape graspCenter(m9)     { rel=<T t(0 -.006 -.32)>, shape:cylinder, size=[.05 .0 .0 .5] color = [0 1 0] }
+graspCenter(m9)     { rel=<T t(0 -.006 -.32)>, shape:cylinder, size=[.05 .0 .0 .5] color = [0 1 0] }
 
 
 
@@ -161,21 +161,21 @@ shape graspCenter(m9)     { rel=<T t(0 -.006 -.32)>, shape:cylinder, size=[.05 .
 ## poles
 ###########
 
-shape pole1 (base){ contact, shape:box, size=[.05 .05 .60 .05], rel=<T t(.30 -.25 0) d(25 0 0 1) d(-40 1 0 0) t(0 .0 .3)> }
-shape pole2 (base){ contact, shape:box, size=[.05 .05 .7 .03], rel=<T t(-.30 -.25 0) d(-45 0 0 1) d(-43 1 0 0) t(0 .0 .35)> }
+pole1 (base){ contact, shape:box, size=[.05 .05 .60 .05], rel=<T t(.30 -.25 0) d(25 0 0 1) d(-40 1 0 0) t(0 .0 .3)> }
+pole2 (base){ contact, shape:box, size=[.05 .05 .7 .03], rel=<T t(-.30 -.25 0) d(-45 0 0 1) d(-43 1 0 0) t(0 .0 .35)> }
 
-shape back1 (base) { contact, shape:box, size=[.05 .05 .85 .05], rel=<T t(0 .25 0) d(25 0 0 1) d(15 1 0 0) t(-.0565  .0565 0) t(0 0 .425)> }
-shape back2 (base) { contact, shape:box, size=[.05 .05 .85 .05], rel=<T t(0 .25 0) d(25 0 0 1) d(15 1 0 0) t(-.0565 -.0565 0) t(0 0 .425)> }
-shape back3 (base) { contact, shape:box, size=[.05 .05 .85 .05], rel=<T t(0 .25 0) d(25 0 0 1) d(15 1 0 0) t( .0565 -.0565 0) t(0 0 .425)> }
-shape back4 (base) { contact, shape:box, size=[.05 .05 .85 .05], rel=<T t(0 .25 0) d(25 0 0 1) d(15 1 0 0) t( .0565  .0565 0) t(0 0 .425)> }
+back1 (base) { contact, shape:box, size=[.05 .05 .85 .05], rel=<T t(0 .25 0) d(25 0 0 1) d(15 1 0 0) t(-.0565  .0565 0) t(0 0 .425)> }
+back2 (base) { contact, shape:box, size=[.05 .05 .85 .05], rel=<T t(0 .25 0) d(25 0 0 1) d(15 1 0 0) t(-.0565 -.0565 0) t(0 0 .425)> }
+back3 (base) { contact, shape:box, size=[.05 .05 .85 .05], rel=<T t(0 .25 0) d(25 0 0 1) d(15 1 0 0) t( .0565 -.0565 0) t(0 0 .425)> }
+back4 (base) { contact, shape:box, size=[.05 .05 .85 .05], rel=<T t(0 .25 0) d(25 0 0 1) d(15 1 0 0) t( .0565  .0565 0) t(0 0 .425)> }
 
 
 ###########
 ## old objects
 ###########
 
-body  OBJECTS{ X=<T t(.0 -.8 .69)> }
+ OBJECTS{ X=<T t(.0 -.8 .69)> }
 
-shape target1(OBJECTS){ contact, shape:box, rel=<T t( .25 .2 .055) d(50 0 0 1) d(30 0 1 0)>, size=[.1 .1 .15 .0], color=[.3 .9 .1] }
-shape target2(OBJECTS){ contact, shape:cylinder, rel=<T t( .25 -.2 .055) d(50 0 0 1) d(30 0 1 0)>, size=[.0 .0 .108 .0375], color=[.3 .9 .1] }
+target1(OBJECTS){ contact, shape:box, rel=<T t( .25 .2 .055) d(50 0 0 1) d(30 0 1 0)>, size=[.1 .1 .15 .0], color=[.3 .9 .1] }
+target2(OBJECTS){ contact, shape:cylinder, rel=<T t( .25 -.2 .055) d(50 0 0 1) d(30 0 1 0)>, size=[.0 .0 .108 .0375], color=[.3 .9 .1] }
 

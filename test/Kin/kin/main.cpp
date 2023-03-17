@@ -191,9 +191,9 @@ void TEST(Copy){
   G1 >>FILE("z.1");
   G2 >>FILE("z.2");
 
-  charA g1,g2;
-  FILE("z.1") >>g1;
-  FILE("z.2") >>g2;
+  rai::String g1,g2;
+  g1.read(FILE("z.1"), "", "", -1); //no stop symbols
+  g2.read(FILE("z.2"), "", "", -1);
 
   CHECK_EQ(g1, g2, "copy operator failed!")
   cout <<"** copy operator success" <<endl;

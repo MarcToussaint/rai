@@ -6,6 +6,8 @@ from lxml import etree
 inFile = sys.argv[1]
 xmlData = etree.parse(inFile)
 
+useCollisionShapes = False
+
 def writeShape(link):
     elem = link.find('origin')
     if elem is not None:
@@ -75,16 +77,17 @@ for link in links:
 
     # visual shape
     for visual in link.findall('visual'):
-        print('%s_1 (%s): {' % (name, name), end='')
+        print('%s_0 (%s): {' % (name, name), end='')
         writeShape(visual)
         print(' visual: true }') # end of shape
 
     # collision shape
-    for collision in link.findall('collision'):
-        print('%s_0 (%s): {' % (name, name), end='')
-        print(' color: [.8 .2 .2 .5],', end='')
-        writeShape(collision)
-        print(' contact: -2 }') # end of shape
+    if useCollisionShapes:
+        for collision in link.findall('collision'):
+            print('%s_1 (%s): {' % (name, name), end='')
+            print(' color: [.8 .2 .2 .5],', end='')
+            writeShape(collision)
+            print(' contact: -2 }') # end of shape
 
 
 joints = xmlData.findall('/joint')
@@ -135,7 +138,7 @@ for joint in joints:
 
         elem = joint.find('mimic')
         if elem is not None:
-            print(' mimic: (%s),' % elem.attrib['joint'], end='')
+            print(' mimic: %s,' % elem.attrib['joint'], end='')
 
         #elem = joint.find('axis')
         #if elem is not None:
