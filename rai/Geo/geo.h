@@ -53,6 +53,7 @@ struct Vector {
   double isColinear(const Vector&) const;
   double length() const;
   double lengthSqr() const;
+  double sum() const;
   double angle(const Vector&) const;
   double radius() const;
   double phi() const;

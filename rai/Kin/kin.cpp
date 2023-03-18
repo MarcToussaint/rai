@@ -2235,11 +2235,11 @@ void Configuration::stepSwift() {
 }
 */
 
-void Configuration::stepFcl() {
+void Configuration::stepFcl(double tmpCutoff) {
   //-- get the frame state of collision objects
   arr X = getFrameState();
   //-- step fcl
-  fcl()->step(X);
+  fcl()->step(X, tmpCutoff);
   //-- add as proxies
   proxies.clear();
   addProxies(fcl()->collisions);

@@ -2211,7 +2211,9 @@ bool OpenGL::modifiersShift(){ return _SHIFT(modifiers); }
 bool OpenGL::modifiersCtrl(){ return _CTRL(modifiers); }
 
 arr OpenGL::get3dMousePos(arr& normal){
-  float d = captureDepth(mouseposy, mouseposx);
+  double d = 0;
+  if(mouseposy>=0. && mouseposy<=height-1 && mouseposx>=0. && mouseposx<=width-1)
+    d = captureDepth(mouseposy, mouseposx);
   arr x = {mouseposx, mouseposy, d};
   if(d<.01 || d==1.) {
     cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
@@ -2331,7 +2333,9 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
       beginNonThreadedDraw(true);
       Draw(w, h, nullptr, true);
       endNonThreadedDraw(true);
-      float d = captureDepth(mouseposy, mouseposx);
+      double d = 0.;
+      if(mouseposy>=0. && mouseposy<=height-1 && mouseposx>=0. && mouseposx<=width-1)
+        d = captureDepth(mouseposy, mouseposx);
       arr x = {double(mouseposx), double(mouseposy), d};
 //      cout <<" image coords: " <<x;
       if(d<.01 || d==1.) {
@@ -2353,7 +2357,9 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
 
   //-- RIGHT -> focus on selected point
   if(mouse_button==3 && (_NONE(modifiers))) {
-    double d = captureDepth(mouseposy, mouseposx);
+    double d = 0.;
+    if(mouseposy>=0. && mouseposy<=height-1 && mouseposx>=0. && mouseposx<=width-1)
+      d = captureDepth(mouseposy, mouseposx);
     if(d<.001 || d==1.) {
       cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
     } else {

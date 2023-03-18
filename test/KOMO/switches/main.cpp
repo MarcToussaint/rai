@@ -158,9 +158,9 @@ void testPickAndPlace2(bool keyframesOnly){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-//  testGrasp();
-//  testPickAndPlace2(false);
+  //testGrasp();
   testPickAndPlace(false);
+  testPickAndPlace2(false);
 
   return 0;
 }

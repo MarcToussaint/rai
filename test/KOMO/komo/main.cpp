@@ -259,10 +259,10 @@ int MAIN(int argc,char** argv){
 //  rnd.clockSeed();
 
   testEasy();
-//  testAlign();
-//  testThin();
-//  testPR2();
-//  testThreading();
+  testAlign();
+  testThin();
+  testPR2();
+  testThreading();
 
   return 0;
 }

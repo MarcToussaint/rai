@@ -28,10 +28,12 @@ void testPickAndPlace(rai::ArgWord pathOrSeq){
 
   //grasp
   rai::Skeleton S = {
-    { 1., 1., rai::SY_topBoxGrasp, {"gripper", "box2"} },
+//    { 1., 1., rai::SY_topBoxGrasp, {"gripper", "box2"} },
+    { 1., 1., rai::SY_touch, {"gripper", "box2"} },
     { 1., 2., rai::SY_stable, {"gripper", "box2"} },
 //    { 2., 2., rai::SY_topBoxPlace, {"gripper", "box2", "table"} },
-    { 1.9, 2.1, rai::SY_downUp, {"gripper"} },
+    { .8, 1.2, rai::SY_downUp, {"gripper"} },
+    { 1.8, 2.2, rai::SY_downUp, {"gripper"} },
     { 2., 2., rai::SY_poseEq, {"box2", "target2"} },
     { 2., -1., rai::SY_stable, {"table", "box2"} },
   };

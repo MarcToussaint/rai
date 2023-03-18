@@ -14,7 +14,8 @@ target2 (table){
 
 box (table){
     joint:rigid, Q:<t(.3 0 .1)>
-    shape:ssBox, size:[.3 .2 .1 .02], color:[.8 .8 .8] }
+    shape:ssBox, size:[.3 .2 .1 .02], color:[.8 .8 .8]
+    mass: .1 }
 
 target (table){
     Q:<t(.5 .0 .1) d(20 0 0 1)>

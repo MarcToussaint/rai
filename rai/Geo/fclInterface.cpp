@@ -115,7 +115,7 @@ FclInterface::~FclInterface() {
   delete self;
 }
 
-void FclInterface::step(const arr& X) {
+void FclInterface::step(const arr& X, double _cutoff) {
   CHECK_EQ(X.nd, 2, "");
   CHECK_EQ(X.d0, self->convexGeometryData.N, "");
   CHECK_EQ(X.d1, 7, "");
@@ -129,9 +129,14 @@ void FclInterface::step(const arr& X) {
   }
   self->manager->update();
 
+  double defaultCutoff = cutoff;
+  if(_cutoff>=0) cutoff = _cutoff;
+
   collisions.clear();
   self->manager->collide(this, FclInterface_self::BroadphaseCallback);
   collisions.reshape(-1, 2);
+
+  if(_cutoff>=0) cutoff = defaultCutoff;
 
   X_lastQuery = X;
 }

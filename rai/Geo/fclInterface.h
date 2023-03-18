@@ -22,7 +22,7 @@ struct FclInterface {
   FclInterface(const Array<shared_ptr<Mesh>>& geometries, double _cutoff=0.);
   ~FclInterface();
 
-  void step(const arr& X);
+  void step(const arr& X, double _cutoff=-1.);
 
 protected:
   friend FclInterface_self;

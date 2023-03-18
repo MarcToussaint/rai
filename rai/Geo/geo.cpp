@@ -111,6 +111,8 @@ double Vector::length() const { return ::sqrt(lengthSqr()); }
 /// returns the square of length |a|^2
 double Vector::lengthSqr() const { return x*x + y*y + z*z; }
 
+double Vector::sum() const { return x+y+z; }
+
 /// angle in [0..pi] between this and b
 double Vector::angle(const Vector& b) const {
   double a=((*this)*b)/(length()*b.length());
@@ -1527,8 +1529,12 @@ void Transformation::checkNan() const {
 
 /// operator<<
 void Transformation::write(std::ostream& os) const {
-  os <<'[' <<pos.x <<", " <<pos.y <<", " <<pos.z <<", "
-     <<rot.w <<", " <<rot.x <<", " <<rot.y <<", " <<rot.z <<']';
+  if(rot.isZero){
+    os <<'[' <<pos.x <<", " <<pos.y <<", " <<pos.z <<']';
+  }else{
+    os <<'[' <<pos.x <<", " <<pos.y <<", " <<pos.z <<", "
+      <<rot.w <<", " <<rot.x <<", " <<rot.y <<", " <<rot.z <<']';
+  }
 }
 
 /// operator>>

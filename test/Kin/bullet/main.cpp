@@ -52,6 +52,7 @@ void simGfile(){
     rai::Configuration C;
     C.addFile(file);
     C.optimizeTree();
+    C.ensure_q();
 
 #if 0
     SimInteract sim(C);

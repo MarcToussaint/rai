@@ -484,36 +484,45 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
       rai::Transformation relB = 0; //-f->get_Q();
       joint->setParentPose(conv_Transformation2PxTrans(relA));
       joint->setChildPose(conv_Transformation2PxTrans(relB));
-      joint->setJointPosition(PxArticulationAxis::eTWIST, f->joint->getQ());
 
       PxArticulationAxis::Enum axis = PxArticulationAxis::eCOUNT;
+      PxArticulationJointType::Enum type = PxArticulationJointType::eUNDEFINED;
       switch(f->joint->type){
         case rai::JT_hingeX:{
-          joint->setJointType(PxArticulationJointType::eREVOLUTE);
+          type = PxArticulationJointType::eREVOLUTE;
           axis = PxArticulationAxis::eTWIST;
-          joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
+          break;
+        }
+        case rai::JT_hingeY:{
+          type = PxArticulationJointType::eREVOLUTE;
+          axis = PxArticulationAxis::eSWING1;
+          break;
+        }
+        case rai::JT_hingeZ:{
+          type = PxArticulationJointType::eREVOLUTE;
+          axis = PxArticulationAxis::eSWING2;
           break;
         }
         case rai::JT_transX:{
-          joint->setJointType(PxArticulationJointType::ePRISMATIC);
+          type = PxArticulationJointType::ePRISMATIC;
           axis = PxArticulationAxis::eX;
-          joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
           break;
         }
         case rai::JT_transY:{
-          joint->setJointType(PxArticulationJointType::ePRISMATIC);
+          type = PxArticulationJointType::ePRISMATIC;
           axis = PxArticulationAxis::eY;
-          joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
           break;
         }
         case rai::JT_transZ:{
-          joint->setJointType(PxArticulationJointType::ePRISMATIC);
+          type = PxArticulationJointType::ePRISMATIC;
           axis = PxArticulationAxis::eZ;
-          joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
           break;
         }
         default: NIY;
       }
+      joint->setJointType(type);
+      joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
+      joint->setJointPosition(axis, f->joint->getQ());
       jointAxis(f->ID) = axis;
 
 //      if(f->joint->limits.N){
@@ -716,6 +725,8 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes
 //===========================================================================
 
 PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose): self(nullptr) {
+  CHECK(C._state_q_isGood, "PhysX needs joint angles for initialization");
+
   self = new PhysXInterface_self;
 
   self->opt.verbose = verbose;

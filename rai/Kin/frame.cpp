@@ -390,7 +390,7 @@ void rai::Frame::write(Graph& G) {
   if(shape) shape->write(G);
   if(inertia) inertia->write(G);
 
-  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
+  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "joint_scale", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
   if(ats) for(Node* n : *ats) {
     if(!n->key.startsWith("%") && !avoid.contains(n->key)) {
       n->newClone(G);
@@ -415,7 +415,7 @@ void rai::Frame::write(std::ostream& os) const {
   if(shape) shape->write(os);
   if(inertia) inertia->write(os);
 
-  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
+  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "joint_scale", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
   if(ats) for(Node* n : *ats) {
     if(!n->key.startsWith("%") && !avoid.contains(n->key)){
       os <<", ";
@@ -1285,7 +1285,7 @@ void rai::Joint::read(const Graph& ats) {
 
   if(!B.isZero()) {
     //new frame between: from -> f -> to
-    CHECK_EQ(frame->children.N, 1, "");
+    CHECK_EQ(frame->children.N, 1, "a post transform of frame '" <<frame->name <<"' requires it has a child");
     Frame* follow = frame->children.scalar();
 
     CHECK(follow->parent, "");
