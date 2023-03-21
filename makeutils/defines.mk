@@ -48,6 +48,10 @@ LIBS += -lpng
 endif
 
 ifeq ($(FCL),1)
+ifeq ($(FCL_LOCAL),1)
+LPATHS += $(HOME)/git/fcl/build/lib
+CPATH := $(CPATH):$(HOME)/git/fcl/build/include:$(HOME)/git/fcl/include
+endif
 DEPEND_UBUNTU += libfcl-dev
 CXXFLAGS  += -DRAI_FCL
 LIBS      += -lfcl

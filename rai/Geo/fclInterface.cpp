@@ -79,14 +79,11 @@ FclInterface::FclInterface(const Array<shared_ptr<Mesh>>& geometries, double _cu
       dat->polygons.insColumns(0);
       for(uint i=0; i<dat->polygons.d0; i++) dat->polygons(i, 0) = 3;
 #if FCL_MINOR_VERSION >= 7
-      std::vector<fcl::Vector3<float>> verts(mesh.V.d0);
-      std::vector<int> faces(mesh.T.N) ;
-      for(uint i=0;i<verts.size();i++) verts[i] = {(float)mesh.V(i,0), (float)mesh.V(i,1), (float)mesh.V(i,2)};
-      for(uint i=0;i<faces.size();i++) faces[i] = mesh.T.elem(i);
-      auto model = make_shared<fcl::Convex<float>>(std::make_shared<const std::vector<fcl::Vector3<float>>>(std::move(verts)),
-						   mesh.T.d0,
-						   std::make_shared<const std::vector<int>>(std::move(faces)),
-						   true);
+      auto verts = make_shared<std::vector<fcl::Vector3<float>>>(mesh.V.d0);
+      auto faces = make_shared<std::vector<int>>(mesh.T.N);
+      for(uint i=0;i<verts->size();i++) (*verts)[i] = {(float)mesh.V(i,0), (float)mesh.V(i,1), (float)mesh.V(i,2)};
+      for(uint i=0;i<faces->size();i++) (*faces)[i] = mesh.T.elem(i);
+      auto model = make_shared<fcl::Convex<float>>(verts, mesh.T.d0, faces, true);
 #else
       auto model = make_shared<fcl::Convex>((fcl::Vec3f*)mesh.Tn.p, dat->plane_dis.p, mesh.T.d0, (fcl::Vec3f*)mesh.V.p, mesh.V.d0, (int*)dat->polygons.p);
 #endif

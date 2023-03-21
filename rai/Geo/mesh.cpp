@@ -1979,11 +1979,11 @@ double GJK_distance(Mesh& mesh1, Mesh& mesh2,
 
 #ifdef RAI_Lewiner
 
-void Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {
+void Mesh::setImplicitSurface(const ScalarFunction& f, double lo, double hi, uint res) {
   setImplicitSurface(f, lo, hi, lo, hi, lo, hi, res);
 }
 
-void Mesh::setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res) {
+void Mesh::setImplicitSurface(const ScalarFunction& f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res) {
   MarchingCubes mc(res, res, res);
   mc.init_all() ;
 
@@ -2064,7 +2064,7 @@ void Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) 
 void Mesh::setImplicitSurface(const floatA& gridValues, const arr& lo, const arr& hi) { NICO }
 #endif
 
-void Mesh::setImplicitSurfaceBySphereProjection(ScalarFunction f, double rad, uint fineness){
+void Mesh::setImplicitSurfaceBySphereProjection(const ScalarFunction& f, double rad, uint fineness){
   setSphere(fineness);
   scale(rad);
 
