@@ -195,11 +195,11 @@ void TEST(PR2){
 //  komo.denseOptimization=true;
 //  komo.sparseOptimization=true;
   komo.setModel(C);
-  komo.setTiming(1., 100, 10., 2);
+  komo.setTiming(1., 30, 10., 2);
   komo.add_qControlObjective({}, 2, 1.);
   komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e1});
   komo.addObjective({.98,1.}, FS_qItself, {}, OT_sos, {1e1}, {}, 1);
-  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
+  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e1});
 
 //  komo.setSpline(10);
   komo.optimize();

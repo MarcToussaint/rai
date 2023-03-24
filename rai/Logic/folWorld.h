@@ -156,19 +156,26 @@ struct FOL_World_State : TreeSearchNode {
   uint T_step;
   double T_real;
   double R_total;
+  //FOL_World::Handle decision; ///< the decision that led to this node
+  Node* folDecision=0;
   Array<FOL_World::Handle> actions;
+  Array<FOL_World_State*> children;
   rai::String name;
 
   FOL_World_State(FOL_World& L, TreeSearchNode* _parent, bool _isTerminal);
 
-  //transition in new state
-  virtual int getNumDecisions(){ return actions.N; }
-
-  virtual std::shared_ptr<TreeSearchNode> transition(int action);
-
+  //compute
   virtual void compute(){ HALT("shouldn't be here"); }
 
-  //access parent
+  //transition
+  virtual int getNumDecisions(){ return actions.N; }
+  virtual std::shared_ptr<TreeSearchNode> transition(int action);
+
+  //helpers
+  void getStateSequence(Array<Graph*>& states, arr& times, String& skeletonString);
+  FOL_World_State* getChildByAction(Node* folDecision);
+
+  //I/O
   virtual void write(std::ostream& os) const;
   virtual void report(std::ostream& os, int verbose) const;
 };

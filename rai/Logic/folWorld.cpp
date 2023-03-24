@@ -131,10 +131,10 @@ TreeSearchDomain::TransitionReturn FOL_World::transition(const Handle& action) {
     NodeL decisionTuple = {d->rule};
     decisionTuple.append(d->substitution);
     lastDecisionInState = createNewFact(*state, decisionTuple);
-    lastDecisionInState->key = ("decision");
+    lastDecisionInState->key = "decision";
   } else {
     lastDecisionInState = createNewFact(*state, {Wait_keyword});
-    lastDecisionInState->key = ("decision");
+    lastDecisionInState->key = "decision";
   }
 
   //-- apply effects of decision
@@ -400,6 +400,7 @@ void FOL_World::setState(Graph* s, int setT_step) {
 }
 
 Graph* FOL_World::createStateCopy() {
+  CHECK(state, "state is not initialized");
   Graph* new_state = &KB.addSubgraph(STRING("STATE_"<<count++), state->isNodeOfGraph->parents);
   state->index();
   new_state->copy(*state);
@@ -627,16 +628,43 @@ FOL_World_State::FOL_World_State(FOL_World& L, TreeSearchNode* _parent, bool _is
 }
 
 std::shared_ptr<TreeSearchNode> FOL_World_State::transition(int action){
+  CHECK_GE(action, 0, "");
+  if(action<(int)children.N && children(action)) HALT("duplicate transition call");
   if(L.state!=state) L.setState(state, T_step);
   L.T_real = T_real;
   CHECK_LE(1+(uint)action, actions.N, "that action doesn't exist");
   TreeSearchDomain::TransitionReturn ret = L.transition(actions(action));
   CHECK(L.state!=state, "");
   std::shared_ptr<FOL_World_State> s = make_shared<FOL_World_State>(L, this, L.is_terminal_state());
+  s->decision = actions(action);
+  s->folDecision = s->state->getNode("decision");
   s->f_prio = L.T_step;
   if(!s->isTerminal) s->f_prio += .9;
   s->name <<"fol" <<L.T_step<<'_' <<action <<' ' <<*actions(action);
+  while(action>=(int)children.N) children.append(0);
+  children(action) = s.get();
   return s;
+}
+
+void FOL_World_State::getStateSequence(Array<Graph*>& states, arr& times, String& skeletonString){
+  Array<FOL_World_State*> folStates;
+  folStates.memMove=states.memMove=1;
+  FOL_World_State *s = this;
+  while(s) { folStates.prepend(s); s = dynamic_cast<FOL_World_State*>(s->parent); }
+  for(FOL_World_State* s:folStates){
+    if(s->name.N) skeletonString <<'\n' <<s->name;
+    states.append(s->state);
+    times.append(s->T_real);
+  }
+}
+
+FOL_World_State* FOL_World_State::getChildByAction(Node* folDecision) {
+  CHECK(children.N, "node is not expanded");
+  for(FOL_World_State* ch:children) {
+    if(tuplesAreEqual(ch->folDecision->parents, folDecision->parents)) return ch;
+  }
+  LOG(-1) <<"a child with action '" <<*folDecision <<"' does not exist";
+  return nullptr;
 }
 
 void FOL_World_State::write(std::ostream& os) const { os <<'#' <<ID <<'_' <<name <<' '; }

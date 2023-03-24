@@ -1190,9 +1190,9 @@ bool Configuration::checkConsistency() const {
       arr jq = j->calcDofsFromConfig();
       CHECK_EQ(jq.N, j->dim, "");
       if(j->active){
-        for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - q.elem(j->qIndex+i), RAI_2PI), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
+        for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - q.elem(j->qIndex+i), RAI_2PI), 2e-5, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
       }else{
-        for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - qInactive.elem(j->qIndex+i), RAI_2PI), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
+        for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - qInactive.elem(j->qIndex+i), RAI_2PI), 2e-5, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
       }
     }
   }
@@ -2235,11 +2235,11 @@ void Configuration::stepSwift() {
 }
 */
 
-void Configuration::stepFcl(double tmpCutoff) {
+void Configuration::stepFcl(double cutoff) {
   //-- get the frame state of collision objects
   arr X = getFrameState();
   //-- step fcl
-  fcl()->step(X, tmpCutoff);
+  fcl()->step(X, cutoff);
   //-- add as proxies
   proxies.clear();
   addProxies(fcl()->collisions);

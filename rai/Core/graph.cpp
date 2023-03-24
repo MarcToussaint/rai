@@ -474,7 +474,7 @@ Node* Graph::edit(Node* ed) {
       edited++;
     }
   if(!edited) {
-    RAI_MSG("no nodes edited!");
+    LOG(1) <<"no nodes edited! (from '" <<*ed <<"')";
   }
   if(&ed->container==this) { delete ed; ed=nullptr; }
   return nullptr;
@@ -1039,7 +1039,8 @@ void Graph::write(std::ostream& os, const char* ELEMSEP, const char* BRACKETS, i
 }
 
 void Graph::writeYaml(std::ostream& os){
-  write(os, ",\n", "{}", 0, true, false);
+  //write(os, "\n", "{}", 0, true, false);
+  write(os, "\n", 0, -1, true, false);
 }
 
 void Graph::writeParseInfo(std::ostream& os) {

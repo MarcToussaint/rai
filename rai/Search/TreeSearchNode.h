@@ -30,15 +30,15 @@ struct TreeSearchNode{
   TreeSearchNode(TreeSearchNode *parent=0);
   virtual ~TreeSearchNode() {}
 
+  //compute
   virtual void compute() = 0;
 
-  //transition in new state
+  //transition
   virtual int getNumDecisions() = 0;
   virtual std::shared_ptr<TreeSearchNode> transition(int action) = 0;
   virtual std::shared_ptr<TreeSearchNode> transitionRandomly();
 
-
-  //access parent
+  //I/O
   virtual void write(std::ostream& os) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
   virtual void report(std::ostream& os, int verbose) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
   virtual void data(Graph& g){}

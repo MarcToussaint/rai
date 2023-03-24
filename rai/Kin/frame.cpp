@@ -774,7 +774,7 @@ void rai::Joint::setMimic(rai::Joint* j, bool unsetPreviousMimic){
       mimic->mimicers.removeValue(this);
       mimic=0;
     }
-    CHECK_EQ(j->type, type, "can't mimic joints of different type [could be generalized to dim]:" <<*this <<*j);
+    CHECK_EQ(j->type, type, "can't mimic joints of different type [could be generalized to dim]:" <<*this->frame <<" -- " <<*j->frame);
     CHECK(!mimic,"");
     mimic=j;
     mimic->mimicers.append(this);
@@ -1323,7 +1323,7 @@ void rai::Joint::read(const Graph& ats) {
 
   if(ats.get(d, "q")) {
     if(!dim) { //HACK convention
-      frame->set_Q()->rot.setRad(d, 1., 0., 0.);
+      frame->set_Q()->rot.setRad(d*scale, 1., 0., 0.);
     } else {
       CHECK(dim!=UINT_MAX, "setting q (in config file) for 0-dim joint");
       CHECK(dim, "setting q (in config file) for 0-dim joint");
@@ -1353,6 +1353,11 @@ void rai::Joint::read(const Graph& ats) {
 
   //sampling
   ats.get(sampleUniform, "sampleUniform");
+
+  //active
+  bool _active=true;
+  ats.get(_active, "joint_active");
+  if(!_active) setActive(false);
 
   //coupled to another joint requires post-processing by the Graph::read!!
   if(ats["mimic"]) {

@@ -8,6 +8,9 @@ xmlData = etree.parse(inFile)
 
 useCollisionShapes = False
 
+if len(sys.argv)>2 and sys.argv[2]=='-coll':
+    useCollisionShapes = True
+
 def writeShape(link):
     elem = link.find('origin')
     if elem is not None:
@@ -79,6 +82,8 @@ for link in links:
     for visual in link.findall('visual'):
         print('%s_0 (%s): {' % (name, name), end='')
         writeShape(visual)
+        #if not useCollisionShapes:
+        #    print(' contact: -2,', end='')
         print(' visual: true }') # end of shape
 
     # collision shape
@@ -111,6 +116,8 @@ for joint in joints:
                     print(' joint: hingeY,', end='')
                 elif axis=='0 0 1':
                     print(' joint: hingeZ,', end='')
+                elif axis=='0 0 -1':
+                    print(' joint: hingeZ, joint_scale: -1,', end='')
                 else:
                     raise Exception('CAN ONLY PROCESS X Y Z prismatic joints, not', axis)
             else:
@@ -128,6 +135,8 @@ for joint in joints:
                     print(' joint: transY, joint_scale: -1,', end='')
                 elif axis=='0 0 1':
                     print(' joint: transZ,', end='')
+                elif axis=='0 0 -1':
+                    print(' joint: transZ, joint_scale: -1,', end='')
                 else:
                     raise Exception('CAN ONLY PROCESS X Y Z prismatic joints, not', axis)
             else:

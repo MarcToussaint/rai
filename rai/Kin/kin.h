@@ -252,7 +252,7 @@ struct Configuration : GLDrawer {
   void glAdd(void (*call)(void*, OpenGL&), void* classP);
   int glAnimate();
   void view_close();
-  void stepFcl(double tmpCutoff=-1.);
+  void stepFcl(double cutoff=-1.);
   void stepPhysx(double tau);
   void stepOde(double tau);
   void stepDynamics(arr& qdot, const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);

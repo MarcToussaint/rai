@@ -1,17 +1,35 @@
+#include <yaml-cpp/yaml.h>
 #include <Core/graph.h>
+
+//===========================================================================
 
 void read(const char* filename){
   rai::Graph G(filename, false);  //including parse info?
-  cout <<G <<endl;
   G.checkConsistency();
-  cout <<"\ndone" <<endl;
-//  G.writeParseInfo(cout);
-  cout <<"read graph=\n--------------------\n" <<G <<"\n--------------------" <<endl;
+  cout <<"--------- read graph -----------\n" <<G <<"\n--------------------" <<endl;
 
-  G.writeHtml(FILE("z.html"), FILE(filename));
+  //-- display html
+  //G.writeHtml(FILE("z.html"), FILE(filename));
+  //rai::system("firefox z.html &");
+
+  //-- test yaml consistency
+  G.writeYaml(FILE("z1.yaml"));
+  try {
+    YAML::Node yaml = YAML::LoadFile(filename);
+    FILE("z2.yaml") <<yaml;
+  }catch(YAML::ParserException& e){
+    cout <<"*** file '" <<filename <<"' is not yaml compatible:\n    " <<e.what() <<endl;
+  }
+  try {
+    YAML::Node yaml = YAML::LoadFile("z1.yaml");
+    FILE("z3.yaml") <<yaml;
+  }catch(YAML::ParserException& e){
+    cout <<"*** Graph::writeYaml('z1.yaml') is not yaml compatible!!!\n    " <<e.what() <<endl;
+  }
+  //rai::system("diff z2.yaml z3.yaml");
+
+  //-- display dot
   G.writeDot(FILE("z.dot").getOs());
-
-//  rai::system("firefox z.html &");
   rai::system("dot -Tpdf z.dot > z.pdf");
   rai::system("evince z.pdf &");
 }

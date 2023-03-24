@@ -19,6 +19,12 @@ CXXFLAGS += -DRAI_JSON
 LIBS += -ljsoncpp
 endif
 
+ifeq ($(YAML),1)
+DEPEND_UBUNTU += libyaml-cpp-dev
+CXXFLAGS += -DRAI_YAML
+LIBS += -lyaml-cpp
+endif
+
 ifeq ($(OPENMP),1)
 CXXFLAGS += -fopenmp -DOPENMP
 endif
