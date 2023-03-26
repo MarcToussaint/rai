@@ -1575,7 +1575,7 @@ void Transformation::read(std::istream& is) {
           RAI_MSG("unknown Transformation read tag: '" <<c <<"' abort reading this frame"); is.putback(c); return;
         }
       }
-    if(is.fail()) HALT("error reading '" <<c <<"' parameters in frame");
+    if(is.fail()) HALT("error reading '" <<c <<"' parameters in Transformation");
   }
   if(is.fail()) HALT("could not read Transformation struct");
   rot.normalize();

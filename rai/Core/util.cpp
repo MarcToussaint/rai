@@ -546,13 +546,12 @@ void timerResume() {
 }
 
 //COPY & PAST from graph.h
-Mutex::TypedToken<rai::Graph> getParameters();
+Mutex::TypedToken<rai::Graph> params();
 void initParameters(int _argc, char* _argv[], bool forceReload, bool verbose);
 
 /// memorize the command line arguments and open a log file
-void initCmdLine(int _argc, char* _argv[]) {
+void initCmdLine(int _argc, char* _argv[], bool quiet) {
   argc=_argc; argv=_argv;
-  bool quiet=false;
   for(int i=0; i<argc; i++) if(!strcmp(argv[i],"-quiet")) quiet=true;
   
   if(!quiet){
@@ -1059,7 +1058,7 @@ std::istream& rai::FileToken::getIs(bool change_dir) {
     is = std::make_unique<std::ifstream>();
     is->open(name);
     LOG(3) <<"opening input file '" <<name <<"'";
-    if(!is->good()) THROW("could not open file '" <<name <<"' for input from '" <<cwd <<"./" <<path <<"'");
+    if(!is->good()) THROW("could not open file '" <<name <<"' for input from '" <<cwd <<" / " <<path <<"'");
   }
   return *is;
 }

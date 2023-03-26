@@ -147,16 +147,16 @@ struct FOL_World : TreeSearchDomain {
   void writePDDLfiles(const String& name);
   String callPDDLsolver();
 
+  void report(ostream& os) const;
 };
 stdOutPipe(FOL_World)
 
 struct FOL_World_State : TreeSearchNode {
   FOL_World& L;
-  Graph* state;
-  uint T_step;
-  double T_real;
-  double R_total;
-  //FOL_World::Handle decision; ///< the decision that led to this node
+  Graph* state=0;
+  uint T_step=0;
+  double T_real=0;
+  double R_total=0;
   Node* folDecision=0;
   Array<FOL_World::Handle> actions;
   Array<FOL_World_State*> children;
@@ -173,6 +173,7 @@ struct FOL_World_State : TreeSearchNode {
 
   //helpers
   void getStateSequence(Array<Graph*>& states, arr& times, String& skeletonString);
+  NodeL getDecisionSequence(String& string);
   FOL_World_State* getChildByAction(Node* folDecision);
 
   //I/O

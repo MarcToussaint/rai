@@ -1189,11 +1189,16 @@ bool Configuration::checkConsistency() const {
       Joint *j = f->joint;
       arr jq = j->calcDofsFromConfig();
       CHECK_EQ(jq.N, j->dim, "");
+      arr tmpq;
       if(j->active){
-        for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - q.elem(j->qIndex+i), RAI_2PI), 2e-5, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
+        tmpq.referToRange(q, j->qIndex, j->qIndex+j->dim-1);
       }else{
-        for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - qInactive.elem(j->qIndex+i), RAI_2PI), 2e-5, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
+        tmpq.referToRange(qInactive, j->qIndex, j->qIndex+j->dim-1);
+        //for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - qInactive.elem(j->qIndex+i), RAI_2PI), 2e-5, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
       }
+      if(j->type==JT_quatBall){ op_normalize(tmpq); }
+      if(j->type==JT_free){ op_normalize(tmpq({3,6}).noconst()); }
+      for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - tmpq.elem(i), RAI_2PI), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
     }
   }
 
@@ -1570,9 +1575,9 @@ arr Configuration::calc_fwdPropagateVelocities(const arr& qdot) {
   return vel;
 }
 
-void Configuration::ensure_proxies() {
+void Configuration::ensure_proxies(bool fine) {
   if(!_state_proxies_isGood) stepFcl(); //broadphase
-  //for(Proxy& p: proxies) if(!p.collision) p.calc_coll(); //fine
+  if(fine) for(Proxy& p: proxies) if(!p.collision) p.calc_coll(); //fine
 }
 
 //===========================================================================
@@ -2670,13 +2675,13 @@ void Configuration::report(std::ostream& os) const {
   for(Frame* f:frames) if(f->shape) nShapes++;
 //  for(Dof* j:activeJoints) if(j->uncertainty) nUc++;
 
-  os <<"Config: q.N=" <<getJointStateDimension()
+  os <<"Configuration: q.N=" <<getJointStateDimension()
      <<" #frames=" <<frames.N
      <<" #dofs=" <<activeDofs.N
      <<" #shapes=" <<nShapes
      <<" #ucertainties=" <<nUc
      <<" #proxies=" <<proxies.N
-     <<" #dofs=" <<otherDofs.N
+     <<" #forces=" <<otherDofs.N
      <<" #evals=" <<setJointStateCount
      <<endl;
 
@@ -2887,13 +2892,15 @@ void Configuration::reportProxies(std::ostream& os, double belowMargin, bool bri
 
   os <<"Proximity report: #" <<proxies.N <<endl;
   uint i=0;
+  double pen = 0.;
   for(const Proxy& p: proxies) {
     if(p.d>belowMargin) continue;
-    os  <<i;
+    if(p.d<0.) pen -= p.d;
+    os <<"  " <<i++;
     p.write(os, brief);
     os <<endl;
-    i++;
   }
+  cout <<"  TOTAL PENETRATION: " <<pen <<endl;
   os <<"ForceExchange report:" <<endl;
   for(Frame* a:frames) for(ForceExchange* c:a->forces){
     if(&c->a==a) {

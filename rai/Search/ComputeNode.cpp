@@ -19,7 +19,7 @@ void rai::ComputeNode::compute(){
   if(l>1e9) isFeasible=false;
   f_prio = baseLevel + computePenalty();
   if(info().verbose>0){
-    if(isComplete) LOG(0) <<"computed " <<name <<" -> complete with c:" <<c <<" l:" <<l <<" level:" <<f_prio;
+    if(isComplete) LOG(0) <<"computed " <<name <<" -> complete with c:" <<c <<" l:" <<l <<" level:" <<f_prio <<(isFeasible?" feasible":" INFEASIBLE") <<(isTerminal?" TERMINAL":0);
     else LOG(0) <<"computed " <<name <<" -> still incomplete with c:" <<c;
   }
 }
@@ -29,7 +29,7 @@ std::shared_ptr<rai::TreeSearchNode> rai::ComputeNode::transition(int i){
   // update level
   if(!child->parent){
     child->parent = this;
-    CHECK_EQ((uint)i, n_children, "really?")
+    if((uint)i!=n_children) LOG(0) <<"creating childBranch #" <<i <<" without lower branches first";
     n_children++;
   }
   child->baseLevel = baseLevel + computePenalty();

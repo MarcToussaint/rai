@@ -183,7 +183,7 @@ struct Graph : NodeL {
   void read(std::istream& is, bool parseInfo=false);
   Node* readNode(std::istream& is, StringA& tags, const char* predeterminedKey, bool verbose, bool parseInfo); //used only internally..
   void readJson(std::istream& is);
-  void write(std::ostream& os=cout, const char* ELEMSEP=",\n", const char* BRACKETS="{  }", int indent=-1, bool yamlMode=false, bool binary=false) const;
+  void write(std::ostream& os=cout, const char* ELEMSEP=",\n", const char* BRACKETS=0, int indent=-1, bool yamlMode=false, bool binary=false) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0, int focusIndex=-1, bool subGraphsAsNodes=false);
   void writeHtml(std::ostream& os, std::istream& is);
   void writeYaml(std::ostream& os);
@@ -323,7 +323,7 @@ stdOutPipe(RenderingInfo)
 //===========================================================================
 
 /// global registry of parameters (taken from cmd line or file) as a singleton graph
-Mutex::TypedToken<rai::Graph> getParameters();
+Mutex::TypedToken<rai::Graph> params();
 void initParameters(int _argc, char* _argv[], bool forceReload=false, bool verbose=true);
 
 //===========================================================================

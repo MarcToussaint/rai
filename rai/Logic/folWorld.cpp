@@ -559,6 +559,17 @@ String FOL_World::callPDDLsolver() {
   return plan;
 }
 
+void FOL_World::report(std::ostream& os) const {
+  os <<"FOL_World info:"
+    <<"\n  decisions: ";
+  for(Node* n:decisionRules) os <<n->key <<", ";
+  os <<"\n  rules: ";
+  for(Node* n:worldRules) os <<n->key <<", ";
+  os <<"\n  start state: ";
+  start_state->write(os, " ");
+  os <<endl;
+}
+
 Node* FOL_World::addSymbol(const char* name) {
   return KB.add<bool>(name, true);
 }
@@ -636,7 +647,6 @@ std::shared_ptr<TreeSearchNode> FOL_World_State::transition(int action){
   TreeSearchDomain::TransitionReturn ret = L.transition(actions(action));
   CHECK(L.state!=state, "");
   std::shared_ptr<FOL_World_State> s = make_shared<FOL_World_State>(L, this, L.is_terminal_state());
-  s->decision = actions(action);
   s->folDecision = s->state->getNode("decision");
   s->f_prio = L.T_step;
   if(!s->isTerminal) s->f_prio += .9;
@@ -646,13 +656,28 @@ std::shared_ptr<TreeSearchNode> FOL_World_State::transition(int action){
   return s;
 }
 
-void FOL_World_State::getStateSequence(Array<Graph*>& states, arr& times, String& skeletonString){
+NodeL FOL_World_State::getDecisionSequence(String& string){
+  Array<FOL_World_State*> folStates;
+  folStates.memMove=1;
+  FOL_World_State *s = this;
+  while(s) { folStates.prepend(s); s = dynamic_cast<FOL_World_State*>(s->parent); }
+  NodeL decisions;
+  for(FOL_World_State* s:folStates) if(s->folDecision){
+    decisions.append(s->folDecision);
+    s->folDecision->key = " ";
+    string <<*s->folDecision;
+    s->folDecision->key = "decision";
+  }
+  return decisions;
+}
+
+void FOL_World_State::getStateSequence(Array<Graph*>& states, arr& times, String& planString){
   Array<FOL_World_State*> folStates;
   folStates.memMove=states.memMove=1;
   FOL_World_State *s = this;
   while(s) { folStates.prepend(s); s = dynamic_cast<FOL_World_State*>(s->parent); }
   for(FOL_World_State* s:folStates){
-    if(s->name.N) skeletonString <<'\n' <<s->name;
+    if(s->name.N) planString <<'\n' <<s->name;
     states.append(s->state);
     times.append(s->T_real);
   }

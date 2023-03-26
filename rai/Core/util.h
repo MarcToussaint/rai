@@ -111,7 +111,7 @@ void   timerResume();
 long mem();
 
 //----- command line handling
-void initCmdLine(int _argc, char* _argv[]);
+void initCmdLine(int _argc, char* _argv[], bool quiet=true);
 bool checkCmdLineTag(const char* tag);
 char* getCmdLineArgument(const char* tag);
 

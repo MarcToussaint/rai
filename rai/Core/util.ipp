@@ -25,7 +25,7 @@ namespace rai {
 
 template<class T>
 bool getParameterBase(T& x, const char* key, bool hasDefault, const T* Default) {
-  if(getParameters()->get<T>(x, key)) {
+  if(params()->get<T>(x, key)) {
     LOG(3) <<std::setw(20) <<key <<": " <<std::setw(5) <<x <<" # user [" <<typeid(x).name() <<"]";
     return true;
   }
@@ -72,10 +72,10 @@ template<class T> bool checkParameter(const char* tag) {
 }
 
 template<class T> void setParameter(const char* key, const T& x){
-  T* y = getParameters()->find<T>(key);
+  T* y = params()->find<T>(key);
   if(y) *y = x;
   else{
-    getParameters()->add<T>(key, x);
+    params()->add<T>(key, x);
   }
 }
 

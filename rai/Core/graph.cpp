@@ -48,7 +48,7 @@ stdOutPipe(ParseInfo)
 
 //-- query existing types
 inline Node* reg_findType(const char* key) {
-  NodeL types = getParameters()->getNodesOfType<std::shared_ptr<Type>>();
+  NodeL types = params()->getNodesOfType<std::shared_ptr<Type>>();
   for(Node* ti: types) {
     if(String(ti->as<std::shared_ptr<Type>>()->typeId().name())==key) return ti;
     if(ti->key==key) return ti;
@@ -137,7 +137,6 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
 
   //-- write parents
   if(parents.N) {
-    //    if(keys.N) os <<' ';
     os <<'(';
     for(Node* it: parents) {
       if(it!=parents.elem(0)) os <<' ';
@@ -583,12 +582,12 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
 }
 
 void Graph::read(std::istream& is, bool parseInfo) {
-  bool expectBraces=false;
-  char c=peerNextChar(is, " \n\r\t", true);
-  if(c=='{') {
-    is >>PARSE("{");
-    expectBraces=true;
-  }
+//  bool expectBraces=false;
+//  char c=peerNextChar(is, " \n\r\t", true);
+//  if(c=='{') {
+//    is >>PARSE("{");
+//    expectBraces=true;
+//  }
 
   uint Nbefore = N;
   if(parseInfo) getParseInfo(nullptr).beg=is.tellg();
@@ -639,9 +638,9 @@ void Graph::read(std::istream& is, bool parseInfo) {
     }
   }
 
-  if(expectBraces) {
-    is >>PARSE("}");
-  }
+//  if(expectBraces) {
+//    is >>PARSE("}");
+//  }
 
   if(parseInfo) getParseInfo(nullptr).end=is.tellg();
 
@@ -881,13 +880,14 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
           node = add<NodeL>(key,  par, parents);
         } break;
         case '{': { // sub graph
-          is.putback(c);
+          //is.putback(c);
           Graph& subgraph = this->addSubgraph(key, parents);
           subgraph.read(is);
           node = subgraph.isNodeOfGraph;
           if(tags.N>1) {
             for(uint i=0; i<tags.N-1; i++) subgraph.add<bool>(STRING('%' <<tags.elem(i)), true);
           }
+          parse(is,"}");
         } break;
         default: { //error
           is.putback(c);
@@ -1347,7 +1347,7 @@ int distance(NodeL A, NodeL B) {
 
 Singleton<Graph> parameterGraph;
 
-Mutex::TypedToken<Graph> getParameters(){
+Mutex::TypedToken<Graph> params(){
   return parameterGraph();
 }
 
@@ -1374,7 +1374,7 @@ void initParameters(int _argc, char*_argv[], bool forceReload, bool verbose){
         P->add<bool>(key, true);
       }
     } else {
-      P->add<rai::String>(rai::argv[n], STRING("arg"<<argn++));
+      P->add<rai::String>(STRING("arg"<<argn++), rai::argv[n]);
       //RAI_MSG("non-parsed cmd line argument:" <<rai::argv[n]);
     }
   }

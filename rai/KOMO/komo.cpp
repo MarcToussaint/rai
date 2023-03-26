@@ -682,13 +682,14 @@ void KOMO::getConfiguration_full(Configuration& C, int t, int verbose){
 #if 1
   C.clear();
   FrameL F = timeSlices[k_order+t].copy();
-  for(rai::Frame *f:F){
+  for(uint i=0;i<F.N;i++){
+    rai::Frame *f = F(i);
     f->ensure_X();
     if(f->parent && !F.contains(f->parent)) F.append(f->parent);
   }
   C.addCopies(F, {}); //, pathConfig.getDofs(F, false));
   C.frames.reshape(-1);
-  C.checkConsistency();
+  //C.checkConsistency();
 #else
   //note: the alternative would be to copy the frames komo.timeSlices[step] into a new config
   CHECK_EQ(k_order, 1, "");
@@ -1527,6 +1528,14 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
     pathConfig._state_proxies_isGood=true;
     pathConfig.ensure_proxies(); //expensive!!
     timeCollisions += rai::cpuTime();
+  }
+}
+
+void KOMO::checkConsistency(){
+  pathConfig.checkConsistency();
+  for(rai::Frame* f:timeSlices){
+    CHECK_EQ(f, pathConfig.frames.elem(f->ID), "");
+    CHECK_EQ(&f->C, &pathConfig, "");
   }
 }
 

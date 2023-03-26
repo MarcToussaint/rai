@@ -43,10 +43,10 @@ void rai::printTree(const rai::Array<std::shared_ptr<rai::TreeSearchNode>>& T){
 }
 
 void rai::printTree(std::ostream& os, const rai::Array<std::shared_ptr<TreeSearchNode> >& T){
-
   rai::Graph G;
   for(uint i=0;i<T.N;i++){
     TreeSearchNode *n = T(i).get();
+    n->ID = i;
     rai::NodeL par;
     if(n->parent) par.append(G.elem(n->parent->ID));
     rai::Graph& sub = G.addSubgraph(n->name, par);

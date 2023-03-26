@@ -218,7 +218,7 @@ public:
   void retrospectApplySwitches();
   void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly={});            ///< set the state trajectory of all configurations
-
+  void checkConsistency();
 
   //===========================================================================
   //
