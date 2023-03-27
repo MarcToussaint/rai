@@ -11,7 +11,7 @@ rai::TreeSearchNode::TreeSearchNode(TreeSearchNode* parent)
 
 std::shared_ptr<rai::TreeSearchNode> rai::TreeSearchNode::transitionRandomly(){ return transition(rnd(getNumDecisions())); }
 
-void rai::printTree(const rai::Array<rai::TreeSearchNode*>& T){
+/*void rai::printTree(const rai::Array<rai::TreeSearchNode*>& T){
   rai::Graph G;
   for(uint i=0;i<T.N;i++){
     TreeSearchNode *n = T(i);
@@ -34,15 +34,15 @@ void rai::printTree(const rai::Array<rai::TreeSearchNode*>& T){
   G.write(FILE("z.tree"));
   G.writeDot(FILE("z.dot"));
   rai::system("dot -Tpdf z.dot > z.pdf");
-}
+}*/
 
-void rai::printTree(const rai::Array<std::shared_ptr<rai::TreeSearchNode>>& T){
+/*void rai::printTree(const rai::Array<std::shared_ptr<rai::TreeSearchNode>>& T){
   rai::Array<rai::TreeSearchNode*> TT(T.N);
   for(uint i=0;i<T.N;i++) TT(i) = T(i).get();
   printTree(TT);
-}
+}*/
 
-void rai::printTree(std::ostream& os, const rai::Array<std::shared_ptr<TreeSearchNode> >& T){
+void rai::printTree(const rai::Array<std::shared_ptr<TreeSearchNode> >& T){
   rai::Graph G;
   for(uint i=0;i<T.N;i++){
     TreeSearchNode *n = T(i).get();

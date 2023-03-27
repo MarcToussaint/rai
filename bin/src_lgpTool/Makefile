@@ -1,5 +1,7 @@
 BASE = ../..
 
-DEPEND = Core Logic Geo Kin KOMO LGP
+OPTIM = debug
+
+DEPEND = Core KOMO LGP
 
 include $(BASE)/makeutils/generic.mk

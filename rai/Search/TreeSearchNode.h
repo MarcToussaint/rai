@@ -47,10 +47,7 @@ inline std::ostream& operator<<(std::ostream& os, const TreeSearchNode& D) { D.w
 
 //===========================================================================
 
-void printTree(const rai::Array<TreeSearchNode*>& T);
 void printTree(const rai::Array<std::shared_ptr<TreeSearchNode>>& T);
-void printTree(std::ostream& os, const rai::Array<std::shared_ptr<TreeSearchNode>>& T);
-
 
 //===========================================================================
 
