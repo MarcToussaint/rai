@@ -1,0 +1,7 @@
+{ [touchBoxNormalZ, handB, floor], [stable_, floor, handB, ROBOT] }
+{ [touchBoxNormalX, handA, back], [stable_, back, handA, ROBOT] }
+{ [touchBoxNormalX, handB, back], [stable_, back, handB, ROBOT] }
+{ [touchBoxNormalX, handA, back], [stable_, back, handA, ROBOT] }
+{ [touch, handB, ball1], [stable_, handB, ball1] }
+{ [dynamic_, world, ball1] }
+{ [end] }

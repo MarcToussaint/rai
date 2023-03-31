@@ -1,0 +1,4 @@
+{ [touchBoxNormalZ, handB, hoover], [inside, handB, hoover], [stable_, hoover, handB, ROBOT] }
+{ [touchBoxNormalX, handA, box1], [inside, handA, box1], [stable_, handA, box1] }
+{ [touch, box1, ball0] }
+{ [end] }

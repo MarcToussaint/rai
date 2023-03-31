@@ -9,9 +9,11 @@
 #ifdef RAI_PYBIND
 
 #include "ry.h"
+#include "types.h"
 
 #include <pybind11/pybind11.h>
 #include "../Core/util.h"
+#include "../Core/graph.h"
 
 
 void init_CfgFileParameters(){
@@ -36,6 +38,7 @@ void init_LogToPythonConsole(){
 }
 
 void init_enums(pybind11::module& m);
+void init_params(pybind11::module& m);
 
 
 PYBIND11_MODULE(libry, m) {
@@ -48,6 +51,7 @@ PYBIND11_MODULE(libry, m) {
   m.def("setRaiPath", &rai::setRaiPath, "redefine the rai (or rai-robotModels) path");
   m.def("raiPath", &rai::raiPath, "get a path relative to rai base path");
 
+  init_params(m);
   init_Config(m);
   init_Feature(m);
   init_Frame(m);
@@ -59,7 +63,7 @@ PYBIND11_MODULE(libry, m) {
 //  init_PhysX(m);
 //  init_Operate(m);
 //  init_Camera(m);
-//  init_Simulation(m);
+  init_Simulation(m);
 //  init_CtrlSet(m);
 //  init_CtrlSolver(m);
 
@@ -78,6 +82,11 @@ void init_enums(pybind11::module& m){
     ENUMVAL(sequence)
     ENUMVAL(path)
      .export_values();
+}
+
+void init_params(pybind11::module& m){
+  m.def("params_add", [](const pybind11::dict& D){ rai::params()->copy(dict2graph(D), true); }, "add/set parameters");
+  m.def("params_print", [](){ LOG(0) <<rai::params()(); }, "print the parameters");
 }
 
 #endif

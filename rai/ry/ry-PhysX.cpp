@@ -18,7 +18,7 @@
 void init_PhysX(pybind11::module& m) {
   pybind11::class_<PhysXInterface, std::shared_ptr<PhysXInterface>>(m, "PhysXInterface")
 
-      .def("step", &PhysXInterface::step)
+  .def("step", &PhysXInterface::step)
 
   .def("step", [](PhysXInterface& self, shared_ptr<rai::Configuration>& C) {
     self.pushKinematicStates(*C);

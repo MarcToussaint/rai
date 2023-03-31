@@ -26,6 +26,9 @@ struct OptConstrained {
   int its=0, numBadSteps=0;
   ostream* logFile=nullptr;
 
+  bool trace_lambda=true;
+  arr lambdaTrace, evalsTrace;
+
   OptConstrained(arr& x, arr& dual, const shared_ptr<NLP>& P, rai::OptOptions opt=NOOPT, ostream* _logFile=0);
 
   uint run();

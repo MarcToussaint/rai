@@ -13,6 +13,8 @@ bool rai::AStar::step() {
     return true;
   }
 
+  steps++;
+
   //pop
   TreeSearchNode* node =  queue.pop();
   //    LOG(0) <<"looking at node '" <<*node <<"'";
@@ -77,11 +79,11 @@ bool rai::AStar::step() {
   return false;
 }
 
-void rai::AStar::run() {
+void rai::AStar::run(int stepsLimit) {
   for(;;) {
     if(step()) break;
     //      report();
-    iters++;
+    if(stepsLimit>=0 && steps>=stepsLimit) break;
   }
   if(verbose>0){
     LOG(0) <<"==== DONE ===";
@@ -90,7 +92,7 @@ void rai::AStar::run() {
 }
 
 void rai::AStar::report(){
-  std::cout <<" iters: " <<iters
+  std::cout <<" iters: " <<steps
            <<" mem#: " <<mem.N
           <<" queue#: " <<queue.N <<endl;
   if(verbose>2) std::cout <<" queue: " <<queue <<std::endl;

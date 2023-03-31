@@ -2257,6 +2257,15 @@ arr SparseMatrix::At_A() const {
   return conv_sparseEigen2sparseArr(W);
 }
 
+arr SparseMatrix::A_At() const {
+  Eigen::SparseMatrix<double> s = conv_sparseArr2sparseEigen(*this);
+
+  Eigen::SparseMatrix<double> W(Z.d0, Z.d0);
+  W = s * s.transpose();
+
+  return conv_sparseEigen2sparseArr(W);
+}
+
 arr SparseMatrix::A_B(const arr& B) const {
   if(!isSparse(B) && B.N<25){
     arr C;

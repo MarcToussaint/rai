@@ -734,6 +734,7 @@ struct SparseMatrix : SpecialArray {
   //computations
   arr At_x(const arr& x, bool transpose=true) const;
   arr At_A() const;
+  arr A_At() const;
   arr A_B(const arr& B) const;
   arr B_A(const arr& B) const;
   void transpose();

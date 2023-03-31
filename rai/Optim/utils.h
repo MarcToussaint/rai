@@ -57,10 +57,6 @@ struct Conv_NLP_ScalarProblem : ScalarFunction {
 // checks, evaluation
 //
 
-bool checkJacobianCP(NLP& P, const arr& x, double tolerance);
-bool checkHessianCP(NLP& P, const arr& x, double tolerance);
-bool checkInBound(NLP& P, const arr& x);
-void boundClip(NLP& P, arr& x);
 bool checkDirectionalGradient(const ScalarFunction& f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction& f, const arr& x, const arr& delta, double tolerance);
 

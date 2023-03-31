@@ -1,0 +1,8 @@
+{ [touch, floor, handB], [stable_, floor, handB, ROBOT] }
+{ [touch, floor, handA], [stable_, floor, handA, ROBOT], [dynamic_, world, pend2] }
+{ [touch, floor, handB], [stable_, floor, handB, ROBOT] }
+{ [touch, handA, stick2] }
+{ [end] }
+
+
+

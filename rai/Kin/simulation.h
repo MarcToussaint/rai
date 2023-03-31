@@ -15,6 +15,7 @@ namespace rai {
 
 struct SimulationState;
 struct SimulationImp;
+struct TeleopCallbacks;
 
 //a non-threaded simulation with direct interface and stepping -- in constrast to BotSim, which is threaded (emulating real time) and has
 //the default ctrl interface via low-level reference messages
@@ -32,6 +33,7 @@ struct Simulation {
   Array<shared_ptr<SimulationImp>> imps; ///< list of (adversarial) imps doing things/perturbations/noise in addition to clean physics engine
   int verbose;
   FrameL grasps;
+  std::shared_ptr<TeleopCallbacks> teleopCallbacks;
 
   Simulation(Configuration& _C, SimulatorEngine _engine, int _verbose=2);
   ~Simulation();
@@ -100,6 +102,28 @@ struct Simulation {
 
   std::shared_ptr<struct PhysXInterface> hidden_physx();
   OpenGL& hidden_gl();
+  void loadTeleopCallbacks();
+};
+
+//===========================================================================
+
+struct TeleopCallbacks : OpenGL::GLClickCall, OpenGL::GLKeyCall, OpenGL::GLHoverCall{
+  arr q_ref;
+  bool stop=false;
+  bool grab=false;
+  arr oldx;
+  double mouseDepth=0.;
+  uint nMarkers=0;
+  rai::Configuration& C;
+  rai::Frame *marker=0;
+  bool markerWasSet=false;
+
+  TeleopCallbacks(rai::Configuration& C, rai::Frame *marker=0) : C(C), marker(marker) { q_ref = C.getJointState(); }
+
+  bool hasNewMarker();
+  virtual bool clickCallback(OpenGL& gl);
+  virtual bool keyCallback(OpenGL& gl);
+  virtual bool hoverCallback(OpenGL& gl);
 };
 
 }

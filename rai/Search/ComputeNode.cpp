@@ -39,9 +39,9 @@ std::shared_ptr<rai::TreeSearchNode> rai::ComputeNode::transition(int i){
 //    child->baseLevel += ::pow(double(i)/info().level_w0, info().level_pw);
 //  }
   child->f_prio = child->baseLevel;
-  if(info().verbose>0){
-    LOG(0) <<"created node '" <<child->name <<"' ID:" <<child->ID <<" type: '" <<rai::niceTypeidName(typeid(*child)) <<"' baseLevel:" <<child->baseLevel;
-  }
+  //if(info().verbose>0){
+  //  LOG(0) <<"created node '" <<child->name <<"' ID:" <<child->ID <<" type: '" <<rai::niceTypeidName(typeid(*child)) <<"' baseLevel:" <<child->baseLevel;
+  //}
   return child;
 }
 

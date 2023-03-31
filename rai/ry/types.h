@@ -18,6 +18,7 @@
 #include <pybind11/numpy.h>
 
 pybind11::dict graph2dict(const rai::Graph& G);
+rai::Graph dict2graph(const pybind11::dict& dict);
 
 pybind11::list graph2list(const rai::Graph& G);
 

@@ -149,6 +149,9 @@ void init_Simulation(pybind11::module& m) {
 
   .def("getScreenshot", &rai::Simulation::getScreenshot)
 
+  .def("loadTeleopCallbacks", &rai::Simulation::loadTeleopCallbacks)
+
+
   ;
 
   pybind11::class_<rai::CameraView::Sensor, std::shared_ptr<rai::CameraView::Sensor>>(m, "CameraViewSensor");

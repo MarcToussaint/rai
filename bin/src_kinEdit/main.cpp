@@ -2,6 +2,7 @@
 #include <Gui/opengl.h>
 #include <Core/graph.h>
 #include <Kin/frame.h>
+#include <Kin/simulation.h>
 
 const char *USAGE =
     "\nUsage:  kinEdit <g-filename>"
@@ -105,6 +106,25 @@ int main(int argc,char **argv){
   //-- continuously animate
   if(file.endsWith(".dae")){
     C.view(true);
+  }else if(rai::checkParameter<bool>("sim")){
+    rai::Simulation S(C, S._physx, 2);
+    S.loadTeleopCallbacks();
+//    rai::TeleopCallbacks TC(C);
+//    S.hidden_gl().addClickCall(&TC);
+//    S.hidden_gl().addKeyCall(&TC);
+//    S.hidden_gl().addHoverCall(&TC);
+
+    double tau=.01;
+    Metronome tic(tau);
+    while(!S.teleopCallbacks->stop){
+      tic.waitForTic();
+      S.step({}, tau, S._position);
+      //C.ensure_proxies();
+      //C.getTotalPenetration();
+      //C.reportProxies();
+      //C.view();
+    }
+
   }else{
     rai::editConfiguration(file, C);
   }

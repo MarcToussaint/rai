@@ -72,47 +72,6 @@ double Conv_NLP_ScalarProblem::scalar(arr& g, arr& H, const arr& x){
 // checks and converters
 //
 
-bool checkJacobianCP(NLP& P, const arr& x, double tolerance) {
-  VectorFunction F = [&P](const arr& x) {
-    arr phi, J;
-    P.evaluate(phi, J, x);
-    phi.J() = J;
-    return phi;
-  };
-  return checkJacobian(F, x, tolerance);
-}
-
-bool checkHessianCP(NLP& P, const arr& x, double tolerance) {
-  uint i;
-  arr phi, J;
-  P.evaluate(phi, NoArr, x); //TODO: only call getStructure
-  for(i=0; i<P.featureTypes.N; i++) if(P.featureTypes(i)==OT_f) break;
-  if(i==P.featureTypes.N) {
-    RAI_MSG("no f-term in this KOM problem");
-    return true;
-  }
-  ScalarFunction F = [&P, &phi, &J, i](arr& g, arr& H, const arr& x) -> double{
-    P.evaluate(phi, J, x);
-    P.getFHessian(H, x);
-    g = J[i];
-    return phi(i);
-  };
-  return checkHessian(F, x, tolerance);
-}
-
-void boundClip(NLP& P, arr& x){
-  arr bounds_lo, bounds_up;
-  P.getBounds(bounds_lo, bounds_up);
-  boundClip(x, bounds_lo, bounds_up);
-}
-
-bool checkInBound(NLP& P, const arr& x){
-  arr bound_lo, bound_up;
-  P.getBounds(bound_lo, bound_up);
-  CHECK_EQ(x.N, bound_lo.N, "");
-  CHECK_EQ(x.N, bound_up.N, "");
-  return boundCheck(x, bound_lo, bound_up);
-}
 
 
 //void OptOptions::write(std::ostream& os) const {

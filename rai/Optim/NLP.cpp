@@ -109,6 +109,50 @@ double NLP::eval_scalar(arr& g, arr& H, const arr& x) {
   return f;
 }
 
+bool NLP::checkJacobian(const arr& _x, double tolerance) {
+  VectorFunction F = [this](const arr& x) {
+    arr phi, J;
+    this->evaluate(phi, J, x);
+    phi.J() = J;
+    return phi;
+  };
+  arr x(_x);
+  if(x.N!=dimension) x = getInitializationSample();
+  return ::checkJacobian(F, x, tolerance);
+}
+
+bool NLP::checkHessian(const arr& x, double tolerance) {
+  uint i;
+  arr phi, J;
+  evaluate(phi, NoArr, x); //TODO: only call getStructure
+  for(i=0; i<featureTypes.N; i++) if(featureTypes(i)==OT_f) break;
+  if(i==featureTypes.N) {
+    RAI_MSG("no f-term in this KOM problem");
+    return true;
+  }
+  ScalarFunction F = [this, &phi, &J, i](arr& g, arr& H, const arr& x) -> double{
+    this->evaluate(phi, J, x);
+    this->getFHessian(H, x);
+    g = J[i];
+    return phi(i);
+  };
+  return ::checkHessian(F, x, tolerance);
+}
+
+void NLP::boundClip(arr& x){
+  arr bounds_lo, bounds_up;
+  getBounds(bounds_lo, bounds_up);
+  ::boundClip(x, bounds_lo, bounds_up);
+}
+
+bool NLP::checkInBound(const arr& x){
+  arr bound_lo, bound_up;
+  getBounds(bound_lo, bound_up);
+  CHECK_EQ(x.N, bound_lo.N, "");
+  CHECK_EQ(x.N, bound_up.N, "");
+  return boundCheck(x, bound_lo, bound_up);
+}
+
 //===========================================================================
 
 void NLP_Factored::evaluate(arr& phi, arr& J, const arr& x) {

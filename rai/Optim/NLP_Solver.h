@@ -50,6 +50,9 @@ struct NLP_Solver : NonCopyable {
   arr getTrace_costs(){ return P->costTrace; }
   arr getTrace_phi(){ return P->phiTrace; }
   arr getTrace_J(){ return P->JTrace; }
+  arr getTrace_lambda();
+  arr getTrace_evals();
+  void reportLangrangeGradients(std::ostream& os, const StringA& featureNames);
   void gnuplot_costs(){
     FILE("z.opt.trace") <<getTrace_costs();
     gnuplot("plot 'z.opt.trace' us 0:1 t 'sos', '' us 0:2 t 'ineq', '' us 0:3 t 'eq'");

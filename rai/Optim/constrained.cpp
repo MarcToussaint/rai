@@ -111,6 +111,11 @@ OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<NLP>& P, ra
     if(newton.x.N<5) cout <<" \tlambda:" <<L.lambda;
     cout <<endl;
   }
+
+  if(trace_lambda && L.lambda.N){
+    lambdaTrace.append(L.lambda); lambdaTrace.reshape(-1, L.lambda.N);
+    evalsTrace.append(newton.evals);
+  }
 }
 
 uint OptConstrained::run() {
@@ -198,6 +203,7 @@ bool OptConstrained::ministep(){
   //upate Lagrange parameters
   double L_x_before = newton.fx;
   L.autoUpdate(opt, &newton.fx, newton.gx, newton.Hx);
+  clip(L.lambda, -10., 10.);
   if(!!dual) dual=L.lambda;
   if(logFile) {
     (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.mu <<", L_x_beforeUpdate: " <<L_x_before <<", L_x_afterUpdate: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
@@ -212,6 +218,11 @@ bool OptConstrained::ministep(){
     if(L.useLB) cout <<" muLB:" <<std::setw(11) <<L.muLB;
     if(newton.x.N<5) cout <<" \tlambda:" <<L.lambda;
     cout <<endl;
+  }
+
+  if(trace_lambda){
+    lambdaTrace.append(L.lambda); lambdaTrace.reshape(-1, L.lambda.N);
+    evalsTrace.append(newton.evals);
   }
 
 #if 0 //this would trigger a new evaluation; only to confirm that autoUpdate updates also fx correctly

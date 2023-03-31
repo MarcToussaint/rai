@@ -706,11 +706,11 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes
 
   //-- set inertia
   if(type != rai::BT_static) {
-    if(false && f->inertia && f->inertia->mass>0.) {
+    if(/*false && */f->inertia && f->inertia->mass>0.) {
       //PxRigidBodyExt::updateMassAndInertia(*actor, f->inertia->mass);
       actor->setMass(f->inertia->mass);
       actor->setMassSpaceInertiaTensor({float(f->inertia->matrix.m00), float(f->inertia->matrix.m11), float(f->inertia->matrix.m22)});
-      //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
+      cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
     } else {
       PxRigidBodyExt::updateMassAndInertia(*actor, 1000.f);
       if(!f->inertia) new rai::Inertia(*f);

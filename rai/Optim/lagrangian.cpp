@@ -245,28 +245,32 @@ arr LagrangianProblem::get_totalFeatures(){
 }
 
 void LagrangianProblem::reportGradients(std::ostream& os, const StringA& featureNames){
-  CHECK_EQ(featureNames.N, phi_x.N, "");
-
-  //-- build feature -> entry map
+  //-- build feature -> entry map based on names
   struct Entry{ rai::String name; double grad=0.; double err=0.; ObjectiveType ot=OT_none; };
   intA idx2Entry(phi_x.N);
   rai::Array<Entry> entries;
+  if(featureNames.N){
+    CHECK_EQ(featureNames.N, phi_x.N, "");
+    idx2Entry = -1;
 
-  idx2Entry = -1;
-
-  for(uint i=0;i<featureNames.N;i++){
-    rai::String& s = featureNames.elem(i);
-    if(!s.N) continue;
-    for(uint j=0;j<entries.N;j++){
-      if(entries(j).name == s){
-        idx2Entry(i) = j;
-        break;
+    for(uint i=0;i<featureNames.N;i++){
+      rai::String& s = featureNames.elem(i);
+      if(!s.N) continue;
+      for(uint j=0;j<entries.N;j++){
+        if(entries(j).name == s){
+          idx2Entry(i) = j;
+          break;
+        }
+      }
+      if(idx2Entry(i)==-1){
+        idx2Entry(i) = entries.N;
+        entries.append( { s, 0., 0.} );
       }
     }
-    if(idx2Entry(i)==-1){
-      idx2Entry(i) = entries.N;
-      entries.append( { s, 0., 0.} );
-    }
+  }else{
+    idx2Entry.setStraightPerm(phi_x.N);
+    entries.resize(phi_x.N);
+    for(uint i=0;i<phi_x.N;i++) entries(i) = { STRING("phi" <<i <<"_" <<rai::Enum<ObjectiveType>(P->featureTypes(i))), 0., 0.};
   }
 
   //-- collect all gradients
@@ -307,10 +311,35 @@ void LagrangianProblem::reportGradients(std::ostream& os, const StringA& feature
 
   entries.sort( [](const Entry& a, const Entry& b) -> bool{ return a.grad > b.grad; } );
 
+  os <<"== Lagrange constraint gradients: \n";
   for(Entry& e: entries){
     if(!e.err) continue;
-    os <<"{ " <<e.name <<" err: " <<e.err <<" grad: " <<e.grad <<" type: " <<rai::Enum<ObjectiveType>(e.ot) <<" }" <<endl;
+    os <<"  { " <<e.name <<" err: " <<e.err <<" grad: " <<e.grad <<" type: " <<rai::Enum<ObjectiveType>(e.ot) <<" }" <<endl;
   }
+}
+
+void LagrangianProblem::reportMatrix(std::ostream& os){
+  arr C = unpack(J_x.sparse().A_At());
+//  arr U,s,V;
+//  svd(U,s,V,M);
+//  cout <<"SVD: U=" <<U <<"s=" <<s <<"V=" <<V <<endl;
+  arr sig = sqrt(getDiag(C));
+  struct Entry{ uint i,j; double c=0.; };
+  rai::Array<Entry> entries;
+  for(uint i=0;i<C.d0;i++) for(uint j=i+1;j<C.d1;j++){
+    C(i,j) /= (sig(i) *sig(j));
+    if(P->featureTypes.p[i]>OT_sos && P->featureTypes.p[j]>OT_sos && C(i,j)<0.){
+      entries.append(Entry{i,j,C(i,j)});
+    }
+  }
+
+  entries.sort( [](const Entry& a, const Entry& b) -> bool{ return a.c < b.c; } );
+
+  os <<"== Lagrange constraint conflicts: (c=-1 is maximal conflict) \n";
+  for(Entry& e: entries){
+    os <<"  { " <<" c: " <<e.c <<" (" <<e.i <<',' <<e.j <<") }" <<endl;
+  }
+
 }
 
 double LagrangianProblem::get_cost_f() {

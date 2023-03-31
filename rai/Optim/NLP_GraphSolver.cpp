@@ -90,7 +90,7 @@ void NLP_GraphSolver::test() {
   P->subSelect({}, {});
   P->report(cout, 2);
   arr x = P->getInitializationSample();
-  checkJacobianCP(*P, x, 1e-6);
+  P->checkJacobian(x, 1e-6);
 
   for(uint t=0;t<20;t++){
     uintA A;
@@ -102,7 +102,7 @@ void NLP_GraphSolver::test() {
     P->subSelect(X,Y);
     P->report(cout, 2);
     x = P->getInitializationSample();
-    if(!checkJacobianCP(*P, x, 1e-6)) rai::wait();
+    if(!P->checkJacobian(x, 1e-6)) rai::wait();
   }
 }
 
@@ -138,7 +138,7 @@ std::shared_ptr<SolverReturn> NLP_GraphSolver::solveRandom() {
   ret = subSolver
         .setProblem(P)
         .solve(0);
-  checkJacobianCP(*P, subSolver.x, 1e-4);
+  P->checkJacobian(subSolver.x, 1e-4);
   P->report(cout, 4, STRING("OPT for " <<X <<'|' <<Y));
   ret->done = true;
   return ret;

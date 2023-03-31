@@ -21,14 +21,14 @@ struct AStar {
   NodeP root;
   PriorityQueue<TreeSearchNode*> queue;
   rai::Array<TreeSearchNode*> solutions;
-  uint iters=0;
+  uint steps=0;
   int verbose=1;
   double currentLevel=0.;
 
   AStar(const std::shared_ptr<TreeSearchNode>& _root);
 
   bool step();
-  void run();
+  void run(int stepsLimit=-1);
   void report();
 };
 

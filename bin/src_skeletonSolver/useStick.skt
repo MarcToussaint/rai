@@ -1,0 +1,12 @@
+{ [touchBoxNormalZ, handB, floor], [stable_, floor, handB, ROBOT] }
+{ [touchBoxNormalZ, handA, floor], [stable_, floor, handA, ROBOT] }
+{ [touchBoxNormalZ, handB, floor], [stable_, floor, handB, ROBOT] }
+{ [touch, handA, stick1], [stable_, handA, stick1] }
+{ [touch, stick1, floor], [stable_, floor, stick1] }
+{ [touchBoxNormalZ, handA, floor], [stable_, floor, handA, ROBOT] }
+{ [touchBoxNormalZ, handB, floor], [stable_, floor, handB, ROBOT] }
+{ [touchBoxNormalZ, handA, floor], [stable_, floor, handA, ROBOT] }
+{ [touch, handB, stick1], [stable_, handB, stick1] }
+{ [touch, pend2, stick1] }
+
+#{ [end] }

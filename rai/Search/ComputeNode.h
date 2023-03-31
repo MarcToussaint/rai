@@ -16,10 +16,6 @@ namespace rai {
   NodeGlobal& info();
 
   struct ComputeNode : TreeSearchNode {
-//    uint ID=0;
-//    rai::String name;
-//    bool isComplete = false;
-//    bool isTerminal = false;
     double c=0.;     //cost invested into completion of THIS node
     double l=-1.;    //lower bound (also feasibility) computed at completion -> f_prio
     double c_now=0.;
@@ -27,7 +23,7 @@ namespace rai {
 
     //-- core Astar methods
     virtual void compute();
-    virtual void untimedCompute() = 0;
+    virtual void untimedCompute(){ HALT("this or compute needs overload"); }
 
     virtual int getNumDecisions() = 0;
     std::shared_ptr<TreeSearchNode> transition(int i);

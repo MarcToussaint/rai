@@ -59,7 +59,7 @@ arr NLoptInterface::solve(const arr& x_init) {
   CHECK_EQ(x.N, bounds_up.N, "NLOpt requires bounds");
   CHECK_EQ(x.N, bounds_lo.N, "NLOpt requires bounds");
   for(uint i=0; i<bounds_lo.N; i++) CHECK(bounds_lo.elem(i)<bounds_up.elem(i), "NLOpt requires bounds");
-  boundClip(*P, x);
+  P->boundClip(x);
 
   //-- create NLopt solver
   bool needsSubsolver;

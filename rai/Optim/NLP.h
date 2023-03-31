@@ -52,27 +52,32 @@ public:
     featureTypes = P.featureTypes;
   };
 
-  //-- essential method that needs overload
+  //-- virtual methods that define the problem
+
+  // essential method that needs overload
   virtual void evaluate(arr& phi, arr& J, const arr& x) = 0;       //evaluate all features and (optionally) their Jacobians for state x
 
-  //-- optional initialization method
+  // optional initialization method
   virtual arr  getInitializationSample(const arr& previousOptima= {}); //get an initialization (for MC sampling/restarts) [default: initialize random within bounds]
 
-  //-- optional evaluation of Hessian of all scalar objectives
+  // optional evaluation of Hessian of all scalar objectives
   virtual void getFHessian(arr& H, const arr& x) { H.clear(); } //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
 
-  //-- optional: return some info on the problem and the last evaluation, potentially with display
+  // optional: return some info on the problem and the last evaluation, potentially with display
   virtual void report(ostream& os, int verbose, const char* msg=0);
 
+  //-- trivial getters
   uint getDimension() const { return dimension; }
   void getBounds(arr& lo, arr& up) const { lo=bounds_lo; up=bounds_up; }
   const ObjectiveTypeA& getFeatureTypes() const { return featureTypes; }
 
+  //-- utilities
   shared_ptr<NLP> ptr(){ return shared_ptr<NLP>(this, [](NLP*){}); }
-
-
   double eval_scalar(arr& g, arr& H, const arr& x);
-
+  bool checkJacobian(const arr& x, double tolerance);
+  bool checkHessian(const arr& x, double tolerance);
+  bool checkInBound(const arr& x);
+  void boundClip(arr& x);
 };
 
 //===========================================================================

@@ -355,26 +355,6 @@ void rai::Frame::read(const Graph& ats) {
   }
   if(ats["shape"] || ats["mesh"] || ats["sdf"]) { shape = new Shape(*this); shape->read(ats); }
   if(ats["mass"]) { inertia = new Inertia(*this); inertia->read(ats); }
-
-  if(ats["collisionCore"]) {
-    arr core = ats.get<arr>("collisionCore");
-    core.reshape(-1, 3);
-    double r = ats.get<double>("collisionCore_radius");
-
-    Shape* sh=0;
-    if(!shape) {
-      shape = new Shape(*this);
-      sh = shape;
-    } else {
-      Frame* f = new Frame(this);
-      sh = new Shape(*f);
-    }
-    sh->type() = rai::ST_ssCvx;
-    sh->sscCore().V = core;
-    sh->size = arr{r};
-    sh->mesh().C = arr{1., 1., 0., .5};
-    sh->mesh().setSSCvx(core, r);
-  }
 }
 
 void rai::Frame::write(Graph& G) {
@@ -1450,6 +1430,11 @@ void rai::Shape::read(const Graph& ats) {
       sscCore().read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
       fil.cd_start();
     }
+    if(ats.get(x, "core")) {
+      x.reshape(-1, 3);
+      sscCore().V = x;
+    }
+
     if(ats.get(str, "sdf"))      { sdf().read(FILE(str)); }
     else if(ats.get(fil, "sdf")) { sdf().read(fil); }
     if(_sdf){

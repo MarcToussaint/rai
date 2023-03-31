@@ -216,6 +216,7 @@ void rai::LGPcomp_Waypoints::untimedCompute(){
     //    komoWaypoints->pathConfig.reportProxies();
     komoWaypoints->pathConfig.reportLimits();
     komoWaypoints->checkGradients();
+    sol.optCon->L.reportGradients(cout, komoWaypoints->featureNames);
   }
   if(sket->verbose()>1) komoWaypoints->view(sket->verbose()>2, STRING(name <<" - optimized \n" <<*ret));
   //    if(sket->verbose()>1){

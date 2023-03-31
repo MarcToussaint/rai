@@ -51,6 +51,23 @@ pybind11::dict graph2dict(const rai::Graph& G) {
   return dict;
 }
 
+rai::Graph dict2graph(const pybind11::dict& dict) {
+  rai::Graph G;
+  for(auto item:dict) {
+    rai::String key = item.first.cast<std::string>().c_str();
+    pybind11::handle value = item.second;
+
+    if(pybind11::isinstance<pybind11::float_>(value)) {
+      G.add<double>(key, value.cast<double>());
+    }else if(pybind11::isinstance<pybind11::str>(value)) {
+        G.add<rai::String>(key, value.cast<std::string>().c_str());
+    } else {
+      LOG(-1) <<"can't convert dict entry '" <<key <<"' of type " <<value.get_type() <<" to graph";
+    }
+  }
+  return G;
+}
+
 pybind11::list graph2list(const rai::Graph& G) {
   pybind11::list list;
   for(rai::Node* n:G) {

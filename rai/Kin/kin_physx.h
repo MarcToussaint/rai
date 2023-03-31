@@ -20,8 +20,8 @@ namespace rai {
     RAI_PARAM("physx/", double, angularDamping, .1)
     RAI_PARAM("physx/", double, defaultFriction, 1.)
     RAI_PARAM("physx/", double, defaultRestitution, .1)
-    RAI_PARAM("physx/", double, motorKp, .1)
-    RAI_PARAM("physx/", double, motorKd, 1.)
+    RAI_PARAM("physx/", double, motorKp, 1000.)
+    RAI_PARAM("physx/", double, motorKd, 100.)
   };
 }//namespace
 

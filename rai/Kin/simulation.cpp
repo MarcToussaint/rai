@@ -156,6 +156,9 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   }
 
   arr ucontrol = u_control; //a copy to allow for perturbations
+  if(!ucontrol.N && u_mode==_position && teleopCallbacks){
+    ucontrol = teleopCallbacks->q_ref;
+  }
 
   //-- imps before control
   for(shared_ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_beforeControl) {
@@ -832,6 +835,73 @@ std::shared_ptr<PhysXInterface> Simulation::hidden_physx(){
 
 OpenGL& Simulation::hidden_gl(){
   return self->display->gl;
+}
+
+void Simulation::loadTeleopCallbacks(){
+  CHECK(!teleopCallbacks, "");
+  teleopCallbacks = make_shared<TeleopCallbacks>(C);
+  self->display->gl.addClickCall(teleopCallbacks.get());
+  self->display->gl.addKeyCall(teleopCallbacks.get());
+  self->display->gl.addHoverCall(teleopCallbacks.get());
+}
+
+bool TeleopCallbacks::hasNewMarker(){
+  if(markerWasSet){ markerWasSet=false; return true; }
+  return false;
+}
+
+bool TeleopCallbacks::clickCallback(OpenGL& gl){
+  LOG(0) <<"click";
+  if(gl.modifiersCtrl() && gl.mouseIsDown){
+    LOG(0) <<"creating marker " <<nMarkers;
+    arr normal;
+    arr x = gl.get3dMousePos(normal);
+    uint id = gl.get3dMouseObjID();
+    if(id>=C.frames.N) return true;
+    rai::Frame *f = C.frames(id);
+    rai::Frame *m = marker;
+    if(!m) m = C.addFrame(STRING("m" <<nMarkers <<"_" <<f->name));
+    else if(m->parent) m->unLink();
+    m->setParent(f);
+    m->setShape(rai::ST_marker, {.1});
+    rai::Transformation X=0;
+    X.pos = x;
+    X.rot.setDiff(Vector_z, normal);
+    m->setPose(X);
+    nMarkers++;
+    markerWasSet=true;
+  }
+  return true;
+}
+
+bool TeleopCallbacks::keyCallback(OpenGL& gl){
+  if(gl.pressedkey=='q') stop=true;
+  return true;
+}
+
+bool TeleopCallbacks::hoverCallback(OpenGL& gl){
+  grab = gl.modifiersShift();
+  if(!mouseDepth) mouseDepth = gl.captureDepth(gl.mouseposy, gl.mouseposx);
+  if(mouseDepth<.01 || mouseDepth==1.){
+    mouseDepth=0.;
+    grab=false;
+  }
+  if(grab){
+    arr x = {double(gl.mouseposx), double(gl.mouseposy), mouseDepth};
+    gl.camera.unproject_fromPixelsAndGLDepth(x, gl.width, gl.height);
+
+    if(oldx.N){
+      arr del = x-oldx;
+      q_ref(0) += del(0);
+      q_ref(1) += del(1);
+      q_ref(2) += del(2);
+    }
+    oldx=x;
+  }else{
+    oldx.clear();
+    mouseDepth=0.;
+  }
+  return true;
 }
 
 } //namespace rai

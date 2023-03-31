@@ -88,8 +88,8 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
   x({7, 10}) /= length(x({7, 10}));
 
   if(verbose>1) {
-    checkJacobianCP(F, x, 1e-4);
-    checkHessianCP(F, x, 1e-4);
+    F.checkJacobian(x, 1e-4);
+    F.checkHessian(x, 1e-4);
   }
 
   OptConstrained opt(x, NoArr, F.ptr(), rai::OptOptions()
@@ -103,8 +103,8 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
   opt.run();
 
   if(verbose>1) {
-    checkJacobianCP(F, x, 1e-4);
-    checkHessianCP(F, x, 1e-4);
+    F.checkJacobian(x, 1e-4);
+    F.checkHessian(x, 1e-4);
   }
 
   f = opt.L.get_costs();
@@ -252,8 +252,8 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
   arr x = core;
 
   if(verbose>1) {
-    checkJacobianCP(P, x, 1e-4);
-    checkHessianCP(P, x, 1e-4);
+    P.checkJacobian(x, 1e-4);
+    P.checkHessian(x, 1e-4);
   }
 
   OptConstrained opt(x, NoArr, P.ptr(), rai::OptOptions()
@@ -274,8 +274,8 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
   }
 
   if(verbose>1) {
-    checkJacobianCP(P, x, 1e-4);
-    checkHessianCP(P, x, 1e-4);
+    P.checkJacobian(x, 1e-4);
+    P.checkHessian(x, 1e-4);
   }
 }
 
@@ -578,8 +578,8 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
   else if(num==2)  F = make_shared<FitCapsuleProblem>(pts);
 
   if(verbose>1) {
-    checkJacobianCP(*F, x, 1e-4);
-    checkHessianCP(*F, x, 1e-4);
+    F->checkJacobian(x, 1e-4);
+    F->checkHessian(x, 1e-4);
   }
 
 #if 1
@@ -604,8 +604,8 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
   opt.run();
 
   if(verbose>1) {
-    checkJacobianCP(*F, x, 1e-4);
-    checkHessianCP(*F, x, 1e-4);
+    F->checkJacobian(x, 1e-4);
+    F->checkHessian(x, 1e-4);
   }
 
   core = x({0, x.N-2});
