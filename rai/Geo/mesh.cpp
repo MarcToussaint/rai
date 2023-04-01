@@ -2060,7 +2060,7 @@ void Mesh::setImplicitSurface(const arr& gridValues, const arr& lo, const arr& h
 }
 
 #else //Lewiner
-void Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {  NICO  }
+void Mesh::setImplicitSurface(const ScalarFunction& f, double lo, double hi, uint res) {  NICO  }
 void Mesh::setImplicitSurface(const floatA& gridValues, const arr& lo, const arr& hi) { NICO }
 #endif
 

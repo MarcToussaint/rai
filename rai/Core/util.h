@@ -365,7 +365,7 @@ X >>FILE("outfile");
 etc
 */
 struct FileToken {
-  rai::String path, name, cwd;
+  rai::String path, name, baseDir;
   std::shared_ptr<std::ofstream> os;
   std::shared_ptr<std::ifstream> is;
 
@@ -384,6 +384,8 @@ struct FileToken {
   operator std::istream& () { return getIs(); }
   operator std::ostream& () { return getOs(); }
 
+  rai::String autoPath() const;
+  rai::String relPath() const;
   rai::String fullPath() const;
 };
 template<class T> FileToken& operator>>(FileToken& fil, T& x) { fil.getIs() >>x;  return fil; }

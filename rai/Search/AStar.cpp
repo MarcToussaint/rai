@@ -83,7 +83,7 @@ void rai::AStar::run(int stepsLimit) {
   for(;;) {
     if(step()) break;
     //      report();
-    if(stepsLimit>=0 && steps>=stepsLimit) break;
+    if(stepsLimit>=0 && (int)steps>=stepsLimit) break;
   }
   if(verbose>0){
     LOG(0) <<"==== DONE ===";

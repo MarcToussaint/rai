@@ -26,7 +26,7 @@ void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start=NoArr, uint iters=
 
   uint evals=0;
   for(uint k=0;k<iters;k++){
-    checkJacobianCP(*P, x, 1e-4);
+    P->checkJacobian(x, 1e-4);
 //    checkGradient(lag, x, 1e-4);
 //    checkHessian (lag, x, 1e-4); //will throw errors: no Hessians for g!
 

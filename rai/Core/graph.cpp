@@ -188,7 +188,7 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
       else os <<'"' <<str <<'"';
     }
   } else if(is<FileToken>()) {
-    os <<'\'' <<getValue<FileToken>()->fullPath() <<'\'';
+    os <<'\'' <<getValue<FileToken>()->autoPath() <<'\'';
   } else if(is<arr>()) {
     getValue<arr>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<floatA>()) {

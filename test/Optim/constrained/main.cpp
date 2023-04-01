@@ -55,7 +55,7 @@ void TEST(CoveringSphere){
 
   cout <<"point = " <<x <<endl;
   cout <<"cr_init=" <<cr <<endl;
-  checkJacobianCP(F, cr, 1e-4);
+  F.checkJacobian(cr, 1e-4);
   OptConstrained(cr, NoArr, F.ptr())
       .run();
   cout <<"cr_opt=" <<cr <<endl;
@@ -73,7 +73,7 @@ void TEST(NLP){
   cout <<x <<endl <<phi;
 
   //Conv_NLP_ConstrainedProblem F(P);
-  checkJacobianCP(*P, x, 1e-4);
+  P->checkJacobian(x, 1e-4);
 
   OptConstrained opt(x, NoArr, P, rai::OptOptions().set_verbose(6));
   P->getBounds(opt.newton.bounds_lo, opt.newton.bounds_up);

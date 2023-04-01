@@ -987,11 +987,11 @@ uint rai::String::read(std::istream& is, const char* skipSymbols, const char* st
 //
 
 rai::FileToken::FileToken() {
-  cwd = getcwd_string();
+  baseDir = getcwd_string();
 }
 
 rai::FileToken::FileToken(const char* filename, bool change_dir) {
-  cwd = getcwd_string();
+  baseDir = getcwd_string();
   name = filename;
   if(change_dir) cd_file();
 //  if(!exists()) HALT("file '" <<filename <<"' does not exist");
@@ -1000,7 +1000,7 @@ rai::FileToken::FileToken(const char* filename, bool change_dir) {
 rai::FileToken::FileToken(const FileToken& ft) {
   name=ft.name;
   path=ft.path;
-  cwd=ft.cwd;
+  baseDir=ft.baseDir;
   is = ft.is;
   os = ft.os;
 }
@@ -1021,16 +1021,16 @@ void rai::FileToken::decomposeFilename() {
 }
 
 void rai::FileToken::cd_start() {
-  LOG(3) <<"entering path '" <<cwd<<"'";
-  if(chdir(cwd)) HALT("couldn't change to directory '" <<cwd <<"'");
+  LOG(3) <<"entering path '" <<baseDir<<"'";
+  if(chdir(baseDir)) HALT("couldn't change to directory '" <<baseDir <<"'");
 }
 
 void rai::FileToken::cd_file() {
   cd_start();
   if(!path.N) decomposeFilename();
   if(path!=".") {
-    LOG(3) <<"entering path '" <<path<<"' from '" <<cwd <<"'";
-    if(chdir(path)) HALT("couldn't change to directory '" <<path <<"' from '" <<cwd <<"'");
+    LOG(3) <<"entering path '" <<path<<"' from '" <<baseDir <<"'";
+    if(chdir(path)) HALT("couldn't change to directory '" <<path <<"' from '" <<baseDir <<"'");
   }
 }
 
@@ -1047,7 +1047,7 @@ std::ostream& rai::FileToken::getOs(bool change_dir) {
     os = std::make_unique<std::ofstream>();
     os->open(name);
     LOG(3) <<"opening output file '" <<name <<"'";
-    if(!os->good()) RAI_MSG("could not open file '" <<name <<"' for output from '" <<cwd <<"./" <<path <<"'");
+    if(!os->good()) RAI_MSG("could not open file '" <<name <<"' for output from '" <<baseDir <<"./" <<path <<"'");
   }
   return *os;
 }
@@ -1059,16 +1059,28 @@ std::istream& rai::FileToken::getIs(bool change_dir) {
     is = std::make_unique<std::ifstream>();
     is->open(name);
     LOG(3) <<"opening input file '" <<name <<"'";
-    if(!is->good()) THROW("could not open file '" <<name <<"' for input from '" <<cwd <<" / " <<path <<"'");
+    if(!is->good()) THROW("could not open file '" <<name <<"' for input from '" <<baseDir <<" / " <<path <<"'");
   }
   return *is;
+}
+
+rai::String rai::FileToken::autoPath() const {
+  rai::String nowDir;
+  nowDir = getcwd_string();
+  if(nowDir==baseDir) return relPath();
+  return fullPath();
+}
+
+rai::String rai::FileToken::relPath() const {
+  if(!path.N || name[0]=='/') return name;
+  return path+'/'+name;
 }
 
 rai::String rai::FileToken::fullPath() const {
   if(name[0]=='/') return name;
   if(path.N && path[0]=='/') return path+'/'+name;
   rai::String str;
-  str <<cwd;
+  str <<baseDir;
   if(path.N) str <<'/' <<path;
   str <<'/' <<name;
   return str;
