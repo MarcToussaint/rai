@@ -6,7 +6,7 @@ static uint TreeSearchNode_ID=0;
 
 rai::TreeSearchNode::TreeSearchNode(TreeSearchNode* parent)
   : ID(TreeSearchNode_ID++), parent(parent) {
-  if(parent) parent->n_children++;
+  if(parent) parent->children.append(this);
 }
 
 std::shared_ptr<rai::TreeSearchNode> rai::TreeSearchNode::transitionRandomly(){ return transition(rnd(getNumDecisions())); }
@@ -48,11 +48,11 @@ void rai::printTree(const rai::Array<std::shared_ptr<TreeSearchNode> >& T){
     TreeSearchNode *n = T(i).get();
     n->ID = i;
     rai::NodeL par;
-    if(n->parent) par.append(G.elem(n->parent->ID));
+    if(n->parent && n->parent->ID<G.N) par.append(G.elem(n->parent->ID));
     rai::Graph& sub = G.addSubgraph(n->name, par);
 
     sub.add<double>("level", n->f_prio);
-    sub.add<double>("n_children", n->n_children);
+    sub.add<double>("n_children", n->children.N);
     if(n->needsWidening) sub.add<bool>("needsWidening", true);
     n->data(sub);
 

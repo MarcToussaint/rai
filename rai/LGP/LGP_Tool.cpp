@@ -26,6 +26,9 @@ namespace rai {
     Graph lgpConfig(lgpFile.p);
     C.addFile(confFile);
 
+    params()->copy(lgpConfig, true);
+    cout <<"=== ALL PARAMS ===\n" <<params() <<endl;
+
     //setup FolWorld
     FileToken folFile = lgpConfig.get<FileToken>("fol");
     LOG(0) <<"using folFile '" <<folFile.fullPath() <<"'";
@@ -35,9 +38,9 @@ namespace rai {
 
     //setup lgproot
     lgproot = make_shared<LGPComp_root>(L, C,
-                                             lgpConfig.get<bool>("genericCollisions"),
-                                             lgpConfig.get<StringA>("coll"),
-                                             lgpConfig.get<StringA>("lifts"));
+                                        lgpConfig.get<bool>("genericCollisions"),
+                                        lgpConfig.get<StringA>("coll", {}),
+                                        lgpConfig.get<StringA>("lifts", {}));
 
   }
 
@@ -165,7 +168,8 @@ void LGP_Tool::player() {
       cout <<"(s) sequence optim" <<endl;
       cout <<"(x) path optim" <<endl;
       uint c=0;
-      for(FOL_World_State* a:focusNode->children) {
+      for(TreeSearchNode* _a:focusNode->children) {
+        FOL_World_State* a = dynamic_cast<FOL_World_State*>(_a);
         cout <<"(" <<c++ <<") " <<*a->folDecision <<endl;
       }
     }
@@ -197,7 +201,7 @@ void LGP_Tool::player() {
         if(choice<0 || choice>=(int)focusNode->children.N) {
           cout <<"--- there is no such choice" <<endl;
         } else {
-          focusNode = focusNode->children(choice); //choose a decision
+          focusNode = dynamic_cast<FOL_World_State*>(focusNode->children(choice)); //choose a decision
           expand(focusNode);
         }
       }
@@ -297,7 +301,7 @@ void LGP_Tool::buildTree(uint depth) {
       FOL_World_State* n = fifo.popFirst();
       if(n->T_step<depth){
           expand(n);
-          for(FOL_World_State* c:n->children) fifo.append(c);
+          for(TreeSearchNode* c:n->children) fifo.append(dynamic_cast<FOL_World_State*>(c));
       }
   }
 

@@ -8,7 +8,7 @@ namespace rai {
 
   struct NodeGlobal{
     RAI_PARAM("CT/", int, verbose, 1)
-    RAI_PARAM("LGP/", double, level_pc, 1.)
+    RAI_PARAM("LGP/", double, level_cP, 1.)
     RAI_PARAM("LGP/", double, level_c0, 1.)
     RAI_PARAM("LGP/", double, level_eps, 0.)
   };
@@ -20,6 +20,8 @@ namespace rai {
     double l=-1.;    //lower bound (also feasibility) computed at completion -> f_prio
     double c_now=0.;
     double baseLevel=0.;
+
+    ComputeNode(ComputeNode* parent) : TreeSearchNode(parent) {}
 
     //-- core Astar methods
     virtual void compute();
@@ -34,7 +36,7 @@ namespace rai {
     virtual double branchingHeuristic(){ return 1.; }
 
     virtual double computePenalty(){
-      return ::pow(c/info().level_c0, info().level_pc);
+      return ::pow(c/info().level_c0, info().level_cP);
     }
     virtual double branchingPenalty_child(int i){
       if(getNumDecisions()>=0) return 0;
@@ -46,9 +48,8 @@ namespace rai {
       return baseLevel + computePenalty();
     }
 
-    virtual void write(ostream& os) const{ os <<name; }
     virtual void store(const char* path) const {}
-    virtual void data(Graph& g);
+    virtual void data(Graph& g) const;
   };
   stdOutPipe(ComputeNode)
 

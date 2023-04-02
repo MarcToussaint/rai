@@ -159,7 +159,6 @@ struct FOL_World_State : TreeSearchNode {
   double R_total=0;
   Node* folDecision=0;
   Array<FOL_World::Handle> actions;
-  Array<FOL_World_State*> children;
   rai::String name;
 
   FOL_World_State(FOL_World& L, TreeSearchNode* _parent, bool _isTerminal);
@@ -179,6 +178,7 @@ struct FOL_World_State : TreeSearchNode {
   //I/O
   virtual void write(std::ostream& os) const;
   virtual void report(std::ostream& os, int verbose) const;
+  virtual void data(Graph &g) const;
 };
 
 } //namespace

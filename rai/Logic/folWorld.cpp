@@ -630,12 +630,13 @@ void FOL_World::addDecisionSequence(std::istream& is) {
 }
 
 FOL_World_State::FOL_World_State(FOL_World& L, TreeSearchNode* _parent, bool _isTerminal)
-  : L(L), state(L.createStateCopy()), T_step(L.T_step), T_real(L.T_real), R_total(L.R_total){
-  parent = _parent;
+  : TreeSearchNode(_parent), L(L), state(L.createStateCopy()), T_step(L.T_step), T_real(L.T_real), R_total(L.R_total){
   isTerminal = _isTerminal;
   isFeasible = true;
   isComplete = true;
-  actions = L.get_actions();
+  if(!isTerminal){
+    actions = L.get_actions();
+  }
 }
 
 std::shared_ptr<TreeSearchNode> FOL_World_State::transition(int action){
@@ -650,7 +651,7 @@ std::shared_ptr<TreeSearchNode> FOL_World_State::transition(int action){
   s->folDecision = s->state->getNode("decision");
   s->f_prio = L.T_step;
   if(!s->isTerminal) s->f_prio += .9;
-  s->name <<"fol" <<L.T_step<<'_' <<action <<' ' <<*actions(action);
+  s->name <<L.T_step <<'.' <<action <<' ' <<*actions(action);
   while(action>=(int)children.N) children.append(0);
   children(action) = s.get();
   return s;
@@ -685,7 +686,8 @@ void FOL_World_State::getStateSequence(Array<Graph*>& states, arr& times, String
 
 FOL_World_State* FOL_World_State::getChildByAction(Node* folDecision) {
   CHECK(children.N, "node is not expanded");
-  for(FOL_World_State* ch:children) {
+  for(TreeSearchNode* _ch:children) {
+    FOL_World_State* ch = dynamic_cast<FOL_World_State*>(_ch);
     if(tuplesAreEqual(ch->folDecision->parents, folDecision->parents)) return ch;
   }
   LOG(-1) <<"a child with action '" <<*folDecision <<"' does not exist";
@@ -695,5 +697,9 @@ FOL_World_State* FOL_World_State::getChildByAction(Node* folDecision) {
 void FOL_World_State::write(std::ostream& os) const { os <<'#' <<ID <<'_' <<name <<' '; }
 
 void FOL_World_State::report(std::ostream& os, int verbose) const { os <<'#' <<ID <<'_' <<name <<' '; }
+
+void FOL_World_State::data(Graph& g) const{
+  g.add("a", name); //STRING(*folDecision));
+}
 
 } //namespace

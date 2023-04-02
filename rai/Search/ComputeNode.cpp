@@ -28,9 +28,9 @@ std::shared_ptr<rai::TreeSearchNode> rai::ComputeNode::transition(int i){
   auto child = createNewChild(i);
   // update level
   if(!child->parent){
-    child->parent = this;
-    if((uint)i!=n_children) LOG(0) <<"creating childBranch #" <<i <<" without lower branches first";
-    n_children++;
+    CHECK_EQ(child->parent, this, "");
+    CHECK_GE(children.N, uint(i+1), "");
+    //if((uint)i!=children.N) LOG(0) <<"creating childBranch #" <<i <<" without lower branches first";
   }
   child->baseLevel = baseLevel + computePenalty();
   child->baseLevel += info().level_eps;
@@ -45,7 +45,7 @@ std::shared_ptr<rai::TreeSearchNode> rai::ComputeNode::transition(int i){
   return child;
 }
 
-void rai::ComputeNode::data(rai::Graph& g){
+void rai::ComputeNode::data(rai::Graph& g) const{
   if(c>0.) g.add<double>("c", c);
   if(l>0.) g.add<double>("l", l);
 }

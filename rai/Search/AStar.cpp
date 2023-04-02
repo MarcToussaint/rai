@@ -1,7 +1,7 @@
 #include "AStar.h"
 
-rai::AStar::AStar(const std::shared_ptr<rai::TreeSearchNode>& _root){
-  root = _root;
+rai::AStar::AStar(const std::shared_ptr<rai::TreeSearchNode>& _root, SearchMode _mode)
+  : root(_root), mode(_mode) {
   root->ID = 0;
   mem.append(root);
   queue.add(root->f_prio, root.get());
@@ -16,17 +16,20 @@ bool rai::AStar::step() {
   steps++;
 
   //pop
-  TreeSearchNode* node =  queue.pop();
+  TreeSearchNode* node = 0;
+  if(mode==astar){
+    node = queue.pop();
+    CHECK_GE(node->f_prio, currentLevel, "level needs to increase");
+    currentLevel = node->f_prio;
+  }else if(mode==treePolicy){
+    node = selectByTreePolicy();
+  }
   //    LOG(0) <<"looking at node '" <<*node <<"'";
-
-  //CHECK(!node->isComplete, "this node is already complete - should not be in the queue");
-  CHECK_GE(node->f_prio, currentLevel, "level needs to increase");
-  currentLevel = node->f_prio;
 
   //widen
   if(node->needsWidening){
     CHECK(node->parent, "");
-    NodeP sibling = node->parent->transition(node->parent->n_children);
+    NodeP sibling = node->parent->transition(node->parent->children.N);
     if(sibling){
       CHECK_EQ(sibling->parent, node->parent, "")
       CHECK_GE(sibling->f_prio, currentLevel, "sibling needs to have greater level")
@@ -97,4 +100,24 @@ void rai::AStar::report(){
           <<" queue#: " <<queue.N <<endl;
   if(verbose>2) std::cout <<" queue: " <<queue <<std::endl;
   if(solutions.N) std::cout <<" solutions: " <<solutions.modList();
+}
+
+rai::TreeSearchNode* rai::AStar::selectByTreePolicy(){
+  rai::TreeSearchNode *node = root.get();
+
+  //-- TREE POLICY
+  while(node->children.N
+        //(int)node->children.N == node->getNumDecisions()  //# we are 'inside' the full expanded tree: children for each action -> UCB to select the most promising
+        && !node->isTerminal){                       //# we're not at a terminal yet
+
+    // compute the UCB scores for all children
+    arr scores(node->children.N);
+    for(uint i=0;i<scores.N;i++) scores(i) = node->children(i)->treePolicyScore();
+    //child->data_Q / child->data_n + beta * sqrt(2. * ::log(node->data_n)/child->data_n);
+
+    // pick the child with highest
+    node = node->children(argmax(scores));
+  }
+
+  return node;
 }

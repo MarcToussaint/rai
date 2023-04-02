@@ -16,7 +16,10 @@ namespace rai {
 
   struct LGP_GlobalInfo {
     RAI_PARAM("LGP/", int, verbose, 1)
-    RAI_PARAM("LGP/", double, waypointBranching, 10.)
+    RAI_PARAM("LGP/", double, skeleton_w0, 1.)
+    RAI_PARAM("LGP/", double, skeleton_wP, 2.)
+    RAI_PARAM("LGP/", double, waypoint_w0, 10.)
+    RAI_PARAM("LGP/", double, waypoint_wP, 2.)
     RAI_PARAM("LGP/", int, waypointStopEvals, 1000)
     RAI_PARAM("LGP/", int, rrtStopEvals, 10000)
     RAI_PARAM("LGP/", double, pathCtrlCosts, 1.)
@@ -41,10 +44,7 @@ namespace rai {
     virtual void untimedCompute(){}
     virtual int getNumDecisions(){ return -1.; }
     virtual double effortHeuristic(){ return 11.+10.; }
-    virtual double branchingPenalty_child(int i){
-      double pw=2., w0=1;
-      return ::pow(double(i)/w0, pw);
-    }
+    virtual double branchingPenalty_child(int i);
 
     virtual std::shared_ptr<ComputeNode> createNewChild(int i);
   };
@@ -68,12 +68,9 @@ namespace rai {
     virtual void untimedCompute();
 
     virtual int getNumDecisions(){ return -1.; }
-    virtual double branchingHeuristic(){ return root->info->waypointBranching; }
+    virtual double branchingHeuristic(){ return root->info->waypoint_w0; }
     virtual double effortHeuristic(){ return 10.+10.; }
-    virtual double branchingPenalty_child(int i){
-      double pw=2., w0=root->info->waypointBranching;
-      return ::pow(double(i)/w0, pw);
-    }
+    virtual double branchingPenalty_child(int i);
 
 
     virtual std::shared_ptr<ComputeNode> createNewChild(int i);
@@ -90,7 +87,7 @@ namespace rai {
     std::shared_ptr<NLP_Factored> nlp;
     uint t=0;
 
-    FactorBoundsComputer(LGPcomp_Skeleton *_root, int rndSeed);
+    FactorBoundsComputer(LGPcomp_Skeleton *_sket, int rndSeed);
 
     virtual void untimedCompute();
     virtual double effortHeuristic(){ return 10.+1.*(komoWaypoints.T); }
@@ -144,7 +141,7 @@ namespace rai {
     arr q0, qT;
     arr path;
 
-    LGPcomp_RRTpath(LGPcomp_Skeleton *_root, LGPcomp_Waypoints *_ways, uint _t);
+    LGPcomp_RRTpath(ComputeNode* _par, LGPcomp_Waypoints *_ways, uint _t);
 
     virtual void untimedCompute();
     virtual double effortHeuristic(){ return 10.+1.*(ways->komoWaypoints->T-t-1); }
@@ -162,7 +159,7 @@ namespace rai {
     shared_ptr<KOMO> komoPath;
     NLP_Solver sol;
 
-    LGPcomp_Path(LGPcomp_Skeleton *_root, LGPcomp_Waypoints *_ways, LGPcomp_RRTpath *last);
+    LGPcomp_Path(LGPcomp_RRTpath *_par, LGPcomp_Waypoints *_ways);
 
     virtual void untimedCompute();
     virtual double effortHeuristic(){ return 0.; }

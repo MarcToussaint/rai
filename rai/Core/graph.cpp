@@ -548,12 +548,12 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
   for(Node* n:newNodes) CHECK(n->numChildren==0 && n->children.N==0, "");
 #endif
 
-  //-- now copy subgraphs
+  //-- copy subgraphs
   for(Node* n:newNodes) if(n->is<Graph>()) {
       n->graph().copy(G.elem(n->index-indexOffset)->graph()); //you can only call the operator= AFTER assigning isNodeOfGraph
     }
 
-  //-- now rewire parental links
+  //-- rewire parental links
   for(Node* n:newNodes) {
     for(uint i=0; i<n->parents.N; i++) {
       Node* p=n->parents(i); //the parent in the origin graph

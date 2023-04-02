@@ -6,7 +6,7 @@
 #include <Kin/F_qFeatures.h>
 
 rai::LGPComp_root::LGPComp_root(rai::FOL_World& _L, rai::Configuration& _C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift)
-  : L(_L), C(_C), genericCollisions(genericCollisions), explicitCollisions(explicitCollisions), explicitLift(explicitLift) {
+  : ComputeNode(0), L(_L), C(_C), genericCollisions(genericCollisions), explicitCollisions(explicitCollisions), explicitLift(explicitLift) {
   name <<"LGPComp_root#0";
 
   L.reset_state();
@@ -18,17 +18,21 @@ rai::LGPComp_root::LGPComp_root(rai::FOL_World& _L, rai::Configuration& _C, bool
   fol_astar -> verbose = info->verbose - 2;
 }
 
+double rai::LGPComp_root::branchingPenalty_child(int i){
+  return ::pow(double(i)/info->skeleton_w0, info->skeleton_wP);
+}
+
 std::shared_ptr<rai::ComputeNode> rai::LGPComp_root::createNewChild(int i){
   return make_shared<LGPcomp_Skeleton>(this, i);
 }
 
 //===========================================================================
 
-rai::LGPcomp_Skeleton::LGPcomp_Skeleton(rai::LGPComp_root* _root, int num) : root(_root), num(num) {
+rai::LGPcomp_Skeleton::LGPcomp_Skeleton(rai::LGPComp_root* _root, int num) : ComputeNode(_root), root(_root), num(num) {
   name <<"LGPcomp_Skeleton#"<<num;
 }
 
-rai::LGPcomp_Skeleton::LGPcomp_Skeleton(rai::LGPComp_root* _root, const rai::Skeleton& _skeleton) : root(_root), skeleton(_skeleton) {
+rai::LGPcomp_Skeleton::LGPcomp_Skeleton(rai::LGPComp_root* _root, const rai::Skeleton& _skeleton) : ComputeNode(_root), root(_root), skeleton(_skeleton) {
   name <<"FixedSkeleton";
   planString <<skeleton;
 
@@ -80,15 +84,20 @@ void rai::LGPcomp_Skeleton::untimedCompute(){
   if(root->info->verbose>1) LOG(0) <<skeleton;
 }
 
+double rai::LGPcomp_Skeleton::branchingPenalty_child(int i){
+  return ::pow(double(i)/root->info->waypoint_w0, root->info->waypoint_wP);
+}
+
 std::shared_ptr<rai::ComputeNode> rai::LGPcomp_Skeleton::createNewChild(int i){
-//  return make_shared<FactorBoundsComputer>(this, i);
-//  if(states.N) return make_shared<PoseBoundsComputer>(this, i);
+  //  return make_shared<FactorBoundsComputer>(this, i);
+  //  if(states.N) return make_shared<PoseBoundsComputer>(this, i);
   return make_shared<LGPcomp_Waypoints>(this, i);
 }
 
 //===========================================================================
 
-rai::PoseBoundsComputer::PoseBoundsComputer(rai::LGPcomp_Skeleton* _sket, int rndSeed) : sket(_sket), seed(rndSeed){
+rai::PoseBoundsComputer::PoseBoundsComputer(rai::LGPcomp_Skeleton* _sket, int rndSeed)
+  : ComputeNode(_sket), sket(_sket), seed(rndSeed){
   name <<"PoseBoundsComputer#"<<seed;
 }
 
@@ -129,7 +138,8 @@ std::shared_ptr<rai::ComputeNode> rai::PoseBoundsComputer::createNewChild(int i)
 
 //===========================================================================
 
-rai::FactorBoundsComputer::FactorBoundsComputer(rai::LGPcomp_Skeleton* _root, int rndSeed) : sket(_root), seed(rndSeed){
+rai::FactorBoundsComputer::FactorBoundsComputer(rai::LGPcomp_Skeleton* _sket, int rndSeed)
+  : ComputeNode(_sket), sket(_sket), seed(rndSeed){
   name <<"FactorBoundsComputer#"<<seed;
 
   komoWaypoints.clone(*sket->skeleton.komoWaypoints);
@@ -178,7 +188,8 @@ std::shared_ptr<rai::ComputeNode> rai::FactorBoundsComputer::createNewChild(int 
 
 //===========================================================================
 
-rai::LGPcomp_Waypoints::LGPcomp_Waypoints(rai::LGPcomp_Skeleton* _sket, int rndSeed) : sket(_sket), seed(rndSeed){
+rai::LGPcomp_Waypoints::LGPcomp_Waypoints(rai::LGPcomp_Skeleton* _sket, int rndSeed)
+  : ComputeNode(_sket), sket(_sket), seed(rndSeed){
   name <<"LGPcomp_Waypoints#"<<seed;
 
   komoWaypoints = make_shared<KOMO>();
@@ -239,14 +250,16 @@ void rai::LGPcomp_Waypoints::untimedCompute(){
 }
 
 std::shared_ptr<rai::ComputeNode> rai::LGPcomp_Waypoints::createNewChild(int i){
-  komoWaypoints->checkConsistency();
+  //komoWaypoints->checkConsistency();
   CHECK(!i, "only single child");
-  return make_shared<LGPcomp_RRTpath>(sket, this, 0);
+  return make_shared<LGPcomp_RRTpath>(this, this, 0);
 }
 
 //===========================================================================
 
-rai::LGPcomp_RRTpath::LGPcomp_RRTpath(rai::LGPcomp_Skeleton* _root, rai::LGPcomp_Waypoints* _ways, uint _t) : sket(_root), ways(_ways), t(_t){
+rai::LGPcomp_RRTpath::LGPcomp_RRTpath(ComputeNode *_par, rai::LGPcomp_Waypoints* _ways, uint _t)
+  : ComputeNode(_par), sket(_ways->sket), ways(_ways), t(_t){
+  if(!t) CHECK_EQ(_par, _ways, "");
   name <<"LGPcomp_RRTpath#" <<ways->seed <<'.' <<t;
   if(sket->verbose()>1) LOG(0) <<"rrt for phase:" <<t;
   rai::Skeleton::getTwoWaypointProblem(t, C, q0, qT, *ways->komoWaypoints);
@@ -285,17 +298,17 @@ void rai::LGPcomp_RRTpath::untimedCompute(){
 std::shared_ptr<rai::ComputeNode> rai::LGPcomp_RRTpath::createNewChild(int i){
   CHECK(!i, "only single child");
   if(t+1 < ways->komoWaypoints->T){
-    auto rrt =  make_shared<LGPcomp_RRTpath>(sket, ways, t+1);
+    auto rrt =  make_shared<LGPcomp_RRTpath>(this, ways, t+1);
     rrt->prev = this;
     return rrt;
   }
-  return make_shared<LGPcomp_Path>(sket, ways, this);
+  return make_shared<LGPcomp_Path>(this, ways);
 }
 
 //===========================================================================
 
-rai::LGPcomp_Path::LGPcomp_Path(rai::LGPcomp_Skeleton* _root, rai::LGPcomp_Waypoints* _ways, rai::LGPcomp_RRTpath* last)
-  : sket(_root), ways(_ways){
+rai::LGPcomp_Path::LGPcomp_Path(rai::LGPcomp_RRTpath* _par, rai::LGPcomp_Waypoints* _ways)
+  : ComputeNode(_par), sket(_ways->sket), ways(_ways){
   name <<"LGPcomp_Path#"<<ways->seed;
 
   isTerminal = true;
@@ -306,7 +319,7 @@ rai::LGPcomp_Path::LGPcomp_Path(rai::LGPcomp_Skeleton* _root, rai::LGPcomp_Waypo
   //collect path and initialize
   rai::Array<LGPcomp_RRTpath*> rrts(ways->komoWaypoints->T);
   rrts=0;
-  rrts(-1) = last;
+  rrts(-1) = _par;
   for(uint t=ways->komoWaypoints->T-1;t--;){
     rrts(t) = rrts(t+1)->prev;
     CHECK_EQ(rrts(t)->t, t, "");
