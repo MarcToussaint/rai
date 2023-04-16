@@ -361,90 +361,12 @@ To get really precise distances and penetrations use the FS.distance feature wit
 reloads, displays and animates the configuration whenever the file is changed"
       )
 
-  .def("komo_IK", [](shared_ptr<rai::Configuration>& self, bool useSwift) {
-//  ry::RyKOMO komo;
-    auto komo = make_shared<KOMO>();
-    komo->setModel(*self, useSwift);
-    komo->setIKOpt();
-    return komo;
-  },
-  "create KOMO solver configured to IK, useSwift determine whether for each \
-query the broadphase collision computations are done. (Necessary only when generic \
-FS.accumulatedCollision feature is needed. The explicit distance feature is independent \
-from broadphase collision computation)",
-  pybind11::arg("useSwift")
-      )
-
-  .def("komo_CGO", [](shared_ptr<rai::Configuration>& self, uint numConfigs, bool useSwift) {
-    CHECK_GE(numConfigs, 1, "");
-    auto komo = make_shared<KOMO>();
-    komo->setModel(*self, useSwift);
-    komo->setTiming(numConfigs, 1, 1., 1);
-    komo->addQuaternionNorms();
-    return komo;
-  },
-  "create KOMO solver configured for dense graph optimization, \
-numConfig gives the number of configurations optimized over, \
-useSwift determine whether for each \
-query the broadphase collision computations are done. (Necessary only when generic \
-FS.accumulatedCollision feature is needed. The explicit distance feature is independent \
-from broadphase collision computation)",
-  pybind11::arg("numConfigs"),
-  pybind11::arg("useSwift")
-      )
-
-  .def("komo_path",  [](shared_ptr<rai::Configuration>& self, double phases, uint stepsPerPhase, double timePerPhase, bool useSwift) {
-    auto komo = make_shared<KOMO>();
-    komo->setModel(*self, useSwift);
-    komo->setTiming(phases, stepsPerPhase, timePerPhase);
-    komo->add_qControlObjective({}, 2, 1.);
-    return komo;
-  },
-  "create KOMO solver configured for sparse path optimization",
-  pybind11::arg("phases"),
-  pybind11::arg("stepsPerPhase")=20,
-  pybind11::arg("timePerPhase")=5.,
-  pybind11::arg("useSwift")
-      )
-
-  .def("komo",  [](shared_ptr<rai::Configuration>& self, double phases, uint stepsPerPhase, double timePerPhase, uint k_order, bool useSwift) {
-    auto komo = make_shared<KOMO>();
-    komo->setModel(*self, useSwift);
-    komo->setTiming(phases, stepsPerPhase, timePerPhase, k_order);
-    return komo;
-  },
-  "create KOMO solver configured for sparse path optimization without control objective",
-  pybind11::arg("phases"),
-  pybind11::arg("stepsPerPhase")=20,
-  pybind11::arg("timePerPhase")=5.,
-  pybind11::arg("k_order")=2,
-  pybind11::arg("useSwift")
-      )
-
-  /*
-  .def("lgp", [](shared_ptr<rai::Configuration>& self, const std::string& folFileName) {
-    ry::RyLGP_Tree lgp;
-    lgp.lgp = make_shared<LGP_Tree_Thread>(*self, folFileName.c_str());
-    return lgp;
-  },
-  "create an LGP solver"
-      )
-
-  .def("physx", [](shared_ptr<rai::Configuration>& self) {
-    return make_shared<PhysXInterface>(*self);
-  },
-  "create a PhysX engine for physical simulation from the configuration: The configuration \
-  is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
-      )
-  */
-
-  .def("bullet", [](shared_ptr<rai::Configuration>& self) {
-    return make_shared<BulletInterface>(*self);
-  },
-  "create a Bullet engine for physical simulation from the configuration: The configuration \
-  is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
-      )
-
+  .def("report", [](shared_ptr<rai::Configuration>& self) {
+    rai::String str;
+    self->report(str);
+    return str;
+  }
+  )
   
   .def("simulation", [](shared_ptr<rai::Configuration>& self, rai::Simulation::SimulatorEngine engine, int verbose) {
     return make_shared<rai::Simulation>(*self, engine, verbose);
@@ -455,15 +377,6 @@ allows you to control robot motors by position, velocity, or accelerations, \
   pybind11::arg("engine"),
   pybind11::arg("verbose")
       )
-
-//.def("operate", [](shared_ptr<rai::Configuration>& self, const char* rosNodeName) {
-//  ry::RyOperate op;
-//  op.R = make_shared<RobotOperation>(*self, .01, rosNodeName);
-//  return op;
-//},
-//"create a module (including ROS node) to sync this configuration both ways (reading state, and controlling) to a real robot",
-//pybind11::arg("rosNodeName")
-//    )
 
   .def("sortFrames", [](shared_ptr<rai::Configuration>& self) {
     self->sortFrames();

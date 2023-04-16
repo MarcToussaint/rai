@@ -28,10 +28,15 @@ void init_Frame(pybind11::module& m) {
 
     .def("setColor", &rai::Frame::setColor )
 
-    .def("setPose", &rai::Frame::setPose )
+    .def("setPose",  [](shared_ptr<rai::Frame>& self, const char* pose){
+       self->setRelativePose(rai::Transformation(pose));
+     })
+
     .def("setPosition", &rai::Frame::setPosition )
     .def("setQuaternion", &rai::Frame::setQuaternion )
-    .def("setRelativePose", &rai::Frame::setRelativePose )
+    .def("setRelativePose", [](shared_ptr<rai::Frame>& self, const char* pose){
+       self->setRelativePose(rai::Transformation(pose));
+     })
     .def("setRelativePosition", &rai::Frame::setRelativePosition )
     .def("setRelativeQuaternion", &rai::Frame::setRelativeQuaternion )
     .def("setJoint", &rai::Frame::setJoint )

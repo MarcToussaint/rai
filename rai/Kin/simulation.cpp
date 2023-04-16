@@ -150,6 +150,7 @@ Simulation::Simulation(Configuration& _C, Simulation::SimulatorEngine _engine, i
 }
 
 Simulation::~Simulation() {
+  LOG(0) <<"shutting down Simulation";
 }
 
 void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
@@ -365,7 +366,7 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
       if(p.b == finger1) fing1close.setAppend(p.a);
       if(p.a == finger2) fing2close.setAppend(p.b);
       if(p.b == finger2) fing2close.setAppend(p.a);
-      LOG(0) <<"near objects: " <<p;
+      //LOG(0) <<"near objects: " <<p;
     }
   }
 

@@ -49,7 +49,7 @@ struct GripperAbstraction {
   virtual void close(double force=.0, //relative to [min,max]
                      double width=.2, //relative to [min,max]
                      double speed=.2) = 0; //relative to [min,max]
-  virtual void close(const char* objName, double force=.0, double width=.2, double speed=.2){ close(force, width, speed); }
+  virtual void closeGrasp(const char* objName, double force=.0, double width=.2, double speed=.2){ close(force, width, speed); }
   virtual double pos() = 0;
   virtual bool isDone() = 0;
 };

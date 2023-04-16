@@ -79,8 +79,8 @@ void init_KOMO(pybind11::module& m) {
     .def("getT", [](std::shared_ptr<KOMO>& self) { return self->T; } )
 
     .def("getFrameState", &KOMO::getConfiguration_X)
-    .def("getPath_qOrg", &KOMO::getPath_qOrg)
-    .def("getPath",  &KOMO::getPath_qAll)
+    .def("getPath", &KOMO::getPath_qOrg)
+    .def("getPath_qAll",  &KOMO::getPath_qAll)
     .def("getPathFrames", &KOMO::getPath_X)
     .def("getPathTau", &KOMO::getPath_tau)
 

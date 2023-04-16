@@ -76,13 +76,13 @@ PYBIND11_MODULE(libry, m) {
 void init_enums(pybind11::module& m){
 
 #undef ENUMVAL
-#define ENUMVAL(x) .value(#x, rai::_##x)
+#define ENUMVAL(x) .value(#x, rai::x)
 
  pybind11::enum_<rai::ArgWord>(m, "ArgWord")
-    ENUMVAL(left)
-    ENUMVAL(right)
-    ENUMVAL(sequence)
-    ENUMVAL(path)
+    ENUMVAL(_left)
+    ENUMVAL(_right)
+    ENUMVAL(_sequence)
+    ENUMVAL(_path)
      .export_values();
 }
 
