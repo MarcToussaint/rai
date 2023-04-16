@@ -21,7 +21,7 @@ void init_KOMO(pybind11::module& m) {
 
     .def(pybind11::init<>())
 
-    .def("setModel", &KOMO::setModel)
+    .def("setConfig", &KOMO::setModel)
     .def("setTiming", &KOMO::setTiming)
 
     .def("addTimeOptimization", &KOMO::addTimeOptimization)
@@ -41,7 +41,7 @@ void init_KOMO(pybind11::module& m) {
 
     .def("addQuaternionNorms", &KOMO::addQuaternionNorms, "", pybind11::arg("times")=arr(), pybind11::arg("scale")=3., pybind11::arg("hard")=true )
 
-    .def("add_qControlObjective", &KOMO::add_qControlObjective, "", pybind11::arg("times"), pybind11::arg("order"), pybind11::arg("scale")=1.,
+    .def("addControlObjective", &KOMO::add_qControlObjective, "", pybind11::arg("times"), pybind11::arg("order"), pybind11::arg("scale")=1.,
 	 pybind11::arg("target")=arr(), pybind11::arg("deltaFromStep")=0, pybind11::arg("deltaToStep")=0 )
 
     .def("addModeSwitch", &KOMO::addModeSwitch, "", pybind11::arg("times"), pybind11::arg("newMode"), pybind11::arg("frames"), pybind11::arg("firstSwitch")=true )
@@ -80,7 +80,7 @@ void init_KOMO(pybind11::module& m) {
 
     .def("getFrameState", &KOMO::getConfiguration_X)
     .def("getPath_qOrg", &KOMO::getPath_qOrg)
-    .def("getPath_qAll",  &KOMO::getPath_qAll)
+    .def("getPath",  &KOMO::getPath_qAll)
     .def("getPathFrames", &KOMO::getPath_X)
     .def("getPathTau", &KOMO::getPath_tau)
 

@@ -166,12 +166,12 @@ void rai::Frame::_state_updateAfterTouchingQ() {
 
 void rai::Frame::getRigidSubFrames(FrameL& F, bool includeRigidJoints) const {
   for(Frame* child:children)
-    if(!child->joint || (includeRigidJoints && child->joint->type==JT_rigid)) { F.append(child); child->getRigidSubFrames(F, includeRigidJoints); }
+    if(!child->joint || /*!child->joint->active ||*/ (includeRigidJoints && child->joint->type==JT_rigid)) { F.append(child); child->getRigidSubFrames(F, includeRigidJoints); }
 }
 
 void rai::Frame::getPartSubFrames(FrameL& F) const {
   for(Frame* child:children)
-    if(!child->joint || !child->joint->isPartBreak()) { F.append(child); child->getPartSubFrames(F); }
+    if(!child->joint || /*!child->joint->active ||*/ !child->joint->isPartBreak()) { F.append(child); child->getPartSubFrames(F); }
 }
 
 void rai::Frame::getSubtree(FrameL& F) const {
@@ -933,6 +933,10 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
   for(Joint* j:mimicers){
     if(type!=JT_tau){
       j->frame->Q = Q;
+      if(j->scale==-1.){
+        j->frame->Q.pos = -j->frame->Q.pos;
+        j->frame->Q.rot.invert();
+      }
       j->frame->_state_setXBadinBranch();
     }else{
       j->frame->tau = frame->tau;
@@ -1202,7 +1206,8 @@ bool rai::Joint::isPartBreak() {
   //    return (dim!=1 && !mimic) || type==JT_tau;
 }
 
-double& rai::Joint::getQ() {
+double& rai::Joint::get_q() {
+  if(!active) return frame->C.qInactive.elem(qIndex);
   return frame->C.q.elem(qIndex);
 }
 
@@ -1556,6 +1561,15 @@ void rai::Shape::glDraw(OpenGL& gl) {
 
     if(_type==rai::ST_marker) {
       if(!gl.drawOptions.drawVisualsOnly) {
+#if 1
+        rai::Vector p=0;
+        if(frame.parent) p=frame.parent->ensure_X().pos;
+        p = p / frame.ensure_X();
+        glBegin(GL_LINES);
+        glVertex3f(0, 0, 0);
+        glVertex3f(p.x, p.y, p.z);
+        glEnd();
+#endif
         double s=1.;
         if(size.N) s = size.last();
         if(s>0.){

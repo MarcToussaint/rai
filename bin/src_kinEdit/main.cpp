@@ -126,7 +126,7 @@ int main(int argc,char **argv){
     }
 
   }else{
-    rai::editConfiguration(file, C);
+    C.watchFile(file);
   }
 
   return 0;

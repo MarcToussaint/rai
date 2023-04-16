@@ -24,14 +24,14 @@ struct SplineCtrlReference : ReferenceFeed {
   /// append new knots to the spline; if prependLast, the currently last spline remains a zero-vel double know (holds) before starting the appended
   void append(const arr& x, const arr& t, double ctrlTime, bool prependLast);
   /// override the spline, but use the current spline's current pos/vel as start knot of the new spline; the first time knot needs to be >.1 sec
-  void overrideSmooth(const arr& x, const arr& t, double ctrlTime);
+  void overwriteSmooth(const arr& x, const arr& t, double ctrlTime);
   /// fully override the spline with new knots x and t, as well as initial vel xDot0; for safety, the first x needs to be close to the current spline's current pos
-  void overrideHard(const arr& x, const arr& t, double ctrlTime);
+  void overwriteHard(const arr& x, const arr& t, double ctrlTime);
 
   //simple helper for single goal spline
   void moveTo(const arr& x, double t, double ctrlTime, bool append){
     if(append) this->append(~x, {t}, ctrlTime, true);
-    else  overrideSmooth(~x, {t}, ctrlTime);
+    else  overwriteSmooth(~x, {t}, ctrlTime);
   }
 
   //info:

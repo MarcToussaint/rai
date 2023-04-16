@@ -680,6 +680,7 @@ void glColor(float r, float g, float b, float alpha) {
 void glColor(float* rgb) { glColor(rgb[0], rgb[1], rgb[2], 1.); }
 
 void glColor(const arr& col) {
+  if(col.N==1) glColor(col.p[0], col.p[0], col.p[0], 1.);
   if(col.N==3) glColor(col.p[0], col.p[1], col.p[2], 1.);
   if(col.N==4) glColor(col.p[0], col.p[1], col.p[2], col.p[3]);
 }

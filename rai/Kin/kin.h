@@ -220,10 +220,9 @@ struct Configuration : GLDrawer {
   void setJacModeAs(const arr& J);
 
   /// @name features
-  shared_ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}) const;
-  arr evalFeature(FeatureSymbol fs, const StringA& frames= {}) const;
+  shared_ptr<Feature> feature(FeatureSymbol fs, const StringA& frames={}, const arr& scale=NoArr, const arr& target=NoArr, int order=-1) const;
   template<class T> arr eval(const StringA& frames= {}){ return T().eval(getFrames(frames)); }
-  arr eval(FeatureSymbol fs, const StringA& frames= {});
+  arr eval(FeatureSymbol fs, const StringA& frames= {}, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 
   /// @name high level inverse kinematics
   void inverseKinematicsPos(Frame& frame, const arr& ytarget, const Vector& rel_offset=NoVector, int max_iter=3);
@@ -270,6 +269,9 @@ struct Configuration : GLDrawer {
   Graph getGraph() const;
   void displayDot();
 
+  void watchFile(const char* filename);
+  int animate(struct Inotify* ino=nullptr);
+
   //some info
   void report(std::ostream& os=cout) const;
   void reportProxies(std::ostream& os=cout, double belowMargin=1., bool brief=true) const;
@@ -278,7 +280,6 @@ struct Configuration : GLDrawer {
 private:
   void readFromGraph(const Graph& G, bool addInsteadOfClear=false);
   friend struct KinematicSwitch;
-  friend void editConfiguration(const char* orsfile, Configuration& G);
 };
 
 stdPipes(Configuration)
@@ -301,8 +302,5 @@ void makeConvexHulls(FrameL& frames, bool onlyContactShapes=true);
 void computeOptimalSSBoxes(FrameL& frames);
 void computeMeshNormals(FrameL& frames, bool force=false);
 void computeMeshGraphs(FrameL& frames, bool force=false);
-
-void editConfiguration(const char* orsfile, Configuration& G);
-int animateConfiguration(Configuration& G, struct Inotify* ino=nullptr);
 
 } //namespace rai

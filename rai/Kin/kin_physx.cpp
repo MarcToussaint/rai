@@ -129,6 +129,8 @@ struct PhysXInterface_self {
     //  self->plane
     //  self->planeShape
     for(PxRigidActor* a: actors) if(a) {
+      PxArticulationLink* actor = a->is<PxArticulationLink>();
+      if(actor) continue; //don't remove articulation links
       gScene->removeActor(*a);
       a->release();
     }
@@ -434,7 +436,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
   FrameL F = {base};
   base->getPartSubFrames(F);
   FrameL links = {base};
-  for(auto* f:F){ if(f->joint && !f->joint->isPartBreak()) links.append(f); }
+  for(auto* f:F){ if(f->joint && /*f->joint->active &&*/ !f->joint->isPartBreak()) links.append(f); }
   intA parents(links.N);
   parents(0) = -1;
   for(uint i=1;i<links.N;i++){
@@ -453,6 +455,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 
   PxArticulationReducedCoordinate* articulation = core->mPhysics->createArticulationReducedCoordinate();
   articulation->setArticulationFlag(PxArticulationFlag::eFIX_BASE, true);
+  articulation->setArticulationFlag(PxArticulationFlag::eDISABLE_SELF_COLLISION, true);
   //articulation->setSolverIterationCounts(minPositionIterations, minVelocityIterations);
   //articulation->setMaxCOMLinearVelocity(maxCOMLinearVelocity);
 
@@ -522,7 +525,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
       }
       joint->setJointType(type);
       joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
-      joint->setJointPosition(axis, f->joint->getQ());
+      joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
       jointAxis(f->ID) = axis;
 
 //      if(f->joint->limits.N){
@@ -530,7 +533,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 //      }
 
       if(f->joint->mimic){
-        NIY;
+//        NIY;
         //        btVector3 pivot(0,1,0);
         //        btMatrix3x3 frame(1,0,0,0,1,0,0,0,1);
         //        //HARD CODED: mimicer is the previous one
@@ -544,13 +547,18 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 
       if(true){
         PxArticulationDrive posDrive;
-        posDrive.stiffness = opt.motorKp;                      // the spring constant driving the joint to a target position
-        posDrive.damping = opt.motorKd;                        // the damping coefficient driving the joint to a target velocity
+        if(f->joint->active){
+          posDrive.stiffness = opt.motorKp;                      // the spring constant driving the joint to a target position
+          posDrive.damping = opt.motorKd;                        // the damping coefficient driving the joint to a target velocity
+        }else{ //hack for grippers
+          posDrive.stiffness = opt.motorKp;
+          posDrive.damping = opt.motorKd/10.;
+        }
         posDrive.maxForce = PX_MAX_F32; //1e10f;                              // force limit for the drive
         posDrive.driveType = PxArticulationDriveType::eFORCE;  // make the drive output be a force/torque (default)
         joint->setDriveParams(axis, posDrive);
         joint->setDriveVelocity(axis, 0.);
-        joint->setDriveTarget(axis, f->joint->getQ());
+        joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
       }
     }
   }
@@ -659,7 +667,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
         }
         geometry=0;
       }else{
-        LOG(0) <<"using cvx hull of mesh as no decomposition (M.cvsParts) is available";
+        if(opt.verbose>1) LOG(0) <<"using cvx hull of mesh as no decomposition (M.cvsParts) is available";
         floatA Vfloat = rai::convert<float>(s->mesh().V);
         PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
                                        *core->mPhysics, *core->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
@@ -849,6 +857,7 @@ void PhysXInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){
       if(!actor) continue;
       PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
       if(!joint) continue;
+      if(!f->joint->active) continue;
       CHECK_EQ(f->joint->qIndex, qIdx, "inconsistent q indexing");
 
       auto axis = self->jointAxis(f->ID);
@@ -868,6 +877,23 @@ void PhysXInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){
     cout <<endl;
   }
   if(q_ref.N) CHECK_EQ(qIdx, q_ref.N, ""); //make this only a warning?
+}
+
+void PhysXInterface::setMotorQ(const rai::Configuration& C){
+  if(self->opt.multiBody){
+    for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)){
+      PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
+      if(!actor) continue;
+      PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
+      if(!joint) continue;
+
+      auto axis = self->jointAxis(f->ID);
+      CHECK_LE(axis, self->jointAxis(0)-1, "");
+      joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
+    }
+  }else if(self->opt.jointedBodies){
+    NIY;
+  }
 }
 
 void PhysXInterface::pushKinematicStates(const rai::Configuration& C) {

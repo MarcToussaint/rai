@@ -163,7 +163,7 @@ char skip(std::istream& is, const char* skipSymbols, const char* stopSymbols, bo
   char c;
   for(;;) {
     c=is.get();
-    if(is.eof()) return 255;
+    if(is.eof()) return '\255';
     if(skipCommentLines && c=='#') { skipRestOfLine(is); continue; }
     if(skipSymbols && !contains(skipSymbols, c)) break;
     if(stopSymbols && contains(stopSymbols, c)) break;

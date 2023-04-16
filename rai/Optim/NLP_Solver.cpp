@@ -108,6 +108,7 @@ shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
   ret->dual=dual;
   ret->evals=P->evals;
   ret->time = time;
+  ret->done = true;
   return ret;
 }
 

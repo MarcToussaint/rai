@@ -62,7 +62,7 @@ void testPushes(){
 void testGrasp(){
   rai::Configuration C;
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/liftRing.g"));
-  C["box"]->set_Q()->setText("<t(.3 -.1 .25) d(40 1 1 0)>");
+  C["box"]->set_Q()->setText("<t(.3 .1 .25) d(40 1 1 0)>");
   C["stick"]->set_Q()->setText("<t(-.3 .6 1.1) d(90 1 0 0) d(20 1 1 0)>");
 
   arr q = C.getJointState();
@@ -123,17 +123,22 @@ void testGrasp(){
 
 void testOpenClose(){
   rai::Configuration RealWorld;
+//  RealWorld.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
   RealWorld.addFile(rai::raiPath("../rai-robotModels/scenarios/liftRing.g"));
-  RealWorld["box"]->set_Q()->setText("<t(.3 -.1 .25) d(40 1 1 0)>");
-  RealWorld["stick"]->set_Q()->setText("<t(-.3 .6 1.1) d(90 1 0 0) d(20 1 1 0)>");
+//  RealWorld["box"]->set_Q()->setText("<t(.3 -.1 .25) d(40 1 1 0)>");
+//  RealWorld["stick"]->set_Q()->setText("<t(-.3 .6 1.1) d(90 1 0 0) d(20 1 1 0)>");
   rai::Simulation S(RealWorld, S._physx, 2);
 
   rai::Configuration C;
+//  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/liftRing.g"));
   C.view(false, "initial");
+  arr q0 = C.getJointState();
 
   double tau = .01;
+  S.step(q0, tau, S._position);
 
+  rai::wait();
   S.closeGripper("gripper");
   for(uint t=0;;t++){
     rai::wait(tau);
@@ -142,10 +147,12 @@ void testOpenClose(){
     C.setJointState(q);
     C.view();
 
-    S.step({}, tau, S._none);
+    S.step(q0, tau, S._position);
+    cout <<"closing finger pos:" <<S.getGripperWidth("gripper") <<endl;
     if(S.getGripperIsClose("gripper")) break;
   }
 
+  rai::wait();
   S.openGripper("gripper");
   for(uint t=0;;t++){
     rai::wait(tau);
@@ -154,7 +161,8 @@ void testOpenClose(){
     C.setJointState(q);
     C.view();
 
-    S.step({}, tau, S._none);
+    S.step(q0, tau, S._position);
+    cout <<"opening finger pos:" <<S.getGripperWidth("gripper") <<endl;
     if(S.getGripperIsOpen("gripper")) break;
   }
 }
@@ -281,6 +289,8 @@ void testCompound(){
   double tau=.01;
   Metronome tic(tau);
 
+  rai::system("mkdir -p z.vid/; rm -f z.vid/*.ppm");
+
   for(uint t=0;t<4./tau;t++){
     tic.waitForTic();
 
@@ -307,6 +317,8 @@ void testMotors(){
   double tau=.01;
   Metronome tic(tau);
 
+  rai::system("mkdir -p z.vid/; rm -f z.vid/*.ppm");
+
   for(uint t=0;t<4./tau;t++){
     tic.waitForTic();
 
@@ -323,6 +335,8 @@ void testMotors(){
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
+
+  testOpenClose(); return 0;
 
   testMotors();
   testRndScene();

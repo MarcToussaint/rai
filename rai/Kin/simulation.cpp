@@ -35,6 +35,7 @@ struct Simulation_self {
   std::shared_ptr<BulletBridge> bulletBridge;
   rai::Configuration bridgeC;
 #endif
+  std::shared_ptr<OpenGL> glDebug;
 
   SplineCtrlReference ref;
 
@@ -70,6 +71,7 @@ struct SimulationImp {
 
 struct Imp_CloseGripper : SimulationImp {
   Frame* gripper, *fing1, *fing2, *obj, *finger1, *finger2;
+  Joint* joint;
   Vector axis;
   arr limits;
   std::unique_ptr<F_PairCollision> coll1;
@@ -77,7 +79,7 @@ struct Imp_CloseGripper : SimulationImp {
   double q;
   double speed;
 
-  Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, Frame* _obj, double _speed);
+  Imp_CloseGripper(Frame* _gripper, Joint* _joint, Frame* _fing1, Frame* _fing2, Frame* _obj, double _speed);
   virtual void modConfiguration(Simulation& S, double tau);
 };
 
@@ -85,12 +87,13 @@ struct Imp_CloseGripper : SimulationImp {
 
 struct Imp_OpenGripper : SimulationImp {
   Frame* gripper, *fing1, *fing2;
+  Joint* joint;
   Vector axis;
   arr limits;
   double q;
   double speed;
 
-  Imp_OpenGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, double _speed);
+  Imp_OpenGripper(Frame* _gripper, Joint* _joint, Frame* _fing1, Frame* _fing2, double _speed);
   virtual void modConfiguration(Simulation& S, double tau);
 };
 
@@ -204,7 +207,11 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   if(engine==_physx) {
     if(self->physx->opt().jointedBodies || self->physx->opt().multiBody){
       self->physx->pushKinematicStates(C); //usually none anyway
-      self->physx->setMotorQ(q_ref, qDot_ref); //motor control
+//      self->physx->setMotorQ(q_ref, qDot_ref); //motor control
+      if(q_ref.N){
+        C.setJointState(q_ref);
+        self->physx->setMotorQ(C); //motor control
+      }
     }else{
       if(q_ref.N) C.setJointState(q_ref); //kinematic control
       if(qDot_ref.N) qDot = qDot_ref;
@@ -235,6 +242,16 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   C.ensure_q();
 
   if(verbose>0) self->updateDisplayData(time, C);
+
+#if 0
+  if(!self->glDebug){
+    self->glDebug = make_shared<OpenGL>("physx sim DEBUG", 500, 300);
+    self->glDebug->camera.setDefault();
+    self->glDebug->add(glStandardScene);
+    self->glDebug->add(*self->physx);
+  }
+  self->glDebug->update();
+#endif
 }
 
 void Simulation::setMoveTo(const arr& x, double t, bool append){
@@ -245,18 +262,20 @@ void Simulation::setMoveTo(const arr& x, double t, bool append){
   if(x.nd==2) times.setGrid(1, t/(x.d0), t, x.d0-1);
 
   if(append) self->ref.append(path, times, time, true);
-  else self->ref.overrideSmooth(path, times, time);
+  else self->ref.overwriteSmooth(path, times, time);
 }
 
 void Simulation::move(const arr& path, const arr& t){
   self->ref.append(path, t, time, true);
 }
 
-bool getFingersForGripper(rai::Frame*& gripper, rai::Frame*& fing1, rai::Frame*& fing2, rai::Configuration& C, const char* gripperFrameName) {
+bool getFingersForGripper(rai::Frame*& gripper, rai::Joint*& joint, rai::Frame*& fing1, rai::Frame*& fing2, rai::Configuration& C, const char* gripperFrameName) {
   gripper = C.getFrame(gripperFrameName);
+  joint=0;
   if(!gripper) {
     LOG(-1) <<"you passed me a non-existing gripper name!";
     gripper=fing1=fing2=0;
+    joint=0;
     return false;
   }
   gripper = gripper->getUpwardLink();
@@ -266,6 +285,7 @@ bool getFingersForGripper(rai::Frame*& gripper, rai::Frame*& fing1, rai::Frame*&
   for(rai::Frame* f:F){
     if(f->name.endsWith("finger1")) fing1=f;
     if(f->name.endsWith("finger2")) fing2=f;
+    if(f->joint && f->joint->dim==1 && !f->joint->active && !f->joint->mimic) joint = f->joint;
   }
   fing1 = fing1->parent;
   fing2 = fing2->parent;
@@ -284,7 +304,8 @@ bool getFingersForGripper(rai::Frame*& gripper, rai::Frame*& fing1, rai::Frame*&
 
 void Simulation::openGripper(const char* gripperFrameName, double width, double speed) {
   rai::Frame* gripper, *fing1, *fing2;
-  getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
+  rai::Joint* joint;
+  getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
   if(!gripper) return;
 
   //remove gripper from grasps list
@@ -315,12 +336,15 @@ void Simulation::openGripper(const char* gripperFrameName, double width, double 
   if(verbose>1) {
     LOG(1) <<"initiating opening gripper " <<gripper->name;
   }
-  imps.append(make_shared<Imp_OpenGripper>(gripper, fing1, fing2, speed));
+
+  C.ensure_q();
+  imps.append(make_shared<Imp_OpenGripper>(gripper, joint, fing1, fing2, speed));
 }
 
 void Simulation::closeGripper(const char* gripperFrameName, double width, double speed, double force) {
   rai::Frame* gripper, *fing1, *fing2;
-  getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
+  rai::Joint* joint;
+  getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
   if(!gripper) return;
 
   rai::Frame *finger1 = fing1, *finger2=fing2;
@@ -372,19 +396,20 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
     }
   }
 
-  imps.append(make_shared<Imp_CloseGripper>(gripper, fing1, fing2, obj, speed));
+  imps.append(make_shared<Imp_CloseGripper>(gripper, joint, fing1, fing2, obj, speed));
 }
 
 void Simulation::closeGripperGrasp(const char* gripperFrameName, const char* objectName, double width, double speed, double force){
   rai::Frame* gripper, *fing1, *fing2;
-  getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
+  rai::Joint* joint;
+  getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
   if(!gripper) return;
 
   rai::Frame *finger1 = fing1, *finger2=fing2;
   while(!finger1->shape || finger1->shape->type()!=ST_capsule) finger1=finger1->children.last();
   while(!finger2->shape || finger2->shape->type()!=ST_capsule) finger2=finger2->children.last();
 
-  imps.append(make_shared<Imp_CloseGripper>(gripper, fing1, fing2, C.getFrame(objectName), speed));
+  imps.append(make_shared<Imp_CloseGripper>(gripper, joint, fing1, fing2, C.getFrame(objectName), speed));
 }
 
 shared_ptr<SimulationState> Simulation::getState() {
@@ -433,33 +458,48 @@ double Simulation::getTimeToMove(){
 
 double Simulation::getGripperWidth(const char* gripperFrameName) {
   rai::Frame* gripper, *fing1, *fing2;
-  getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
+  rai::Joint* joint;
+  getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
   if(!gripper) return -1.;
+  if(joint) return joint->get_q();
   return fing1->get_Q().pos.sum();
 }
 
 bool Simulation::getGripperIsGrasping(const char* gripperFrameName) {
   rai::Frame* gripper, *fing1, *fing2;
-  getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
+  rai::Joint* joint;
+  getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
   for(Frame* g:grasps) if(g==gripper) return true;
   return false;
 }
 
 bool Simulation::getGripperIsClose(const char* gripperFrameName) {
   rai::Frame* gripper, *fing1, *fing2;
-  getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
+  rai::Joint* joint;
+  getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
   if(!gripper) return -1.;
-  double q = fing1->get_Q().pos.sum();
-  if(q<=fing1->ats->get<arr>("limits")(0)) return true;
+  if(joint){
+    double q = joint->get_q();
+    if(q < joint->limits(0)+.001) return true;
+  }else{
+    double q = fing1->get_Q().pos.sum();
+    if(q<=fing1->ats->get<arr>("limits")(0)) return true;
+  }
   return false;
 }
 
 bool Simulation::getGripperIsOpen(const char* gripperFrameName) {
   rai::Frame *gripper, *fing1, *fing2;
-  getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
+  rai::Joint* joint;
+  getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
   if(!gripper) return false;
-  double q = fing1->get_Q().pos.sum();
-  if(q>=fing1->ats->get<arr>("limits")(1)) return true;
+  if(joint){
+    double q = joint->get_q();
+    if(q > joint->limits(1)-.001) return true;
+  }else{
+    double q = fing1->get_Q().pos.sum();
+    if(q>=fing1->ats->get<arr>("limits")(1)) return true;
+  }
   return false;
 }
 
@@ -611,8 +651,8 @@ byteA Simulation::getScreenshot() {
 
 //===========================================================================
 
-Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, Frame* _obj, double _speed)
-  : gripper(_gripper), fing1(_fing1), fing2(_fing2), obj(_obj), finger1(fing1), finger2(fing2), speed(_speed) {
+Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Joint* _joint,  Frame* _fing1, Frame* _fing2, Frame* _obj, double _speed)
+  : gripper(_gripper), fing1(_fing1), fing2(_fing2), obj(_obj), finger1(fing1), finger2(fing2), joint(_joint), speed(_speed) {
   when = _beforePhysics;
   type = Simulation::_closeGripper;
 
@@ -627,10 +667,15 @@ Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2
   }
 
 //  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
-  limits = fing1->ats->get<arr>("limits");
-  axis = fing1->get_Q().pos;
-  q = axis.sum();
-  if(q) axis /= q; else axis = Vector_x;
+  if(joint){
+    limits = joint->limits;
+    q = joint->get_q();
+  }else{
+    limits = fing1->ats->get<arr>("limits");
+    axis = fing1->get_Q().pos;
+    q = axis.sum();
+    if(q) axis /= q; else axis = Vector_x;
+  }
 }
 
 void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
@@ -644,10 +689,15 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
 
   //-- actually close gripper until both distances are < .001
   q -= 1e-1*speed*tau;
-  fing1->set_Q()->pos =  q*axis;
-  fing2->set_Q()->pos = -q*axis;
+  if(joint){
+    S.C.setDofState({q}, {joint});
+  }else{
+    fing1->set_Q()->pos =  q*axis;
+    fing2->set_Q()->pos = -q*axis;
+  }
+  cout <<"closing: " <<q <<endl;
 
-  if(q<limits(0)) { //stop grasp by joint limits -> unsuccessful
+  if(q < limits(0)) { //stop grasp by joint limits -> unsuccessful
     if(S.verbose>1) {
       LOG(1) <<"terminating closing gripper (limit) - nothing grasped";
     }
@@ -693,16 +743,21 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
 
 //===========================================================================
 
-Imp_OpenGripper::Imp_OpenGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, double _speed)
-  : gripper(_gripper), fing1(_fing1), fing2(_fing2), speed(_speed) {
+Imp_OpenGripper::Imp_OpenGripper(Frame* _gripper, Joint* _joint, Frame* _fing1, Frame* _fing2, double _speed)
+  : gripper(_gripper), fing1(_fing1), fing2(_fing2), joint(_joint), speed(_speed) {
   when = _beforePhysics;
   type = Simulation::_openGripper;
 
 //  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
-  limits = fing1->ats->get<arr>("limits");
-  axis = fing1->get_Q().pos;
-  q = axis.sum();
-  if(q) axis /= q; else axis = Vector_x;
+  if(joint){
+    limits = joint->limits;
+    q = joint->get_q();
+  }else{
+    limits = fing1->ats->get<arr>("limits");
+    axis = fing1->get_Q().pos;
+    q = axis.sum();
+    if(q) axis /= q; else axis = Vector_x;
+  }
 }
 
 void Imp_OpenGripper::modConfiguration(Simulation& S, double tau) {
@@ -714,8 +769,12 @@ void Imp_OpenGripper::modConfiguration(Simulation& S, double tau) {
 
   //-- actually open gripper until limit
   q += 1e-1*speed*tau;
-  fing1->set_Q()->pos =  q*axis;
-  fing2->set_Q()->pos = -q*axis;
+  if(joint){
+    S.C.setDofState({q}, {joint});
+  }else{
+    fing1->set_Q()->pos =  q*axis;
+    fing2->set_Q()->pos = -q*axis;
+  }
 
   if(q > limits(1)) { //stop opening
     if(S.verbose>1) {

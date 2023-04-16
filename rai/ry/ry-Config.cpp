@@ -244,13 +244,18 @@ many mapping refer to one or several frames, which need to be specified using fr
   pybind11::arg("frameNames")=std::vector<std::string>(),
     pybind11::arg("scale")=std::vector<double>(),
     pybind11::arg("target")=std::vector<double>(),
-    pybind11::arg("order")=0
+    pybind11::arg("order")=-1
     )
 
-  .def("evalFeature", [](shared_ptr<rai::Configuration>& self, FeatureSymbol fs, const std::vector<std::string>& frames) {
-    arr y = self->evalFeature(fs, strvec2StringA(frames));
+  .def("eval", [](shared_ptr<rai::Configuration>& self, FeatureSymbol fs, const StringA& frames, const arr& scale, const arr& target, int order) {
+    arr y = self->eval(fs, frames, scale, target, order);
     return pybind11::make_tuple(arr2numpy(y), arr2numpy(y.J()));
-  }, "TODO remove -> use feature directly"
+  }, "evaluate a feature",
+  pybind11::arg("featureSymbol"),
+      pybind11::arg("frames")=StringA{},
+      pybind11::arg("scale")=NoArr,
+      pybind11::arg("target")=NoArr,
+      pybind11::arg("order")=-1
       )
 
   .def("selectJoints", [](shared_ptr<rai::Configuration>& self, const std::vector<std::string>& jointNames, bool notThose) {
@@ -351,11 +356,7 @@ To get really precise distances and penetrations use the FS.distance feature wit
   "create an offscreen renderer for this configuration"
       )
 
-  .def("edit", [](shared_ptr<rai::Configuration>& self, const char* fileName) {
-    rai::Configuration K;
-    editConfiguration(fileName, K);
-    self->copy(K);
-  },
+  .def("watchFile", &rai::Configuration::watchFile,
   "launch a viewer that listents (inode) to changes of a file (made by you in an editor), and \
 reloads, displays and animates the configuration whenever the file is changed"
       )

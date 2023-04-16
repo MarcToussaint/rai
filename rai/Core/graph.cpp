@@ -611,7 +611,12 @@ void Graph::read(std::istream& is, bool parseInfo) {
       uint Nbefore = N;
       read(n->as<FileToken>().getIs(true), parseInfo);
       if(namePrefix.N) { //prepend a naming prefix to all nodes just read
-        for(uint i=Nbefore; i<N; i++) elem(i)->key.prepend(namePrefix);
+        for(uint i=Nbefore; i<N; i++){
+          elem(i)->key.prepend(namePrefix);
+          rai::String *tmp=0;
+          if(elem(i)->is<Graph>()) tmp=elem(i)->graph().find<rai::String>("mimic");
+          if(tmp) tmp->prepend(namePrefix);
+        }
         namePrefix.clear();
       }
       n->as<FileToken>().cd_start();

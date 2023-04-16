@@ -236,14 +236,14 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
     else f->frameIDs = C.getFrameIDs(frames);
   }
 
-  if(!!scale) {
+  if(!!scale && scale.N) {
     if(!f->scale.N) f->scale = scale;
     else if(scale.N==1) f->scale *= scale.scalar();
     else if(scale.N==f->scale.N) f->scale *= scale.scalar();
     else NIY;
   }
 
-  if(!!target) f->target = target;
+  if(!!target && target.N) f->target = target;
 
   if(order>=0) f->order = order;
 

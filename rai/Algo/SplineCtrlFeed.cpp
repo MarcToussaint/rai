@@ -33,7 +33,7 @@ void SplineCtrlReference::append(const arr& x, const arr& t, double ctrlTime, bo
   }
 }
 
-void SplineCtrlReference::overrideSmooth(const arr& x, const arr& t, double ctrlTime){
+void SplineCtrlReference::overwriteSmooth(const arr& x, const arr& t, double ctrlTime){
   CHECK(t.first()>.001, "that's too harsh!");
   waitForInitialized();
   arr x_now, xDot_now;
@@ -45,7 +45,7 @@ void SplineCtrlReference::overrideSmooth(const arr& x, const arr& t, double ctrl
   splineSet->set(2, _x, _t+ctrlTime, xDot_now);
 }
 
-void SplineCtrlReference::overrideHard(const arr& x, const arr& t, double ctrlTime){
+void SplineCtrlReference::overwriteHard(const arr& x, const arr& t, double ctrlTime){
   waitForInitialized();
 
   CHECK_LE(t.first(), .0, "");

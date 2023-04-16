@@ -40,6 +40,7 @@ void init_LogToPythonConsole(){
 void init_enums(pybind11::module& m);
 void init_params(pybind11::module& m);
 
+void init_BotOp(pybind11::module& m);
 
 PYBIND11_MODULE(libry, m) {
   m.doc() = "rai bindings";
@@ -69,6 +70,7 @@ PYBIND11_MODULE(libry, m) {
 
   init_Optim(m);
   init_tests(m);
+  init_BotOp(m);
 }
 
 void init_enums(pybind11::module& m){

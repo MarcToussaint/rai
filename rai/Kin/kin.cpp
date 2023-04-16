@@ -2833,7 +2833,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     j->read(*f->ats);
   }
 
-  //if the joint is coupled to another:
+  // mimic joints: if the joint is coupled to another:
   {
     Joint* j;
     for(Frame* f: frames) if((j=f->joint) && j->mimic==(Joint*)1) {
@@ -2853,6 +2853,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
         if(!j->mimic) HALT("The joint '" <<*j <<"' is declared mimicking '" <<jointName <<"' -- but that doesn't exist!");
         j->type = j->mimic->type;
         j->q0 = j->mimic->q0;
+        j->active = j->mimic->active;
         j->setDofs(j->q0, 0);
 
         delete mim;
@@ -2981,18 +2982,12 @@ void Configuration::setJacModeAs(const arr& J){
 }
 
 /// return a feature for a given frame(s)
-std::shared_ptr<Feature> Configuration::feature(FeatureSymbol fs, const StringA& frames) const {
-  return symbols2feature(fs, frames, *this);
+std::shared_ptr<Feature> Configuration::feature(FeatureSymbol fs, const StringA& frames, const arr& scale, const arr& target, int order) const {
+  return symbols2feature(fs, frames, *this, scale, target, order);
 }
 
-/// evaluate a feature for a given frame(s)
-arr Configuration::evalFeature(FeatureSymbol fs, const StringA& frames) const {
-  std::shared_ptr<Feature> feat = feature(fs, frames);
-  return feat->eval(feat->getFrames(*this));
-}
-
-arr Configuration::eval(FeatureSymbol fs, const StringA& frames){
-  return feature(fs,frames)->eval(getFrames(frames));
+arr Configuration::eval(FeatureSymbol fs, const StringA& frames, const arr& scale, const arr& target, int order){
+  return feature(fs, frames, scale, target, order)->eval(getFrames(frames));
 }
 
 /// Compute the new configuration q such that body is located at ytarget (with deplacement rel).
@@ -3427,17 +3422,15 @@ void _glDrawOdeWorld(dWorldID world)
 }
 */
 
-int animateConfiguration(Configuration& C, Inotify* ino) {
+int Configuration::animate(Inotify* ino) {
   arr x, x0;
-  x0 = C.getJointState();
-  arr lim = C.getLimits();
+  x0 = getJointState();
+  arr lim = getLimits();
   const int steps = 50;
-  C.checkConsistency();
-  StringA jointNames = C.getJointNames();
+  checkConsistency();
+  StringA jointNames = getJointNames();
 
-  //  uint saveCount=0;
-
-  C.viewer()->resetPressedKey();
+  viewer()->resetPressedKey();
   for(uint i=x0.N; i--;) {
     x=x0;
     double upper_lim = lim(i, 1);
@@ -3454,18 +3447,18 @@ int animateConfiguration(Configuration& C, Inotify* ino) {
       x(i) = center + (delta*(0.5*cos(RAI_2PI*t/steps + offset)));
       // Joint limits
       checkNan(x);
-      C.setJointState(x);
-      int key = C.view(false, STRING("DOF = " <<i <<" : " <<jointNames(i) <<lim[i]));
+      setJointState(x);
+      int key = view(false, STRING("DOF = " <<i <<" : " <<jointNames(i) <<lim[i]));
 
       if(key==13 || key==27 || key=='q') {
-        C.setJointState(x0);
+        setJointState(x0);
         return key;
       }
       wait(0.01);
     }
   }
-  C.setJointState(x0);
-  return C.view(true);
+  setJointState(x0);
+  return view(true);
 }
 
 Frame* movingBody=nullptr;
@@ -3626,28 +3619,56 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   }
 };
 
-void editConfiguration(const char* filename, Configuration& C) {
-  C.checkConsistency();
+void Configuration::watchFile(const char* filename) {
+  checkConsistency();
 
   //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
   //  gl.addHoverCall(new EditConfigurationHoverCall(K));
-  C.gl().addKeyCall(new EditConfigurationKeyCall(C,exit));
-  C.gl().addClickCall(new EditConfigurationClickCall(C));
-  //  C.gl()->ensure_gl().reportEvents=true;
+  gl().addKeyCall(new EditConfigurationKeyCall(*this,exit));
+  gl().addClickCall(new EditConfigurationClickCall(*this));
+  //  gl()->ensure_gl().reportEvents=true;
   Inotify ino(filename);
   for(; !exit;) {
-    cout <<"watching..." <<endl;
+    //-- LOADING
+    LOG(0) <<"reloading `" <<filename <<"' ... ";
+    {
+      FileToken file(filename, true);
+      Graph G;
+      try {
+        lineCount=1;
+        G.read(file);
+        G.checkConsistency();
+      } catch(std::runtime_error& err) {
+        LOG(0) <<"g-File Synax Error line " <<lineCount <<": " <<err.what() <<" -- please check the file and re-save";
+      }
+
+      Configuration C_tmp;
+      try {
+        C_tmp.readFromGraph(G);
+        {
+          gl().dataLock(RAI_HERE);
+          copy(C_tmp, false);
+        }
+        report();
+      } catch(std::runtime_error& err) {
+        LOG(0) <<"Configuration initialization failed: " <<err.what() <<" -- please check the file and re-save";
+      }
+      file.cd_start(); //important: also on crash - cd back to original
+    }
+
+    //-- WATCHING
+    LOG(0) <<"watching...";
     int key = -1;
-    C.viewer()->recopyMeshes(C);
-    C.viewer()->resetPressedKey();
-    C.viewer()->drawText = "waiting for file change ('h' for help)";
+    viewer()->recopyMeshes(*this);
+    viewer()->resetPressedKey();
+    viewer()->drawText = "waiting for file change ('h' for help)";
     for(;;) {
-      key = C.view(false);
+      key = view(false);
       //if(key) cout <<"*** KEY:" <<key <<endl;
       if(key==13 || key==27 || key=='q') break;
       if(key=='h'){
-        C.viewer()->drawText = "HELP:\n"
+        viewer()->drawText = "HELP:\n"
                       "RIGHT CLICK - set focus point (move view and set center of rotation)\n"
                       "LEFT CLICK - rotate (ball; or around z at view rim)\n"
                       "q - quit\n"
@@ -3664,41 +3685,19 @@ void editConfiguration(const char* filename, Configuration& C) {
       wait(.2);
     }
     if(exit) break;
+
+    //-- ANIMATING
     if(key==13) {
-      cout <<"animating.." <<endl;
+      LOG(0) <<"animating..";
       //while(ino.pollForModification());
-      key = animateConfiguration(C, &ino);
+      key = animate(&ino);
     }
     //if(key) cout <<"*** KEYout:" <<key <<endl;
     if(key==27 || key=='q') break;
     if(key==-1) continue;
-
     if(!getInteractivity()) {
       exit=true;
     }
-
-    cout <<"reloading `" <<filename <<"' ... " <<endl;
-    Configuration C_tmp;
-    {
-      FileToken file(filename, true);
-      Graph G;
-      try {
-        lineCount=1;
-        G.read(file);
-        G.checkConsistency();
-      } catch(std::runtime_error& err) {
-        cout <<"g-File Synax Error line " <<lineCount <<": " <<err.what() <<" -- please check the file and re-save" <<endl;
-      }
-      try {
-        C_tmp.readFromGraph(G);
-        C = C_tmp;
-        C.report();
-      } catch(std::runtime_error& err) {
-        cout <<"Configuration initialization failed: " <<err.what() <<" -- please check the file and re-save" <<endl;
-      }
-      file.cd_start(); //important: also on crash - cd back to original
-    }
-
   }
 }
 

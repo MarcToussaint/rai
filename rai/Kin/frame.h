@@ -261,8 +261,8 @@ struct Joint : Dof, NonCopyable {
 
   bool isPartBreak();
 
-  //access the K's q vector
-  double& getQ();
+  //access the C's q vector
+  double& get_q();
 
   //structural operations
   void makeRigid();
