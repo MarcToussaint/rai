@@ -2108,7 +2108,7 @@ std::shared_ptr<FclInterface> Configuration::fcl() {
         geometries(f->ID) = f->shape->_mesh;
       }
     }
-    self->fcl = make_shared<FclInterface>(geometries, .0); //-1.=broadphase only -> many proxies, 0.=binary, .1=exact margin (slow)
+    self->fcl = make_shared<FclInterface>(geometries, -1.); //-1.=broadphase only -> many proxies, 0.=binary, .1=exact margin (slow)
   }
   return self->fcl;
 }
@@ -3101,8 +3101,10 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
 
     //proxies
     if(gl.drawOptions.drawProxies) for(const Proxy& p: proxies) {
+      if(p.collision && p.d<=0.){
         ((Proxy*)&p)->glDraw(gl);
       }
+    }
 
     for(Frame* fr: F) for(ForceExchange* f:fr->forces) {
       if(f->sign(fr)>0.) f->glDraw(gl);

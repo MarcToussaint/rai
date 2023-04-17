@@ -718,14 +718,14 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes
       //PxRigidBodyExt::updateMassAndInertia(*actor, f->inertia->mass);
       actor->setMass(f->inertia->mass);
       actor->setMassSpaceInertiaTensor({float(f->inertia->matrix.m00), float(f->inertia->matrix.m11), float(f->inertia->matrix.m22)});
-      cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
+      //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
     } else {
       PxRigidBodyExt::updateMassAndInertia(*actor, 1000.f);
       if(!f->inertia) new rai::Inertia(*f);
       f->inertia->mass = actor->getMass();
       f->inertia->matrix.setDiag(conv_PxVec3_arr( actor->getMassSpaceInertiaTensor() ));
       f->inertia->com = conv_PxVec3_arr( actor->getCMassLocalPose().p );
-      cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
+      //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
     }
   }
 }
@@ -870,11 +870,11 @@ void PhysXInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){
     for(PxRevoluteJoint* j:self->joints) if(j){
       double qi = j->getAngle();
       double v_ref = self->opt.motorKp * (q_ref(qIdx) - qi);
-      cout <<' ' <<v_ref <<' ' <<qi;
+      //cout <<' ' <<v_ref <<' ' <<qi;
       j->setDriveVelocity(v_ref);
       qIdx++;
     }
-    cout <<endl;
+    //cout <<endl;
   }
   if(q_ref.N) CHECK_EQ(qIdx, q_ref.N, ""); //make this only a warning?
 }

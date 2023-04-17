@@ -127,13 +127,13 @@ void FclInterface::step(const arr& X, double _cutoff) {
   self->manager->update();
 
   double defaultCutoff = cutoff;
-  if(_cutoff>=0) cutoff = _cutoff;
+  if(_cutoff!=-2.) cutoff = _cutoff;
 
   collisions.clear();
   self->manager->collide(this, FclInterface_self::BroadphaseCallback);
   collisions.reshape(-1, 2);
 
-  if(_cutoff>=0) cutoff = defaultCutoff;
+  if(_cutoff!=-2.) cutoff = defaultCutoff;
 
   X_lastQuery = X;
 }
@@ -148,6 +148,8 @@ void FclInterface::addCollision(void* userData1, void* userData2) {
 
 bool FclInterface_self::BroadphaseCallback(CollObject* o1, CollObject* o2, void* cdata_) {
   FclInterface* fcl = static_cast<FclInterface*>(cdata_);
+
+  if(fcl->cutoff>=0) LOG(-1) <<"fcl fine collision (ccd) is buggy - might stall - cutoff:" <<fcl->cutoff;
 
   if(fcl->cutoff==0.) { //fine boolean collision query
     CollisionRequest request;

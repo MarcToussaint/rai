@@ -356,7 +356,7 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   CHECK(finger2->shape && finger2->shape->cont, "");
 
   //collect objects close to fing1 and fing2
-  C.stepFcl(.2);
+  C.stepFcl();
   FrameL fing1close;
   FrameL fing2close;
   for(rai::Proxy& p:C.proxies) {
@@ -696,7 +696,6 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
     fing1->set_Q()->pos =  q*axis;
     fing2->set_Q()->pos = -q*axis;
   }
-  cout <<"closing: " <<q <<endl;
 
   if(q < limits(0)) { //stop grasp by joint limits -> unsuccessful
     if(S.verbose>1) {

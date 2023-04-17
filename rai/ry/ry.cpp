@@ -91,4 +91,6 @@ void init_params(pybind11::module& m){
   m.def("params_print", [](){ LOG(0) <<rai::params()(); }, "print the parameters");
 }
 
+//void init_BotOp(pybind11::module& m){}
+
 #endif

@@ -1519,7 +1519,7 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
       //if(!opt.useFCL){
       //  collisionPairs = swift->step(X);
       {
-        fcl->step(X);
+        fcl->step(X, -1.);  //-1.=broadphase only -> many proxies, 0.=binary, .1=exact margin (slow)
         collisionPairs = fcl->collisions;
       }
       collisionPairs += timeSlices.d1 * s; //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice
