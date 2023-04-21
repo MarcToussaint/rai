@@ -20,8 +20,8 @@ extern "C" {
 #endif
 
 #ifdef RAI_CCD
-#  include "ccd/ccd.h"
-#  include "ccd/quat.h"
+#  include "./ccd/ccd.h"
+#  include "./ccd/quat.h"
 #endif
 
 #include "qhull.h"
@@ -414,7 +414,7 @@ void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
 //      simplex2 = ~p2; //m2 is a point/sphere
 
   } else if(method==_ccdGJKIntersect) {
-    int ret = ccdGJKIntersect(&m1, &m2, &ccd, &_v1, &_v2, simplex);
+    int ret = ccdGJKIntersectRai(&m1, &m2, &ccd, &_v1, &_v2, simplex);
     if(ret) {
       distance = -1.;
       return;
@@ -493,7 +493,7 @@ void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
 //    else distance=-1.;
 //    return;
 //  }else if(method==_ccdGJKPenetration){
-////    intersect = !ccdGJKPenetration(&m1, &m2, &ccd, &depth, &_dir, &_pos);
+////    intersect = !ccdGJKPenetrationRai(&m1, &m2, &ccd, &depth, &_dir, &_pos);
 //    NIY
 //  }
 //  HALT("should not be here");

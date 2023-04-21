@@ -91,9 +91,11 @@ _ccd_export void ccdFirstDirDefault(const void *o1, const void *o2,
 /**
  * Returns true if two given objects interest.
  */
-_ccd_export int ccdGJKIntersect(const void *obj1, const void *obj2,
+_ccd_export int ccdGJKIntersectRai(const void *obj1, const void *obj2,
                                 const ccd_t *ccd, ccd_vec3_t *v1, ccd_vec3_t *v2,
                                 ccd_vec3_t simplex[8]);
+_ccd_export int ccdGJKIntersect(const void *obj1, const void *obj2,
+                                const ccd_t *ccd, ccd_vec3_t *v1, ccd_vec3_t *v2);
 
 /**
  * This function computes separation vector of two objects. Separation
