@@ -20,8 +20,8 @@ extern "C" {
 #endif
 
 #ifdef RAI_CCD
-#  include "./ccd/ccd.h"
-#  include "./ccd/quat.h"
+#  include "./ccd_rai/ccd.h"
+#  include "./ccd_rai/quat.h"
 #endif
 
 #include "qhull.h"

@@ -10,6 +10,11 @@
 
 #ifdef RAI_FCL
 
+#ifdef RAI_CCD //to ensure this is loaded locally, not from FCL
+#  include "./ccd_rai/ccd.h"
+#  include "./ccd_rai/quat.h"
+#endif
+
 #include <fcl/config.h>
 #if FCL_MINOR_VERSION >= 6
 #  include <fcl/fcl.h>
