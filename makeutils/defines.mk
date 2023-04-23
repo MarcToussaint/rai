@@ -30,7 +30,7 @@ CXXFLAGS += -fopenmp -DOPENMP
 endif
 
 ifeq ($(PYBIND),1)
-DEPEND_UBUNTU += python3-dev python3 python3-numpy python3-pip python3-distutils
+DEPEND_UBUNTU += python3-dev python3
 #pybind11-dev NO! don't use the ubuntu package. Instead use:
 #  pip3 install --user pybind11
 CXXFLAGS += -DRAI_PYBIND `python3 -m pybind11 --includes`
@@ -55,10 +55,11 @@ endif
 
 ifeq ($(FCL),1)
 ifeq ($(FCL_LOCAL),1)
-LPATHS += $(HOME)/git/fcl/build/lib
-CPATH := $(CPATH):$(HOME)/git/fcl/build/include:$(HOME)/git/fcl/include
-endif
+#LPATHS += $(HOME)/git/fcl/build/lib
+#CPATH := $(CPATH):$(HOME)/git/fcl/build/include:$(HOME)/git/fcl/include
+else
 DEPEND_UBUNTU += libfcl-dev
+endif
 CXXFLAGS  += -DRAI_FCL
 LIBS      += -lfcl
 endif

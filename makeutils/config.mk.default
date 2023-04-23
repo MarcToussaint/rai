@@ -25,9 +25,11 @@
 #NLOPT = 0
 #IPOPT = 0
 
-## we use the following collision/physics libraries by default, but can be disabled
+## we can use the following collision/physics libraries, but can be disabled
 #FCL = 0
-#BULLET = 0
+#PHYSX = 0
+BULLET = 0
+#FCL_LOCAL = 1
 
 ## below are more libs, which we could use, but are disabled by default
 OPENCV = 0
@@ -37,7 +39,6 @@ G4 = 0
 #PNG = 0
 PCL = 0
 ODE = 0
-PHYSX = 0
 ROS = 0
 ROS_VERSION = melodic
 
