@@ -4,11 +4,13 @@ const char *USAGE =
     "\nUsage: lgpTool <lgp-filename>"
     "\n  -viewConfig           inspect the world configuration -- analogous to kinEdit of the .g-file"
     "\n  -buildTree 3          build the logic action tree down to depth 5 and display it (outputs z.pdf)"
+    "\n  -play                 (interactively go through logic action tree - might be instable)"
     "\n  -folPlan 10           search (using Astar) and output the 5 first logic action plans"
     "\n  -compute \"[2 3 0 0]\"  compute along a branch down the Completion Tree [#plan #waypointSeed #rrt #rrt ... #pathSeed]"
     "\n  -solve                solve the lgp using Effort Level Search on the Completion Tree"
     "\n  -decisions            solve the Completion Tree for a specific action sequence fileBase.decisions"
     "\n  -skeleton             solve the Completion Tree for a specific skeleton defined in fileBase.skt (doesn't have to correspond to an action plan)"
+    "\n  -LGP/verbose <0-4>    set verbosity level"
     "\n";
 
 //===========================================================================

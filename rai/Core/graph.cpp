@@ -837,7 +837,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
               arrA reals;
               is >>reals;
               add<arrA>(key,  reals, parents);
-            } else if((type>='a' && type<='z') || (type>='A' && type<='Z')) { //StringA}
+            } else if((type>='a' && type<='z') || (type>='A' && type<='Z') || type=='_' || type=='/') { //StringA}
               is.putback(type);
               is.putback(c);
               StringA strings;

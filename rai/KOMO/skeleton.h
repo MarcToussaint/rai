@@ -56,6 +56,14 @@ struct Skeleton {
   void addEntry(const arr& timeInterval, SkeletonSymbol symbol, StringA frames){
     S.append(SkeletonEntry(timeInterval(0), timeInterval(-1), symbol, frames));
   }
+  void appendSkeleton(const Skeleton& other){
+    double maxPhase = getMaxPhase();
+    for(SkeletonEntry s:other.S){ //copy!
+      if(s.phase0>=0) s.phase0+=maxPhase;
+      if(s.phase1>=0) s.phase1+=maxPhase;
+      S.append(s);
+    }
+  }
 
   //-- add objectives
   void addExplicitCollisions(const StringA& collisions);

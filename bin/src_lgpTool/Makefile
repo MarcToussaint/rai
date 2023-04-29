@@ -2,6 +2,6 @@ BASE = ../..
 
 OPTIM = debug
 
-DEPEND = Core KOMO LGP
+DEPEND = Core Kin KOMO PathAlgos LGP
 
 include $(BASE)/makeutils/generic.mk

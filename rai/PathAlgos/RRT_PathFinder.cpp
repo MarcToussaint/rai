@@ -231,7 +231,7 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
 
 //===========================================================================
 
-RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, const arr& _goals, double _stepsize, uint _verbose, bool _intermediateCheck)
+RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, const arr& _goals, double _stepsize, int _verbose, bool _intermediateCheck)
   : P(_P),
     stepsize(_stepsize),
     verbose(_verbose),
@@ -246,7 +246,6 @@ RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, con
   rrtT = make_shared<RRT_SingleTree>(qT, qTret);
 
   if(verbose>2){
-    DISP.clear();
     DISP.copy(P.C);
     DISP.gl().add(*rrt0);
     DISP.gl().add(*rrtT);
@@ -312,6 +311,12 @@ int RRT_PathFinder::stepConnect(){
 
   //animation display
   if(verbose>2){
+    if(DISP.frames.N!=P.C.frames.N){
+      DISP.copy(P.C);
+      DISP.gl().add(*rrt0);
+      DISP.gl().add(*rrtT);
+    }
+
     if(!(iters%100)){
       DISP.setJointState(rrt0->getLast());
       DISP.view(verbose>4, STRING("planConnect evals " <<P.evals));

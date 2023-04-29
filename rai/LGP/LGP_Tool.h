@@ -34,7 +34,7 @@ struct LGP_Tool {
 
   LGP_Tool(const char* file);
 
-  LGP_Tool(rai::FOL_World& L, rai::Configuration& C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift);
+  LGP_Tool(rai::FOL_World& L, rai::Configuration& C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton);
   ~LGP_Tool();
 
 

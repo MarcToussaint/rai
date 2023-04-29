@@ -5,8 +5,12 @@
 #include <iomanip>
 #include <Kin/F_qFeatures.h>
 
-rai::LGPComp_root::LGPComp_root(rai::FOL_World& _L, rai::Configuration& _C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift)
-  : ComputeNode(0), L(_L), C(_C), genericCollisions(genericCollisions), explicitCollisions(explicitCollisions), explicitLift(explicitLift) {
+rai::LGPComp_root::LGPComp_root(rai::FOL_World& _L, rai::Configuration& _C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton)
+  : ComputeNode(0), L(_L), C(_C),
+    genericCollisions(genericCollisions),
+    explicitCollisions(explicitCollisions),
+    explicitLift(explicitLift),
+    explicitTerminalSkeleton(explicitTerminalSkeleton) {
   name <<"LGPComp_root#0";
 
   L.reset_state();
@@ -69,6 +73,12 @@ void rai::LGPcomp_Skeleton::untimedCompute(){
   //cout <<skeletonString <<endl;
   skeleton.setFromStateSequence(states, times);
   //cout <<skeleton <<endl;
+
+  if(root->explicitTerminalSkeleton){
+    Skeleton app;
+    app.read(root->explicitTerminalSkeleton);
+    skeleton.appendSkeleton(app);
+  }
 
   //-- create NLPs
   skeleton.collisions=root->genericCollisions;
@@ -270,7 +280,7 @@ rai::LGPcomp_RRTpath::LGPcomp_RRTpath(ComputeNode *_par, rai::LGPcomp_Waypoints*
 
   for(rai::Frame *f:C.frames) f->ensure_X();
   rrt = make_shared<RRT_PathFinder>(*cp, q0, qT, .05);
-  if(sket->verbose()>1) rrt->verbose=2;
+  if(sket->verbose()>1) rrt->verbose=sket->verbose()-2;
   rrt->maxIters=sket->root->info->rrtStopEvals;
 }
 
@@ -286,7 +296,7 @@ void rai::LGPcomp_RRTpath::untimedCompute(){
     isComplete=true;
     l=1e10;
     //      if(root->sol->opt.verbose>0) komoPath->view(root->sol->opt.verbose>1, "init path - RRT FAILED");
-    if(sket->verbose()>1) LOG(-1) <<"FAILED";
+    if(sket->verbose()>1) LOG(-1) <<"RRT FAILED";
     path.clear();
   }
   if(isComplete){

@@ -3568,6 +3568,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
     } else if(gl.pressedkey=='i') {
       LOG(0) <<"INFO:";
       C.report(cout);
+      C.gl().camera.report(cout);
     } else if(gl.pressedkey=='c') { //compute collisions
       C.ensure_proxies();
       double p = C.getTotalPenetration();

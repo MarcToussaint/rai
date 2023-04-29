@@ -35,11 +35,12 @@ namespace rai {
     bool genericCollisions=false;
     StringA explicitCollisions;
     StringA explicitLift;
+    String explicitTerminalSkeleton;
     std::shared_ptr<rai::AStar> fol_astar;
     std::shared_ptr<LGP_GlobalInfo> info;
     bool fixedSkeleton=false;
 
-    LGPComp_root(FOL_World& _L, Configuration& _C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift);
+    LGPComp_root(FOL_World& _L, Configuration& _C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton);
 
     virtual void untimedCompute(){}
     virtual int getNumDecisions(){ return -1.; }

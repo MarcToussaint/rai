@@ -40,13 +40,14 @@ namespace rai {
     lgproot = make_shared<LGPComp_root>(L, C,
                                         lgpConfig.get<bool>("genericCollisions"),
                                         lgpConfig.get<StringA>("coll", {}),
-                                        lgpConfig.get<StringA>("lifts", {}));
+                                        lgpConfig.get<StringA>("lifts", {}),
+                                        lgpConfig.get<String>("terminalSkeleton", {}));
 
   }
 
-  LGP_Tool::LGP_Tool(FOL_World& L, Configuration& C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift) {
+  LGP_Tool::LGP_Tool(FOL_World& L, Configuration& C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton) {
 
-    lgproot = make_shared<LGPComp_root>(L, C, genericCollisions, explicitCollisions, explicitLift);
+    lgproot = make_shared<LGPComp_root>(L, C, genericCollisions, explicitCollisions, explicitLift, explicitTerminalSkeleton);
     //info = make_shared<LGP_DomainInfo>();
     //fol.reset_state();
     //root = make_shared<FOL_World_State>(fol, nullptr, false);
@@ -157,8 +158,9 @@ void LGP_Tool::player() {
     {
       //print
       cout <<"********************" <<endl;
-      cout <<*focusNode <<endl;
-      cout <<"--------------------" <<endl;
+      cout <<"nodeID: " <<*focusNode <<"\nstate: ";
+      focusNode->state->write(cout, "");
+      cout <<"\n--------------------" <<endl;
       cout <<"\nCHOICES:" <<endl;
       cout <<"(q) quit" <<endl;
       cout <<"(u) up" <<endl;
