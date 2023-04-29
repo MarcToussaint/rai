@@ -13,7 +13,7 @@
 
 CtrlSolver::CtrlSolver(const rai::Configuration& _C, double _tau, uint k_order)
   : tau(_tau) {
-  komo.setModel(_C, true);
+  komo.setConfig(_C, true);
   komo.setTiming(1., 1, _tau, k_order);
   komo.setupPathConfig();
 }
@@ -36,8 +36,8 @@ void CtrlSolver::delObjectives(const rai::Array<shared_ptr<CtrlObjective>>& O) {
 }
 
 #if 0
-std::shared_ptr<CtrlObjective> CtrlSolver::add_qControlObjective(uint order, double scale, const arr& target) {
-  shared_ptr<Objective> o = komo.add_qControlObjective({}, order, scale, target);
+std::shared_ptr<CtrlObjective> CtrlSolver::addControlObjective(uint order, double scale, const arr& target) {
+  shared_ptr<Objective> o = komo.addControlObjective({}, order, scale, target);
   return addObjective(o->feat, NoStringA, o->type);
 }
 

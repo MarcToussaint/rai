@@ -884,7 +884,7 @@ void KOMO_ext::setSquaredQAccVelHoming(double startTime, double endTime, double 
 void KOMO_ext::setConfigFromFile() {
   Configuration C(getParameter<String>("KOMO/modelfile"));
 //  K.optimizeTree();
-  setModel(
+  setConfig(
     C,
     getParameter<bool>("KOMO/useSwift", true)
   );
@@ -899,7 +899,7 @@ void KOMO_ext::setConfigFromFile() {
 void KOMO_ext::setMoveTo(Configuration& world, Frame& endeff, Frame& target, byte whichAxesToAlign) {
 //  if(MP) delete MP;
 //  MP = new KOMO(world);
-  setModel(world);
+  setConfig(world);
   this->world.checkConsistency();
 
   setTasks(*this, endeff, target, whichAxesToAlign, 1, -1, -1.);

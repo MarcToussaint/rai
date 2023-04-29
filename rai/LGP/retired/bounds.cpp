@@ -94,7 +94,7 @@ PoseBound::PoseBound(shared_ptr<KOMO>& komo,
     finalS.write(cout, finalS.getSwitches(startKinematics));
   }
 
-  komo->setModel(startKinematics, collisions);
+  komo->setConfig(startKinematics, collisions);
   komo->setTiming(optHorizon, 1, 10., 1);
 
   komo->addQuaternionNorms();
@@ -102,8 +102,8 @@ PoseBound::PoseBound(shared_ptr<KOMO>& komo,
   komo->setHoming(0., -1., 1e-2);
   komo->setSquaredQVelocities(1., -1., 1e-1); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
 #else
-  komo->add_qControlObjective({}, 1, 1e-2);
-  komo->add_qControlObjective({}, 0, 1e-2);
+  komo->addControlObjective({}, 1, 1e-2);
+  komo->addControlObjective({}, 0, 1e-2);
 #endif
 
   finalS.addObjectives(*komo);
@@ -144,7 +144,7 @@ SeqBound::SeqBound(shared_ptr<KOMO>& komo,
   double maxPhase = S.getMaxPhase();
   komo->clearObjectives();
 
-  komo->setModel(startKinematics, collisions);
+  komo->setConfig(startKinematics, collisions);
   komo->setTiming(maxPhase+1., 1, 5., 1);
 //  komo->solver=rai::KS_sparse; //sparseOptimization = true;
   komo->animateOptimization = 0;
@@ -154,8 +154,8 @@ SeqBound::SeqBound(shared_ptr<KOMO>& komo,
   komo->setHoming(0., -1., 1e-2);
   komo->setSquaredQVelocities(0., -1., 1e-2);
 #else
-  komo->add_qControlObjective({}, 1, 1e-2);
-  komo->add_qControlObjective({}, 0, 1e-2);
+  komo->addControlObjective({}, 1, 1e-2);
+  komo->addControlObjective({}, 0, 1e-2);
 #endif
   S.addObjectives(*komo);
 
@@ -175,7 +175,7 @@ PathBound::PathBound(shared_ptr<KOMO>& komo,
   double maxPhase = S.getMaxPhase();
   komo->clearObjectives();
 
-  komo->setModel(startKinematics, collisions);
+  komo->setConfig(startKinematics, collisions);
   uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
   uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
   komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
@@ -187,8 +187,8 @@ PathBound::PathBound(shared_ptr<KOMO>& komo,
   if(pathOrder==1) komo->setSquaredQVelocities();
   else komo->setSquaredQAccelerations();
 #else
-  komo->add_qControlObjective({}, 2, 1.);
-  komo->add_qControlObjective({}, 0, 1e-2);
+  komo->addControlObjective({}, 2, 1.);
+  komo->addControlObjective({}, 0, 1e-2);
 #endif
 
   S.addObjectives(*komo);
@@ -208,7 +208,7 @@ SeqPathBound::SeqPathBound(shared_ptr<KOMO>& komo,
   double maxPhase = S.getMaxPhase();
   komo->clearObjectives();
 
-  komo->setModel(startKinematics, collisions);
+  komo->setConfig(startKinematics, collisions);
   uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
   uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
   komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
@@ -220,8 +220,8 @@ SeqPathBound::SeqPathBound(shared_ptr<KOMO>& komo,
   if(pathOrder==1) komo->setSquaredQVelocities();
   else komo->setSquaredQAccelerations();
 #else
-  komo->add_qControlObjective({}, 2, 1.);
-  komo->add_qControlObjective({}, 0, 1e-2);
+  komo->addControlObjective({}, 2, 1.);
+  komo->addControlObjective({}, 0, 1e-2);
 #endif
 
   uint T = floor(maxPhase+.5);
@@ -255,12 +255,12 @@ SeqVelPathBound::SeqVelPathBound(shared_ptr<KOMO>& komo,
   double maxPhase = S.getMaxPhase();
   komo->clearObjectives();
 
-  komo->setModel(startKinematics, collisions);
+  komo->setConfig(startKinematics, collisions);
   uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
   komo->setTiming(maxPhase+.5, stepsPerPhase, 10., 1);
 
-  komo->add_qControlObjective({}, 1, 1.);
-  komo->add_qControlObjective({}, 0, 1e-2);
+  komo->addControlObjective({}, 1, 1.);
+  komo->addControlObjective({}, 0, 1e-2);
   komo->addQuaternionNorms();
 
   CHECK_EQ(waypoints.N-1, floor(maxPhase+.5), "");

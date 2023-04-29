@@ -18,7 +18,7 @@ arr ReceedingHorizonPathSmoother::run(int verbose) {
 
   // set up KOMO problem for part of the path
   KOMO komo;
-  komo.setModel(P.C, true);
+  komo.setConfig(P.C, true);
   komo.setTiming(1., horizon, horizonDuration, 2);
   komo.opt.verbose = verbose;
 
@@ -32,7 +32,7 @@ arr ReceedingHorizonPathSmoother::run(int verbose) {
     if(verbose>1) LOG(0) << "Smoother Iteration " << i;
 
     komo.add_collision(true);
-    komo.add_qControlObjective({}, 2, 1.);
+    komo.addControlObjective({}, 2, 1.);
     //-- set prefix configurations
     if(i<=1) {
       komo.setConfiguration_qOrg(-2, smoothed[0]);

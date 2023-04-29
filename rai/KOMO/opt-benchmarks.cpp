@@ -6,9 +6,9 @@ OptBench_InvKin_Endeff::OptBench_InvKin_Endeff(const char* modelFile, bool uncon
   rai::Configuration C(modelFile);
   komo = make_unique<KOMO>();
   komo->solver = rai::KS_dense;
-  komo->setModel(C, false);
+  komo->setConfig(C, false);
   komo->setTiming(1., 1, 1., 1);
-  komo->add_qControlObjective({}, 1, 1.);
+  komo->addControlObjective({}, 1, 1.);
   //    komo->addQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   ObjectiveType ot = OT_eq;
@@ -31,15 +31,15 @@ void OptBench_Skeleton::create(const char* modelFile, const rai::Skeleton& S, ra
   }else{
     komo->solver = rai::KS_sparse;
   }
-  komo->setModel(C, false);
+  komo->setConfig(C, false);
 
   double maxPhase = S.getMaxPhase();
   if(sequenceOrPath==rai::_sequence){
     komo->setTiming(maxPhase, 1, 2., 1);
-    komo->add_qControlObjective({}, 1, 1e-1);
+    komo->addControlObjective({}, 1, 1e-1);
   }else{
     komo->setTiming(maxPhase, 30, 5., 2);
-    komo->add_qControlObjective({}, 2, 1e0);
+    komo->addControlObjective({}, 2, 1e0);
   }
   komo->addQuaternionNorms();
 

@@ -16,13 +16,13 @@ void tutorialBasics(){
    * 3) the objectives */
 
   //-- setting the model; false -> NOT calling collision detection (FCL) for every 'setJointState' -> faster
-  komo.setModel(C, false);
+  komo.setConfig(C, false);
 
   //-- the timing parameters: 2 phases, 20 time slices, 5 seconds, k=2 (acceleration mode)
   komo.setTiming(1, 20, 5., 2);
 
   //-- default tasks for transition costs
-  komo.add_qControlObjective({}, 2, 1.);
+  komo.addControlObjective({}, 2, 1.);
 //  komo.addQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple objectives - the 'addObjective' is the most important method to define path problems
@@ -79,13 +79,13 @@ void tutorialInverseKinematics(){
   KOMO komo;
   komo.solver = rai::KS_dense; //not necessary, but makes Jacobians simpler
 
-  komo.setModel(G, false);
+  komo.setConfig(G, false);
 
   //-- the timing parameters: 1 phase, 1 time slice, duration 1, order 1
   komo.setTiming(1., 1, 1., 1);
 
   //-- default tasks for transition costs
-  komo.add_qControlObjective({}, 1, 1.);
+  komo.addControlObjective({}, 1, 1.);
   komo.addQuaternionNorms({}, 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple tasks, called low-level

@@ -21,7 +21,7 @@ void init_CtrlSet(pybind11::module& m) {
            pybind11::arg("type"),
            pybind11::arg("transientStep")=-1.
            )
-      .def("add_qControlObjective", &CtrlSet::add_qControlObjective)
+      .def("addControlObjective", &CtrlSet::addControlObjective)
 
   .def("canBeInitiated", [](std::shared_ptr<CtrlSet>& self, std::shared_ptr<CtrlSolver>& solver) {
       return self->canBeInitiated(solver->komo.pathConfig);

@@ -61,7 +61,7 @@ namespace rai {
     lgproot->C.checkConsistency();
     lgproot->C.ensure_proxies(true);
     lgproot->C.reportProxies(cout, .1, true);
-    editConfiguration(fileBase + ".g", lgproot->C);
+    lgproot->C.watchFile(fileBase + ".g");
   }
 
 

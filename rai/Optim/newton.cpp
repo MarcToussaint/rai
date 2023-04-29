@@ -10,6 +10,8 @@
 
 #include <iomanip>
 
+//#define NewtonLazyLineSearchMode
+
 template<> const char* rai::Enum<OptNewton::StopCriterion>::names []= {
  "None", "DeltaConverge", "TinyFSteps", "TinyXSteps", "CritEvals", "StepFailed", "LineSearchSteps", 0 };
 
@@ -41,7 +43,11 @@ void OptNewton::reinit(const arr& _x) {
 //  boundClip(x, bounds_lo, bounds_up);
   boundCheck(x, bounds_lo, bounds_up);
   timeEval -= rai::cpuTime();
+#ifdef NewtonLazyLineSearchMode
+  fx = f(NoArr, NoArr, x);  evals++;
+#else
   fx = f(gx, Hx, x);  evals++;
+#endif
   timeEval += rai::cpuTime();
 
   //startup verbose
@@ -66,6 +72,12 @@ OptNewton::StopCriterion OptNewton::step() {
 
   double fy;
   arr y, gy, Hy, Delta;
+
+#ifdef NewtonLazyLineSearchMode
+  timeEval -= rai::cpuTime();
+  fx = f(gx, Hx, x);  //evals++;
+  timeEval += rai::cpuTime();
+#endif
 
   its++;
   if(options.verbose>1) cout <<"--newton-- it:" <<std::setw(4) <<its <<std::flush;
@@ -189,7 +201,11 @@ OptNewton::StopCriterion OptNewton::step() {
     if(options.verbose>5) cout <<"  y:" <<y;
     boundClip(y, bounds_lo, bounds_up);
     timeEval -= rai::cpuTime();
+#ifdef NewtonLazyLineSearchMode
+    fy = f(NoArr, NoArr, y);  evals++;
+#else
     fy = f(gy, Hy, y);  evals++;
+#endif
     timeEval += rai::cpuTime();
     if(options.verbose>1) cout <<"  evals:" <<std::setw(4) <<evals <<"  f(y):" <<std::setw(11) <<fy <<std::flush;
     if(simpleLog) {
@@ -210,8 +226,11 @@ OptNewton::StopCriterion OptNewton::step() {
       if(absMax(y-x)<1e-1*options.stopTolerance) numTinyXSteps++; else numTinyXSteps=0;
       x = y;
       fx = fy;
+#ifdef NewtonLazyLineSearchMode
+#else
       gx = gy;
       Hx = Hy;
+#endif
       alpha *= options.stepInc;
       break; //end line search
     } else {

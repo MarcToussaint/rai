@@ -118,7 +118,7 @@ void MNode::solvePoseProblem() {
 #else
   poseProblem = new KOMO();
   KOMO& komo(*poseProblem);
-  komo.setModel(effKinematics);
+  komo.setConfig(effKinematics);
   komo.setTiming(1, 1, 5., 1);
 
   komo.setSquaredQVelocities();
@@ -220,7 +220,7 @@ void MNode::solveSeqProblem(int verbose) {
 #else
   seqProblem = new KOMO();
   KOMO& komo(*seqProblem);
-  komo.setModel(startKinematics);
+  komo.setConfig(startKinematics);
   komo.setTiming(time, 2, 5., 1, false);
 
   komo.setHoming(-1., -1., 1e-1); //gradient bug??
@@ -293,7 +293,7 @@ void MNode::solvePathProblem(uint microSteps, int verbose) {
 #else
   pathProblem = new KOMO();
   KOMO& komo(*pathProblem);
-  komo.setModel(startKinematics);
+  komo.setConfig(startKinematics);
   komo.setTiming(time, microSteps, 5., 2);
 
   komo.setSquaredQAccelerations();
@@ -338,7 +338,7 @@ case 1: {
     effKinematics = parent->effKinematics;
   }
 
-  komo.setModel(effKinematics, false);
+  komo.setConfig(effKinematics, false);
   komo.setTiming(1., 2, 5., 1);
 
   if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
@@ -367,9 +367,9 @@ case 1: {
 //    else effKinematics = parent->effKinematics;
 
 //    if(!parent || !parent->parent){
-//      komo.setModel(startKinematics, false);
+//      komo.setConfig(startKinematics, false);
 //    }else{
-//      komo.setModel(parent->parent->effKinematics, false);
+//      komo.setConfig(parent->parent->effKinematics, false);
 //    }
 //    komo.setTiming(2.+.5, 2, 5., 1);
 
@@ -390,7 +390,7 @@ case 1: {
 //    komo.setPairedTimes();
 //  } break;
 case 2: {
-  komo.setModel(startKinematics, false);
+  komo.setConfig(startKinematics, false);
   if(time>1e-2) komo.setTiming(time, 2, 5., 1);
   else  komo.setTiming(1., 2, 5., 1);
 
@@ -417,7 +417,7 @@ case 2: {
 //      cout <<komo.getPath_times() <<endl;
 } break;
 case 3: {
-  komo.setModel(startKinematics, collisions);
+  komo.setConfig(startKinematics, collisions);
   uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
   uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
   komo.setTiming(time+.5, stepsPerPhase, 5., pathOrder);
@@ -462,7 +462,7 @@ case 3: {
 //      effKinematics = parent->effKinematics;
 //  }
 
-//  komo.setModel(effKinematics);
+//  komo.setConfig(effKinematics);
 //  komo.setAbstractTask(0., *folState);
 
 //  effKinematics = *komo.configurations.last();
@@ -494,7 +494,7 @@ void MNode::solvePoseProblem() {
 
   poseProblem = new KOMO();
   KOMO& komo(*poseProblem);
-  komo.setModel(effKinematics);
+  komo.setConfig(effKinematics);
   komo.setTiming(1., 2, 5., 1, false);
 
   if(LGP_useHoming) komo.setHoming(-1., -1., 1e-1); //gradient bug??
@@ -567,7 +567,7 @@ void MNode::solveSeqProblem(int verbose) {
 
   seqProblem = new KOMO();
   KOMO& komo(*seqProblem);
-  komo.setModel(startKinematics);
+  komo.setConfig(startKinematics);
   komo.setTiming(time, 2, 5., 1, false);
 
   if(LGP_useHoming) komo.setHoming(-1., -1., 1e-1); //gradient bug??
@@ -629,7 +629,7 @@ void MNode::solvePathProblem(uint microSteps, int verbose) {
 
   pathProblem = new KOMO();
   KOMO& komo(*pathProblem);
-  komo.setModel(startKinematics);
+  komo.setConfig(startKinematics);
   komo.setTiming(time, microSteps, 5., 2, false);
 
   if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2); //gradient bug??

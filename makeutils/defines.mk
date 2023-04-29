@@ -65,7 +65,7 @@ LIBS      += -lfcl
 endif
 
 ifeq ($(CCD),1)
-DEPEND += extern_ccd
+DEPEND += extern_ccd_rai
 CXXFLAGS += -DRAI_CCD
 endif
 

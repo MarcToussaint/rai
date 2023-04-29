@@ -88,7 +88,7 @@ void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, 
 
 void chooseBoxGrasp(rai::Configuration& K, const char* endeff, const char* object) {
   KOMO komo;
-  komo.setModel(K, true);
+  komo.setConfig(K, true);
   komo.setIKOpt();
 
   //  komo.addObjective(0., 0., FS_accumulatedCollisions, {}, OT_eq, 1e0);
@@ -125,7 +125,7 @@ void chooseBoxGrasp(rai::Configuration& K, const char* endeff, const char* objec
 
 void findOpposingGrasp(rai::Configuration& K, const char* fingerL, const char* fingerR, const char* object) {
   KOMO komo;
-  komo.setModel(K, true);
+  komo.setConfig(K, true);
   komo.setIKOpt();
 
   komo.addObjective({1., 1.}, make_shared<F_GraspOppose>(), {fingerL, fingerR, object}, OT_eq, {1e2});

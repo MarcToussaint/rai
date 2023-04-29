@@ -20,7 +20,7 @@ void plan(){
   K.reset_q();
 
   KOMO_ext komo;
-  komo.setModel(K, false);
+  komo.setConfig(K, false);
   komo.setPathOpt(3., 20, 1.);
   komo.setSquaredQAccelerations();
   

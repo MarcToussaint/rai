@@ -101,7 +101,7 @@ KOMO::~KOMO() {
   switches.clear();
 }
 
-void KOMO::setModel(const Configuration& C, bool _computeCollisions) {
+void KOMO::setConfig(const Configuration& C, bool _computeCollisions) {
   orgJointIndices = C.getDofIDs();
   if(&C!=&world) world.copy(C, _computeCollisions);
   computeCollisions = _computeCollisions;
@@ -122,7 +122,7 @@ void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhas
 void KOMO::clone(const KOMO& komo, bool deepCopyFeatures){
   clearObjectives();
   opt = komo.opt;
-  setModel(komo.world, komo.computeCollisions);
+  setConfig(komo.world, komo.computeCollisions);
   //setTiming:
   stepsPerPhase = komo.stepsPerPhase;
   T = komo.T;
@@ -579,7 +579,7 @@ void KOMO::addContact_elasticBounce(double time, const char* from, const char* t
   addObjective({time}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-4});
 }
 
-shared_ptr<Objective> KOMO::add_qControlObjective(const arr& times, uint order, double scale, const arr& target, int deltaFromStep, int deltaToStep) {
+shared_ptr<Objective> KOMO::addControlObjective(const arr& times, uint order, double scale, const arr& target, int deltaFromStep, int deltaToStep) {
   auto F = getCtrlFramesAndScale(world);
   //F.scale *= sqrt(tau); NO!! The Feature::finiteDifference does this automatically, depending on the timeIntegral flag!
 
@@ -643,7 +643,7 @@ void KOMO::setLiftDownUp(double time, const char* endeff, double timeToLift) {
 void KOMO::setIKOpt() {
   solver = rai::KS_dense;
   setTiming(1., 1, 1., 1);
-  add_qControlObjective({}, 1, 1e-1);
+  addControlObjective({}, 1, 1e-1);
   addQuaternionNorms();
 }
 

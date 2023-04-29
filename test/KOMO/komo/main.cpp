@@ -13,9 +13,9 @@ void TEST(Easy){
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
   
   KOMO komo;
-  komo.setModel(C);
+  komo.setConfig(C);
   komo.setTiming(1., 100, 5., 2);
-  komo.add_qControlObjective({}, 2, 1.);
+  komo.addControlObjective({}, 2, 1.);
   komo.addQuaternionNorms({}, 1., false);
 
   //-- set a time optim objective
@@ -48,10 +48,10 @@ void TEST(Align){
   KOMO komo;
 //  komo.solver = rai::KS_sparseStructured; //set via rai.cfg!!
 //  komo.verbose=1; //set via rai.cfg!!
-  komo.setModel(C);
+  komo.setConfig(C);
   komo.setTiming(1., 100, 5., 2);
 
-  komo.add_qControlObjective({}, 2, 1.);
+  komo.addControlObjective({}, 2, 1.);
 
   komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e1});
   komo.addObjective({1.}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
@@ -149,9 +149,9 @@ void TEST(Thin){
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
 
   KOMO komo;
-  komo.setModel(C);
+  komo.setConfig(C);
   komo.setTiming(1., 60, 5., 2);
-  komo.add_qControlObjective({}, 2, 1.);
+  komo.addControlObjective({}, 2, 1.);
 
   //-- set a time optim objective
 //  komo.addObjective({}, make_shared<TM_Time>(), OT_sos, {1e2}, {}, 1); //smooth time evolution
@@ -194,9 +194,9 @@ void TEST(PR2){
 //  komo.logFile = new ofstream("z.dat");
 //  komo.denseOptimization=true;
 //  komo.sparseOptimization=true;
-  komo.setModel(C);
+  komo.setConfig(C);
   komo.setTiming(1., 30, 10., 2);
-  komo.add_qControlObjective({}, 2, 1.);
+  komo.addControlObjective({}, 2, 1.);
   komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e1});
   komo.addObjective({.98,1.}, FS_qItself, {}, OT_sos, {1e1}, {}, 1);
   komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e1});
@@ -219,9 +219,9 @@ void TEST(Threading) {
   KOMO komo;
   komo.opt.verbose = 0;
   //komo.opt.animateOptimization=1;
-  komo.setModel(C, false);
+  komo.setConfig(C, false);
   komo.setTiming(1, 10, 2, 2);
-  komo.add_qControlObjective({}, 2);
+  komo.addControlObjective({}, 2);
   komo.addObjective({1, 1}, FS_positionDiff, {"r_gripper", "block1"}, OT_eq, {1e2});
   arr x0 = komo.pathConfig.getJointState();
 

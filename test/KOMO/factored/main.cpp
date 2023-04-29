@@ -22,9 +22,9 @@ void testFactored(){
 
   KOMO komo;
 
-  komo.setModel(C, false);
+  komo.setConfig(C, false);
   komo.setTiming(2.5, 3, 5., 2);
-  komo.add_qControlObjective({}, 2);
+  komo.addControlObjective({}, 2);
   komo.addQuaternionNorms();
 
   //consistency constraint
@@ -101,7 +101,7 @@ void testFactored(){
   nlp->report(cout, 5);
   komo.view(true);
 
-  checkJacobianCP(*nlp, komo.x, 1e-6);
+  nlp->checkJacobian(komo.x, 1e-6);
 
   NLP_Solver()
       .setProblem(nlp)

@@ -100,7 +100,7 @@ struct KOMO_ext : KOMO {
 
   //-- (not much in use..) specs gives as logic expressions in a Graph (or config file)
   KOMO_ext() : KOMO() {}
-  KOMO_ext(const rai::Configuration& K) : KOMO_ext() { setModel(K); } //for compatibility only
+  KOMO_ext(const rai::Configuration& K) : KOMO_ext() { setConfig(K); } //for compatibility only
 
 };
 

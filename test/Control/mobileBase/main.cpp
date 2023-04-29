@@ -53,8 +53,8 @@ void controlMobile(){
   double tau = .02;
 
   CtrlSet CS;
-  auto c_acc = CS.add_qControlObjective(2, 1e-4*sqrt(tau), C);
-  auto c_vel = CS.add_qControlObjective(1, 1e-1*sqrt(tau), C);
+  auto c_acc = CS.addControlObjective(2, 1e-4*sqrt(tau), C);
+  auto c_vel = CS.addControlObjective(1, 1e-1*sqrt(tau), C);
 
   auto co = CS.addObjective(make_feature(FS_qItself, {"mobileBase"}, C, {1e1}, {}, 1), OT_sos);
 

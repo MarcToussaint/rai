@@ -15,9 +15,9 @@ void TEST(Grasp){
 
   KOMO komo;
 
-  komo.setModel(C);
+  komo.setConfig(C);
   komo.setTiming(2.5, 10., 5.);
-  komo.add_qControlObjective({}, 2, 1.);
+  komo.addControlObjective({}, 2, 1.);
   komo.addQuaternionNorms();
 
   komo.addObjective({1.}, FS_distance, {"endeff", "stickTip"}, OT_eq, {1e2});
@@ -53,15 +53,17 @@ void testPickAndPlace(bool keyframesOnly){
 
   KOMO komo;
 
-  komo.setModel(C, false);
+  komo.setConfig(C, false);
   if(!keyframesOnly){
     komo.setTiming(2.5, 30, 5., 2);
-    komo.add_qControlObjective({}, 2);
+    komo.addControlObjective({}, 2);
   }else{
     komo.setTiming(3., 1, 5., 1);
-    komo.add_qControlObjective({}, 1, 1e-1);
+    komo.addControlObjective({}, 1, 1e-1);
   }
   komo.addQuaternionNorms();
+
+  komo.pathConfig.report();
 
   //grasp
   komo.addModeSwitch({1., 2.}, rai::SY_stable, {"gripper", "box"}, true);
@@ -101,13 +103,13 @@ void testPickAndPlace2(bool keyframesOnly){
 
   KOMO komo;
 
-  komo.setModel(C, false);
+  komo.setConfig(C, false);
   if(!keyframesOnly){
     komo.setTiming(2.5, 30, 5., 2);
-    komo.add_qControlObjective({}, 2);
+    komo.addControlObjective({}, 2);
   }else{
     komo.setTiming(3., 1, 5., 1);
-    komo.add_qControlObjective({}, 1, 1e-1);
+    komo.addControlObjective({}, 1, 1e-1);
   }
   komo.addQuaternionNorms();
 

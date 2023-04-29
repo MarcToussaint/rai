@@ -78,7 +78,7 @@ struct KOMO : NonCopyable {
   ~KOMO();
 
   //-- setup the problem
-  void setModel(const rai::Configuration& C, bool _computeCollisions=true);
+  void setConfig(const rai::Configuration& C, bool _computeCollisions=true);
   void setTiming(double _phases=1., uint _stepsPerPhase=30, double durationPerPhase=5., uint _k_order=2);
 
   void clone(const KOMO& komo, bool deepCopyFeatures=true);
@@ -119,7 +119,7 @@ struct KOMO : NonCopyable {
   // mid-level ways to define objectives: typically adding one specific objective
   //
 
-  shared_ptr<struct Objective> add_qControlObjective(const arr& times, uint order, double scale=1., const arr& target=NoArr, int deltaFromStep=0, int deltaToStep=0);
+  shared_ptr<struct Objective> addControlObjective(const arr& times, uint order, double scale=1., const arr& target=NoArr, int deltaFromStep=0, int deltaToStep=0);
   void addQuaternionNorms(const arr& times=NoArr, double scale=3e0, bool hard=true);
 
   void add_collision(bool hardConstraint=true, double margin=.0, double prec=1e1);

@@ -10,11 +10,11 @@
 
 void KOMO_Control::setup(const rai::Configuration& C, double tau, double accCosts, double velCosts, bool avoidCollisions) {
 
-  setModel(C, true);
+  setConfig(C, true);
   setTiming(1., 1, tau, 2);
 
-  if(accCosts>0.) add_qControlObjective({}, 2, accCosts);
-  if(velCosts>0.) add_qControlObjective({}, 1, velCosts);
+  if(accCosts>0.) addControlObjective({}, 2, accCosts);
+  if(velCosts>0.) addControlObjective({}, 1, velCosts);
   if(avoidCollisions) add_collision(true, 0., 1e0);
 
   q = C.getJointState();

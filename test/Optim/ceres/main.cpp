@@ -151,9 +151,9 @@ void tutorialBasics(){
 
   KOMO komo;
   komo.solver = rai::KS_sparse; //sparseOptimization=true;
-  komo.setModel(C, false);
+  komo.setConfig(C, false);
   komo.setTiming(1, 1, 5., 1);
-  komo.add_qControlObjective({}, 1, 1e0);
+  komo.addControlObjective({}, 1, 1e0);
 //  komo.addQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   komo.addObjective({1.,-1.}, FS_positionDiff, {"endeff", "target"}, OT_sos, {1e1});
@@ -169,7 +169,7 @@ void tutorialBasics(){
   auto P1 = komo.nlp();
   auto P = make_shared<Conv_NLP_TrivialFactoreded>(P1);
 
-  checkJacobianCP(*P, komo.x, 1e-4);
+  P->checkJacobian(komo.x, 1e-4);
 
   Conv_NLP_CeresProblem cer(P);
   cer.x_full = P->getInitializationSample();
@@ -249,7 +249,7 @@ void TEST(Ceres){
   arr x, phi;
   x = P.getInitializationSample();
 
-  checkJacobianCP(P, x, 1e-4);
+  P.checkJacobian(x, 1e-4);
 
   OptConstrained opt(x, NoArr, P.ptr());
   {

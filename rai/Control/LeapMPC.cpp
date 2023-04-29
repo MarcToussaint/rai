@@ -1,12 +1,12 @@
 #include "LeapMPC.h"
 
 LeapMPC::LeapMPC(rai::Configuration& C, double timingScale){
-  komo.setModel(C, false);
+  komo.setConfig(C, false);
 #if 0
   komo.setTiming(2., 1, .1, 2);
 
   //control costs at short horizon
-  komo.add_qControlObjective({1}, 2, 1e0);
+  komo.addControlObjective({1}, 2, 1e0);
 
   //leap costs for the leap
   komo.addObjective({2}, make_shared<CubicSplineLeapCost>(C.getCtrlFramesAndScale()), {}, OT_sos, {1.}, NoArr, 2);
@@ -26,7 +26,7 @@ LeapMPC::LeapMPC(rai::Configuration& C, double timingScale){
   komo.setTiming(1., 3, 1., 1);
 
   //control costs at short horizon
-  komo.add_qControlObjective({}, 1, 1e-1);
+  komo.addControlObjective({}, 1, 1e-1);
   komo.reportProblem();
 #endif
 

@@ -22,7 +22,7 @@ shared_ptr<CtrlObjective> CtrlSet::addObjective(const shared_ptr<Feature>& f, Ob
   return t;
 }
 
-shared_ptr<CtrlObjective> CtrlSet::add_qControlObjective(uint order, double _scale, const rai::Configuration& C) {
+shared_ptr<CtrlObjective> CtrlSet::addControlObjective(uint order, double _scale, const rai::Configuration& C) {
   return addObjective(symbols2feature(FS_qControl, {}, C, {_scale}, NoArr, order), OT_sos);
 }
 

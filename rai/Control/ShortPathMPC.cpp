@@ -7,15 +7,15 @@ ShortPathMPC::ShortPathMPC(rai::Configuration& C, uint steps, double _defaultTau
 {
   qHome = C.getJointState();
 
-  komo.setModel(C, false);
+  komo.setConfig(C, false);
   komo.setTiming(1., steps, defaultTau*steps, 2);
   sliceOfConstraint=komo.T-1;
 
   //control costs at short horizon
-  //komo.add_qControlObjective({}, 1, 1e-1);
+  //komo.addControlObjective({}, 1, 1e-1);
 //  komo.add_jointLimits();
-  komo.add_qControlObjective({}, 2, .1);
-//  komo.add_qControlObjective({}, 0, 1e0);
+  komo.addControlObjective({}, 2, .1);
+//  komo.addControlObjective({}, 0, 1e0);
   //komo.add_collision();
 //  komo.reportProblem();
 }

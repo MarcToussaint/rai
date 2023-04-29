@@ -14,10 +14,10 @@ void TEST(KomoSequence){
   makeConvexHulls(K.frames);
 
   KOMO_ext komo;
-  komo.setModel(K);
+  komo.setConfig(K);
   komo.setTiming(2., 20, 10.);
 
-  komo.add_qControlObjective({}, 2);// setSquaredQAccVelHoming();
+  komo.addControlObjective({}, 2);// setSquaredQAccVelHoming();
   komo.addQuaternionNorms();
 
   komo.setGrasp(1., 1.8, "humanR", "Long1");

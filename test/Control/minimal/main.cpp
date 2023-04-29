@@ -16,8 +16,8 @@ void testMinimal(){
 
   CtrlSet CS;
   //control costs
-  CS.add_qControlObjective(2, 1e-2*sqrt(tau), C);
-  CS.add_qControlObjective(1, 1e-1*sqrt(tau), C);
+  CS.addControlObjective(2, 1e-2*sqrt(tau), C);
+  CS.addControlObjective(1, 1e-1*sqrt(tau), C);
 
   //position carrot (is transient!)
   auto pos = CS.addObjective(make_feature(FS_poseDiff, {"gripper", "target"}, C, {1e0}), OT_sos, .1);
@@ -71,8 +71,8 @@ void testGrasp(){
   grasp.symbolicCommands.append({"closeGripper", "r_gripper"});
 
   CtrlSet controls;
-  controls.add_qControlObjective(2, 1e-3*sqrt(tau), C);
-  controls.add_qControlObjective(1, 1e-1*sqrt(tau), C);
+  controls.addControlObjective(2, 1e-3*sqrt(tau), C);
+  controls.addControlObjective(1, 1e-1*sqrt(tau), C);
 //  auto coll = ctrl.addObjective(FS_accumulatedCollisions, {}, OT_eq, {1e2});
 
   CtrlSolver ctrl(C, tau, 2);
@@ -122,8 +122,8 @@ void testIneqCarrot(){
   reach.addObjective(make_feature(FS_positionDiff, {"object", "r_gripperCenter"}, C, {1e1}, {.0, 0., -.05}), OT_eq, .01);
 
   CtrlSet controls;
-//  controls.add_qControlObjective(2, 1e-2*sqrt(tau), C);
-  controls.add_qControlObjective(1, 1e-1*sqrt(tau), C);
+//  controls.addControlObjective(2, 1e-2*sqrt(tau), C);
+  controls.addControlObjective(1, 1e-1*sqrt(tau), C);
 
   CtrlSolver ctrl(C, tau, 2);
 
