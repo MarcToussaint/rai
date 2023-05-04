@@ -22,7 +22,10 @@ namespace rai {
     RAI_PARAM("LGP/", double, waypoint_wP, 2.)
     RAI_PARAM("LGP/", int, waypointStopEvals, 1000)
     RAI_PARAM("LGP/", int, rrtStopEvals, 10000)
+    RAI_PARAM("LGP/", double, rrtStepsize, .05)
+    RAI_PARAM("LGP/", double, rrtTolerance, .03)
     RAI_PARAM("LGP/", double, pathCtrlCosts, 1.)
+    RAI_PARAM("LGP/", int, pathStepsPerPhase, 30)
     RAI_PARAM("LGP/", double, collScale, 1e1)
     RAI_PARAM("LGP/", bool, useSequentialWaypointSolver, false)
   };

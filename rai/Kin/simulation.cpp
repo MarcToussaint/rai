@@ -506,7 +506,7 @@ bool Simulation::getGripperIsOpen(const char* gripperFrameName) {
 
 CameraView& Simulation::cameraview() {
   if(!self->cameraview) {
-    self->cameraview = make_shared<CameraView>(C, true, false);
+    self->cameraview = make_shared<CameraView>(C, true, 0);
   }
   return *self->cameraview;
 }

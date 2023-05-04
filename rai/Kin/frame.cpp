@@ -1683,8 +1683,9 @@ void rai::Shape::createMeshes() {
       }
       double r = size(2);
       CHECK(size.N==3 && r>1e-10, "");
-      for(uint i=0; i<2; i++) if(size(i)<2.*r) size(i) = 2.*r;
-      sscCore().setCylinder(size(1)-2.*r, size(0)-2.*r);
+      if(size(0)<2.*r) size(0) = 2.*r;
+      if(size(1)<r) size(1) = r;
+      sscCore().setCylinder(size(1)-r, size(0)-2.*r);
       mesh().setSSCvx(sscCore().V, r);
     } break;
     case rai::ST_ssBoxElip: {

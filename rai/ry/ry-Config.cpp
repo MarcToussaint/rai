@@ -494,7 +494,12 @@ allows you to control robot motors by position, velocity, or accelerations, \
   ENUMVAL(rai::ST, pointCloud)
   ENUMVAL(rai::ST, ssCvx)
   ENUMVAL(rai::ST, ssBox)
-  .export_values();
+  ENUMVAL(rai::ST, ssCylinder)
+  ENUMVAL(rai::ST, ssBoxElip)
+  ENUMVAL(rai::ST, quad)
+  ENUMVAL(rai::ST, camera)
+  ENUMVAL(rai::ST, sdf)
+    .export_values();
 
   pybind11::enum_<FeatureSymbol>(m, "FS")
   ENUMVAL(FS, position)

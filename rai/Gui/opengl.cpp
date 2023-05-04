@@ -472,7 +472,7 @@ void OpenGL::openWindow() {
 
     fg->addGL(this);
   }else{
-    if(!glfwGetWindowAttrib(self->window, GLFW_VISIBLE)){
+    if(!offscreen && !glfwGetWindowAttrib(self->window, GLFW_VISIBLE)){
       glfwShowWindow(self->window);
     }
   }

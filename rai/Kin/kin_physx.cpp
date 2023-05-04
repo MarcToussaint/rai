@@ -879,7 +879,7 @@ void PhysXInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){
   if(q_ref.N) CHECK_EQ(qIdx, q_ref.N, ""); //make this only a warning?
 }
 
-void PhysXInterface::setMotorQ(const rai::Configuration& C){
+void PhysXInterface::setMotorQ(const rai::Configuration& C, bool setHardInstantly){
   if(self->opt.multiBody){
     for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)){
       PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
@@ -889,6 +889,11 @@ void PhysXInterface::setMotorQ(const rai::Configuration& C){
 
       auto axis = self->jointAxis(f->ID);
       CHECK_LE(axis, self->jointAxis(0)-1, "");
+      if(setHardInstantly){
+        LOG(0) <<"setting joint pos hard: " <<f->name <<' ' <<f->joint->get_q();
+        joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
+        joint->setDriveVelocity(axis, 0.);
+      }
       joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
     }
   }else if(self->opt.jointedBodies){
@@ -909,6 +914,7 @@ void PhysXInterface::pushKinematicStates(const rai::Configuration& C) {
 }
 
 void PhysXInterface::pushFullState(const rai::Configuration& C, const arr& frameVelocities, bool onlyKinematic) {
+  // frame states (including of dynamic, e.g. falling, objects)
   for(rai::Frame* f : C.frames) {
     if(self->actors.N <= f->ID) continue;
     PxRigidActor* a = self->actors(f->ID);
@@ -936,6 +942,9 @@ void PhysXInterface::pushFullState(const rai::Configuration& C, const arr& frame
       }
     }
   }
+
+  //-- joint states for multibody (similar to setMotorQ)
+  setMotorQ(C, true);
 }
 
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) {

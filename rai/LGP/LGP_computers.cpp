@@ -53,7 +53,7 @@ rai::LGPcomp_Skeleton::LGPcomp_Skeleton(rai::LGPComp_root* _root, const rai::Ske
 }
 
 void rai::LGPcomp_Skeleton::createNLPs(const Configuration& C){
-  skeleton.getKomo_path(C, 30, root->info->pathCtrlCosts, -1e-2, -1e-2, root->info->collScale);
+  skeleton.getKomo_path(C, root->info->pathStepsPerPhase, root->info->pathCtrlCosts, -1e-2, -1e-2, root->info->collScale);
   skeleton.getKomo_waypoints(C, 1e-2, -1e-2, root->info->collScale);
   //skeleton.getKOMO_finalSlice(C, 1e-2, -1e-2);
   //skeleton.komoWaypoints->addObjective({}, make_shared<F_q0Bias>(), {"ALL"}, OT_sos, {1e0});

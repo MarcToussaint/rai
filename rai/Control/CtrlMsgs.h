@@ -9,6 +9,7 @@
 #pragma once
 
 #include "../Core/array.h"
+#include "../Geo/geo.h"
 #include "../Algo/SplineCtrlFeed.h"
 
 namespace rai {
@@ -52,6 +53,14 @@ struct GripperAbstraction {
   virtual void closeGrasp(const char* objName, double force=.0, double width=.2, double speed=.2){ close(force, width, speed); }
   virtual double pos() = 0;
   virtual bool isDone() = 0;
+};
+
+struct CameraAbstraction {
+  rai::String name;
+  virtual void getImageAndDepth(byteA& image, floatA& depth) = 0;
+  virtual arr getFxypxy(){ return arr{}; } //intrinsics
+  virtual rai::Transformation getPose(){ return 0; } //extrinsics
+  void getPointCloud(byteA& image, arr& pts, bool globalCoordinates);
 };
 
 } //namespace

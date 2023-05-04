@@ -29,9 +29,8 @@ void init_Frame(pybind11::module& m) {
     .def("setColor", &rai::Frame::setColor )
 
     .def("setPose",  [](shared_ptr<rai::Frame>& self, const char* pose){
-       self->setRelativePose(rai::Transformation(pose));
+       self->setPose(rai::Transformation(pose));
      })
-
     .def("setPosition", &rai::Frame::setPosition )
     .def("setQuaternion", &rai::Frame::setQuaternion )
     .def("setRelativePose", [](shared_ptr<rai::Frame>& self, const char* pose){
@@ -56,6 +55,15 @@ void init_Frame(pybind11::module& m) {
 
     
     .def("addAttribute", &rai::Frame::addAttribute )
+    .def("addAttributes",  [](shared_ptr<rai::Frame>& self, const pybind11::dict& D){
+      if(!self->ats) self->ats = make_shared<rai::Graph>();
+      self->ats->copy(dict2graph(D), true);
+     }, "add/set attributes for the frame")
+
+    .def("getAttributes", [](shared_ptr<rai::Frame>& self){
+      if(!self->ats) self->ats = make_shared<rai::Graph>();
+      return graph2dict(*self->ats);
+     }, "get frame attributes")
 
     .def_readwrite("name", &rai::Frame::name )
 
