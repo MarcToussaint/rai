@@ -15,6 +15,7 @@
 #include "../Kin/kin.h"
 #include "../Kin/frame.h"
 #include "../Kin/viewer.h"
+#include "../Gui/opengl.h"
 
 //void checkView(shared_ptr<rai::Frame>& self, bool recopyMeshes=false){
 //  if(self->C.hasView()){
@@ -42,11 +43,16 @@ void init_Frame(pybind11::module& m) {
     .def("setJointState", &rai::Frame::setJointState )
     .def("setContact", &rai::Frame::setContact )
     .def("setMass", &rai::Frame::setMass )
-    .def("setPointCloud", [](shared_ptr<rai::Frame>& self, const pybind11::array& points, const pybind11::array_t<byte>& colors) {
+    .def("setPointCloud", [](std::shared_ptr<rai::Frame>& self, const pybind11::array& points, const pybind11::array_t<byte>& colors) {
 	arr _points = numpy2arr<double>(points);
 	byteA _colors = numpy2arr<byte>(colors);
-	self->setPointCloud(_points, _colors);
-      })
+	if(self->C.viewer()->gl){
+	  auto mux = self->C.gl().dataLock(RAI_HERE);
+	  self->setPointCloud(_points, _colors);
+	}else{
+	  self->setPointCloud(_points, _colors);
+	}
+     }, "", pybind11::arg("points"), pybind11::arg("colors") = pybind11::array_t<byte>{} )
 
     .def("setShape", &rai::Frame::setShape, "", pybind11::arg("type"), pybind11::arg("size") )
 

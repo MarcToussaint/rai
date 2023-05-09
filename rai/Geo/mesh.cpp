@@ -1622,7 +1622,7 @@ void Mesh::glDraw(struct OpenGL& gl) {
         col[0] = col[1] = col[2] = C.elem(0);
         col[3] = (C.N==2?C.elem(1):1.);
       }
-      if(lightingEnabled) glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
+      if(lightingEnabled && T.N) glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
       else glColor4fv(col);
     }
   }

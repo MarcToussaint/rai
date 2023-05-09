@@ -1853,7 +1853,7 @@ void OpenGL::Draw(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
   if(text.N) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    if(clearColor(0)+clearColor(1)+clearColor(2)>1.) glColor(0.0, 0.0, 0.0, 1.0); else glColor(1.0, 1.0, 1.0, 1.0);
+    if(clearColor(0)+clearColor(1)+clearColor(2)>1.) glColor3d(0., 0., 0.); else glColor3d(1., 1., 1.);
     glMatrixMode(GL_MODELVIEW);
     glOrtho(0., (double)w, (double)h, .0, -1., 1.);
     glDrawText(text, 10, 20, 0);
@@ -1885,7 +1885,7 @@ void OpenGL::Draw(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
     if(vi->text.N) {
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
-      if(clearColor(0)+clearColor(1)+clearColor(2)>1.) glColor(0.0, 0.0, 0.0, 1.0); else glColor(1.0, 1.0, 1.0, 1.0);
+      if(clearColor(0)+clearColor(1)+clearColor(2)>1.) glColor3d(0., 0., 0.); else glColor3d(1., 1., 1.);
       glMatrixMode(GL_MODELVIEW);
       glLoadIdentity();
       glOrtho(0., (vi->ri-vi->le)*w, (vi->to-vi->bo)*h, .0, -1., 1.);

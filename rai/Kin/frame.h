@@ -155,8 +155,8 @@ struct Frame : NonCopyable {
   Frame& setRelativePose(const rai::Transformation& _Q);
   Frame& setRelativePosition(const arr& pos);
   Frame& setRelativeQuaternion(const arr& quat);
-  Frame& setPointCloud(const arr& points, const byteA& colors= {});
-  Frame& setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
+  Frame& setPointCloud(const arr& points, const byteA& colors={});
+  Frame& setConvexMesh(const arr& points, const byteA& colors={}, double radius=0.);
   Frame& setMesh(const rai::Mesh& m);
   Frame& setSdf(const SDF_GridData& sdf);
   Frame& setColor(const arr& color);

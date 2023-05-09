@@ -26,14 +26,14 @@ void init_CfgFileParameters(){
 namespace pybind11{
   bool logCallback(const char* str, int log_level){
     std::string _str(str);
-    pybind11::print("[rai]", str, "flush"_a=true);
+    //pybind11::print("[rai]", str, "flush"_a=true);
     //pybind11::print("flush"_a=true);
     return false;
   }
 }
 
 void init_LogToPythonConsole(){
-  rai::_log.callback = pybind11::logCallback;
+  //rai::_log.callback = pybind11::logCallback;
   //LOG(0) <<"initializing ry log callback";
 }
 

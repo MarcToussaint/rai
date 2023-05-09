@@ -470,9 +470,11 @@ rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors) {
     cerr <<"given point cloud has zero size" <<endl;
     return *this;
   }
-  getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
+  rai::Mesh& mesh = getShape().mesh();
+  mesh.V.clear().operator=(points).reshape(-1, 3);
   if(colors.N) {
-    getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
+    mesh.C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
+    if(mesh.C.N <= 4){ mesh.C.reshape(-1); }
   }
   return *this;
 }
