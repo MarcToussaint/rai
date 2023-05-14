@@ -274,12 +274,12 @@ rai::LGPcomp_RRTpath::LGPcomp_RRTpath(ComputeNode *_par, rai::LGPcomp_Waypoints*
   if(sket->verbose()>1) LOG(0) <<"rrt for phase:" <<t;
   rai::Skeleton::getTwoWaypointProblem(t, C, q0, qT, *ways->komoWaypoints);
   //cout <<C.getJointNames() <<endl;
-  cp = make_shared<ConfigurationProblem>(C, true, .03);
+  cp = make_shared<ConfigurationProblem>(C, true, sket->root->info->rrtTolerance);
   if(sket->skeleton.explicitCollisions.N) cp->setExplicitCollisionPairs(sket->skeleton.explicitCollisions);
   cp->computeAllCollisions = sket->skeleton.collisions;
 
   for(rai::Frame *f:C.frames) f->ensure_X();
-  rrt = make_shared<RRT_PathFinder>(*cp, q0, qT, .05);
+  rrt = make_shared<RRT_PathFinder>(*cp, q0, qT, sket->root->info->rrtStepsize);
   if(sket->verbose()>1) rrt->verbose=sket->verbose()-2;
   rrt->maxIters=sket->root->info->rrtStopEvals;
 }
@@ -290,7 +290,7 @@ void rai::LGPcomp_RRTpath::untimedCompute(){
   if(r==1){
     isComplete=true;
     l=0.;
-    path = path_resampleLinear(rrt->path, 30);
+    path = path_resampleLinear(rrt->path, sket->root->info->pathStepsPerPhase);
   }
   if(r==-1){
     isComplete=true;

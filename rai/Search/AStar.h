@@ -16,7 +16,7 @@
 namespace rai {
 
 struct AStar {
-  enum SearchMode { astar=0, treePolicy=1 };
+  enum SearchMode { astar=0, treePolicy=1, FIFO=2 };
 
   typedef std::shared_ptr<TreeSearchNode> NodeP;
   rai::Array<NodeP> mem;
@@ -30,11 +30,14 @@ struct AStar {
 
   AStar(const std::shared_ptr<TreeSearchNode>& _root, SearchMode _mode = astar);
 
-  bool step();
+  void step();
   void run(int stepsLimit=-1);
   void report();
 
   TreeSearchNode* selectByTreePolicy();
+
+private:
+  void addToQueue(TreeSearchNode *node);
 };
 
 } //namespace

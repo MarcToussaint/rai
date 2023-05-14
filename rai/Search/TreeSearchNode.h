@@ -38,7 +38,7 @@ struct TreeSearchNode{
   virtual std::shared_ptr<TreeSearchNode> transition(int action) = 0;
   virtual std::shared_ptr<TreeSearchNode> transitionRandomly();
 
-  virtual double treePolicyScore(){ HALT("needs overload"); } //e.g. return UCB score of child
+  virtual double treePolicyScore(int i){ HALT("needs overload"); } //e.g. return UCB score of child
 
   //I/O
   virtual void write(std::ostream& os) const { os <<name; }

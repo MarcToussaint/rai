@@ -38,6 +38,11 @@ template<class T> struct PriorityQueue : rai::Array<PriorityQueueEntry<T>> {
     rai::Array<PriorityQueueEntry<T>>::insertInSorted(e, PriorityQueueEntry<T>::cmp, FIFOifEqual);
   }
 
+  void append(const T& x){
+    PriorityQueueEntry<T> e = {0., x};
+    rai::Array<PriorityQueueEntry<T>>::append(e);
+  }
+
   T pop() {
     T x=rai::Array<PriorityQueueEntry<T>>::first().x;
     rai::Array<PriorityQueueEntry<T>>::remove(0);
