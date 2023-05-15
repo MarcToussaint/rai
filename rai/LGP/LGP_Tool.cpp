@@ -27,7 +27,7 @@ namespace rai {
     C.addFile(confFile);
 
     params()->copy(lgpConfig, true);
-    cout <<"=== ALL PARAMS ===\n" <<params() <<endl;
+    //cout <<"=== ALL PARAMS ===\n" <<params() <<endl;
 
     //setup FolWorld
     FileToken folFile = lgpConfig.get<FileToken>("fol");

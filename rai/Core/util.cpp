@@ -129,10 +129,10 @@ Singleton<rai::ProcessInfo> processInfo;
 
 /// running a system command and checking return value
 void system(const char* cmd) {
-  cout <<"SYSTEM CMD: " <<cmd <<endl;
+  //cout <<"SYSTEM CMD: " <<cmd <<endl;
   int r = ::system(cmd);
   rai::wait(.1);
-  if(r) LOG(-1) <<"system return error " <<r;
+  if(r) LOG(-1) <<"system return error " <<r <<" for command '" <<cmd <<"'";
 }
 
 /// open an output-file with name '\c name'
@@ -910,9 +910,13 @@ bool rai::String::operator!=(const char* s) const { return !operator==(s); }
 bool rai::String::operator!=(const String& s) const { return !(operator==(s)); }
 bool rai::String::operator<=(const String& s) const { return p && s.p && strcmp(p, s.p)<=0; }
 
-int rai::String::find(char c) const {
-  if(!p) return false;
-  for(uint i=0;i<N;i++) if(p[i]==c) return i;
+int rai::String::find(char c, bool reverse) const {
+  if(!p) return -1;
+  if(reverse){
+    for(uint i=N;i--;) if(p[i]==c) return i;
+  }else{
+    for(uint i=0;i<N;i++) if(p[i]==c) return i;
+  }
   return -1;
 }
 

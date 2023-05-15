@@ -7,9 +7,11 @@
 namespace rai {
 
   struct NodeGlobal{
-    RAI_PARAM("CT/", int, verbose, 1)
-    RAI_PARAM("LGP/", double, level_cP, 1.)
+    RAI_PARAM("LGP/", int, verbose, 1)
     RAI_PARAM("LGP/", double, level_c0, 1.)
+    RAI_PARAM("LGP/", double, level_cP, 1.)
+    RAI_PARAM("LGP/", double, level_w0, 10.)
+    RAI_PARAM("LGP/", double, level_wP, 2.)
     RAI_PARAM("LGP/", double, level_eps, 0.)
   };
 
@@ -18,7 +20,7 @@ namespace rai {
   struct ComputeNode : TreeSearchNode {
     double c=0.;     //cost invested into completion of THIS node
     double l=-1.;    //lower bound (also feasibility) computed at completion -> f_prio
-    double c_now=0.;
+    double c_now=0., c_tot=0.;
     double baseLevel=0.;
 
     ComputeNode(ComputeNode* parent) : TreeSearchNode(parent) {}
@@ -50,6 +52,14 @@ namespace rai {
 
     virtual void store(const char* path) const {}
     virtual void data(Graph& g) const;
+
+    void backup_c(double c){
+      ComputeNode *n = this;
+      while(n){
+        n->c_tot += c;
+        n = dynamic_cast<ComputeNode*>(n->parent);
+      }
+    }
   };
   stdOutPipe(ComputeNode)
 

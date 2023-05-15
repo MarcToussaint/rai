@@ -16,6 +16,7 @@ void rai::ComputeNode::compute(){
   untimedCompute();
   c_now += rai::cpuTime();
   c += c_now;
+  backup_c(c_now);
   if(l>1e9) isFeasible=false;
   f_prio = baseLevel + computePenalty();
   if(info().verbose>0){

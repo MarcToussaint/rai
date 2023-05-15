@@ -121,7 +121,7 @@ void rai::PoseBoundsComputer::untimedCompute(){
   S.addExplicitCollisions(sket->root->explicitCollisions);
   std::shared_ptr<KOMO> komo = S.getKOMO_finalSlice(sket->root->C, 1e-2, -1e-2);
 
-  rnd.seed(seed);
+//  rnd.seed(seed);
   komo->initRandom(0);
 //  komo->opt.animateOptimization = 2;
 
@@ -153,7 +153,7 @@ rai::FactorBoundsComputer::FactorBoundsComputer(rai::LGPcomp_Skeleton* _sket, in
   name <<"FactorBoundsComputer#"<<seed;
 
   komoWaypoints.clone(*sket->skeleton.komoWaypoints);
-  rnd.seed(rndSeed);
+//  rnd.seed(rndSeed);
   komoWaypoints.initRandom(0);
 
   nlp = komoWaypoints.nlp_FactoredTime();
@@ -206,7 +206,7 @@ rai::LGPcomp_Waypoints::LGPcomp_Waypoints(rai::LGPcomp_Skeleton* _sket, int rndS
 
   komoWaypoints->clone(*sket->skeleton.komoWaypoints);
 
-  rnd.seed(rndSeed);
+//  rnd.seed(rndSeed);
   komoWaypoints->initRandom(0);
   if(sket->verbose()>2) komoWaypoints->view(sket->verbose()>2, STRING(name <<" - init"));
 
@@ -246,7 +246,7 @@ void rai::LGPcomp_Waypoints::untimedCompute(){
   //    }
   if(sket->verbose()>2) while(komoWaypoints->view_play(true));
 
-  if(sket->verbose()>1 && !ret->feasible)
+  //if(sket->verbose()>1 && !ret->feasible) {}
 
   l = sol.ret->eq + sol.ret->ineq;
   isComplete = ret->done;
@@ -254,7 +254,9 @@ void rai::LGPcomp_Waypoints::untimedCompute(){
     if(ret->ineq>.5 || ret->eq>2.){
       isFeasible = false;
       komoWaypoints->view_close();
-      sol.optCon->L.reportGradients(cout, komoWaypoints->featureNames);
+      if(sket->verbose()>1) {
+        sol.optCon->L.reportGradients(cout, komoWaypoints->featureNames);
+      }
     }else isFeasible = true;
   }
 }
@@ -359,7 +361,7 @@ rai::LGPcomp_Path::LGPcomp_Path(rai::LGPcomp_RRTpath* _par, rai::LGPcomp_Waypoin
 }
 
 void rai::LGPcomp_Path::untimedCompute(){
-  for(uint i=0;i<10;i++) if(sol.step()) break;
+  for(uint i=0;i<1;i++) if(sol.step()) break;
 
   l = sol.ret->eq + sol.ret->ineq;
   isComplete = sol.ret->done;
@@ -376,25 +378,29 @@ void rai::LGPcomp_Path::untimedCompute(){
       //l = 1e10;
       isFeasible = false;
       komoPath->view_close();
-      sol.optCon->L.reportGradients(cout, komoPath->featureNames);
+      if(sket->verbose()>1){
+        sol.optCon->L.reportGradients(cout, komoPath->featureNames);
+      }
     }else{
       isFeasible = true;
-      auto path = STRING("z.sol_"<<ID<<"/");
-      komoPath->pathConfig.gl().drawOptions.drawVisualsOnly=true;
-      komoPath->view_play(false, .1, path);
-      ofstream fil (path + "info.txt");
-      fil <<*sol.ret <<"\n\nSkeleton:{" <<sket->planString <<"\n}" <<endl;
-      fil <<komoPath->getReport(false) <<endl;
-      sol.optCon->L.reportGradients(fil, komoPath->featureNames);
-      ofstream cfil (path + "last.g");
-      komoPath->world.setFrameState(komoPath->getConfiguration_X(komoPath->T-1));
-      cfil <<komoPath->world;
-      {
-//        uint id = komoPath->world["obj"]->ID;
-//        FrameL F = komoPath->timeSlices.col(id);
-//        arr X = komoPath->pathConfig.getFrameState(F);
-//        FILE("obj.path") <<X;
-//        rai::wait();
+      if(sket->verbose()>0){ //save video and path and everything
+        auto path = STRING("z.sol_"<<ID<<"/");
+        komoPath->pathConfig.gl().drawOptions.drawVisualsOnly=true;
+        komoPath->view_play(false, .1, path);
+        ofstream fil (path + "info.txt");
+        fil <<*sol.ret <<"\n\nSkeleton:{" <<sket->planString <<"\n}" <<endl;
+        fil <<komoPath->getReport(false) <<endl;
+        sol.optCon->L.reportGradients(fil, komoPath->featureNames);
+        ofstream cfil (path + "last.g");
+        komoPath->world.setFrameState(komoPath->getConfiguration_X(komoPath->T-1));
+        cfil <<komoPath->world;
+        {
+          //        uint id = komoPath->world["obj"]->ID;
+          //        FrameL F = komoPath->timeSlices.col(id);
+          //        arr X = komoPath->pathConfig.getFrameState(F);
+          //        FILE("obj.path") <<X;
+          //        rai::wait();
+        }
       }
     }
     if(sket->verbose()<2) komoPath->view_close();
