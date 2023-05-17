@@ -1093,7 +1093,7 @@ void PhysXInterface::pushKinematicStates(const rai::Configuration& C) { NICO }
 void PhysXInterface::pushFullState(const rai::Configuration& C, const arr& vels, bool onlyKinematic) { NICO }
 void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& vels) { NICO }
 void PhysXInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){ NICO }
-void PhysXInterface::setMotorQ(const rai::Configuration& C){ NICO }
+void PhysXInterface::setMotorQ(const rai::Configuration& C, bool setHardInstantly){ NICO }
 void PhysXInterface::postAddObject(rai::Frame* f) { NICO }
 
 void PhysXInterface::changeObjectType(rai::Frame* f, int _type) { NICO }
