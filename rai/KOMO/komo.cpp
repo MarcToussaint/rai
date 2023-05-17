@@ -1475,7 +1475,7 @@ void KOMO::setupPathConfig() {
 //  }
 //  pathConfig.selectJoints(activeJoints);
 
-  pathConfig.ensure_q();
+  x = pathConfig.getJointState();
   pathConfig.checkConsistency();
 }
 
