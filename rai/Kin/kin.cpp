@@ -971,10 +971,13 @@ Graph Configuration::reportForces() {
 }
 
 /// checks if all names of the bodies are disjoint
-bool Configuration::checkUniqueNames() const {
-  for(Frame* a:  frames) for(Frame* b: frames) {
+bool Configuration::checkUniqueNames(bool makeUnique) {
+  for(Frame* a: frames) for(Frame* b: frames) {
       if(a==b) break;
-      if(a->name==b->name) return false;
+      if(a->name==b->name){
+        if(!makeUnique) return false;
+        else a->name <<'_' <<a->ID;
+      }
     }
   return true;
 }
@@ -3568,6 +3571,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
     } else if(gl.pressedkey=='i') {
       LOG(0) <<"INFO:";
       C.report(cout);
+      cout <<"joints: " <<C.getJointNames() <<endl;
       C.gl().camera.report(cout);
     } else if(gl.pressedkey=='c') { //compute collisions
       C.ensure_proxies();

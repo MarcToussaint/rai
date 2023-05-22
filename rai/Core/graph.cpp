@@ -631,8 +631,8 @@ void Graph::read(std::istream& is, bool parseInfo) {
     } else if(n->key=="ChDir") {
       n->as<FileToken>().cd_file();
     } else if(tags.N && tags(0)=="Delete") {
-//      n->key.remove(0);
       NodeL dels = getNodes(n->key);
+      if(!dels.N || (dels.N==1 && dels.elem(0)==n)) LOG(-1) <<"nothing to delete with key '" <<n->key <<"'";
       for(Node* d: dels) { delete d; d=nullptr; }
     } else if(tags.N && tags(0)=="DeleteBranch") {
       //      n->key.remove(0);

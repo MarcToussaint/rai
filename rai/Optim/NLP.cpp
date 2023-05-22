@@ -109,7 +109,7 @@ double NLP::eval_scalar(arr& g, arr& H, const arr& x) {
   return f;
 }
 
-bool NLP::checkJacobian(const arr& _x, double tolerance) {
+bool NLP::checkJacobian(const arr& _x, double tolerance, const StringA& featureNames) {
   VectorFunction F = [this](const arr& x) {
     arr phi, J;
     this->evaluate(phi, J, x);
@@ -118,7 +118,7 @@ bool NLP::checkJacobian(const arr& _x, double tolerance) {
   };
   arr x(_x);
   if(x.N!=dimension) x = getInitializationSample();
-  return ::checkJacobian(F, x, tolerance);
+  return ::checkJacobian(F, x, tolerance, false, featureNames);
 }
 
 bool NLP::checkHessian(const arr& x, double tolerance) {

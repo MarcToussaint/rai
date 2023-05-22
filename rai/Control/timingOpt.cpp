@@ -78,8 +78,8 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents,
     }
     if(ctrlCost>0.){
       featureTypes({m,m+2*d-1}) = OT_sos; //control costs
-      for(uint i=0;i<d;i++){ featureNames.append(STRING("leapCost_" <<i)); }
-      for(uint i=0;i<d;i++){ featureNames.append(STRING("leapCost_" <<i)); }
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("ctrlCost" <<i)); }
+      for(uint i=0;i<d;i++){ featureNames.append(STRING("ctrlCost" <<i)); }
       m += 2*d;
     }
     if(maxVel.N){
@@ -276,7 +276,7 @@ void TimingProblem::report(std::ostream& fil, int verbose, const char* msg){
   arr times = integral(tau);  times.prepend(0.);
 
   if(verbose>0){
-    LOG(0) <<"TAUS: " <<tau <<"\nTIMES: " <<times <<"\nTOTAL: " <<times.last() <<endl;
+    LOG(0) <<"\nTAUS: " <<tau <<"\nTIMES: " <<times <<"\nTOTAL: " <<times.last() <<endl;
     {
       //write
       if(verbose>1){

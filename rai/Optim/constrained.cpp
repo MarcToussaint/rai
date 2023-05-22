@@ -203,7 +203,7 @@ bool OptConstrained::ministep(){
   //upate Lagrange parameters
   double L_x_before = newton.fx;
   L.autoUpdate(opt, &newton.fx, newton.gx, newton.Hx);
-  clip(L.lambda, -10., 10.);
+//  clip(L.lambda, -100., 100.);
   if(!!dual) dual=L.lambda;
   if(logFile) {
     (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.mu <<", L_x_beforeUpdate: " <<L_x_before <<", L_x_afterUpdate: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;

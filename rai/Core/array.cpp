@@ -1059,24 +1059,46 @@ bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool 
 }
 
 bool checkJacobian(const VectorFunction& f,
-                   const arr& x, double tolerance, bool verbose) {
+                   const arr& x, double tolerance, bool verbose, const StringA& featureNames) {
   arr J;
   arr JJ = finiteDifferenceJacobian(f, x, J);
-  uint i;
-  double md=maxDiff(J, JJ, &i);
-  if(md>tolerance && md>fabs(J.elem(i))*tolerance) {
-    RAI_MSG("checkJacobian -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
+#if 1
+  uint k;
+  double md=maxDiff(J, JJ, &k);
+  if(md>tolerance && md>fabs(J.elem(k))*tolerance) {
+    uint i=k/J.d1, j=j%J.d1;
+    LOG(-1) <<"FAILURE in row " <<i <<' ' <<(featureNames.N?featureNames(i):"") <<" -- max diff=" <<md <<" |"<<J.elem(k)<<'-'<<JJ.elem(k)<<"| (stored in files z.J_*)";
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
     if(verbose) {
       cout <<"J_analytical = " <<J
-           <<"\nJ_empirical  = " <<JJ <<endl;
+          <<"\nJ_empirical  = " <<JJ <<endl;
     }
     return false;
   } else {
     cout <<"checkJacobian -- SUCCESS (max diff error=" <<md <<")" <<endl;
   }
   return true;
+#else
+  }else{
+    bool succ=true;
+    for(uint i=0; i<J.d0; i++) {
+      uint j;
+      double md=maxDiff(J[i], JJ[i], &j);
+      if(md>tolerance && md>fabs(J(i, j))*tolerance) {
+        if(featureNames.N) {
+          LOG(-1) <<"FAILURE in line " <<i <<featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
+        }
+        succ=false;
+      }
+    }
+    if(!succ){
+      J >>FILE("z.J_analytical");
+      JJ >>FILE("z.J_empirical");
+    }
+    return succ;
+  }
+#endif
 }
 
 void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {

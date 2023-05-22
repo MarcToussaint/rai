@@ -160,7 +160,7 @@ struct Configuration : GLDrawer {
   double getEnergy(const arr& qdot);
   double getTotalPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
   Graph reportForces();
-  bool checkUniqueNames() const;
+  bool checkUniqueNames(bool makeUnique=false);
   FrameL calc_topSort() const;
   bool check_topSort() const;
 

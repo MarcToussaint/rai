@@ -61,6 +61,7 @@ int main(int argc,char **argv){
   C.ensure_q();
   C.checkConsistency();
   C.sortFrames();
+  C.checkUniqueNames(true);
 
   //-- make convex
   if(rai::checkParameter<bool>("makeConvexHulls")){

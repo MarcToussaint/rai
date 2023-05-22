@@ -74,7 +74,7 @@ public:
   //-- utilities
   shared_ptr<NLP> ptr(){ return shared_ptr<NLP>(this, [](NLP*){}); }
   double eval_scalar(arr& g, arr& H, const arr& x);
-  bool checkJacobian(const arr& x, double tolerance);
+  bool checkJacobian(const arr& x, double tolerance, const StringA& featureNames={});
   bool checkHessian(const arr& x, double tolerance);
   bool checkInBound(const arr& x);
   void boundClip(arr& x);
