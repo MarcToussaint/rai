@@ -266,7 +266,11 @@ void PhysXInterface_self::addLink(rai::Frame* f) {
 
   addShapesAndInertia(actor, shapes, type, f);
 
-  actor->setAngularDamping(opt.angularDamping);
+  double angularDamping = opt.angularDamping;
+  if(f->ats && f->ats->find<double>("angularDamping")){
+    angularDamping = f->ats->get<double>("angularDamping");
+  }
+  actor->setAngularDamping(angularDamping);
 
   gScene->addActor(*actor);
 
@@ -551,7 +555,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
           posDrive.stiffness = opt.motorKp;                      // the spring constant driving the joint to a target position
           posDrive.damping = opt.motorKd;                        // the damping coefficient driving the joint to a target velocity
         }else{ //hack for grippers
-          posDrive.stiffness = opt.motorKp;
+          posDrive.stiffness = opt.motorKp/10.;
           posDrive.damping = opt.motorKd/10.;
         }
         posDrive.maxForce = PX_MAX_F32; //1e10f;                              // force limit for the drive
@@ -688,9 +692,11 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
   if(geometry) {
     //-- decide/create a specific material
     PxMaterial* mMaterial = defaultMaterial;
-    double fric=-1.;
-    if(s->frame.ats && s->frame.ats->get<double>(fric, "friction")) {
-      double rest=s->frame.ats->get<double>("restitution", 0.1);
+    if(s->frame.ats &&
+       (s->frame.ats->find<double>("friction") || s->frame.ats->find<double>("restitution"))) {
+      double fric=s->frame.ats->get<double>("friction", opt.defaultFriction);
+      double rest=s->frame.ats->get<double>("restitution", opt.defaultRestitution);
+      LOG(0) <<" shape " <<s->frame.name <<" friction: " <<fric <<" restitution: " <<rest;
       mMaterial = core->mPhysics->createMaterial(fric, fric, rest);
     }
 
@@ -796,6 +802,8 @@ void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& frameVelociti
     if(self->actors.N <= f->ID) continue;
     PxRigidActor* a = self->actors(f->ID);
     if(!a) continue;
+
+    if(self->opt.multiBody && f->joint && !f->joint->active) continue; //don't pull gripper joint states
 
     if(self->actorTypes(f->ID) == rai::BT_dynamic) {
       rai::Transformation X;

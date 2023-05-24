@@ -326,7 +326,9 @@ void Simulation::openGripper(const char* gripperFrameName, double width, double 
 
   //reattach object to world frame, and make it physical
   if(obj) {
-    C.attach(C.frames(0), obj);
+    //C.attach(C.frames(0), obj);
+    obj = obj->getUpwardLink();
+    obj->unLink();
     obj->inertia->type = BT_dynamic;
     if(engine==_physx) {
       self->physx->changeObjectType(obj, rai::BT_dynamic);
@@ -724,6 +726,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
       arr y = oppose.eval({finger1, finger2, obj});
 
       if(sumOfSqr(y) < 0.1) { //good enough -> success!
+#if 1
         // kinematically attach object to gripper
         obj = obj->getUpwardLink();
         S.C.attach(gripper, obj);
@@ -736,6 +739,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
           S.self->bullet->changeObjectType(obj, BT_kinematic);
         } else if(S.engine==S._kinematic){
         } else NIY;
+#endif
 
         //allows the user to know that gripper grasps something
         S.grasps.append(gripper);
