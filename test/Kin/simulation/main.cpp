@@ -224,6 +224,15 @@ void testFriction(){
     obj->addAttribute("friction", .02*i);
   }
 
+  for(int i=0;i<10;i++){
+    rai::Frame *obj = C.addFrame(STRING("ball" <<i));
+    arr size = {.05};
+    obj->setShape(rai::ST_sphere, size);
+    obj->setPosition({(i-5)*.2,.5,2.});
+    obj->setMass(.2);
+    obj->addAttribute("restitution", .1*i);
+  }
+
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandasTable.g"));
 
   C["table"]->setQuaternion({1.,-.1,0.,0.}); //tilt the table!!

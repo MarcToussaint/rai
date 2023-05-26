@@ -233,6 +233,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->bridgeC.view(false, "bullet bridge");
 #endif
   } else if(engine==_kinematic) {
+    C.setJointState(q_ref);
   } else NIY;
 
   //-- imps after physics
@@ -325,13 +326,16 @@ void Simulation::openGripper(const char* gripperFrameName, double width, double 
 
   //reattach object to world frame, and make it physical
   if(obj) {
-    C.attach(C.frames(0), obj);
+    //C.attach(C.frames(0), obj);
+    obj = obj->getUpwardLink();
+    obj->unLink();
     obj->inertia->type = BT_dynamic;
     if(engine==_physx) {
       self->physx->changeObjectType(obj, rai::BT_dynamic);
-    } else {
+    } else if(engine==_bullet) {
       self->bullet->changeObjectType(obj, rai::BT_dynamic);
-    }
+    } else if(engine==_kinematic) {
+    } else NIY;
   }
 
   if(verbose>1) {
@@ -479,12 +483,14 @@ bool Simulation::getGripperIsClose(const char* gripperFrameName) {
   rai::Joint* joint;
   getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
   if(!gripper) return -1.;
+  double speed=.1;
+  if(joint->frame->parent->name.contains("robotiq")) speed=-1.;
   if(joint){
     double q = joint->get_q();
-    if(q < joint->limits(0)+.001) return true;
+    if((speed>0. && q<joint->limits(0)+.01)
+       || (speed<0. && q>joint->limits(1)-.01)) return true;
   }else{
-    double q = fing1->get_Q().pos.sum();
-    if(q<=fing1->ats->get<arr>("limits")(0)) return true;
+    NIY;
   }
   return false;
 }
@@ -494,12 +500,14 @@ bool Simulation::getGripperIsOpen(const char* gripperFrameName) {
   rai::Joint* joint;
   getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
   if(!gripper) return false;
+  double speed=-1.;
+  if(joint->frame->parent->name.contains("robotiq")) speed=1.;
   if(joint){
     double q = joint->get_q();
-    if(q > joint->limits(1)-.001) return true;
+    if((speed>0. && q<joint->limits(0)+.001)
+       || (speed<0. && q>joint->limits(1)-.001)) return true;
   }else{
-    double q = fing1->get_Q().pos.sum();
-    if(q>=fing1->ats->get<arr>("limits")(1)) return true;
+    NIY;
   }
   return false;
 }
@@ -667,6 +675,9 @@ Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Joint* _joint,  Frame* _fing
     coll2->setFrameIDs({finger2->ID, obj->ID});
   }
 
+  if(joint->frame->parent->name.contains("robotiq")) speed *= 1.;
+  else speed *= -.1;
+
 //  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
   if(joint){
     limits = joint->limits;
@@ -689,7 +700,8 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
   }
 
   //-- actually close gripper until both distances are < .001
-  q -= 1e-1*speed*tau;
+  q += speed*tau;
+  cout <<"q: " <<q <<endl;
   if(joint){
     S.C.setDofState({q}, {joint});
   }else{
@@ -697,7 +709,8 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
     fing2->set_Q()->pos = -q*axis;
   }
 
-  if(q < limits(0)) { //stop grasp by joint limits -> unsuccessful
+  if((speed>0. && q>limits(1))
+     || (speed<0. && q < limits(0))) { //stop grasp by joint limits -> unsuccessful
     if(S.verbose>1) {
       LOG(1) <<"terminating closing gripper (limit) - nothing grasped";
     }
@@ -713,6 +726,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
       arr y = oppose.eval({finger1, finger2, obj});
 
       if(sumOfSqr(y) < 0.1) { //good enough -> success!
+#if 1
         // kinematically attach object to gripper
         obj = obj->getUpwardLink();
         S.C.attach(gripper, obj);
@@ -721,9 +735,11 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
         // tell engine that object is now kinematic, not dynamic
         if(S.engine==S._physx) {
           S.self->physx->changeObjectType(obj, BT_kinematic);
-        } else {
+        } else if(S.engine==S._bullet){
           S.self->bullet->changeObjectType(obj, BT_kinematic);
-        }
+        } else if(S.engine==S._kinematic){
+        } else NIY;
+#endif
 
         //allows the user to know that gripper grasps something
         S.grasps.append(gripper);
@@ -748,6 +764,9 @@ Imp_OpenGripper::Imp_OpenGripper(Frame* _gripper, Joint* _joint, Frame* _fing1, 
   when = _beforePhysics;
   type = Simulation::_openGripper;
 
+  if(joint->frame->parent->name.contains("robotiq")) speed *= -1.;
+  else speed *= .1;
+
 //  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
   if(joint){
     limits = joint->limits;
@@ -768,7 +787,7 @@ void Imp_OpenGripper::modConfiguration(Simulation& S, double tau) {
   CHECK_EQ(&S.C, &fing2->C, "");
 
   //-- actually open gripper until limit
-  q += 1e-1*speed*tau;
+  q += speed*tau;
   if(joint){
     S.C.setDofState({q}, {joint});
   }else{
@@ -776,7 +795,8 @@ void Imp_OpenGripper::modConfiguration(Simulation& S, double tau) {
     fing2->set_Q()->pos = -q*axis;
   }
 
-  if(q > limits(1)) { //stop opening
+  if((speed>0 && q>limits(1))
+     || (speed<0 && q<limits(0))){ //stop opening
     if(S.verbose>1) {
       LOG(1) <<"terminating opening gripper " <<gripper->name;
     }

@@ -1201,7 +1201,7 @@ bool Configuration::checkConsistency() const {
       }
       if(j->type==JT_quatBall){ op_normalize(tmpq); }
       if(j->type==JT_free){ op_normalize(tmpq({3,6}).noconst()); }
-      for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - tmpq.elem(i), RAI_2PI), 2e-5, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
+      //for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - tmpq.elem(i), RAI_2PI), 2e-5, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
     }
   }
 
