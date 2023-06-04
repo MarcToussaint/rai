@@ -12,7 +12,7 @@ struct ReferenceFeed {
 };
 
 struct SplineCtrlReference : ReferenceFeed {
-  Var<Spline> spline;
+  Var<BSpline> spline;
 
   /// initializes to constant (q_real, zero-vel) spline
   void initialize(const arr& q_real, const arr& qDot_real, double time);

@@ -331,7 +331,7 @@ void generateSequence(arr &X, uint T, uint n){
   rndUniform(P,-1.,1.,false); P[0]=0.; P[P.d0-1]=0.;
   
   //convert into a smooth spline (1/0.03 points per via point):
-  X = rai::Spline().set(2,P, range(0.,1.,P.d0-1)).eval(range(0.,1.,T));
+  X = rai::BSpline().set(2,P, range(0.,1.,P.d0-1)).eval(range(0.,1.,T));
 }
 
 void TEST(PlayStateSequence){

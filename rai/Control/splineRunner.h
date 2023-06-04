@@ -13,7 +13,7 @@
 namespace rai {
 
 struct SplineRunner {
-  rai::Spline refSpline; // reference spline constructed from ref
+  rai::BSpline refSpline; // reference spline constructed from ref
   arr refPoints, refTimes; // the knot points and times of the spline
   double phase=0.; // current phase in the spline
 

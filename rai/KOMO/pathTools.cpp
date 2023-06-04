@@ -278,7 +278,7 @@ void mirrorDuplicate(std::pair<arr, arr>& path) {
 }
 
 arr path_resample(const arr& q, double durationScale) {
-  rai::Spline S = getSpline(q);
+  rai::BSpline S = getSpline(q);
 
   uint T = durationScale * q.d0;
   durationScale = double(T)/double(q.d0);
@@ -305,8 +305,8 @@ arr path_resampleLinear(const arr& q, uint T){
   return r;
 }
 
-rai::Spline getSpline(const arr& q, double duration, uint degree) {
-  rai::Spline S;
+rai::BSpline getSpline(const arr& q, double duration, uint degree) {
+  rai::BSpline S;
   S.set(degree, q, grid(1,0.,duration, q.N-1));
   return S;
 }

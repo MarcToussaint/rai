@@ -14,16 +14,25 @@ namespace rai {
 
 //==============================================================================
 
-/// a spline
-struct Spline {
+struct BSplineCore {
+  arr knots;
+  arr B;
+
+  arr get(double t, uint degree, arr& J=NoArr);
+  arr jacobian(double t, uint degree);
+
+};
+
+/// a B-spline
+struct BSpline {
   uint degree;
   arr points, times; ///< the points and times as provided by the user
   arr knotPoints, knotTimes; ///< the points and times with (non-intuitive) head and tail added depending on degree
 
   //-- methods to define the points and times
-  Spline& set(uint degree, const arr& _points, const arr& _times, const arr& startVel=NoArr, const arr& endVel=NoArr);
-  Spline& set_vel(uint degree, const arr& _points, const arr& velocities, const arr& _times);
-  Spline& setUniform(uint _degree, uint steps);
+  BSpline& set(uint degree, const arr& _points, const arr& _times, const arr& startVel=NoArr, const arr& endVel=NoArr);
+  BSpline& set_vel(uint degree, const arr& _points, const arr& velocities, const arr& _times);
+  BSpline& setUniform(uint _degree, uint steps);
   arr getGridBasis(uint T);
 
   void append(const arr& _points, const arr& _times);
@@ -36,7 +45,10 @@ struct Spline {
   /// core method to evaluate spline
   void eval(arr& x, arr& xDot, arr& xDDot, double t) const;
   arr eval(double t, uint derivative=0) const;
+  arr eval2(double t, uint derivative=0, arr& Jtimes=NoArr) const;
   arr eval(const arr& ts);
+
+  arr jac_point(double t, uint derivative=0) const;
 
   /// for t \in [0,1] the coefficients are the weighting of the points: f(t) = coeffs(t)^T * points
   arr getCoeffs(double t, uint K, uint derivative=0) const;
@@ -92,7 +104,7 @@ void CubicSplinePosVelAcc(arr& pos, arr& vel, arr& acc, double trel, const arr& 
 //===========================================================================
 
 /// a wrapper around a spline with methods specific to online path adaptation
-struct Path : Spline {
+struct Path : BSpline {
   Path(arr& X, uint degree=3) { set(3, X, grid(1, 0., 1., X.d0-1)); }
 
   arr getPosition(double t) const;

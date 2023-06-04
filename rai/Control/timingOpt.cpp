@@ -223,7 +223,7 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
       if(k==0){
         arr y;
         y = rai::CubicSplineAcc0(_x0, _v0, _x1, _v1, tau(k), tauJ);
-        y *= 10.;
+        y *= 2.;
         phi.setVectorBlock(y.noJ(), m);
         if(!!J) J.sparse().add(y.J(), m, 0);
         m += y.N;
@@ -232,7 +232,7 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
       arr y;
       if(k==K-1){
         y = rai::CubicSplineAcc1(_x0, _v0, _x1, _v1, tau(k), tauJ);
-        y *= 10.;
+        y *= 2.;
       }else{
         y = rai::CubicSplineAcc1(_x0, _v0, _x1, _v1, tau(k), tauJ)
           - rai::CubicSplineAcc0(_x1, _v1, xJ(k+1), vJ(k+1), tau(k+1), Jtau(k+1));

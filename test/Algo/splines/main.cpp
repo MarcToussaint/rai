@@ -5,7 +5,7 @@
 //==============================================================================
 
 void TEST(Basics){
-  rai::Spline S;
+  rai::BSpline S;
   arr X = {1., 0., 0., 1.};  X.reshape(-1,1);
   arr T = {0., .5, .5, 1.};
   arr vel = {1.};
@@ -48,7 +48,7 @@ void TEST(Speed){
   arr T = integral(rand(N)+0.1);
 //  cout <<X <<endl <<T <<endl;
 
-  rai::Spline S;
+  rai::BSpline S;
   S.set(2, X, T);
 
   rai::timerStart();
@@ -97,13 +97,50 @@ void TEST(Path){
 
 }
 
+//==============================================================================
+
+void testDiff(){
+  uint T=100;
+  arr X(T,7);
+  rndUniform(X,-1,1,false);
+
+  rai::BSpline S;
+  S.set(3, X, grid(1, 0., 1., X.d0-1).reshape(-1));
+
+  double teval;
+  fct Test = [&S, &teval](const arr& knots) -> arr {
+    S.knotTimes = knots;
+    arr y;
+    y = S.eval2(teval, 0, y.J());
+    return y;
+  };
+
+  double time = -rai::cpuTime();
+  for(uint k=0;k<100;k++){
+    teval = rnd.uni(-.1, 1.1);
+    arr knots = S.knotTimes;
+    arr x = S.eval(teval);
+    arr y = S.eval2(teval);
+    arr z = Test(knots);
+    cout <<teval <<' ' <<x <<' ' <<y <<' ' <<x-y <<' ' <<x-z.noJ() <<endl;
+    checkJacobian(Test, knots, 1e-4);
+    S.knotTimes = knots;
+  }
+  time += rai::cpuTime();
+  cout <<"time: " <<time <<endl;
+}
+
+//==============================================================================
+
+
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc, argv);
 
-  testBasics();
+//  testBasics();
 //  testSpeed();
 
 //  testPath();
+  testDiff();
 
   return 0;
 }

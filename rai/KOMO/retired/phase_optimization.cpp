@@ -10,7 +10,7 @@
 
 PhaseOptimization::PhaseOptimization(arr& X, uint _kX, double _w) {
   T = X.d0;
-  p = new rai::Spline(T, X, 1);
+  p = new rai::BSpline(T, X, 1);
   kX = _kX;
   k = 3;
   w = sqrt(_w);

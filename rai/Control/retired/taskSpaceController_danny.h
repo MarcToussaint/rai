@@ -35,9 +35,9 @@ struct LinTaskSpaceAccLaw {
   arr trajectoryDot;
   arr trajectoryDDot;
 
-  rai::Spline* trajectorySpline;
-  rai::Spline* trajectoryDotSpline;
-  rai::Spline* trajectoryDDotSpline;
+  rai::BSpline* trajectorySpline;
+  rai::BSpline* trajectoryDotSpline;
+  rai::BSpline* trajectoryDDotSpline;
 
   bool trajectoryActive = false;
   bool trajectoryDotActive = false;
@@ -52,7 +52,7 @@ struct LinTaskSpaceAccLaw {
   void setC(arr C);
 
   void setTrajectory(uint trajLength, const arr& traj = NoArr, const arr& trajDot = NoArr, const arr& trajDDot = NoArr);
-  void setSpline(rai::Spline* yS = nullptr, rai::Spline* yDotS = nullptr, rai::Spline* yDDotS = nullptr);
+  void setSpline(rai::BSpline* yS = nullptr, rai::BSpline* yDotS = nullptr, rai::BSpline* yDDotS = nullptr);
 
   void setTargetEvalSpline(double s);
 

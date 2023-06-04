@@ -59,7 +59,7 @@ struct CtrlTarget_MaxCarrot : CtrlMovingTarget {
 
 struct CtrlTarget_PathCarrot: CtrlMovingTarget {
   double maxStep;
-  rai::Spline spline;
+  rai::BSpline spline;
   double endTime;
   double time=0.;
   uint countInRange=0;

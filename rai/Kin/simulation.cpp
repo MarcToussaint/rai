@@ -701,7 +701,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
 
   //-- actually close gripper until both distances are < .001
   q += speed*tau;
-  cout <<"q: " <<q <<endl;
+  //cout <<"q: " <<q <<endl;
   if(joint){
     S.C.setDofState({q}, {joint});
   }else{

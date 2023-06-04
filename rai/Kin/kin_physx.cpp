@@ -696,7 +696,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
        (s->frame.ats->find<double>("friction") || s->frame.ats->find<double>("restitution"))) {
       double fric=s->frame.ats->get<double>("friction", opt.defaultFriction);
       double rest=s->frame.ats->get<double>("restitution", opt.defaultRestitution);
-      LOG(0) <<" shape " <<s->frame.name <<" friction: " <<fric <<" restitution: " <<rest;
+      //LOG(0) <<" shape " <<s->frame.name <<" friction: " <<fric <<" restitution: " <<rest;
       mMaterial = core->mPhysics->createMaterial(fric, fric, rest);
     }
 
@@ -803,7 +803,7 @@ void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& frameVelociti
     PxRigidActor* a = self->actors(f->ID);
     if(!a) continue;
 
-    if(self->opt.multiBody && f->joint && !f->joint->active) continue; //don't pull gripper joint states
+    if(self->opt.multiBody && f->joint && !f->joint->active && f->joint->dim==1) continue; //don't pull gripper joint states
 
     if(self->actorTypes(f->ID) == rai::BT_dynamic) {
       rai::Transformation X;
@@ -898,7 +898,7 @@ void PhysXInterface::setMotorQ(const rai::Configuration& C, bool setHardInstantl
       auto axis = self->jointAxis(f->ID);
       CHECK_LE(axis, self->jointAxis(0)-1, "");
       if(setHardInstantly){
-        LOG(0) <<"setting joint pos hard: " <<f->name <<' ' <<f->joint->get_q();
+        //LOG(0) <<"setting joint pos hard: " <<f->name <<' ' <<f->joint->get_q();
         joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
         joint->setDriveVelocity(axis, 0.);
       }

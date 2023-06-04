@@ -223,7 +223,7 @@ OptNewton::StopCriterion OptNewton::step() {
         (*logFile) <<"{ lineSearch: " <<lineSearchSteps <<", alpha: " <<alpha <<", beta: " <<beta <<", f_x: " <<fx <<", f_y: " <<fy <<", wolfe: " <<wolfe <<", accept: True }," <<endl;
       }
       if(options.stopFTolerance<0. && fx-fy<options.stopFTolerance) numTinyFSteps++; else numTinyFSteps=0;
-      if(absMax(y-x)<1e-1*options.stopTolerance) numTinyXSteps++; else numTinyXSteps=0;
+      if(absMax(y-x)<1e-2*options.stopTolerance) numTinyXSteps++; else numTinyXSteps=0;
       x = y;
       fx = fy;
 #ifdef NewtonLazyLineSearchMode

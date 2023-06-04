@@ -177,8 +177,8 @@ bool OptConstrained::ministep(){
       return true; //good: small step in last loop and err small
     }else{
       if(opt.verbose>0) cout <<"               -- but err too large " <<g_err+h_err <<'>' <<opt.stopGTolerance <<endl;
-      if(numBadSteps>4){
-        cout <<"               -- but numBadSteps > 4" <<endl;
+      if(numBadSteps>6){
+        cout <<"               -- but numBadSteps > 6" <<endl;
         return true;
       }
     }

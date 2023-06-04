@@ -87,7 +87,7 @@ struct CtrlReference_PD: CtrlMovingTarget {
 //===========================================================================
 
 struct CtrlReference_Path: CtrlMovingTarget {
-  rai::Spline spline;
+  rai::BSpline spline;
   double executionTime;
   double phase;
   CtrlReference_Path(const arr& path, double executionTime);

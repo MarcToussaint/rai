@@ -45,7 +45,7 @@ void LinTaskSpaceAccLaw::setC(arr C) {
   this->C = C;
 }
 
-void LinTaskSpaceAccLaw::setSpline(rai::Spline* yS, rai::Spline* yDotS, rai::Spline* yDDotS) {
+void LinTaskSpaceAccLaw::setSpline(rai::BSpline* yS, rai::BSpline* yDotS, rai::BSpline* yDDotS) {
   this->trajectorySpline = yS;
   this->trajectoryDotSpline = yDotS;
   this->trajectoryDDotSpline = yDDotS;
@@ -338,7 +338,7 @@ void TaskSpaceController::generateTaskSpaceSplines() {
     CHECK_GE(law->trajectoryDDot.d0,  3, "The trajectoryDDot must consists of at least 3 states for the spline to work");
     //law->setSpline(new rai::Spline(law->trajectory.d0, law->trajectory), new rai::Spline(law->trajectory.d0, law->trajectoryDot));
     //law->setSpline(new rai::Spline(law->trajectory.d0, law->trajectory));
-    law->setSpline(new rai::Spline(law->trajectory.d0, law->trajectory), new rai::Spline(law->trajectoryDot.d0, law->trajectoryDot), new rai::Spline(law->trajectoryDDot.d0, law->trajectoryDDot));
+    law->setSpline(new rai::BSpline(law->trajectory.d0, law->trajectory), new rai::BSpline(law->trajectoryDot.d0, law->trajectoryDot), new rai::BSpline(law->trajectoryDDot.d0, law->trajectoryDDot));
   }
 }
 

@@ -18,14 +18,14 @@
 
 namespace rai {
 
-void Spline::clear() {
+void BSpline::clear() {
   points.clear();
   times.clear();
   knotPoints.clear();
   knotTimes.clear();
 }
 
-arr Spline::getCoeffs(double t, uint K, uint derivative) const {
+arr BSpline::getCoeffs(double t, uint K, uint derivative) const {
   arr b(K+1), b_0(K+1), db(K+1), db_0(K+1), ddb(K+1), ddb_0(K+1);
   for(uint p=0; p<=degree; p++) {
     b_0=b; b.setZero();
@@ -70,7 +70,55 @@ arr Spline::getCoeffs(double t, uint K, uint derivative) const {
 
 #define ZDIV(x,y) (y?x/y:0.)
 
-void Spline::getCoeffs2(arr& b, arr& db, arr& ddb, double t, uint degree, double* knotTimes, uint knotN, uint knotTimesN, uint derivatives) {
+arr BSplineCore::get(double t, uint degree, arr& J){
+  B.resize(knots.N-degree, degree+1).setZero();
+//  CHECK_LE(knots(0), t, "");
+//  CHECK_LE(t, knots(-1), "");
+
+  if(!!J) J.resize(B.d0, B.d1, knots.N).setZero();
+
+  //initialize rank 0
+  for(uint k=0; k<B.d0; k++) {
+    if(knots(k)<=t && t<knots(k+1)) B(k, 0)=1.;
+  }
+
+  //recursion
+  for(uint p=1; p<=degree; p++) {
+    for(uint i=0; i<B.d0; i++) {
+      if(i+p<knots.N) {
+        double xnom = t - knots(i);
+        double xden = knots(i+p) - knots(i);
+        if(xnom!=0. && xden!=0.){
+          double x = DIV(xnom, xden, true);
+          B(i,p) = x * B(i, p-1);
+          if(!!J){
+            J(i,p,i) += (-1./xnom + 1./xden) * x * B(i, p-1);
+            J(i,p,i+p) += (-1./xden) * x * B(i, p-1);
+//            J(i,p,{}) += x * J(i, p-1, {});
+            for(double *a=&J(i,p,0), *b=&J(i,p-1,0), *stop=a+J.d2; a!=stop; a++, b++) *a += x * (*b);
+          }
+        }
+      }
+      if(i+1<knots.N && i+p+1<knots.N && i+1<B.d0) {
+        double ynom = knots(i+p+1) - t;
+        double yden = knots(i+p+1) - knots(i+1);
+        if(ynom!=0. && yden!=0.){
+          double y = DIV(ynom, yden, true);
+          B(i,p) += y * B(i+1, p-1);
+          if(!!J){
+            J(i,p,i+1) += (1./yden) * y * B(i+1, p-1);
+            J(i,p,i+p+1) += (1./ynom - 1./yden) * y * B(i+1, p-1);
+//            J(i,p,{}) += y * J(i+1, p-1, {});
+            for(double *a=&J(i,p,0), *b=&J(i+1,p-1,0), *stop=a+J.d2; a!=stop; a++, b++) *a += y * (*b);
+          }
+        }
+      }
+    }
+  }
+  return B;
+}
+
+void BSpline::getCoeffs2(arr& b, arr& db, arr& ddb, double t, uint degree, double* knotTimes, uint knotN, uint knotTimesN, uint derivatives) {
   CHECK_EQ(knotN+degree+1, knotTimesN, "");
 
   b.resize(knotN).setZero();
@@ -110,11 +158,11 @@ void Spline::getCoeffs2(arr& b, arr& db, arr& ddb, double t, uint degree, double
   }
 }
 
-void Spline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
+void BSpline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
 #if 0 //computing coeffs for ALL knot points (most zero...)
 //  uint K = knotPoints.d0-1;
-//  arr coeffs = getCoeffs(t, K, derivative);
-  arr coeffs = getCoeffs2(t, degree, knotTimes.p, knotPoints.d0, knotTimes.N, derivative);
+  arr coeffs = getCoeffs(t, knotPoints.d0-1, derivative);
+//  arr coeffs = getCoeffs2(t, degree, knotTimes.p, knotPoints.d0, knotTimes.N, derivative);
   return (~coeffs * knotPoints).reshape(knotPoints.d1);
 #else //pick out only the LOCAL knot points
 
@@ -147,7 +195,7 @@ void Spline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
 #endif
 }
 
-arr Spline::eval(double t, uint derivative) const{
+arr BSpline::eval(double t, uint derivative) const{
   arr x;
   if(derivative==0) eval(x, NoArr, NoArr, t);
   else if(derivative==1) eval(NoArr, x, NoArr, t);
@@ -156,13 +204,50 @@ arr Spline::eval(double t, uint derivative) const{
   return x;
 }
 
-arr Spline::eval(const arr& ts){
+arr BSpline::eval2(double t, uint derivative, arr& Jtimes) const{
+  if(!!Jtimes) Jtimes.resize(knotPoints.d1, knotTimes.N).setZero();
+
+  if(t<knotTimes(0)) return knotPoints[0];
+  if(t>knotTimes(-1)) return knotPoints[-1];
+
+  int center = knotTimes.rankInSorted(t, rai::lowerEqual<double>, true);
+  center -= 1;
+  int lo = center - degree;  if(lo<0) lo=0;
+  int up = center + degree;  if(up>(int)knotTimes.N-1) up=knotTimes.N-1;
+
+  arr Jtmp, Jtmp2;
+
+  BSplineCore core;
+  core.knots.referToRange(knotTimes, lo, up);
+  core.get(t, degree, (!Jtimes?NoArr:Jtmp));
+
+  arr x(knotPoints.d1);
+  x.setZero();
+  for(uint j=0;j<core.B.d0;j++){
+    x += core.B(j, degree) * knotPoints[lo+j];
+    if(!!Jtimes){
+      Jtmp2.resize(knotPoints.d1, knotTimes.N).setZero();
+      Jtmp2.setMatrixBlock(knotPoints[lo+j] * ~Jtmp(j, degree, {}), 0, lo);
+      Jtimes += Jtmp2;
+    }
+  }
+  return x;
+}
+
+
+arr BSpline::eval(const arr& ts){
   arr f(ts.N, points.d1);
   for(uint i=0;i<ts.N;i++) f[i] = eval(ts(i));
   return f;
 }
 
-Spline& Spline::set(uint _degree, const arr& _points, const arr& _times, const arr& startVel, const arr& endVel) {
+arr BSpline::jac_point(double t, uint derivative) const
+{
+  NIY;
+  return {};
+}
+
+BSpline& BSpline::set(uint _degree, const arr& _points, const arr& _times, const arr& startVel, const arr& endVel) {
   CHECK_EQ(_times.nd, 1, "");
   CHECK_LE(_points.nd, 2, "");
   CHECK_EQ(_points.d0, _times.N, "");
@@ -200,7 +285,7 @@ Spline& Spline::set(uint _degree, const arr& _points, const arr& _times, const a
   return *this;
 }
 
-Spline& Spline::set_vel(uint degree, const arr& _points, const arr& velocities, const arr& _times){
+BSpline& BSpline::set_vel(uint degree, const arr& _points, const arr& velocities, const arr& _times){
   arr pts = repmat(_points,1,2).reshape(-1, _points.d1);
   arr tms = repmat(_times,1,2).reshape(-1);
   set(degree, pts, tms);
@@ -212,13 +297,13 @@ Spline& Spline::set_vel(uint degree, const arr& _points, const arr& velocities, 
   return *this;
 }
 
-Spline&Spline::setUniform(uint _degree, uint steps) {
+BSpline&BSpline::setUniform(uint _degree, uint steps) {
   arr x = ::range(0.,1.,steps);
   set(_degree, x, x);
   return *this;
 }
 
-arr Spline::getGridBasis(uint T) {
+arr BSpline::getGridBasis(uint T) {
   arr basis(T, knotPoints.d0);
   arr db,ddb;
   for(uint t=0; t<T; t++){
@@ -227,7 +312,7 @@ arr Spline::getGridBasis(uint T) {
   return basis;
 }
 
-void Spline::append(const arr& _points, const arr& _times){
+void BSpline::append(const arr& _points, const arr& _times){
   CHECK_EQ(_points.nd, 2, "");
   CHECK_EQ(_points.d0, _times.N, "");
 
@@ -265,14 +350,14 @@ void Spline::append(const arr& _points, const arr& _times){
 }
 
 
-void Spline::doubleKnot(uint t){
+void BSpline::doubleKnot(uint t){
   knotPoints.insRows(t + degree/2);
   knotPoints[t+degree/2] = points[t];
 
   knotTimes.insert(t+degree+1,times(t));
 }
 
-void Spline::setDoubleKnotVel(int t, const arr& vel){
+void BSpline::setDoubleKnotVel(int t, const arr& vel){
   CHECK_EQ(degree, 2, "NIY");
   arr a=knotPoints[t+degree/2];
   arr b=knotPoints[t+degree/2+1];
@@ -284,11 +369,11 @@ void Spline::setDoubleKnotVel(int t, const arr& vel){
 //==============================================================================
 
 arr Path::getPosition(double t) const {
-  return Spline::eval(t);
+  return BSpline::eval(t);
 }
 
 arr Path::getVelocity(double t) const {
-  return Spline::eval(t, 1);
+  return BSpline::eval(t, 1);
 }
 
 void Path::transform_CurrentBecomes_EndFixed(const arr& current, double t) {
