@@ -207,6 +207,7 @@ struct Dof {
   virtual ~Dof() {}
   virtual void setDofs(const arr& q, uint n=0) = 0;
   virtual arr calcDofsFromConfig() const = 0;
+  virtual void setRandom(uint timeSlices_d1, int verbose);
   arr getDofState();
   virtual String name() const = 0;
 

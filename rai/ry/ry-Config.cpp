@@ -368,7 +368,7 @@ reloads, displays and animates the configuration whenever the file is changed"
   }
   )
   
-  .def("simulation", [](shared_ptr<rai::Configuration>& self, rai::Simulation::SimulatorEngine engine, int verbose) {
+  .def("simulation", [](shared_ptr<rai::Configuration>& self, rai::Simulation::Engine engine, int verbose) {
     return make_shared<rai::Simulation>(*self, engine, verbose);
   },
   "create a generic Simulation engine, which can internally call PhysX, Bullet, or just kinematics to forward simulate, \
@@ -560,7 +560,7 @@ allows you to control robot motors by position, velocity, or accelerations, \
 #undef ENUMVAL
 #define ENUMVAL(x) .value(#x, rai::Simulation::_##x)
 
-  pybind11::enum_<rai::Simulation::SimulatorEngine>(m, "SimulatorEngine")
+  pybind11::enum_<rai::Simulation::Engine>(m, "SimulationEngine")
   ENUMVAL(physx)
   ENUMVAL(bullet)
   ENUMVAL(kinematic)

@@ -20,6 +20,10 @@
 #include <iomanip>
 //#define BACK_BRIDGE
 
+template<> const char* rai::Enum<rai::Simulation::Engine>::names []= {
+  "none", "physx", "bullet", "kinematic", nullptr
+};
+
 namespace rai {
 
 //===========================================================================
@@ -126,7 +130,7 @@ struct Imp_NoPenetrations : SimulationImp {
 
 //===========================================================================
 
-Simulation::Simulation(Configuration& _C, Simulation::SimulatorEngine _engine, int _verbose)
+Simulation::Simulation(Configuration& _C, Engine _engine, int _verbose)
   : self(make_unique<Simulation_self>()),
     C(_C),
     time(0.),
@@ -317,15 +321,12 @@ void Simulation::openGripper(const char* gripperFrameName, double width, double 
 
   //check if an object is attached
   rai::Frame* obj = gripper->children(-1);
-  if(!obj || !obj->joint || obj->joint->type != rai::JT_rigid) {
-    if(verbose>1) {
-      LOG(1) <<"gripper '" <<gripper->name <<"' does not hold an object";
-    }
-    obj=0;
-  }
+  if(!obj || !obj->joint || obj->joint->type != rai::JT_rigid) obj=0;
 
   //reattach object to world frame, and make it physical
   if(obj) {
+    if(verbose>1) LOG(1) <<"initiating opening gripper " <<gripper->name <<" and releasing obj " <<obj->name;
+
     //C.attach(C.frames(0), obj);
     obj = obj->getUpwardLink();
     obj->unLink();
@@ -336,10 +337,8 @@ void Simulation::openGripper(const char* gripperFrameName, double width, double 
       self->bullet->changeObjectType(obj, rai::BT_dynamic);
     } else if(engine==_kinematic) {
     } else NIY;
-  }
-
-  if(verbose>1) {
-    LOG(1) <<"initiating opening gripper " <<gripper->name;
+  }else{
+    if(verbose>1) LOG(1) <<"initiating opening gripper " <<gripper->name <<" (without releasing obj)";
   }
 
   C.ensure_q();
@@ -395,7 +394,7 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
 
   if(verbose>1) {
     if(obj) {
-      LOG(1) <<"initiating grasp of object " <<obj->name <<" (if this is not what you expect, did you setContact(1) for the object you want to grasp?)";
+      LOG(1) <<"initiating grasp of object " <<obj->name <<" (auto detected; if this is not what you expect, did you setContact(1) for the object you want to grasp?)";
     } else {
       LOG(1) <<"closing gripper without near object (if this is not what you expect, did you setContact(1) for the object you want to grasp?)";
     }
@@ -413,6 +412,8 @@ void Simulation::closeGripperGrasp(const char* gripperFrameName, const char* obj
   rai::Frame *finger1 = fing1, *finger2=fing2;
   while(!finger1->shape || finger1->shape->type()!=ST_capsule) finger1=finger1->children.last();
   while(!finger2->shape || finger2->shape->type()!=ST_capsule) finger2=finger2->children.last();
+
+  if(verbose>1) LOG(1) <<"initiating grasp of object " <<objectName <<" (prefixed)";
 
   imps.append(make_shared<Imp_CloseGripper>(gripper, joint, fing1, fing2, C.getFrame(objectName), speed));
 }
@@ -716,11 +717,10 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
     }
     killMe = true;
   } else if(obj) {
-    //      step({}, .01, _none);
     double d1 = -coll1->eval(coll1->getFrames(S.C)).scalar();
     double d2 = -coll2->eval(coll2->getFrames(S.C)).scalar();
-    //  cout <<q <<" d1: " <<d1 <<"d2: " <<d2 <<endl;
-    if(d1< -5e-3 && d2< -5e-3) { //stop grasp by penetration
+    //cout <<q <<" d1: " <<d1 <<" d2: " <<d2 <<endl;
+    if(d1<1e-3 && d2<1e-3) { //stop when both close < 1mm
       //evaluate stability
       F_GraspOppose oppose;
       arr y = oppose.eval({finger1, finger2, obj});
@@ -744,13 +744,9 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
         //allows the user to know that gripper grasps something
         S.grasps.append(gripper);
 
-        if(S.verbose>1) {
-          LOG(1) <<"terminating grasp of object " <<obj->name <<" - SUCCESS";
-        }
+        if(S.verbose>1) LOG(1) <<"terminating grasp of object " <<obj->name <<" - SUCCESS (distances d1:" <<d1 <<" d2:" <<d2 <<" oppose:" <<y <<")";
       } else { //unsuccessful
-        if(S.verbose>1) {
-          LOG(1) <<"terminating grasp of object " <<obj->name <<" - FAILURE";
-        }
+        if(S.verbose>1) LOG(1) <<"terminating grasp of object " <<obj->name <<" - FAILURE (distances d1:" <<d1 <<" d2:" <<d2 <<" oppose:" <<y <<")";
       }
       killMe = true;
     }
@@ -797,9 +793,7 @@ void Imp_OpenGripper::modConfiguration(Simulation& S, double tau) {
 
   if((speed>0 && q>limits(1))
      || (speed<0 && q<limits(0))){ //stop opening
-    if(S.verbose>1) {
-      LOG(1) <<"terminating opening gripper " <<gripper->name;
-    }
+    if(S.verbose>1) LOG(1) <<"terminating opening gripper " <<gripper->name <<" at width " <<q;
     killMe = true;
   }
 }

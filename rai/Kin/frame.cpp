@@ -672,6 +672,59 @@ bool rai::Frame::isChildOf(const rai::Frame* par, int order) const {
 
 //===========================================================================
 
+void rai::Dof::setRandom(uint timeSlices_d1, int verbose){
+  if(sampleUniform>0. && (sampleUniform>=1. || sampleUniform>=rnd.uni())){
+    //** UNIFORM
+    if(verbose>0) LOG(0) <<"init '" <<frame->name <<'[' <<frame->ID <<',' <<(timeSlices_d1?frame->ID/timeSlices_d1:0) <<']' <<"' uniform in limits " <<limits <<" relative to '" <<frame->parent->name <<"'";
+
+    if(frame->prev){
+      frame->set_X() = frame->prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
+    }
+    arr q = calcDofsFromConfig();
+
+    for(uint k=0; k<dim; k++){
+      double lo = limits.elem(2*k+0); //lo
+      double up = limits.elem(2*k+1); //up
+      if(up>=lo){
+        q(k) = rnd.uni(lo,up);
+        if(q0.N) q0(k) = q(k); //CRUCIAL to impose a bias to that random initialization
+      }
+    }
+    setDofs(q);
+
+  }else{
+    //** GAUSS
+    //mean: q0 or prev
+    if(q0.N){ //has default mean
+      setDofs(q0); //also sets it for all mimicers
+    }else if(frame->prev){
+      CHECK(frame->prev, "");
+      if(verbose>0) LOG(0) <<"init '" <<frame->name <<'[' <<frame->ID <<',' <<(timeSlices_d1?frame->ID/timeSlices_d1:0) <<']'
+                          <<"' pose-X-equal to prevSlice frame '" <<frame->prev->name <<"' relative to '" <<frame->parent->name <<"'";
+      //init from relative pose (as in applySwitch)
+      frame->set_X() = frame->prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
+      arr q = calcDofsFromConfig();
+      setDofs(q); //also sets it for all mimicers
+    }
+
+    //gauss
+    arr q = calcDofsFromConfig();
+    rndGauss(q, sampleSdv, true);
+    if(verbose>0) LOG(0) <<"init '" <<frame->name <<'[' <<frame->ID <<',' <<(timeSlices_d1?frame->ID/timeSlices_d1:0) <<']' <<"' adding noise: " <<q;
+
+    //clip
+    if(limits.N){
+      for(uint k=0; k<dim; k++) { //in case joint has multiple dimensions
+        double lo = limits.elem(2*k+0); //lo
+        double up = limits.elem(2*k+1); //up
+        if(up>=lo) rai::clip(q(k), lo, up);
+      }
+      if(verbose>0) LOG(0) <<"clipped to " <<limits <<" -> " <<q;
+    }
+    setDofs(q);
+  }
+}
+
 arr rai::Dof::getDofState(){
   return frame->C.getDofState(DofL{this});
 }

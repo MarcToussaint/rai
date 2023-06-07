@@ -530,7 +530,11 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
 #endif
   addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_eq, {1e0}, NoArr, 1, +1, 0);
+  if(k_order>0){
+    addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_eq, {1e0}, NoArr, 1, +1, 0);
+  }else{
+    addObjective({startTime, endTime}, make_shared<F_fex_ForceInFrictionCone>(), {from, to}, OT_ineq, {1e0});
+  }
 
   //regularization
   addObjective({startTime, endTime}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-2}, NoArr, k_order, +2, +0);
@@ -1539,7 +1543,7 @@ void KOMO::checkConsistency(){
   }
 }
 
-shared_ptr<NLP> KOMO::nlp(){
+std::shared_ptr<NLP> KOMO::nlp(){
   return make_shared<Conv_KOMO_NLP>(*this, solver==rai::KS_sparse);
 }
 

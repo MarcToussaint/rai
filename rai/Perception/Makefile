@@ -8,7 +8,7 @@ DEPEND = Core Geo Gui Kin Algo Control
 
 GL = 1
 LAPACK = 1
-OPENCV = 1
+OPENCV4 = 1
 PCL = 1
 X264 = 0
 

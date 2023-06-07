@@ -692,58 +692,8 @@ void Configuration::setTaus(const arr& tau) {
 }
 
 void Configuration::setRandom(uint timeSlices_d1, int verbose){
-  for(Dof *d:activeDofs){
-    if(d->sampleUniform>0. && (d->sampleUniform>=1. || d->sampleUniform>=rnd.uni())){
-      //** UNIFORM
-      if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']' <<"' uniform in limits " <<d->limits <<" relative to '" <<d->frame->parent->name <<"'";
-
-      if(d->frame->prev){
-        d->frame->set_X() = d->frame->prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
-      }
-      arr q = d->calcDofsFromConfig();
-
-      for(uint k=0; k<d->dim; k++){
-        double lo = d->limits.elem(2*k+0); //lo
-        double up = d->limits.elem(2*k+1); //up
-        if(up>=lo){
-          q(k) = rnd.uni(lo,up);
-          if(d->q0.N) d->q0(k) = q(k); //CRUCIAL to impose a bias to that random initialization
-        }
-      }
-      d->setDofs(q);
-
-    }else{
-      //** GAUSS
-      //mean: q0 or prev
-      if(d->q0.N){ //has default mean
-        d->setDofs(d->q0); //also sets it for all mimicers
-      }else if(d->frame->prev){
-        CHECK(d->frame->prev, "");
-        if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']'
-                            <<"' pose-X-equal to prevSlice frame '" <<d->frame->prev->name <<"' relative to '" <<d->frame->parent->name <<"'";
-        //init from relative pose (as in applySwitch)
-        d->frame->set_X() = d->frame->prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
-        arr q = d->calcDofsFromConfig();
-        d->setDofs(q); //also sets it for all mimicers
-      }
-
-      //gauss
-      arr q = d->calcDofsFromConfig();
-      rndGauss(q, d->sampleSdv, true);
-      if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']' <<"' adding noise: " <<q;
-
-      //clip
-      if(d->limits.N){
-        for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
-          double lo = d->limits.elem(2*k+0); //lo
-          double up = d->limits.elem(2*k+1); //up
-          if(up>=lo) rai::clip(q(k), lo, up);
-        }
-        if(verbose>0) LOG(0) <<"clipped to " <<d->limits <<" -> " <<q;
-      }
-      d->setDofs(q);
-    }
-  }
+  ensure_indexedJoints();
+  for(Dof *d:activeDofs) d->setRandom(timeSlices_d1, verbose);
   _state_q_isGood=false;
   checkConsistency();
 }
@@ -1307,6 +1257,7 @@ bool Configuration::checkConsistency() const {
 
 Joint* Configuration::attach(Frame* a, Frame* b) {
   b = b->getUpwardLink();
+  if(a->isChildOf(b, 1000)) LOG(-1) <<"attaching '" <<b->name <<"' to '" <<a->name <<"' creates a kinematic loop";
   if(b->parent) b->unLink();
   b->setParent(a, true);
   return new Joint(*b, JT_rigid);

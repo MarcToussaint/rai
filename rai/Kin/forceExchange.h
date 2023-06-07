@@ -40,6 +40,7 @@ struct ForceExchange : Dof, NonCopyable, GLDrawer {
   uint getDimFromType();
   void setDofs(const arr& q, uint n);
   arr calcDofsFromConfig() const;
+  void setRandom(uint timeSlices_d1, int verbose);
   String name() const{ return STRING("fex-" <<a.name <<'-' <<b.name); }
 
   virtual double sign(Frame *f) const { if(&a==f) return 1.; return -1.; }

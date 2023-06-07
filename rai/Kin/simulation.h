@@ -20,7 +20,7 @@ struct TeleopCallbacks;
 //a non-threaded simulation with direct interface and stepping -- in constrast to BotSim, which is threaded (emulating real time) and has
 //the default ctrl interface via low-level reference messages
 struct Simulation {
-  enum SimulatorEngine { _physx, _bullet, _kinematic };
+  enum Engine { _noEngine, _physx, _bullet, _kinematic };
   enum ControlMode { _none, _position, _velocity, _acceleration, _posVel, _spline };
   enum ImpType { _closeGripper, _openGripper, _depthNoise, _rgbNoise, _adversarialDropper, _objectImpulses, _blockJoints, _noPenetrations };
 
@@ -29,13 +29,13 @@ struct Simulation {
   Configuration& C;
   double time;
   arr qDot;
-  SimulatorEngine engine;
+  Engine engine;
   Array<shared_ptr<SimulationImp>> imps; ///< list of (adversarial) imps doing things/perturbations/noise in addition to clean physics engine
   int verbose;
   FrameL grasps;
   std::shared_ptr<TeleopCallbacks> teleopCallbacks;
 
-  Simulation(Configuration& _C, SimulatorEngine _engine, int _verbose=2);
+  Simulation(Configuration& _C, Engine _engine, int _verbose=2);
   ~Simulation();
 
   //== controller interface

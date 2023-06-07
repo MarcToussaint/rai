@@ -16,7 +16,7 @@
 #include "opencv.h"
 
 struct sVideoEncoder_OpenCV {
-  CvVideoWriter* video;
+  cv::VideoWriter* video;
   const char* filename;
   uint fps;
   uint numFrames; //,width,height;

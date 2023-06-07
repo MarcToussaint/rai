@@ -1370,6 +1370,18 @@ Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
   HALT("not implemented yet");
 }
 
+template<class T> T rai::Array<T>::median_nonConst() {
+  CHECK_GE(N, 1, "");
+  std::nth_element(p, p+N/2, p+N);
+  return *(p+N/2);
+}
+
+template<class T> T rai::Array<T>::nthElement_nonConst(uint n) {
+  CHECK_GE(N, n+1, "");
+  std::nth_element(p, p+n, p+N);
+  return *(p+n);
+}
+
 /// sort this list
 template<class T> Array<T>& Array<T>::sort(ElemCompare comp) {
   std::sort(p, p+N, comp);

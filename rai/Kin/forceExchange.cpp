@@ -21,6 +21,7 @@ rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeTyp
   b.forces.append(this);
   a.C.otherDofs.append(this);
   setZero();
+  sampleSdv = .1;
   if(copy) {
     qIndex=copy->qIndex; dim=copy->dim; limits=copy->limits; active=copy->active;
     sampleUniform=copy->sampleUniform;  sampleSdv=copy->sampleSdv;
@@ -43,6 +44,7 @@ rai::ForceExchange::~ForceExchange() {
 }
 
 void rai::ForceExchange::setZero() {
+  a.C._state_q_isGood=false;
   force.resize(3).setZero();
   torque.resize(3).setZero();
   if(type==FXT_poa || type==FXT_poaOnly){
@@ -111,6 +113,12 @@ arr rai::ForceExchange::calcDofsFromConfig() const {
     q.resize(1).first() = force.scalar();
   }else NIY;
   return q;
+}
+
+void rai::ForceExchange::setRandom(uint timeSlices_d1, int verbose){
+  setZero();
+  q0 = calcDofsFromConfig();
+  Dof::setRandom(timeSlices_d1, verbose);
 }
 
 void rai::ForceExchange::kinPOA(arr& y, arr& J) const {

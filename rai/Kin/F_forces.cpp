@@ -221,6 +221,7 @@ void F_TotalForce::phi2(arr& y, arr& J, const FrameL& F) {
   a->C.kinematicsZero(torque, Jtorque, 3);
 
   if(gravity) {
+    CHECK(a->inertia, "can't accumulate gravity force for zero-mass object '" <<a->name <<"'")
     double mass=1.;
     if(a->inertia) mass = a->inertia->mass;
     force(2) += gravity * mass;
@@ -485,13 +486,26 @@ arr F_fex_ForceIsNormal::phi(const FrameL& F) {
   //-- force needs to align with normal -> project force along normal
   arr y = force - normal*(~normal * force);
   return y;
-  //AUTODIFF
-//  if(!!J){
-//    J = force.J();
-//    J -= (normal^normal)*force.J();
-//    J -= (normal^force)*normal.J();
-//    J -= scalarProduct(normal, force)*normal.J();
-//  }
+}
+
+arr F_fex_ForceInFrictionCone::phi(const FrameL& F)
+{
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
+  if(!ex){ arr y; F.elem(0)->C.kinematicsZero(y, y.J(), dim_phi2(F)); return y; }
+
+  //-- from the contact we need force
+  arr force = F_fex_Force() .eval(F);
+
+  //-- from the geometry we need normal
+  arr normal = F_fex_POASurfaceAvgNormal() .eval(F);
+  op_normalize(normal);
+
+  //-- friction cone
+  arr nf = normal*(~normal * force);
+  arr a = force - nf;
+  arr a2 = ~a * a;
+  arr b2 = ~force * nf;
+  return a2 - (mu*mu)*b2;
 }
 
 void F_fex_ForceIsComplementary::phi2(arr& y, arr& J, const FrameL& F) {
