@@ -31,8 +31,9 @@ struct CtrlStateMsg {
   double ctrlTime=0.;
   int stall=0; //now many iterations should we stall (not increment ctrl time)
   arr q, qDot; // actual joint state
-  arr tauExternal; // external torques
-  void initZero(uint n){ q.resize(n).setZero(); qDot.resize(n).setZero(); tauExternal.resize(n).setZero(); }
+  arr tauExternalIntegral; // external torques
+  int tauExternalCount=0;
+  void initZero(uint n){ q.resize(n).setZero(); qDot.resize(n).setZero(); tauExternalIntegral.resize(n).setZero(); tauExternalCount=0; }
 };
 
 struct RobotAbstraction{
