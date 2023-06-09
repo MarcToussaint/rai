@@ -1535,7 +1535,6 @@ template<class T> void Array<T>::write(std::ostream& os, const char* ELEMSEP, co
 
   if(BRACKETS[0]) os <<BRACKETS[0];
   if(binary) {
-    os <<typeid(T).name();
     writeDim(os);
     os <<endl;
     os.put(0);
@@ -1585,13 +1584,9 @@ template<class T> Array<T>& Array<T>::read(std::istream& is) {
     is >>PARSE("[");
     expectBracket=true;
     c=peerNextChar(is, " \n\r\t", true);
-    if(c==typeid(T).name()[0] && 0==typeid(T).name()[1]){ //c is a type indicator - swallow it
-      is.get(c); //eat c
-      c=peerNextChar(is, " \n\r\t", true);
-    }
   }
 
-  if(c=='<') {
+  if(c=='<') { //fast pre-sized read
     readDim(is);
     c=peerNextChar(is, " \n\r\t", true);
     if(c==0) {  //binary read
@@ -1664,8 +1659,8 @@ template<class T> bool Array<T>::readTagged(std::istream& is, const char* tag) {
 template<class T> void Array<T>::writeDim(std::ostream& os) const {
   uint i;
   os <<'<';
-  if(nd) os <<dim(0);
-  for(i=1; i<nd; i++) os <<' ' <<dim(i);
+  os <<typeid(T).name();
+  for(i=0; i<nd; i++) os <<' ' <<dim(i);
   os <<'>';
 }
 
@@ -1675,6 +1670,9 @@ template<class T> void Array<T>::readDim(std::istream& is) {
   uint ND, dim[10];
   is >>PARSE("<");
   is.get(c);
+  if(c==typeid(T).name()[0] && 0==typeid(T).name()[1]){ //c is a type indicator - swallow it
+    is.get(c); //eat c
+  }
   if(c=='>'){
     clear();
     return;

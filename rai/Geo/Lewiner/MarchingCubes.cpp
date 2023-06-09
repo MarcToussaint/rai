@@ -73,7 +73,7 @@ MarchingCubes::~MarchingCubes()
 void MarchingCubes::run( MCreal iso )
 //-----------------------------------------------------------------------------
 {
-  clock_t time = clock() ;
+  //clock_t time = clock() ;
 
   compute_intersection_points( iso ) ;
 

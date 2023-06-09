@@ -163,9 +163,9 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
   //-- write value
   if(is<Graph>()) {
     if(yamlMode && indent>=0){
-      graph().write(os, ",\n", "{}", indent, yamlMode);
+      graph().write(os, ",\n", "{}", indent, yamlMode, binary);
     }else{
-      graph().write(os, ", ", "{  }", indent, yamlMode);
+      graph().write(os, ", ", "{  }", indent, yamlMode, binary);
     }
   } else if(is<NodeL>()) {
     os <<"(";
@@ -197,6 +197,8 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
     getValue<uintA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<intA>()) {
     getValue<intA>()->write(os, ", ", nullptr, "[]", false, binary);
+  } else if(is<byteA>()) {
+    getValue<byteA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<intAA>()) {
     getValue<intAA>()->write(os, ", ", nullptr, "[]");
   } else if(is<StringA>()) {
@@ -800,60 +802,52 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
           node = add<String>(key,  str, parents);
         } break;
         case '[': { //some Array
-          char type=getNextChar(is, 0);
-          if(type=='d'){ //arr
-            is.putback('[');
-            add<arr>(key)->setParents(parents)->as<arr>().read(is);
-          }else if(type=='f'){ //floatA
-            is.putback('[');
-            add<floatA>(key)->setParents(parents)->as<floatA>().read(is);
-          }else if(type=='i'){ //intA
-            is.putback('[');
-            add<intA>(key)->setParents(parents)->as<intA>().read(is);
-          }else if(type=='j'){ //uintA
-            is.putback('[');
-            add<uintA>(key)->setParents(parents)->as<uintA>().read(is);
-          }else if(type=='b'){ //byteA
-            is.putback('[');
-            add<byteA>(key)->setParents(parents)->as<byteA>().read(is);
-          }else{
+          char type=getNextChar(is, "  \n\r\t");
+          if(type=='<'){ //Array with type+dim tag
+            char type2=getNextChar(is, 0);
             is.putback(type);
-            type=getNextChar(is, "  \n\r\t");
-            if(type=='"') { //StringA
-              is.putback(type);
-              is.putback(c);
-              StringA strings;
-              String::readSkipSymbols=",\"";
-              String::readStopSymbols="\"";
-              String::readEatStopSymbol = 1;
-              is >>strings;
-              String::readSkipSymbols = " \t";
-              String::readStopSymbols = ",\n\r";
-              String::readEatStopSymbol = 1;
-              add<StringA>(key,  strings, parents);
-            } else if(type=='[') { //arrA
-              is.putback(type);
-              is.putback(c);
-              arrA reals;
-              is >>reals;
-              add<arrA>(key,  reals, parents);
-            } else if((type>='a' && type<='z') || (type>='A' && type<='Z') || type=='_' || type=='/') { //StringA}
-              is.putback(type);
-              is.putback(c);
-              StringA strings;
-              String::readStopSymbols=" ,\n\t]";
-              String::readEatStopSymbol = 0;
-              is >>strings;
-              String::readStopSymbols = ",\n\r";
-              String::readEatStopSymbol = 1;
-              add<StringA>(key,  strings, parents);
-            } else {
-              is.putback(type);
-              is.putback(c);
-              arr reals;
-              is >>reals;
-              add<arr>(key,  reals, parents);
-            }
+            //is.putback(c);
+            if(type2=='d') add<arr>(key)->setParents(parents)->as<arr>().read(is);
+            else if(type2=='f') add<floatA>(key)->setParents(parents)->as<floatA>().read(is);
+            else if(type2=='i') add<intA>(key)->setParents(parents)->as<intA>().read(is);
+            else if(type2=='j') add<uintA>(key)->setParents(parents)->as<uintA>().read(is);
+            else if(type2=='h') add<byteA>(key)->setParents(parents)->as<byteA>().read(is);
+            else HALT("can't parse array with type indicator '" <<type <<"'");
+            is >>PARSE("]");
+          }else if(type=='"') { //StringA
+            is.putback(type);
+            is.putback(c);
+            StringA strings;
+            String::readSkipSymbols=",\"";
+            String::readStopSymbols="\"";
+            String::readEatStopSymbol = 1;
+            is >>strings;
+            String::readSkipSymbols = " \t";
+            String::readStopSymbols = ",\n\r";
+            String::readEatStopSymbol = 1;
+            add<StringA>(key,  strings, parents);
+          } else if(type=='[') { //arrA
+            is.putback(type);
+            is.putback(c);
+            arrA reals;
+            is >>reals;
+            add<arrA>(key,  reals, parents);
+          } else if((type>='a' && type<='z') || (type>='A' && type<='Z') || type=='_' || type=='/') { //StringA}
+            is.putback(type);
+            is.putback(c);
+            StringA strings;
+            String::readStopSymbols=" ,\n\t]";
+            String::readEatStopSymbol = 0;
+            is >>strings;
+            String::readStopSymbols = ",\n\r";
+            String::readEatStopSymbol = 1;
+            add<StringA>(key,  strings, parents);
+          } else {
+            is.putback(type);
+            is.putback(c);
+            arr reals;
+            is >>reals;
+            add<arr>(key,  reals, parents);
           }
           node = elem(-1);
         } break;

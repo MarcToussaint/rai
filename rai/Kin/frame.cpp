@@ -97,7 +97,7 @@ void rai::Frame::calc_X_from_parent() {
   Transformation& from = parent->X;
   X = from;
   X.appendTransformation(Q);
-  CHECK_EQ(X.pos.x, X.pos.x, "NAN transformation:" <<from <<'*' <<Q);
+//  CHECK_EQ(X.pos.x, X.pos.x, "NAN transformation:" <<from <<'*' <<Q);
   if(joint) {
     Joint* j = joint;
     if(j->type==JT_hingeX || j->type==JT_transX || j->type==JT_XBall)  j->axis = from.rot.getX();

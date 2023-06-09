@@ -611,6 +611,7 @@ namespace rai{
   uint product(const uintA& x);
   uint max(const uintA& x);
   uint sum(const uintA& x);
+  float sum(const floatA& x);
   uintA integral(const uintA& x);
   uintA differencing(const uintA& x, uint width=1);
 

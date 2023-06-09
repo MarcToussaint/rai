@@ -1066,7 +1066,7 @@ bool checkJacobian(const VectorFunction& f,
   uint k;
   double md=maxDiff(J, JJ, &k);
   if(md>tolerance && md>fabs(J.elem(k))*tolerance) {
-    uint i=k/J.d1, j=j%J.d1;
+    uint i=k/J.d1;
     LOG(-1) <<"FAILURE in row " <<i <<' ' <<(featureNames.N?featureNames(i):"") <<" -- max diff=" <<md <<" |"<<J.elem(k)<<'-'<<JJ.elem(k)<<"| (stored in files z.J_*)";
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
@@ -2728,9 +2728,15 @@ uint product(const uintA& x){
 }
 
 uint sum(const uintA& v) {
-  uint t(0);
-  for(uint i=v.N; i--; t+=v.p[i]) {};
-  return t;
+  uint s(0);
+  for(uint i=v.N; i--; s+=v.p[i]) {};
+  return s;
+}
+
+float sum(const floatA& v) {
+  float s(0.f);
+  for(uint i=v.N; i--; s+=v.p[i]) {};
+  return s;
 }
 
 uint max(const uintA& x){
