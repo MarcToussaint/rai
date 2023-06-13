@@ -413,9 +413,11 @@ void Simulation::closeGripperGrasp(const char* gripperFrameName, const char* obj
   while(!finger1->shape || finger1->shape->type()!=ST_capsule) finger1=finger1->children.last();
   while(!finger2->shape || finger2->shape->type()!=ST_capsule) finger2=finger2->children.last();
 
-  if(verbose>1) LOG(1) <<"initiating grasp of object " <<objectName <<" (prefixed)";
+  rai::Frame *obj = 0;
+  if(objectName) obj = C.getFrame(objectName);
+  if(verbose>1) LOG(1) <<"initiating grasp of object " <<(obj?obj->name:"--nil--") <<" (prefixed)";
 
-  imps.append(make_shared<Imp_CloseGripper>(gripper, joint, fing1, fing2, C.getFrame(objectName), speed));
+  imps.append(make_shared<Imp_CloseGripper>(gripper, joint, fing1, fing2, obj, speed));
 }
 
 shared_ptr<SimulationState> Simulation::getState() {
@@ -727,18 +729,20 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
 
       if(sumOfSqr(y) < 0.1) { //good enough -> success!
 #if 1
-        // kinematically attach object to gripper
-        obj = obj->getUpwardLink();
-        S.C.attach(gripper, obj);
-        obj->inertia->type = BT_kinematic;
+        if(obj){
+          // kinematically attach object to gripper
+          obj = obj->getUpwardLink();
+          S.C.attach(gripper, obj);
+          obj->inertia->type = BT_kinematic;
 
-        // tell engine that object is now kinematic, not dynamic
-        if(S.engine==S._physx) {
-          S.self->physx->changeObjectType(obj, BT_kinematic);
-        } else if(S.engine==S._bullet){
-          S.self->bullet->changeObjectType(obj, BT_kinematic);
-        } else if(S.engine==S._kinematic){
-        } else NIY;
+          // tell engine that object is now kinematic, not dynamic
+          if(S.engine==S._physx) {
+            S.self->physx->changeObjectType(obj, BT_kinematic);
+          } else if(S.engine==S._bullet){
+            S.self->bullet->changeObjectType(obj, BT_kinematic);
+          } else if(S.engine==S._kinematic){
+          } else NIY;
+        }
 #endif
 
         //allows the user to know that gripper grasps something

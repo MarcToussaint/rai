@@ -61,6 +61,7 @@ int rai::ConfigurationViewer::update(bool watch) {
 
   int ret=0;
   if(watch) {
+    gl->raiseWindow();
     ret = gl->watch();
     gl->text = drawText;
   }else{
