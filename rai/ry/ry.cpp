@@ -88,6 +88,11 @@ void init_enums(pybind11::module& m){
 
 void init_params(pybind11::module& m){
   m.def("params_add", [](const pybind11::dict& D){ rai::params()->copy(dict2graph(D), true); }, "add/set parameters");
+  m.def("params_file", [](const char* filename){
+    ifstream fil(filename);
+    if(fil.good()) rai::params()->read(fil);
+    else LOG(0) <<"could not add params file '" <<filename <<"'";
+  }, "add parameters from a file");
   m.def("params_print", [](){ LOG(0) <<rai::params()(); }, "print the parameters");
 }
 
