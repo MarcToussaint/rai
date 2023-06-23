@@ -1336,6 +1336,40 @@ void tensorCondMax(arr& X, uint left) {
   }
 }
 
+/// get the maximal and second maximal value
+void maxIndices(uint& m1, uint& m2, const arr& x) {
+  uint i;
+  if(x.p[0]>x.p[1]) { m1=0; m2=1; } else { m1=1; m2=0; }
+  for(i=2; i<x.N; i++) {
+    if(x.p[i]>x.p[m2]) {  //greater than m2
+      if(x.p[i]>x.p[m1]) {  m2=m1;  m1=i; } //greater than m1
+      else m2=i;
+    }
+  }
+}
+
+void tensorCond11Rule(arr& X, uint left, double rate) {
+  uint i, j, dl=1, dr, jmax1, jmax2;
+  for(j=0; j<left; j++) dl*=X.dim(j);
+  dr=X.N/dl;
+  CHECK_EQ(dl*dr, X.N, "");
+  arr X_i(dl);
+  double amin=10.;
+  for(i=0; i<dr; i++) {
+    for(j=0; j<dl; j++) X_i(j) = X.p[j*dr + i];  //copy this row into one array
+    //find the 1st and 2nd highest in this conditional part
+    maxIndices(jmax1, jmax2, X_i);
+    if(X_i(jmax1)==X_i(jmax2)) continue;
+    CHECK(X_i(jmax1)>X_i(jmax2), "must be really greater...");
+    //compute the log ratio
+    double a = ::log(rate)/::log(X_i(jmax1)/X_i(jmax2));
+    //rescale everything [no -> globally rescale]
+    //for(j=0;j<dl;j++)  X.p[j*dr + i] = pow(X.p[j*dr + i], a);
+    if(a<amin) amin=a;
+  }
+  if(amin>1.) for(i=0; i<X.N; i++) X.elem(i) = pow(X.elem(i), amin);
+}
+
 /** makes X to be a distribution over the left leftmost-indexed
   variables and normalizes it */
 void tensorCondSoftMax(arr& X, uint left, double beta) {

@@ -318,6 +318,10 @@ template<class T> void operator-=(Array<T>& x, const T& y){
   T *xp=x.p, *xstop=xp+x.N;
   for(; xp!=xstop; xp++) *xp -= y;
 }
+template<class T> void operator*=(Array<T>& x, const T& y){
+  T *xp=x.p, *xstop=xp+x.N;
+  for(; xp!=xstop; xp++) *xp *= y;
+}
 template<class T> Array<T> operator+(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x+=z; return x; }
 template<class T> Array<T> operator+(const Array<T>& y, T z){                Array<T> x(y); x+=z; return x; }
 template<class T> Array<T> operator-(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x-=z; return x; }
@@ -544,12 +548,60 @@ void setMinusSorted(Array<T>& x, const Array<T>& y, bool (*comp)(const T& a, con
 
 /// share x and y at least one element?
 template<class T> uint numberSharedElements(const Array<T>& x, const Array<T>& y) {
-  Array<T> z;
-  setSection(z, x, y);
+  Array<T> z = setSection(x, y);
   return z.N;
 }
 
 }
+
+//===========================================================================
+//
+// special iterators
+
+namespace rai {
+
+template<class T>
+struct ArrayItEnumerated {
+  T* p;
+  uint count;
+  T& operator()() { return *p; } //access to value by user
+  T& operator->() { return *p; }
+  void operator++() { p++; count++; }
+  ArrayItEnumerated& operator*() { return *this; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
+  friend bool operator!=(const ArrayItEnumerated& i, const ArrayItEnumerated& j) { return i.p!=j.p; }
+};
+
+template<class T>
+struct ArrayIterationEnumerated {
+  const Array<T>& x;
+  ArrayIterationEnumerated(const Array<T>& x):x(x) {}
+  ArrayItEnumerated<T> begin() { return {x.p, 0}; }
+  ArrayItEnumerated<T> end() { return {x.p+x.N, x.N}; }
+};
+
+template<class T>
+ArrayIterationEnumerated<T> enumerated(const Array<T>& x){ return ArrayIterationEnumerated<T>(x); }
+
+template<class T>
+struct ArrayItReverse {
+  T* p;
+  T& operator*() { return *p; } //access to value by user
+  void operator++() { p--; }
+  friend bool operator!=(const ArrayItReverse& i, const ArrayItReverse& j) { return i.p!=j.p; }
+};
+
+template<class T>
+struct ArrayIterationReversed {
+  const Array<T>& x;
+  ArrayIterationReversed(const Array<T>& x):x(x) {}
+  ArrayItReverse<T> begin() { return {x.p+x.N-1}; }
+  ArrayItReverse<T> end() { return {x.p-1}; }
+};
+
+template<class T>
+ArrayIterationReversed<T> reversed(const Array<T>& x){ return ArrayIterationReversed<T>(x); }
+
+} //namespace
 
 //===========================================================================
 

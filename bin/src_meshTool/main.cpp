@@ -8,7 +8,7 @@
 
 const char *USAGE=
 "\n\
-Usage:  meshTools file.* <tags...>\n\
+Usage:  meshTool file.* <tags...>\n\
 \n\
 Tags can be -hide, -box, -fuse, -clean, -center, -scale, -qhull, -flip \n";
 

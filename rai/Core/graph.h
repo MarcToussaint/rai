@@ -165,6 +165,7 @@ struct Graph : NodeL {
   //-- editing nodes
   Node* edit(Node* ed); ///< ed describes how another node should be edited; ed is removed after editing is done
   void edit(const NodeL& L) { for(Node* ed:L) edit(ed); }
+  bool checkUniqueKeys(bool makeUnique=false);
   void collapse(Node* a, Node* b);
 
   //-- hierarchical finding: up and down in the graph hierarchy

@@ -2001,6 +2001,12 @@ arr Camera::getInverseProjectionMatrix() const {
     return T * Pinv;
   }
   if(heightAbs > 0.) { //ortho mode
+      arr Pinv(4, 4);
+      Pinv.setZero();
+      Pinv(0, 0) = 1./(2.*focalLength/whRatio);
+      Pinv(1, 1) = 1./(2.*focalLength);
+      Pinv(2, 2) = -1.; //flips 'positive depth' back to Right-Handed frame
+      Pinv(3, 3) = 1.; //homogeneous 3D is kept
     NIY;
   }
   NIY;
@@ -2033,6 +2039,16 @@ void Camera::project2PixelsAndTrueDepth(arr& x, double width, double height) con
 }
 
 void Camera::unproject_fromPixelsAndTrueDepth(arr& x, double width, double height) const {
+  if(heightAbs>0.){
+    x(0) = 2.*(x(0)/height) - 1.;
+    x(1) = 2.*(x(1)/height) - 1.;
+    x(0) *= .5*heightAbs;
+    x(1) *= .5*heightAbs;
+    x(2) *= -1.;
+    x.resizeCopy(3);
+    X.applyOnPoint(x);
+    return;
+  }
   CHECK_LE(fabs(width/height - whRatio), 1e-2, "given width and height don't match whRatio");
   if(x.N==3) x.append(1.);
   CHECK_EQ(x.N, 4, "");

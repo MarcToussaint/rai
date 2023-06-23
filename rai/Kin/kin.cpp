@@ -3557,7 +3557,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
         case '1':  gl.drawOptions.drawShapes^=1;  break;
         case '2':  gl.drawOptions.drawJoints^=1;  break;
         case '3':  gl.drawOptions.drawProxies^=1;  break;
-        case '4':  gl.drawOptions.drawZlines^=1;  break;
+        case '4':  gl.drawOptions.drawVisualsOnly^=1;  break;
         case '5':  gl.reportSelects^=1;  break;
         case '6':  gl.reportEvents^=1;  break;
         case '7':  gl.drawOptions.drawMode_idColor^=1; gl.drawOptions.drawColors^=1;  break;

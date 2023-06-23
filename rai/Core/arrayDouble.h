@@ -66,9 +66,6 @@ extern const char* arrayBrackets;
 
 namespace rai {
 
-struct ArrayIterationEnumerated;
-struct ArrayIterationReverse;
-
 /** Simple array container to store arbitrary-dimensional arrays (tensors).
   Can buffer more memory than necessary for faster
   resize; enables non-const reference of subarrays; enables fast
@@ -98,10 +95,6 @@ struct ArrayDouble : public Array<double> {
   ArrayDouble& operator=(const ArrayDouble& a);
   ArrayDouble& operator=(const Array<double>& a);
   ArrayDouble& operator=(const std::vector<double>& values){ setCarray(&values.front(), values.size()); return *this; }
-
-  //iterators
-  ArrayIterationEnumerated itEnumerated() const;
-  ArrayIterationReverse itReverse();
 
   //conversion
   std::vector<double> vec() const{ return std::vector<double>(p, p+N); }
@@ -166,38 +159,20 @@ typedef rai::ArrayDouble arr;
 
 namespace rai {
 
-struct ArrayItEnumerated {
-  double* p;
-  uint count;
-  double& operator()() { return *p; } //access to value by user
-  void operator++() { p++; count++; }
-  ArrayItEnumerated& operator*() { return *this; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
-  friend bool operator!=(const ArrayItEnumerated& i, const ArrayItEnumerated& j) { return i.p!=j.p; }
-  double& operator->() { return *p; }
-};
 
-struct ArrayIterationEnumerated {
-  const arr& x;
-  ArrayIterationEnumerated(const arr& x):x(x) {}
-  ArrayItEnumerated begin() { return {x.p, 0}; }
-  ArrayItEnumerated end() { return {x.p+x.N, x.N}; }
-  //  const_iterator begin() const { return p; }
-  //  const_iterator end() const { return p+N; }
-};
+//struct ArrayIterationReverse_It {
+//  double* p;
+//  double& operator*() { return *p; } //access to value by user
+//  void operator++() { p--; }
+//  friend bool operator!=(const ArrayIterationReverse_It& i, const ArrayIterationReverse_It& j) { return i.p!=j.p; }
+//};
 
-struct ArrayIterationReverse_It {
-  double* p;
-  double& operator*() { return *p; } //access to value by user
-  void operator++() { p--; }
-  friend bool operator!=(const ArrayIterationReverse_It& i, const ArrayIterationReverse_It& j) { return i.p!=j.p; }
-};
-
-struct ArrayIterationReverse {
-  arr& x;
-  ArrayIterationReverse(arr& x):x(x) {}
-  ArrayIterationReverse_It begin() { return {x.p+x.N-1}; }
-  ArrayIterationReverse_It end() { return {x.p-1}; }
-};
+//struct ArrayIterationReverse {
+//  arr& x;
+//  ArrayIterationReverse(arr& x):x(x) {}
+//  ArrayIterationReverse_It begin() { return {x.p+x.N-1}; }
+//  ArrayIterationReverse_It end() { return {x.p-1}; }
+//};
 
 
 //===========================================================================
@@ -631,10 +606,6 @@ arr eigen_Ainv_b(const arr& A, const arr& b);
 /// @{
 
 namespace rai {
-
-inline ArrayIterationEnumerated arr::itEnumerated() const { return ArrayIterationEnumerated(*this); }
-
-inline ArrayIterationReverse arr::itReverse() { return ArrayIterationReverse(*this); }
 
 inline bool isSparse(const arr& X)       { return X.special && (X.special->type==SpecialArray::sparseMatrixST || X.special->type==SpecialArray::sparseVectorST); }
 inline bool isSpecial(const arr& X)      { return X.special && X.special->type!=SpecialArray::ST_none; }

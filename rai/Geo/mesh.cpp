@@ -1532,7 +1532,7 @@ void Mesh::writeArr(std::ostream& os) {
   if(cvxParts.N) G.add("cvxParts", cvxParts);
   if(tex.N) G.add("tex", tex);
   if(texImg.N) G.add("texImg", texImg);
-  G.write(os, ",\n", "{\n\n}", -1, false, true);
+  G.write(os, ",\n", "", -1, false, true);
 }
 
 void Mesh::readArr(std::istream& is) {

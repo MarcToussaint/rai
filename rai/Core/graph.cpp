@@ -481,6 +481,20 @@ Node* Graph::edit(Node* ed) {
   return nullptr;
 }
 
+bool Graph::checkUniqueKeys(bool makeUnique){
+  for(Node* a: list()){
+    if(makeUnique && !a->key.N) a->key <<'_' <<a->index;
+    for(Node* b: list()) {
+      if(a==b) break;
+      if(a->key==b->key){
+        if(!makeUnique) return false;
+        else a->key <<'_' <<a->index;
+      }
+    }
+  }
+  return true;
+}
+
 void Graph::collapse(Node* a, Node* b) {
   NodeL ab= {a, b}, ba= {b, a};
 //  cout <<"collapsing " <<a->keys.elem(0) <<' ' <<b->keys.elem(0) <<endl;

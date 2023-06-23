@@ -205,11 +205,11 @@ void TEST(Iterators) {
   x += 10.;
   cout <<x <<endl;
 
-  for(auto& e:x.itEnumerated()){
+  for(auto& e:rai::enumerated(x)){
     cout <<e.count <<' ' <<e() <<endl;
   }
 
-  for(auto& e:x.itReverse()){
+  for(auto& e:rai::reversed(x)){
     cout <<e <<endl;
   }
 }
@@ -937,7 +937,6 @@ void TEST(EigenValues){
 int MAIN(int argc, char **argv){
   rai::initCmdLine(argc, argv);
 
-  testIntegral(); return 0;
 
   testBasics();
   testIterators();
@@ -956,6 +955,7 @@ int MAIN(int argc, char **argv){
   testPermutation();
   testGnuplot();
   testDeterminant();
+  testIntegral();
   testEigenValues();;
   testRowShifted();
   testSparseVector();
