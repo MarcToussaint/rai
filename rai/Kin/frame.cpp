@@ -1480,6 +1480,7 @@ void rai::Shape::read(const Graph& ats) {
       mesh().read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
 //      cout <<"MESH: " <<mesh().V.dim() <<endl;
     }
+    if(type()==rai::ST_mesh && !mesh().T.N) type()=rai::ST_pointCloud;
     if(ats.get(fil, "texture"))     {
       fil.cd_file();
       read_ppm(mesh().texImg, fil.name, true);
