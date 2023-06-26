@@ -26,8 +26,7 @@ struct BSplineCore {
 /// a B-spline
 struct BSpline {
   uint degree;
-  arr points, times; ///< the points and times as provided by the user
-  arr knotPoints, knotTimes; ///< the points and times with (non-intuitive) head and tail added depending on degree
+  arr ctrlPoints, knotTimes; ///< the points and times with (non-intuitive) head and tail added depending on degree
 
   //-- methods to define the points and times
   BSpline& set(uint degree, const arr& _points, const arr& _times, const arr& startVel=NoArr, const arr& endVel=NoArr);
@@ -35,8 +34,12 @@ struct BSpline {
   BSpline& setUniform(uint _degree, uint steps);
   arr getGridBasis(uint T);
 
-  void append(const arr& _points, const arr& _times);
+  void append(const arr& _points, const arr& _times, bool inside=true);
   void clear();
+
+  //
+  arr getPoints();
+  void setPoints(const arr& pts);
 
   //experimental
   void doubleKnot(uint t);
@@ -45,7 +48,7 @@ struct BSpline {
   /// core method to evaluate spline
   void eval(arr& x, arr& xDot, arr& xDDot, double t) const;
   arr eval(double t, uint derivative=0) const;
-  arr eval2(double t, uint derivative=0, arr& Jtimes=NoArr) const;
+  arr eval2(double t, uint derivative=0, arr& Jpoints=NoArr, arr& Jtimes=NoArr) const;
   arr eval(const arr& ts);
 
   arr jac_point(double t, uint derivative=0) const;

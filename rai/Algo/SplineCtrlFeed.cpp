@@ -9,11 +9,11 @@ void SplineCtrlReference::initialize(const arr& q_real, const arr& qDot_real, do
 }
 
 void SplineCtrlReference::waitForInitialized(){
-  while(!spline.get()->times.N) spline.waitForNextRevision();
+  while(!spline.get()->knotTimes.N) spline.waitForNextRevision();
 }
 
 void SplineCtrlReference::getReference(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, const arr& q_real, const arr& qDot_real, double ctrlTime){
-  if(!spline.get()->points.N) initialize(q_real, qDot_real, ctrlTime);
+  if(!spline.get()->ctrlPoints.N) initialize(q_real, qDot_real, ctrlTime);
   spline.get() -> eval(q_ref, qDot_ref, qDDot_ref, ctrlTime);
 }
 
@@ -22,7 +22,7 @@ void SplineCtrlReference::append(const arr& x, const arr& t, double ctrlTime, bo
   arr _x(x), _t(t);
   auto splineSet = spline.set();
   if(prependLast){
-    _x.prepend(splineSet->points[-1]);
+    _x.prepend(splineSet->ctrlPoints[-1]);
     _t.prepend(0.);
   }
   if(ctrlTime > splineSet->end()){ //previous spline is done... create new one
@@ -70,10 +70,10 @@ void SplineCtrlReference::report(double ctrlTime){
   waitForInitialized();
   arr x, xDot;
   auto splineGet = spline.get();
-  cout <<"times: current: " <<ctrlTime << " knots: " <<splineGet->times <<endl;
-  splineGet->eval(x, xDot, NoArr, splineGet->times.first());
+  cout <<"times: current: " <<ctrlTime << " knots: " <<splineGet->knotTimes <<endl;
+  splineGet->eval(x, xDot, NoArr, splineGet->knotTimes.first());
   cout <<"eval(first): " <<x <<' ' <<xDot <<endl;
-  splineGet->eval(x, xDot, NoArr, splineGet->times.last());
+  splineGet->eval(x, xDot, NoArr, splineGet->knotTimes.last());
   cout <<"eval(last): " <<x <<' ' <<xDot <<endl;
   splineGet->eval(x, xDot, NoArr, ctrlTime);
   cout <<"eval(current): " <<x <<' ' <<xDot <<endl;

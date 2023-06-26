@@ -12,7 +12,7 @@ void createPath(){
   
   KOMO komo;
   komo.setConfig(C);
-  komo.setTiming(1., 100, 5., 2);
+  komo.setTiming(1., 100, 1., 2);
   komo.addControlObjective({}, 2, 1.);
   komo.addQuaternionNorms({}, 1., false);
 
@@ -26,10 +26,14 @@ void createPath(){
 
   komo.reportProblem();
 
-  komo.optimize();
+  auto ret = NLP_Solver()
+      .setProblem(komo.nlp())
+      .solve();
+  cout <<*ret <<endl;
+//  komo.optimize();
 
   komo.view(false, "result");
-//  while(komo.view_play(true));
+  while(komo.view_play(true));
 
   FILE("z.path") <<komo.getPath_qOrg();
 }

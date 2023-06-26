@@ -937,7 +937,6 @@ void TEST(EigenValues){
 int MAIN(int argc, char **argv){
   rai::initCmdLine(argc, argv);
 
-
   testBasics();
   testIterators();
   testCheatSheet();

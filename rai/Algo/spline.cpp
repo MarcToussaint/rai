@@ -19,9 +19,7 @@
 namespace rai {
 
 void BSpline::clear() {
-  points.clear();
-  times.clear();
-  knotPoints.clear();
+  ctrlPoints.clear();
   knotTimes.clear();
 }
 
@@ -183,14 +181,14 @@ void BSpline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
   getCoeffs2(b, db, ddb, t, degree, knotTimes.p+offset, knotN, knotTimesN, derivative);
 
   //linear combination
-  uint n = knotPoints.d1;
+  uint n = ctrlPoints.d1;
   if(!!x) x.resize(n).setZero();
   if(!!xDot) xDot.resize(n).setZero();
   if(!!xDDot) xDDot.resize(n).setZero();
   for(uint j=0;j<b.N;j++){
-    if(!!x) for(uint k=0;k<n;k++) x.elem(k) += b.elem(j)*knotPoints(offset+j,k);
-    if(!!xDot) for(uint k=0;k<n;k++) xDot.elem(k) += db.elem(j)*knotPoints(offset+j,k);
-    if(!!xDDot) for(uint k=0;k<n;k++) xDDot.elem(k) += ddb.elem(j)*knotPoints(offset+j,k);
+    if(!!x) for(uint k=0;k<n;k++) x.elem(k) += b.elem(j)*ctrlPoints(offset+j,k);
+    if(!!xDot) for(uint k=0;k<n;k++) xDot.elem(k) += db.elem(j)*ctrlPoints(offset+j,k);
+    if(!!xDDot) for(uint k=0;k<n;k++) xDDot.elem(k) += ddb.elem(j)*ctrlPoints(offset+j,k);
   }
 #endif
 }
@@ -204,11 +202,15 @@ arr BSpline::eval(double t, uint derivative) const{
   return x;
 }
 
-arr BSpline::eval2(double t, uint derivative, arr& Jtimes) const{
-  if(!!Jtimes) Jtimes.resize(knotPoints.d1, knotTimes.N).setZero();
+arr BSpline::eval2(double t, uint derivative, arr& Jpoints, arr& Jtimes) const{
+  if(!!Jpoints) Jpoints.resize(ctrlPoints.d1, ctrlPoints.d0, ctrlPoints.d1).setZero();
+  if(!!Jtimes) Jtimes.resize(ctrlPoints.d1, knotTimes.N).setZero();
 
-  if(t<knotTimes(0)) return knotPoints[0];
-  if(t>knotTimes(-1)) return knotPoints[-1];
+  if(t<knotTimes(0)) return ctrlPoints[0];
+  if(t>=knotTimes(-1)){
+    if(!!Jpoints) for(uint i=0;i<ctrlPoints.d1;i++) Jpoints(i,-1,i) = 1.;
+    return ctrlPoints[-1];
+  }
 
   int center = knotTimes.rankInSorted(t, rai::lowerEqual<double>, true);
   center -= 1;
@@ -221,13 +223,18 @@ arr BSpline::eval2(double t, uint derivative, arr& Jtimes) const{
   core.knots.referToRange(knotTimes, lo, up);
   core.get(t, degree, (!Jtimes?NoArr:Jtmp));
 
-  arr x(knotPoints.d1);
+  arr x(ctrlPoints.d1);
   x.setZero();
   for(uint j=0;j<core.B.d0;j++){
-    x += core.B(j, degree) * knotPoints[lo+j];
+    double b = core.B(j, degree);
+    if(lo+j>=ctrlPoints.d0){ CHECK_ZERO(b, 1e-4, ""); continue; }
+    x += b * ctrlPoints[lo+j];
+    if(!!Jpoints){
+      for(uint i=0;i<ctrlPoints.d1;i++) Jpoints(i,lo+j,i) = b;
+    }
     if(!!Jtimes){
-      Jtmp2.resize(knotPoints.d1, knotTimes.N).setZero();
-      Jtmp2.setMatrixBlock(knotPoints[lo+j] * ~Jtmp(j, degree, {}), 0, lo);
+      Jtmp2.resize(ctrlPoints.d1, knotTimes.N).setZero();
+      Jtmp2.setMatrixBlock(ctrlPoints[lo+j] * ~Jtmp(j, degree, {}), 0, lo);
       Jtimes += Jtmp2;
     }
   }
@@ -236,7 +243,7 @@ arr BSpline::eval2(double t, uint derivative, arr& Jtimes) const{
 
 
 arr BSpline::eval(const arr& ts){
-  arr f(ts.N, points.d1);
+  arr f(ts.N, ctrlPoints.d1);
   for(uint i=0;i<ts.N;i++) f[i] = eval(ts(i));
   return f;
 }
@@ -249,22 +256,20 @@ arr BSpline::jac_point(double t, uint derivative) const
 
 BSpline& BSpline::set(uint _degree, const arr& _points, const arr& _times, const arr& startVel, const arr& endVel) {
   CHECK_EQ(_times.nd, 1, "");
-  CHECK_LE(_points.nd, 2, "");
+  CHECK_EQ(_points.nd, 2, "");
   CHECK_EQ(_points.d0, _times.N, "");
 
   degree = _degree;
-  points=_points; if(points.nd==1) points.reshape(points.N, 1);
-  times=_times;
 
   //knot points with head and tail
-  knotPoints = points;
+  ctrlPoints = _points;
   for(uint i=0; i<degree/2; i++) {
-    knotPoints.prepend(points[0]);
-    knotPoints.append(points[points.d0-1]);
+    ctrlPoints.prepend(_points[0]);
+    ctrlPoints.append(_points[-1]);
   }
 
   //knot times with head and tail
-  uint m=knotPoints.d0+degree;
+  uint m=ctrlPoints.d0+degree;
   knotTimes.resize(m+1);
   for(uint i=0; i<=m; i++) {
     if(i<=degree) knotTimes(i)=_times.first();
@@ -278,9 +283,9 @@ BSpline& BSpline::set(uint _degree, const arr& _points, const arr& _times, const
 
   //can also tune startVel and endVel for degree 2
   if(!!startVel) setDoubleKnotVel(-1, startVel);
-  if(!!endVel) setDoubleKnotVel(points.N-1, endVel);
+  if(!!endVel) setDoubleKnotVel(_points.d0-1, endVel);
 
-  CHECK_EQ(knotPoints.d0, knotTimes.N-degree-1 , "");
+  CHECK_EQ(ctrlPoints.d0, knotTimes.N-degree-1 , "");
 
   return *this;
 }
@@ -304,63 +309,82 @@ BSpline&BSpline::setUniform(uint _degree, uint steps) {
 }
 
 arr BSpline::getGridBasis(uint T) {
-  arr basis(T, knotPoints.d0);
+  arr basis(T, ctrlPoints.d0);
   arr db,ddb;
   for(uint t=0; t<T; t++){
-    getCoeffs2(basis[t].noconst(), db, ddb, double(t)/(T-1), degree, knotTimes.p, knotPoints.d0, knotTimes.N, 0);
+    getCoeffs2(basis[t].noconst(), db, ddb, double(t)/(T-1), degree, knotTimes.p, ctrlPoints.d0, knotTimes.N, 0);
   }
   return basis;
 }
 
-void BSpline::append(const arr& _points, const arr& _times){
+void BSpline::append(const arr& _points, const arr& _times, bool inside){
   CHECK_EQ(_points.nd, 2, "");
   CHECK_EQ(_points.d0, _times.N, "");
 
   CHECK_GE(_times.first(), 0., "append needs to be in relative time, always with _times.first()>=0.");
   if(!_times.first()){
-    CHECK_LE(maxDiff(points[-1], _points[0]), 1e-10, "when appending with _times.first()=0., the first point needs to be identical to the previous last, making this a double knot");
+    CHECK_LE(maxDiff(ctrlPoints[-1], _points[0]), 1e-10, "when appending with _times.first()=0., the first point needs to be identical to the previous last, making this a double knot");
   }
 
   //remember end time
   double Tend = knotTimes.last();
 
-  points.append(_points);
-  times.append(_times+Tend);
-
-
   //remove tails
-  knotPoints.resize(knotPoints.d0-degree/2, knotPoints.d1);
-  knotTimes.resizeCopy(knotTimes.N-1-2*(degree/2));
+  if(inside){
+    ctrlPoints.resizeCopy(ctrlPoints.d0-degree/2, ctrlPoints.d1);
+    knotTimes.resizeCopy(knotTimes.N-1-2*(degree/2));
+  }else{
+    knotTimes.resizeCopy(knotTimes.N-1-(degree/2));
+  }
 
   //append things:
-  knotPoints.append(_points);
+  ctrlPoints.append(_points);
   knotTimes.append(_times+Tend);
   if(!(degree%2)){
+    arr tmp = knotTimes;
     for(uint i=knotTimes.N-1;i>=knotTimes.N-_times.N; i--) {
 //      times(i) = .5*(times(i-1)+times(i));
-      knotTimes(i) = .5*(times(i-degree-1)+times(i-degree));
+      knotTimes(i) = .5*(tmp(i-1) + tmp(i));
     }
   }
 
   //append tails;
-  for(uint i=0; i<degree/2; i++) knotPoints.append(_points[-1]);
-  knotTimes.append(_times(-1)+Tend,1+2*(degree/2));
+  for(uint i=0; i<degree/2; i++) ctrlPoints.append(_points[-1]);
+  knotTimes.append(_times(-1)+Tend, 1+2*(degree/2)); //multiple
 
-  CHECK_EQ(knotPoints.d0, knotTimes.N-degree-1 , "");
+  CHECK_EQ(ctrlPoints.d0, knotTimes.N-degree-1 , "");
+}
+
+arr BSpline::getPoints(){
+  arr pts = ctrlPoints;
+  //remove tail and head
+  pts.delRows(0,degree/2);
+  pts.resizeCopy(pts.d0-degree/2, pts.d1);
+  return pts;
+}
+
+void BSpline::setPoints(const arr& pts){
+  CHECK_EQ(pts.d1, ctrlPoints.d1 , "");
+  CHECK_EQ(pts.d0+2*(degree/2), ctrlPoints.d0 , "");
+  ctrlPoints = pts;
+  for(uint i=0; i<degree/2; i++) {
+    ctrlPoints.prepend(pts[0]);
+    ctrlPoints.append(pts[-1]);
+  }
 }
 
 
 void BSpline::doubleKnot(uint t){
-  knotPoints.insRows(t + degree/2);
-  knotPoints[t+degree/2] = points[t];
+  ctrlPoints.insRows(t + degree/2);
+  ctrlPoints[t+degree/2] = ctrlPoints[t+degree/2-1];
 
-  knotTimes.insert(t+degree+1,times(t));
+  knotTimes.insert(t+degree+1, knotTimes(t+degree));
 }
 
 void BSpline::setDoubleKnotVel(int t, const arr& vel){
   CHECK_EQ(degree, 2, "NIY");
-  arr a=knotPoints[t+degree/2];
-  arr b=knotPoints[t+degree/2+1];
+  arr a=ctrlPoints[t+degree/2];
+  arr b=ctrlPoints[t+degree/2+1];
   CHECK(maxDiff(a,b)<1e-10,"this is not a double knot!");
   a -= vel*.5*(knotTimes(t+degree+1)-knotTimes(t+degree));
   b += vel*.5*(knotTimes(t+degree+2)-knotTimes(t+degree+1));
@@ -378,25 +402,25 @@ arr Path::getVelocity(double t) const {
 
 void Path::transform_CurrentBecomes_EndFixed(const arr& current, double t) {
   arr delta = current - eval(t);
-  for(uint i=0; i<knotPoints.d0; i++) {
-    double ti = double(i)/double(knotPoints.d0-1);
+  for(uint i=0; i<ctrlPoints.d0; i++) {
+    double ti = double(i)/double(ctrlPoints.d0-1);
     double a = (1.-ti)/(1.-t);
-    knotPoints[i] += a*delta;
+    ctrlPoints[i] += a*delta;
   }
 }
 
 void Path::transform_CurrentFixed_EndBecomes(const arr& end, double t) {
   arr delta = end - eval(1.);
-  for(uint i=0; i<knotPoints.d0; i++) {
-    double ti = double(i)/double(knotPoints.d0-1);
+  for(uint i=0; i<ctrlPoints.d0; i++) {
+    double ti = double(i)/double(ctrlPoints.d0-1);
     double a = (ti-t)/(1.-t);
-    knotPoints[i] += a*delta;
+    ctrlPoints[i] += a*delta;
   }
 }
 
 void Path::transform_CurrentBecomes_AllFollow(const arr& current, double t) {
   arr delta = current - eval(t);
-  for(uint i=0; i<knotPoints.d0; i++) knotPoints[i] += delta;
+  for(uint i=0; i<ctrlPoints.d0; i++) ctrlPoints[i] += delta;
 }
 
 //==============================================================================

@@ -36,7 +36,7 @@ struct SplineCtrlReference : ReferenceFeed {
 
   //info:
   double getEndTime() { return spline.get()->end(); }
-  arr getEndPoint() { return spline.get()->knotPoints[-1].copy(); }
+  arr getEndPoint() { return spline.get()->ctrlPoints[-1].copy(); }
   void eval(arr& x, arr& xDot, arr& xDDot, double t) { spline.get()->eval(x, xDot, xDDot, t); }
 
   void report(double ctrlTime);

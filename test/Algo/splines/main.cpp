@@ -4,6 +4,19 @@
 
 //==============================================================================
 
+void plotIt(rai::BSpline& S){
+  ofstream fil("z.test");
+  for(double t=S.begin()-.1;t<=S.end()+.1;t+=.001){
+    arr x, xDot, xDDot;
+    S.eval(x, xDot, xDDot, t);
+    fil <<t <<' ' <<x.modRaw() <<' ' <<xDot.modRaw() <<' ' <<xDDot.modRaw() <<endl;
+//    fil <<t <<' ' <<S.eval(t,2).modRaw() <<endl;
+  }
+  fil.close();
+  gnuplot("set size square; set grid; plot  'z.test' us 1:2, x");
+  rai::wait();
+}
+
 void TEST(Basics){
   rai::BSpline S;
   arr X = {1., 0., 0., 1.};  X.reshape(-1,1);
@@ -12,31 +25,23 @@ void TEST(Basics){
   S.set(2, X, T);
 
   cout <<"\ntimes = " <<S.knotTimes <<endl;
-  cout <<"points = " <<~S.knotPoints <<endl;
+  cout <<"points = " <<~S.ctrlPoints <<endl;
+  plotIt(S);
 
-  S.append(arr{0., 1.}.reshape(-1,1), {.5, 1.});
+  S.append(arr{0., 1.}.reshape(-1,1), {.5, 1.}, true);
 
   cout <<"\ntimes = " <<S.knotTimes <<endl;
-  cout <<"points = " <<~S.knotPoints <<endl;
+  cout <<"points = " <<~S.ctrlPoints <<endl;
+  plotIt(S);
 
   S.setDoubleKnotVel(-1, vel);
   S.setDoubleKnotVel(1, vel);
   S.setDoubleKnotVel(5, -vel);
 
   cout <<"\ntimes = " <<S.knotTimes <<endl;
-  cout <<"points = " <<~S.knotPoints <<endl;
+  cout <<"points = " <<~S.ctrlPoints <<endl;
+  plotIt(S);
 
-  ofstream fil("z.test");
-  for(double t=S.begin()+.1;t<=S.end()+.1;t+=.001){
-    arr x, xDot, xDDot;
-    S.eval(x, xDot, xDDot, t);
-    fil <<t <<' ' <<x.modRaw() <<' ' <<xDot.modRaw() <<' ' <<xDDot.modRaw() <<endl;
-//    fil <<t <<' ' <<S.eval(t,2).modRaw() <<endl;
-  }
-  fil.close();
-  gnuplot("set size square; plot  'z.test' us 1:2, x", true);
-//  gnuplot("plot 'z.test' us 1:2, '' us 1:3, '' us 1:4, x", true);
-  rai::wait();
 }
 
 //==============================================================================
@@ -68,7 +73,7 @@ void TEST(Path){
 
   rai::Path P(X,2);
   cout <<"times = " <<P.knotTimes
-      <<"\npoints= " <<P.knotPoints <<endl;
+      <<"\npoints= " <<P.ctrlPoints <<endl;
 
   //-- gradient check of velocity
   fct Test = [&P](const arr& x) -> arr {
@@ -107,24 +112,47 @@ void testDiff(){
   rai::BSpline S;
   S.set(3, X, grid(1, 0., 1., X.d0-1).reshape(-1));
 
+  //-- test w.r.t. times
   double teval;
-  fct Test = [&S, &teval](const arr& knots) -> arr {
-    S.knotTimes = knots;
+  fct evalFromKnotTimes = [&S, &teval](const arr& knotTimes) -> arr {
+    S.knotTimes = knotTimes;
     arr y;
-    y = S.eval2(teval, 0, y.J());
+    y = S.eval2(teval, 0, NoArr, y.J());
     return y;
   };
 
   double time = -rai::cpuTime();
   for(uint k=0;k<100;k++){
     teval = rnd.uni(-.1, 1.1);
-    arr knots = S.knotTimes;
+    arr knotTimes = S.knotTimes;
     arr x = S.eval(teval);
     arr y = S.eval2(teval);
-    arr z = Test(knots);
+    arr z = evalFromKnotTimes(knotTimes);
     cout <<teval <<' ' <<x <<' ' <<y <<' ' <<x-y <<' ' <<x-z.noJ() <<endl;
-    checkJacobian(Test, knots, 1e-4);
-    S.knotTimes = knots;
+    checkJacobian(evalFromKnotTimes, knotTimes, 1e-4);
+    S.knotTimes = knotTimes;
+  }
+  time += rai::cpuTime();
+  cout <<"time: " <<time <<endl;
+
+  //-- test w.r.t. points
+  fct evalFromKnotPoints= [&S, &teval](const arr& knotPoints) -> arr {
+    S.ctrlPoints = knotPoints;
+    arr y;
+    y = S.eval2(teval, 0, y.J(), NoArr);
+    return y;
+  };
+
+  time = -rai::cpuTime();
+  for(uint k=0;k<100;k++){
+    teval = rnd.uni(-.1, 1.1);
+    arr knotPoints = S.ctrlPoints;
+    arr x = S.eval(teval);
+    arr y = S.eval2(teval);
+    arr z = evalFromKnotPoints(knotPoints);
+    cout <<teval <<' ' <<x <<' ' <<y <<' ' <<x-y <<' ' <<x-z.noJ() <<endl;
+    checkJacobian(evalFromKnotPoints, knotPoints, 1e-4);
+    S.ctrlPoints = knotPoints;
   }
   time += rai::cpuTime();
   cout <<"time: " <<time <<endl;
@@ -136,11 +164,11 @@ void testDiff(){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc, argv);
 
-//  testBasics();
+  testBasics();
 //  testSpeed();
 
 //  testPath();
-  testDiff();
+//  testDiff();
 
   return 0;
 }
