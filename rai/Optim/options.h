@@ -37,6 +37,7 @@ struct OptOptions {
   RAI_PARAM("opt/", double, muMax, 1e4)
   RAI_PARAM("opt/", double, muLBInit, .1)
   RAI_PARAM("opt/", double, muLBDec, .2)
+  RAI_PARAM("opt/", double, maxLambda, -1.)
   RAI_PARAM_ENUM("opt/", ConstrainedMethodType, constrainedMethod, augmentedLag)
 //  void write(std::ostream& os) const;
 };

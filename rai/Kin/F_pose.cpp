@@ -174,13 +174,13 @@ void F_ScalarProduct::phi2(arr& y, arr& J, const FrameL& F){
   CHECK(fabs(vec1.length()-1.)<1e-4, "vector references must be normalized");
   CHECK(fabs(vec2.length()-1.)<1e-4, "vector references must be normalized");
 
-  arr zi, Ji, zj, Jj;
-  f1->C.kinematicsVec(zi, Ji, f1, vec1);
-  f2->C.kinematicsVec(zj, Jj, f2, vec2);
+  arr z1, J1, z2, J2;
+  f1->C.kinematicsVec(z1, J1, f1, vec1);
+  f2->C.kinematicsVec(z2, J2, f2, vec2);
 
   y.resize(1);
-  y(0) = scalarProduct(zi, zj);
-  J = ~zj * Ji + ~zi * Jj;
+  y(0) = scalarProduct(z1, z2);
+  J = ~z2 * J1 + ~z1 * J2;
 }
 
 //===========================================================================

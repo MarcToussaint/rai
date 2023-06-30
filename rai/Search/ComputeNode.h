@@ -34,8 +34,8 @@ namespace rai {
 
     virtual std::shared_ptr<ComputeNode> createNewChild(int i) = 0;
 
-    virtual double effortHeuristic(){ return 0.; }        //expected effort-to-go (FULL DOWN-STREAM TO LEAF NODE)
-    virtual double branchingHeuristic(){ return 1.; }
+//    virtual double effortHeuristic(){ return 0.; }        //expected effort-to-go (FULL DOWN-STREAM TO LEAF NODE)
+//    virtual double branchingHeuristic(){ return 1.; }
 
     virtual double computePenalty(){
       return ::pow(c/info().level_c0, info().level_cP);

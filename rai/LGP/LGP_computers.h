@@ -47,7 +47,7 @@ namespace rai {
 
     virtual void untimedCompute(){}
     virtual int getNumDecisions(){ return -1.; }
-    virtual double effortHeuristic(){ return 11.+10.; }
+//    virtual double effortHeuristic(){ return 11.+10.; }
     virtual double branchingPenalty_child(int i);
 
     virtual std::shared_ptr<ComputeNode> createNewChild(int i);
@@ -72,8 +72,8 @@ namespace rai {
     virtual void untimedCompute();
 
     virtual int getNumDecisions(){ return -1.; }
-    virtual double branchingHeuristic(){ return root->info->waypoint_w0; }
-    virtual double effortHeuristic(){ return 10.+10.; }
+//    virtual double branchingHeuristic(){ return root->info->waypoint_w0; }
+//    virtual double effortHeuristic(){ return 10.+10.; }
     virtual double branchingPenalty_child(int i);
 
 
@@ -94,7 +94,7 @@ namespace rai {
     FactorBoundsComputer(LGPcomp_Skeleton *_sket, int rndSeed);
 
     virtual void untimedCompute();
-    virtual double effortHeuristic(){ return 10.+1.*(komoWaypoints.T); }
+//    virtual double effortHeuristic(){ return 10.+1.*(komoWaypoints.T); }
     virtual int getNumDecisions(){ return 1; }
     virtual std::shared_ptr<ComputeNode> createNewChild(int i);
   };
@@ -109,7 +109,7 @@ namespace rai {
     PoseBoundsComputer(LGPcomp_Skeleton *_sket, int rndSeed);
 
     virtual void untimedCompute();
-    virtual double effortHeuristic(){ return 10.+1.*(sket->states.N); }
+//    virtual double effortHeuristic(){ return 10.+1.*(sket->states.N); }
     virtual int getNumDecisions(){ return 1; }
     virtual std::shared_ptr<ComputeNode> createNewChild(int i);
   };
@@ -126,8 +126,8 @@ namespace rai {
     LGPcomp_Waypoints(LGPcomp_Skeleton *_sket, int rndSeed);
 
     virtual void untimedCompute();
-    virtual double effortHeuristic(){ return 10.+1.*(komoWaypoints->T); }
-    virtual int getNumDecisions(){ return 1; }
+//    virtual double effortHeuristic(){ return 10.+1.*(komoWaypoints->T); }
+    virtual int getNumDecisions(){ return 2; }
     virtual std::shared_ptr<ComputeNode> createNewChild(int i);
   };
 
@@ -148,7 +148,7 @@ namespace rai {
     LGPcomp_RRTpath(ComputeNode* _par, LGPcomp_Waypoints *_ways, uint _t);
 
     virtual void untimedCompute();
-    virtual double effortHeuristic(){ return 10.+1.*(ways->komoWaypoints->T-t-1); }
+//    virtual double effortHeuristic(){ return 10.+1.*(ways->komoWaypoints->T-t-1); }
 
     virtual int getNumDecisions(){ return 1; }
     virtual std::shared_ptr<ComputeNode> createNewChild(int i);
@@ -156,17 +156,19 @@ namespace rai {
 
   //===========================================================================
 
-  struct LGPcomp_Path : ComputeNode {
+  struct LGPcomp_OptimizePath : ComputeNode {
     LGPcomp_Skeleton *sket=0;
     LGPcomp_Waypoints *ways=0;
 
     shared_ptr<KOMO> komoPath;
     NLP_Solver sol;
 
-    LGPcomp_Path(LGPcomp_RRTpath *_par, LGPcomp_Waypoints *_ways);
+    LGPcomp_OptimizePath(LGPcomp_Skeleton *_sket); //compute path from skeleton directly, without waypoints first
+    LGPcomp_OptimizePath(LGPcomp_Waypoints *_ways); //compute path initialized from waypoints
+    LGPcomp_OptimizePath(LGPcomp_RRTpath *_par, LGPcomp_Waypoints *_ways); //compute path initialized from series of RRT solutions
 
     virtual void untimedCompute();
-    virtual double effortHeuristic(){ return 0.; }
+//    virtual double effortHeuristic(){ return 0.; }
 
     virtual double sample(){
       CHECK(sol.ret, "");

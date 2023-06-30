@@ -2093,6 +2093,7 @@ bool Configuration::hasView(){
 
 int Configuration::view(bool pause, const char* txt) {
 //  gl()->resetPressedKey();
+  for(Frame* f:frames) f->ensure_X();
   int key = viewer()->setConfiguration(*this, txt, pause);
 //  if(pause) {
 //    if(!txt) txt="Config::watch";

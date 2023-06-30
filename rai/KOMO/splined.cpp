@@ -55,7 +55,7 @@ void SplinedKOMO::evaluate(arr& phi, arr& J, const arr& x){
   for(uint i=0;i<timeGrid.N;i++){
       x_fine[i] = S.eval2(timeGrid(i), 0, Jpoints);
       tmp = Jpoints.sub(0,-1, +1+(S.degree/2), -1-(S.degree/2), 0,-1); //clip the Jacobian w.r.t. head/tail ctrl points AND first const point
-      for(int k=1;k<=(S.degree/2);k++){ //tricky: the tail ctrlPoints actually all contribute to the last Jpoints (as setPoints overwrites all tail ctrlPoints with same end point)
+      for(int k=1;k<=int(S.degree/2);k++){ //tricky: the tail ctrlPoints actually all contribute to the last Jpoints (as setPoints overwrites all tail ctrlPoints with same end point)
           for(uint i=0;i<x0.N;i++) tmp(i,-1,i) += Jpoints(i,-k,i);
       }
       tmp.reshape(x0.N, dimension);

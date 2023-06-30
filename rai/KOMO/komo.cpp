@@ -314,7 +314,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
             -1.1,1.1, -1.1,1.1, -1.1,1.1, -1.1,1.1 }; //no limits on rotation
         }
         //sample heuristic
-        f->joint->sampleUniform=.0;
+        f->joint->sampleUniform=1.;
         f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
       }
     } else if(newMode==SY_stableZero) {
@@ -451,18 +451,19 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
     if(f){
       //limits?
       rai::Shape* on = world.getFrame(frames(0))->shape;
-      CHECK_EQ(on->type(), rai::ST_ssBox, "")
-      f->joint->limits = {
-                         -.5*on->size(0), .5*on->size(0),
-                         -.5*on->size(1), .5*on->size(1),
-                         -RAI_2PI,RAI_2PI };
-      //init heuristic
-      f->joint->sampleUniform=1.;
-      f->joint->q0 = zeros(3);
-      rai::Frame *p=f->prev;
-      while(p && p->joint && p->joint->type==JT_transXYPhi){
-        p->joint->limits = f->joint->limits;
-        p = p->prev;
+      if(on->type()==rai::ST_ssBox){
+        f->joint->limits = {
+          -.5*on->size(0), .5*on->size(0),
+          -.5*on->size(1), .5*on->size(1),
+          -RAI_2PI,RAI_2PI };
+        //init heuristic
+        f->joint->sampleUniform=1.;
+        f->joint->q0 = zeros(3);
+        rai::Frame *p=f->prev;
+        while(p && p->joint && p->joint->type==JT_transXYPhi){
+          p->joint->limits = f->joint->limits;
+          p = p->prev;
+        }
       }
     }
 

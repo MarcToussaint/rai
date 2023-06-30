@@ -90,18 +90,20 @@ void rai::AStar::step() {
   }
 }
 
-void rai::AStar::run(int stepsLimit) {
+bool rai::AStar::run(int stepsLimit) {
   uint numSol=solutions.N;
   for(;;) {
     step();
     if(solutions.N>numSol) break;
-    //      report();
+    if(isEmpty()) break;
     if(stepsLimit>=0 && (int)steps>=stepsLimit) break;
   }
   if(verbose>0){
-    LOG(0) <<"==== DONE ===";
+    LOG(0) <<"# of new solution found: " <<solutions.N - numSol;
     report();
   }
+  if(solutions.N>numSol) return true;
+  return false;
 }
 
 void rai::AStar::report(){
@@ -109,7 +111,7 @@ void rai::AStar::report(){
            <<" mem#: " <<mem.N
           <<" queue#: " <<queue.N <<endl;
   if(verbose>2) std::cout <<" queue: " <<queue <<std::endl;
-  if(solutions.N) std::cout <<" solutions: " <<solutions.modList();
+  if(solutions.N){ std::cout <<" solutions: " <<solutions.modList(); std::cout <<endl; }
 }
 
 rai::TreeSearchNode* rai::AStar::selectByTreePolicy(){

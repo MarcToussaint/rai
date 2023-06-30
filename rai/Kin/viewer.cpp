@@ -98,6 +98,7 @@ int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, con
 
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
+    for(rai::Frame* f:_C.frames) CHECK(f->_state_X_isGood, "");
     framePath = _C.getFrameState();
     framePath.reshape(1, _C.frames.N, 7);
     drawTimeSlice=0;

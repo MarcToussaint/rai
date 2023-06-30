@@ -159,7 +159,7 @@ void LGP_Tool::player() {
       //print
       cout <<"********************" <<endl;
       cout <<"nodeID: " <<*focusNode <<"\nstate: ";
-      focusNode->state->write(cout, "");
+      focusNode->state->write(cout, " ");
       cout <<"\n--------------------" <<endl;
       cout <<"\nCHOICES:" <<endl;
       cout <<"(q) quit" <<endl;
@@ -229,10 +229,9 @@ void LGP_Tool::compute(const intA& branches){
     mem.append(child);
     node = child.get();
     while(!node->isComplete) node->compute();
+    printTree(mem);
+    system("evince z.pdf &");
   }
-
-  printTree(mem);
-  system("evince z.pdf &");
 }
 
 void LGP_Tool::solve(const std::shared_ptr<TreeSearchNode>& root){

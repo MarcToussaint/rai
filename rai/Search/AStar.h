@@ -31,8 +31,9 @@ struct AStar {
   AStar(const std::shared_ptr<TreeSearchNode>& _root, SearchMode _mode = astar);
 
   void step();
-  void run(int stepsLimit=-1);
+  bool run(int stepsLimit=-1);
   void report();
+  bool isEmpty(){ return mode==astar && !queue.N; }
 
   TreeSearchNode* selectByTreePolicy();
 

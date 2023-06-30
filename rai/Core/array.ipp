@@ -1611,8 +1611,12 @@ template<class T> Array<T>& Array<T>::read(std::istream& is) {
     for(;;) {
       skip(is, " ,\r\t", NULL, true);
       is.get(c);
+      if(is.eof()){
+        if(expectBracket) LOG(-1), "closing bracket is missing";
+        is.clear();
+        break;
+      }
       if(expectBracket && c==']') { is.clear(); break; }
-      if(!expectBracket && is.eof()) { is.clear(); break; }
       if(c==';' || c=='\n') {  //set an array width
         if(!d) d=i; else if(d && i%d) PARSERR("mis-structured array in row " <<i/d);
         continue;

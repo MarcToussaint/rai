@@ -184,6 +184,7 @@ struct Frame : NonCopyable {
   friend struct Joint;
   friend struct Transformation_Xtoken;
   friend struct Transformation_Qtoken;
+  friend struct ConfigurationViewer;
 };
 stdOutPipe(Frame)
 
