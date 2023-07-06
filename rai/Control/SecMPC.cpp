@@ -33,7 +33,10 @@ SecMPC::SecMPC(KOMO& komo, int subSeqStart, int subSeqStop, double timeCost, dou
 
   if(setNextWaypointTangent) timingMPC.set_updatedWaypoints(timingMPC.waypoints, true);
 
-  if(opt.verbose>0) LOG(0) <<"new SecMPC";
+  if(opt.verbose>0){
+    LOG(0) <<"new SecMPC with following waypoint komo:";
+    waypointMPC.komo.reportProblem();
+  }
 }
 
 //===========================================================================

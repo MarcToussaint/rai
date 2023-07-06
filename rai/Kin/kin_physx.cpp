@@ -250,7 +250,11 @@ void PhysXInterface_self::addLink(rai::Frame* f) {
     if(f->joint && !f->joint->isPartBreak()) type=rai::BT_dynamic;
   }
 
-  if(opt.verbose>0) LOG(0) <<"adding link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes";
+  if(opt.verbose>0){
+    LOG(0) <<"adding link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes";
+    for(rai::Shape* s:shapes) cout <<s->frame.name <<' ';
+    cout <<endl;
+  }
 
   //-- create a PhysX actor
   PxRigidDynamic* actor=nullptr;
