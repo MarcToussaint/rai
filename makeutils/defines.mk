@@ -29,6 +29,13 @@ ifeq ($(OPENMP),1)
 CXXFLAGS += -fopenmp -DOPENMP
 endif
 
+ifeq ($(TORCH),1)
+CXXFLAGS  += -DRAI_TORCH
+CPATH := $(CPATH):$(TORCH_PATH)/include:$(TORCH_PATH)/include/torch/csrc/api/include/torch
+LPATH := $(LPATH):$(TORCH_PATH)/lib
+LIBS += -ltorch -lc10 -ltorch_cpu # -lc10_cuda -ltorch_cuda -Wl,--no-as-needed -ltorch_cuda
+endif
+
 ifeq ($(PYBIND),1)
 DEPEND_UBUNTU += python3-dev python3
 #pybind11-dev NO! don't use the ubuntu package. Instead use:
