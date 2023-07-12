@@ -21,7 +21,6 @@ rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeTyp
   b.forces.append(this);
   a.C.otherDofs.append(this);
   setZero();
-  sampleSdv = .1;
   if(copy) {
     qIndex=copy->qIndex; dim=copy->dim; limits=copy->limits; active=copy->active;
     sampleUniform=copy->sampleUniform;  sampleSdv=copy->sampleSdv;
@@ -117,7 +116,7 @@ arr rai::ForceExchange::calcDofsFromConfig() const {
 
 void rai::ForceExchange::setRandom(uint timeSlices_d1, int verbose){
   setZero();
-  q0 = calcDofsFromConfig();
+//  q0 = calcDofsFromConfig();
   Dof::setRandom(timeSlices_d1, verbose);
 }
 

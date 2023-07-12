@@ -213,7 +213,7 @@ rai::LGPcomp_Waypoints::LGPcomp_Waypoints(rai::LGPcomp_Skeleton* _sket, int rndS
 
   komoWaypoints->clone(*sket->skeleton.komoWaypoints);
 
-  rnd.seed(rndSeed);
+  //rnd.seed(rndSeed);
   komoWaypoints->initRandom(0);
   if(sket->verbose()>2) komoWaypoints->view(sket->verbose()>3, STRING(name <<" - init"));
 
@@ -273,6 +273,8 @@ void rai::LGPcomp_Waypoints::untimedCompute(){
     }
   }
 }
+
+int rai::LGPcomp_Waypoints::getNumDecisions(){ return 1; }
 
 std::shared_ptr<rai::ComputeNode> rai::LGPcomp_Waypoints::createNewChild(int i){
   //komoWaypoints->checkConsistency();

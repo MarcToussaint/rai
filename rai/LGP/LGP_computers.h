@@ -127,7 +127,7 @@ namespace rai {
 
     virtual void untimedCompute();
 //    virtual double effortHeuristic(){ return 10.+1.*(komoWaypoints->T); }
-    virtual int getNumDecisions(){ return 2; }
+    virtual int getNumDecisions();
     virtual std::shared_ptr<ComputeNode> createNewChild(int i);
   };
 
