@@ -15,7 +15,7 @@
 #include "../Kin/feature.h"
 
 void init_Feature(pybind11::module& m) {
-  pybind11::class_<Feature, shared_ptr<Feature>>(m, "Feature")
+  pybind11::class_<Feature, shared_ptr<Feature>>(m, "Feature", "todo doc")
       .def("setOrder", &Feature::setOrder)
       .def("setScale", &Feature::setScale)
       .def("setTarget", &Feature::setTarget)

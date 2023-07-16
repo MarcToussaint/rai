@@ -13,7 +13,7 @@
 #include "../PathAlgos/RRT_PathFinder.h"
 
 void init_PathAlgos(pybind11::module& m) {
-  pybind11::class_<rai::PathFinder, std::shared_ptr<rai::PathFinder>>(m, "PathFinder")
+  pybind11::class_<rai::PathFinder, std::shared_ptr<rai::PathFinder>>(m, "PathFinder", "todo doc")
 
   .def(pybind11::init<>())
   .def("setProblem", &rai::PathFinder::setProblem, "", pybind11::arg("Configuration"), pybind11::arg("starts"), pybind11::arg("goals") )

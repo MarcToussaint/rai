@@ -1612,7 +1612,7 @@ template<class T> Array<T>& Array<T>::read(std::istream& is) {
       skip(is, " ,\r\t", NULL, true);
       is.get(c);
       if(is.eof()){
-        if(expectBracket) LOG(-1), "closing bracket is missing";
+        if(expectBracket) LOG(-1) <<"closing bracket is missing";
         is.clear();
         break;
       }

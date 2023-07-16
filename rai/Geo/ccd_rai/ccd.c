@@ -908,6 +908,7 @@ static int expandPolytope(ccd_pt_t *pt, ccd_pt_el_t *el,
                 ccdPtDelEdge(pt, (ccd_pt_edge_t *)el);
             }
 
+	    e[3] = 0; //avoid uninitialized warning
             e[4] = ccdPtAddEdge(pt, v[4], v[2]);
             e[5] = ccdPtAddEdge(pt, v[4], v[0]);
             e[6] = ccdPtAddEdge(pt, v[4], v[1]);

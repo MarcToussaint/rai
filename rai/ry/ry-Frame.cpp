@@ -25,7 +25,7 @@
 //}
 
 void init_Frame(pybind11::module& m) {
-  pybind11::class_<rai::Frame, shared_ptr<rai::Frame>>(m, "Frame")
+  pybind11::class_<rai::Frame, shared_ptr<rai::Frame>>(m, "Frame", "todo doc")
 
     .def("setColor", &rai::Frame::setColor )
 

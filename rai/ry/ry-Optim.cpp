@@ -19,7 +19,7 @@ void init_Optim(pybind11::module& m) {
 
   //===========================================================================
 
-  pybind11::class_<NLP, shared_ptr<NLP>> __mp(m, "NLP");
+  pybind11::class_<NLP, shared_ptr<NLP>> __mp(m, "NLP", "Representation of a Nonlinear Mathematical Program");
   __mp
 
   .def("evaluate", [](std::shared_ptr<NLP>& self, const arr& x) {
