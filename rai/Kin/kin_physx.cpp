@@ -628,6 +628,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       //      break;
     case rai::ST_capsule:
     case rai::ST_cylinder:
+    case rai::ST_ssCylinder:
     case rai::ST_ssBox:
     case rai::ST_ssCvx: {
       floatA Vfloat = rai::convert<float>(s->mesh().V);

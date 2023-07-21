@@ -239,17 +239,22 @@ void LGP_Tool::solve(const std::shared_ptr<TreeSearchNode>& root){
   printTree(compute_astar.mem);
   system("evince z.pdf &");
   //  tree.runTrivial(1000, 100.);
+  double next=rai::realTime(), now;
   for(uint k=0;k<1000;k++){
-    for(uint i=0;i<20;i++) compute_astar.step();
+    compute_astar.step();
     //astar.report();
-    printTree(compute_astar.mem);
-    uint solutions=0;
-    for(TreeSearchNode *n:compute_astar.solutions){
-      if(n->isFeasible) solutions++;
-      cout <<"=== SOLUTIONS: " <<solutions <<endl;
+    now=rai::realTime();
+    if(now>next){
+      printTree(compute_astar.mem);
+      next = now + 2.; //update every 2 sec
+      uint solutions=0;
+      for(TreeSearchNode *n:compute_astar.solutions){
+        if(n->isFeasible) solutions++;
+        cout <<"=== SOLUTIONS: " <<solutions <<endl;
+      }
+      if(solutions>=12) break;
+      //wait();
     }
-    if(solutions>=12) break;
-    //wait();
   }
 }
 

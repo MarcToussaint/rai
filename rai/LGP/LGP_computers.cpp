@@ -415,7 +415,7 @@ rai::LGPcomp_OptimizePath::LGPcomp_OptimizePath(rai::LGPcomp_RRTpath* _par, rai:
     }
   }
 
-  if(sket->verbose()>1) komoPath->view(sket->verbose()>2, STRING(name <<" - init with rrts"));
+  if(sket->verbose()>1) komoPath->view(sket->verbose()>3, STRING(name <<" - init with rrts"));
 
   komoPath->run_prepare(0.);
   //  komoPath->opt.animateOptimization=2;
@@ -425,17 +425,20 @@ rai::LGPcomp_OptimizePath::LGPcomp_OptimizePath(rai::LGPcomp_RRTpath* _par, rai:
 }
 
 void rai::LGPcomp_OptimizePath::untimedCompute(){
-  for(uint i=0;i<1;i++) if(sol.step()) break;
+  for(uint i=0;i<5;i++) if(sol.step()) break;
 
 
   l = sol.ret->eq + sol.ret->ineq;
   isComplete = sol.ret->done;
+  sol.ret->feasible = (sol.ret->ineq + sol.ret->eq < 3.);
 
-  if(!isComplete && sket->verbose()>4){
+  if(!isComplete && sket->verbose()>2){
     komoPath->pathConfig.gl().drawOptions.drawVisualsOnly=true;
     komoPath->view(sket->verbose()>5, STRING(name <<" - intermediate result c:" <<c <<"\n" <<*sol.ret));
-    if(sket->verbose()>5) while(komoPath->view_play(true, .1));
-    else komoPath->view_play(false, .1);
+    if(sket->verbose()>3){
+      if(sket->verbose()>5) while(komoPath->view_play(true, .1));
+      else komoPath->view_play(false, .1);
+    }
   }
 
   if(isComplete){
@@ -448,7 +451,6 @@ void rai::LGPcomp_OptimizePath::untimedCompute(){
     //komoPath->checkGradients();
     if(sket->verbose()>1) while(komoPath->view_play(sket->verbose()>1 && sol.ret->feasible));
 
-    sol.ret->feasible = (sol.ret->ineq + sol.ret->eq < 3.);
     if(!sol.ret->feasible){
       //l = 1e10;
       isFeasible = false;
