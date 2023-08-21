@@ -989,7 +989,7 @@ double coll_3on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2
 PclCollision::PclCollision(const arr& _x, ANN& ann,
                            const rai::Transformation& t1, const arr& Jp1, const arr& Jx1,
                            const rai::Transformation& t2, const arr& Jp2, const arr& Jx2,
-                           double _rad1, double _rad2) {
+                           double _rad1, double _rad2, bool returnVector) {
 
   Vector x(_x);
 
@@ -1001,12 +1001,13 @@ PclCollision::PclCollision(const arr& _x, ANN& ann,
 
   arr sqrDists;
   uintA idx;
-  uint K=50;
+  uint K=10;
   ann.getkNN(sqrDists, idx, x.getArr(), K);
 
   arr normal;
-  double sumD=0;
-  arr Jz;
+  double y_dist=0;
+  Vector y_vec(0);
+  arr J_dist, J_vec;
   x = t2.rot * x; //relative to center2, but in world axes!
   for(uint k=0;k<K;k++){
     Vector z = ann.X[idx(k)];
@@ -1014,20 +1015,28 @@ PclCollision::PclCollision(const arr& _x, ANN& ann,
     Vector del = x - z;
     double d = del.length();
     normal = del.getArr();
-    if(fabs(d)>1e-10) normal /= d;
-    if(!Jz.N){
-      Jz = ~normal * (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
+    if(d>1e-10) normal /= d;
+    if(!J_dist.N){
+      J_dist = ~normal * (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
+      J_vec = (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
     }else{
-      Jz += ~normal * (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
+      J_dist += ~normal * (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
+      J_vec += (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
     }
-    sumD += d;
+    y_dist += d;
+    y_vec += del;
   }
-  sumD /= double(K);
-  Jz /= double(K);
+  y_dist /= double(K);
+  y_vec /= double(K);
+  J_dist /= double(K);
+  J_vec /= double(K);
 
-  y = arr{sumD-_rad1-_rad2};
-  if(!!J) {
-    J = Jz;
+  if(!returnVector){
+    y = arr{y_dist-_rad1-_rad2};
+    if(!!J) J = J_dist;
+  }else{
+    y = y_vec.getArr();
+    if(!!J) J = J_vec;
   }
 }
 

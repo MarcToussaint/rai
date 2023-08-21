@@ -69,10 +69,14 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     rai::PclCollision coll(m1->V, m2->ensure_ann(),
                            f1->ensure_X(), Jp1, Jx1,
                            f2->ensure_X(), Jp2, Jx2,
-                           r1, r2);
-    CHECK_EQ(type, _negScalar, "");
-    y = -coll.y;
-    if(!!J) J = -coll.J;
+                           r1, r2, type==_vector);
+    if(type==_negScalar){
+      y = -coll.y;
+      if(!!J) J = -coll.J;
+    }else if(type==_vector){
+      y = coll.y;
+      if(!!J) J = coll.J;
+    }else NIY;
     if(!!J) checkNan(J);
     return;
   }

@@ -252,7 +252,7 @@ void PhysXInterface_self::addLink(rai::Frame* f) {
 
   if(opt.verbose>0){
     LOG(0) <<"adding link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes";
-    for(rai::Shape* s:shapes) cout <<s->frame.name <<' ';
+    for(rai::Shape* s:shapes) cout <<' ' <<s->frame.name;
     cout <<endl;
   }
 
@@ -438,27 +438,32 @@ void PhysXInterface_self::unlockJoint(PxD6Joint* joint, rai::Joint* rai_joint) {
 }
 
 void PhysXInterface_self::addMultiBody(rai::Frame* base) {
-  CHECK(!base->parent || (base->joint && base->joint->type==rai::JT_rigid) || (base->joint && base->inertia), "base needs to be either rigid or with inertia");
+  //CHECK(!base->parent || (base->joint && base->joint->type==rai::JT_rigid) || (base->joint && base->inertia), "base needs to be either rigid or with inertia");
 
   //-- collect all links for that root
   FrameL F = {base};
-  base->getPartSubFrames(F);
+  //base->getPartSubFrames(F);
+  base->getSubtree(F);
   FrameL links = {base};
   for(auto* f:F){ if(f->joint && /*f->joint->active &&*/ !f->joint->isPartBreak()) links.append(f); }
   intA parents(links.N);
-  parents(0) = -1;
+  parents = -1;
   for(uint i=1;i<links.N;i++){
     rai::Frame *p = links(i)->parent->getUpwardLink();
     parents(i) = links.findValue(p);
+    if(parents(i)==-1){
+      //special case: the multibody contains a partbreak link - skip over it (same as assuming fixed)
+      CHECK(p->joint && p->joint->isPartBreak(), "");
+      p = p->parent->getUpwardLink();
+      parents(i) = links.findValue(p);
+    }
     CHECK(parents(i)>=0, "");
   }
   rai::Array<PxArticulationLink*> linksPx(links.N);
   linksPx = NULL;
 
   if(opt.verbose>0){
-    LOG(0) <<"adding multibody with base '" <<base->name <<"' and links:";
-    for(rai::Frame *f:links) cout <<f->name <<' ';
-    cout <<"..." <<endl;
+    LOG(0) <<"adding multibody with base '" <<base->name <<"' with the following links ...";
   }
 
   PxArticulationReducedCoordinate* articulation = core->mPhysics->createArticulationReducedCoordinate();
@@ -477,6 +482,11 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
     if(i>0) type = rai::BT_dynamic;
 
     //create link
+    if(opt.verbose>0){
+      LOG(0) <<"adding multibody link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes";
+      for(rai::Shape* s:shapes) cout <<' ' <<s->frame.name;
+      cout <<endl;
+    }
 
     PxArticulationLink* actor = 0;
     actor = articulation->createLink(i==0?NULL:linksPx(parents(i)), conv_Transformation2PxTrans(f->ensure_X()));
@@ -529,6 +539,11 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
           axis = PxArticulationAxis::eZ;
           break;
         }
+//        case rai::JT_quatBall:{
+//          type = PxArticulationJointType::eSPHERICAL;
+//          axis = PxArticulationAxis::eZ;
+//          break;
+//        }
         default: NIY;
       }
       joint->setJointType(type);
@@ -767,9 +782,12 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose): self(n
     FrameL parts = C.getParts();
     for(rai::Frame *f : parts){
       bool asMultiBody=false;
+#if 0
       FrameL sub = f->getSubtree();
       for(rai::Frame *a:sub) if(a->joint){ asMultiBody=true; break; }
-
+#else
+      if(f->ats && f->ats->findNode("multibody")) asMultiBody=true;
+#endif
       if(asMultiBody){
         self->addMultiBody(f);
       }else{
@@ -921,6 +939,7 @@ void PhysXInterface::pushKinematicStates(const rai::Configuration& C) {
       PxRigidActor* a = self->actors(f->ID);
       if(!a) continue; //f is not an actor
 
+      LOG(0) <<"pushing kinematic state (i.e. frame pose) of " <<f->name;
       ((PxRigidDynamic*)a)->setKinematicTarget(conv_Transformation2PxTrans(f->ensure_X()));
     }
   }
@@ -1071,7 +1090,15 @@ void PhysXInterface::watch(bool pause, const char* txt) {
 //    self->gl->camera.setDefault();
 //  }
 //  if(pause) self->gl->watch(txt);
-//  else self->gl->update(txt);
+  //  else self->gl->update(txt);
+}
+
+void PhysXInterface::setGravity(float grav){
+  self->gScene->setGravity(PxVec3(0.f, 0.f, grav));
+}
+
+void PhysXInterface::disableGravity(rai::Frame* f, bool disable){
+  self->actors(f->ID)->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, disable);
 }
 
 void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b) {

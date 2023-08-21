@@ -139,8 +139,11 @@ struct Frame : NonCopyable {
   Dof* getDof() const;
 
   void prefixSubtree(const char* prefix);
-  void computeCompoundInertia(bool clearChildInertias=true);
   void transformToDiagInertia();
+
+  //composed object manipulation
+  void computeCompoundInertia(bool clearChildInertias=true);
+  void convertDecomposedShapeToChildFrames();
 
   //I/O
   void read(const Graph& ats);

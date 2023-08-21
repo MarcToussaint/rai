@@ -19,7 +19,7 @@ namespace rai {
     RAI_PARAM("physx/", bool, jointedBodies, false)
     RAI_PARAM("physx/", double, angularDamping, .1)
     RAI_PARAM("physx/", double, defaultFriction, 1.)
-    RAI_PARAM("physx/", double, defaultRestitution, .1)
+    RAI_PARAM("physx/", double, defaultRestitution, .1) //restitution=1 should be elastic...
     RAI_PARAM("physx/", double, motorKp, 1000.)
     RAI_PARAM("physx/", double, motorKd, 100.)
   };
@@ -47,6 +47,8 @@ struct PhysXInterface : GLDrawer {
   void glDraw(OpenGL&);
   void watch(bool pause=false, const char* txt=nullptr);
 
+  void setGravity(float grav);
+  void disableGravity(rai::Frame *f, bool disable=true);
   void addForce(rai::Vector& force, rai::Frame* b);
   void addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos);
 

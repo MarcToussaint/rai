@@ -80,7 +80,8 @@ struct PclCollision{
   PclCollision(const arr& x, ANN& ann,
                const rai::Transformation& t1, const arr& Jp1, const arr& Jx1,
                const rai::Transformation& t2, const arr& Jp2, const arr& Jx2,
-               double rad1=0., double rad2=0.);
+               double rad1=0., double rad2=0.,
+               bool returnVector=false);
 };
 
 //===========================================================================

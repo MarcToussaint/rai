@@ -68,6 +68,7 @@ enum FeatureSymbol {
   FS_transVelocities,
 
   FS_qQuaternionNorms,
+  FS_opposeCentral,
 };
 
 namespace rai {

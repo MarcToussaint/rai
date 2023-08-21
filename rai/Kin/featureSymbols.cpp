@@ -131,6 +131,7 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
   shared_ptr<Feature> f;
   if(feat==FS_distance) {  f=make_shared<F_PairCollision>(F_PairCollision::_negScalar, false); }
   else if(feat==FS_oppose) {  f=make_shared<F_GraspOppose>(); }
+  else if(feat==FS_opposeCentral) {  f=make_shared<F_GraspOppose>(1e-2); }
   else if(feat==FS_aboveBox) {  f=make_shared<F_AboveBox>(); }
   else if(feat==FS_insideBox) {  f=make_shared<F_InsideBox>(); }
   else if(feat==FS_standingAbove) {

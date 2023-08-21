@@ -283,6 +283,24 @@ void rai::Frame::computeCompoundInertia(bool clearChildInertias){
   }
 }
 
+void rai::Frame::convertDecomposedShapeToChildFrames(){
+  CHECK(shape && shape->type()==ST_mesh, "");
+  Mesh &m = shape->mesh();
+  CHECK(m.cvxParts.N, "");
+  for(uint i=0;i<m.cvxParts.N;i++){
+    rai::Frame *ch = new Frame(this);
+    ch->name <<name <<'_' <<i;
+    ch->setShape(ST_mesh, {});
+    Mesh &s = ch->shape->mesh();
+    int start = m.cvxParts(i);
+    int end = i+1<m.cvxParts.N ? m.cvxParts(i+1)-1 : -1;
+    s.V = m.V({start, end});
+    s.makeConvexHull();
+    ch->shape->cont = shape->cont;
+  }
+  delete shape;
+}
+
 void rai::Frame::transformToDiagInertia(){
   CHECK(inertia, "");
   CHECK(!shape || shape->type()==rai::ST_marker, "can't translate this frame if it has a shape attached");
