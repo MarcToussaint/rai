@@ -41,6 +41,7 @@ struct ConfigurationViewer : GLDrawer {
   int watch(const char* text=nullptr);
   void add(GLDrawer& c);
   void resetPressedKey();
+  void clear();
 
 private://draw data
   Configuration C;

@@ -262,6 +262,10 @@ template<class T> struct Array {
   bool readTagged(std::istream& is, const char* tag);
   void writeDim(std::ostream& os=std::cout) const;
   void readDim(std::istream& is);
+  void writeJson(std::ostream& os=std::cout) const;
+  void readJson(std::istream& is, bool skipType=false);
+  void writeBase64(std::ostream& os) const;
+  void readBase64(std::istream& is);
 
   /// modifiers
   ArrayModRaw<T> modRaw() const;
@@ -669,6 +673,19 @@ namespace rai{
 
   template<class T>
   void tensorPermutation(Array<T>& Y, const Array<T>& X, const uintA& Yid);
+}
+
+
+//===========================================================================
+//
+// base 64 encoding
+//
+
+namespace rai{
+  uint b64_codeLen(uint data_len);
+  uint b64_maxDataLen(uint code_len);
+  void b64_encode(char* code, int code_len, const char* data, int data_len);
+  void b64_decode(char* data, int data_len, const char* code, int code_len);
 }
 
 //===========================================================================

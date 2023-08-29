@@ -42,8 +42,8 @@ void TEST(MeshTools) {
         <<"\n  #triangles: " <<mesh.T.d0
        <<"\n  bounds: " <<mesh.getBounds()
       <<"\n  center: " <<mesh.getMean()
-     <<"\n  area: " <<mesh.getArea()
-    <<"\n  volume: " <<mesh.getVolume()
+     <<"\n  area: " <<(mesh.T.N?mesh.getArea():0)
+    <<"\n  volume: " <<(mesh.T.N?mesh.getVolume():0)
     <<"\n  cvxParts: " <<mesh.cvxParts.N
     <<endl;
 
@@ -99,7 +99,7 @@ void TEST(MeshTools) {
     edited=true;
   }
 
-   if(rai::checkCmdLineTag("decomp")){
+   if(rai::checkParameter<bool>("decomp")){
      cout <<"  decomposing..." <<endl;
      rai::Mesh M = mesh.decompose();
      mesh = M;
@@ -128,6 +128,7 @@ void TEST(MeshTools) {
   cout <<"  saving.. to z.*" <<endl;
   mesh.writePLY("z.ply", true);
   mesh.writeArr(FILE("z.arr"));
+  mesh.writeJson(FILE("z.msh"));
 
   cout <<"== bye bye ==" <<endl;
 }

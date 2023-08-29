@@ -462,7 +462,6 @@ void Mesh::makeConvexHull() {
   if(V.d0<=1) return;
 #if 1
   V = getHull(V, T);
-  if(C.nd==2) C = mean(C);
   cvxParts.clear();
   Vn.clear();
   Tn.clear();
@@ -1253,7 +1252,7 @@ void Mesh::readFile(const char* filename) {
 void Mesh::read(std::istream& is, const char* fileExtension, const char* filename) {
   if(!strcmp(fileExtension, "arr")) { readArr(is); }
   else if(!strcmp(fileExtension, "pts")) { readPts(is); }
-  else if(!strcmp(fileExtension, "msh")) { readArr(is); }
+  else if(!strcmp(fileExtension, "msh")) { readJson(is); }
   else if(!strcmp(fileExtension, "off")) { readOffFile(is); }
   else if(!strcmp(fileExtension, "ply")) { readPLY(filename); }
   else if(!strcmp(fileExtension, "tri")) { readTriFile(is); }
@@ -1524,22 +1523,44 @@ void Mesh::writePLY(const char* fn, bool bin) {
 void Mesh::readPLY(const char* fn) { NICO }
 #endif
 
+void Mesh::writeJson(std::ostream& os){
+  os <<"{\nV: ";
+  convert<float>(V).writeJson(os);
+  os <<",\nT: ";
+  T.writeJson(os);
+  os <<"\n}" <<endl;
+}
+
+void Mesh::readJson(std::istream& is){
+  parse(is, "{", false);
+  parse(is, "V:", false);
+  floatA tmp;
+  tmp.readJson(is);
+  copy(V, tmp);
+  parse(is, ",", false);
+  parse(is, "T:", false);
+  T.readJson(is);
+  parse(is, "}", false);
+}
+
 void Mesh::writeArr(std::ostream& os) {
   Graph G;
-  G.add("V", V);
-  G.add("T", T);
-  if(C.N) G.add("C", C);
+  G.add("V", convert<float>(V));
+  if(V.d0<65535) G.add("T", convert<uint16_t>(T)); else  G.add("T", T);
+  if(C.N) G.add("C", convert<float>(C));
   if(cvxParts.N) G.add("cvxParts", cvxParts);
   if(tex.N) G.add("tex", tex);
   if(texImg.N) G.add("texImg", texImg);
-  G.write(os, ",\n", "", -1, false, true);
+  G.write(os, ",\n", "{\n\n}", -1, false, true);
 }
 
 void Mesh::readArr(std::istream& is) {
+  clear();
   Graph G(is);
-  G.get(V, "V");
-  G.get(T, "T");
-  G.get(C, "C");
+  rai::Node *n;
+  n=G["V"]; if(n){ if(n->is<arr>()) V = n->as<arr>(); else V = convert<double>( n->as<floatA>() ); }
+  n=G["T"]; if(n){ if(n->is<uintA>()) T = n->as<uintA>(); else T = convert<uint>( n->as<uint16A>() ); }
+  n=G["C"]; if(n){ if(n->is<arr>()) C = n->as<arr>(); else C = convert<double>( n->as<floatA>() ); }
   G.get(cvxParts, "cvxParts");
   G.get(tex, "tex");
   G.get(texImg, "texImg");
@@ -2242,7 +2263,7 @@ void inertiaMesh(double *I, double& mass, double density, const rai::Mesh& m){
     double mi = mass * m.getArea(i)/area;
     for(uint v=0;v<3;v++) vertexMass(m.T(i,v)) += mi/3.; //area per vertex
   }
-  cout <<::sum(vertexMass) <<' ' <<mass <<endl;
+  //cout <<::sum(vertexMass) <<' ' <<mass <<endl;
   for(uint i=0;i<m.V.d0;i++){
     double mi = vertexMass(i);
     double x=m.V(i,0), y=m.V(i,1), z=m.V(i,2);

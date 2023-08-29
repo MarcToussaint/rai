@@ -50,6 +50,12 @@ void rai::ConfigurationViewer::add(GLDrawer& c) { ensure_gl(); gl->add(c); }
 
 void rai::ConfigurationViewer::resetPressedKey() { ensure_gl(); gl->pressedkey=0; }
 
+void rai::ConfigurationViewer::clear(){
+  auto _dataLock = gl->dataLock(RAI_HERE);
+  C.clear();
+  framePath.clear();
+}
+
 int rai::ConfigurationViewer::update(bool watch) {
   ensure_gl();
 

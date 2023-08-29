@@ -193,6 +193,8 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
     getValue<arr>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<floatA>()) {
     getValue<floatA>()->write(os, ", ", nullptr, "[]", false, binary);
+  } else if(is<uint16A>()) {
+    getValue<uint16A>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<uintA>()) {
     getValue<uintA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<intA>()) {
@@ -598,12 +600,9 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
 }
 
 void Graph::read(std::istream& is, bool parseInfo) {
-//  bool expectBraces=false;
-//  char c=peerNextChar(is, " \n\r\t", true);
-//  if(c=='{') {
-//    is >>PARSE("{");
-//    expectBraces=true;
-//  }
+  bool expectBraces=false;
+  char c=getNextChar(is, " \n\r\t", true);
+  if(c=='{') expectBraces=true; else is.putback(c);
 
   uint Nbefore = N;
   if(parseInfo) getParseInfo(nullptr).beg=is.tellg();
@@ -659,9 +658,9 @@ void Graph::read(std::istream& is, bool parseInfo) {
     }
   }
 
-//  if(expectBraces) {
-//    is >>PARSE("}");
-//  }
+  if(expectBraces) {
+    is >>PARSE("}");
+  }
 
   if(parseInfo) getParseInfo(nullptr).end=is.tellg();
 
@@ -816,52 +815,65 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
           node = add<String>(key,  str, parents);
         } break;
         case '[': { //some Array
-          char type=getNextChar(is, "  \n\r\t");
-          if(type=='<'){ //Array with type+dim tag
-            char type2=getNextChar(is, 0);
-            is.putback(type);
-            //is.putback(c);
-            if(type2=='d') add<arr>(key)->setParents(parents)->as<arr>().read(is);
-            else if(type2=='f') add<floatA>(key)->setParents(parents)->as<floatA>().read(is);
-            else if(type2=='i') add<intA>(key)->setParents(parents)->as<intA>().read(is);
-            else if(type2=='j') add<uintA>(key)->setParents(parents)->as<uintA>().read(is);
-            else if(type2=='h') add<byteA>(key)->setParents(parents)->as<byteA>().read(is);
-            else HALT("can't parse array with type indicator '" <<type <<"'");
-            is >>PARSE("]");
-          }else if(type=='"') { //StringA
-            is.putback(type);
-            is.putback(c);
-            StringA strings;
-            String::readSkipSymbols=",\"";
-            String::readStopSymbols="\"";
-            String::readEatStopSymbol = 1;
-            is >>strings;
-            String::readSkipSymbols = " \t";
-            String::readStopSymbols = ",\n\r";
-            String::readEatStopSymbol = 1;
-            add<StringA>(key,  strings, parents);
-          } else if(type=='[') { //arrA
-            is.putback(type);
-            is.putback(c);
-            arrA reals;
-            is >>reals;
-            add<arrA>(key,  reals, parents);
-          } else if((type>='a' && type<='z') || (type>='A' && type<='Z') || type=='_' || type=='/') { //StringA}
-            is.putback(type);
-            is.putback(c);
-            StringA strings;
-            String::readStopSymbols=" ,\n\t]";
-            String::readEatStopSymbol = 0;
-            is >>strings;
-            String::readStopSymbols = ",\n\r";
-            String::readEatStopSymbol = 1;
-            add<StringA>(key,  strings, parents);
-          } else {
-            is.putback(type);
-            is.putback(c);
-            arr reals;
-            is >>reals;
-            add<arr>(key,  reals, parents);
+          //check a dedicated type string (json
+          rai::String typetag;
+          typetag.read(is, " \t", " \t\n\r,", false);
+          if(typetag(0)=='"' && typetag(-1)=='"') typetag = typetag.getSubString(1, -2);
+          if(typetag==rai::atomicTypeidName(typeid(double))) add<arr>(key)->setParents(parents)->as<arr>().readJson(is, true);
+          else if(typetag==rai::atomicTypeidName(typeid(float))) add<floatA>(key)->setParents(parents)->as<floatA>().readJson(is, true);
+          else if(typetag==rai::atomicTypeidName(typeid(uint16_t))) add<uint16A>(key)->setParents(parents)->as<uint16A>().readJson(is, true);
+          else if(typetag==rai::atomicTypeidName(typeid(uint))) add<uintA>(key)->setParents(parents)->as<uintA>().readJson(is, true);
+          else if(typetag==rai::atomicTypeidName(typeid(int))) add<intA>(key)->setParents(parents)->as<intA>().readJson(is, true);
+          else{
+            while(typetag.N){ is.putback(typetag(-1)); typetag.resize(typetag.N-1, true); }
+
+            char type=getNextChar(is, "  \n\r\t");
+            if(type=='<'){ //Array with type+dim tag
+              char type2=getNextChar(is, 0);
+              is.putback(type);
+              //is.putback(c);
+              if(type2=='d') add<arr>(key)->setParents(parents)->as<arr>().read(is);
+              else if(type2=='f') add<floatA>(key)->setParents(parents)->as<floatA>().read(is);
+              else if(type2=='i') add<intA>(key)->setParents(parents)->as<intA>().read(is);
+              else if(type2=='j') add<uintA>(key)->setParents(parents)->as<uintA>().read(is);
+              else if(type2=='h') add<byteA>(key)->setParents(parents)->as<byteA>().read(is);
+              else HALT("can't parse array with type indicator '" <<type <<"'");
+              is >>PARSE("]");
+            }else if(type=='"') { //StringA
+              is.putback(type);
+              is.putback(c);
+              StringA strings;
+              String::readSkipSymbols=",\"";
+              String::readStopSymbols="\"";
+              String::readEatStopSymbol = 1;
+              is >>strings;
+              String::readSkipSymbols = " \t";
+              String::readStopSymbols = ",\n\r";
+              String::readEatStopSymbol = 1;
+              add<StringA>(key,  strings, parents);
+            } else if(type=='[') { //arrA
+              is.putback(type);
+              is.putback(c);
+              arrA reals;
+              is >>reals;
+              add<arrA>(key,  reals, parents);
+            } else if((type>='a' && type<='z') || (type>='A' && type<='Z') || type=='_' || type=='/') { //StringA}
+              is.putback(type);
+              is.putback(c);
+              StringA strings;
+              String::readStopSymbols=" ,\n\t]";
+              String::readEatStopSymbol = 0;
+              is >>strings;
+              String::readStopSymbols = ",\n\r";
+              String::readEatStopSymbol = 1;
+              add<StringA>(key,  strings, parents);
+            } else {
+              is.putback(type);
+              is.putback(c);
+              arr reals;
+              is >>reals;
+              add<arr>(key,  reals, parents);
+            }
           }
           node = elem(-1);
         } break;

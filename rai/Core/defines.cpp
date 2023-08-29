@@ -17,4 +17,15 @@ namespace rai{
     return _errString;
   }
   const char* errString(){ return errStringStream().p; }
+
+const char* atomicTypeidName(const std::type_info& type){
+  if(type==typeid(int)) return "int32";
+  if(type==typeid(uint16_t)) return "uint16";
+  if(type==typeid(uint)) return "uint32";
+  if(type==typeid(float)) return "float32";
+  if(type==typeid(double)) return "float64";
+  LOG(-2) <<"not yet defined string for type" <<type.name();
+  return 0;
+}
+
 }

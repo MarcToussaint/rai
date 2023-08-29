@@ -336,6 +336,7 @@ void mult(Vector& a, const Quaternion& b, const Vector& c, bool add); //a += b*c
 double sqrDistance(const rai::Vector& a, const rai::Vector& b);
 // quaternion methods
 double quat_scalarProduct(const rai::Quaternion& a, const rai::Quaternion& b);
+double quat_sqrDistance(const rai::Quaternion& a, const rai::Quaternion& b);
 // differentiable operations:
 void quat_concat(arr& y, arr& Ja, arr& Jb, const arr& A, const arr& B);
 void quat_normalize(arr& y, arr& J, const arr& a);

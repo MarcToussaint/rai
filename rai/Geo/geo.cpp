@@ -1180,6 +1180,16 @@ double quat_scalarProduct(const Quaternion& a, const Quaternion& b) {
   return a.w*b.w+a.x*b.x+a.y*b.y+a.z*b.z;
 }
 
+double quat_sqrDistance(const Quaternion& a, const Quaternion& b) {
+  double sign=1.;
+  if(quat_scalarProduct(a, b)<0) sign=-1.;
+  double w = (sign*b.w-a.w);
+  double x = (sign*b.x-a.x);
+  double y = (sign*b.y-a.y);
+  double z = (sign*b.z-a.z);
+  return w*w + x*x + y*y + z*z;
+}
+
 void quat_concat(arr& y, arr& Ja, arr& Jb, const arr& A, const arr& B) {
   rai::Quaternion a(A);
   rai::Quaternion b(B);

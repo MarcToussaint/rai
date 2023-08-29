@@ -323,41 +323,48 @@ double forceClosure(const arr& C, const arr& Cn, const rai::Vector& center,
 arr getHull(const arr& V, uintA& T) {
   auto lock = qhullMutex(RAI_HERE);
 
+  arr Vnew;
+
   int exitcode;
   uint dim=V.d1;
   static char* cmd = (char*) "qhull Qt ";
   exitcode = qh_new_qhull(V.d1, V.d0, V.p, false, cmd, nullptr, stderr);
-  if(exitcode) HALT("qh_new_qhull error - exitcode " <<exitcode);
 
-  qh_triangulate();
+  if(!exitcode){
+    qh_triangulate();
 
-  facetT* facet;
-  vertexT* vertex, **vertexp;
-  uint f, i, v;
+    facetT* facet;
+    vertexT* vertex, **vertexp;
+    uint f, i, v;
 
-  arr Vnew;
-  Vnew.resize(qh num_vertices, dim);
-  i=0;
-  FORALLvertices {
-    vertex->id = i;
-    memmove(&Vnew(i, 0), vertex->point,  dim*sizeof(double));
-    i++;
-  }
-  if(true) { //retrieve also the triangulation
-    T.resize(qh num_facets, dim);
-    f=0;
-    FORALLfacets {
-      i=0;
-      FOREACHvertex_(facet->vertices) {
-        if(i<3) T(f, i)=vertex->id; else RAI_MSG("face " <<f <<" has " <<i <<" vertices" <<endl);
-        i++;
-      }
-      if(facet->toporient) {
-        v=T(f, 0);  T(f, 0)=T(f, 1);  T(f, 1)=v;
-      }
-      f++;
+    Vnew.resize(qh num_vertices, dim);
+    i=0;
+    FORALLvertices {
+      vertex->id = i;
+      memmove(&Vnew(i, 0), vertex->point,  dim*sizeof(double));
+      i++;
     }
-    CHECK_EQ(f, T.d0, "");
+    if(true) { //retrieve also the triangulation
+      T.resize(qh num_facets, dim);
+      f=0;
+      FORALLfacets {
+        i=0;
+        FOREACHvertex_(facet->vertices) {
+          if(i<3) T(f, i)=vertex->id; else RAI_MSG("face " <<f <<" has " <<i <<" vertices" <<endl);
+          i++;
+        }
+        if(facet->toporient) {
+          v=T(f, 0);  T(f, 0)=T(f, 1);  T(f, 1)=v;
+        }
+        f++;
+      }
+      CHECK_EQ(f, T.d0, "");
+    }
+
+  }else{
+    LOG(-1) <<"qh_new_qhull error - exitcode " <<exitcode;
+    Vnew.clear();
+    T.clear();
   }
 
   qh_freeqhull(!qh_ALL);

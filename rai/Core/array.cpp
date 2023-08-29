@@ -2795,6 +2795,37 @@ template void tensorPermutation(Array<float>& Y, const Array<float>& X, const ui
 
 }
 
+
+//===========================================================================
+//
+// base 64 encoding
+//
+
+extern "C" {
+int Base64decode_len(const char *bufcoded);
+int Base64decode(char *bufplain, const char *bufcoded);
+int Base64encode_len(int len);
+int Base64encode(char *encoded, const char *string, int len);
+}
+
+namespace rai{
+  uint b64_codeLen(uint data_len){
+    return Base64encode_len(data_len);
+  }
+
+  void b64_encode(char* code, int code_len, const char* data, int data_len){
+    CHECK_EQ(b64_codeLen(data_len), code_len, "");
+    int code_len2 = Base64encode(code, data, data_len);
+    CHECK_EQ(code_len2, code_len, "");
+  }
+
+  void b64_decode(char* data, int data_len, const char* code, int code_len){
+    CHECK_EQ(b64_codeLen(data_len), code_len, "");
+    int data_len2 = Base64decode(data, code);
+    CHECK_EQ(data_len2, data_len, "");
+  }
+}
+
 //===========================================================================
 //
 // explicit instantiations

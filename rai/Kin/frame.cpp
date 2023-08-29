@@ -296,7 +296,11 @@ void rai::Frame::convertDecomposedShapeToChildFrames(){
     int end = i+1<m.cvxParts.N ? m.cvxParts(i+1)-1 : -1;
     s.V = m.V({start, end});
     s.makeConvexHull();
-    ch->shape->cont = shape->cont;
+    if(!s.V.N){
+      delete ch; //ch->setShape(ST_marker, {.01});
+    }else{
+      ch->shape->cont = shape->cont;
+    }
   }
   delete shape;
 }
@@ -305,7 +309,7 @@ void rai::Frame::transformToDiagInertia(){
   CHECK(inertia, "");
   CHECK(!shape || shape->type()==rai::ST_marker, "can't translate this frame if it has a shape attached");
   CHECK(!joint || joint->type==rai::JT_rigid || joint->type==rai::JT_free, "can't translate this frame if it has a joint attached");
-  LOG(0) <<"translating frame '" <<name <<"' to accomodate for centered compound inertia";
+  //LOG(0) <<"translating frame '" <<name <<"' to accomodate for centered compound inertia";
   rai::Transformation t=0;
   //transform COM
   if(!inertia->com.isZero){

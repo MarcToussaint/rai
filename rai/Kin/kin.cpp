@@ -970,12 +970,14 @@ bool Configuration::check_topSort() const {
 void Configuration::clear() {
 //  glClose();
 //  swiftDelete();
+  if(self->viewer) self->viewer->clear();
+  self->fcl.reset();
 
   reset_q();
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
   while(frames.N) { delete frames.last(); /*checkConsistency();*/ }
   reset_q();
-  if(self->viewer) self->viewer->recopyMeshes(*this);
+  //if(self->viewer) self->viewer->recopyMeshes(*this);
 
   _state_proxies_isGood=false;
 }

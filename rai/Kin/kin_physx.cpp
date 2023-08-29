@@ -939,7 +939,7 @@ void PhysXInterface::pushKinematicStates(const rai::Configuration& C) {
       PxRigidActor* a = self->actors(f->ID);
       if(!a) continue; //f is not an actor
 
-      LOG(0) <<"pushing kinematic state (i.e. frame pose) of " <<f->name;
+      //LOG(0) <<"pushing kinematic state (i.e. frame pose) of " <<f->name;
       ((PxRigidDynamic*)a)->setKinematicTarget(conv_Transformation2PxTrans(f->ensure_X()));
     }
   }
@@ -1136,6 +1136,7 @@ void PhysXInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){ NICO }
 void PhysXInterface::setMotorQ(const rai::Configuration& C, bool setHardInstantly){ NICO }
 void PhysXInterface::postAddObject(rai::Frame* f) { NICO }
 
+void PhysXInterface::disableGravity(rai::Frame* f, bool disable){ NICO }
 void PhysXInterface::changeObjectType(rai::Frame* f, int _type) { NICO }
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) { NICO }
 void PhysXInterface::watch(bool pause, const char* txt) { NICO }

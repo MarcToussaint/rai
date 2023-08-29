@@ -27,6 +27,7 @@ extern bool globalMemoryStrict;
 extern uint lineCount;
 char skip(std::istream& is, const char* skipSymbols, const char* stopSymbols, bool skipCommentLines);
 char peerNextChar(std::istream& is, const char* skipSymbols, bool skipCommentLines);
+char getNextChar(std::istream& is, const char* skipSymbols, bool skipCommentLines);
 bool parse(std::istream& is, const char* str, bool silent);
 uint rndInt(uint up);
 
@@ -1533,15 +1534,18 @@ template<class T> void Array<T>::write(std::ostream& os, const char* ELEMSEP, co
   if(!LINESEP) LINESEP=arrayLinesep;
   if(!BRACKETS) BRACKETS=arrayBrackets;
 
-  if(BRACKETS[0]) os <<BRACKETS[0];
   if(binary) {
+    writeJson(os);
+#if 0
     writeDim(os);
     os <<endl;
     os.put(0);
     os.write((char*)p, sizeT*N);
     os.put(0);
     os <<endl;
+#endif
   } else {
+    if(BRACKETS[0]) os <<BRACKETS[0];
     if(dimTag || nd>3) { os <<' '; writeDim(os); if(nd==2) os <<'\n'; else os <<' '; }
     if(nd>=3) os <<'\n';
     if(nd==0 && N==1) {
@@ -1569,8 +1573,8 @@ template<class T> void Array<T>::write(std::ostream& os, const char* ELEMSEP, co
         os <<(i?ELEMSEP:"") <<elem(i);
       }
     }
+    if(BRACKETS[1]) os <<BRACKETS[1];
   }
-  if(BRACKETS[1]) os <<BRACKETS[1];
 }
 
 /** @brief prototype for operator>>, if there is a dimensionality tag: fast reading of ascii (if there is brackets[]) or binary (if there is \\0\\0 brackets) data; otherwise slow ascii read */
@@ -1690,6 +1694,67 @@ template<class T> void Array<T>::readDim(std::istream& is) {
     CHECK_EQ(c, ' ', "error in reading dimensionality");
   }
   resize(ND+1, dim);
+}
+
+template<class T> void Array<T>::writeBase64(std::ostream& os) const {
+  int code_len = b64_codeLen(N*sizeT);
+  char* code = (char*) malloc(code_len);
+  b64_encode(code, code_len, (const char*)p, N*sizeT);
+  os.write(code, code_len);
+  free(code);
+}
+
+template<class T> void Array<T>::readBase64(std::istream& is) {
+  int code_len = b64_codeLen(N*sizeT);
+  char* code = (char*) malloc(code_len);
+  is.read(code, code_len);
+  if(is.fail()) LOG(-2) <<"could not base64 data";
+  b64_decode((char*)p, N*sizeT, code, code_len);
+  free(code);
+}
+
+/// write a json dict
+template<class T> void Array<T>::writeJson(std::ostream& os) const {
+  os <<"[ \"" <<rai::atomicTypeidName(typeid(T)) <<"\", [";
+  for(uint i=0; i<nd; i++){ os <<dim(i); if(i+1<nd) os <<", "; }
+  os <<"], \"";
+  writeBase64(os);
+  os <<"\" ]";
+}
+
+/// read a json dict
+template<class T> void Array<T>::readJson(std::istream& is, bool skipType) {
+  if(!skipType){
+    parse(is, "[", false);
+    { char c=getNextChar(is, " \n\r\t", true); if(c!='"') is.putback(c); }
+    parse(is, rai::atomicTypeidName(typeid(T)), false);
+    { char c=getNextChar(is, " \n\r\t", true); if(c!='"') is.putback(c); }
+  }
+  parse(is, ",", false);
+  parse(is, "[", false);
+  {
+    char c;
+    uint ND, dim[10];
+    is.get(c);
+    if(c==']'){
+      clear();
+      return;
+    }else{
+      is.putback(c);
+    }
+    for(ND=0;; ND++) {
+      is >>dim[ND];
+      is.get(c);
+      if(c==']') break;
+      CHECK_EQ(c, ',', "error in reading dimensionality");
+    }
+    resize(ND+1, dim);
+  }
+  parse(is, ",", false);
+  parse(is, "\"", false);
+  readBase64(is);
+  parse(is, "\"", false);
+  parse(is, "]", false);
 }
 
 template<class T> uint Array<T>::serial_size() {

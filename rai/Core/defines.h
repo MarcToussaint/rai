@@ -194,3 +194,6 @@ std::istream& operator>>(std::istream& is, const PARSE&);
 
 
 ostream& stdCout();
+namespace rai{
+  const char* atomicTypeidName(const std::type_info& type);
+}

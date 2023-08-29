@@ -106,7 +106,7 @@ LIBS += -lrt
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
 
 CXXFLAGS += -Wno-terminate -Wno-pragmas -fPIC
-CFLAGS += -fPIC
+CFLAGS += -fPIC -O3
 
 ifndef RAI_NO_CXX11
 CXXFLAGS += -std=c++2a

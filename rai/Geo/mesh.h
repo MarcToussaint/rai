@@ -140,6 +140,8 @@ struct Mesh : GLDrawer {
   void writeOffFile(const char* filename);
   void writePLY(const char* fn, bool bin=true);
   void readPLY(const char* fn);
+  void writeJson(std::ostream&);
+  void readJson(std::istream&);
   void writeArr(std::ostream&);
   void readArr(std::istream&);
   void readPts(std::istream&);
