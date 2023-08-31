@@ -2801,12 +2801,10 @@ template void tensorPermutation(Array<float>& Y, const Array<float>& X, const ui
 // base 64 encoding
 //
 
-extern "C" {
 int Base64decode_len(const char *bufcoded);
 int Base64decode(char *bufplain, const char *bufcoded);
 int Base64encode_len(int len);
 int Base64encode(char *encoded, const char *string, int len);
-}
 
 namespace rai{
   uint b64_codeLen(uint data_len){

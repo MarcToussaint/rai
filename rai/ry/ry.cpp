@@ -53,6 +53,7 @@ PYBIND11_MODULE(ry, m) {
 
   m.def("setRaiPath", &rai::setRaiPath, "redefine the rai (or rai-robotModels) path");
   m.def("raiPath", &rai::raiPath, "get a path relative to rai base path");
+  m.def("compiled", [](){ std::stringstream msg; msg <<"compile time: "<< __DATE__ <<' ' <<__TIME__; return msg.str(); }, "return a compile date+time version string");
 
   init_params(m);
   init_Config(m);
