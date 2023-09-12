@@ -21,7 +21,7 @@ STATE {
  (gas) = 3
 }
 
-Rule default(){
+Rule default{
   precond{}
   out1{ } 
   out2{ (noise) }

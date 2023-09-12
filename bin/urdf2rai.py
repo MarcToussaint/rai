@@ -139,8 +139,8 @@ for joint in joints:
                 print('%s (%s): { Q: [%s] }' % (name+'_origin', parent, xyz))
                 parent = name+'_origin'
 
-        print('%s (%s): {' % (name, parent), end='')
-        #print('%s (%s %s): {' % (name, parent, joint.find('child').attrib['link']), end='')
+        #print('%s (%s): {' % (name, parent), end='')
+        print('%s (%s %s): {' % (name, parent, joint.find('child').attrib['link']), end='')
 
         # figure out joint type
         att = joint.attrib.get('type')
@@ -216,7 +216,7 @@ for joint in joints:
 
         print('}')
 
-        print('Edit %s (%s): {}' % (joint.find('child').attrib['link'], name) )
+        #print('Edit %s (%s): {}' % (joint.find('child').attrib['link'], name) )
 
 #print(etree.tostring(links[22]))
 #print(etree.tostring(joints[0]))

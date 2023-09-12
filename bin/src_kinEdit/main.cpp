@@ -57,10 +57,16 @@ int main(int argc,char **argv){
     LOG(0) <<"PRUNING STRUCTURE";
     C.optimizeTree(true, true, false);
   }
+
+  //-- sort frames
+//  if(rai::checkParameter<bool>("sort")){
+    LOG(0) <<"SORTING FRAMES";
+    C.sortFrames();
+//  }
+
 //    C.optimizeTree(false, false, false);
   C.ensure_q();
   C.checkConsistency();
-  C.sortFrames();
   C.checkUniqueNames(true);
 
   //-- make convex

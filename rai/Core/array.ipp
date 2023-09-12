@@ -1819,7 +1819,6 @@ template<class T> void writeConsecutiveConstant(std::ostream& os, const Array<T>
 
 /// contatenation of two arrays
 template<class T> Array<T> operator, (const Array<T>& y, const Array<T>& z) { Array<T> x(y); x.append(z); return x; }
-
 /// calls Array<T>::read
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x) { x.read(is); return is; }
 

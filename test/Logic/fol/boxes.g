@@ -85,7 +85,7 @@ Rule activate_positioning {
 
 Term (Terminate positioning) {
      X, Y
-     { (inPosition Y)  (positioning X Y)! (busy X)! }
+     { (inPosition Y) (positioning X Y)! (busy X)! }
 }
 
 Rule activate_releasing {

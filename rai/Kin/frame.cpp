@@ -124,7 +124,7 @@ void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
 }
 
 const rai::Transformation& rai::Frame::ensure_X() {
-#if 0 //for testing loops during debugging
+#if 1 //for testing loops during debugging
   {
     rai::Frame* f=parent;
     while(f) {
@@ -615,7 +615,7 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A) {
   if(parent) {
     f = new Frame(parent);
     parent->children.removeValue(this);
-    f->name <<name <<"_base";//<<parent->name <<'>' <<name;
+    f->name <<name <<"_origin";//<<parent->name <<'>' <<name;
   } else {
     f = new Frame(C);
     f->name <<"NIL>" <<name;

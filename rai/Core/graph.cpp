@@ -23,6 +23,10 @@ rai::Graph& NoGraph = __NoGraph;
 rai::NodeL& NoNodeL=*((rai::NodeL*)nullptr);
 //Graph& NoGraph=*((Graph*)nullptr);
 
+namespace rai {
+  void readNodeParents2(Graph& G, Node *n, String& str);
+}
+
 //===========================================================================
 //
 // annotations to a node while parting; can be used for highlighting and error messages
@@ -238,6 +242,7 @@ Graph::Graph() : isNodeOfGraph(nullptr), pi(nullptr), ri(nullptr) {
 
 Graph::Graph(const char* filename, bool parseInfo): Graph() {
   FileToken file(filename, true);
+  rai::lineCount=1;
   read(file, parseInfo);
   file.cd_start();
 }
@@ -324,8 +329,7 @@ Node_typed<int>* Graph::add(const uintA& parentIdxs) {
 
 void Graph::appendDict(const std::map<std::string, std::string>& dict) {
   for(const std::pair<std::string, std::string>& p:dict) {
-    StringA tags;
-    Node* n = readNode(STRING(':'<<p.second), tags, p.first.c_str(), false, false);
+    Node* n = readNode(STRING(p.first<<':'<<p.second), false, false);
     if(!n) RAI_MSG("failed to read dict entry <" <<p.first <<',' <<p.second <<'>');
   }
 }
@@ -477,7 +481,7 @@ Node* Graph::edit(Node* ed) {
       edited++;
     }
   if(!edited) {
-    LOG(1) <<"no nodes edited! (from '" <<*ed <<"')";
+    LOG(-1) <<"no nodes edited! (from '" <<*ed <<"')";
   }
   if(&ed->container==this) { delete ed; ed=nullptr; }
   return nullptr;
@@ -607,21 +611,25 @@ void Graph::read(std::istream& is, bool parseInfo) {
   uint Nbefore = N;
   if(parseInfo) getParseInfo(nullptr).beg=is.tellg();
   String namePrefix;
-  StringA tags;
   for(;;) {
     DEBUG(checkConsistency());
     char c=peerNextChar(is, " \n\r\t,");
     if(!is.good() || c=='}') { is.clear(); break; }
-    Node* n = readNode(is, tags, NULL, false, parseInfo);
+
+    Node* n = readNode(is, false, parseInfo);
     if(!n) break;
+
+    //-- special keys
     if(n->key=="Parent" && n->is<NodeL>()) {
       NodeL& P = n->as<NodeL>();
       Node *nn = n->container.isNodeOfGraph;
       CHECK(nn,"can set 'Parent' only within a subgraph node");
       for(Node *par:P) nn->addParent(par);
       delete n; n=nullptr;
+
     }else if(n->key=="Quit") {
       delete n; n=nullptr;
+
     }else if(n->key=="Include") {
       uint Nbefore = N;
       read(n->as<FileToken>().getIs(true), parseInfo);
@@ -636,6 +644,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
       }
       n->as<FileToken>().cd_start();
       delete n; n=nullptr;
+
     } else if(n->key=="Prefix") {
       if(n->is<String>()) {
         namePrefix = n->as<String>();
@@ -643,18 +652,47 @@ void Graph::read(std::istream& is, bool parseInfo) {
         namePrefix.clear();
       } else LOG(-1) <<*n <<" is not a proper name prefix";
       delete n; n=nullptr;
+
     } else if(n->key=="ChDir") {
       n->as<FileToken>().cd_file();
-    } else if(tags.N && tags(0)=="Delete") {
+
+    } else if(n->key.startsWith("Delete ")) {
+      n->key.replace(0, strlen("Delete "), 0, 0);
       NodeL dels = getNodes(n->key);
       if(!dels.N || (dels.N==1 && dels.elem(0)==n)) LOG(-1) <<"nothing to delete with key '" <<n->key <<"'";
       for(Node* d: dels) { delete d; d=nullptr; }
-    } else if(tags.N && tags(0)=="DeleteBranch") {
+      n=nullptr;
+
+    } else if(n->key.startsWith("DeleteBranch ")) {
+      n->key.replace(0, strlen("DeleteBranch "), 0, 0);
       //      n->key.remove(0);
       NodeL dels = getNodes(n->key);
       NodeL all = dels;
       for(Node* d: dels) d->getSubtree(all);
       for(Node* d: all) { delete d; d=nullptr; }
+      n=nullptr;
+
+    }
+
+    //-- post processes: split keys -> graph tags
+    if(n && n->is<Graph>()){
+      for(;n->key.N;){
+        uint i=0;
+        for(;i<n->key.N;i++){
+          if(n->key(i)==' ') break;
+          if(n->key(i)=='(') break;
+        }
+        if(i==n->key.N || n->key(i)=='(') break;
+
+        uint j=i;
+        for(;j<n->key.N;j++){
+          if(n->key(j)!=' ') break;
+        }
+        if(j==n->key.N || n->key(j)=='(') break;
+
+        n->graph().add<bool>(STRING('%' <<n->key.getSubString(0, i-1)), true);
+        n->key.replace(0, j, 0, 0);
+      }
     }
   }
 
@@ -666,16 +704,40 @@ void Graph::read(std::istream& is, bool parseInfo) {
 
   DEBUG(checkConsistency());
 
+  //-- post processes: parent keys -> parenting
+  {
+    //cut all parentTags
+    StringA parentTags(N);
+    for(uint i=Nbefore; i<N; i++) {
+      Node* n=elem(i);
+      int start = n->key.find('(', false);
+      int stop = n->key.find(')', true);
+      if(start>=0 && stop>=0){
+        if(stop-1>=start+1){
+          parentTags(n->index) = n->key.getSubString(start+1, stop-1);
+        }
+        n->key.replace(start, stop-start+1, 0, 0);
+        while(n->key.N && n->key(-1)==' ') n->key.resize(n->key.N-1, true);
+      }
+    }
+    for(uint i=Nbefore; i<N; i++) {
+      if(parentTags(i).N){
+        Node* n=elem(i);
+        readNodeParents2(*this, n, parentTags(i));
+      }
+    }
+  }
+
   //-- merge all Mege keys
-  NodeL edits;// = getNodesWithTag("%Edit");
+  NodeL edits;
   for(uint i=Nbefore; i<N; i++) {
-    Node* n=elem(i);
-    if(n->is<Graph>() && n->graph().findNode("%Edit")) edits.append(n);
+    Node* n=elem(i), *tag;
+    if(n->is<Graph>() && (tag=n->graph().findNode("%Edit"))){
+      edits.append(n);
+      n->graph().delNode(tag);
+    }
   }
   for(Node* ed:edits) {
-//    CHECK_EQ(ed->key.elem(0), "Edit", "an edit node needs Edit as first key");
-    ed->graph().delNode(ed->graph().findNode("%Edit"));
-//    ed->key.remove(0);
     edit(ed);
   }
 
@@ -739,7 +801,39 @@ void readNodeParents(Graph& G, std::istream& is, NodeL& parents, ParseInfo& pinf
   parse(is, ")");
 }
 
-Node* Graph::readNode(std::istream& is, StringA& tags, const char* predeterminedKey, bool verbose, bool parseInfo) {
+void readNodeParents2(Graph& G, Node *n, String& str) {
+
+  String par;
+  NodeL parents;
+  str.clearStream();
+  for(uint j=0;; j++) {
+    par.read(str, " \t\n\r,", " \t\n\r,", false);
+    if(!par.N){
+      char c = str.get();
+      if(!str.eof()){
+        LOG(-1) <<"not fully read: full:" <<str;
+      }
+      break;
+    }
+    Node* e = G.findNode(par, true, false); //important: recurse up
+    if(e) { //sucessfully found
+      parents.append(e);
+    } else { //this element is not known!!
+      int rel=0;
+      str >>rel;
+      if(rel<0 && (int)G.N+rel>=0) { //check if this is a negative integer
+        e=G.elem(G.N+rel);
+        parents.append(e);
+      } else {
+        LOG(-1) <<"parsing node '" <<n->key <<"' -- unknown " <<j <<". parent '" <<par <<"'";
+      }
+    }
+  }
+
+  n->setParents(parents);
+}
+
+Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo) {
   String str;
 
   ParseInfo pinfo;
@@ -748,27 +842,29 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
   if(verbose) { cout <<"\nNODE (line="<<lineCount <<")"; }
 
   //-- read keys
-  tags.clear();
   skip(is, " \t\n\r");
   pinfo.keys_beg=is.tellg();
-  for(;;) {
-    if(!str.read(is, " \t", " \t\n\r,;([{}=:!\'", false)) break;
-    if(str(0)=='"' && str(-1)=='"') str = str.getSubString(1, -2);
-    tags.append(str);
+  {
+    //if(!str.read(is, " \t", " \t\n\r,;([{}=:!\'", false)) break;
+    str.read(is, " \t", ":\t\n\r,;[{})<=!~\'", false);
+    while(str.N && str(-1)==' ') str.resize(str.N-1, true);
+    if(str.N){
+      if(str(0)=='"' && str(-1)=='"') str = str.getSubString(1, -2);
+      if(str(0)=='\'' && str(-1)=='\'') str = str.getSubString(1, -2);
+    }
     pinfo.keys_end=is.tellg();
   }
   DEBUG(checkConsistency());
 
-  if(verbose) { cout <<" tags:" <<tags <<std::flush; }
-
-  String key;
-  if(!predeterminedKey) {
-    if(tags.N) key = tags.elem(-1);
-  } else {
-    key = predeterminedKey;
+  String key = str;
+  char c=getNextChar(is, " \t"); //don't skip new lines
+  if(c==')'){
+    key.append(c);
+    c=getNextChar(is, " \t");
   }
 
   //-- read parents
+  /*
   NodeL parents;
   char c=getNextChar(is, " \t"); //don't skip new lines
   if(c=='(') {
@@ -778,6 +874,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
   DEBUG(checkConsistency());
 
   if(verbose) { cout <<" parents:"; if(!parents.N) cout <<"none"; else cout <<parents.modList() <<std::flush; }
+  */
 
   //-- read value
   Node* node=nullptr;
@@ -787,47 +884,50 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
     if((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_' || c=='/') { //String or boolean
       is.putback(c);
       str.read(is, "", " \n\r\t,;}", false);
-      if(str=="true" || str=="True") node = add<bool>(key, true, parents);
-      else if(str=="false" || str=="False") node = add<bool>(key, false, parents);
-      else node = add<String>(key, str, parents);
+      if(str=="true" || str=="True") node = add<bool>(key, true);
+      else if(str=="false" || str=="False") node = add<bool>(key, false);
+      else node = add<String>(key, str);
     } else if(rai::contains("-.0123456789", c)) {  //single double
       is.putback(c);
       double d;
       try { is >>d; } catch(...) PARSERR("can't parse the double number", pinfo);
-      node = add<double>(key, d, parents);
+      node = add<double>(key, d);
     } else switch(c) {
         case '!': { //boolean false
-          node = add<bool>(key, false, parents);
+          node = add<bool>(key, false);
+        } break;
+        case '~': { //boolean true
+          node = add<bool>(key, true);
         } break;
         case '<': { //FileToken
           str.read(is, "", ">", true);
           try {
-            node = add<FileToken>(key, FileToken(str, false), parents);
+            node = add<FileToken>(key, FileToken(str, false));
 //          node->get<FileToken>().getIs();  //creates the ifstream and might throw an error
           } catch(...) {
             delete node; node=nullptr;
             PARSERR("file " <<str <<" does not exist -> converting to string!", pinfo);
-            node = add<String>(key,  str, parents);
+            node = add<String>(key,  str);
           }
         } break;
         case '\"': { //String
           str.read(is, "", "\"", true);
-          node = add<String>(key,  str, parents);
+          node = add<String>(key,  str);
         } break;
         case '\'': { //String
           str.read(is, "", "\'", true);
-          node = add<String>(key,  str, parents);
+          node = add<String>(key,  str);
         } break;
         case '[': { //some Array
           //check a dedicated type string (json
           rai::String typetag;
           typetag.read(is, " \t", " \t\n\r,", false);
           if(typetag(0)=='"' && typetag(-1)=='"') typetag = typetag.getSubString(1, -2);
-          if(typetag==rai::atomicTypeidName(typeid(double))) add<arr>(key)->setParents(parents)->as<arr>().readJson(is, true);
-          else if(typetag==rai::atomicTypeidName(typeid(float))) add<floatA>(key)->setParents(parents)->as<floatA>().readJson(is, true);
-          else if(typetag==rai::atomicTypeidName(typeid(uint16_t))) add<uint16A>(key)->setParents(parents)->as<uint16A>().readJson(is, true);
-          else if(typetag==rai::atomicTypeidName(typeid(uint))) add<uintA>(key)->setParents(parents)->as<uintA>().readJson(is, true);
-          else if(typetag==rai::atomicTypeidName(typeid(int))) add<intA>(key)->setParents(parents)->as<intA>().readJson(is, true);
+          if(typetag==rai::atomicTypeidName(typeid(double))) add<arr>(key)->as<arr>().readJson(is, true);
+          else if(typetag==rai::atomicTypeidName(typeid(float))) add<floatA>(key)->as<floatA>().readJson(is, true);
+          else if(typetag==rai::atomicTypeidName(typeid(uint16_t))) add<uint16A>(key)->as<uint16A>().readJson(is, true);
+          else if(typetag==rai::atomicTypeidName(typeid(uint))) add<uintA>(key)->as<uintA>().readJson(is, true);
+          else if(typetag==rai::atomicTypeidName(typeid(int))) add<intA>(key)->as<intA>().readJson(is, true);
           else{
             while(typetag.N){ is.putback(typetag(-1)); typetag.resize(typetag.N-1, true); }
 
@@ -836,11 +936,11 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
               char type2=getNextChar(is, 0);
               is.putback(type);
               //is.putback(c);
-              if(type2=='d') add<arr>(key)->setParents(parents)->as<arr>().read(is);
-              else if(type2=='f') add<floatA>(key)->setParents(parents)->as<floatA>().read(is);
-              else if(type2=='i') add<intA>(key)->setParents(parents)->as<intA>().read(is);
-              else if(type2=='j') add<uintA>(key)->setParents(parents)->as<uintA>().read(is);
-              else if(type2=='h') add<byteA>(key)->setParents(parents)->as<byteA>().read(is);
+              if(type2=='d') add<arr>(key)->as<arr>().read(is);
+              else if(type2=='f') add<floatA>(key)->as<floatA>().read(is);
+              else if(type2=='i') add<intA>(key)->as<intA>().read(is);
+              else if(type2=='j') add<uintA>(key)->as<uintA>().read(is);
+              else if(type2=='h') add<byteA>(key)->as<byteA>().read(is);
               else HALT("can't parse array with type indicator '" <<type <<"'");
               is >>PARSE("]");
             }else if(type=='"') { //StringA
@@ -854,13 +954,13 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
               String::readSkipSymbols = " \t";
               String::readStopSymbols = ",\n\r";
               String::readEatStopSymbol = 1;
-              add<StringA>(key,  strings, parents);
+              add<StringA>(key,  strings);
             } else if(type=='[') { //arrA
               is.putback(type);
               is.putback(c);
               arrA reals;
               is >>reals;
-              add<arrA>(key,  reals, parents);
+              add<arrA>(key,  reals);
             } else if((type>='a' && type<='z') || (type>='A' && type<='Z') || type=='_' || type=='/') { //StringA}
               is.putback(type);
               is.putback(c);
@@ -870,13 +970,13 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
               is >>strings;
               String::readStopSymbols = ",\n\r";
               String::readEatStopSymbol = 1;
-              add<StringA>(key,  strings, parents);
+              add<StringA>(key,  strings);
             } else {
               is.putback(type);
               is.putback(c);
               arr reals;
               is >>reals;
-              add<arr>(key,  reals, parents);
+              add<arr>(key,  reals);
             }
           }
           node = elem(-1);
@@ -884,17 +984,14 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
         case '(': { // set of parent nodes
           NodeL par;
           readNodeParents(*this, is, par, pinfo);
-          node = add<NodeL>(key,  par, parents);
+          node = add<NodeL>(key,  par);
         } break;
         case '{': { // sub graph
-          //is.putback(c);
-          Graph& subgraph = this->addSubgraph(key, parents);
+          is.putback(c);
+          Graph& subgraph = this->addSubgraph(key);
           subgraph.read(is);
           node = subgraph.isNodeOfGraph;
-          if(tags.N>1) {
-            for(uint i=0; i<tags.N-1; i++) subgraph.add<bool>(STRING('%' <<tags.elem(i)), true);
-          }
-          parse(is,"}");
+//          parse(is,"}");
         } break;
         default: { //error
           is.putback(c);
@@ -904,7 +1001,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
       }
   } else { //no ':' or '{' -> boolean
     is.putback(c);
-    node = add<bool>(key,  true, parents);
+    node = add<bool>(key,  true);
   }
   if(node) pinfo.value_end=is.tellg();
   pinfo.end=is.tellg();
@@ -919,17 +1016,18 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
 
   if(!node) {
     cerr <<"FAILED reading node with keys ";
-    tags.write(cerr, " ", nullptr, "()");
-    cerr <<" and parents " <<parents.modList() <<endl;
+    //tags.write(cerr, " ", nullptr, "()");
+    //cerr <<" and parents " <<parents.modList() <<endl;
   }
 
+  /*
   if(tags.N>1) {
     if(node->is<bool>() && tags.N==2 && tags(0)=="Delete") {
       node->as<bool>() = false;
     } else if(!node->is<Graph>()) {
       LOG(-1) <<"you specified tags " <<tags <<" for node '" <<*node <<"', which is of non-graph type -- ignored";
     }
-  }
+  }*/
 
   //eat the next , or ;
   c=getNextChar(is, " \n\r\t");
@@ -1367,15 +1465,14 @@ void initParameters(int _argc, char*_argv[], bool forceReload, bool verbose){
   if(forceReload) P->clear();
 
   //-- parse cmd line arguments into graph
-  StringA tags;
   int argn=0;
   for(int n=1; n<argc; n++) {
     if(rai::argv[n][0]=='-') {
       rai::String key(rai::argv[n]+1);
       if(n+1<rai::argc && rai::argv[n+1][0]!='-') {
         rai::String value;
-        value <<':' <<rai::argv[n+1];
-        P->readNode(value, tags, key, false, false);
+        value <<key <<':' <<rai::argv[n+1];
+        P->readNode(value, false, false);
         n++;
       } else {
         P->add<bool>(key, true);

@@ -2655,139 +2655,45 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
   //all the special cases with %body %joint %shape is only for backward compatibility. New: just frames
   Node *qAngles=0;
 
-  NodeL bs = G.getNodesWithTag("%body");
-  for(Node* n:  bs) {
-    CHECK(n->is<Graph>(), "bodies must have value Graph");
-    CHECK(n->graph().findNode("%body"), "");
-
-    Frame* b=new Frame(*this);
-    node2frame(n->index) = b;
-    b->name=n->key;
-    b->ats = make_shared<Graph>();
-    b->ats->copy(n->graph(), false, true);
-    b->read(*b->ats);
-  }
-
-  //-- normal case! just normal frames or edges
+  //-- each node becomes a frame
   for(Node* n: G) {
     if(!n->is<Graph>()){
-      CHECK_EQ(n->key,"q", "only non-graph node is q:[joint angles]!");
+      CHECK_EQ(n->key, "q", "only non-graph node is q:[joint angles]!");
       qAngles=n;
       continue;
     }
-    if(n->graph().findNode("%body") || n->graph().findNode("%shape") || n->graph().findNode("%joint")) continue;
     //    CHECK_EQ(n->keys(0),"frame","");
     CHECK_LE(n->parents.N, 2, "frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
 
-    if(n->parents.N<=1) { //normal frame
-
-      Frame* b = nullptr;
-      if(!n->parents.N) b = new Frame(*this);
-      else if(n->parents.N==1){
-        Frame *p = node2frame(n->parents(0)->index);
-        CHECK(p, "parent frame '" <<n->parents(0)->key <<"' does not yet exist - is graph DAG?");
-        b = new Frame(p); //getFrameByName(n->parents(0)->key));
-      }else HALT("a frame can only have one parent");
-      node2frame(n->index) = b;
-      b->name=n->key;
-      b->ats = make_shared<Graph>();
-      b->ats->copy(n->graph(), false, true);
-      b->read(*b->ats);
-
-    } else { //this is an inserted joint -> 2 frames (pre-joint and joint)
-
-      Frame* from = node2frame(n->parents(0)->index);
-      Frame* to   = node2frame(n->parents(1)->index);
-      CHECK(from, "JOINT: from '" <<n->parents(0)->key <<"' does not exist ["<<*n <<"]");
-      CHECK(to, "JOINT: to '" <<n->parents(1)->key <<"' does not exist ["<<*n <<"]");
-      CHECK(!from->isChildOf(to, INT32_MAX), "you can't insert joint in loops!");
-
-#if 0
-      //generate a pre node?
-      rai::Frame *pre=from;
-      rai::Transformation A=0, B=0;
-      n->graph().get(A, "A");
-      n->graph().get(A, "pre");
-      if(!A.isZero()) {
-        pre = new Frame(from);
-        pre->name = n->key;
-        pre->name <<"_pre";
-        pre->set_Q()=A; //->read(preT->get<String>());
-        //n->graph().delNode(preT);
-        //n->graph().index();
-      }
-#endif
-
-      //generate a new 'joint base frame'
-      Frame* b = new Frame(from);
-      node2frame(n->index) = b;
-      b->name=n->key;
-
-      //connect the new frame and optionally impose the post node relative transform
-      to->setParent(b, false);
-
-#if 0
-      n->graph().get(B, "B");
-      n->graph().get(B, "post");
-      if(!B.isZero()) {
-        to->set_Q()=B;
-        //n->graph().delNode(n->graph().findNode("B"));
-        //n->graph().index();
-      }
-#endif
-
-      b->ats = make_shared<Graph>();
-      b->ats->copy(n->graph(), false, true);
-      b->read(*b->ats);
-    }
-  }
-
-  NodeL ss = G.getNodesWithTag("%shape");
-  for(Node* n: ss) {
-    CHECK_LE(n->parents.N, 1, "shapes must have no or one parent");
-    CHECK(n->is<Graph>(), "shape must have value Graph");
-    CHECK(n->graph().findNode("%shape"), "");
-
     Frame* f = new Frame(*this);
     f->name=n->key;
-    f->ats = make_shared<Graph>();
-    f->ats->copy(n->graph(), false, true);
-    Shape* s = new Shape(*f);
-    s->read(*f->ats);
 
-    if(n->parents.N==1) {
-      Frame* b = getFrame(n->parents(0)->key);
-      CHECK(b, "could not find frame '" <<n->parents(0)->key <<"'");
-      f->setParent(b);
-      if((*f->ats)["rel"]) f->ats->get(f->Q, "rel");
-    }
+    node2frame(n->index) = f;
   }
 
-  NodeL js = G.getNodesWithTag("%joint");
-  for(Node* n: js) {
-    CHECK_EQ(n->parents.N, 2, "joints must have two parents: specs=" <<*n <<' ' <<n->index);
-    CHECK(n->is<Graph>(), "joints must have value Graph: specs=" <<*n <<' ' <<n->index);
-    CHECK(n->graph().findNode("%joint"), "");
+  //-- post-process: check for parents
+  for(Node* n: G) {
+    Frame* f = node2frame(n->index);
+    if(!f) continue;
 
-    Frame* from = getFrame(n->parents(0)->key);
-    Frame* to  = getFrame(n->parents(1)->key);
-    CHECK(from, "JOINT: from '" <<n->parents(0)->key <<"' does not exist ["<<*n <<"]");
-    CHECK(to, "JOINT: to '" <<n->parents(1)->key <<"' does not exist ["<<*n <<"]");
+    if(n->parents.N>=1) {
+      Frame *p = node2frame(n->parents(0)->index);
+      CHECK(p, "parent frame '" <<n->parents(0)->key <<"' does not yet exist - is graph DAG?");
+      f->setParent(p);
 
-    Frame* f=new Frame(*this);
-    if(n->key.N) {
-      f->name=n->key;
-    } else {
-      f->name <<'|' <<to->name; //the joint frame is actually the link frame of all child frames
+      if(n->parents.N==2) { //this is an inserted joint -> 2 frames (pre-joint and joint)
+        Frame* post   = node2frame(n->parents(1)->index);
+        CHECK(post, "JOINT: to '" <<n->parents(1)->key <<"' does not exist ["<<*n <<"]");
+        CHECK(!p->isChildOf(post, INT32_MAX), "you can't insert joint in loops!");
+
+        //connect the new frame and optionally impose the post node relative transform
+        post->setParent(f, false);
+      }
     }
+
     f->ats = make_shared<Graph>();
     f->ats->copy(n->graph(), false, true);
-
-    f->setParent(from);
-    to->setParent(f);
-
-    Joint* j=new Joint(*f);
-    j->read(*f->ats);
+    f->read(n->graph());
   }
 
   // mimic joints: if the joint is coupled to another:

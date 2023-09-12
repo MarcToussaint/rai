@@ -1,2 +1,2 @@
-Include: '../../../../rai-robotModels/scenarios/liftRing.g'
+Include: <../../../../rai-robotModels/scenarios/liftRing.g>
 

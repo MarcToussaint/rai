@@ -186,6 +186,7 @@ struct String : public std::iostream {
   void append(char x);
   void prepend(const String& s);
   void replace(uint i, uint n, const char* xp, uint xN);
+  void removePrefix(const char* prefix);
 
   String& setRandom();
 
