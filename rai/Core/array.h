@@ -682,7 +682,7 @@ namespace rai{
 //
 
 namespace rai{
-  uint b64_codeLen(uint data_len);
+  int b64_codeLen(uint data_len);
   uint b64_maxDataLen(uint code_len);
   void b64_encode(char* code, int code_len, const char* data, int data_len);
   void b64_decode(char* data, int data_len, const char* code, int code_len);

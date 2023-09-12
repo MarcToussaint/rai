@@ -615,7 +615,7 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A) {
   if(parent) {
     f = new Frame(parent);
     parent->children.removeValue(this);
-    f->name <<parent->name <<'>' <<name;
+    f->name <<name <<"_base";//<<parent->name <<'>' <<name;
   } else {
     f = new Frame(C);
     f->name <<"NIL>" <<name;

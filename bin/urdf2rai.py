@@ -2,13 +2,29 @@
 
 import sys
 from lxml import etree
+import argparse
 
-inFile = sys.argv[1]
+parser = argparse.ArgumentParser(description='convert urdf to yaml (rai convention)')
+
+parser.add_argument('urdf_file', type=str,
+                    help='required input file')
+
+parser.add_argument('-coll', type=bool, default=False,
+                    help='use collision shapes?')
+
+parser.add_argument('-meshRemove', type=str, default='package://',
+                    help='a prefix from the mesh files to be removed')
+
+parser.add_argument('-meshExt', type=str,
+                    help='overwrite the mesh file extension')
+
+args = parser.parse_args()
+
+inFile = args.urdf_file
 xmlData = etree.parse(inFile)
 
 useCollisionShapes = False
-
-if len(sys.argv)>2 and sys.argv[2]=='-coll':
+if args.coll:
     useCollisionShapes = True
 
 def writeShape(link):
@@ -21,10 +37,10 @@ def writeShape(link):
         if xyz=='0 0 0':
             xyz=None
         if xyz is not None and rpy is not None:
-            print(' rel: <t(%s) E(%s)>,' % (xyz, rpy), end='')
+            print(' rel: "t(%s) E(%s)",' % (xyz, rpy), end='')
         else:
             if rpy is not None:
-                print(' rel: <E(%s)>,' % (rpy), end='')
+                print(' rel: "E(%s)",' % (rpy), end='')
             if xyz is not None:
                 print(' rel: [%s],' % (xyz), end='')
 
@@ -42,8 +58,10 @@ def writeShape(link):
 
     elem = link.find('geometry/mesh')
     if elem is not None:
-        filename = elem.attrib['filename'].replace('package://','',1)
-        print(' mesh: \'%s\',' % filename, end='')
+        filename = elem.attrib['filename'].replace(args.meshRemove,'',1)
+        if args.meshExt is not None:
+            filename = filename[:-3] + args.meshExt
+        print(' mesh: <%s>,' % filename, end='')
         if elem.find('scale') is not None:
             print(' meshscale: [%s],' % elem.attrib['scale'], end='')
 
@@ -99,9 +117,30 @@ joints = xmlData.findall('/joint')
 for joint in joints:
     name = joint.attrib['name']
     if joint.find('child') is not None:
-        print('%s (%s %s): {' % (name,
-                                   joint.find('parent').attrib['link'],
-                                   joint.find('child').attrib['link']), end=''),
+
+        parent = joint.find('parent').attrib['link']
+
+        # add an origin frame as pre frame?
+        elem = joint.find('origin')
+        if elem is not None:
+            xyz = elem.attrib.get('xyz')
+            rpy = elem.attrib.get('rpy')
+            if rpy=='0 0 0':
+                rpy=None
+            if xyz=='0 0 0':
+                xyz=None
+            if xyz is not None and rpy is not None:
+                print('%s (%s): { Q: "t(%s) E(%s)" }' % (name+'_origin', parent, xyz, rpy))
+                parent = name+'_origin'
+            elif rpy is not None:
+                print('%s (%s): { Q: "E(%s)" }' % (name+'_origin', parent, rpy))
+                parent = name+'_origin'
+            elif xyz is not None:
+                print('%s (%s): { Q: [%s] }' % (name+'_origin', parent, xyz))
+                parent = name+'_origin'
+
+        print('%s (%s): {' % (name, parent), end='')
+        #print('%s (%s %s): {' % (name, parent, joint.find('child').attrib['link']), end='')
 
         # figure out joint type
         att = joint.attrib.get('type')
@@ -153,22 +192,6 @@ for joint in joints:
         #if elem is not None:
         #    print('axis:[%s]' % elem.attrib['xyz'])
 
-        elem = joint.find('origin')
-        if elem is not None:
-            xyz = elem.attrib.get('xyz')
-            rpy = elem.attrib.get('rpy')
-            if rpy=='0 0 0':
-                rpy=None
-            if xyz=='0 0 0':
-                xyz=None
-            if xyz is not None and rpy is not None:
-                print(' pre: <t(%s) E(%s)>,' % (xyz, rpy), end='')
-            else:
-                if rpy is not None:
-                    print(' pre: <E(%s)>,' % (rpy), end='')
-                if xyz is not None:
-                    print(' pre: [%s],' % (xyz), end='')
-
         elem = joint.find('limit')
         if elem is not None:
             lo = elem.attrib.get('lower')
@@ -192,6 +215,8 @@ for joint in joints:
                     print(' limits: [%s %s],' % (lo, up), end='')
 
         print('}')
+
+        print('Edit %s (%s): {}' % (joint.find('child').attrib['link'], name) )
 
 #print(etree.tostring(links[22]))
 #print(etree.tostring(joints[0]))

@@ -2718,7 +2718,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
       }
 #endif
 
-      //generate a new 'between' frame
+      //generate a new 'joint base frame'
       Frame* b = new Frame(from);
       node2frame(n->index) = b;
       b->name=n->key;

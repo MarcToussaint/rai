@@ -252,7 +252,7 @@ struct Joint : Dof, NonCopyable {
   Joint(Frame& from, Frame& f, Joint* copyJoint=nullptr);
   ~Joint();
 
-  const Transformation& X() const; ///< the frame where the joint STARTS (i.e. parent->X)
+  const Transformation& X() const; ///< the base frame, where the joint STARTS (i.e. parent->X)
   const Transformation& Q() const; ///< the transformation realized by this joint (i.e. from parent->X to frame->X)
   Frame* from() const { return frame->parent; }
   virtual String name() const { return STRING(frame->name<<'.'<<frame->ID); }

@@ -12,6 +12,9 @@ void read(const char* filename){
   //G.writeHtml(FILE("z.html"), FILE(filename));
   //rai::system("firefox z.html &");
 
+  //-- output
+  FILE("z.g") <<G;
+
   //-- test yaml consistency
   G.writeYaml(FILE("z1.yaml"));
   try {

@@ -16,6 +16,6 @@ EIGEN = 1
 CXXFLAGS += -DRAI_ROOT_PATH=\"`pwd`/../..\"
 
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
-OBJS = $(SRCS:%.cpp=%.o) base64.o
+OBJS = $(SRCS:%.cpp=%.o)
 
 include $(BASE)/makeutils/generic.mk

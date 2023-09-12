@@ -1698,7 +1698,7 @@ template<class T> void Array<T>::readDim(std::istream& is) {
 
 template<class T> void Array<T>::writeBase64(std::ostream& os) const {
   int code_len = b64_codeLen(N*sizeT);
-  char* code = (char*) malloc(code_len);
+  char* code = (char*) malloc(code_len+1);
   b64_encode(code, code_len, (const char*)p, N*sizeT);
   os.write(code, code_len);
   free(code);
@@ -1706,8 +1706,9 @@ template<class T> void Array<T>::writeBase64(std::ostream& os) const {
 
 template<class T> void Array<T>::readBase64(std::istream& is) {
   int code_len = b64_codeLen(N*sizeT);
-  char* code = (char*) malloc(code_len);
+  char* code = (char*) malloc(code_len+1);
   is.read(code, code_len);
+  code[code_len] = '\0';
   if(is.fail()) LOG(-2) <<"could not base64 data";
   b64_decode((char*)p, N*sizeT, code, code_len);
   free(code);

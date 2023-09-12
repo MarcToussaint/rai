@@ -35,7 +35,7 @@ k:{ a, b:0.2 x:"hallo"     # sub-Graph with 6 nodes
 Edit k { y:false, z:otherString, b:7, c:newAttribute }
 
 # including
-Include: 'example_include.g'   # first creates a normal FileToken node then opens and includes the file directly
+Include: <example_include.g>   # first creates a normal FileToken node then opens and includes the file directly
 
 ## strange notations
 a()       # key=a, value=true, parents=none

@@ -2807,7 +2807,7 @@ int Base64encode_len(int len);
 int Base64encode(char *encoded, const char *string, int len);
 
 namespace rai{
-  uint b64_codeLen(uint data_len){
+  int b64_codeLen(uint data_len){
     return Base64encode_len(data_len);
   }
 

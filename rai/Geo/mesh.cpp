@@ -1251,6 +1251,9 @@ void Mesh::readFile(const char* filename) {
 
 void Mesh::read(std::istream& is, const char* fileExtension, const char* filename) {
   if(!strcmp(fileExtension, "arr")) { readArr(is); }
+  else if(!strcmp(fileExtension, "omp")) { readArr(is); } //decomp
+  else if(!strcmp(fileExtension, "esh")) { readArr(is); } //mesh
+  else if(!strcmp(fileExtension, "nts")) { readArr(is); } //points
   else if(!strcmp(fileExtension, "pts")) { readPts(is); }
   else if(!strcmp(fileExtension, "msh")) { readJson(is); }
   else if(!strcmp(fileExtension, "off")) { readOffFile(is); }
@@ -1568,7 +1571,7 @@ void Mesh::readArr(std::istream& is) {
 
 void Mesh::readPts(std::istream& is) {
   floatA pts;
-  pts.read(is);
+  pts.readJson(is);
   if(pts.d1==3){
     rai::copy(V, pts);
   }else{

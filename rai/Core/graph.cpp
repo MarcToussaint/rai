@@ -188,7 +188,7 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
       else os <<'"' <<str <<'"';
     }
   } else if(is<FileToken>()) {
-    os <<'\'' <<getValue<FileToken>()->autoPath() <<'\'';
+    os <<'<' <<getValue<FileToken>()->autoPath() <<'>';
   } else if(is<arr>()) {
     getValue<arr>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<floatA>()) {
@@ -799,8 +799,8 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
         case '!': { //boolean false
           node = add<bool>(key, false, parents);
         } break;
-        case '\'': { //FileToken
-          str.read(is, "", "\'", true);
+        case '<': { //FileToken
+          str.read(is, "", ">", true);
           try {
             node = add<FileToken>(key, FileToken(str, false), parents);
 //          node->get<FileToken>().getIs();  //creates the ifstream and might throw an error
@@ -812,6 +812,10 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
         } break;
         case '\"': { //String
           str.read(is, "", "\"", true);
+          node = add<String>(key,  str, parents);
+        } break;
+        case '\'': { //String
+          str.read(is, "", "\'", true);
           node = add<String>(key,  str, parents);
         } break;
         case '[': { //some Array
@@ -876,28 +880,6 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
             }
           }
           node = elem(-1);
-        } break;
-        case '<': { //any type parser
-#if 1
-          str.read(is, "", ">", true);
-          node = add<String>(key,  str, parents);
-#else
-          str.read(is, " \t", " \t\n\r()`-=~!@#$%^&*()+[]{};'\\:|,./<>?", false);
-          //      str.read(is, " \t", " \t\n\r()`1234567890-=~!@#$%^&*()_+[]{};'\\:|,./<>?", false);
-          //        node = readTypeIntoNode(*this, str, is);
-          if(!node) {
-            is.clear();
-            String substr;
-            substr.read(is, "", ">", false);
-            //          PARSERR("could not parse value of type '" <<str <<"' -- no such type has been registered; converting this to string: '"<<substr<<"'", pinfo);
-            str = STRING('<' <<str <<' ' <<substr <<'>');
-            node = newNode<String>(keys, parents, str);
-          } else {
-            node->keys = keys;
-            node->parents = parents;
-          }
-          parse(is, ">");
-#endif
         } break;
         case '(': { // set of parent nodes
           NodeL par;
