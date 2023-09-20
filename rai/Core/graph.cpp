@@ -925,9 +925,10 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo) {
           if(typetag(0)=='"' && typetag(-1)=='"') typetag = typetag.getSubString(1, -2);
           if(typetag==rai::atomicTypeidName(typeid(double))) add<arr>(key)->as<arr>().readJson(is, true);
           else if(typetag==rai::atomicTypeidName(typeid(float))) add<floatA>(key)->as<floatA>().readJson(is, true);
-          else if(typetag==rai::atomicTypeidName(typeid(uint16_t))) add<uint16A>(key)->as<uint16A>().readJson(is, true);
           else if(typetag==rai::atomicTypeidName(typeid(uint))) add<uintA>(key)->as<uintA>().readJson(is, true);
+          else if(typetag==rai::atomicTypeidName(typeid(uint16_t))) add<uint16A>(key)->as<uint16A>().readJson(is, true);
           else if(typetag==rai::atomicTypeidName(typeid(int))) add<intA>(key)->as<intA>().readJson(is, true);
+          else if(typetag==rai::atomicTypeidName(typeid(int16_t))) add<Array<int16_t>>(key)->as<Array<int16_t>>().readJson(is, true);
           else{
             while(typetag.N){ is.putback(typetag(-1)); typetag.resize(typetag.N-1, true); }
 

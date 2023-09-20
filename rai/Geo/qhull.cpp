@@ -328,7 +328,9 @@ arr getHull(const arr& V, uintA& T) {
   int exitcode;
   uint dim=V.d1;
   static char* cmd = (char*) "qhull Qt ";
-  exitcode = qh_new_qhull(V.d1, V.d0, V.p, false, cmd, nullptr, stderr);
+  FILE* fnull = fopen("/dev/null", "w");
+  exitcode = qh_new_qhull(V.d1, V.d0, V.p, false, cmd, nullptr, fnull);
+  fclose(fnull);
 
   if(!exitcode){
     qh_triangulate();

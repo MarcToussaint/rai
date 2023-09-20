@@ -1667,6 +1667,10 @@ void rai::Shape::glDraw(OpenGL& gl) {
       if(!mesh().V.N) {
         LOG(1) <<"trying to draw empty mesh (shape type:" <<_type <<")";
       } else {
+        if(!mesh().T.N){
+          if(size.N) glPointSize(size.last());
+          else glPointSize(1.f);
+        }
         mesh().glDraw(gl);
       }
     }

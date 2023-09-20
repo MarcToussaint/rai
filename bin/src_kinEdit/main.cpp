@@ -8,12 +8,13 @@ const char *USAGE =
     "\nUsage:  kinEdit <g-filename>"
     "\n"
     "\n  -file <g-file>"
-    "\n  -prune           to optimize the tree structure and prune useless frames"
+    "\n  -prune           optimize the tree structure and prune useless frames"
     "\n  -makeConvexHulls   make all meshes convex"
     "\n  -collisions      compute collisions in the scene and report proxies"
-    "\n  -writeMeshes     to write all meshes in a folder"
-    "\n  -dot             to illustrate the tree structure as graph"
-    "\n  -cleanOnly       to skip the animation/edit loop\n";
+    "\n  -writeMeshes     write all meshes in a folder"
+    "\n  -convert         write various export formats (urdf, collada)
+    "\n  -dot             illustrate the tree structure as graph"
+    "\n  -cleanOnly       skip the animation/edit loop\n";
 
 int main(int argc,char **argv){
   rai::initCmdLine(argc, argv);

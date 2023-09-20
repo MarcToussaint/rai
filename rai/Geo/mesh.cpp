@@ -1253,7 +1253,7 @@ void Mesh::read(std::istream& is, const char* fileExtension, const char* filenam
   if(!strcmp(fileExtension, "arr")) { readArr(is); }
   else if(!strcmp(fileExtension, "omp")) { readArr(is); } //decomp
   else if(!strcmp(fileExtension, "esh")) { readArr(is); } //mesh
-  else if(!strcmp(fileExtension, "nts")) { readArr(is); } //points
+  else if(!strcmp(fileExtension, "nts")) { readPts(is); } //points
   else if(!strcmp(fileExtension, "pts")) { readPts(is); }
   else if(!strcmp(fileExtension, "msh")) { readJson(is); }
   else if(!strcmp(fileExtension, "off")) { readOffFile(is); }
@@ -1562,7 +1562,7 @@ void Mesh::readArr(std::istream& is) {
   Graph G(is);
   rai::Node *n;
   n=G["V"]; if(n){ if(n->is<arr>()) V = n->as<arr>(); else V = convert<double>( n->as<floatA>() ); }
-  n=G["T"]; if(n){ if(n->is<uintA>()) T = n->as<uintA>(); else T = convert<uint>( n->as<uint16A>() ); }
+  n=G["T"]; if(n){ if(n->is<uintA>()) T = n->as<uintA>(); else{ if(n->is<Array<int16_t>>()) T = convert<uint>( n->as<Array<int16_t>>() ); else T = convert<uint>( n->as<uint16A>() ); } }
   n=G["C"]; if(n){ if(n->is<arr>()) C = n->as<arr>(); else C = convert<double>( n->as<floatA>() ); }
   G.get(cvxParts, "cvxParts");
   G.get(tex, "tex");
