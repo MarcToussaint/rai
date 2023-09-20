@@ -1008,7 +1008,12 @@ void DrawActor(PxRigidActor* actor, rai::Frame* frame, OpenGL& gl) {
 
     // use the color of the first shape of the body for the entire body
     rai::Shape* s = frame->shape;
-    if(!s) s = frame->children.elem(0)->shape;
+    if(!s) for(rai::Frame* ch:frame->children){
+      if(ch->shape && ch->shape->alpha()==1.){
+        s = ch->shape;
+        break;
+      }
+    }
     if(s) glColor(s->mesh().C);
 
     rai::Transformation f;
@@ -1073,6 +1078,7 @@ void DrawActor(PxRigidActor* actor, rai::Frame* frame, OpenGL& gl) {
 }
 
 void PhysXInterface::glDraw(OpenGL& gl) {
+  gl.text.clear() <<self->stepCount;
   for(PxRigidActor* a: self->actors) {
     if(a) {
       rai::Frame* f = (rai::Frame*)a->userData;

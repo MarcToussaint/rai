@@ -89,15 +89,15 @@ struct Imp_CloseGripper : SimulationImp {
 
 //===========================================================================
 
-struct Imp_OpenGripper : SimulationImp {
+struct Imp_GripperMove : SimulationImp {
   Frame* gripper, *fing1, *fing2;
   Joint* joint;
   Vector axis;
-  arr limits;
   double q;
   double speed;
+  double stop;
 
-  Imp_OpenGripper(Frame* _gripper, Joint* _joint, Frame* _fing1, Frame* _fing2, double _speed);
+  Imp_GripperMove(Frame* _gripper, Joint* _joint, Frame* _fing1, Frame* _fing2, double _speed, double _stop=-1.);
   virtual void modConfiguration(Simulation& S, double tau);
 };
 
@@ -240,6 +240,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     C.setJointState(q_ref);
   } else NIY;
 
+
   //-- imps after physics
   for(shared_ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_afterPhysics) {
       imp->modConfiguration(*this, tau);
@@ -308,7 +309,7 @@ bool getFingersForGripper(rai::Frame*& gripper, rai::Joint*& joint, rai::Frame*&
   return true;
 }
 
-void Simulation::openGripper(const char* gripperFrameName, double width, double speed) {
+void Simulation::moveGripper(const char* gripperFrameName, double width, double speed) {
   rai::Frame* gripper, *fing1, *fing2;
   rai::Joint* joint;
   getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
@@ -325,7 +326,7 @@ void Simulation::openGripper(const char* gripperFrameName, double width, double 
 
   //reattach object to world frame, and make it physical
   if(obj) {
-    if(verbose>1) LOG(1) <<"initiating opening gripper " <<gripper->name <<" and releasing obj " <<obj->name;
+    if(verbose>1) LOG(1) <<"initiating opening gripper " <<gripper->name <<" and releasing obj " <<obj->name <<" width:" <<width <<" speed:" <<speed;
 
     //C.attach(C.frames(0), obj);
     obj = obj->getUpwardLink();
@@ -338,11 +339,11 @@ void Simulation::openGripper(const char* gripperFrameName, double width, double 
     } else if(engine==_kinematic) {
     } else NIY;
   }else{
-    if(verbose>1) LOG(1) <<"initiating opening gripper " <<gripper->name <<" (without releasing obj)";
+    if(verbose>1) LOG(1) <<"initiating opening gripper " <<gripper->name <<" (without releasing obj)" <<" width:" <<width <<" speed:" <<speed;
   }
 
   C.ensure_q();
-  imps.append(make_shared<Imp_OpenGripper>(gripper, joint, fing1, fing2, speed));
+  imps.append(make_shared<Imp_GripperMove>(gripper, joint, fing1, fing2, speed, width));
 }
 
 void Simulation::closeGripper(const char* gripperFrameName, double width, double speed, double force) {
@@ -418,6 +419,20 @@ void Simulation::closeGripperGrasp(const char* gripperFrameName, const char* obj
   if(verbose>1) LOG(1) <<"initiating grasp of object " <<(obj?obj->name:"--nil--") <<" (prefixed)";
 
   imps.append(make_shared<Imp_CloseGripper>(gripper, joint, fing1, fing2, obj, speed));
+}
+
+bool Simulation::gripperIsDone(const char* gripperFrameName){
+  rai::Frame *gripper = C.getFrame(gripperFrameName);
+  if(!gripper) {
+    LOG(-1) <<"you passed me a non-existing gripper name!";
+    return true;
+  }
+  gripper = gripper->getUpwardLink();
+  for(auto& imp: imps){
+    if(std::dynamic_pointer_cast<Imp_GripperMove>(imp) && std::dynamic_pointer_cast<Imp_GripperMove>(imp)->gripper==gripper) return false;
+    if(std::dynamic_pointer_cast<Imp_CloseGripper>(imp) && std::dynamic_pointer_cast<Imp_CloseGripper>(imp)->gripper==gripper) return false;
+  }
+  return true;
 }
 
 shared_ptr<SimulationState> Simulation::getState() {
@@ -759,14 +774,15 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
 
 //===========================================================================
 
-Imp_OpenGripper::Imp_OpenGripper(Frame* _gripper, Joint* _joint, Frame* _fing1, Frame* _fing2, double _speed)
-  : gripper(_gripper), fing1(_fing1), fing2(_fing2), joint(_joint), speed(_speed) {
+Imp_GripperMove::Imp_GripperMove(Frame* _gripper, Joint* _joint, Frame* _fing1, Frame* _fing2, double _speed, double _stop)
+  : gripper(_gripper), fing1(_fing1), fing2(_fing2), joint(_joint), speed(_speed), stop(_stop) {
   when = _beforePhysics;
   type = Simulation::_openGripper;
 
   if(joint->frame->parent->name.contains("robotiq")) speed *= -1.;
   else speed *= .1;
 
+  arr limits;
 //  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
   if(joint){
     limits = joint->limits;
@@ -777,9 +793,13 @@ Imp_OpenGripper::Imp_OpenGripper(Frame* _gripper, Joint* _joint, Frame* _fing1, 
     q = axis.sum();
     if(q) axis /= q; else axis = Vector_x;
   }
+
+  rai::clip(stop, limits(0), limits(1));
+
+  if((stop>q && speed<0.) || (stop<q && speed>0.)) speed *= -1.;
 }
 
-void Imp_OpenGripper::modConfiguration(Simulation& S, double tau) {
+void Imp_GripperMove::modConfiguration(Simulation& S, double tau) {
   if(killMe) return;
 
   CHECK_EQ(&S.C, &gripper->C, "");
@@ -795,8 +815,8 @@ void Imp_OpenGripper::modConfiguration(Simulation& S, double tau) {
     fing2->set_Q()->pos = -q*axis;
   }
 
-  if((speed>0 && q>limits(1))
-     || (speed<0 && q<limits(0))){ //stop opening
+  if((speed>0 && q>stop)
+     || (speed<0 && q<stop)){ //stop opening
     if(S.verbose>1) LOG(1) <<"terminating opening gripper " <<gripper->name <<" at width " <<q;
     killMe = true;
   }

@@ -107,7 +107,7 @@ void testGrasp(){
     }
 
     if(t==900){
-      S.openGripper("gripper");
+      S.moveGripper("gripper");
     }
 
     if(t>1200 && S.getGripperWidth("gripper")>=.02){ //that's the upper limit of this gripper
@@ -153,7 +153,7 @@ void testOpenClose(){
   }
 
   rai::wait();
-  S.openGripper("gripper");
+  S.moveGripper("gripper");
   for(uint t=0;;t++){
     rai::wait(tau);
 

@@ -52,7 +52,7 @@ void init_Simulation(pybind11::module& m) {
 
   .def("get_qDot", &rai::Simulation::get_qDot)
 
-  .def("openGripper", &rai::Simulation::openGripper,
+  .def("openGripper", &rai::Simulation::moveGripper,
        "",
        pybind11::arg("gripperFrameName"),
        pybind11::arg("width") = .075,

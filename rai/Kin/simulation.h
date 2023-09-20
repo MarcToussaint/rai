@@ -48,9 +48,10 @@ struct Simulation {
   void move(const arr& path, const arr& t);
 
   //-- send a gripper command
-  void openGripper(const char* gripperFrameName, double width=.075, double speed=.3);
+  void moveGripper(const char* gripperFrameName, double width=.075, double speed=.3);
   void closeGripper(const char* gripperFrameName, double width=.05, double speed=.3, double force=20.);
   void closeGripperGrasp(const char* gripperFrameName, const char* objectName, double width=.05, double speed=.3, double force=20.);
+  bool gripperIsDone(const char* gripperFrameName);
 
   //-- get state information
   const arr& get_q() { return C.getJointState(); }
