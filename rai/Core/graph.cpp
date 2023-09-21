@@ -194,6 +194,7 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
   } else if(is<FileToken>()) {
     os <<'<' <<getValue<FileToken>()->autoPath() <<'>';
   } else if(is<arr>()) {
+    if(getValue<arr>()->N>=20) binary=true;
     getValue<arr>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<floatA>()) {
     getValue<floatA>()->write(os, ", ", nullptr, "[]", false, binary);
@@ -1134,7 +1135,7 @@ void Graph::write(std::ostream& os, const char* ELEMSEP, const char* BRACKETS, i
   }
   if(indent>=0) indent += 2;
   for(uint i=0; i<N; i++) {
-    if(indent>=0){ os <<'\n'; for(int i=0;i<indent;i++) os <<' '; }
+    if(indent>=0){ if(i) os <<ELEMSEP; os <<'\n'; for(int i=0;i<indent;i++) os <<' '; }
     else if(i) os <<ELEMSEP;
     if(elem(i)) elem(i)->write(os, indent, yamlMode, binary); else os <<"<nullptr>";
   }

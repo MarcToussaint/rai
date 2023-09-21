@@ -13,7 +13,7 @@ void plotIt(rai::BSpline& S){
 //    fil <<t <<' ' <<S.eval(t,2).modRaw() <<endl;
   }
   fil.close();
-  gnuplot("set size square; set grid; plot  'z.test' us 1:2, x");
+  gnuplot("set size square; set grid; plot [:][-.2:1.2] 'z.test' us 1:2, 3-x, 1+x, x-.5");
   rai::wait();
 }
 
@@ -22,14 +22,13 @@ void TEST(Basics){
   arr X = {1., 0., 0., 1.};  X.reshape(-1,1);
   arr T = {0., .5, .5, 1.};
   arr vel = {1.};
-  S.set(2, X, T);
+  S.set(3, X, T);
 
   cout <<"\ntimes = " <<S.knotTimes <<endl;
   cout <<"points = " <<~S.ctrlPoints <<endl;
   plotIt(S);
 
   S.append(arr{0., 1.}.reshape(-1,1), {.5, 1.}, true);
-
   cout <<"\ntimes = " <<S.knotTimes <<endl;
   cout <<"points = " <<~S.ctrlPoints <<endl;
   plotIt(S);
