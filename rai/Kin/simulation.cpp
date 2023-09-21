@@ -41,7 +41,7 @@ struct Simulation_self {
 #endif
   std::shared_ptr<OpenGL> glDebug;
 
-  SplineCtrlReference ref;
+  BSplineCtrlReference ref;
 
   void updateDisplayData(double _time, const Configuration& _C);
   void updateDisplayData(const byteA& _image, const floatA& _depth);
@@ -268,12 +268,12 @@ void Simulation::setMoveTo(const arr& x, double t, bool append){
   arr times = {t};
   if(x.nd==2) times.setGrid(1, t/(x.d0), t, x.d0-1);
 
-  if(append) self->ref.append(path, times, time, true);
+  if(append) self->ref.append(path, times, time);
   else self->ref.overwriteSmooth(path, times, time);
 }
 
 void Simulation::move(const arr& path, const arr& t){
-  self->ref.append(path, t, time, true);
+  self->ref.append(path, t, time);
 }
 
 bool getFingersForGripper(rai::Frame*& gripper, rai::Joint*& joint, rai::Frame*& fing1, rai::Frame*& fing2, rai::Configuration& C, const char* gripperFrameName) {

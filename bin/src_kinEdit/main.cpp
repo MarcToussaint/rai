@@ -12,7 +12,7 @@ const char *USAGE =
     "\n  -makeConvexHulls   make all meshes convex"
     "\n  -collisions      compute collisions in the scene and report proxies"
     "\n  -writeMeshes     write all meshes in a folder"
-    "\n  -convert         write various export formats (urdf, collada)
+    "\n  -convert         write various export formats (urdf, collada)"
     "\n  -dot             illustrate the tree structure as graph"
     "\n  -cleanOnly       skip the animation/edit loop\n";
 

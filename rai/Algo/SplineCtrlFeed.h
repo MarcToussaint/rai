@@ -11,8 +11,9 @@ struct ReferenceFeed {
   virtual void getReference(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, const arr& q_real, const arr& qDot_real, double ctrlTime) = 0;
 };
 
-struct SplineCtrlReference : ReferenceFeed {
+struct BSplineCtrlReference : ReferenceFeed {
   Var<BSpline> spline;
+  uint degree=2;
 
   /// initializes to constant (q_real, zero-vel) spline
   void initialize(const arr& q_real, const arr& qDot_real, double time);
@@ -21,18 +22,12 @@ struct SplineCtrlReference : ReferenceFeed {
   /// callback called by a robot control loop; at first time initializes the spline
   void getReference(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, const arr& q_real, const arr& qDot_real, double ctrlTime);
 
-  /// append new knots to the spline; if prependLast, the currently last spline remains a zero-vel double know (holds) before starting the appended
-  void append(const arr& x, const arr& t, double ctrlTime, bool prependLast);
+  /// append new knots to the spline; the currently last spline remains a zero-vel double know (holds) before starting the appended
+  void append(const arr& x, const arr& t, double ctrlTime);
   /// override the spline, but use the current spline's current pos/vel as start knot of the new spline; the first time knot needs to be >.1 sec
   void overwriteSmooth(const arr& x, const arr& t, double ctrlTime);
   /// fully override the spline with new knots x and t, as well as initial vel xDot0; for safety, the first x needs to be close to the current spline's current pos
   void overwriteHard(const arr& x, const arr& t, double ctrlTime);
-
-  //simple helper for single goal spline
-  void moveTo(const arr& x, double t, double ctrlTime, bool append){
-    if(append) this->append(~x, {t}, ctrlTime, true);
-    else  overwriteSmooth(~x, {t}, ctrlTime);
-  }
 
   //info:
   double getEndTime() { return spline.get()->end(); }
@@ -55,15 +50,9 @@ struct CubicSplineCtrlReference : ReferenceFeed {
   /// append new knots to the spline; if prependLast, the currently last spline remains a zero-vel double know (holds) before starting the appended
   void append(const arr& x, const arr& v, const arr& t, double ctrlTime);
   /// override the spline, but use the current spline's current pos/vel as start knot of the new spline; the first time knot needs to be >.1 sec
-  void overrideSmooth(const arr& x, const arr& v, const arr& t, double ctrlTime);
+  void overwriteSmooth(const arr& x, const arr& v, const arr& t, double ctrlTime);
   /// fully override the spline with new knots x and t, as well as initial vel xDot0; for safety, the first x needs to be close to the current spline's current pos
-  void overrideHard(const arr& x, const arr& v, const arr& t, double ctrlTime);
-
-  //simple helper for single goal spline
-  void moveTo(const arr& x, double t, double ctrlTime, bool append){
-    if(append) this->append(~x, zeros(1, x.N), {t}, ctrlTime);
-    else  overrideSmooth(~x, zeros(1, x.N), {t}, ctrlTime);
-  }
+  void overwriteHard(const arr& x, const arr& v, const arr& t, double ctrlTime);
 
   //info:
   double getEndTime() { waitForInitialized(); return spline.get()->end(); }

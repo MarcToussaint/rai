@@ -996,8 +996,9 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo) {
         } break;
         default: { //error
           is.putback(c);
-          PARSERR("unknown value indicator '" <<c <<"'", pinfo);
-          return nullptr;
+          node = add<bool>(key,  true);
+//          PARSERR("unknown value indicator '" <<c <<"'", pinfo);
+//          return nullptr;
         }
       }
   } else { //no ':' or '{' -> boolean

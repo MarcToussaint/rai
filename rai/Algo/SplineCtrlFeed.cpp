@@ -4,36 +4,36 @@ namespace rai{
 
 //===========================================================================
 
-void SplineCtrlReference::initialize(const arr& q_real, const arr& qDot_real, double ctrlTime) {
-  spline.set()->set(2, ~q_real, {ctrlTime});
+void BSplineCtrlReference::initialize(const arr& q_real, const arr& qDot_real, double ctrlTime) {
+  spline.set()->set(degree, ~q_real, {ctrlTime});
 }
 
-void SplineCtrlReference::waitForInitialized(){
+void BSplineCtrlReference::waitForInitialized(){
   while(!spline.get()->knotTimes.N) spline.waitForNextRevision();
 }
 
-void SplineCtrlReference::getReference(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, const arr& q_real, const arr& qDot_real, double ctrlTime){
+void BSplineCtrlReference::getReference(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, const arr& q_real, const arr& qDot_real, double ctrlTime){
   if(!spline.get()->ctrlPoints.N) initialize(q_real, qDot_real, ctrlTime);
   spline.get() -> eval(q_ref, qDot_ref, qDDot_ref, ctrlTime);
 }
 
-void SplineCtrlReference::append(const arr& x, const arr& t, double ctrlTime, bool prependLast){
+void BSplineCtrlReference::append(const arr& x, const arr& t, double ctrlTime){
   waitForInitialized();
   arr _x(x), _t(t);
   auto splineSet = spline.set();
-  if(prependLast){
+  //LOG(0) <<"append before:" <<splineSet->ctrlPoints <<splineSet->knotTimes;
+  if(ctrlTime > splineSet->end()){ //previous spline is done... create new one
     _x.prepend(splineSet->ctrlPoints[-1]);
     _t.prepend(0.);
-  }
-  if(ctrlTime > splineSet->end()){ //previous spline is done... create new one
-    splineSet->set(2, _x, _t+ctrlTime);
+    splineSet->set(degree, _x, _t+ctrlTime);
   }else{ //previous spline still active... append
     CHECK_GE(t.first(), .01, "that's too harsh! When appending the first time knot should be greater zero (otherwise non-smooth).");
-    splineSet->append(_x, _t);
+    splineSet->append(_x, _t, false);
   }
+  //LOG(0) <<"append after:" <<splineSet->ctrlPoints <<splineSet->knotTimes;
 }
 
-void SplineCtrlReference::overwriteSmooth(const arr& x, const arr& t, double ctrlTime){
+void BSplineCtrlReference::overwriteSmooth(const arr& x, const arr& t, double ctrlTime){
   CHECK(t.first()>.001, "that's too harsh!");
   waitForInitialized();
   arr x_now, xDot_now;
@@ -42,10 +42,10 @@ void SplineCtrlReference::overwriteSmooth(const arr& x, const arr& t, double ctr
   splineSet->eval(x_now, xDot_now, NoArr, ctrlTime);
   _x.prepend(x_now);
   _t.prepend(0.);
-  splineSet->set(2, _x, _t+ctrlTime, xDot_now);
+  splineSet->set(degree, _x, _t+ctrlTime, xDot_now);
 }
 
-void SplineCtrlReference::overwriteHard(const arr& x, const arr& t, double ctrlTime){
+void BSplineCtrlReference::overwriteHard(const arr& x, const arr& t, double ctrlTime){
   waitForInitialized();
 
   CHECK_LE(t.first(), .0, "");
@@ -57,7 +57,7 @@ void SplineCtrlReference::overwriteHard(const arr& x, const arr& t, double ctrlT
   arr x_old, xDot_old;
   splineSet->eval(x_old, xDot_old, NoArr, ctrlTime);
 
-  splineSet->set(2, x, t+ctrlTime, xDot_old);
+  splineSet->set(degree, x, t+ctrlTime, xDot_old);
 
   //only saftey checks: evaluate the new spline
   arr x_new, xDot_new;
@@ -66,7 +66,7 @@ void SplineCtrlReference::overwriteHard(const arr& x, const arr& t, double ctrlT
   if(maxDiff(xDot_old,xDot_new)>.5) LOG(0) <<"your initial velocity is too far from the current spline";
 }
 
-void SplineCtrlReference::report(double ctrlTime){
+void BSplineCtrlReference::report(double ctrlTime){
   waitForInitialized();
   arr x, xDot;
   auto splineGet = spline.get();
@@ -99,14 +99,14 @@ void CubicSplineCtrlReference::append(const arr& x, const arr& v, const arr& t, 
   waitForInitialized();
   if(ctrlTime > getEndTime()){ //previous spline is done... create new one but 'overwrite'
     LOG(1) <<"override";
-    overrideSmooth(x, v, t, ctrlTime);
+    overwriteSmooth(x, v, t, ctrlTime);
   }else{ //previous spline still active... append
     CHECK_GE(t.first(), .01, "that's too harsh! When appending the first time knot should be greater zero (otherwise non-smooth).");
     spline.set()->append(x, v, t);
   }
 }
 
-void CubicSplineCtrlReference::overrideSmooth(const arr& x, const arr& v, const arr& t, double ctrlTime){
+void CubicSplineCtrlReference::overwriteSmooth(const arr& x, const arr& v, const arr& t, double ctrlTime){
   waitForInitialized();
   arr x_now, xDot_now;
   arr _x(x), _v(v), _t(t);
@@ -127,7 +127,7 @@ void CubicSplineCtrlReference::overrideSmooth(const arr& x, const arr& v, const 
   splineSet->set(_x, _v, _t+ctrlTime);
 }
 
-void CubicSplineCtrlReference::overrideHard(const arr& x, const arr& v, const arr& t, double ctrlTime){
+void CubicSplineCtrlReference::overwriteHard(const arr& x, const arr& v, const arr& t, double ctrlTime){
   waitForInitialized();
 
   CHECK_LE(t.first(), .0, "hard overwrite requires the spline to include a NOW node");

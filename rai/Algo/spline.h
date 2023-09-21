@@ -34,7 +34,7 @@ struct BSpline {
   BSpline& setUniform(uint _degree, uint steps);
   arr getGridBasis(uint T);
 
-  void append(const arr& _points, const arr& _times, bool inside=true);
+  void append(const arr& _points, const arr& _times, bool inside);
   void clear();
 
   //

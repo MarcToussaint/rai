@@ -382,7 +382,7 @@ void BSpline::doubleKnot(uint t){
 }
 
 void BSpline::setDoubleKnotVel(int t, const arr& vel){
-  CHECK_EQ(degree, 2, "NIY");
+  CHECK_EQ(degree, 2, "setDoubleKnot only implemented for degree=2");
   arr a=ctrlPoints[t+degree/2];
   arr b=ctrlPoints[t+degree/2+1];
   CHECK(maxDiff(a,b)<1e-10,"this is not a double knot!");
