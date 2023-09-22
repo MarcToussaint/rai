@@ -88,11 +88,11 @@ UIC = uic
 YACC = bison -d
 
 LINK	= $(CXX)
-CPATHS	+= $(BASE)/rai $(HOME)/opt/include
+CPATHS	+= $(BASE)/rai $(HOME)/.local/include
 ifdef BASE2
 CPATHS	+= $(BASE2)
 endif
-LPATHS	+= $(BASE)/lib $(HOME)/opt/lib /usr/local/lib
+LPATHS	+= $(BASE)/lib $(HOME)/.local/lib /usr/local/lib
 ifdef BASE2
 LPATHS	+= $(BASE2)/lib
 endif

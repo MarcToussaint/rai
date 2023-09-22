@@ -6,6 +6,7 @@
 # (a tag like `FREEGLUT = 1' can be defined in the make-config as needed)
 
 ARCH = $(shell uname -m)
+USER_LIB = $(HOME)/.local
 
 ifeq ($(RAI_CMAKE),1)
 DEPEND :=
@@ -313,7 +314,7 @@ endif
 
 ifeq ($(OPENCV4),1)
 CXXFLAGS  += -DRAI_OPENCV
-CPATH := $(HOME)/opt/include/opencv4/:$(CPATH)
+CPATH := $(USER_LIB)/include/opencv4/:$(CPATH)
 LIBS += -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_videoio
 endif
 
@@ -462,10 +463,10 @@ endif
 
 ifeq ($(PHYSX),1)
 CXXFLAGS += -DRAI_PHYSX -D_DEBUG -DPX_DISABLE_FLUIDS -DCORELIB -DPX32 -DLINUX
-CPATH := $(CPATH):$(HOME)/opt/PhysX5/include
-#LPATHS += $(HOME)/opt/PhysX5/lib
+CPATH := $(CPATH):$(USER_LIB)/include
+LPATHS += $(USER_LIB)/lib/PhysX
 LIBS += -lpthread -lrt\
--lPhysXExtensions_static_64 -lPhysX_64 -lPhysXCooking_64 -lPhysXCommon_64 -lPhysXFoundation_64
+-lPhysXExtensions_static_64 -lPhysX_static_64 -lPhysXCooking_static_64 -lPhysXCommon_static_64 -lPhysXFoundation_static_64
 
 #Physx-3.3:
 #-lLowLevel \
@@ -487,7 +488,7 @@ endif
 ifeq ($(BULLET_LOCAL),1)
 #BULLET_PATH=$(HOME)/git/bullet3
 CXXFLAGS  += -DRAI_BULLET -DBT_USE_DOUBLE_PRECISION
-CPATH := $(HOME)/opt/include/bullet/:$(CPATH)
+CPATH := $(USER_LIB)/include/bullet/:$(CPATH)
 #LPATH := $(BULLET_PATH)/bin:$(LPATH)
 #CPATH := $(CPATH):$(BULLET_PATH)/src
 #btLIB = _gmake_x64_release
@@ -502,8 +503,8 @@ endif
 
 ifeq ($(PORTAUDIO),1)
 CXXFLAGS  += -DRAI_PORTAUDIO
-LPATHS += $(HOME)/opt/portaudio/lib/.libs
-CPATHS += $(HOME)/opt/portaudio/include
+LPATHS += $(USER_LIB)/portaudio/lib/.libs
+CPATHS += $(USER_LIB)/portaudio/include
 LIBS += -lportaudio
 endif
 

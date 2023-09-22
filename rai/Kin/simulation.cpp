@@ -29,7 +29,7 @@ namespace rai {
 //===========================================================================
 
 struct Simulation_self {
-  arr qdot;
+  arr qDot;
   arr frameVelocities;
   std::shared_ptr<struct Simulation_DisplayThread> display;
   std::shared_ptr<CameraView> cameraview;
@@ -45,15 +45,6 @@ struct Simulation_self {
 
   void updateDisplayData(double _time, const Configuration& _C);
   void updateDisplayData(const byteA& _image, const floatA& _depth);
-};
-
-//===========================================================================
-
-struct SimulationState {
-  arr frameState;
-  arr frameVels;
-
-  SimulationState(const arr& _frameState, const arr& _frameVels) : frameState(_frameState), frameVels(_frameVels) {}
 };
 
 //===========================================================================
@@ -181,8 +172,8 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     q_ref = ucontrol;
   } else if(u_mode==_velocity) {
     arr q = C.getJointState();
-    qDot = ucontrol;
-    q += tau * qDot;
+    self->qDot = ucontrol;
+    q += tau * self->qDot;
     q_ref = q;
     qDot_ref = ucontrol;
   } else if(u_mode==_posVel) {
@@ -191,16 +182,16 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     qDot_ref = ucontrol[1];
   } else if(u_mode==_acceleration) {
     arr q = C.getJointState();
-    if(!qDot.N) qDot = zeros(q.N);
-    q += .5 * tau * qDot;
-    qDot += tau * ucontrol;
-    q += .5 * tau * qDot;
+    if(!self->qDot.N) self->qDot = zeros(q.N);
+    q += .5 * tau * self->qDot;
+    self->qDot += tau * ucontrol;
+    q += .5 * tau * self->qDot;
     q_ref = q;
-    qDot_ref = qDot;
+    qDot_ref = self->qDot;
   } else if(u_mode==_spline) {
     arr q = C.getJointState();
-    if(!qDot.N) qDot = zeros(q.N);
-    self->ref.getReference(q_ref, qDot_ref, NoArr, q, qDot, time);
+    if(!self->qDot.N) self->qDot = zeros(q.N);
+    self->ref.getReference(q_ref, qDot_ref, NoArr, q, self->qDot, time);
   } else NIY;
 
   //-- imps before physics
@@ -208,27 +199,27 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
       imp->modConfiguration(*this, tau);
     }
 
-  //-- call the physics ending
+  //-- call the physics engine
   if(engine==_physx) {
     if(self->physx->opt().jointedBodies || self->physx->opt().multiBody){
-      self->physx->pushKinematicStates(C); //usually none anyway
-//      self->physx->setMotorQ(q_ref, qDot_ref); //motor control
+      self->physx->pushFrameStates(C, NoArr, true); //kinematicOnly (usually none anyway)
       if(q_ref.N){
         C.setJointState(q_ref);
-        self->physx->setMotorQ(C); //motor control
+        self->physx->setMotorQ(C); //qDot_ref, motor control
       }
     }else{
       if(q_ref.N) C.setJointState(q_ref); //kinematic control
-      if(qDot_ref.N) qDot = qDot_ref;
-      self->physx->pushKinematicStates(C);
+      if(qDot_ref.N) self->qDot = qDot_ref;
+      self->physx->pushFrameStates(C, NoArr, true); //kinematicOnly
     }
     self->physx->step(tau);
     self->physx->pullDynamicStates(C, self->frameVelocities);
+    self->physx->pullMotorStates(C, self->qDot);  //why not also pull the motor states?
   } else if(engine==_bullet) {
     self->bullet->pushKinematicStates(C);
     if(self->bullet->opt().multiBody){
       if(ucontrol.nd!=2) LOG(1) <<"stepping motorized bullet without ctrl reference";
-      else self->bullet->setMotorQ(ucontrol[0], ucontrol[1]); //C.getJointState(), qDot);
+      else self->bullet->setMotorQ(ucontrol[0], ucontrol[1]); //C.getJointState(), self->qDot);
     }
     self->bullet->step(tau);
     self->bullet->pullDynamicStates(C); //, self->frameVelocities);
@@ -435,27 +426,32 @@ bool Simulation::gripperIsDone(const char* gripperFrameName){
   return true;
 }
 
-shared_ptr<SimulationState> Simulation::getState() {
-  arr qdot;
+void Simulation::getState(arr& frameState, arr& frameVelocities, arr& q, arr& qDot) {
   if(engine==_physx) {
-    self->physx->pullDynamicStates(C, qdot);
+    self->physx->pullDynamicStates(C, frameVelocities);
+    if(!!q || !!qDot) self->physx->pullMotorStates(C, qDot);
   } else if(engine==_bullet) {
-    self->bullet->pullDynamicStates(C, qdot);
+    self->bullet->pullDynamicStates(C, frameVelocities);
+    if(!!q) NIY;
   } else NIY;
-  return make_shared<SimulationState>(C.getFrameState(), qdot);
+  frameState = C.getFrameState();
+  q = C.getJointState();
 }
 
-void Simulation::setState(const arr& frameState, const arr& frameVelocities) {
+void Simulation::setState(const arr& frameState, const arr& frameVelocities, const arr& q, const arr& qDot) {
   C.setFrameState(frameState);
-  pushConfigurationToSimulator(frameVelocities);
+  if(!!q && q.N) C.setJointState(q);
+  pushConfigurationToSimulator(frameVelocities, qDot);
 }
 
-void Simulation::pushConfigurationToSimulator(const arr& frameVelocities) {
+void Simulation::pushConfigurationToSimulator(const arr& frameVelocities, const arr& qDot) {
   if(engine==_physx) {
-    self->physx->pushFullState(C, frameVelocities);
+    self->physx->pushFrameStates(C, frameVelocities);
+    if(!!qDot && qDot.N) self->physx->setMotorQ(C, true, qDot);
   } else if(engine==_bullet) {
     self->bullet->pushFullState(C, frameVelocities);
   } else NIY;
+  if(verbose>0) self->updateDisplayData(time, C);
 }
 
 void Simulation::registerNewObjectWithEngine(Frame* f) {
@@ -467,12 +463,8 @@ void Simulation::registerNewObjectWithEngine(Frame* f) {
   } else NIY;
 }
 
-void Simulation::restoreState(const shared_ptr<SimulationState>& state) {
-  setState(state->frameState, state->frameVels);
-}
-
 const arr& Simulation::get_qDot() {
-  return self->qdot;
+  return self->qDot;
 }
 
 double Simulation::getTimeToMove(){
@@ -835,11 +827,12 @@ void Imp_ObjectImpulses::modConfiguration(Simulation& S, double tau) {
   vel(0) *= .1;
   vel(1) *= .1;
 
-  std::shared_ptr<SimulationState> state = S.getState();
+  arr X, V;
+  S.getState(X, V);
 
-  state->frameVels(obj->ID, 0, {}) = vel;
+  V(obj->ID, 0, {}) = vel;
 
-  S.restoreState(state);
+  S.setState(X, V);
 }
 
 //===========================================================================

@@ -33,12 +33,12 @@ struct PhysXInterface : GLDrawer {
 
   void step(double tau=.01);
 
-  void pushKinematicStates(const rai::Configuration& C);
-  void pushFullState(const rai::Configuration& C, const arr& frameVelocities=NoArr, bool onlyKinematic=false);
+  void pushFrameStates(const rai::Configuration& C, const arr& frameVelocities=NoArr, bool onlyKinematic=false);
   void pullDynamicStates(rai::Configuration& C, arr& frameVelocities=NoArr);
 
   void setMotorQ(const arr& q_ref, const arr& qDot_ref);
-  void setMotorQ(const rai::Configuration& C, bool setHardInstantly=false);
+  void setMotorQ(const rai::Configuration& C, bool setHardInstantly=false, const arr& qDot=NoArr);
+  void pullMotorStates(rai::Configuration& C, arr& qDot);
 
   void changeObjectType(rai::Frame* f, int type);
   void postAddObject(rai::Frame* f);

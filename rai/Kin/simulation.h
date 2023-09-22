@@ -13,7 +13,6 @@
 
 namespace rai {
 
-struct SimulationState;
 struct SimulationImp;
 struct TeleopCallbacks;
 
@@ -28,7 +27,6 @@ struct Simulation {
 
   Configuration& C;
   double time;
-  arr qDot;
   Engine engine;
   Array<shared_ptr<SimulationImp>> imps; ///< list of (adversarial) imps doing things/perturbations/noise in addition to clean physics engine
   int verbose;
@@ -90,10 +88,9 @@ struct Simulation {
   //== management interface
 
   //-- store and reset the state of the simulation
-  shared_ptr<SimulationState> getState();
-  void restoreState(const shared_ptr<SimulationState>& state);
-  void setState(const arr& frameState, const arr& frameVelocities=NoArr);
-  void pushConfigurationToSimulator(const arr& frameVelocities=NoArr);
+  void getState(arr& frameState, arr& frameVelocities, arr& q=NoArr, arr& qDot=NoArr);
+  void setState(const arr& frameState, const arr& frameVelocities=NoArr, const arr& q=NoArr, const arr& qDot=NoArr);
+  void pushConfigurationToSimulator(const arr& frameVelocities=NoArr, const arr& qDot=NoArr);
 
   //-- post-hoc world manipulations
   void registerNewObjectWithEngine(rai::Frame* f);

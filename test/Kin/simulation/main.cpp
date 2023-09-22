@@ -93,7 +93,7 @@ void testGrasp(){
 //                 .setCentering()
                  .eval(C.getFrames({"finger1", "finger2", "ring4"}));
 //                 C.feature(FS_oppose, {"finger1", "finger2", "ring4"})->eval(C);
-      diff *= rai::MIN(.01/length(diff), 1.);
+      diff *= rai::MIN(.01/length(diff), .03);
       q -= pseudoInverse(diff.J(), NoArr, 1e-2) * diff;
     }
 
@@ -189,6 +189,8 @@ void testRndScene(){
 
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandasTable.g"));
 
+  arr q0 = C.getJointState();
+
   rai::Simulation S(C, S._physx, 2);
   S.cameraview().addSensor("camera");
 
@@ -201,7 +203,7 @@ void testRndScene(){
     tic.waitForTic();
     if(!(t%10)) S.getImageAndDepth(rgb, depth); //we don't need images with 100Hz, rendering is slow
 
-    S.step({}, tau, S._none);
+    S.step(q0, tau, S._position);
   }
 
   C.sortFrames();
@@ -237,6 +239,8 @@ void testFriction(){
 
   C["table"]->setQuaternion({1.,-.1,0.,0.}); //tilt the table!!
 
+  arr q0 = C.getJointState();
+
   rai::Simulation S(C, S._physx, 2);
   S.cameraview().addSensor("camera");
 
@@ -249,7 +253,7 @@ void testFriction(){
   for(uint t=0;t<300;t++){
     tic.waitForTic();
 
-    S.step({}, tau, S._none);
+    S.step(q0, tau, S._position);
     write_ppm(S.getScreenshot(), STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(ppmCount++)<<".ppm"));
   }
 
@@ -273,6 +277,8 @@ void testStackOfBlocks(){
 
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandasTable.g"));
 
+  arr q0 = C.getJointState();
+
   rai::Simulation S(C, S._physx, 2);
 
   double tau=.01;  //jumps a bit for tau=.01
@@ -281,7 +287,7 @@ void testStackOfBlocks(){
   for(uint t=0;t<4./tau;t++){
     tic.waitForTic();
 
-    S.step({}, tau, S._none);
+    S.step(q0, tau, S._position);
   }
 
   rai::wait();
@@ -321,23 +327,28 @@ void testMotors(){
   arr v0 = zeros(q0.N);
 
   rai::Simulation S(C, S._physx, 4);
-  rai::wait();
+//  rai::wait();
 
   double tau=.01;
   Metronome tic(tau);
 
   rai::system("mkdir -p z.vid/; rm -f z.vid/*.ppm");
 
+  arr X, V, q, qDot;
+  S.getState(X, V, q, qDot);
+  cout <<q <<qDot <<endl;
+
   for(uint t=0;t<4./tau;t++){
     tic.waitForTic();
 
     S.step((q0,v0).reshape(2,-1), tau, S._posVel);
 
+    if(!(t%100)){ S.setState(X, V, q, qDot); }
+
     write_ppm(S.getScreenshot(), STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
   }
 
-  rai::wait();
-
+//  rai::wait();
 }
 
 //===========================================================================

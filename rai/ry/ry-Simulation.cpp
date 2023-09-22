@@ -127,22 +127,23 @@ void init_Simulation(pybind11::module& m) {
   .def("addImp", &rai::Simulation::addImp)
 
   .def("getState", [](std::shared_ptr<rai::Simulation>& self) {
-    shared_ptr<rai::SimulationState> state = self->getState();
-    return pybind11::make_tuple(arr2numpy(state->frameState),
-                                arr2numpy(state->frameVels));
+    arr X, V;
+    self->getState(X, V);
+    return pybind11::make_tuple(arr2numpy(X), arr2numpy(V));
   })
-
-  .def("restoreState", &rai::Simulation::restoreState)
 
   .def("setState", &rai::Simulation::setState,
        "",
        pybind11::arg("frameState"),
-       pybind11::arg("frameVelocities") = std::vector<double>()
+       pybind11::arg("frameVelocities") = std::vector<double>(),
+       pybind11::arg("jointState") = std::vector<double>(),
+       pybind11::arg("jointVelocities") = std::vector<double>()
       )
 
   .def("pushConfigurationToSimulator", &rai::Simulation::pushConfigurationToSimulator,
        "set the simulator to the full (frame) state of the configuration",
-       pybind11::arg("frameVelocities") = std::vector<double>()
+       pybind11::arg("frameVelocities") = std::vector<double>(),
+       pybind11::arg("jointVelocities") = std::vector<double>()
        )
 
   .def("depthData2pointCloud", [](std::shared_ptr<rai::Simulation>& self, const pybind11::array_t<float>& depth, const std::vector<double>& Fxypxy) {

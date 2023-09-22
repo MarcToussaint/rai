@@ -910,7 +910,7 @@ void PhysXInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){
   if(q_ref.N) CHECK_EQ(qIdx, q_ref.N, ""); //make this only a warning?
 }
 
-void PhysXInterface::setMotorQ(const rai::Configuration& C, bool setHardInstantly){
+void PhysXInterface::setMotorQ(const rai::Configuration& C, bool setHardInstantly, const arr& qDot){
   if(self->opt.multiBody){
     for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)){
       PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
@@ -923,7 +923,8 @@ void PhysXInterface::setMotorQ(const rai::Configuration& C, bool setHardInstantl
       if(setHardInstantly){
         //LOG(0) <<"setting joint pos hard: " <<f->name <<' ' <<f->joint->get_q();
         joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
-        joint->setDriveVelocity(axis, 0.);
+        if(!qDot) joint->setDriveVelocity(axis, 0.);
+        else joint->setDriveVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
       }
       joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
     }
@@ -932,51 +933,50 @@ void PhysXInterface::setMotorQ(const rai::Configuration& C, bool setHardInstantl
   }
 }
 
-void PhysXInterface::pushKinematicStates(const rai::Configuration& C) {
-  for(rai::Frame* f: C.frames) {
-    if(self->actors.N <= f->ID) continue;
-    if(self->actorTypes(f->ID)==rai::BT_kinematic) {
-      PxRigidActor* a = self->actors(f->ID);
-      if(!a) continue; //f is not an actor
+void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot){
+  arr q = C.getJointState();
+  qDot.resize(q.N).setZero();
 
-      //LOG(0) <<"pushing kinematic state (i.e. frame pose) of " <<f->name;
-      ((PxRigidDynamic*)a)->setKinematicTarget(conv_Transformation2PxTrans(f->ensure_X()));
+  if(self->opt.multiBody){
+    for(rai::Frame* f:C.frames) if(f->joint && f->joint->active && self->actors(f->ID)){
+      PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
+      if(!actor) continue;
+      PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
+      if(!joint) continue;
+
+      auto axis = self->jointAxis(f->ID);
+      CHECK_LE(axis, self->jointAxis(0)-1, "");
+      q(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
+      qDot(f->joint->qIndex) = joint->getJointVelocity(axis) / f->joint->scale;
     }
+  }else if(self->opt.jointedBodies){
+    NIY;
   }
+  C.setJointState(q);
 }
 
-void PhysXInterface::pushFullState(const rai::Configuration& C, const arr& frameVelocities, bool onlyKinematic) {
+void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& frameVelocities, bool onlyKinematic) {
   // frame states (including of dynamic, e.g. falling, objects)
   for(rai::Frame* f : C.frames) {
     if(self->actors.N <= f->ID) continue;
     PxRigidActor* a = self->actors(f->ID);
     if(!a) continue; //f is not an actor
 
-    bool isKinematic = self->actorTypes(f->ID)==rai::BT_kinematic;
-    if(onlyKinematic && !isKinematic) continue;
-    if(self->actorTypes(f->ID)!=rai::BT_kinematic) {
-      a->setGlobalPose(conv_Transformation2PxTrans(f->ensure_X()));
-    } else {
+    if(self->actorTypes(f->ID)==rai::BT_kinematic){
       ((PxRigidDynamic*)a)->setKinematicTarget(conv_Transformation2PxTrans(f->ensure_X()));
-    }
-    if(self->actorTypes(f->ID)==rai::BT_dynamic) {
+    }else if(!onlyKinematic){
+      a->setGlobalPose(conv_Transformation2PxTrans(f->ensure_X()));
+
       if(!!frameVelocities && frameVelocities.N) {
-        arr v = frameVelocities(f->ID, 0, {}), w = frameVelocities(f->ID, 1, {});
-        PxRigidDynamic* px_body = (PxRigidDynamic*) a;
-        px_body->setLinearVelocity(PxVec3(frameVelocities(f->ID, 0, 0), frameVelocities(f->ID, 0, 1), frameVelocities(f->ID, 0, 2)));
-        px_body->setAngularVelocity(PxVec3(frameVelocities(f->ID, 1, 0), frameVelocities(f->ID, 1, 1), frameVelocities(f->ID, 1, 2)));
-      } else {
-//        PxRigidDynamic* px_body = dynamic_cast<PxRigidDynamic*>(a);
-//        if(px_body){
-//          px_body->setLinearVelocity(PxVec3(0., 0., 0.));
-//          px_body->setAngularVelocity(PxVec3(0., 0., 0.));
-//        }
+        if(self->actorTypes(f->ID)==rai::BT_dynamic && a->getType() == PxActorType::eRIGID_DYNAMIC) {
+          arr v = frameVelocities(f->ID, 0, {}), w = frameVelocities(f->ID, 1, {});
+          PxRigidDynamic* px_body = (PxRigidDynamic*) a;
+          px_body->setLinearVelocity(PxVec3(frameVelocities(f->ID, 0, 0), frameVelocities(f->ID, 0, 1), frameVelocities(f->ID, 0, 2)));
+          px_body->setAngularVelocity(PxVec3(frameVelocities(f->ID, 1, 0), frameVelocities(f->ID, 1, 1), frameVelocities(f->ID, 1, 2)));
+        }
       }
     }
   }
-
-  //-- joint states for multibody (similar to setMotorQ)
-  setMotorQ(C, true);
 }
 
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) {
