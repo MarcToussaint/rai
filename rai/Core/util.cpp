@@ -636,6 +636,7 @@ rai::LogObject::~LogObject() {
     (*fil) <<"** execution stop: " <<rai::date()
         <<"\n** real time: " <<rai::realTime()
         <<"sec\n** CPU time: " <<rai::cpuTime() <<endl;
+    (*fil) <<"\n** set+queried params:\n" <<params()();
   }
   if(fil){
     (*fil).close();

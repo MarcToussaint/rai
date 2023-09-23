@@ -213,10 +213,18 @@ Frame* Configuration::addFrame(const char* name, const char* parent, const char*
   return f;
 }
 
-Frame* Configuration::addFile(const char* filename) {
+Frame* Configuration::addFile(const char* filename, const char* namePrefix) {
   uint n=frames.N;
   FileToken file(filename, true);
   Graph G(file);
+  if(namePrefix && namePrefix[0]){
+    for(Node *n:G){
+      n->key.prepend(namePrefix);
+      rai::String *tmp=0;
+      if(n->is<Graph>()) tmp=n->graph().find<rai::String>("mimic");
+      if(tmp) tmp->prepend(namePrefix);
+    }
+  }
   readFromGraph(G, true);
   file.cd_start();
   if(frames.N==n) return 0; //no frames added

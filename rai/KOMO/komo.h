@@ -53,13 +53,13 @@ struct KOMO : NonCopyable {
   rai::Configuration pathConfig;  ///< configuration containing full path (T+k_order copies of world, with switches applied)
   uintA orgJointIndices;          ///< set of joint IDs (IDs of frames with dofs) of the original world
   FrameL timeSlices;              ///< the original timeSlices of the pathConfig (when switches add frames, pathConfig.frames might differ from timeSlices - otherwise not)
-  bool computeCollisions;         ///< whether swift or fcl (collisions/proxies) is evaluated whenever new configurations are set (needed if features read proxy list)
+  bool computeCollisions=true;    ///< whether swift or fcl (collisions/proxies) is evaluated whenever new configurations are set (needed if features read proxy list)
   shared_ptr<rai::FclInterface> fcl;
   //shared_ptr<SwiftInterface> swift;
 
   //-- optimizer
   rai::KOMOsolver solver=rai::KS_sparse;
-  arr x, dual;                 ///< the primal and dual solution
+  arr x, dual;                    ///< the primal and dual solution
 
   //-- options
   rai::KOMO_Options opt;
@@ -75,12 +75,13 @@ struct KOMO : NonCopyable {
   uint evalCount=0;
   ofstream* logFile=0;
 
-  KOMO();
+  KOMO() {}
+  KOMO(const rai::Configuration& C, double _phases, uint _stepsPerPhase, uint _k_order, bool _enableCollisions=true);
   ~KOMO();
 
   //-- setup the problem
   void setConfig(const rai::Configuration& C, bool _computeCollisions=true);
-  void setTiming(double _phases=1., uint _stepsPerPhase=30, double durationPerPhase=5., uint _k_order=2);
+  void setTiming(double _phases, uint _stepsPerPhase, double durationPerPhase=5., uint _k_order=2);
 
   void clone(const KOMO& komo, bool deepCopyFeatures=true);
 

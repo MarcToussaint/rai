@@ -166,7 +166,11 @@ void init_Optim(pybind11::module& m) {
   pybind11::class_<NLP_Solver, std::shared_ptr<NLP_Solver>>(m, "NLP_Solver", "An interface to portfolio of solvers")
 
       .def(pybind11::init<>())
-//      .def("setProblem", &NLP_Solver::setProblem)
+      .def(pybind11::init<const shared_ptr<NLP>&, int>(), "",
+           pybind11::arg("problem"),
+           pybind11::arg("verbose")=0
+           )
+
       .def("setProblem", &NLP_Solver::setProblem)
       .def("setSolver", &NLP_Solver::setSolver)
 

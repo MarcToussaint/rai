@@ -22,6 +22,14 @@ pybind11::dict graph2dict(const rai::Graph& G) {
     //-- write value
     if(n->is<rai::Graph>()) {
       dict[key.p] = graph2dict(n->as<rai::Graph>());
+    } else if(n->is<double>()) {
+      dict[key.p] = n->as<double>();
+    } else if(n->is<int>()) {
+      dict[key.p] = n->as<int>();
+    } else if(n->is<uint>()) {
+      dict[key.p] = n->as<uint>();
+    } else if(n->is<bool>()) {
+      dict[key.p] = n->as<bool>();
     } else if(n->is<rai::String>()) {
       dict[key.p] = n->as<rai::String>().p;
     } else if(n->is<arr>()) {
@@ -34,14 +42,6 @@ pybind11::dict graph2dict(const rai::Graph& G) {
       dict[key.p] = Array2vec(n->as<uintA>());
     } else if(n->is<boolA>()) {
       dict[key.p] = Array2vec(n->as<boolA>());
-    } else if(n->is<double>()) {
-      dict[key.p] = n->as<double>();
-    } else if(n->is<int>()) {
-      dict[key.p] = n->as<int>();
-    } else if(n->is<uint>()) {
-      dict[key.p] = n->as<uint>();
-    } else if(n->is<bool>()) {
-      dict[key.p] = n->as<bool>();
     } else if(n->is<rai::Enum<rai::ShapeType>>()) {
       dict[key.p] = n->as<rai::Enum<rai::ShapeType>>().name();
     } else {
@@ -59,6 +59,10 @@ rai::Graph dict2graph(const pybind11::dict& dict) {
 
     if(pybind11::isinstance<pybind11::float_>(value)) {
       G.add<double>(key, value.cast<double>());
+    }else if(pybind11::isinstance<pybind11::int_>(value)) {
+      G.add<int>(key, value.cast<int>());
+    }else if(pybind11::isinstance<pybind11::bool_>(value)) {
+      G.add<bool>(key, value.cast<bool>());
     }else if(pybind11::isinstance<pybind11::str>(value)) {
         G.add<rai::String>(key, value.cast<std::string>().c_str());
     } else {

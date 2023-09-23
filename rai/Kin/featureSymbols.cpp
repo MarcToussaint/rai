@@ -70,6 +70,8 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
   "transVelocities",
 
   "qQuaternionNorms",
+  "FS_opposeCentral",
+  "FS_jointState",
   nullptr
 };
 

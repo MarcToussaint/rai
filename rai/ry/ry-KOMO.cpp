@@ -20,9 +20,25 @@ void init_KOMO(pybind11::module& m) {
   pybind11::class_<KOMO, std::shared_ptr<KOMO>>(m, "KOMO", "Constrained solver to optimize configurations or paths. (KOMO = k-order Markov Optimization)")
 
     .def(pybind11::init<>())
+    .def(pybind11::init<const rai::Configuration&, double, uint, uint, bool>(), "",
+         pybind11::arg("config"),
+         pybind11::arg("phases"),
+         pybind11::arg("stepsPerPhase"),
+         pybind11::arg("k_order"),
+         pybind11::arg("enableCollisions")
+         )
 
-    .def("setConfig", &KOMO::setConfig)
-    .def("setTiming", &KOMO::setTiming)
+    .def("setConfig", &KOMO::setConfig, "",
+         pybind11::arg("config"),
+         pybind11::arg("enableCollisions")
+         )
+
+    .def("setTiming", &KOMO::setTiming, "",
+         pybind11::arg("phases"),
+         pybind11::arg("stepsPerPhase"),
+         pybind11::arg("durationPerPhase"),
+         pybind11::arg("k_order")
+         )
 
     .def("addTimeOptimization", &KOMO::addTimeOptimization)
 
@@ -109,6 +125,10 @@ void init_KOMO(pybind11::module& m) {
 	rai::Graph R = self->getReport(false);
 	return R.get<double>("sos");
       })
+
+    //-- update
+    .def("updateRootObjects", &KOMO::updateRootObjects,
+         "update root frames (without parents) within all KOMO configurations", pybind11::arg("config"))
 
     //-- display
 

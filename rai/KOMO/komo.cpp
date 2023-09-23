@@ -90,8 +90,10 @@ rai::Transformation relTransformOn(const rai::Configuration& K, const char* name
 
 //===========================================================================
 
-KOMO::KOMO() : computeCollisions(true) {
-  solver = getParameter<rai::Enum<rai::KOMOsolver>>("KOMO/solver", KS_sparse);
+KOMO::KOMO(const Configuration& C, double _phases, uint _stepsPerPhase, uint _k_order, bool _enableCollisions)
+  : KOMO() {
+  setConfig(C, _enableCollisions);
+  setTiming(_phases, _stepsPerPhase, 1., _k_order);
 }
 
 KOMO::~KOMO() {

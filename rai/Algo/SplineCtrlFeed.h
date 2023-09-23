@@ -13,7 +13,7 @@ struct ReferenceFeed {
 
 struct BSplineCtrlReference : ReferenceFeed {
   Var<BSpline> spline;
-  uint degree=2;
+  uint degree=3;
 
   /// initializes to constant (q_real, zero-vel) spline
   void initialize(const arr& q_real, const arr& qDot_real, double time);

@@ -44,11 +44,12 @@ void init_Config(pybind11::module& m) {
 
 //-- setup/edit the configuration
 
-  .def("addFile", [](shared_ptr<rai::Configuration>& self, const std::string& fileName) {
-    self->addFile(fileName.c_str());
+  .def("addFile", [](shared_ptr<rai::Configuration>& self, const std::string& fileName, const std::string& namePrefix) {
+    self->addFile(fileName.c_str(), namePrefix.c_str());
   },
-  "add the contents of the file to C",
-  pybind11::arg("file_name")
+      "add the contents of the file to C",
+      pybind11::arg("filename"),
+      pybind11::arg("namePrefix") = std::string()
       )
 
   .def("addFrame", [](shared_ptr<rai::Configuration>& self, const std::string& name, const std::string& parent, const std::string& args) {
@@ -136,15 +137,10 @@ void init_Config(pybind11::module& m) {
   "get the total number of degrees of freedom"
       )
 
-  .def("getJointState", [](shared_ptr<rai::Configuration>& self, const uintA& joints) {
-    arr q;
-    if(joints.N) q = self->getJointState(joints);
-    else q = self->getJointState();
-    return q;
-//    return arr2numpy(q);
+  .def("getJointState", [](shared_ptr<rai::Configuration>& self) {
+    return self->getJointState();
   },
-  "get the joint state as a numpy vector, optionally only for a subset of joints specified as list of joint names",
-  pybind11::arg("joints") = std::vector<std::string>()
+      "get the joint state as a numpy vector, optionally only for a subset of joints specified as list of joint names"
       )
 
   .def("getDofIDs", [](shared_ptr<rai::Configuration>& self){
@@ -534,9 +530,11 @@ allows you to control robot motors by position, velocity, or accelerations, \
   ENUMVAL(FS, accumulatedCollisions)
   ENUMVAL(FS, jointLimits)
   ENUMVAL(FS, distance)
+  ENUMVAL(FS, negDistance)
   ENUMVAL(FS, oppose)
 
   ENUMVAL(FS, qItself)
+  ENUMVAL(FS, jointState)
 
   ENUMVAL(FS, aboveBox)
   ENUMVAL(FS, insideBox)

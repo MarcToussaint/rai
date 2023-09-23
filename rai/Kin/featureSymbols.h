@@ -69,6 +69,8 @@ enum FeatureSymbol {
 
   FS_qQuaternionNorms,
   FS_opposeCentral,
+  FS_jointState = FS_qItself,
+  FS_negDistance = FS_distance
 };
 
 namespace rai {
