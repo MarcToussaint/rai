@@ -35,7 +35,10 @@ void BSplineCtrlReference::append(const arr& x, const arr& t, double ctrlTime){
 
 void BSplineCtrlReference::overwriteSmooth(const arr& x, const arr& t, double ctrlTime){
   CHECK(t.first()>.001, "that's too harsh!");
-  waitForInitialized();
+  if(!spline.get()->knotTimes.N){ //not yet initialized
+    append(x, t, ctrlTime);
+    return;
+  }
   arr x_now, xDot_now;
   arr _x(x), _t(t);
   auto splineSet = spline.set();
