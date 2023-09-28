@@ -90,6 +90,9 @@ rai::Transformation relTransformOn(const rai::Configuration& K, const char* name
 
 //===========================================================================
 
+KOMO::KOMO() {
+}
+
 KOMO::KOMO(const Configuration& C, double _phases, uint _stepsPerPhase, uint _k_order, bool _enableCollisions)
   : KOMO() {
   setConfig(C, _enableCollisions);

@@ -28,6 +28,8 @@ template<> const char* rai::Enum<NLopt_SolverOption>::names []= {
     "LD_TNEWTON_PRECOND",
     "LD_TNEWTON_PRECOND_RESTART", nullptr };
 
+NLP_Solver::NLP_Solver() {}
+
 NLP_Solver& NLP_Solver::setProblem(const shared_ptr<NLP>& _P){
   if(P){
     CHECK_EQ(P->P.get(), _P.get(), "");

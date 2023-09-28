@@ -75,7 +75,7 @@ struct KOMO : NonCopyable {
   uint evalCount=0;
   ofstream* logFile=0;
 
-  KOMO() {}
+  KOMO();
   KOMO(const rai::Configuration& C, double _phases, uint _stepsPerPhase, uint _k_order, bool _enableCollisions=true);
   ~KOMO();
 
