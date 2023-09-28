@@ -547,8 +547,8 @@ void timerResume() {
 }
 
 //COPY & PAST from graph.h
-Mutex::TypedToken<rai::Graph> params();
 void initParameters(int _argc, char* _argv[], bool forceReload, bool verbose);
+rai::String getParamsDump();
 
 /// memorize the command line arguments and open a log file
 void initCmdLine(int _argc, char* _argv[], bool quiet) {
@@ -636,7 +636,7 @@ rai::LogObject::~LogObject() {
     (*fil) <<"** execution stop: " <<rai::date()
         <<"\n** real time: " <<rai::realTime()
         <<"sec\n** CPU time: " <<rai::cpuTime() <<endl;
-    (*fil) <<"\n** set+queried params:\n" <<params()();
+    (*fil) <<"\n** set+queried params:\n" <<getParamsDump();
   }
   if(fil){
     (*fil).close();

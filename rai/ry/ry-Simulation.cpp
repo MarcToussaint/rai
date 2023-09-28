@@ -127,9 +127,9 @@ void init_Simulation(pybind11::module& m) {
   .def("addImp", &rai::Simulation::addImp)
 
   .def("getState", [](std::shared_ptr<rai::Simulation>& self) {
-    arr X, V;
-    self->getState(X, V);
-    return pybind11::make_tuple(arr2numpy(X), arr2numpy(V));
+    arr X, V, x, v;
+    self->getState(X, V, x, v);
+    return pybind11::make_tuple(arr2numpy(X), arr2numpy(V), arr2numpy(x), arr2numpy(v));
   })
 
   .def("setState", &rai::Simulation::setState,

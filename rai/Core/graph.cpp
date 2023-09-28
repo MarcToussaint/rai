@@ -803,7 +803,6 @@ void readNodeParents(Graph& G, std::istream& is, NodeL& parents, ParseInfo& pinf
 }
 
 void readNodeParents2(Graph& G, Node *n, String& str) {
-
   String par;
   NodeL parents;
   str.clearStream();
@@ -812,7 +811,7 @@ void readNodeParents2(Graph& G, Node *n, String& str) {
     if(!par.N){
       char c = str.get();
       if(!str.eof()){
-        LOG(-1) <<"not fully read: full:" <<str;
+        LOG(-1) <<"not fully read: full:" <<str <<" read:" <<c;
       }
       break;
     }
@@ -1515,6 +1514,12 @@ void initParameters(int _argc, char*_argv[], bool forceReload, bool verbose){
   if(verbose){
     LOG(1) <<"** parsed parameters:\n" <<P() <<'\n';
   }
+}
+
+rai::String getParamsDump(){
+  rai::String str;
+  str <<params()();
+  return str;
 }
 
 } //namespace
