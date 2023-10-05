@@ -244,7 +244,7 @@ arr LagrangianProblem::get_totalFeatures(){
   return feat;
 }
 
-void LagrangianProblem::reportGradients(std::ostream& os, const StringA& featureNames){
+rai::Graph LagrangianProblem::reportGradients(const StringA& featureNames){
   //-- build feature -> entry map based on names
   struct Entry{ rai::String name; double grad=0.; double err=0.; ObjectiveType ot=OT_none; };
   intA idx2Entry(phi_x.N);
@@ -311,11 +311,15 @@ void LagrangianProblem::reportGradients(std::ostream& os, const StringA& feature
 
   entries.sort( [](const Entry& a, const Entry& b) -> bool{ return a.grad > b.grad; } );
 
-  os <<"== Lagrange constraint gradients: \n";
+  rai::Graph G;
   for(Entry& e: entries){
     if(!e.err) continue;
-    os <<"  { " <<e.name <<" err: " <<e.err <<" grad: " <<e.grad <<" type: " <<rai::Enum<ObjectiveType>(e.ot) <<" }" <<endl;
+    rai::Graph &g = G.addSubgraph(e.name);
+    g.add<double>("err", e.err);
+    g.add<double>("grad", e.grad);
+    g.add<rai::String>("type", rai::Enum<ObjectiveType>(e.ot).name());
   }
+  return G;
 }
 
 void LagrangianProblem::reportMatrix(std::ostream& os){

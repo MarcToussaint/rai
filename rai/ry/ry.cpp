@@ -56,9 +56,9 @@ PYBIND11_MODULE(ry, m) {
   m.def("compiled", [](){ std::stringstream msg; msg <<"compile time: "<< __DATE__ <<' ' <<__TIME__; return msg.str(); }, "return a compile date+time version string");
 
   init_params(m);
+  init_Frame(m);
   init_Config(m);
   init_Feature(m);
-  init_Frame(m);
   init_KOMO(m);
   init_Skeleton(m);
   init_PathAlgos(m);
@@ -76,19 +76,6 @@ PYBIND11_MODULE(ry, m) {
 #endif
 }
 
-void init_enums(pybind11::module& m){
-
-#undef ENUMVAL
-#define ENUMVAL(x) .value(#x, rai::x)
-
- pybind11::enum_<rai::ArgWord>(m, "ArgWord")
-    ENUMVAL(_left)
-    ENUMVAL(_right)
-    ENUMVAL(_sequence)
-    ENUMVAL(_path)
-     .export_values();
-}
-
 void init_params(pybind11::module& m){
   m.def("params_add", [](const pybind11::dict& D){ rai::params()->copy(dict2graph(D), true); }, "add/set parameters");
   m.def("params_file", [](const char* filename){
@@ -97,6 +84,153 @@ void init_params(pybind11::module& m){
     else LOG(0) <<"could not add params file '" <<filename <<"'";
   }, "add parameters from a file");
   m.def("params_print", [](){ LOG(0) <<rai::params()(); }, "print the parameters");
+}
+
+void init_enums(pybind11::module& m){
+
+#undef ENUMVAL
+#define ENUMVAL(x) .value(#x, rai::x)
+
+pybind11::enum_<rai::ArgWord>(m, "ArgWord")
+  ENUMVAL(_left)
+  ENUMVAL(_right)
+  ENUMVAL(_sequence)
+  ENUMVAL(_path)
+    .export_values();
+
+#undef ENUMVAL
+#define ENUMVAL(pre, x) .value(#x, pre##_##x)
+
+  pybind11::enum_<rai::JointType>(m, "JT")
+  ENUMVAL(rai::JT,hingeX) ENUMVAL(rai::JT,hingeY) ENUMVAL(rai::JT,hingeZ) ENUMVAL(rai::JT,transX) ENUMVAL(rai::JT,transY) ENUMVAL(rai::JT,transZ) ENUMVAL(rai::JT,transXY) ENUMVAL(rai::JT,trans3) ENUMVAL(rai::JT,transXYPhi) ENUMVAL(rai::JT,transYPhi) ENUMVAL(rai::JT,universal) ENUMVAL(rai::JT,rigid) ENUMVAL(rai::JT,quatBall) ENUMVAL(rai::JT,phiTransXY) ENUMVAL(rai::JT,XBall) ENUMVAL(rai::JT,free) ENUMVAL(rai::JT,generic) ENUMVAL(rai::JT,tau)
+  .export_values();
+
+  pybind11::enum_<rai::ShapeType>(m, "ST")
+  ENUMVAL(rai::ST, none)
+  ENUMVAL(rai::ST, box)
+  ENUMVAL(rai::ST, sphere)
+  ENUMVAL(rai::ST, capsule)
+  ENUMVAL(rai::ST, mesh)
+  ENUMVAL(rai::ST, cylinder)
+  ENUMVAL(rai::ST, marker)
+  ENUMVAL(rai::ST, pointCloud)
+  ENUMVAL(rai::ST, ssCvx)
+  ENUMVAL(rai::ST, ssBox)
+  ENUMVAL(rai::ST, ssCylinder)
+  ENUMVAL(rai::ST, ssBoxElip)
+  ENUMVAL(rai::ST, quad)
+  ENUMVAL(rai::ST, camera)
+  ENUMVAL(rai::ST, sdf)
+    .export_values();
+
+
+  pybind11::enum_<FeatureSymbol>(m, "FS")
+  ENUMVAL(FS, position)
+  ENUMVAL(FS, positionDiff)
+  ENUMVAL(FS, positionRel)
+  ENUMVAL(FS, quaternion)
+  ENUMVAL(FS, quaternionDiff)
+  ENUMVAL(FS, quaternionRel)
+  ENUMVAL(FS, pose)
+  ENUMVAL(FS, poseDiff)
+  ENUMVAL(FS, poseRel)
+  ENUMVAL(FS, vectorX)
+  ENUMVAL(FS, vectorXDiff)
+  ENUMVAL(FS, vectorXRel)
+  ENUMVAL(FS, vectorY)
+  ENUMVAL(FS, vectorYDiff)
+  ENUMVAL(FS, vectorYRel)
+  ENUMVAL(FS, vectorZ)
+  ENUMVAL(FS, vectorZDiff)
+  ENUMVAL(FS, vectorZRel)
+  ENUMVAL(FS, scalarProductXX)
+  ENUMVAL(FS, scalarProductXY)
+  ENUMVAL(FS, scalarProductXZ)
+  ENUMVAL(FS, scalarProductYX)
+  ENUMVAL(FS, scalarProductYY)
+  ENUMVAL(FS, scalarProductYZ)
+  ENUMVAL(FS, scalarProductZZ)
+  ENUMVAL(FS, gazeAt)
+
+  ENUMVAL(FS, angularVel)
+
+  ENUMVAL(FS, accumulatedCollisions)
+  ENUMVAL(FS, jointLimits)
+  ENUMVAL(FS, distance)
+  ENUMVAL(FS, negDistance)
+  ENUMVAL(FS, oppose)
+
+  ENUMVAL(FS, qItself)
+  ENUMVAL(FS, jointState)
+
+  ENUMVAL(FS, aboveBox)
+  ENUMVAL(FS, insideBox)
+
+  ENUMVAL(FS, pairCollision_negScalar)
+  ENUMVAL(FS, pairCollision_vector)
+  ENUMVAL(FS, pairCollision_normal)
+  ENUMVAL(FS, pairCollision_p1)
+  ENUMVAL(FS, pairCollision_p2)
+
+  ENUMVAL(FS, standingAbove)
+
+  ENUMVAL(FS, physics)
+  ENUMVAL(FS, contactConstraints)
+  ENUMVAL(FS, energy)
+
+  ENUMVAL(FS, transAccelerations)
+  ENUMVAL(FS, transVelocities)
+      .export_values();
+
+  pybind11::enum_<rai::SkeletonSymbol>(m, "SY")
+  ENUMVAL(rai::SY,touch) ENUMVAL(rai::SY,above) ENUMVAL(rai::SY,inside) ENUMVAL(rai::SY,oppose) ENUMVAL(rai::SY,restingOn)
+  ENUMVAL(rai::SY,poseEq) ENUMVAL(rai::SY,positionEq) ENUMVAL(rai::SY,stableRelPose) ENUMVAL(rai::SY,stablePose)
+  ENUMVAL(rai::SY,stable) ENUMVAL(rai::SY,stableOn) ENUMVAL(rai::SY,dynamic) ENUMVAL(rai::SY,dynamicOn) ENUMVAL(rai::SY,dynamicTrans) ENUMVAL(rai::SY,quasiStatic) ENUMVAL(rai::SY,quasiStaticOn) ENUMVAL(rai::SY,downUp) ENUMVAL(rai::SY,break) ENUMVAL(rai::SY,stableZero)
+  ENUMVAL(rai::SY,contact) ENUMVAL(rai::SY,contactStick) ENUMVAL(rai::SY,contactComplementary) ENUMVAL(rai::SY,bounce) ENUMVAL(rai::SY,push)
+  ENUMVAL(rai::SY,magic) ENUMVAL(rai::SY,magicTrans)
+  ENUMVAL(rai::SY,pushAndPlace)
+  ENUMVAL(rai::SY,topBoxGrasp) ENUMVAL(rai::SY,topBoxPlace)
+  ENUMVAL(rai::SY,dampMotion)
+  ENUMVAL(rai::SY,identical)
+  ENUMVAL(rai::SY,alignByInt)
+  ENUMVAL(rai::SY,makeFree) ENUMVAL(rai::SY,forceBalance)
+  ENUMVAL(rai::SY,relPosY)
+  ENUMVAL(rai::SY,touchBoxNormalX) ENUMVAL(rai::SY,touchBoxNormalY) ENUMVAL(rai::SY,touchBoxNormalZ)
+  ENUMVAL(rai::SY,boxGraspX) ENUMVAL(rai::SY,boxGraspY) ENUMVAL(rai::SY,boxGraspZ)
+  ENUMVAL(rai::SY,lift)
+  ENUMVAL(rai::SY,stableYPhi)
+  ENUMVAL(rai::SY,stableOnX)
+  ENUMVAL(rai::SY,stableOnY)
+  ENUMVAL(rai::SY,end)
+  .export_values();
+
+#undef ENUMVAL
+#define ENUMVAL(x) .value(#x, rai::Simulation::_##x)
+
+  pybind11::enum_<rai::Simulation::Engine>(m, "SimulationEngine")
+  ENUMVAL(physx)
+  ENUMVAL(bullet)
+  ENUMVAL(kinematic)
+  .export_values();
+
+  pybind11::enum_<rai::Simulation::ControlMode>(m, "ControlMode")
+  ENUMVAL(none)
+  ENUMVAL(position)
+  ENUMVAL(velocity)
+  ENUMVAL(acceleration)
+  ENUMVAL(spline)
+  .export_values();
+
+  pybind11::enum_<rai::Simulation::ImpType>(m, "ImpType")
+  ENUMVAL(closeGripper)
+  ENUMVAL(openGripper)
+  ENUMVAL(depthNoise)
+  ENUMVAL(rgbNoise)
+  ENUMVAL(adversarialDropper)
+  ENUMVAL(objectImpulses)
+  ENUMVAL(noPenetrations)
+  .export_values();
+
 }
 
 //void init_BotOp(pybind11::module& m){}

@@ -223,6 +223,24 @@ namespace detail {
     }
   };
 
+  //** uintA <--> numpy
+  template <> struct type_caster<uintA> {
+  public:
+    PYBIND11_TYPE_CASTER(uintA, _("uintA"));
+
+    bool load(pybind11::handle src, bool) {
+      auto buf = pybind11::array_t<uint>::ensure(src);
+      if(!buf) return false;
+      value = numpy2arr<uint>(buf);
+      return !PyErr_Occurred();
+    }
+
+    static handle cast(const uintA& src, return_value_policy /* policy */, handle /* parent */) {
+      pybind11::array_t<double> ret = Array2numpy<uint>(src);
+      return ret.release();
+    }
+  };
+
   //vector<T> <--> Array<T>
   template <class T> struct type_caster<rai::Array<T>> {
   public:

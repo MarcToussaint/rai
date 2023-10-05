@@ -56,7 +56,7 @@ void init_Frame(pybind11::module& m) {
 
     .def("setShape", &rai::Frame::setShape, "", pybind11::arg("type"), pybind11::arg("size") )
 
-    .def("setParent", &rai::Frame::setParent )
+    .def("setParent", &rai::Frame::setParent, "", pybind11::arg("parent"), pybind11::arg("keepAbsolutePose_and_adaptRelativePose") = false, pybind11::arg("checkForLoop") = false)
     .def("unLink", &rai::Frame::unLink )
 
     
@@ -110,13 +110,6 @@ void init_Frame(pybind11::module& m) {
 
   //===========================================================================
 
-#undef ENUMVAL
-#define ENUMVAL(pre, x) .value(#x, pre##_##x)
-
-  pybind11::enum_<rai::JointType>(m, "JT")
-
-  ENUMVAL(rai::JT,hingeX) ENUMVAL(rai::JT,hingeY) ENUMVAL(rai::JT,hingeZ) ENUMVAL(rai::JT,transX) ENUMVAL(rai::JT,transY) ENUMVAL(rai::JT,transZ) ENUMVAL(rai::JT,transXY) ENUMVAL(rai::JT,trans3) ENUMVAL(rai::JT,transXYPhi) ENUMVAL(rai::JT,transYPhi) ENUMVAL(rai::JT,universal) ENUMVAL(rai::JT,rigid) ENUMVAL(rai::JT,quatBall) ENUMVAL(rai::JT,phiTransXY) ENUMVAL(rai::JT,XBall) ENUMVAL(rai::JT,free) ENUMVAL(rai::JT,generic) ENUMVAL(rai::JT,tau)
-  .export_values();
 
 }
 

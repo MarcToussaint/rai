@@ -44,8 +44,9 @@ void init_Config(pybind11::module& m) {
 
 //-- setup/edit the configuration
 
-  .def("addFile", [](shared_ptr<rai::Configuration>& self, const std::string& fileName, const std::string& namePrefix) {
-    self->addFile(fileName.c_str(), namePrefix.c_str());
+  .def("addFile", [](shared_ptr<rai::Configuration>& self, const char* filename, const char* namePrefix){
+    rai::Frame* f = self->addFile(filename, namePrefix);
+    return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
   },
       "add the contents of the file to C",
       pybind11::arg("filename"),
@@ -60,36 +61,6 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("name"),
   pybind11::arg("parent") = std::string(),
   pybind11::arg("args") = std::string()
-      )
-
-  .def("addObject", [](shared_ptr<rai::Configuration>& self, const std::string& name, const std::string& parent,
-                       rai::ShapeType shape,
-                       const std::vector<double>& size,
-                       const std::vector<double>& color,
-                       const std::vector<double>& pos,
-  const std::vector<double>& quat) {
-    rai::Frame *f = self->addFrame(name.c_str(), parent.c_str());
-    if(f->parent) f->setJoint(rai::JT_rigid);
-    f->setShape(shape, arr(size, true));
-    f->setContact(-1);
-    if(color.size()) f->setColor(arr(color, true));
-    if(f->parent) {
-      if(pos.size()) f->setRelativePosition(arr(pos,true));
-      if(quat.size()) f->setRelativeQuaternion(arr(quat, true));
-    } else {
-      if(pos.size()) f->setPosition(arr(pos,true));
-      if(quat.size()) f->setQuaternion(arr(quat, true));
-    }
-
-    return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
-  }, "TODO remove! use addFrame only",
-  pybind11::arg("name"),
-  pybind11::arg("parent") = std::string(),
-  pybind11::arg("shape"),
-  pybind11::arg("size") = std::vector<double>(),
-  pybind11::arg("color") = std::vector<double>(),
-  pybind11::arg("pos") = std::vector<double>(),
-  pybind11::arg("quat") = std::vector<double>()
       )
 
   .def("addConfigurationCopy", [](shared_ptr<rai::Configuration>& self, shared_ptr<rai::Configuration>& other, double tau){
@@ -255,8 +226,6 @@ many mapping refer to one or several frames, which need to be specified using fr
       )
 
   .def("selectJoints", [](shared_ptr<rai::Configuration>& self, const std::vector<std::string>& jointNames, bool notThose) {
-    // TODO: this is joint groups
-    // TODO: maybe call joint groups just joints and joints DOFs
     self->selectJointsByName(strvec2StringA(jointNames), notThose);
   },
   "redefine what are considered the DOFs of this configuration: only joints listed in jointNames are considered \
@@ -264,19 +233,6 @@ part of the joint state and define the number of DOFs",
   pybind11::arg("jointNames"),
   pybind11::arg("notThose") = false
       )
-
-  .def("selectJointsByTag", [](shared_ptr<rai::Configuration>& self, const std::vector<std::string>& jointGroups) {
-    self->selectJointsByAtt(strvec2StringA(jointGroups));
-    self->ensure_q();
-  },
-  "redefine what are considered the DOFs of this configuration: only joint that have a tag listed in jointGroups are considered \
-part of the joint state and define the number of DOFs",
-  pybind11::arg("jointGroups")
-      )
-
-  .def("makeObjectsFree", [](shared_ptr<rai::Configuration>& self, const std::vector<std::string>& objs) {
-    self->makeObjectsFree(strvec2StringA(objs));
-  }, "TODO remove -> to frame")
 
   .def("makeObjectsConvex", [](shared_ptr<rai::Configuration>& self) {
     makeConvexHulls(self->frames);
@@ -293,7 +249,7 @@ topological order from frame2 to the broken joint"
       )
 
   .def("computeCollisions", [](shared_ptr<rai::Configuration>& self) {
-    self->stepFcl();
+    self->ensure_proxies();
   },
   "call the broadphase collision engine (SWIFT++ or FCL) to generate the list of collisions (or near proximities) \
 between all frame shapes that have the collision tag set non-zero"
@@ -320,6 +276,9 @@ To get really precise distances and penetrations use the FS.distance feature wit
   pybind11::arg("belowMargin") = 1.
       )
 
+  .def("getTotalPenetration", &rai::Configuration::getTotalPenetration,
+       "returns the sum of all penetrations")
+
   .def("view",  &rai::Configuration::view,
        "open a view window for the configuration",
        pybind11::arg("pause")=false,
@@ -344,36 +303,21 @@ To get really precise distances and penetrations use the FS.distance feature wit
   .def("view_close", &rai::Configuration::view_close,
   "close the view")
 
-  .def("cameraView", [](shared_ptr<rai::Configuration>& self) {
-    ry::RyCameraView view;
-    view.cam = make_shared<rai::CameraView>(*self, true, 0);
-    return view;
-  },
-  "create an offscreen renderer for this configuration"
-      )
-
   .def("watchFile", &rai::Configuration::watchFile,
   "launch a viewer that listents (inode) to changes of a file (made by you in an editor), and \
 reloads, displays and animates the configuration whenever the file is changed"
       )
 
+  .def("animate", [](shared_ptr<rai::Configuration>& self) { self->animate(); },
+     "displays while articulating all dofs in a row")
+
   .def("report", [](shared_ptr<rai::Configuration>& self) {
     rai::String str;
     self->report(str);
-    return str;
+    return pybind11::str(str.p, str.N);
   }
   )
   
-  .def("simulation", [](shared_ptr<rai::Configuration>& self, rai::Simulation::Engine engine, int verbose) {
-    return make_shared<rai::Simulation>(*self, engine, verbose);
-  },
-  "create a generic Simulation engine, which can internally call PhysX, Bullet, or just kinematics to forward simulate, \
-allows you to control robot motors by position, velocity, or accelerations, \
-    and allows you go query camera images and depth",
-  pybind11::arg("engine"),
-  pybind11::arg("verbose")
-      )
-
   .def("sortFrames", [](shared_ptr<rai::Configuration>& self) {
     self->sortFrames();
   }, "resort the internal order of frames according to the tree topology. This is important before saving the configuration.")
@@ -396,6 +340,16 @@ allows you to control robot motors by position, velocity, or accelerations, \
   pybind11::arg("tau"),
   pybind11::arg("dynamicNoise"),
   pybind11::arg("gravity"))
+
+
+  .def("write", [](shared_ptr<rai::Configuration>& self) { rai::String str; self->write(str);  return pybind11::str(str.p, str.N); },
+  "write the full configuration in a string (roughly yaml), e.g. for file export")
+
+  .def("writeURDF", [](shared_ptr<rai::Configuration>& self) { rai::String str; self->writeURDF(str);  return pybind11::str(str.p, str.N); },
+  "write the full configuration as URDF in a string, e.g. for file export")
+
+  .def("writeCollada", &rai::Configuration::writeCollada,
+  "write the full configuration in a collada file for export")
 
   ;
 
@@ -476,112 +430,6 @@ allows you to control robot motors by position, velocity, or accelerations, \
     return make_shared<ImageViewerCallback>(self.segmentation);
   })
   ;
-
-#define ENUMVAL(pre, x) .value(#x, pre##_##x)
-
-  pybind11::enum_<rai::ShapeType>(m, "ST")
-  ENUMVAL(rai::ST, none)
-  ENUMVAL(rai::ST, box)
-  ENUMVAL(rai::ST, sphere)
-  ENUMVAL(rai::ST, capsule)
-  ENUMVAL(rai::ST, mesh)
-  ENUMVAL(rai::ST, cylinder)
-  ENUMVAL(rai::ST, marker)
-  ENUMVAL(rai::ST, pointCloud)
-  ENUMVAL(rai::ST, ssCvx)
-  ENUMVAL(rai::ST, ssBox)
-  ENUMVAL(rai::ST, ssCylinder)
-  ENUMVAL(rai::ST, ssBoxElip)
-  ENUMVAL(rai::ST, quad)
-  ENUMVAL(rai::ST, camera)
-  ENUMVAL(rai::ST, sdf)
-    .export_values();
-
-  pybind11::enum_<FeatureSymbol>(m, "FS")
-  ENUMVAL(FS, position)
-  ENUMVAL(FS, positionDiff)
-  ENUMVAL(FS, positionRel)
-  ENUMVAL(FS, quaternion)
-  ENUMVAL(FS, quaternionDiff)
-  ENUMVAL(FS, quaternionRel)
-  ENUMVAL(FS, pose)
-  ENUMVAL(FS, poseDiff)
-  ENUMVAL(FS, poseRel)
-  ENUMVAL(FS, vectorX)
-  ENUMVAL(FS, vectorXDiff)
-  ENUMVAL(FS, vectorXRel)
-  ENUMVAL(FS, vectorY)
-  ENUMVAL(FS, vectorYDiff)
-  ENUMVAL(FS, vectorYRel)
-  ENUMVAL(FS, vectorZ)
-  ENUMVAL(FS, vectorZDiff)
-  ENUMVAL(FS, vectorZRel)
-  ENUMVAL(FS, scalarProductXX)
-  ENUMVAL(FS, scalarProductXY)
-  ENUMVAL(FS, scalarProductXZ)
-  ENUMVAL(FS, scalarProductYX)
-  ENUMVAL(FS, scalarProductYY)
-  ENUMVAL(FS, scalarProductYZ)
-  ENUMVAL(FS, scalarProductZZ)
-  ENUMVAL(FS, gazeAt)
-
-  ENUMVAL(FS, angularVel)
-
-  ENUMVAL(FS, accumulatedCollisions)
-  ENUMVAL(FS, jointLimits)
-  ENUMVAL(FS, distance)
-  ENUMVAL(FS, negDistance)
-  ENUMVAL(FS, oppose)
-
-  ENUMVAL(FS, qItself)
-  ENUMVAL(FS, jointState)
-
-  ENUMVAL(FS, aboveBox)
-  ENUMVAL(FS, insideBox)
-
-  ENUMVAL(FS, pairCollision_negScalar)
-  ENUMVAL(FS, pairCollision_vector)
-  ENUMVAL(FS, pairCollision_normal)
-  ENUMVAL(FS, pairCollision_p1)
-  ENUMVAL(FS, pairCollision_p2)
-
-  ENUMVAL(FS, standingAbove)
-
-  ENUMVAL(FS, physics)
-  ENUMVAL(FS, contactConstraints)
-  ENUMVAL(FS, energy)
-
-  ENUMVAL(FS, transAccelerations)
-  ENUMVAL(FS, transVelocities)
-  .export_values();
-
-#undef ENUMVAL
-#define ENUMVAL(x) .value(#x, rai::Simulation::_##x)
-
-  pybind11::enum_<rai::Simulation::Engine>(m, "SimulationEngine")
-  ENUMVAL(physx)
-  ENUMVAL(bullet)
-  ENUMVAL(kinematic)
-  .export_values();
-
-  pybind11::enum_<rai::Simulation::ControlMode>(m, "ControlMode")
-  ENUMVAL(none)
-  ENUMVAL(position)
-  ENUMVAL(velocity)
-  ENUMVAL(acceleration)
-  ENUMVAL(spline)
-  .export_values();
-
-  pybind11::enum_<rai::Simulation::ImpType>(m, "ImpType")
-  ENUMVAL(closeGripper)
-  ENUMVAL(openGripper)
-  ENUMVAL(depthNoise)
-  ENUMVAL(rgbNoise)
-  ENUMVAL(adversarialDropper)
-  ENUMVAL(objectImpulses)
-  ENUMVAL(noPenetrations)
-  .export_values();
-
 }
 
 #endif

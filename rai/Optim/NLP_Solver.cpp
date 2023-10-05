@@ -169,7 +169,7 @@ arr NLP_Solver::getTrace_lambda(){ CHECK(optCon, ""); return optCon->lambdaTrace
 
 arr NLP_Solver::getTrace_evals(){ CHECK(optCon, ""); return optCon->evalsTrace; }
 
-void NLP_Solver::reportLangrangeGradients(std::ostream& os, const StringA& featureNames){
+rai::Graph NLP_Solver::reportLangrangeGradients(const StringA& featureNames){
   CHECK(optCon, "");
-  return optCon->L.reportGradients(os, featureNames);
+  return optCon->L.reportGradients(featureNames);
 }

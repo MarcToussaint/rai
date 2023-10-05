@@ -2863,7 +2863,8 @@ std::shared_ptr<Feature> Configuration::feature(FeatureSymbol fs, const StringA&
 }
 
 arr Configuration::eval(FeatureSymbol fs, const StringA& frames, const arr& scale, const arr& target, int order){
-  return feature(fs, frames, scale, target, order)->eval(getFrames(frames));
+  std::shared_ptr<Feature> f = feature(fs, frames, scale, target, order);
+  return f->eval(getFrames(f->frameIDs));
 }
 
 /// Compute the new configuration q such that body is located at ytarget (with deplacement rel).
@@ -3552,6 +3553,7 @@ void Configuration::watchFile(const char* filename) {
                       "RIGHT CLICK - set focus point (move view and set center of rotation)\n"
                       "LEFT CLICK - rotate (ball; or around z at view rim)\n"
                       "q - quit\n"
+                      "[ENTER] - animate or force reload\n"
                       "[SPACE] - write object info\n"
                       "SHIFT-LEFT CLICK - move view\n"
                       "i - write info\n"

@@ -182,6 +182,11 @@ void init_Optim(pybind11::module& m) {
       .def("getTrace_phi", &NLP_Solver::getTrace_phi)
       .def("getTrace_J", &NLP_Solver::getTrace_J)
 
+      .def("reportLagrangeGradients", [](std::shared_ptr<NLP_Solver>& self, const StringA& featureNames){
+        rai::Graph R = self->reportLangrangeGradients(featureNames);
+        return graph2dict(R);
+       })
+
       .def("getOptions", [](std::shared_ptr<NLP_Solver>& self){ return self->opt; } )
       .def("setOptions", [](std::shared_ptr<NLP_Solver>& self
          #define MEMBER(type, name, x) ,type name

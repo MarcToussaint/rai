@@ -23,8 +23,8 @@ void init_KOMO(pybind11::module& m) {
     .def(pybind11::init<const rai::Configuration&, double, uint, uint, bool>(), "",
          pybind11::arg("config"),
          pybind11::arg("phases"),
-         pybind11::arg("stepsPerPhase"),
-         pybind11::arg("k_order"),
+         pybind11::arg("slicesPerPhase"),
+         pybind11::arg("kOrder"),
          pybind11::arg("enableCollisions")
          )
 
@@ -35,9 +35,9 @@ void init_KOMO(pybind11::module& m) {
 
     .def("setTiming", &KOMO::setTiming, "",
          pybind11::arg("phases"),
-         pybind11::arg("stepsPerPhase"),
+         pybind11::arg("slicesPerPhase"),
          pybind11::arg("durationPerPhase"),
-         pybind11::arg("k_order")
+         pybind11::arg("kOrder")
          )
 
     .def("addTimeOptimization", &KOMO::addTimeOptimization)
@@ -58,7 +58,7 @@ void init_KOMO(pybind11::module& m) {
     .def("addQuaternionNorms", &KOMO::addQuaternionNorms, "", pybind11::arg("times")=arr(), pybind11::arg("scale")=3., pybind11::arg("hard")=true )
 
     .def("addControlObjective", &KOMO::addControlObjective, "", pybind11::arg("times"), pybind11::arg("order"), pybind11::arg("scale")=1.,
-	 pybind11::arg("target")=arr(), pybind11::arg("deltaFromStep")=0, pybind11::arg("deltaToStep")=0 )
+         pybind11::arg("target")=arr(), pybind11::arg("deltaFromSlice")=0, pybind11::arg("deltaToSlice")=0 )
 
     .def("addModeSwitch", &KOMO::addModeSwitch, "", pybind11::arg("times"), pybind11::arg("newMode"), pybind11::arg("frames"), pybind11::arg("firstSwitch")=true )
     .def("addInteraction_elasticBounce", &KOMO::addContact_elasticBounce, "", pybind11::arg("time"), pybind11::arg("from"), pybind11::arg("to"),
@@ -70,7 +70,7 @@ void init_KOMO(pybind11::module& m) {
     .def("initRandom", &KOMO::initRandom, "", pybind11::arg("verbose")=0 )
     .def("initWithConstant", &KOMO::initWithConstant, "", pybind11::arg("q") )
     .def("initWithPath_qOrg", &KOMO::initWithPath_qOrg, "", pybind11::arg("q") )
-    .def("initWithWaypoints", &KOMO::initWithWaypoints, "", pybind11::arg("waypoints"), pybind11::arg("waypointStepsPerPhase")=1, pybind11::arg("interpolate")=false, pybind11::arg("verbose")=-1 )
+    .def("initWithWaypoints", &KOMO::initWithWaypoints, "", pybind11::arg("waypoints"), pybind11::arg("waypointSlicesPerPhase")=1, pybind11::arg("interpolate")=false, pybind11::arg("verbose")=-1 )
     .def("initPhaseWithDofsPath", &KOMO::initPhaseWithDofsPath, "", pybind11::arg("t_phase"), pybind11::arg("dofIDs"), pybind11::arg("path"), pybind11::arg("autoResamplePath")=false )
 
     //-- solve
@@ -105,26 +105,28 @@ void init_KOMO(pybind11::module& m) {
 	return graph2list(G);
       })
 
-    .def("getReport", [](std::shared_ptr<KOMO>& self) {
-	rai::Graph R = self->getReport(true);
+    .def("report", [](std::shared_ptr<KOMO>& self, bool plotOverTime) {
+        rai::Graph R = self->report(plotOverTime);
+        return graph2dict(R);
+      },
+      "returns a dict with full report on features, optionally plotting costs/violations over time",
+      pybind11::arg("plotOverTime") = false)
+
+    .def("getReport", [](std::shared_ptr<KOMO>& self, bool plotOverTime) {
+        rai::Graph R = self->getReport(plotOverTime);
 	return graph2dict(R);
       })
 
+    .def("getFeatureNames", [](std::shared_ptr<KOMO>& self) {
+        return self->featureNames;
+     }, "returns a long list of features (per time slice!), to be used by an NLP_Solver")
+
     .def("reportProblem", [](std::shared_ptr<KOMO>& self) {
-	std::stringstream str;
+        rai::String str;
 	self->reportProblem(str);
-	return str.str();
+	return pybind11::str(str.p, str.N);
       })
 
-    .def("getConstraintViolations", [](std::shared_ptr<KOMO>& self) {
-	rai::Graph R = self->getReport(false);
-	return R.get<double>("ineq") + R.get<double>("eq");
-      })
-
-    .def("getCosts", [](std::shared_ptr<KOMO>& self) {
-	rai::Graph R = self->getReport(false);
-	return R.get<double>("sos");
-      })
 
     //-- update
     .def("updateRootObjects", &KOMO::updateRootObjects,

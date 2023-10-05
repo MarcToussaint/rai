@@ -1160,6 +1160,109 @@ void KOMO::run(OptOptions options) {
   if(opt.verbose>1) cout <<getReport(opt.verbose>2) <<endl;
 }
 
+Graph KOMO::report(bool plotOverTime){
+  Graph G;
+  {
+    Graph& g = G.addSubgraph("KOMO_specs");
+    g.add("x_dim", x.N);
+    g.add("dual_dim", dual.N);
+    g.add("T", T);
+    g.add("k", k_order);
+    g.add("phases", double(T)/stepsPerPhase);
+    g.add("slicesPerPhase", stepsPerPhase);
+    g.add("enableCollisions", computeCollisions);
+    g.add("tau", tau);
+    g.add("#slices", timeSlices.d0);
+    g.add("#totalDOF", pathConfig.getJointStateDimension());
+    g.add("#frames", pathConfig.frames.N);
+    g.add("#pathQueries:", pathConfig.setJointStateCount);
+  }
+
+  arr err=zeros(T, objectives.N);
+  arr totals = zeros(OT_ineqP+1);
+
+  {
+    Graph& g_ob = G.addSubgraph("objectives");
+    uint M=0;
+    for(shared_ptr<Objective>& c:objectives){
+      Graph& g = g_ob.addSubgraph(c->name);
+      g.add<double>("order", c->feat->order);
+      g.add<String>("type", Enum<ObjectiveType>(c->type).name());
+      if(c->feat->scale.N) g.add<arr>("scale", c->feat->scale);
+      if(c->feat->target.N) g.add<arr>("target", c->feat->target);
+      if(featureValues.N){
+        double e, c_err=0.;
+        for(GroundedObjective* ob:c->groundings){
+          uint d = ob->feat->dim(ob->frames);
+          int i = ob->objId;
+          uint t = ob->timeSlices.last();
+          CHECK_GE(i, 0, "");
+          for(uint j=0; j<d; j++){
+            if(ob->type==OT_sos){ e = sqr(featureValues(M+j)); c_err += e; err(t,i) += e; }
+            else if(ob->type==OT_ineq){ e = MAX(0., featureValues(M+j)); c_err += e; err(t,i) += e; }
+            else if(ob->type==OT_eq){ e = fabs(featureValues(M+j)); c_err += e; err(t,i) += e; }
+            else if(ob->type==OT_f){ e = featureValues(M+j); c_err += e; err(t,i) += e; }
+          }
+          M += d;
+        }
+        totals(c->type) += c_err;
+        g.add<double>("err", c_err);
+      }
+
+      g.add<arr>("times", c->times);
+      if(c->times.N && c->times.elem(0)==-10.){
+        g.add<arr>("slices", c->times);
+      }else{
+        int fromStep, toStep;
+        conv_times2steps(fromStep, toStep, c->times, stepsPerPhase, T, +0, +0);
+        g.add<arr>("slices", {(double)fromStep, (double)toStep});
+      }
+    }
+  }
+
+    //  for(std::shared_ptr<KinematicSwitch>& sw:switches) {
+//    os <<"    ";
+//    if(sw->timeOfApplication+k_order >= timeSlices.d0) {
+////      LOG(-1) <<"switch time " <<sw->timeOfApplication <<" is beyond time horizon " <<T;
+//      sw->write(os, {});
+//    } else {
+//      sw->write(os, timeSlices[sw->timeOfApplication+k_order]);
+//    }
+//    os <<endl;
+//  }
+
+  if(featureValues.N){
+    Graph& g = G.addSubgraph("totals");
+    g.add<double>("sos", totals(OT_sos));
+    g.add<double>("ineq", totals(OT_ineq));
+    g.add<double>("eq", totals(OT_eq));
+    g.add<double>("f", totals(OT_f));
+  }
+
+  if(plotOverTime) {
+    //-- write a gnuplot file
+    ofstream fil("z.komoData");
+    //first line: legend
+    for(auto c:objectives) fil <<c->name <<' ';
+    fil <<endl;
+    //rest: just the matrix
+    err.write(fil, nullptr, nullptr, "  ");
+    fil.close();
+
+    ofstream fil2("z.komoReport.plt");
+    fil2 <<"set key autotitle columnheader" <<endl;
+    fil2 <<"set title 'komo report'" <<endl;
+    fil2 <<"plot 'z.komoData' \\" <<endl;
+    for(uint i=1; i<=objectives.N; i++) fil2 <<(i>1?"  ,''":"     ") <<" u (($0+1)/" <<stepsPerPhase <<"):"<<i<<" w l lw 3 lc " <<i <<" lt " <<1-((i/10)%2) <<" \\" <<endl;
+    fil2 <<endl;
+    fil2.close();
+
+    gnuplot("load 'z.komoReport.plt'");
+  }
+
+  return G;
+}
+
 void KOMO::reportProblem(std::ostream& os) {
   os <<"KOMO Problem:" <<endl;
   os <<"  x-dim:" <<x.N <<"  dual-dim:" <<dual.N <<endl;
@@ -1572,7 +1675,7 @@ shared_ptr<NLP_Factored> KOMO::nlp_FactoredParts(){
 
 Camera& KOMO::displayCamera(){ DEPR; return pathConfig.viewer()->displayCamera(); }
 
-rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs) {
+rai::Graph KOMO::getReport(bool plotOverTime, int reportFeatures, std::ostream& featuresOs) {
   //-- collect all task costs and constraints
   StringA name; name.resize(objectives.N);
   arr err=zeros(T, objectives.N);
@@ -1640,7 +1743,7 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
   report.add<double>("eq", totalH);
   report.add<double>("f", totalF);
 
-  if(gnuplt) {
+  if(plotOverTime) {
     //-- write a nice gnuplot file
     ofstream fil("z.costReport");
     //first line: legend
@@ -1666,7 +1769,7 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
     fil2 <<endl;
     fil2.close();
 
-    if(gnuplt) {
+    if(plotOverTime) {
 //      cout <<"KOMO Report\n" <<report <<endl;
       gnuplot("load 'z.costReport.plt'");
     }
