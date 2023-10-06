@@ -217,11 +217,11 @@ void testRndScene(){
 void testFriction(){
   rai::Configuration C;
 
-  for(int i=0;i<10;i++){
+  for(int i=0;i<8;i++){
     rai::Frame *obj = C.addFrame(STRING("obj" <<i));
     arr size = {.1,.1,.1, .01};
     obj->setShape(rai::ST_ssBox, size);
-    obj->setPosition({(i-5)*.2,0.,1.});
+    obj->setPosition({(i-4)*.2,0.,1.});
     obj->setMass(.2);
     obj->addAttribute("friction", .02*i);
   }

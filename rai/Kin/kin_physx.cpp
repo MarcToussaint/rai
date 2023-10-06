@@ -194,7 +194,7 @@ void PhysXInterface_self::initPhysics(){
   //-- Create the scene
   PxSceneDesc sceneDesc(core->mPhysics->getTolerancesScale());
   sceneDesc.gravity = PxVec3(0.f, 0.f, px_gravity);
-  sceneDesc.bounceThresholdVelocity = 10.;
+//  sceneDesc.bounceThresholdVelocity = 2.;
   //sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
   sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
   //sceneDesc.broadPhaseType = PxBroadPhaseType::eGPU;
@@ -251,9 +251,12 @@ void PhysXInterface_self::addLink(rai::Frame* f) {
   }
 
   if(opt.verbose>0){
-    LOG(0) <<"adding link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes";
-    for(rai::Shape* s:shapes) cout <<' ' <<s->frame.name;
-    cout <<endl;
+    rai::String str;
+    str <<"adding link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes (";
+    for(rai::Shape* s:shapes) str <<' ' <<s->frame.name;
+    str <<")";
+    if(f->inertia) str <<" and mass " <<f->inertia->mass;
+    LOG(0) <<str;
   }
 
   //-- create a PhysX actor
@@ -482,12 +485,6 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
     if(i>0) type = rai::BT_dynamic;
 
     //create link
-    if(opt.verbose>0){
-      LOG(0) <<"adding multibody link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes";
-      for(rai::Shape* s:shapes) cout <<' ' <<s->frame.name;
-      cout <<endl;
-    }
-
     PxArticulationLink* actor = 0;
     actor = articulation->createLink(i==0?NULL:linksPx(parents(i)), conv_Transformation2PxTrans(f->ensure_X()));
     linksPx(i) = actor;
@@ -497,6 +494,20 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
     actorTypes(f->ID) = type;
 
     addShapesAndInertia(actor, shapes, type, f);
+
+    if(opt.multiBodyDisableGravity){
+      actor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+    }
+
+    if(opt.verbose>0){
+      rai::String str;
+      str <<"adding multibody link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes (";
+      for(rai::Shape* s:shapes) str <<' ' <<s->frame.name;
+      str <<")";
+      if(f->joint) str <<" and joint " <<f->joint->type;
+      if(f->inertia) str <<" and mass " <<f->inertia->mass;
+      LOG(0) <<str;
+    }
 
     if(i>0){
       PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
@@ -740,7 +751,7 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes
 
   //-- set inertia
   if(type != rai::BT_static) {
-    if(/*false && */f->inertia && f->inertia->mass>0.) {
+    if(f->inertia && f->inertia->mass>0.) {
       //PxRigidBodyExt::updateMassAndInertia(*actor, f->inertia->mass);
       actor->setMass(f->inertia->mass);
       actor->setMassSpaceInertiaTensor({float(f->inertia->matrix.m00), float(f->inertia->matrix.m11), float(f->inertia->matrix.m22)});

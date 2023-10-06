@@ -769,7 +769,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
 Imp_GripperMove::Imp_GripperMove(Frame* _gripper, Joint* _joint, Frame* _fing1, Frame* _fing2, double _speed, double _stop)
   : gripper(_gripper), fing1(_fing1), fing2(_fing2), joint(_joint), speed(_speed), stop(_stop) {
   when = _beforePhysics;
-  type = Simulation::_openGripper;
+  type = Simulation::_moveGripper;
 
   if(joint->frame->parent->name.contains("robotiq")) speed *= -1.;
   else speed *= .1;

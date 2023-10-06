@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "lagrangian.h"
+#include "../Core/graph.h"
 
 #include <math.h>
 

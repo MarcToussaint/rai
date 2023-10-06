@@ -23,13 +23,14 @@ void dropRandomScene(){
     }
     f->setMass(1.);
     f->inertia->matrix.deleteOffDiagonal();
-    f->shape->cont=1;
     f->set_X()->setRandom();
     f->set_X()->pos.z += 2.;
   }
 
-  BulletInterface sim(C);
-//  PhysXInterface sim(C);
+  C.getJointState();
+
+//  BulletInterface sim(C);
+  PhysXInterface sim(C);
 
   for(uint t=0; t<300; t++) {
     rai::wait(.01);
@@ -91,8 +92,8 @@ void simGfile(){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-//  dropRandomScene();
-  simGfile();
+  dropRandomScene();
+//  simGfile();
 
   return 0;
 }

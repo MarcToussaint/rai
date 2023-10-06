@@ -21,7 +21,7 @@ struct TeleopCallbacks;
 struct Simulation {
   enum Engine { _noEngine, _physx, _bullet, _kinematic };
   enum ControlMode { _none, _position, _velocity, _acceleration, _posVel, _spline };
-  enum ImpType { _closeGripper, _openGripper, _depthNoise, _rgbNoise, _adversarialDropper, _objectImpulses, _blockJoints, _noPenetrations };
+  enum ImpType { _closeGripper, _moveGripper, _depthNoise, _rgbNoise, _adversarialDropper, _objectImpulses, _blockJoints, _noPenetrations };
 
   std::unique_ptr<struct Simulation_self> self;
 
