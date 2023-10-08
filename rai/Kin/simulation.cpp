@@ -241,15 +241,15 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   if(verbose>0) self->updateDisplayData(time, C);
 
-#if 0
-  if(!self->glDebug){
-    self->glDebug = make_shared<OpenGL>("physx sim DEBUG", 500, 300);
-    self->glDebug->camera.setDefault();
-    self->glDebug->add(glStandardScene);
-    self->glDebug->add(*self->physx);
+  if(verbose>3){
+    if(!self->glDebug){
+      self->glDebug = make_shared<OpenGL>("physx sim DEBUG", 500, 300);
+      self->glDebug->camera.setDefault();
+      self->glDebug->add(glStandardScene);
+      self->glDebug->add(*self->physx);
+    }
+    self->glDebug->update();
   }
-  self->glDebug->update();
-#endif
 }
 
 void Simulation::setMoveTo(const arr& x, double t, bool append){
@@ -426,10 +426,10 @@ bool Simulation::gripperIsDone(const char* gripperFrameName){
   return true;
 }
 
-void Simulation::getState(arr& frameState, arr& frameVelocities, arr& q, arr& qDot) {
+void Simulation::getState(arr& frameState, arr& q, arr& frameVelocities, arr& qDot) {
   if(engine==_physx) {
     self->physx->pullDynamicStates(C, frameVelocities);
-    if(!!q || !!qDot) self->physx->pullMotorStates(C, qDot);
+    self->physx->pullMotorStates(C, qDot);
   } else if(engine==_bullet) {
     self->bullet->pullDynamicStates(C, frameVelocities);
     if(!!q) NIY;
@@ -438,16 +438,20 @@ void Simulation::getState(arr& frameState, arr& frameVelocities, arr& q, arr& qD
   q = C.getJointState();
 }
 
-void Simulation::setState(const arr& frameState, const arr& frameVelocities, const arr& q, const arr& qDot) {
+void Simulation::setState(const arr& frameState, const arr& q, const arr& frameVelocities, const arr& qDot) {
   C.setFrameState(frameState);
   if(!!q && q.N) C.setJointState(q);
   pushConfigurationToSimulator(frameVelocities, qDot);
+  if(engine==_physx) {
+    self->physx->step(1e-3);
+    pushConfigurationToSimulator(frameVelocities, qDot);
+  }
 }
 
 void Simulation::pushConfigurationToSimulator(const arr& frameVelocities, const arr& qDot) {
   if(engine==_physx) {
     self->physx->pushFrameStates(C, frameVelocities);
-    if(!!qDot && qDot.N) self->physx->setMotorQ(C, true, qDot);
+    self->physx->setMotorQ(C, true, qDot);
   } else if(engine==_bullet) {
     self->bullet->pushFullState(C, frameVelocities);
   } else NIY;

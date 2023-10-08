@@ -57,14 +57,43 @@ rai::Graph dict2graph(const pybind11::dict& dict) {
     rai::String key = item.first.cast<std::string>().c_str();
     pybind11::handle value = item.second;
 
-    if(pybind11::isinstance<pybind11::float_>(value)) {
-      G.add<double>(key, value.cast<double>());
-    }else if(pybind11::isinstance<pybind11::int_>(value)) {
-      G.add<int>(key, value.cast<int>());
-    }else if(pybind11::isinstance<pybind11::bool_>(value)) {
+    if(pybind11::isinstance<pybind11::bool_>(value)) {
+//      LOG(0) <<"converting bool";
       G.add<bool>(key, value.cast<bool>());
+
+    }else if(pybind11::isinstance<pybind11::float_>(value)) {
+//      LOG(0) <<"converting float";
+      G.add<double>(key, value.cast<double>());
+
+    }else if(pybind11::isinstance<pybind11::int_>(value)) {
+//      LOG(0) <<"converting int";
+      G.add<int>(key, value.cast<int>());
+
+    }else if(pybind11::isinstance<pybind11::list>(value)) {
+//      LOG(0) <<"converting list";
+      pybind11::list L = value.cast<pybind11::list>();
+      if(pybind11::isinstance<pybind11::float_>(L[0])
+         || pybind11::isinstance<pybind11::int_>(L[0])){
+//        LOG(0) <<"number list";
+        G.add<arr>(key, list2arr<double>(L));
+      }else if(pybind11::isinstance<pybind11::str>(L[0])){
+//        LOG(0) <<"string list";
+        G.add<StringA>(key, list2StringA(L));
+      }else LOG(-1) <<"can't convert dict entry '" <<key <<"' of type " <<value.get_type() <<" to graph";
+
+    }else if(pybind11::isinstance<pybind11::array_t<double>>(value)
+             || pybind11::isinstance<pybind11::array_t<float>>(value)
+             || pybind11::isinstance<pybind11::array_t<int>>(value)) {
+//      LOG(0) <<"converting arr";
+      auto val = value.cast<pybind11::array_t<double>>();
+      G.add<arr>(key, numpy2arr(val));
+
     }else if(pybind11::isinstance<pybind11::str>(value)) {
-        G.add<rai::String>(key, value.cast<std::string>().c_str());
+      G.add<rai::String>(key, value.cast<std::string>().c_str());
+
+    }else if(pybind11::isinstance<pybind11::dict>(value)) {
+      G.addSubgraph(key) = dict2graph(value.cast<pybind11::dict>());
+
     } else {
       LOG(-1) <<"can't convert dict entry '" <<key <<"' of type " <<value.get_type() <<" to graph";
     }

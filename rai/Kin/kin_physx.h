@@ -16,7 +16,7 @@ namespace rai {
     RAI_PARAM("physx/", bool, yGravity, false)
     RAI_PARAM("physx/", bool, softBody, false)
     RAI_PARAM("physx/", bool, multiBody, true)
-    RAI_PARAM("physx/", bool, multiBodyDisableGravity, false)
+    RAI_PARAM("physx/", bool, multiBodyDisableGravity, true)
     RAI_PARAM("physx/", bool, jointedBodies, false)
     RAI_PARAM("physx/", double, angularDamping, .1)
     RAI_PARAM("physx/", double, defaultFriction, 1.)

@@ -84,6 +84,7 @@ void init_params(pybind11::module& m){
     else LOG(0) <<"could not add params file '" <<filename <<"'";
   }, "add parameters from a file");
   m.def("params_print", [](){ LOG(0) <<rai::params()(); }, "print the parameters");
+  m.def("params_clear", [](){ rai::params()->clear(); }, "clear all parameters");
 }
 
 void init_enums(pybind11::module& m){
@@ -223,7 +224,7 @@ pybind11::enum_<rai::ArgWord>(m, "ArgWord")
 
   pybind11::enum_<rai::Simulation::ImpType>(m, "ImpType")
   ENUMVAL(closeGripper)
-  ENUMVAL(openGripper)
+  ENUMVAL(moveGripper)
   ENUMVAL(depthNoise)
   ENUMVAL(rgbNoise)
   ENUMVAL(adversarialDropper)

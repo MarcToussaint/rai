@@ -28,9 +28,14 @@ struct SimulationState {
 void init_Simulation(pybind11::module& m) {
   pybind11::class_<rai::Simulation, std::shared_ptr<rai::Simulation>>(m, "Simulation", "todo doc")
 
-  .def(pybind11::init([](shared_ptr<rai::Configuration>& C, rai::Simulation::Engine engine, int verbose) {
-    return make_shared<rai::Simulation>(*C, engine, verbose);
-  }))
+  .def(pybind11::init<rai::Configuration&, rai::Simulation::Engine, int>(), "create a Simulation that is associated/attached to the given configuration",
+       pybind11::arg("C"),
+       pybind11::arg("engine"),
+       pybind11::arg("verbose") = 2 )
+
+//  .def(pybind11::init([](shared_ptr<rai::Configuration>& C, rai::Simulation::Engine engine, int verbose) {
+//    return make_shared<rai::Simulation>(*C, engine, verbose);
+//  }))
 
   .def("step", &rai::Simulation::step,
        "",
@@ -128,22 +133,22 @@ void init_Simulation(pybind11::module& m) {
 
   .def("getState", [](std::shared_ptr<rai::Simulation>& self) {
     arr X, V, x, v;
-    self->getState(X, V, x, v);
-    return pybind11::make_tuple(arr2numpy(X), arr2numpy(V), arr2numpy(x), arr2numpy(v));
-  })
+    self->getState(X, x, V, v);
+    return pybind11::make_tuple(arr2numpy(X), arr2numpy(x), arr2numpy(V), arr2numpy(v));
+  }, "returns a 4-tuple or frame state, joint state, frame velocities (linear & angular), joint velocities")
 
   .def("setState", &rai::Simulation::setState,
        "",
        pybind11::arg("frameState"),
-       pybind11::arg("frameVelocities") = std::vector<double>(),
-       pybind11::arg("jointState") = std::vector<double>(),
-       pybind11::arg("jointVelocities") = std::vector<double>()
+       pybind11::arg("jointState") = NoArr,
+       pybind11::arg("frameVelocities") = NoArr,
+       pybind11::arg("jointVelocities") = NoArr
       )
 
   .def("pushConfigurationToSimulator", &rai::Simulation::pushConfigurationToSimulator,
        "set the simulator to the full (frame) state of the configuration",
-       pybind11::arg("frameVelocities") = std::vector<double>(),
-       pybind11::arg("jointVelocities") = std::vector<double>()
+       pybind11::arg("frameVelocities") = NoArr,
+       pybind11::arg("jointVelocities") = NoArr
        )
 
   .def("depthData2pointCloud", [](std::shared_ptr<rai::Simulation>& self, const pybind11::array_t<float>& depth, const std::vector<double>& Fxypxy) {

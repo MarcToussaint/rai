@@ -627,8 +627,8 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
     f->computeCompoundInertia();
     f->transformToDiagInertia();
   }
-  if(f->inertia && !f->inertia->com.isZero){
-    LOG(-2) <<"DON'T DO THAT! Bullet can only properly handle (compound) inertias if transformed to zero com and diagonal tensor";
+  if(f->inertia && !f->inertia->matrix.isDiagonal()){
+    LOG(-2) <<"DON'T DO THAT! PhysX can only properly handle (compound) inertias if transformed to diagonal tensor\n frame:" <<*f;
   }
 
   //-- decide on the type
@@ -776,7 +776,7 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose): self(n
 
   self->opt.verbose = verbose;
 
-  if(self->opt.verbose>0) LOG(0) <<"starting PhysX engine ...";
+  if(self->opt.verbose>0) LOG(0) <<"starting PhysX engine ... (multiBody=" <<self->opt.multiBody <<")";
 
   self->initPhysics();
 
@@ -934,8 +934,8 @@ void PhysXInterface::setMotorQ(const rai::Configuration& C, bool setHardInstantl
       if(setHardInstantly){
         //LOG(0) <<"setting joint pos hard: " <<f->name <<' ' <<f->joint->get_q();
         joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
-        if(!qDot) joint->setDriveVelocity(axis, 0.);
-        else joint->setDriveVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
+        if(!!qDot && qDot.N) joint->setDriveVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
+        else joint->setDriveVelocity(axis, 0.);
       }
       joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
     }
@@ -946,7 +946,7 @@ void PhysXInterface::setMotorQ(const rai::Configuration& C, bool setHardInstantl
 
 void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot){
   arr q = C.getJointState();
-  qDot.resize(q.N).setZero();
+  if(!!qDot) qDot.resize(q.N).setZero();
 
   if(self->opt.multiBody){
     for(rai::Frame* f:C.frames) if(f->joint && f->joint->active && self->actors(f->ID)){
@@ -958,7 +958,7 @@ void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot){
       auto axis = self->jointAxis(f->ID);
       CHECK_LE(axis, self->jointAxis(0)-1, "");
       q(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
-      qDot(f->joint->qIndex) = joint->getJointVelocity(axis) / f->joint->scale;
+      if(!!qDot) qDot(f->joint->qIndex) = joint->getJointVelocity(axis) / f->joint->scale;
     }
   }else if(self->opt.jointedBodies){
     NIY;
@@ -978,12 +978,14 @@ void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& fra
     }else if(!onlyKinematic){
       a->setGlobalPose(conv_Transformation2PxTrans(f->ensure_X()));
 
-      if(!!frameVelocities && frameVelocities.N) {
-        if(self->actorTypes(f->ID)==rai::BT_dynamic && a->getType() == PxActorType::eRIGID_DYNAMIC) {
-          arr v = frameVelocities(f->ID, 0, {}), w = frameVelocities(f->ID, 1, {});
-          PxRigidDynamic* px_body = (PxRigidDynamic*) a;
+      if(self->actorTypes(f->ID)==rai::BT_dynamic && a->getType() == PxActorType::eRIGID_DYNAMIC) {
+        PxRigidDynamic* px_body = (PxRigidDynamic*) a;
+        if(!!frameVelocities && frameVelocities.N) {
           px_body->setLinearVelocity(PxVec3(frameVelocities(f->ID, 0, 0), frameVelocities(f->ID, 0, 1), frameVelocities(f->ID, 0, 2)));
           px_body->setAngularVelocity(PxVec3(frameVelocities(f->ID, 1, 0), frameVelocities(f->ID, 1, 1), frameVelocities(f->ID, 1, 2)));
+        }else{
+          px_body->setLinearVelocity(PxVec3(0.,0.,0.));
+          px_body->setAngularVelocity(PxVec3(0.,0.,0.));
         }
       }
     }

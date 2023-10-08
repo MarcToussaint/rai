@@ -114,7 +114,7 @@ void init_Config(pybind11::module& m) {
       "get the joint state as a numpy vector, optionally only for a subset of joints specified as list of joint names"
       )
 
-  .def("getDofIDs", [](shared_ptr<rai::Configuration>& self){
+  .def("getDofIDs", [](std::shared_ptr<rai::Configuration>& self){
       uintA dofIDs = self->getDofIDs();
       return Array2vec<uint>(dofIDs);
   }, "" )
@@ -131,7 +131,7 @@ void init_Config(pybind11::module& m) {
 //  pybind11::arg("joints") = uintA()
 //  )
 
-  .def("setJointState", [](shared_ptr<rai::Configuration>& self, const arr& q, const pybind11::list& joints) {
+  .def("setJointState", [](std::shared_ptr<rai::Configuration>& self, const arr& q, const pybind11::list& joints) {
     if(!joints.size()) {
       self->setJointState(q);
     } else {

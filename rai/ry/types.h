@@ -102,10 +102,16 @@ inline std::vector<std::string> StringA2strvec(const StringA& x) {
   return y;
 }
 
-inline pybind11::list StringA2strlist(const StringA& x) {
+inline pybind11::list StringA2list(const StringA& x) {
   pybind11::list y(x.N);
   for(uint i=0;i<x.N;i++) y[i] = pybind11::str(x(i).p, x(i).N);
   return y;
+}
+
+inline StringA list2StringA(const pybind11::list& X) {
+  StringA Y(X.size());
+  for(uint i=0; i<Y.N; i++) Y.elem(i) = X[i].cast<std::string>();
+  return Y;
 }
 
 inline arrA npvec2arrA(const std::vector<pybind11::array_t<double>>& x) {
@@ -178,7 +184,7 @@ namespace detail {
     /// C++ -> Python
     static handle cast(const StringA& src, return_value_policy /* policy */, handle /* parent */) {
       //LOG(0) <<"return " <<rai::niceTypeidName(typeid(src));
-      return StringA2strlist(src).release();
+      return StringA2list(src).release();
     }
   };
 

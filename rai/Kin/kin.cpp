@@ -471,26 +471,21 @@ StringA Configuration::getJointNames() const {
     if(!name) name <<'q' <<j->qIndex;
     if(j->dim==1) names(j->qIndex) <<name;
     else for(uint i=0; i<j->dim; i++) names(j->qIndex+i) <<name <<':' <<i;
-
-//    if(j->uncertainty) {
-//      if(j->dim) {
-//        for(uint i=j->dim; i<2*j->dim; i++) names(j->qIndex+i) <<name <<":UC:" <<i;
-//      } else {
-//        names(j->qIndex+1) <<name <<":UC";
-//      }
-//    }
   }
   return names;
 }
 
-DofL Configuration::getDofs(const FrameL& F, bool activesOnly) const{
+DofL Configuration::getDofs(const FrameL& F, bool actives, bool inactives, bool mimics) const{
   DofL dofs;
   for(Frame* f:F) {
-    if(f->joint && (!activesOnly || f->joint->active)){
-      dofs.append(f->joint);
+    Dof *dof = f->joint;
+    if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)){
+      dofs.append(dof);
     }
-    for(ForceExchange* fex: f->forces) if(&fex->a==f){
-      if(fex && (!activesOnly || fex->active)) dofs.append(fex);
+    for(ForceExchange* dof: f->forces) if(&dof->a==f){
+      if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)){
+        dofs.append(dof);
+      }
     }
   }
   return dofs;
@@ -545,7 +540,7 @@ rai::Array<DofL> Configuration::getPartsDofs() const{
     Frame *f = parts.elem(i);
     FrameL sub = {f};
     f->getPartSubFrames(sub);
-    DofL D = getDofs(sub, true);
+    DofL D = getDofs(sub, true, false);
     DofL F;
     if(D.N){
       //remove mimics
