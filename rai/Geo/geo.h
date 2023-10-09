@@ -299,10 +299,7 @@ struct Camera {
   void setKinect();
   void setDefault();
 
-  void focusOrigin();
   void focus(float x, float y, float z, bool makeUpright=false);
-  void focus(const Vector& v, bool makeUpright=false);
-  void focus();
   void watchDirection(const Vector& d);
   void upright(const Vector& up=Vector(0, 0, 1));
 

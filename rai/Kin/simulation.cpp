@@ -923,6 +923,10 @@ uint& Simulation::pngCount(){
   return self->display->pngCount;
 }
 
+Mutex& Simulation::displayMutex(){
+  return self->display->mux;
+}
+
 std::shared_ptr<PhysXInterface> Simulation::hidden_physx(){
   return self->physx;
 }

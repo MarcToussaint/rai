@@ -6,12 +6,12 @@
 //===========================================================================
 
 void TEST(CameraView){
-  rai::Configuration K;
-  K.addFile("../../../../rai-robotModels/pr2/pr2.g");
-  K.addFile("../../../../rai-robotModels/objects/kitchen.g");
-  K.optimizeTree();
+  rai::Configuration C;
+  C.addFile("../../../../rai-robotModels/pr2/pr2.g");
+  C.addFile("../../../../rai-robotModels/objects/kitchen.g");
+  C.optimizeTree();
 
-  rai::CameraView V(K, true, 0);
+  rai::CameraView V(C, true, 0);
 
   V.addSensor("kinect", "endeffKinect", 640, 480, 580./480., -1., {.1, 50.} );
 //  V.selectSensor("kinect");

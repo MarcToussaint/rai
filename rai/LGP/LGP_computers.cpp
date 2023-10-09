@@ -247,7 +247,7 @@ void rai::LGPcomp_Waypoints::untimedCompute(){
     //    komoWaypoints->pathConfig.reportProxies();
     komoWaypoints->pathConfig.reportLimits();
     komoWaypoints->checkGradients();
-    sol.optCon->L.reportGradients(cout, komoWaypoints->featureNames);
+    cout <<sol.optCon->L.reportGradients(komoWaypoints->featureNames) <<endl;
   }
 
   if(!isComplete && sket->verbose()>4){
@@ -260,7 +260,7 @@ void rai::LGPcomp_Waypoints::untimedCompute(){
       isFeasible = false;
       komoWaypoints->view_close();
       if(sket->verbose()>1) {
-        sol.optCon->L.reportGradients(cout, komoWaypoints->featureNames);
+        cout <<sol.optCon->L.reportGradients(komoWaypoints->featureNames) <<endl;
       }
     }else{
       isFeasible = true;
@@ -456,7 +456,7 @@ void rai::LGPcomp_OptimizePath::untimedCompute(){
       isFeasible = false;
       komoPath->view_close();
       if(sket->verbose()>1){
-        sol.optCon->L.reportGradients(cout, komoPath->featureNames);
+        cout <<sol.optCon->L.reportGradients(komoPath->featureNames) <<endl;
       }
     }else{
       isFeasible = true;
@@ -467,7 +467,7 @@ void rai::LGPcomp_OptimizePath::untimedCompute(){
         ofstream fil (path + "info.txt");
         fil <<*sol.ret <<"\n\nSkeleton:{" <<sket->planString <<"\n}" <<endl;
         fil <<komoPath->getReport(false) <<endl;
-        sol.optCon->L.reportGradients(fil, komoPath->featureNames);
+        fil <<sol.optCon->L.reportGradients(komoPath->featureNames) <<endl;
         ofstream cfil (path + "last.g");
         komoPath->world.setFrameState(komoPath->getConfiguration_X(komoPath->T-1));
         cfil <<komoPath->world;

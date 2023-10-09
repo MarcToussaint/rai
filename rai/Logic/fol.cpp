@@ -366,7 +366,7 @@ bool applyEffectLiterals(Graph& facts, NodeL& effects, const NodeL& subst, Graph
 /// extracts the preconditions of the rule, then returns substitutions
 NodeL getRuleSubstitutions2(Graph& KB, Graph& rule, int verbose) {
   //-- extract precondition
-  if(verbose>1) { cout <<"Substitutions for rule " <<rule <<endl; }
+  //if(verbose>1) { cout <<"Substitutions for rule " <<rule <<endl; }
   Graph& preconditions = getFirstNonSymbolOfScope(rule)->graph();
   if(!preconditions.N) return {};
   return getSubstitutions2(KB, preconditions, verbose);

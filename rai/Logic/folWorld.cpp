@@ -238,6 +238,7 @@ const Array<TreeSearchDomain::Handle> FOL_World::get_actions() {
     decisions.append(Handle(new Decision(true, nullptr, {}, decisions.N))); //the wait decision (true as first argument, no rule, no substitution)
   }
   for(Node* rule:decisionRules) {
+    if(verbose>3) cout <<"\n-- # checking rule " <<*rule <<endl;
     NodeL subs = getRuleSubstitutions2(*state, rule->graph(), verbose-3);
     for(uint s=0; s<subs.d0; s++) {
       decisions.append(Handle(new Decision(false, rule, subs[s], decisions.N))); //a grounded rule decision (abstract rule with substution)

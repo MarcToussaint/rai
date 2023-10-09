@@ -98,6 +98,8 @@ struct Simulation {
   //allow writing pics for video
   uint& pngCount();
 
+  Mutex& displayMutex();
+
   std::shared_ptr<struct PhysXInterface> hidden_physx();
   OpenGL& hidden_gl();
   void loadTeleopCallbacks();

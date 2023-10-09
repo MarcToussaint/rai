@@ -975,7 +975,7 @@ void glDrawCamera(const rai::Camera& cam) {
   double dxNear, dyNear, zNear;
   zNear = cam.zNear;
   zFar = cam.zFar;
-  if(zFar-zNear > 1.) zFar = zNear + .1;
+  if(zFar-zNear > 1.) zFar = 0.; //zNear + .1;
   if(cam.focalLength) {
     dyNear = zNear * .5/cam.focalLength;
     dyFar = zFar * .5/cam.focalLength;
@@ -988,39 +988,43 @@ void glDrawCamera(const rai::Camera& cam) {
   }
   glColor(.5, .5, .5);
   glBegin(GL_LINE_STRIP);
-  glVertex3f(-dxNear, -dyNear, -zNear);
-  glVertex3f(-dxNear, dyNear, -zNear);
-  glVertex3f(dxNear, dyNear, -zNear);
-  glVertex3f(dxNear, -dyNear, -zNear);
-  glVertex3f(-dxNear, -dyNear, -zNear);
+  glVertex3f(-dxNear, -dyNear, zNear);
+  glVertex3f(-dxNear, dyNear, zNear);
+  glVertex3f(dxNear, dyNear, zNear);
+  glVertex3f(dxNear, -dyNear, zNear);
+  glVertex3f(-dxNear, -dyNear, zNear);
   glEnd();
-  glBegin(GL_LINE_STRIP);
-  glVertex3f(-dxFar, -dyFar, -zFar);
-  glVertex3f(-dxFar, dyFar, -zFar);
-  glVertex3f(dxFar, dyFar, -zFar);
-  glVertex3f(dxFar, -dyFar, -zFar);
-  glVertex3f(-dxFar, -dyFar, -zFar);
-  glEnd();
-  glBegin(GL_LINES);
-  glVertex3f(0, 0, 0);
-  glVertex3f(-dxNear, -dyNear, -zNear);
-  glVertex3f(0, 0, 0);
-  glVertex3f(-dxNear, dyNear, -zNear);
-  glVertex3f(0, 0, 0);
-  glVertex3f(dxNear, -dyNear, -zNear);
-  glVertex3f(0, 0, 0);
-  glVertex3f(dxNear, dyNear, -zNear);
-  glEnd();
-  glBegin(GL_LINES);
-  glVertex3f(-dxNear, -dyNear, -zNear);
-  glVertex3f(-dxFar,  -dyFar,  -zFar);
-  glVertex3f(-dxNear, dyNear, -zNear);
-  glVertex3f(-dxFar,  dyFar,  -zFar);
-  glVertex3f(dxNear, -dyNear, -zNear);
-  glVertex3f(dxFar,  -dyFar,  -zFar);
-  glVertex3f(dxNear, dyNear, -zNear);
-  glVertex3f(dxFar,  dyFar,  -zFar);
-  glEnd();
+  if(zFar){
+    glBegin(GL_LINE_STRIP);
+    glVertex3f(-dxFar, -dyFar, zFar);
+    glVertex3f(-dxFar, dyFar, zFar);
+    glVertex3f(dxFar, dyFar, zFar);
+    glVertex3f(dxFar, -dyFar, zFar);
+    glVertex3f(-dxFar, -dyFar, zFar);
+    glEnd();
+    glBegin(GL_LINES);
+    glVertex3f(0, 0, 0);
+    glVertex3f(-dxFar, -dyFar, zFar);
+    glVertex3f(0, 0, 0);
+    glVertex3f(-dxFar, dyFar, zFar);
+    glVertex3f(0, 0, 0);
+    glVertex3f(dxFar, -dyFar, zFar);
+    glVertex3f(0, 0, 0);
+    glVertex3f(dxFar, dyFar, zFar);
+    glEnd();
+    glEnd();
+  }else{
+    glBegin(GL_LINES);
+    glVertex3f(0, 0, 0);
+    glVertex3f(-dxNear, -dyNear, zNear);
+    glVertex3f(0, 0, 0);
+    glVertex3f(-dxNear, dyNear, zNear);
+    glVertex3f(0, 0, 0);
+    glVertex3f(dxNear, -dyNear, zNear);
+    glVertex3f(0, 0, 0);
+    glVertex3f(dxNear, dyNear, zNear);
+    glEnd();
+  }
 }
 
 void glDrawDisk(float radius) {
@@ -2199,7 +2203,7 @@ void getSphereVector(rai::Vector& vec, double x, double y, int le, int ri, int b
   int w=ri-le, h=to-bo;
   int minwh = w<h?w:h;
   x=x-le-.5*w;  x*= 2./minwh;
-  y=y-bo-.5*h;  y*= 2./minwh;
+  y=y-bo-.5*h;  y*= -2./minwh;
   vec.x=x;
   vec.y=y;
   vec.z=.5-(x*x+y*y);
@@ -2370,10 +2374,10 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
         x(0) -= double(v->le)*width;
         x(1) -= double(v->bo)*height;
         v->camera.unproject_fromPixelsAndGLDepth(x, (v->ri-v->le)*width, (v->to-v->bo)*height);
-        v->camera.focus(x);
+        v->camera.focus(x(0), x(1), x(2));
       } else {
         cam->unproject_fromPixelsAndGLDepth(x, width, height);
-        cam->focus(x);
+        cam->focus(x(0), x(1), x(2));
       }
       //LOG(1) <<"FOCUS: world coords: " <<x;
     }
@@ -2403,7 +2407,7 @@ void OpenGL::Scroll(int wheel, int direction) {
   for(uint i=0; cont && i<scrollCalls.N; i++) cont = cont && scrollCalls(i)->scrollCallback(*this, direction);
 
   if(cont){
-    double dz = (direction>0.? .1:-.1);
+    double dz = (direction>0.? -.1:.1);
 
     //-- SCROLL -> zoom
     if(_NONE(modifiers)){
@@ -2460,7 +2464,7 @@ void OpenGL::MouseMotion(double _x, double _y) {
       rot.setDiff(vec, downVec);  //consider imagined sphere rotation of mouse-move
     } else {
       //inside: use starndard xy to rotate
-      rot.setVec(2.*(vec-downVec) ^ Vector_z); //consider only xy-mouse-move
+      rot.setVec(2.*(vec-downVec) ^ -Vector_z); //consider only xy-mouse-move
     }
     //rotate about focus
     cam->X.rot = downRot * rot;   //rotate camera's direction

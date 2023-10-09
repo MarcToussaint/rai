@@ -6,6 +6,8 @@
 #include <Kin/F_geometrics.h>
 #include <Kin/kin_physx.h>
 
+#include <Geo/depth2PointCloud.h>
+
 #include <iomanip>
 
 //===========================================================================
@@ -214,6 +216,82 @@ void testRndScene(){
 
 //===========================================================================
 
+void testConstructor(){
+  rai::Configuration C;
+
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
+  C.addFrame("obj")
+      ->setShape(rai::ST_ssBox, {.1,.1,.1, .01})
+      .setPosition({0.,0.,1.})
+      .setMass(.2);
+
+  FILE("z.0") <<C <<endl;
+  {
+    rai::Simulation S(C, S._physx, 1);
+    FILE("z.1") <<C <<endl;
+
+    arr X = C.getFrameState();
+
+    double tau=.01;
+    for(uint t=0;t<100;t++){
+      S.step({}, tau, S._none);
+      rai::wait(tau);
+    }
+  }
+  rai::wait();
+
+  {
+    rai::Simulation S(C, S._physx, 1);
+    FILE("z.2") <<C <<endl;
+
+    arr X = C.getFrameState();
+
+    double tau=.01;
+    for(uint t=0;t<100;t++){
+      S.step({}, tau, S._none);
+      rai::wait(tau);
+    }
+  }
+  rai::wait();
+}
+
+//===========================================================================
+
+void testPcl(){
+  rai::Configuration C;
+
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
+  rai::Frame *pcl = C.addFrame("pcl", "cameraWrist");
+  pcl->setPointCloud({}, {});
+  pcl->setColor({1.,0.,0.,.5});
+
+  rai::Simulation S(C, S._physx, 1);
+
+  S.selectSensor("cameraWrist");
+
+  byteA img;
+  floatA depth;
+  arr pts;
+
+  double tau=.05;
+  for(uint t=0;t<20;t++){
+    S.getImageAndDepth(img, depth);
+    depthData2pointCloud(pts, depth, S.cameraview().currentSensor->getFxypxy());
+
+    {
+      auto lock = S.displayMutex()(RAI_HERE);
+      pcl->setPointCloud(pts, {255,0,0});
+    }
+
+    S.step({}, tau, S._none);
+    rai::wait(tau);
+  }
+
+  rai::wait(true);
+}
+
+//===========================================================================
+
 void testFriction(){
   rai::Configuration C;
 
@@ -299,7 +377,7 @@ void testCompound(){
   rai::Configuration C;
   C.addFile(rai::raiPath("../rai-robotModels/tests/compound.g"));
 
-  rai::Simulation S(C, S._physx, 4);
+  rai::Simulation S(C, S._physx, 3);
 
   double tau=.01;
   Metronome tic(tau);
@@ -326,7 +404,7 @@ void testMotors(){
   arr q0 = C.getJointState();
   arr v0 = zeros(q0.N);
 
-  rai::Simulation S(C, S._physx, 4);
+  rai::Simulation S(C, S._physx, 2);
 //  rai::wait();
 
   double tau=.01;
@@ -358,6 +436,8 @@ int MAIN(int argc,char **argv){
 
   testMotors();
   testRndScene();
+  testConstructor();
+  testPcl();
   testFriction();
   testStackOfBlocks();
   testCompound();

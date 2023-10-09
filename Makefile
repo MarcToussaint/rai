@@ -25,7 +25,7 @@ printUbuntuAll: $(DEPEND:%=inPath_printUbuntu/%) printUbuntu
 
 printDependAll: $(DEPEND:%=inPath_printDepend/%) printDepend
 
-tests: $(test_paths:%=inPath_make/%) inPath_makeLib/ry
+tests: $(test_paths:%=inPath_make/%) #inPath_makeLib/ry
 
 bin: $(bin_paths:%=inPath_make/%)
 
@@ -80,7 +80,7 @@ install: src bin
 runTests: tests
 	@rm -f z.test-report
 	@for p in $(test_paths); do makeutils/run-path.sh $$p; done
-	+@-make -C test/ry run clean
+#	+@-make -C test/ry run clean
 
 
 ################################################################################

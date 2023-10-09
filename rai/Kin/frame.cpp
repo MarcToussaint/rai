@@ -493,9 +493,10 @@ rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors) {
     return *this;
   }
   rai::Mesh& mesh = getShape().mesh();
-  mesh.V.clear().operator=(points).reshape(-1, 3);
+  mesh.V = points;
+  mesh.V.reshape(-1, 3);
   if(colors.N) {
-    mesh.C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
+    mesh.C = (convert<double>(byteA(colors))/255.).reshape(-1, 3);
     if(mesh.C.N <= 4){ mesh.C.reshape(-1); }
   }
   return *this;
@@ -1463,8 +1464,6 @@ rai::Shape::Shape(Frame& f, const Shape* copyShape)
     _type = s._type;
     size = s.size;
     cont = s.cont;
-  } else {
-    mesh().C= {.8, .8, .8};
   }
 }
 
@@ -1665,11 +1664,14 @@ void rai::Shape::glDraw(OpenGL& gl) {
       }
     } else {
       if(!mesh().V.N) {
-        LOG(1) <<"trying to draw empty mesh (shape type:" <<_type <<")";
+        LOG(-1) <<"trying to draw empty mesh (shape type:" <<_type <<")";
       } else {
         if(!mesh().T.N){
           if(size.N) glPointSize(size.last());
           else glPointSize(1.f);
+        }
+        if(!mesh().C.N){
+          glColor(.8, .8, .8);
         }
         mesh().glDraw(gl);
       }

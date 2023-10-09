@@ -60,8 +60,8 @@ void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, flo
         pts(k, 2) = -d;
 #else //fast
         *(pt++) =  d * (x - px) / fx;
-        *(pt++) = -d * (y - py) / fy;
-        *(pt++) = -d;
+        *(pt++) =  d * (y - py) / fy;
+        *(pt++) =  d;
 #endif
       } else {
         pt += 3;
@@ -77,15 +77,15 @@ void depthData2pointCloud(arr& pts, const floatA& depth, const arr& Fxypxy) {
 }
 
 void depthData2point(double* pt, double* fxypxy) {
-  pt[0] =  pt[2] * (pt[0] - fxypxy[2]) / fxypxy[0];
-  pt[1] = -pt[2] * (pt[1] - fxypxy[3]) / fxypxy[1];
-  pt[2] = -pt[2];
+  pt[0] = pt[2] * (pt[0] - fxypxy[2]) / fxypxy[0];
+  pt[1] = pt[2] * (pt[1] - fxypxy[3]) / fxypxy[1];
+//  pt[2] = pt[2];
 }
 
 void point2depthData(double* pt, double* fxypxy) {
-  pt[2] = -pt[2];
   pt[0] = fxypxy[2] + (pt[0]*fxypxy[0])/pt[2];
-  pt[1] = fxypxy[3] - (pt[1]*fxypxy[1])/pt[2];
+  pt[1] = fxypxy[3] + (pt[1]*fxypxy[1])/pt[2];
+  //  pt[2] = pt[2];
 }
 
 void depthData2point(arr& pt, const arr& Fxypxy) {

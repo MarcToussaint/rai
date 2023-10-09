@@ -136,7 +136,7 @@ void waypointHunting(){
   rndUniform(waypoints, -1., 1.);
   for(uint k=0;k<K;k++) waypoints(k,2) += 1.5;
 
-  TimingMPC F(waypoints, 1e1, 1e-1);
+  TimingMPC F(waypoints, 1e2, 1e-1);
 
   rai::Configuration C;
   for(uint k=0;k<K;k++){

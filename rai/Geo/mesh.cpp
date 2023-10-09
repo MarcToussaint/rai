@@ -1653,7 +1653,8 @@ void Mesh::glDraw(struct OpenGL& gl) {
 
   if(!T.N) { //-- draw point cloud
     if(!V.N) return;
-    CHECK(V.nd==2 && V.d1==3, "wrong dimension");
+    CHECK_EQ(V.nd, 2, "wrong dimension");
+    CHECK_EQ(V.d1, 3, "wrong dimension");
     glDisable(GL_LIGHTING);
 
     glEnableClientState(GL_VERTEX_ARRAY);

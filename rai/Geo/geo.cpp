@@ -1819,7 +1819,7 @@ Camera::Camera() {
   setZero();
 
   setPosition(0., 0., 10.);
-  focus(0, 0, 0);
+  focus(0.,0.,0.);
   setHeightAngle(45.);
 }
 
@@ -1843,31 +1843,25 @@ void Camera::setWHRatio(float ratio) { whRatio=ratio; }
 void Camera::setFocalLength(float f) { heightAbs=0;  focalLength = f; }
 /// the frame's position
 void Camera::setPosition(float x, float y, float z) { X.pos.set(x, y, z); }
-/// rotate the frame to focus the absolute coordinate origin (0, 0, 0)
-void Camera::focusOrigin() { foc.setZero(); focus(); }
-/// rotate the frame to focus the point (x, y, z)
-void Camera::focus(float x, float y, float z, bool makeUpright) { foc.set(x, y, z); focus(); if(makeUpright) upright(); }
 /// rotate the frame to focus the point given by the vector
-void Camera::focus(const Vector& v, bool makeUpright) { foc=v; focus(); if(makeUpright) upright(); }
-/// rotate the frame to focus (again) the previously given focus
-void Camera::focus() { watchDirection(foc-X.pos); } //X.Z=X.pos; X.Z-=foc; X.Z.normalize(); upright(); }
+void Camera::focus(float x, float y, float z, bool makeUpright) { foc.set(x,y,z); watchDirection(foc-X.pos); if(makeUpright) upright(); }
 /// rotate the frame to watch in the direction vector D
 void Camera::watchDirection(const Vector& d) {
   if(d.x==0. && d.y==0.) {
     X.rot.setZero();
-    if(d.z>0) X.rot.setDeg(180, 1, 0, 0);
+    if(d.z<0) X.rot.setDeg(180, 1, 0, 0);
     return;
   }
   Quaternion r;
-  r.setDiff(-X.rot.getZ(), d);
+  r.setDiff(X.rot.getZ(), d);
   X.rot=r*X.rot;
 }
 /// rotate the frame to set it upright (i.e. camera's y aligned with world's z)
 void Camera::upright(const Vector& up) {
 #if 1
   //construct desired X:
-  Vector y=X.rot.getY();
-  Vector fwd = -X.rot.getZ();
+  Vector y = -X.rot.getY();
+  Vector fwd = X.rot.getZ();
   Vector yDesired=fwd^(up^fwd); //desired Y
   if(yDesired*up<=0) yDesired=-yDesired;
   Quaternion r;
@@ -1926,9 +1920,9 @@ void Camera::glSetProjectionMatrix() const {
     arr P(4, 4);
     P.setZero();
     P(0, 0) = 2.*focalLength/whRatio;
-    P(1, 1) = 2.*focalLength;
-    P(2, 2) = (zFar + zNear)/(zNear-zFar);
-    P(2, 3) = -1.;
+    P(1, 1) = -2.*focalLength;
+    P(2, 2) = -(zFar + zNear)/(zNear-zFar);
+    P(2, 3) = 1.;
     P(3, 2) = 2. * zFar * zNear / (zNear-zFar);
     glLoadMatrixd(P.p);
 #else
@@ -1959,8 +1953,8 @@ arr Camera::getProjectionMatrix() const {
     arr P(4, 4);
     P.setZero();
     P(0, 0) = 2.*focalLength/whRatio;
-    P(1, 1) = 2.*focalLength;
-    P(2, 2) = -1.; //depth is flipped to become positive for 'in front of camera'
+    P(1, 1) = -2.*focalLength;
+    P(2, 2) = 1.; //depth is flipped to become positive for 'in front of camera'
     P(3, 3) = 1.; //homogeneous 3D is kept
     return P * Tinv;
   }
@@ -1979,9 +1973,9 @@ arr Camera::getGLProjectionMatrix() const {
     arr P(4, 4);
     P.setZero();
     P(0, 0) = 2.*focalLength/whRatio;
-    P(1, 1) = 2.*focalLength;
-    P(2, 2) = (zFar + zNear)/(zNear-zFar);
-    P(2, 3) = -1.;
+    P(1, 1) = -2.*focalLength;
+    P(2, 2) = -(zFar + zNear)/(zNear-zFar);
+    P(2, 3) = 1.;
     P(3, 2) = 2. * zFar * zNear / (zNear-zFar);
     return ~Tinv * P; //(P is already transposed!)
   }
@@ -2005,8 +1999,8 @@ arr Camera::getInverseProjectionMatrix() const {
     arr Pinv(4, 4);
     Pinv.setZero();
     Pinv(0, 0) = 1./(2.*focalLength/whRatio);
-    Pinv(1, 1) = 1./(2.*focalLength);
-    Pinv(2, 2) = -1.; //flips 'positive depth' back to Right-Handed frame
+    Pinv(1, 1) = -1./(2.*focalLength);
+    Pinv(2, 2) = 1.; //flips 'positive depth' back to Right-Handed frame
     Pinv(3, 3) = 1.; //homogeneous 3D is kept
     return T * Pinv;
   }
@@ -2014,8 +2008,8 @@ arr Camera::getInverseProjectionMatrix() const {
       arr Pinv(4, 4);
       Pinv.setZero();
       Pinv(0, 0) = 1./(2.*focalLength/whRatio);
-      Pinv(1, 1) = 1./(2.*focalLength);
-      Pinv(2, 2) = -1.; //flips 'positive depth' back to Right-Handed frame
+      Pinv(1, 1) = -1./(2.*focalLength);
+      Pinv(2, 2) = 1.; //flips 'positive depth' back to Right-Handed frame
       Pinv(3, 3) = 1.; //homogeneous 3D is kept
     NIY;
   }
@@ -2053,8 +2047,8 @@ void Camera::unproject_fromPixelsAndTrueDepth(arr& x, double width, double heigh
     x(0) = 2.*(x(0)/height) - 1.;
     x(1) = 2.*(x(1)/height) - 1.;
     x(0) *= .5*heightAbs;
-    x(1) *= .5*heightAbs;
-    x(2) *= -1.;
+    x(1) *= -.5*heightAbs;
+    x(2) *= 1.;
     x.resizeCopy(3);
     X.applyOnPoint(x);
     return;
@@ -2098,8 +2092,8 @@ arr Camera::getIntrinsicMatrix(double W, double H) const {
     arr K(3, 3);
     K.setZero();
     K(0, 0) = focalLength*H;
-    K(1, 1) = -focalLength*H;
-    K(2, 2) = -1.; //depth is flipped to become positive for 'in front of camera'
+    K(1, 1) = focalLength*H;
+    K(2, 2) = 1.; //depth is flipped to become positive for 'in front of camera'
     K(0, 2) = -0.5*W;
     K(1, 2) = -0.5*H;
     return K;

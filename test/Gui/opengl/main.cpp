@@ -22,7 +22,11 @@ void draw1(void*,OpenGL& gl){
 
 void TEST(Teapot) {
   OpenGL gl;
+
+  gl.camera.setDefault();
+
   gl.reportEvents = true;
+  gl.add(glStandardScene);
   gl.add(draw1,0);
   gl.watch();
   cout <<"returned from watch - watch again" <<endl;

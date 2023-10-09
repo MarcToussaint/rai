@@ -712,6 +712,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
 #endif
     } break;
     case rai::ST_camera:
+    case rai::ST_pointCloud:
     case rai::ST_marker: {
       geometry = nullptr;
     } break;

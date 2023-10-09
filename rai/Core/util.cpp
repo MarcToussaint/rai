@@ -906,7 +906,7 @@ rai::String& rai::String::printf(const char* format, ...) {
 /// shorthand for the !strcmp command
 bool rai::String::operator==(const char* s) const { return p && !strcmp(p, s); }
 /// shorthand for the !strcmp command
-bool rai::String::operator==(const String& s) const { if(!p && !s.p) return true;  return p && s.p && (!strcmp(p, s.p)); }
+bool rai::String::operator==(const String& s) const { if(!N && !s.N) return true;  return p && s.p && (!strcmp(p, s.p)); }
 bool rai::String::operator!=(const char* s) const { return !operator==(s); }
 bool rai::String::operator!=(const String& s) const { return !(operator==(s)); }
 bool rai::String::operator<=(const String& s) const { return p && s.p && strcmp(p, s.p)<=0; }
