@@ -166,7 +166,7 @@ struct Frame : NonCopyable {
   Frame& setJoint(rai::JointType jointType);
   Frame& setContact(int cont);
   Frame& setMass(double mass);
-  Frame& addAttribute(const char* key, double value);
+  Frame& setAttribute(const char* key, double value);
   Frame& setJointState(const arr& q); ///< throws error if this frame is not also a joint, and if q.size() != joint->dim
 
   arr getPose() { return ensure_X().getArr7d(); }

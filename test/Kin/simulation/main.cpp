@@ -301,7 +301,7 @@ void testFriction(){
     obj->setShape(rai::ST_ssBox, size);
     obj->setPosition({(i-4)*.2,0.,1.});
     obj->setMass(.2);
-    obj->addAttribute("friction", .02*i);
+    obj->setAttribute("friction", .02*i);
   }
 
   for(int i=0;i<10;i++){
@@ -310,7 +310,7 @@ void testFriction(){
     obj->setShape(rai::ST_sphere, size);
     obj->setPosition({(i-5)*.2,.5,2.});
     obj->setMass(.2);
-    obj->addAttribute("restitution", .1*i);
+    obj->setAttribute("restitution", .1*i);
   }
 
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandasTable.g"));

@@ -23,7 +23,8 @@ struct ConfigurationViewer : GLDrawer {
   bool playVideo(uint T, uint nFrames, bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
   bool playVideo(bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
-  byteA getScreenshot();
+  byteA getRgb();
+  floatA getDepth();
   void savePng(const char* saveVideoPath="z.vid/");
   void recopyMeshes(const Configuration& _C);
 

@@ -258,9 +258,14 @@ rai::Camera& rai::ConfigurationViewer::displayCamera() {
   return gl->camera;
 }
 
-byteA rai::ConfigurationViewer::getScreenshot() {
+byteA rai::ConfigurationViewer::getRgb() {
   ensure_gl();
   return gl->captureImage;
+}
+
+floatA rai::ConfigurationViewer::getDepth() {
+  ensure_gl();
+  return gl->captureDepth;
 }
 
 void rai::ConfigurationViewer::recopyMeshes(const rai::Configuration& _C) {

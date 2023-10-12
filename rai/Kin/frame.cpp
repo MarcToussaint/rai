@@ -564,13 +564,13 @@ rai::Frame& rai::Frame::setMass(double mass) {
   return *this;
 }
 
-rai::Frame& rai::Frame::addAttribute(const char* key, double value) {
+rai::Frame& rai::Frame::setAttribute(const char* key, double value) {
   if(!ats) ats = make_shared<Graph>();
-//  if(ats->find<double>(key)){
-//    ats->get<double>(key) = value;
-//  }else{
+  if(ats->find<double>(key)){
+    ats->get<double>(key) = value;
+  }else{
     ats->add<double>(key, value);
-//  }
+  }
   return *this;
 }
 
@@ -1638,14 +1638,15 @@ void rai::Shape::glDraw(OpenGL& gl) {
 
     if(_type==rai::ST_marker) {
       if(!gl.drawOptions.drawVisualsOnly) {
-#if 1
-        rai::Vector p=0;
-        if(frame.parent) p=frame.parent->ensure_X().pos;
-        p = p / frame.ensure_X();
-        glBegin(GL_LINES);
-        glVertex3f(0, 0, 0);
-        glVertex3f(p.x, p.y, p.z);
-        glEnd();
+#if 0
+        if(frame.parent){ //little line to parent
+          rai::Vector p=frame.parent->ensure_X().pos;
+          p = p / frame.ensure_X();
+          glBegin(GL_LINES);
+          glVertex3f(0, 0, 0);
+          glVertex3f(p.x, p.y, p.z);
+          glEnd();
+        }
 #endif
         double s=1.;
         if(size.N) s = size.last();

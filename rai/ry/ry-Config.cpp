@@ -22,11 +22,22 @@
 #include "../Kin/simulation.h"
 #include "../Gui/viewer.h"
 #include "../LGP/LGP_tree.h"
+#include "../Geo/depth2PointCloud.h"
 
 //void checkView(shared_ptr<rai::Configuration>& self){ if(self->hasView()) self->view(); }
 void null_deleter(rai::Frame*){}
 
 void init_Config(pybind11::module& m) {
+
+  m.def("depthImage2PointCloud", [](const pybind11::array_t<float>& depth, const arr& fxycxy){
+    arr pts;
+    depthData2pointCloud(pts, numpy2arr<float>(depth), fxycxy);
+    return pts;
+  }, "return the point cloud from the depth image",
+  pybind11::arg("depth"),
+  pybind11::arg("fxycxy")
+  );
+
   pybind11::class_<rai::Configuration, shared_ptr<rai::Configuration>>(m, "Config", "Core data structure to represent a kinematic configuration.")
 
   .def(pybind11::init<>(), "initializes to an empty configuration, with no frames")
@@ -295,13 +306,42 @@ To get really precise distances and penetrations use the FS.distance feature wit
   pybind11::arg("saveVideoPath")=nullptr
   )
 
-  .def("view_getScreenshot", [](shared_ptr<rai::Configuration>& self) {
-    byteA rgb = self->viewer()->getScreenshot();
-   return Array2numpy<byte>(rgb);
+  .def("view_getRgb", [](std::shared_ptr<rai::Configuration>& self) {
+    return Array2numpy<byte>(self->viewer()->getRgb());
   })
+
+  .def("view_getDepth", [](std::shared_ptr<rai::Configuration>& self) {
+    return Array2numpy<float>(self->viewer()->getDepth());
+  })
+
+  .def("view_savePng", [](std::shared_ptr<rai::Configuration>& self, const char* pathPrefix) {
+    self->viewer()->savePng(pathPrefix);
+  }, "saves a png image of the current view, numbered with a global counter, with the intention to make a video",
+  pybind11::arg("pathPrefix") = "z.vid/"
+  )
 
   .def("view_close", &rai::Configuration::view_close,
   "close the view")
+
+  .def("view_pose", [](shared_ptr<rai::Configuration>& self){
+    rai::Camera& cam = self->viewer()->displayCamera();
+    return cam.X.getArr7d();
+  }, "return the 7D pose of the view camera")
+
+  .def("view_focalLength", [](shared_ptr<rai::Configuration>& self){
+    rai::Camera& cam = self->viewer()->displayCamera();
+    return cam.focalLength;
+  }, "return the focal length of the view camera (only intrinsic parameter)")
+
+  .def("view_fxycxy", [](shared_ptr<rai::Configuration>& self){
+    OpenGL& gl = self->viewer()->ensure_gl();
+    rai::Camera& cam = self->viewer()->displayCamera();
+    return cam.getFxypxy(gl.width, gl.height);
+  }, "return (fx, fy, cx, cy): the focal length and image center in PIXEL UNITS")
+
+  .def("view_setCamera", [](shared_ptr<rai::Configuration>& self, rai::Frame* frame){
+    self->viewer()->setCamera(frame);
+  }, "set the camera pose to a frame, and check frame attributes for intrinsic parameters (focalLength, width height)")
 
   .def("watchFile", &rai::Configuration::watchFile,
   "launch a viewer that listents (inode) to changes of a file (made by you in an editor), and \

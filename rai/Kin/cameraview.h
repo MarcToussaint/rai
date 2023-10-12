@@ -24,7 +24,7 @@ struct CameraView : GLDrawer {
     int frame=-1;
     Sensor() {}
     rai::Transformation& pose() { return cam.X; }
-    arr getFxypxy(){ return arr{cam.focalLength*height, cam.focalLength*height, .5*double(width), .5*double(height)}; }
+    arr getFxypxy(){ return cam.getFxypxy(width, height); }
   };
 
   //-- description of world configuration

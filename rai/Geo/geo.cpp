@@ -2086,16 +2086,18 @@ void Camera::unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) con
 #endif
 }
 
-arr Camera::getIntrinsicMatrix(double W, double H) const {
+arr Camera::getFxypxy(double width, double height){ return arr{focalLength*height, focalLength*height, .5*width, .5*height}; }
+
+arr Camera::getIntrinsicMatrix(double width, double height) const {
   if(focalLength>0.) { //normal perspective mode
     CHECK(!heightAbs, "");
     arr K(3, 3);
     K.setZero();
-    K(0, 0) = focalLength*H;
-    K(1, 1) = focalLength*H;
+    K(0, 0) = focalLength*height;
+    K(1, 1) = focalLength*height;
     K(2, 2) = 1.; //depth is flipped to become positive for 'in front of camera'
-    K(0, 2) = -0.5*W;
-    K(1, 2) = -0.5*H;
+    K(0, 2) = -0.5*width;
+    K(1, 2) = -0.5*height;
     return K;
   }
   NIY;
