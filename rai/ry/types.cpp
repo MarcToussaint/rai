@@ -32,6 +32,8 @@ pybind11::dict graph2dict(const rai::Graph& G) {
       dict[key.p] = n->as<bool>();
     } else if(n->is<rai::String>()) {
       dict[key.p] = n->as<rai::String>().p;
+    } else if(n->is<rai::FileToken>()) {
+      dict[key.p] = n->as<rai::FileToken>().autoPath().p;
     } else if(n->is<arr>()) {
       dict[key.p] = n->as<arr>().vec();
     } else if(n->is<arrA>()) {
@@ -44,6 +46,8 @@ pybind11::dict graph2dict(const rai::Graph& G) {
       dict[key.p] = Array2vec(n->as<boolA>());
     } else if(n->is<rai::Enum<rai::ShapeType>>()) {
       dict[key.p] = n->as<rai::Enum<rai::ShapeType>>().name();
+    } else if(n->is<rai::Enum<rai::JointType>>()) {
+      dict[key.p] = n->as<rai::Enum<rai::JointType>>().name();
     } else {
       LOG(-1) <<"can't convert node of type " <<n->type.name() <<" to dictionary";
     }

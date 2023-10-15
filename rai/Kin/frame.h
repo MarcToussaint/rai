@@ -174,7 +174,7 @@ struct Frame : NonCopyable {
   arr getQuaternion() { return ensure_X().rot.getArr4d(); }
   arr getRotationMatrix() { return ensure_X().rot.getArr(); }
   arr getRelativePosition() const { return get_Q().pos.getArr(); }
-  arr getRelativeQuaternion() const { return get_Q().rot.getArr(); }
+  arr getRelativeQuaternion() const { return get_Q().rot.getArr4d(); }
   arr getSize() const ;
   arr getMeshPoints() const ;
   uintA getMeshTriangles() const ;
