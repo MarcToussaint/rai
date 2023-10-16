@@ -62,7 +62,7 @@ int rai::ConfigurationViewer::update(bool watch) {
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
     gl->text = drawText;
-    if(watch) gl->text <<"\n[ENTER]";
+    if(watch) gl->text <<"\n[press key]";
   }
 
   int ret=0;
@@ -87,10 +87,13 @@ int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, con
   if(_C.frames.N!=C.frames.N) copyMeshes = true;
   else{
     for(uint i=0;i<C.frames.N;i++){
-      if((!_C.frames.elem(i)->shape) != (!C.frames.elem(i)->shape)){
-        copyMeshes=true;
-        break;
-      }
+      rai::Shape *s = _C.frames.elem(i)->shape;
+      rai::Shape *r = C.frames.elem(i)->shape;
+      if((!s) != (!r)){ copyMeshes=true; break; }
+      if(!s) continue;
+      if(s->_type != r->_type){ copyMeshes=true; break; }
+      if(s->size != r->size){ copyMeshes=true; break; }
+      if(s->_mesh && r->_mesh && (s->_mesh.get() != r->_mesh.get())){ copyMeshes=true; break; }
     }
   }
   if(copyMeshes) recopyMeshes(_C);
@@ -250,7 +253,7 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
 }
 
 void rai::ConfigurationViewer::savePng(const char* saveVideoPath) {
-  write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"));
+  write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"), true);
 }
 
 rai::Camera& rai::ConfigurationViewer::displayCamera() {
@@ -260,12 +263,20 @@ rai::Camera& rai::ConfigurationViewer::displayCamera() {
 
 byteA rai::ConfigurationViewer::getRgb() {
   ensure_gl();
-  return gl->captureImage;
+  byteA image = gl->captureImage;
+  flip_image(image);
+  return image;
 }
 
 floatA rai::ConfigurationViewer::getDepth() {
   ensure_gl();
-  return gl->captureDepth;
+  floatA depth = gl->captureDepth;
+  flip_image(depth);
+  for(float& d:depth) {
+    if(d==1.f || d==0.f) d=-1.f;
+    else d = gl->camera.glConvertToTrueDepth(d);
+  }
+  return depth;
 }
 
 void rai::ConfigurationViewer::recopyMeshes(const rai::Configuration& _C) {

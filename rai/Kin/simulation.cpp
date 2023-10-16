@@ -641,12 +641,25 @@ void Simulation_self::updateDisplayData(double _time, const rai::Configuration& 
   CHECK(display, "");
   display->mux.lock(RAI_HERE);
   display->time = _time;
-  if(_C.frames.N!=display->Ccopy.frames.N) {
+
+  bool copyMeshes = false;
+  if(_C.frames.N!=display->Ccopy.frames.N) copyMeshes = true;
+  else{
+    for(uint i=0;i<_C.frames.N;i++){
+      rai::Shape *s = _C.frames.elem(i)->shape;
+      rai::Shape *r = display->Ccopy.frames.elem(i)->shape;
+      if((!s) != (!r)){ copyMeshes=true; break; }
+      if(!s) continue;
+      if(s->_type != r->_type){ copyMeshes=true; break; }
+      if(s->size != r->size){ copyMeshes=true; break; }
+      if(s->_mesh && r->_mesh && (s->_mesh->V.N != r->_mesh->V.N)){ copyMeshes=true; break; }
+    }
+  }
+  if(copyMeshes){
     display->Ccopy.copy(_C, false);
     //deep copy meshes!
     for(rai::Frame* f:display->Ccopy.frames) if(f->shape) {
-      shared_ptr<Mesh> org = f->shape->_mesh;
-      f->shape->_mesh = make_shared<Mesh> (*org.get());
+      f->shape->_mesh = make_shared<Mesh> (*f->shape->_mesh.get());
     }
     LOG(0) <<"simulation frames changed: #frames: " <<display->Ccopy.frames.N <<" last: " <<display->Ccopy.frames(-1)->name;
   }

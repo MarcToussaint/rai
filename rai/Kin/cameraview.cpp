@@ -70,7 +70,7 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName) {
   Sensor* sen=0;
   for(Sensor& s:sensors) if(s.name==sensorName) { sen=&s; break; }
   if(!sen){
-    LOG(-1) <<"can't find that sensor: " <<sensorName <<" -- trying to add it";
+    LOG(0) <<"can't find that sensor: " <<sensorName <<" -- trying to add it";
     return addSensor(sensorName);
   }
 

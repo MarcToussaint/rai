@@ -262,8 +262,7 @@ void testPcl(){
 
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
   rai::Frame *pcl = C.addFrame("pcl", "cameraWrist");
-  pcl->setPointCloud({}, {});
-  pcl->setColor({1.,0.,0.,.5});
+  C.view();
 
   rai::Simulation S(C, S._physx, 1);
 
@@ -284,6 +283,7 @@ void testPcl(){
     }
 
     S.step({}, tau, S._none);
+    C.view();
     rai::wait(tau);
   }
 

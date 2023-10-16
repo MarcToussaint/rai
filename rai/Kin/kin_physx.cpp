@@ -628,7 +628,7 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
     f->transformToDiagInertia();
   }
   if(f->inertia && !f->inertia->matrix.isDiagonal()){
-    LOG(-2) <<"DON'T DO THAT! PhysX can only properly handle (compound) inertias if transformed to diagonal tensor\n frame:" <<*f;
+    LOG(-1) <<"DON'T DO THAT! PhysX can only properly handle (compound) inertias if transformed to diagonal tensor\n frame:" <<*f;
   }
 
   //-- decide on the type
