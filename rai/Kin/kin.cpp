@@ -3509,6 +3509,7 @@ void Configuration::watchFile(const char* filename) {
     //-- LOADING
     LOG(0) <<"reloading `" <<filename <<"' ... ";
     {
+      bool succ=true;
       FileToken file(filename, true);
       Graph G;
       try {
@@ -3516,21 +3517,27 @@ void Configuration::watchFile(const char* filename) {
         G.read(file);
         G.checkConsistency();
       } catch(std::runtime_error& err) {
-        LOG(0) <<"g-File Synax Error line " <<lineCount <<": " <<err.what() <<" -- please check the file and re-save";
+        LOG(0) <<"g-File Synax Error line " <<lineCount <<": " <<err.what();
+        succ=false;
       }
 
-      Configuration C_tmp;
-      try {
-        C_tmp.readFromGraph(G);
-        {
-          gl().dataLock(RAI_HERE);
-          copy(C_tmp, false);
+      if(succ){
+        try {
+          Configuration C_tmp;
+          C_tmp.readFromGraph(G);
+          {
+            gl().dataLock(RAI_HERE);
+            copy(C_tmp, false);
+          }
+          report();
+        } catch(std::runtime_error& err) {
+          LOG(0) <<"Configuration initialization failed: " <<err.what();
+          succ=false;
         }
-        report();
-      } catch(std::runtime_error& err) {
-        LOG(0) <<"Configuration initialization failed: " <<err.what() <<" -- please check the file and re-save";
       }
       file.cd_start(); //important: also on crash - cd back to original
+
+      if(!succ) LOG(0) <<"file loading failed -- please check the file and re-save";
     }
 
     //-- WATCHING

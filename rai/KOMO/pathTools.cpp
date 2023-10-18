@@ -324,7 +324,7 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
         boundClip(q, B[0], B[1]);
         C.setJointState(q);
       }else{
-        LOG(-2) <<"BOUNDS FAILED";
+        THROW("BOUNDS FAILED")
         return false;
       }
     }
@@ -368,7 +368,7 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
           C.setJointState(komo.x);
         }
       }else{
-        LOG(-2) <<"COLLIDES!";
+        THROW("COLLIDES!")
         return false;
       }
     }
@@ -390,7 +390,7 @@ bool PoseTool::checkLimits(const arr& limits, bool solve, bool assert){
 
   //without solve
   if(!solve){
-    if(verbose) LOG(-2) <<"BOUNDS FAILED";
+    if(verbose) THROW("BOUNDS FAILED")
     if(assert) HALT("limit check failed");
     return false;
   }

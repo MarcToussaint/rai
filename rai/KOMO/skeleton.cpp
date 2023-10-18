@@ -442,7 +442,7 @@ void Skeleton::addObjectives(KOMO& komo) const {
        && S(k).phase0>=S(k).phase1
        && !(S(k).phase0==0. && S(k).phase1==0.)){ //this case happens in final slice skeletons, where several switches happen at step=0 to create effective dofs
       cout <<*this <<endl;
-      LOG(-2) <<"are you sure this is only a single timeslice mode??:" <<S(k);
+      THROW("are you sure this is only a single timeslice mode??:" <<S(k))
     }
   }
   //-- add objectives for rest

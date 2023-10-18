@@ -1160,9 +1160,9 @@ void KOMO::run(OptOptions options) {
   if(opt.verbose>1) cout <<getReport(opt.verbose>2) <<endl;
 }
 
-Graph KOMO::report(bool plotOverTime){
+Graph KOMO::report(bool specs, bool plotOverTime){
   Graph G;
-  {
+  if(specs){
     Graph& g = G.addSubgraph("KOMO_specs");
     g.add("x_dim", x.N);
     g.add("dual_dim", dual.N);
@@ -1182,10 +1182,11 @@ Graph KOMO::report(bool plotOverTime){
   arr totals = zeros(OT_ineqP+1);
 
   {
-    Graph& g_ob = G.addSubgraph("objectives");
+    Graph* g_ob = &G;
+    if(specs) g_ob = &G.addSubgraph("objectives");
     uint M=0;
     for(shared_ptr<Objective>& c:objectives){
-      Graph& g = g_ob.addSubgraph(c->name);
+      Graph& g = g_ob->addSubgraph(c->name);
       g.add<double>("order", c->feat->order);
       g.add<String>("type", Enum<ObjectiveType>(c->type).name());
       if(c->feat->scale.N) g.add<arr>("scale", c->feat->scale);

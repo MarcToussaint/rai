@@ -323,7 +323,7 @@ void _getSimplex(arr& S, ccd_vec3_t* simplex, const arr& mean) {
   if(S.d0>3){
     cout <<"select: " <<select[0] <<' ' <<select[1] <<' ' <<select[2] <<' ' <<select[3] <<endl;
     for(uint i=0;i<n;i++) cout <<simplex[i].v[0] <<' ' <<simplex[i].v[1] <<' ' <<simplex[i].v[2] <<endl;
-    LOG(-2) <<"4-simplex does not work!:\n" <<S;
+    THROW("4-simplex does not work!:\n" <<S)
   }
 
   for(uint i=0;i<n;i++) for(uint j=i+1;j<n;j++){

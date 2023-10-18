@@ -1980,7 +1980,7 @@ double GJK_sqrDistance(const Mesh& mesh1, const Mesh& mesh2,
       }
 
     } else {
-      if(d2>EPSILON) LOG(-2) <<"GJK converges to simplex!";
+      if(d2>EPSILON) THROW("GJK converges to simplex!")
     }
 
 //    cout <<"point types= " <<pt1 <<' ' <<pt2 <<endl;

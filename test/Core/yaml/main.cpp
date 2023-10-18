@@ -40,7 +40,7 @@ void graph2yamlNode(Node* n, YAML::Node& root){
   } else if(n->is<float>()) { y = n->as<float>();
   } else if(n->is<double>()) { y = n->as<double>();
   } else{
-    LOG(-2) <<"type conversion not implemented: " <<rai::niceTypeidName(n->type);
+    THROW("type conversion not implemented: " <<rai::niceTypeidName(n->type))
     NIY;
   }
 }

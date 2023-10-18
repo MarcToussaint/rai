@@ -25,7 +25,7 @@ const char* atomicTypeidName(const std::type_info& type){
   if(type==typeid(uint16_t)) return "uint16";
   if(type==typeid(float)) return "float32";
   if(type==typeid(double)) return "float64";
-  LOG(-2) <<"not yet defined string for type" <<type.name();
+  THROW("not yet defined string for type" <<type.name())
   return 0;
 }
 

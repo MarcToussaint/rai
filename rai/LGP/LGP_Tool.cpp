@@ -287,7 +287,7 @@ void LGP_Tool::walkToNode(const String& seq) {
   for(Node* actionLiteral:tmp) {
     expand(node);
     FOL_World_State* next = node->getChildByAction(actionLiteral);
-    if(!next) LOG(-2) <<"action '" <<*actionLiteral <<"' is not a child of '" <<*node <<"'";
+    if(!next) THROW("action '" <<*actionLiteral <<"' is not a child of '" <<*node <<"'")
     node = next;
   }
 

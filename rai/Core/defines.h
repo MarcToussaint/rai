@@ -141,7 +141,7 @@ std::istream& operator>>(std::istream& is, const PARSE&);
 
 #ifndef HALT
 #  define RAI_MSG(msg){ LOG(-1) <<msg; }
-#  define THROW(msg){ LOG(-1) <<msg; throw std::runtime_error(rai::errString()); }
+#  define THROW(msg){ LOG(-2) <<msg; throw std::runtime_error(rai::errString()); }
 #  define HALT(msg){ LOG(-2) <<msg; throw std::runtime_error(rai::errString()); }
 #  define NIY  { LOG(-2) <<"not implemented yet - HARD EXIT(2)"; exit(2); }
 #  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; throw std::runtime_error(rai::errString()); }

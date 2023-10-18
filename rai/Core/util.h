@@ -257,7 +257,7 @@ struct Enum {
     bool good=false;
     for(int i=0; names[i]; i++) {
       const char* n = names[i];
-      if(!n) LOG(-2) <<"enum_T " <<typeid(enum_T).name() <<' ' <<str <<" out of range";
+      if(!n) THROW("enum_T " <<typeid(enum_T).name() <<' ' <<str <<" out of range")
       if(str==n) { x=(enum_T)(i); good=true; break; }
     }
     if(!good) {

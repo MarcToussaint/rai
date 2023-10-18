@@ -148,6 +148,11 @@ const rai::Transformation& rai::Frame::get_X() const {
   return X;
 }
 
+rai::Transformation_Qtoken rai::Frame::set_Q() {
+  CHECK(parent, "setQ is only allowed for child frames (at frame '" <<name <<"'");
+  return Transformation_Qtoken(*this);
+}
+
 void rai::Frame::_state_updateAfterTouchingX() {
   _state_setXBadinBranch();
   _state_X_isGood = true;
@@ -159,7 +164,7 @@ void rai::Frame::_state_updateAfterTouchingX() {
 
 void rai::Frame::_state_updateAfterTouchingQ() {
 //  CHECK(parent, "can't set Q for a root frame '" <<name <<"'");
-  if(!parent) LOG(-1) <<"can't set Q for a root frame '" <<name <<"'";
+  if(!parent) THROW("can't set Q for a root frame '" <<name <<"'")
   _state_setXBadinBranch();
   if(joint && joint->dim) C._state_q_isGood = false;
 }
@@ -705,6 +710,7 @@ void rai::Dof::setRandom(uint timeSlices_d1, int verbose){
     }
     arr q = calcDofsFromConfig();
 
+    CHECK(limits.N>=2*dim, "uniform sampling (for '" <<frame->name <<"') requires limits!")
     for(uint k=0; k<dim; k++){
       double lo = limits.elem(2*k+0); //lo
       double up = limits.elem(2*k+1); //up
@@ -812,7 +818,7 @@ rai::Joint::~Joint() {
   frame->C.reset_q();
   frame->joint = nullptr;
   for(Joint *j:mimicers) j->mimic=0;
-  if(mimic) mimic->mimicers.removeValue(this);
+  if(mimic &&  mimic!=(Joint*)1) mimic->mimicers.removeValue(this);
 }
 
 const rai::Transformation& rai::Joint::X() const {

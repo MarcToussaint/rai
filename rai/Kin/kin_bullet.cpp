@@ -596,7 +596,7 @@ btCollisionShape* BulletInterface_self::createLinkShape(ShapeL& shapes, rai::Bod
 #endif
   }
   if(f->inertia && !f->inertia->com.isZero){
-    LOG(-2) <<"DON'T DO THAT! Bullet can only properly handle (compound) inertias if transformed to zero com and diagonal tensor";
+    THROW("DON'T DO THAT! Bullet can only properly handle (compound) inertias if transformed to zero com and diagonal tensor")
   }
 
   //-- decide on the type

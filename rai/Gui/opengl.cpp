@@ -2808,7 +2808,7 @@ void read_png(byteA& img, const char* file_name, bool swap_rows) {
 
   fclose(fp);
 #else
-  LOG(-2) <<"libpng not linked";
+  THROW("libpng not linked")
 #endif
 }
 
@@ -2858,7 +2858,7 @@ void write_png(const byteA& img, const char* file_name, bool swap_rows) {
 
   png_destroy_write_struct(&png, &info);
 #else
-  LOG(-2) <<"libpng not linked";
+  THROW("libpng not linked")
 #endif
 
 }
