@@ -19,7 +19,7 @@
 void init_KOMO(pybind11::module& m) {
   pybind11::class_<KOMO, std::shared_ptr<KOMO>>(m, "KOMO", "Constrained solver to optimize configurations or paths. (KOMO = k-order Markov Optimization)")
 
-    .def(pybind11::init<>())
+    .def(pybind11::init<>(), "[deprecated] please use the other constructor")
     .def(pybind11::init<const rai::Configuration&, double, uint, uint, bool>(), "",
          pybind11::arg("config"),
          pybind11::arg("phases"),
@@ -28,12 +28,12 @@ void init_KOMO(pybind11::module& m) {
          pybind11::arg("enableCollisions")
          )
 
-    .def("setConfig", &KOMO::setConfig, "",
+    .def("setConfig", &KOMO::setConfig, "[deprecated] please set directly in constructor",
          pybind11::arg("config"),
          pybind11::arg("enableCollisions")
          )
 
-    .def("setTiming", &KOMO::setTiming, "",
+    .def("setTiming", &KOMO::setTiming, "[deprecated] please set directly in constructor",
          pybind11::arg("phases"),
          pybind11::arg("slicesPerPhase"),
          pybind11::arg("durationPerPhase"),

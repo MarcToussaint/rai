@@ -402,73 +402,31 @@ reloads, displays and animates the configuration whenever the file is changed"
 
 //===========================================================================
 
-  pybind11::class_<ry::RyCameraView>(m, "CameraView")
-  .def("updateConfig", [](ry::RyCameraView& self, shared_ptr<rai::Configuration>& config) {
-    if(config->frames.N!= self.cam->C.frames.N) {
-      self.cam->C.copy(*config);
-    } else {
-      self.cam->C.setFrameState(config->getFrameState());
-    }
-  })
+  pybind11::class_<rai::CameraView, shared_ptr<rai::CameraView>>(m, "CameraView", "Offscreen rendering")
 
-  .def("addSensor", [](ry::RyCameraView& self, const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const std::vector<double>& zRange, const std::string& backgroundImageFile) {
-    self.cam->addSensor(name, frameAttached, width, height, focalLength, orthoAbsHeight, arr(zRange, true), backgroundImageFile.c_str());
-  }, "",
-  pybind11::arg("name"),
-  pybind11::arg("frameAttached"),
-  pybind11::arg("width"),
-  pybind11::arg("height"),
-  pybind11::arg("focalLength") = -1.,
-  pybind11::arg("orthoAbsHeight") = -1.,
-  pybind11::arg("zRange") = std::vector<double>(),
-  pybind11::arg("backgroundImageFile") = std::string())
+   .def(pybind11::init<const rai::Configuration&, bool>(), "constructor",
+        pybind11::arg("config"),
+        pybind11::arg("offscreen") = true)
 
-  .def("selectSensor", [](ry::RyCameraView& self, const char* sensorName) {
-    self.cam->selectSensor(sensorName);
-  }, "",
-  pybind11::arg("name"))
+  .def("setCamera", &rai::CameraView::selectSensor, "select a camera, typically a frame that has camera info attributes",
+    pybind11::arg("cameraFrameName"))
 
-  .def("computeImageAndDepth", [](ry::RyCameraView& self, bool visualsOnly) {
-    auto imageSet = self.image.set();
-    auto depthSet = self.depth.set();
-    if(visualsOnly) self.cam->renderMode = rai::CameraView::visuals;
-    else self.cam->renderMode = rai::CameraView::all;
-    self.cam->computeImageAndDepth(imageSet, depthSet);
-    pybind11::tuple ret(2);
-    ret[0] = Array2numpy<byte>(imageSet);
-    ret[1] = Array2numpy<float>(depthSet);
-    return ret;
-  },
-  pybind11::arg("visualsOnly")=true
-      )
+  .def("computeImageAndDepth", [](rai::CameraView& self, const rai::Configuration& C,bool visualsOnly) {
+        byteA img;
+        floatA depth;
+        self.updateConfiguration(C);
+        if(visualsOnly) self.renderMode = rai::CameraView::visuals;
+        else self.renderMode = rai::CameraView::all;
+        self.computeImageAndDepth(img, depth);
+        return pybind11::make_tuple(Array2numpy<byte>(img),
+                                    Array2numpy<float>(depth)); },
+      "returns image and depth from a camera sensor; the 'config' argument needs to be the same configuration as in the constructor, but in new state",
+      pybind11::arg("config"),
+      pybind11::arg("visualsOnly") = true )
 
-  .def("computePointCloud", [](ry::RyCameraView& self, const pybind11::array& depth, bool globalCoordinates) {
-    arr _depth = numpy2arr<double>(depth);
-    floatA __depth; copy(__depth, _depth);
-    auto ptsSet = self.pts.set();
-    self.cam->computePointCloud(ptsSet, __depth, globalCoordinates);
-    return arr2numpy(ptsSet);
-  }, "",
-  pybind11::arg("depth"),
-  pybind11::arg("globalCoordinates") = true)
-
-  .def("computeSegmentation", [](ry::RyCameraView& self) {
-    auto segSet = self.segmentation.set();
-    self.cam->computeSegmentation(segSet);
-    return Array2numpy<byte>(segSet());
-  })
-
-  .def("pointCloudViewer", [](ry::RyCameraView& self) {
-    return make_shared<PointCloudViewerCallback>(self.pts, self.image);
-  })
-
-  .def("imageViewer", [](ry::RyCameraView& self) {
-    return make_shared<ImageViewerCallback>(self.image);
-  })
-
-  .def("segmentationViewer", [](ry::RyCameraView& self) {
-    return make_shared<ImageViewerCallback>(self.segmentation);
-  })
+  .def("getFxyCxy", &rai::CameraView::getFxyCxy, "return the camera intrinsics f_x, f_y, c_x, c_y")
+  .def("computeSegmentationImage", &rai::CameraView::computeSegmentationImage, "return an rgb image encoding the object ID segmentation")
+  .def("computeSegmentationID", &rai::CameraView::computeSegmentationImage, "return a uint16 array with object ID segmentation")
   ;
 }
 

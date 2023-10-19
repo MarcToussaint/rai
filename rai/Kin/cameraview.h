@@ -36,12 +36,11 @@ struct CameraView : GLDrawer {
 
   //-- run parameter
   Sensor* currentSensor=0;
-  int watchComputations=0;
   RenderMode renderMode=all;
   byteA frameIDmap;
 
   //-- evaluation outputs
-  CameraView(const rai::Configuration& _C, bool _offscreen=true, int _watchComputations=0);
+  CameraView(const rai::Configuration& _C, bool _offscreen=true);
   ~CameraView() {}
 
   //-- loading the configuration: the meshes, the robot model, the tote, the sensors; all ends up in K
@@ -52,25 +51,16 @@ struct CameraView : GLDrawer {
 
   void updateConfiguration(const Configuration& newC);
 
-  //-- compute/analyze a camera perspective (stored in classes' output fields)
   void computeImageAndDepth(byteA& image, floatA& depth);
-  void computeKinectDepth(uint16A& kinect_depth, const arr& depth);
-  void computePointCloud(arr& pts, const floatA& depth, bool globalCoordinates=true); // point cloud (rgb of every point is given in image)
-  void computeSegmentation(byteA& segmentation);     // -> segmentation
-  void computeSegmentation(uintA& segmentation);     // -> segmentation
+  byteA computeSegmentationImage();
+  uintA computeSegmentationID();
 
-  //-- helpers
-  arr pixel2world(const arr& pixelCoordinates);
-  arr world2pixel(const arr& worldCoordinates);
-
-  //-- displays
-  void watch_PCL(const arr& pts, const byteA& rgb);
+  arr getFxyCxy(){ CHECK(currentSensor, "no sensor selected yet"); return currentSensor->getFxypxy(); }
 
   void glDraw(OpenGL& gl);
 
  private:
   void updateCamera();
-  void done(const char* _code_);
 };
 
 //===========================================================================

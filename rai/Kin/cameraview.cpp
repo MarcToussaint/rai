@@ -12,8 +12,8 @@
 
 //===========================================================================
 
-rai::CameraView::CameraView(const rai::Configuration& _C, bool _offscreen, int _watchComputations)
-  : gl("CameraView", 640, 480, _offscreen), watchComputations(_watchComputations) {
+rai::CameraView::CameraView(const rai::Configuration& _C, bool _offscreen)
+  : gl("CameraView", 640, 480, _offscreen) {
 
   updateConfiguration(_C);
 
@@ -41,7 +41,6 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
   gl.resize(sen.width, sen.height);
   currentSensor=&sen;
 
-  done(__func__);
   return sen;
 }
 
@@ -70,13 +69,12 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName) {
   Sensor* sen=0;
   for(Sensor& s:sensors) if(s.name==sensorName) { sen=&s; break; }
   if(!sen){
-    LOG(0) <<"can't find that sensor: " <<sensorName <<" -- trying to add it";
+//    LOG(0) <<"can't find that sensor: " <<sensorName <<" -- trying to add it";
     return addSensor(sensorName);
   }
 
   gl.resize(sen->width, sen->height);
   currentSensor=sen;
-  done(__func__);
   return *sen;
 }
 
@@ -130,88 +128,24 @@ void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
       else d = gl.camera.glConvertToTrueDepth(d);
     }
   }
-  done(__func__);
 }
 
-void rai::CameraView::computeSegmentation(byteA& segmentation) {
+byteA rai::CameraView::computeSegmentationImage() {
   updateCamera();
   renderMode=seg;
   gl.renderInBack();
-//  gl.update(nullptr, true);
-  segmentation = gl.captureImage;
-  flip_image(segmentation);
-  done(__func__);
+  byteA seg = gl.captureImage;
+  flip_image(seg);
+  return seg;
 }
 
-void rai::CameraView::computeSegmentation(uintA& segmentation) {
-  byteA seg;
-  computeSegmentation(seg);
-  segmentation.resize(seg.d0, seg.d1);
+uintA rai::CameraView::computeSegmentationID() {
+  byteA seg = computeSegmentationImage();
+  uintA segmentation(seg.d0, seg.d1);
   for(uint i=0; i<segmentation.N; i++) {
     segmentation.elem(i) = color2id(seg.p+3*i);
   }
-}
-
-void rai::CameraView::computeKinectDepth(uint16A& kinect_depth, const arr& depth) {
-  kinect_depth.resize(depth.d0, depth.d1);
-  for(uint i=0; i<depth.N; i++) kinect_depth.elem(i) = (uint16_t)(depth.elem(i) * 1000.);
-}
-
-void rai::CameraView::computePointCloud(arr& pts, const floatA& depth, bool globalCoordinates) {
-  uint H=depth.d0, W=depth.d1;
-
-  pts.resize(H*W, 3);
-
-  if(currentSensor) gl.camera = currentSensor->cam;
-
-  CHECK(gl.camera.focalLength>0, "need a focal length greater zero!(not implemented for ortho yet)");
-  int centerX = (W >> 1);
-  int centerY = (H >> 1);
-  double focal_x = 1./(gl.camera.focalLength*H);
-  double focal_y = 1./(gl.camera.focalLength*H);
-
-  uint i=0;
-  for(int y=-centerY+1; y<=centerY; y++) for(int x=-centerX+1; x<=centerX; x++, i++) {
-      double d = depth.elem(i);
-      if(d>=0) {  //2^11-1
-        pts(i, 0) = d*focal_x*x;
-        pts(i, 1) = -d*focal_y*y;
-        pts(i, 2) = -d;
-      } else {
-        pts(i, 0) = 0.;
-        pts(i, 1) = 0.;
-        pts(i, 2) = 1.;
-      }
-    }
-
-  pts.reshape(H, W, 3);
-
-  if(globalCoordinates) {
-    gl.camera.X.applyOnPointArray(pts);
-  }
-  done(__func__);
-}
-
-arr rai::CameraView::pixel2world(const arr& pixelCoordinates){
-  CHECK(currentSensor, "");
-  CHECK_EQ(pixelCoordinates.N, 3, "");
-  arr fxypxy = currentSensor->getFxypxy();
-  arr x = pixelCoordinates;
-  depthData2point(x.p, fxypxy.p);
-  return x;
-}
-
-arr rai::CameraView::world2pixel(const arr& worldCoordinates){
-  CHECK(currentSensor, "");
-  CHECK_EQ(worldCoordinates.N, 3, "");
-  arr fxypxy = currentSensor->getFxypxy();
-  arr x = worldCoordinates;
-  point2depthData(x.p, fxypxy.p);
-  return x;
-}
-
-void rai::CameraView::watch_PCL(const arr& pts, const byteA& rgb) {
-  NIY;
+  return segmentation;
 }
 
 void rai::CameraView::updateCamera() {
@@ -257,14 +191,6 @@ void rai::CameraView::glDraw(OpenGL& gl) {
     C.glDraw(gl);
     gl.drawOptions.drawMode_idColor = false;
     gl.drawOptions.drawColors=true;
-  }
-}
-
-void rai::CameraView::done(const char* _func_) {
-  if(watchComputations) {
-    gl.text = _func_;
-    if(watchComputations==1) gl.update();
-    else gl.watch();
   }
 }
 
