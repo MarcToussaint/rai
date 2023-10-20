@@ -38,7 +38,7 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("fxycxy")
   );
 
-  pybind11::class_<rai::Configuration, shared_ptr<rai::Configuration>>(m, "Config", "Core data structure to represent a kinematic configuration.")
+  pybind11::class_<rai::Configuration, shared_ptr<rai::Configuration>>(m, "Config", "Core data structure to represent a kinematic configuration (essentially a tree of frames). See https://marctoussaint.github.io/robotics-course/tutorials/1a-configurations.html")
 
   .def(pybind11::init<>(), "initializes to an empty configuration, with no frames")
 
@@ -228,8 +228,8 @@ many mapping refer to one or several frames, which need to be specified using fr
   .def("eval", [](shared_ptr<rai::Configuration>& self, FeatureSymbol fs, const StringA& frames, const arr& scale, const arr& target, int order) {
     arr y = self->eval(fs, frames, scale, target, order);
     return pybind11::make_tuple(arr2numpy(y), arr2numpy(y.J()));
-  }, "evaluate a feature",
-  pybind11::arg("featureSymbol"),
+  }, "evaluate a feature -- see https://marctoussaint.github.io/robotics-course/tutorials/features.html",
+      pybind11::arg("featureSymbol"),
       pybind11::arg("frames")=StringA{},
       pybind11::arg("scale")=NoArr,
       pybind11::arg("target")=NoArr,
@@ -336,7 +336,7 @@ To get really precise distances and penetrations use the FS.distance feature wit
   .def("view_fxycxy", [](shared_ptr<rai::Configuration>& self){
     OpenGL& gl = self->viewer()->ensure_gl();
     rai::Camera& cam = self->viewer()->displayCamera();
-    return cam.getFxypxy(gl.width, gl.height);
+    return cam.getFxycxy(gl.width, gl.height);
   }, "return (fx, fy, cx, cy): the focal length and image center in PIXEL UNITS")
 
   .def("view_setCamera", [](shared_ptr<rai::Configuration>& self, rai::Frame* frame){

@@ -24,7 +24,7 @@ struct CameraView : GLDrawer {
     int frame=-1;
     Sensor() {}
     rai::Transformation& pose() { return cam.X; }
-    arr getFxypxy(){ return cam.getFxypxy(width, height); }
+    arr getFxycxy(){ return cam.getFxycxy(width, height); }
   };
 
   //-- description of world configuration
@@ -55,7 +55,7 @@ struct CameraView : GLDrawer {
   byteA computeSegmentationImage();
   uintA computeSegmentationID();
 
-  arr getFxyCxy(){ CHECK(currentSensor, "no sensor selected yet"); return currentSensor->getFxypxy(); }
+  arr getFxyCxy(){ CHECK(currentSensor, "no sensor selected yet"); return currentSensor->getFxycxy(); }
 
   void glDraw(OpenGL& gl);
 
