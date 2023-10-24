@@ -41,7 +41,7 @@ NLP_Solver& NLP_Solver::setProblem(const shared_ptr<NLP>& _P){
   return *this;
 }
 
-shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
+std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
   ret = make_shared<SolverReturn>();
   double time = -rai::cpuTime();
 

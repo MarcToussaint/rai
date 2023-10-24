@@ -53,7 +53,7 @@ OptGrad::StopCriterion OptGrad::step() {
     fy = f(gy, NoArr, y);  evals++;
     if(o.verbose>2) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<std::flush;
-    bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta, gx));
+    bool wolfe = (o.wolfe<=0. || fy <= fx + o.wolfe*alpha*scalarProduct(Delta, gx));
     if(fy==fy && wolfe) { //fy==fy is for NAN?
       //accept new point
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;

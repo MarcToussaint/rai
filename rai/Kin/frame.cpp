@@ -710,13 +710,20 @@ void rai::Dof::setRandom(uint timeSlices_d1, int verbose){
     }
     arr q = calcDofsFromConfig();
 
-    CHECK(limits.N>=2*dim, "uniform sampling (for '" <<frame->name <<"') requires limits!")
-    for(uint k=0; k<dim; k++){
-      double lo = limits.elem(2*k+0); //lo
-      double up = limits.elem(2*k+1); //up
-      if(up>=lo){
-        q(k) = rnd.uni(lo,up);
-        if(q0.N) q0(k) = q(k); //CRUCIAL to impose a bias to that random initialization
+    if(joint() && joint()->type==rai::JT_quatBall && limits(0)<=-1. && limits(1)>=1.){ //special case handler for quaternions
+      CHECK_EQ(q.N, 4, "");
+      q = randn(4);
+      q /= length(q);
+      if(q0.N) q0=q;
+    }else{
+      CHECK(limits.N>=2*dim, "uniform sampling (for '" <<frame->name <<"') requires limits!")
+          for(uint k=0; k<dim; k++){
+        double lo = limits.elem(2*k+0); //lo
+        double up = limits.elem(2*k+1); //up
+        if(up>=lo){
+          q(k) = rnd.uni(lo,up);
+          if(q0.N) q0(k) = q(k); //CRUCIAL to impose a bias to that random initialization
+        }
       }
     }
     setDofs(q);

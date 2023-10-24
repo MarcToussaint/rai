@@ -14,6 +14,7 @@ void read(const char* filename){
 
   //-- output
   FILE("z.g") <<G;
+  G.writeYaml(FILE("z.yaml"));
   return;
 
   //-- test yaml consistency

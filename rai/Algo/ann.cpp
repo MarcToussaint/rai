@@ -52,10 +52,16 @@ void ANN::setX(const arr& _XX) {
 }
 
 void ANN::append(const arr& x) {
-  double* p=X.p;
-  X.append(x);
-  if(X.N==x.d0) X.reshape(1, x.d0);
-  if(X.p!=p) self->clear(); //when the memory location changed clear the tree! (implies recomputation)
+  if(!X.N){
+    self->clear();
+    X = x;
+    X.reshape(1,x.N);
+  }else{
+    double* p=X.p;
+    X.append(x);
+    if(X.N==x.d0) X.reshape(1, x.d0);
+    if(X.p!=p) self->clear(); //when the memory location changed clear the tree! (implies recomputation)
+  }
 }
 
 void ANN::calculate() {

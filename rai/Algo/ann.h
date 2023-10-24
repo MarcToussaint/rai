@@ -30,8 +30,9 @@ struct ANN {
   void append(const arr& x); //append to X
   void calculate();          //compute a tree for all of X
 
+  void getkNN(arr& sqrDists, uintA& idx, const arr& x, uint k, double eps=.0, bool verbose=false); //core method
+
   uint getNN(const arr& x, double eps=.0, bool verbose=false);
   void getkNN(uintA& idx, const arr& x, uint k, double eps=.0, bool verbose=false);
-  void getkNN(arr& sqrDists, uintA& idx, const arr& x, uint k, double eps=.0, bool verbose=false);
   void getkNN(arr& X, const arr& x, uint k, double eps=.0, bool verbose=false);
 };

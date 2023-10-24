@@ -303,16 +303,17 @@ BSpline& BSpline::set_vel(uint degree, const arr& _points, const arr& velocities
 }
 
 BSpline&BSpline::setUniform(uint _degree, uint steps) {
-  arr x = ::range(0.,1.,steps);
-  set(_degree, x, x);
+  arr t = ::range(0.,1.,steps);
+  arr x = t;
+  set(_degree, x.reshape(-1,1), t);
   return *this;
 }
 
 arr BSpline::getGridBasis(uint T) {
-  arr basis(T, ctrlPoints.d0);
+  arr basis(T+1, ctrlPoints.d0);
   arr db,ddb;
-  for(uint t=0; t<T; t++){
-    getCoeffs2(basis[t].noconst(), db, ddb, double(t)/(T-1), degree, knotTimes.p, ctrlPoints.d0, knotTimes.N, 0);
+  for(uint t=0; t<=T; t++){
+    getCoeffs2(basis[t].noconst(), db, ddb, double(t)/double(T), degree, knotTimes.p, ctrlPoints.d0, knotTimes.N, 0);
   }
   return basis;
 }

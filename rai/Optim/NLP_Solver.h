@@ -45,8 +45,8 @@ struct NLP_Solver : NonCopyable {
   NLP_Solver& setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J){ P->setTracing(trace_x, trace_costs, trace_phi, trace_J); return *this; }
   NLP_Solver& clear(){ P.reset(); optCon.reset(); ret.reset(); x.clear(); dual.clear(); return *this; }
 
-  shared_ptr<SolverReturn> solve(int resampleInitialization=-1); ///< -1: only when not yet set
-  shared_ptr<SolverReturn> solveStepping(int resampleInitialization=-1); ///< -1: only when not yet set
+  std::shared_ptr<SolverReturn> solve(int resampleInitialization=-1); ///< -1: only when not yet set
+  std::shared_ptr<SolverReturn> solveStepping(int resampleInitialization=-1); ///< -1: only when not yet set
   bool step();
 
   arr getTrace_x(){ return P->xTrace; }

@@ -142,6 +142,7 @@ struct Configuration : GLDrawer {
   void setTaus(double tau);
   void setTaus(const arr& tau);
   void setRandom(uint timeSlices_d1=0, int verbose=0);
+  void setDofBiasesToCurrent();
 
   /// @name active DOFs selection
   void setActiveDofs(const DofL& dofs);

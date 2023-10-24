@@ -414,7 +414,7 @@ void NLP_Viewer::display(double mu) {
   FILE("z.fct") <<Y.modRaw() <<endl;
 
   rai::String cmd;
-  cmd <<"reset; set contour; set cntrparam linear; set cntrparam levels incremental 0,.1,10; set xlabel 'x'; set ylabel 'y'; ";
+  cmd <<"reset; set contour; set size square; set cntrparam linear; set cntrparam levels incremental 0,.1,10; set xlabel 'x'; set ylabel 'y'; ";
   rai::String splot;
   splot <<"splot [" <<lo(0) <<':' <<up(0) <<"][" <<lo(1) <<':' <<up(1) <<"] "
         <<"'z.fct' matrix us (" <<lo(0) <<"+(" <<up(0)-lo(0) <<")*$2/100):(" <<lo(1) <<"+(" <<up(1)-lo(1) <<")*$1/100):3 w l";

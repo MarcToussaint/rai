@@ -18,6 +18,7 @@
 #include "kin_feather.h"
 #include "featureSymbols.h"
 #include "viewer.h"
+#include "simulation.h"
 #include "../Core/graph.h"
 #include "../Core/util.h"
 #include "../Geo/fclInterface.h"
@@ -704,6 +705,11 @@ void Configuration::setRandom(uint timeSlices_d1, int verbose){
   for(Dof *d:activeDofs) d->setRandom(timeSlices_d1, verbose);
   _state_q_isGood=false;
   checkConsistency();
+}
+
+void Configuration::setDofBiasesToCurrent(){
+  ensure_q();
+  for(Dof *d:activeDofs) d->q0 = d->getDofState();
 }
 
 void Configuration::setActiveDofs(const DofL& dofs){
@@ -3503,6 +3509,7 @@ void Configuration::watchFile(const char* filename) {
   //  gl.addHoverCall(new EditConfigurationHoverCall(K));
   gl().addKeyCall(new EditConfigurationKeyCall(*this,exit));
   gl().addClickCall(new EditConfigurationClickCall(*this));
+  gl().setTitle(STRING("ConfigView <" <<filename <<">"));
   //  gl()->ensure_gl().reportEvents=true;
   Inotify ino(filename);
   for(; !exit;) {
@@ -3548,6 +3555,7 @@ void Configuration::watchFile(const char* filename) {
     viewer()->drawText = "waiting for file change ('h' for help)";
     for(;;) {
       key = view(false);
+      viewer()->resetPressedKey();
       //if(key) cout <<"*** KEY:" <<key <<endl;
       if(key==13 || key==27 || key=='q') break;
       if(key=='h'){
@@ -3560,11 +3568,27 @@ void Configuration::watchFile(const char* filename) {
                       "SHIFT-LEFT CLICK - move view\n"
                       "i - write info\n"
                       "c - compute and write collisions\n"
+                      "s - simulate in PhysX\n"
                       "r - random sample a new configuration\n"
                       "x - export to multiple files (.g .urdf. ply. dae)\n"
                       "1..7 - view options\n"
                       "h - help";
+      } else if(key=='s') { //simulate
+        rai::Simulation S(*this, S._physx, 2);
+        S.loadTeleopCallbacks();
+
+        double tau=.01;
+        Metronome tic(tau);
+        while(!S.teleopCallbacks->stop){
+          tic.waitForTic();
+          S.step({}, tau, S._position);
+          //C.ensure_proxies();
+          //C.getTotalPenetration();
+          //C.reportProxies();
+          //C.view();
+        }
       }
+
       if(ino.poll(false, true)) break;
       wait(.2);
     }

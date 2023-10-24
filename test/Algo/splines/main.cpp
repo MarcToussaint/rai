@@ -45,6 +45,35 @@ void TEST(Basics){
 
 //==============================================================================
 
+void TEST(Basis){
+  rai::BSpline S;
+
+  uint n=300;
+  for(uint deg=0;deg<5;deg++){
+    if(deg) S.setUniform(deg, deg+deg%2);
+    else{ S.degree=0; S.knotTimes={0., 1.}; S.ctrlPoints=zeros(1,1); }
+    //S.knotTimes = ::range(0.,1.,S.knotTimes.N-1);
+    arr B = S.getGridBasis(n);
+
+    FILE("z.dat") <<B.modRaw() <<endl;
+
+    rai::String cmd;
+    cmd <<"set style data lines;\n";
+    cmd <<"set key off;\n";
+    cmd <<"set xtics (";
+    for(uint i=0;i<S.knotTimes.N;i++) cmd <<"\"t_{" <<i <<"}\" " <<S.knotTimes(i) <<",";
+    cmd <<");\n";
+    cmd <<"plot [-.05:1.05][0:1.05] 'z.dat' us ($0/" <<n <<"):1";
+    for(uint i=1;i<B.d1;i++) cmd <<", '' us ($0/" <<n <<"):" <<i+1;
+    cout <<cmd <<endl;
+    gnuplot(cmd);
+    rai::wait();
+  }
+
+}
+
+//==============================================================================
+
 void TEST(Speed){
 
   uint N=1000000, n=2;
@@ -164,6 +193,7 @@ int MAIN(int argc,char** argv){
   rai::initCmdLine(argc, argv);
 
   testBasics();
+  testBasis();
 //  testSpeed();
 
 //  testPath();
