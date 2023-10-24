@@ -3,11 +3,11 @@ BASE = .
 
 target: src
 
-DEPEND = $(shell find rai -mindepth 1 -maxdepth 1 -not -name 'contrib' -printf "%f ")
+DEPEND = $(shell find src -mindepth 1 -maxdepth 1 -not -name 'contrib' -printf "%f ")
 
 ################################################################################
 
-src_paths =  $(shell find rai -mindepth 1 -maxdepth 1 -type d -not -name 'retired' -printf "%f ")
+src_paths =  $(shell find src -mindepth 1 -maxdepth 1 -type d -not -name 'retired' -printf "%f ")
 
 #contrib_paths =  $(shell find -L rai/contrib -mindepth 1 -maxdepth 1 -type d -not -name 'retired' -not -name '.git' -printf "%f ")
 
@@ -19,7 +19,7 @@ bin_paths = $(shell find bin -mindepth 2 -maxdepth 2 -name 'Makefile' -printf "%
 
 installUbuntuAll: force
 	@echo "##### calling make installUbuntu in each lib"
-	+@find rai -mindepth 1 -maxdepth 1 -type d -exec make installUbuntu -C {} \;
+	+@find src -mindepth 1 -maxdepth 1 -type d -exec make installUbuntu -C {} \;
 
 printUbuntuAll: $(DEPEND:%=inPath_printUbuntu/%) printUbuntu
 
@@ -42,7 +42,7 @@ clean: $(src_paths:%=inPath_clean/%) cleanLocks
 cleanStart: force
 	@read -p " *** WARNING: This will rm ALL local files/changes (e.g. project/temporary/data files) - abort if you don't want to continue" yn
 	git clean -f -d -x
-	cp makeutils/config.mk.default makeutils/config.mk
+	cp _make/config.mk.default _make/config.mk
 
 paths: force
 	@echo; echo ----------------------------------------
@@ -63,8 +63,8 @@ install: src bin
 	cp bin/src_kinEdit/x.exe $(INSTALL_PATH)/bin/kinEdit
 	cp lib/lib*.so $(INSTALL_PATH)/lib/rai
 	@echo "copying headers into $(INSTALL_PATH)/include/rai"
-	@eval $(shell cd rai; find . -maxdepth 1 -type d -printf "mkdir -p $(INSTALL_PATH)/include/rai/%f\; ")
-	@eval $(shell cd rai; find . -maxdepth 2 -type f -name '*.h' -or -name '*.tpp' -printf "cp rai/%p $(INSTALL_PATH)/include/rai/%h/\; ")
+	@eval $(shell cd src; find . -maxdepth 1 -type d -printf "mkdir -p $(INSTALL_PATH)/include/rai/%f\; ")
+	@eval $(shell cd src; find . -maxdepth 2 -type f -name '*.h' -or -name '*.tpp' -printf "cp src/%p $(INSTALL_PATH)/include/rai/%h/\; ")
 	@find $(INSTALL_PATH)/include/rai
 	@find $(INSTALL_PATH)/lib/rai
 
@@ -75,19 +75,19 @@ install: src bin
 # test: setConfigFlag $(exa_paths:%=inPath_clean/%) cleanLocks $(exa_paths:%=inPath_make/%)
 
 # setConfigFlag: force
-# 	echo "RAI_TESTS = 1" > makeutils/z.mk
+# 	echo "RAI_TESTS = 1" > _make/z.mk
 
 runTests: tests
 	@rm -f z.test-report
-	@for p in $(test_paths); do makeutils/run-path.sh $$p; done
+	@for p in $(test_paths); do _make/run-path.sh $$p; done
 #	+@-make -C test/ry run clean
 
 
 ################################################################################
 
 deletePotentiallyNonfreeCode: force
-	@rm -Rf rai/Kin/SWIFT rai/Kin/SWIFT_decomposer rai/Geo/Lewiner rai/Geo/ply rai/Geo/GJK
+	@rm -Rf src/Kin/SWIFT src/Kin/SWIFT_decomposer src/Geo/Lewiner src/Geo/ply src/Geo/GJK
 
 ################################################################################
 
-include $(BASE)/makeutils/generic.mk
+include $(BASE)/_make/generic.mk

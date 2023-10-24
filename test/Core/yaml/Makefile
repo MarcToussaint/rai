@@ -7,4 +7,4 @@ DEPEND = Core
 LIBS += -lpthread
 LIBS += -lyaml-cpp
 
-include $(BASE)/makeutils/generic.mk
+include $(BASE)/_make/generic.mk

@@ -6,4 +6,4 @@ LIBS += -lpthread -lEGL
 GL = 1
 DEPEND = Core Geo Gui
 
-include $(BASE)/makeutils/generic.mk
+include $(BASE)/_make/generic.mk

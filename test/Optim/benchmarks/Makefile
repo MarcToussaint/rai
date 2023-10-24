@@ -6,4 +6,4 @@ ifneq ($(RAI_CMAKE), 1)
 DEPEND = Core Optim Geo Gui Kin KOMO
 endif
 
-include $(BASE)/makeutils/generic.mk
+include $(BASE)/_make/generic.mk

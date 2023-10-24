@@ -4,4 +4,4 @@ OBJS = main.o
 
 DEPEND = Core Optim
 
-include $(BASE)/makeutils/generic.mk
+include $(BASE)/_make/generic.mk

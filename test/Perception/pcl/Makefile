@@ -4,5 +4,5 @@ DEPEND = Core Geo Perception Gui
 
 PCL = 1
 
-include $(BASE)/makeutils/generic.mk
+include $(BASE)/_make/generic.mk
 

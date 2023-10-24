@@ -3,4 +3,4 @@ BASE = ../../..
 DEPEND = Core Logic
 #OPTIM=fast_debug
 
-include $(BASE)/makeutils/generic.mk
+include $(BASE)/_make/generic.mk
