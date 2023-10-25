@@ -44,7 +44,7 @@ void init_params(pybind11::module& m);
 void init_BotOp(pybind11::module& m);
 #endif
 
-PYBIND11_MODULE(ry, m) {
+PYBIND11_MODULE(_robotic, m) {
   m.doc() = "rai bindings";
 
   init_LogToPythonConsole();

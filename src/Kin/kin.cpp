@@ -3558,6 +3558,7 @@ void Configuration::watchFile(const char* filename) {
       viewer()->resetPressedKey();
       //if(key) cout <<"*** KEY:" <<key <<endl;
       if(key==13 || key==27 || key=='q') break;
+      if(!rai::getInteractivity()) break;
       if(key=='h'){
         viewer()->drawText = "HELP:\n"
                       "RIGHT CLICK - set focus point (move view and set center of rotation)\n"

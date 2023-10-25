@@ -117,14 +117,15 @@ void init_Frame(pybind11::module& m) {
 void init_enums(pybind11::module& m){
 
 #undef ENUMVAL
+//#define ENUMVAL(x) m.attr(#x) = pybind11::int_(int(rai::x));
 #define ENUMVAL(x) .value(#x, rai::x)
 
-pybind11::enum_<rai::ArgWord>(m, "ArgWord")
+  pybind11::enum_<rai::ArgWord>(m, "ArgWord")
   ENUMVAL(_left)
   ENUMVAL(_right)
   ENUMVAL(_sequence)
   ENUMVAL(_path)
-    .export_values();
+      .export_values();
 
 #undef ENUMVAL
 #define ENUMVAL(pre, x) .value(#x, pre##_##x)
@@ -150,7 +151,6 @@ pybind11::enum_<rai::ArgWord>(m, "ArgWord")
   ENUMVAL(rai::ST, camera)
   ENUMVAL(rai::ST, sdf)
     .export_values();
-
 
   pybind11::enum_<FeatureSymbol>(m, "FS")
   ENUMVAL(FS, position)
