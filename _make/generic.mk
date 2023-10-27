@@ -205,7 +205,7 @@ cleanLocks: force
 
 cleanLibs: force
 	@echo "   *** cleanLibs  " $(PWD)
-	@find $(BASE)/rai $(BASE)/lib $(BASE2) \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
+	@find $(BASE)/src $(BASE)/lib $(BASE2) \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
 
 cleanAll: cleanLocks cleanDepends force
 	@echo "   *** cleanAll   " $(PWD)

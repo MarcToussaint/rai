@@ -93,7 +93,7 @@ struct Configuration : GLDrawer {
   bool operator!() const;
 
   /// @name initializations, building configurations
-  Frame* addFrame(const char* name, const char* parent=nullptr, const char* args=nullptr);
+  Frame* addFrame(const char* name, const char* parent=nullptr, const char* args=nullptr, bool warnDuplicateName=true);
   Frame* addFile(const char* filename, const char* namePrefix=0);
   Frame* addAssimp(const char* filename);
   Frame* addCopies(const FrameL& F, const DofL& _dofs);

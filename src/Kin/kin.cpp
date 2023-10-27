@@ -186,8 +186,8 @@ void Configuration::copy(const Configuration& C, bool referenceFclOnCopy) {
 
 bool Configuration::operator!() const { return this==&NoConfiguration; }
 
-Frame* Configuration::addFrame(const char* name, const char* parent, const char* args) {
-  {//check name duplication
+Frame* Configuration::addFrame(const char* name, const char* parent, const char* args, bool warnDuplicateName) {
+  if(warnDuplicateName){//check name duplication
     Frame* exists = getFrame(name, false);
     if(exists){ LOG(-1) <<"frame already exists! returning existing without modifications!"; return exists; }
   }

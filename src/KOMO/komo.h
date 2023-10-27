@@ -140,6 +140,7 @@ struct KOMO : NonCopyable {
 public:
   //add a mode switch: both, the low-level dof switches and corresponding constraints of consistency
   void addModeSwitch(const arr& times, rai::SkeletonSymbol newMode, const StringA& frames, bool firstSwitch);
+  void addRigidSwitch(const arr& times, const StringA& frames, bool firstSwitch);
 
   //advanced:
   void setPairedTimes();
@@ -216,7 +217,8 @@ public:
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);
   void setupPathConfig();
   void checkBounds(const arr& x);
-  void addStableFrame(const char* name, const char* parent, rai::JointType jointType, const char* initPose);
+  void addStableFrame(rai::SkeletonSymbol newMode, const char* parent, const char* name, const char* toShape);
+  rai::Frame* addStableFrame(rai::JointType jointType, const char* parent, const char* name, const char* initFrame=0, const rai::Transformation& rel=0);
   rai::Frame* applySwitch(const rai::KinematicSwitch& sw);
   void retrospectApplySwitches();
   void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);

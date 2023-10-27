@@ -267,7 +267,7 @@ shared_ptr<Objective> KOMO::addObjective(const arr& times,
 //  flags.append(fl);
 //}
 
-rai::Frame* KOMO::addSwitch(const arr& times, bool before, const shared_ptr<KinematicSwitch>& sw) {
+rai::Frame* KOMO::addSwitch(const arr& times, bool before, const std::shared_ptr<KinematicSwitch>& sw) {
   sw->setTimeOfApplication(times, before, stepsPerPhase, T);
   rai::Frame *f = applySwitch(*sw); //apply immediately
   switches.append(sw); //only to report, not apply in retrospect
@@ -283,12 +283,137 @@ rai::Frame* KOMO::addSwitch(const arr& times, bool before, bool stable,
   return addSwitch(times, before, sw);
 }
 
+void KOMO::addStableFrame(SkeletonSymbol newMode, const char* parent, const char* name, const char* toShape) {
+  //---------------- create the switch and limits for the effective dof ---
+  if(newMode==SY_stable) {
+    rai::Frame* f = addStableFrame(JT_free, parent, name);
+    if(f){//limits?
+      double maxsize = 0.;
+      rai::Shape* from = world.getFrame(parent)->shape;
+      if(from && from->type()!=rai::ST_marker){
+        if(from->type()==rai::ST_sphere || from->type()==rai::ST_cylinder || from->type()==rai::ST_ssCylinder){
+          maxsize += 2.*from->size(0);
+        }else{
+          maxsize += absMax(from->size);
+        }
+      }else if(from){
+        CHECK_EQ(from->type(), ST_marker, "");
+      }
+      rai::Shape* to = world.getFrame(toShape)->shape;
+      if(to && to->type()!=rai::ST_marker){
+        if(to->type()==rai::ST_sphere || to->type()==rai::ST_cylinder || to->type()==rai::ST_ssCylinder){
+          maxsize += 2.*to->size(0);
+        }else{
+          maxsize += absMax(to->size);
+        }
+      }
+      if(maxsize>1e-4){
+        f->joint->limits =
+        { -.9*maxsize, .9*maxsize,
+          -.9*maxsize, .9*maxsize,
+          -.9*maxsize, .9*maxsize,
+          -1.1,1.1, -1.1,1.1, -1.1,1.1, -1.1,1.1 }; //no limits on rotation
+      }
+      //sample heuristic
+      f->joint->sampleUniform=opt.sampleRate_stable;
+      f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
+    }
+  } else if(newMode==SY_stableOn) {
+    double height = .5*(shapeSize(world, parent) + shapeSize(world, toShape));
+    Transformation rel = 0;
+    rel.pos.set(0, 0, height);
+//    rai::Frame* f = addStableFrame(JT_free, parent, name);
+    rai::Frame* f = addStableFrame(JT_transXYPhi, parent, name, 0, rel);
+    //f->joint->setGeneric("xyc");
+    if(false){
+      //limits?
+      double zero=1e-4;
+      rai::Shape* from = world.getFrame(parent)->shape;
+      CHECK_EQ(from->type(), rai::ST_ssBox, "");
+      f->joint->limits = {-.5*from->size(0), .5*from->size(0),
+                          -.5*from->size(1), .5*from->size(1),
+                          -zero, +zero,
+//                          -1.1,1.1, -1.1,1.1, -1.1,1.1, -1.1,1.1 }; //no limits on rotation
+                          -1.1,1.1, -zero,zero, -zero,zero, -1.1,1.1 }; //no limits on rotation
+      //init heuristic
+      f->joint->sampleUniform=opt.sampleRate_stable;
+      f->joint->q0.clear(); // = zeros(3);
+    }
+  } else if(newMode==SY_stableOnX) {
+    Transformation rel = 0;
+    rel.pos.set(.5*(shapeSize(world, parent, 0) + shapeSize(world, name, 2)), 0., 0.);
+    rel.rot.addY(.5*RAI_PI);
+    rai::Frame* f = addStableFrame(JT_transXYPhi, parent, name, 0, rel);
+    if(f){
+      //limits?
+      rai::Shape* on = world.getFrame(parent)->shape;
+      CHECK_EQ(on->type(), rai::ST_ssBox, "")
+          f->joint->limits = {
+                             -.5*on->size(2), .5*on->size(2),
+                             -.5*on->size(1), .5*on->size(1),
+                             -RAI_2PI, RAI_2PI };
+      //init heuristic
+      f->joint->sampleUniform=1.;
+      f->joint->q0 = zeros(3);
+    }
+  } else if(newMode==SY_stableOnY) {
+    Transformation rel = 0;
+    rel.pos.set(0., 0, -.5*(shapeSize(world, parent, 2) + shapeSize(world, name, 1)));
+    rel.rot.addX(.5*RAI_PI);
+    rai::Frame* f = addStableFrame(JT_generic, parent, name, 0, rel);
+    f->joint->setGeneric("xzb");
+    if(f){
+      //limits?
+      rai::Shape* on = world.getFrame(name)->shape;
+      CHECK_EQ(on->type(), rai::ST_ssBox, "")
+          f->joint->limits = {
+                             -.5*on->size(0), .5*on->size(0),
+                             -.5*on->size(2), .5*on->size(2),
+                             -RAI_2PI, RAI_2PI };
+      //init heuristic
+      f->joint->sampleUniform=1.;
+      f->joint->q0 = zeros(f->joint->dim);
+    }
+  } else NIY;
+}
+
+void KOMO::addRigidSwitch(const arr& times, const StringA& frames, bool firstSwitch) {
+  addSwitch(times, true, true, JT_rigid, SWInit_zero, frames(0), frames(1));
+  if(firstSwitch){
+    //NOTE: when frames(0) is picking up a kinematic chain (e.g., where frames(1) is a handB of a walker),
+    //  then we actually need to impose the no-jump constrained on the root of the kinematic chain!
+    //  To prevent special case for the skeleton specifer, we use this ugly code to determine the root of
+    //  the kinematic chain for frames(1) -- when frames(1) is a normal object, this should be just frames(1) itself
+    rai::Frame *toBePicked = world[frames(1)];
+    rai::Frame *rootOfPicked = toBePicked->getUpwardLink(NoTransformation, true);
+    if(stepsPerPhase>3){
+      addObjective({times(0)}, FS_pose, {rootOfPicked->name}, OT_eq, {1e2}, NoArr, 1, 0, +1); //two time slices no velocity -> no acceleration!
+    }else{
+      addObjective({times(0)}, FS_pose, {rootOfPicked->name}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+    }
+  }
+
+  //Note: Why impose no-jump at end - why not let the next mode impose continuity?
+  //  -> Only the current mode knows frame(0), and we want to impose no relative motion of object (frame(0)) to parent (frame(1))
+
+  //-- no jump at end
+  if(times(1)>=0){
+//    if(stepsPerPhase>3){
+//      addObjective({times(1)}, FS_poseRel, {frames(1), frames(0)}, OT_eq, {1e1}, NoArr, 1, 0, +1); //two time slices no velocity -> no acceleration!
+//    }else{
+      addObjective({times(1)}, FS_poseDiff, {frames(1), frames(0)}, OT_eq, {1e2}, NoArr, 0, -1, +1);
+//    }
+//    if(k_order>1) addObjective({times(1)}, make_shared<F_LinAngVel>(), {frames(1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
+  }
+}
+
 void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch) {
   //-- creating a stable kinematic linking
   if(newMode==SY_stable || newMode==SY_stableOn
      || newMode==SY_stableYPhi
      || newMode==SY_stableOnX || newMode==SY_stableOnY
      || newMode==SY_stableZero){
+    //---------------- create the switch and limits for the effective dof ---
     if(newMode==SY_stable) {
       rai::Frame* f = addSwitch(times, true, true, JT_free, SWInit_copy, frames(0), frames(1));
       if(f){//limits?
@@ -390,6 +515,8 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       }
     }
 
+    //---------------- no jump constraints ---
+
     //-- no jump at start
     if(firstSwitch){
       //NOTE: when frames(0) is picking up a kinematic chain (e.g., where frames(1) is a handB of a walker),
@@ -399,15 +526,22 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       rai::Frame *toBePicked = world[frames(1)];
       rai::Frame *rootOfPicked = toBePicked->getUpwardLink(NoTransformation, true);
       if(stepsPerPhase>3){
-        addObjective({times(0)}, FS_pose, {rootOfPicked->name}, OT_eq, {1e2}, NoArr, 1, 0, +1);
+        addObjective({times(0)}, FS_pose, {rootOfPicked->name}, OT_eq, {1e1}, NoArr, 1, 0, +1); //two time slices no velocity -> no acceleration!
       }else{
-        addObjective({times(0)}, FS_pose, {rootOfPicked->name}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+        addObjective({times(0)}, FS_pose, {rootOfPicked->name}, OT_eq, {1e1}, NoArr, 1, 0, 0);
       }
     }
 
+    //Note: Why impose no-jump at end - why not let the next mode impose continuity?
+    //  -> Only the current mode knows frame(0), and we want to impose no relative motion of object (frame(0)) to parent (frame(1))
+
     //-- no jump at end
     if(times(1)>=0){
-      addObjective({times(1)}, FS_poseRel, {frames(1), frames(0)}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+//      if(stepsPerPhase>3){
+//        addObjective({times(1)}, FS_poseRel, {frames(1), frames(0)}, OT_eq, {1e1}, NoArr, 1, 0, +1); //two time slices no velocity -> no acceleration!
+//      }else{
+        addObjective({times(1)}, FS_poseRel, {frames(1), frames(0)}, OT_eq, {1e1}, NoArr, 1, 0, 0);
+//      }
       if(k_order>1) addObjective({times(1)}, make_shared<F_LinAngVel>(), {frames(1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
     }
 
@@ -1426,39 +1560,65 @@ void KOMO::plotPhaseTrajectory() {
 
 //===========================================================================
 
-void KOMO::addStableFrame(const char* name, const char* parent, JointType jointType, const char* initPose) {
-  FrameL F;
+rai::Frame* KOMO::addStableFrame(JointType jointType, const char* parent, const char* name, const char* initFrame, const rai::Transformation& rel) {
+  //-- which slices?
+
   Frame* p0 = world[parent];
   {
     Frame *f = world.addFrame(name);
-    f->setParent(p0, false);
+    if(rel.isZero()){
+      f->setParent(p0, false);
+    }else{
+      Frame *r = world.addFrame(STRING(name<<"_origin"));
+      r->setParent(p0, false);
+      r->setRelativePose(rel);
+      f->setParent(r, false);
+    }
   }
   Frame *init = 0;
-  if(initPose) init = world[initPose];
+  if(initFrame) init = world[initFrame];
+
+  FrameL F, R;
   Frame *f0=0;
   for(uint s=0;s<timeSlices.d0;s++) { //apply switch on all configurations!
-    Frame *f = pathConfig.addFrame(name);
+    Frame *f = pathConfig.addFrame(name, 0, 0, false);
     Frame *p = timeSlices(s,p0->ID);
     CHECK_EQ(p->name, parent, "");
-    f->setParent(p, false);
-    if(initPose) f->setPose(init->getPose());
+    if(rel.isZero()){
+      f->setParent(p, false);
+    }else{
+      Frame *r = pathConfig.addFrame(STRING(name<<"_origin"), 0, 0, false);
+      r->setParent(p, false);
+      r->setRelativePose(rel);
+      f->setParent(r, false);
+      R.append(r);
+    }
+    if(initFrame) f->setPose(init->getPose());
     if(jointType!=JT_none){
       f->setJoint(jointType);
       if(f0) f->joint->setMimic(f0->joint);
       else f0=f;
     }
-    f->setShape(ST_marker, {.1});
+    f->setShape(ST_marker, {.3});
+    f->setColor({1.,0.,1., .5});
     F.append(f);
   }
   CHECK_EQ(F.N, timeSlices.d0,"");
-  timeSlices.insColumns(-1);
-  for(uint s=0;s<timeSlices.d0;s++) timeSlices(s,-1) = F(s);
+  if(rel.isZero()){
+    timeSlices.insColumns(-1);
+    for(uint s=0;s<timeSlices.d0;s++) timeSlices(s,-1) = F(s);
+  }else{
+    CHECK_EQ(R.N, timeSlices.d0,"");
+    timeSlices.insColumns(-1, 2);
+    for(uint s=0;s<timeSlices.d0;s++){ timeSlices(s,-2) = F(s);  timeSlices(s,-1) = R(s); }
+  }
   CHECK_EQ(timeSlices.d1, world.frames.N, "");
   if(timeSlices.N==pathConfig.frames.N){
     pathConfig.frames = timeSlices;
     uint i=0;
     for(Frame* f: pathConfig.frames) f->ID = i++;
   }
+  return f0;
 }
 
 rai::Frame* KOMO::applySwitch(const KinematicSwitch& sw) {
