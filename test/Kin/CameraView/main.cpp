@@ -2,6 +2,7 @@
 #include <Kin/frame.h>
 #include <Kin/cameraview.h>
 #include <Gui/viewer.h>
+#include <Geo/depth2PointCloud.h>
 
 //===========================================================================
 
@@ -11,7 +12,7 @@ void TEST(CameraView){
   C.addFile("../../../../rai-robotModels/objects/kitchen.g");
   C.optimizeTree();
 
-  rai::CameraView V(C, true, 0);
+  rai::CameraView V(C, true);
 
   V.addSensor("kinect", "endeffKinect", 640, 480, 580./480., -1., {.1, 50.} );
 //  V.selectSensor("kinect");
@@ -26,8 +27,8 @@ void TEST(CameraView){
   ImageViewerCallback v3(segmentation);
 
   V.computeImageAndDepth(image.set(), depth.set());
-  V.computeSegmentation(segmentation.set());
-  V.computePointCloud(pts.set(), depth.get());
+  segmentation.set() = V.computeSegmentationImage();
+  depthData2pointCloud(pts.set(), depth.get(), V.getFxyCxy());
 
   rai::wait();
 

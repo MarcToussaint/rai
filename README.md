@@ -1,13 +1,13 @@
 # RAI bare code
 
-This repo contains core sources related to Robotic AI. First users are
+This repo contains core sources related to Robotic AI. Users are
 not recommended to use this repo alone.  Please have a look at example
 projects that use this bare code as a submodule and expose and explain
-one particular functionality. E.g., KOMO or rai-python.
+one particular functionality. E.g., KOMO or the [robotic python lib](https://github.com/MarcToussaint/robotic/).
 
 'bare code' means that this repo contains only sources, a minimal
-Ubuntu-specific build system, and only minimal tests. For integration
-in other projects, use it as a submodule and integrate it in your own
+Ubuntu-specific build system, and development tests. It is mostly used
+as submodule in other integrated projects, with their own
 out-of-source build system.
 
 ## Brief history
@@ -20,13 +20,18 @@ projects and contains a set of representations and methods for
 Robotics, ML and AI. As the functionality is diverse I don't even try
 to explain.
 
+## Repos wrapping rai:
+
+* [Robotic Python Lib](https://pypi.org/project/robotic/)
+* [BotOp](https://github.com/MarcToussaint/botop)
+
 ## Documentation
 
-I only recently started better documentation of some parts. So far, bits and pieces of documentation are scattered:
-* The [Wiki page](../../wiki) contains an introduction to KOMO. There is also an older KOMO tech report on arxiv: <https://arxiv.org/abs/1407.0414>
-* The [rai-maintenence help](https://github.com/MarcToussaint/rai-maintenance/tree/master/help) contains various info
-* The [rai-python Jupyter notebooks](https://github.com/MarcToussaint/rai-python/tree/master/docs) also help understanding the underlying code
-* The [test main.cpp files](test/) might help as well
+The there is no proper documentation of the full rai code. I recommend starting with 
+* The [robotic python lib documentation](https://marctoussaint.github.io/robotic/), which explains core features (but certainly not the underlying code base),
+* With Doxygen (see [rai-maintenence help](https://github.com/MarcToussaint/rai-maintenance/tree/master/help)) you can get an API.
+* The [Wiki page](../../wiki) contains an older introduction to KOMO. There is also an older KOMO tech report on arxiv: <https://arxiv.org/abs/1407.0414>
+* Eventually, the [test main.cpp files](test/) help really understanding the use of the C++ code base.
 
 ## Quick Start
 
@@ -43,15 +48,11 @@ make -j1 installUbuntuAll APTGETYES=--yes # calls sudo apt-get install; remove '
 make -j4
 make -j4 tests bin
 make runTests      # compile and run the essential tests
-
-# when interested in the python bindings:
-```
-pip3 install --user pybind11 jupyter nbconvert matplotlib
 ```
 
 ## Dependencies
 
-To change the dependencies edit the `config.mk` in the root directory:
+To change the dependencies edit the `config.mk` in `_make`:
 When a flag is set =0, this forces that this package is not
 used. Otherwise (when set =0 is commented), a sub-folder Makefile may
 set it equal to 1 and links to this package. After this you definitely
@@ -68,15 +69,5 @@ make dependAll
 make -j4
 ```
 
-## Maintenance & Alternative Build Systems
 
-The rai repo has its own old-fashioned GNU make build system, which is convenient, modular and flexible for me, and compiles each source directory into its own shared lib. But I expect serious users to replace this by their own out-of-source build system.
 
-In [rai-maintenence](https://github.com/MarcToussaint/rai-maintenance/tree/master/buildAlternatives) there is a minimalistic CMake example, showing how to compile selected sources into a single shared lib.
-
-In [rai-maintenence](https://github.com/MarcToussaint/rai-maintenance/tree/master/docker) there are also examples for testing in docker (Ubuntu 18.04 and 16.04).
-
-To install globally: (default path is ~/z.LOCAL)
-```
-sudo make install INSTALL_PATH=/usr/local
-```

@@ -334,7 +334,7 @@ shared_ptr<KOMO> Skeleton::getKomo_waypoints(const Configuration& C, double lenS
   return komo;
 }
 
-shared_ptr<KOMO> Skeleton::getKOMO_finalSlice(const rai::Configuration& C, double lenScale, double homingScale, double collScale){
+shared_ptr<KOMO> Skeleton::getKomo_finalSlice(const rai::Configuration& C, double lenScale, double homingScale, double collScale){
   shared_ptr<KOMO> komo=make_shared<KOMO>();
   komo->opt.verbose = verbose-2;
 
@@ -426,7 +426,7 @@ SkeletonTranscription Skeleton::nlp_path(const rai::Configuration& C, const arrA
 
 SkeletonTranscription Skeleton::nlp_finalSlice(const rai::Configuration& C){
   SkeletonTranscription T;
-  T.komo = getKOMO_finalSlice(C, 1e-2, 1e-2);
+  T.komo = getKomo_finalSlice(C, 1e-2, 1e-2);
   T.nlp = T.komo->nlp();
   return T;
 }

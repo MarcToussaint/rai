@@ -79,7 +79,7 @@ void LGP_Tool::getSkeleton(Skeleton& skeleton, String& skeletonString){
 }
 
 void LGP_Tool::optFinalSlice(Skeleton& skeleton, const String& skeletonString){
-  shared_ptr<KOMO> komoFinalSlice = skeleton.getKOMO_finalSlice(lgproot->C, 1e-2, -1e-2, lgproot->info->collScale);
+  shared_ptr<KOMO> komoFinalSlice = skeleton.getKomo_finalSlice(lgproot->C, 1e-2, -1e-2, lgproot->info->collScale);
 
   //    rnd.seed(rndSeed);
   komoFinalSlice->initRandom(0);

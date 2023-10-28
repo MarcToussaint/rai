@@ -441,12 +441,14 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
           { -.9*maxsize, .9*maxsize,
             -.9*maxsize, .9*maxsize,
             -.9*maxsize, .9*maxsize,
+//            0., 1.1, -.5,.5, -.5,.5, -.5,.5 }; //no limits on rotation
             -1.1,1.1, -1.1,1.1, -1.1,1.1, -1.1,1.1 }; //no limits on rotation
         }
-        //sample heuristic
-        f->joint->sampleUniform=opt.sampleRate_stable;
-        f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
+//        f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
       }
+      //sample heuristic
+      f->joint->sampleUniform=opt.sampleRate_stable;
+      f->joint->q0 = f->joint->calcDofsFromConfig();
     } else if(newMode==SY_stableZero) {
       addSwitch(times, true, true, JT_rigid, SWInit_zero, frames(0), frames(1));
     } else if(newMode==SY_stableOn) {
