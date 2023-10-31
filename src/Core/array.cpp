@@ -1380,7 +1380,7 @@ void lapack_RQ(arr& R, arr& Q, const arr& A) {
   for(int i=0; i<M; i++) for(int j=0; j<=i; j++) R(j, i) = Q(i, j); //copy upper triangle
   dorgrq_(&N, &M, &N, Q.p, &N, tau.p, work.p, &LWORK, &info);
   CHECK(!info, "LAPACK RQ error info = " <<info);
-  Q=~Q;
+  transpose(Q);
   //cout <<"\nR=" <<R <<"\nQ=" <<Q <<"\nRQ=" <<R*Q <<"\nA=" <<A <<endl;
 }
 

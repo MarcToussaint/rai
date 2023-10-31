@@ -37,13 +37,13 @@ void Depth2PointCloud::step() {
   points.set() = _points;
 }
 
-void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, float px, float py) {
+void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, float cx, float cy) {
   uint H=depth.d0, W=depth.d1;
 
   CHECK(fx>0, "need a focal length greater zero!(not implemented for ortho yet)");
   if(std::isnan(fy)) fy = fx;
-  if(std::isnan(px)) px=.5*W;
-  if(std::isnan(py)) py=.5*H;
+  if(std::isnan(cx)) cx=.5*W;
+  if(std::isnan(cy)) cy=.5*H;
 
   pts.resize(H*W, 3);
   pts.setZero();
@@ -59,8 +59,8 @@ void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, flo
         pts(k, 1) = -d * (y - py) / fy;
         pts(k, 2) = -d;
 #else //fast
-        *(pt++) =  d * (x - px) / fx;
-        *(pt++) =  d * (y - py) / fy;
+        *(pt++) =  d * (x - cx) / fx;
+        *(pt++) =  d * (y - cy) / fy;
         *(pt++) =  d;
 #endif
       } else {

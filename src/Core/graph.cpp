@@ -197,14 +197,19 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
     if(getValue<arr>()->N>=20) binary=true;
     getValue<arr>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<floatA>()) {
+    if(getValue<floatA>()->N>=20) binary=true;
     getValue<floatA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<uint16A>()) {
+    if(getValue<uint16A>()->N>=20) binary=true;
     getValue<uint16A>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<uintA>()) {
+    if(getValue<uintA>()->N>=20) binary=true;
     getValue<uintA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<intA>()) {
+    if(getValue<intA>()->N>=20) binary=true;
     getValue<intA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<byteA>()) {
+    if(getValue<byteA>()->N>=20) binary=true;
     getValue<byteA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<intAA>()) {
     getValue<intAA>()->write(os, ", ", nullptr, "[]");
@@ -927,6 +932,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo) {
           else if(typetag==rai::atomicTypeidName(typeid(float))) add<floatA>(key)->as<floatA>().readJson(is, true);
           else if(typetag==rai::atomicTypeidName(typeid(uint))) add<uintA>(key)->as<uintA>().readJson(is, true);
           else if(typetag==rai::atomicTypeidName(typeid(uint16_t))) add<uint16A>(key)->as<uint16A>().readJson(is, true);
+          else if(typetag==rai::atomicTypeidName(typeid(unsigned char))) add<byteA>(key)->as<byteA>().readJson(is, true);
           else if(typetag==rai::atomicTypeidName(typeid(int))) add<intA>(key)->as<intA>().readJson(is, true);
           else if(typetag==rai::atomicTypeidName(typeid(int16_t))) add<Array<int16_t>>(key)->as<Array<int16_t>>().readJson(is, true);
           else{
@@ -1132,10 +1138,13 @@ void Graph::write(std::ostream& os, const char* ELEMSEP, const char* BRACKETS, i
     BRACKETSlength=strlen(BRACKETS);
     for(uint b=0; b<BRACKETSlength/2; b++) os <<BRACKETS[b];
   }
+  bool hasSubgraphs=false;
+  for(const Node *n: *this) if(n->is<Graph>()){ hasSubgraphs=true; break; }
+
   if(indent>=0) indent += 2;
   for(uint i=0; i<N; i++) {
-    if(indent>=0){ if(i) os <<ELEMSEP; os <<'\n'; for(int i=0;i<indent;i++) os <<' '; }
-    else if(i) os <<ELEMSEP;
+    if(indent>=0){ if(i) os <<ELEMSEP <<'\n'; for(int i=0;i<indent;i++) os <<' '; }
+    else if(i){ if(hasSubgraphs) os <<',' <<endl; else os <<ELEMSEP; }
     if(elem(i)) elem(i)->write(os, indent, yamlMode, binary); else os <<"<nullptr>";
   }
   if(BRACKETS){

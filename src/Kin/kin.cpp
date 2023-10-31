@@ -336,7 +336,7 @@ Frame* Configuration::addCopies(const FrameL& F, const DofL& _dofs) {
     FId2thisId(f->ID) = f_new->ID;
 
     //convert constant joints to mimic joints
-    if(f->joint && f->ats && (*f->ats)["constant"]){
+    if(f->joint && f->ats && f->joint->isStable){
       Frame *f_orig = getFrame(f_new->name); //identify by name!!!
       if(f_orig!=f_new){
         CHECK(f_orig->joint, "");
@@ -502,7 +502,7 @@ uintA Configuration::getCtrlFramesAndScale(arr& scale) const {
   uintA qFrames;
   for(rai::Frame* f : frames) {
     rai::Joint *j = f->joint;
-    if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau && (!f->ats || !(*f->ats)["constant"])) {
+    if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau && !j->isStable) {
       qFrames.append(uintA{f->ID, f->parent->ID});
       if(!!scale) scale.append(j->H, j->dim);
     }
@@ -636,11 +636,11 @@ void Configuration::setJointState(const arr& _q) {
 
   _state_q_isGood=true;
   _state_proxies_isGood=false;
-  for(Dof* j:activeDofs) {
-    if(j->joint() && j->joint()->type!=JT_tau) {
-      j->frame->_state_setXBadinBranch();
-    }
-  }
+//  for(Dof* j:activeDofs) {
+//    if(j->joint() && j->joint()->type!=JT_tau) {
+//      j->frame->_state_setXBadinBranch();
+//    }
+//  }
   calc_Q_from_q();
 }
 
