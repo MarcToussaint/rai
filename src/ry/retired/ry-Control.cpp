@@ -9,7 +9,7 @@
 #ifdef RAI_PYBIND
 
 #include "types.h"
-#include "ry-Config.h"
+#include "py-Config.h"
 #include "../Control/control.h"
 
 void init_CtrlSet(pybind11::module& m) {

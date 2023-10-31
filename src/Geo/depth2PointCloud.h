@@ -25,7 +25,7 @@ struct Depth2PointCloud : Thread {
   arr _points;
 
   Depth2PointCloud(Var<floatA>& _depth, float _fx=NAN, float _fy=NAN, float _px=NAN, float _py=NAN);
-  Depth2PointCloud(Var<floatA>& _depth, const arr& FxyCxy);
+  Depth2PointCloud(Var<floatA>& _depth, const arr& fxycxy);
   virtual ~Depth2PointCloud();
 
   void open() {}
@@ -33,8 +33,8 @@ struct Depth2PointCloud : Thread {
   void close() {}
 };
 
-void depthData2point(double* pt, double* FxyCxy);
-void depthData2point(arr& pt, const arr& FxyCxy);
+void depthData2point(double* pt, double* fxycxy);
+void depthData2point(arr& pt, const arr& fxycxy);
 void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, float cx, float cy);
-void depthData2pointCloud(arr& pts, const floatA& depth, const arr& FxyCxy);
-void point2depthData(double* pt, double* FxyCxy);
+void depthData2pointCloud(arr& pts, const floatA& depth, const arr& fxycxy);
+void point2depthData(double* pt, double* fxycxy);

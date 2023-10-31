@@ -8,7 +8,7 @@
 
 #ifdef RAI_PYBIND
 
-#include "ry-LGP_Tree.h"
+#include "py-LGP_Tree.h"
 #include "types.h"
 
 #include "../Kin/viewer.h"

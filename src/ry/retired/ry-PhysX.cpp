@@ -8,8 +8,8 @@
 
 #ifdef RAI_PYBIND
 
-#include "ry-PhysX.h"
-#include "ry-Config.h"
+#include "py-PhysX.h"
+#include "py-Config.h"
 #include "types.h"
 
 #include "../Core/util.h"

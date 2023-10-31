@@ -236,7 +236,7 @@ void rai::Sim_CameraView::step() {
   depth.set() = dep;
 }
 
-arr rai::Sim_CameraView::getFxyCxy() {
+arr rai::Sim_CameraView::getFxycxy() {
   auto sen = V.currentSensor;
   return arr{sen->cam.focalLength*sen->height, sen->cam.focalLength*sen->height, .5*(sen->width-1.), .5*(sen->height-1.)};
 }

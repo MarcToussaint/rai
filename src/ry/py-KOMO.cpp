@@ -9,7 +9,7 @@
 #ifdef RAI_PYBIND
 
 #include "types.h"
-#include "ry-Config.h"
+#include "py-Config.h"
 #include "../KOMO/komo.h"
 #include "../KOMO/skeleton.h"
 

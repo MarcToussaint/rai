@@ -8,8 +8,8 @@
 
 #ifdef RAI_PYBIND
 
-#include "ry-Feature.h"
-#include "ry-Config.h"
+#include "py-Feature.h"
+#include "py-Config.h"
 #include "types.h"
 
 #include "../Kin/feature.h"

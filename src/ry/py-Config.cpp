@@ -8,8 +8,7 @@
 
 #ifdef RAI_PYBIND
 
-#include "ry.h"
-
+#include "py-Config.h"
 #include "types.h"
 
 #include "../Kin/kin.h"
@@ -336,7 +335,7 @@ To get really precise distances and penetrations use the FS.distance feature wit
   .def("view_fxycxy", [](shared_ptr<rai::Configuration>& self){
     OpenGL& gl = self->viewer()->ensure_gl();
     rai::Camera& cam = self->viewer()->displayCamera();
-    return cam.getFxyCxy(gl.width, gl.height);
+    return cam.getFxycxy(gl.width, gl.height);
   }, "return (fx, fy, cx, cy): the focal length and image center in PIXEL UNITS")
 
   .def("view_setCamera", [](shared_ptr<rai::Configuration>& self, rai::Frame* frame){
@@ -424,7 +423,7 @@ reloads, displays and animates the configuration whenever the file is changed"
       pybind11::arg("config"),
       pybind11::arg("visualsOnly") = true )
 
-  .def("getFxyCxy", &rai::CameraView::getFxyCxy, "return the camera intrinsics f_x, f_y, c_x, c_y")
+  .def("getFxycxy", &rai::CameraView::getFxycxy, "return the camera intrinsics f_x, f_y, c_x, c_y")
   .def("computeSegmentationImage", &rai::CameraView::computeSegmentationImage, "return an rgb image encoding the object ID segmentation")
   .def("computeSegmentationID", &rai::CameraView::computeSegmentationImage, "return a uint16 array with object ID segmentation")
   ;

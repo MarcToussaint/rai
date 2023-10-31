@@ -28,7 +28,7 @@ void TEST(CameraView){
 
   V.computeImageAndDepth(image.set(), depth.set());
   segmentation.set() = V.computeSegmentationImage();
-  depthData2pointCloud(pts.set(), depth.get(), V.getFxyCxy());
+  depthData2pointCloud(pts.set(), depth.get(), V.getFxycxy());
 
   rai::wait();
 

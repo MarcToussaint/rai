@@ -8,8 +8,8 @@
 
 #ifdef RAI_PYBIND
 
-#include "ry-Config.h"
-#include "ry-Simulation.h"
+#include "py-Config.h"
+#include "py-Simulation.h"
 #include "types.h"
 
 #include "../Kin/frame.h"
@@ -44,13 +44,13 @@ void init_Simulation(pybind11::module& m) {
        pybind11::arg("u_mode") = rai::Simulation::_velocity
       )
 
-  .def("move", &rai::Simulation::move,
-       "set the spline reference to genreate motion",
-
   .def("setSplineRef", &rai::Simulation::setSplineRef,
-       "set the spline reference to genreate motion",
+       "set the spline reference to generate motion"
+       "\n* path: single configuration, or sequence of spline control points"
+       "\n* times: array with single total duration, or time for each control point (times.N==path.d0)"
+       "\n* append: append (with zero-velocity at append), or smoothly overwrite",
        pybind11::arg("path"),
-       pybind11::arg("t"),
+       pybind11::arg("times"),
        pybind11::arg("append") = true
        )
 
@@ -154,10 +154,10 @@ void init_Simulation(pybind11::module& m) {
        pybind11::arg("jointVelocities") = NoArr
        )
 
-  .def("depthData2pointCloud", [](std::shared_ptr<rai::Simulation>& self, const pybind11::array_t<float>& depth, const std::vector<double>& FxyCxy) {
+  .def("depthData2pointCloud", [](std::shared_ptr<rai::Simulation>& self, const pybind11::array_t<float>& depth, const std::vector<double>& fxycxy) {
     arr points;
     floatA _depth = numpy2arr<float>(depth);
-    depthData2pointCloud(points, _depth, arr(FxyCxy, true));
+    depthData2pointCloud(points, _depth, arr(fxycxy, true));
     return arr2numpy(points);
   })
 

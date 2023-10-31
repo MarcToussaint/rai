@@ -8,7 +8,7 @@
 
 #ifdef RAI_PYBIND
 
-#include "../ry/types.h"
+#include "types.h"
 #include "../Optim/NLP_Factory.h"
 #include "../Optim/NLP_Solver.h"
 #include "../KOMO/opt-benchmarks.h"

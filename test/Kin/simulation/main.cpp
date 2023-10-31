@@ -275,7 +275,7 @@ void testPcl(){
   double tau=.05;
   for(uint t=0;t<20;t++){
     S.getImageAndDepth(img, depth);
-    depthData2pointCloud(pts, depth, S.cameraview().currentSensor->getFxyCxy());
+    depthData2pointCloud(pts, depth, S.cameraview().currentSensor->getFxycxy());
 
     {
       auto lock = S.displayMutex()(RAI_HERE);

@@ -8,13 +8,22 @@
 
 #ifdef RAI_PYBIND
 
-#include "ry.h"
+#include "py-Config.h"
+#include "py-Feature.h"
+#include "py-Frame.h"
+#include "py-KOMO.h"
+#include "py-Simulation.h"
+//#include "py-Camera.h"
+//#include "py-LGP_Tree.h"
+//#include "py-Operate.h"
+//#include "py-Control.h"
+#include "py-Optim.h"
+#include "py-tests.h"
 #include "types.h"
 
 #include <pybind11/pybind11.h>
 #include "../Core/util.h"
 #include "../Core/graph.h"
-
 
 void init_CfgFileParameters(){
   char* argv[2] = {(char*)"rai-pybind", (char*)"-python"};

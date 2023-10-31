@@ -2086,7 +2086,7 @@ void Camera::unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) con
 #endif
 }
 
-arr Camera::getFxyCxy(double width, double height){ return arr{focalLength*height, focalLength*height, .5*width, .5*height}; }
+arr Camera::getFxycxy(double width, double height){ return arr{focalLength*height, focalLength*height, .5*width, .5*height}; }
 
 arr Camera::getIntrinsicMatrix(double width, double height) const {
   if(focalLength>0.) { //normal perspective mode

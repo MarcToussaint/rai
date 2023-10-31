@@ -13,14 +13,14 @@
 
 void loadPcl(arr& pts, byteA& color){
   floatA depth;
-  arr FxyCxy;
+  arr fxycxy;
 
   ifstream fil("z.depthImage");
   color.readTagged(fil, "color");
   depth.readTagged(fil, "depth");
-  FxyCxy.readTagged(fil, "FxyCxy");
+  fxycxy.readTagged(fil, "fxycxy");
 
-  depthData2pointCloud(pts, depth, FxyCxy);
+  depthData2pointCloud(pts, depth, fxycxy);
 
   uint cL=30, cR=30, cT=30, cB=30;
   color = color.sub(cT,-cB,cL,-cR,0,-1);

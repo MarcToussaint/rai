@@ -8,8 +8,8 @@
 
 #ifdef RAI_PYBIND
 
-#include "ry-Bullet.h"
-#include "ry-Config.h"
+#include "py-Bullet.h"
+#include "py-Config.h"
 #include "types.h"
 #include "../Kin/kin_bullet.h"
 

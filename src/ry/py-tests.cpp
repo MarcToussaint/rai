@@ -8,7 +8,7 @@
 
 #ifdef RAI_PYBIND
 
-#include "../ry/types.h"
+#include "types.h"
 #include <pybind11/functional.h>
 #include <pybind11/iostream.h>
 

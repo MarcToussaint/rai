@@ -8,8 +8,8 @@
 
 #ifdef RAI_PYBIND
 
-#include "ry-Operate.h"
-#include "ry-Config.h"
+#include "py-Operate.h"
+#include "py-Config.h"
 #include "types.h"
 
 #include "../Operate/robotOperation.h"

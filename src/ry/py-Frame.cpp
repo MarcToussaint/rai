@@ -8,7 +8,7 @@
 
 #ifdef RAI_PYBIND
 
-#include "ry-Frame.h"
+#include "py-Frame.h"
 #include "types.h"
 
 #include "../Core/thread.h"
