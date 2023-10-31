@@ -31,18 +31,18 @@ void init_Camera(pybind11::module& m) {
     return Array2numpy<float>(depth);
   })
 
-  .def("getPoints", [](ry::RyCamera& self, const std::vector<double>& Fxypxy) {
+  .def("getPoints", [](ry::RyCamera& self, const std::vector<double>& FxyCxy) {
     floatA _depth = self.depth.get();
     arr _points;
-    CHECK_EQ(Fxypxy.size(), 4, "I need 4 intrinsic calibration parameters")
-    depthData2pointCloud(_points, _depth, Fxypxy[0], Fxypxy[1], Fxypxy[2], Fxypxy[3]);
+    CHECK_EQ(FxyCxy.size(), 4, "I need 4 intrinsic calibration parameters")
+    depthData2pointCloud(_points, _depth, FxyCxy[0], FxyCxy[1], FxyCxy[2], FxyCxy[3]);
     return arr2numpy(_points);
   })
 
-  .def("transform_image2world", [](ry::RyCamera& self, const std::vector<double>& pt, const char* cameraFrame, const std::vector<double>& Fxypxy) {
+  .def("transform_image2world", [](ry::RyCamera& self, const std::vector<double>& pt, const char* cameraFrame, const std::vector<double>& FxyCxy) {
     NIY
 //    arr _pt = pt;
-//    depthData2point(_pt, conv_stdvec2arr(Fxypxy)); //transforms the point to camera xyz coordinates
+//    depthData2point(_pt, conv_stdvec2arr(FxyCxy)); //transforms the point to camera xyz coordinates
 
 //    pcl->X.applyOnPoint(pt); //transforms into world coordinates
 

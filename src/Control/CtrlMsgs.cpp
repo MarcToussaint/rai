@@ -5,7 +5,7 @@
 void rai::CameraAbstraction::getPointCloud(byteA& image, arr& pts, bool globalCoordinates) {
   floatA depth;
   getImageAndDepth(image, depth);
-  depthData2pointCloud(pts, depth, getFxycxy());
+  depthData2pointCloud(pts, depth, getFxyCxy());
   if(globalCoordinates){
     rai::Transformation pose=getPose();
     if(!pose.isZero()){

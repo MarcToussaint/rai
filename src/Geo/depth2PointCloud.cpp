@@ -18,8 +18,8 @@ Depth2PointCloud::Depth2PointCloud(Var<floatA>& _depth, float _fx, float _fy, fl
   threadOpen();
 }
 
-Depth2PointCloud::Depth2PointCloud(Var<floatA>& _depth, const arr& Fxypxy)
-  : Depth2PointCloud(_depth, Fxypxy(0), Fxypxy(1), Fxypxy(2), Fxypxy(3)) {
+Depth2PointCloud::Depth2PointCloud(Var<floatA>& _depth, const arr& FxyCxy)
+  : Depth2PointCloud(_depth, FxyCxy(0), FxyCxy(1), FxyCxy(2), FxyCxy(3)) {
 }
 
 Depth2PointCloud::~Depth2PointCloud() {
@@ -72,25 +72,25 @@ void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, flo
 
 }
 
-void depthData2pointCloud(arr& pts, const floatA& depth, const arr& Fxypxy) {
-  depthData2pointCloud(pts, depth, Fxypxy.elem(0), Fxypxy.elem(1), Fxypxy.elem(2), Fxypxy.elem(3));
+void depthData2pointCloud(arr& pts, const floatA& depth, const arr& FxyCxy) {
+  depthData2pointCloud(pts, depth, FxyCxy.elem(0), FxyCxy.elem(1), FxyCxy.elem(2), FxyCxy.elem(3));
 }
 
-void depthData2point(double* pt, double* fxypxy) {
-  pt[0] = pt[2] * (pt[0] - fxypxy[2]) / fxypxy[0];
-  pt[1] = pt[2] * (pt[1] - fxypxy[3]) / fxypxy[1];
+void depthData2point(double* pt, double* FxyCxy) {
+  pt[0] = pt[2] * (pt[0] - FxyCxy[2]) / FxyCxy[0];
+  pt[1] = pt[2] * (pt[1] - FxyCxy[3]) / FxyCxy[1];
 //  pt[2] = pt[2];
 }
 
-void point2depthData(double* pt, double* fxypxy) {
-  pt[0] = fxypxy[2] + (pt[0]*fxypxy[0])/pt[2];
-  pt[1] = fxypxy[3] + (pt[1]*fxypxy[1])/pt[2];
+void point2depthData(double* pt, double* FxyCxy) {
+  pt[0] = FxyCxy[2] + (pt[0]*FxyCxy[0])/pt[2];
+  pt[1] = FxyCxy[3] + (pt[1]*FxyCxy[1])/pt[2];
   //  pt[2] = pt[2];
 }
 
-void depthData2point(arr& pt, const arr& Fxypxy) {
+void depthData2point(arr& pt, const arr& FxyCxy) {
   CHECK_EQ(pt.N, 3, "need a 3D point");
-  CHECK_EQ(Fxypxy.N, 4, "need 4 intrinsic parameters");
-  depthData2point(pt.p, Fxypxy.p);
+  CHECK_EQ(FxyCxy.N, 4, "need 4 intrinsic parameters");
+  depthData2point(pt.p, FxyCxy.p);
 }
 

@@ -275,7 +275,7 @@ void testPcl(){
   double tau=.05;
   for(uint t=0;t<20;t++){
     S.getImageAndDepth(img, depth);
-    depthData2pointCloud(pts, depth, S.cameraview().currentSensor->getFxycxy());
+    depthData2pointCloud(pts, depth, S.cameraview().currentSensor->getFxyCxy());
 
     {
       auto lock = S.displayMutex()(RAI_HERE);
@@ -431,6 +431,34 @@ void testMotors(){
 
 //===========================================================================
 
+void testSplineMode(){
+  rai::Configuration C;
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
+
+  double tau = .01;
+  rai::Simulation S(C, S._physx, 2);
+  Metronome tic(tau);
+
+  //generate random waypoints
+  uint T = 10;
+  arr q0 = C.getJointState();
+  arr q = repmat(~q0, T, 1);
+  q += .5 * randn(q.d0, q.d1);
+  //move command requires total time or explicit times for each control point
+  double time = 10;
+  S.setSplineRef(q, {time});
+
+  for(uint t=0;t<time/tau;t++){
+    tic.waitForTic();
+
+    S.step({}, tau, S._spline);
+  }
+
+  rai::wait();
+}
+
+//===========================================================================
+
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
@@ -444,6 +472,7 @@ int MAIN(int argc,char **argv){
   testPushes();
   testOpenClose();
   testGrasp();
+  testSplineMode();
 
   return 0;
 }

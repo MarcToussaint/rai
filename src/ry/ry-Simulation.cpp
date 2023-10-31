@@ -44,14 +44,17 @@ void init_Simulation(pybind11::module& m) {
        pybind11::arg("u_mode") = rai::Simulation::_velocity
       )
 
-  .def("setMoveto", &rai::Simulation::setMoveTo,
+  .def("move", &rai::Simulation::move,
+       "set the spline reference to genreate motion",
+
+  .def("setSplineRef", &rai::Simulation::setSplineRef,
        "set the spline reference to genreate motion",
        pybind11::arg("path"),
        pybind11::arg("t"),
        pybind11::arg("append") = true
        )
 
-  .def("getTimeToMove", &rai::Simulation::getTimeToMove)
+  .def("getTimeToSplineEnd", &rai::Simulation::getTimeToSplineEnd)
 
   .def("get_q", &rai::Simulation::get_q)
 
@@ -151,10 +154,10 @@ void init_Simulation(pybind11::module& m) {
        pybind11::arg("jointVelocities") = NoArr
        )
 
-  .def("depthData2pointCloud", [](std::shared_ptr<rai::Simulation>& self, const pybind11::array_t<float>& depth, const std::vector<double>& Fxypxy) {
+  .def("depthData2pointCloud", [](std::shared_ptr<rai::Simulation>& self, const pybind11::array_t<float>& depth, const std::vector<double>& FxyCxy) {
     arr points;
     floatA _depth = numpy2arr<float>(depth);
-    depthData2pointCloud(points, _depth, arr(Fxypxy, true));
+    depthData2pointCloud(points, _depth, arr(FxyCxy, true));
     return arr2numpy(points);
   })
 

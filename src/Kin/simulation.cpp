@@ -252,19 +252,19 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   }
 }
 
-void Simulation::setMoveTo(const arr& x, double t, bool append){
-  arr path = x;
-  if(x.nd==1) path.reshape(1,x.d0);
+void Simulation::setSplineRef(const arr& _x, const arr& _times, bool append){
+  arr path = _x;
+  if(_x.nd==1) path.reshape(1, _x.N);
 
-  arr times = {t};
-  if(x.nd==2) times.setGrid(1, t/(x.d0), t, x.d0-1);
+  arr times = _times;
+  if(times.N==1 && path.d0>1){
+    double t = times.elem();
+    times.setGrid(1, t/(path.d0), t, path.d0-1);
+  }
+  CHECK_EQ(path.d0, times.N, "need times for each control point");
 
   if(append) self->ref.append(path, times, time);
   else self->ref.overwriteSmooth(path, times, time);
-}
-
-void Simulation::move(const arr& path, const arr& t){
-  self->ref.append(path, t, time);
 }
 
 bool getFingersForGripper(rai::Frame*& gripper, rai::Joint*& joint, rai::Frame*& fing1, rai::Frame*& fing2, rai::Configuration& C, const char* gripperFrameName) {
@@ -471,7 +471,7 @@ const arr& Simulation::get_qDot() {
   return self->qDot;
 }
 
-double Simulation::getTimeToMove(){
+double Simulation::getTimeToSplineEnd(){
   return self->ref.getEndTime()-time;
 }
 

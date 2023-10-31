@@ -33,6 +33,9 @@ src: $(src_paths:%=inPath_makeLib/%)
 
 ry: inPath_makeLib/ry
 
+install: force
+	cp --dereference bin/kinEdit $/(HOME)/.local/bin
+
 dependAll: $(src_paths:%=inPath_depend/%)
 
 unityAll: $(src_paths:%=inPath_unity/%)

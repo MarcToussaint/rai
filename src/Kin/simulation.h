@@ -41,9 +41,8 @@ struct Simulation {
   //-- step the simulation, optionally send a low-level control, or use the spline reference
   void step(const arr& u_control={}, double tau=.01, ControlMode u_mode = _spline);
 
-  //-- adapt the spline reference to genreate motion (should become the default way)
-  void setMoveTo(const arr& q, double t, bool append=true);
-  void move(const arr& path, const arr& t);
+  //-- adapt the spline reference to genreate motion (default way)
+  void setSplineRef(const arr& _q, const arr& _times, bool append=true);
 
   //-- send a gripper command
   void moveGripper(const char* gripperFrameName, double width=.075, double speed=.3);
@@ -54,7 +53,7 @@ struct Simulation {
   //-- get state information
   const arr& get_q() { return C.getJointState(); }
   const arr& get_qDot();
-  double getTimeToMove();
+  double getTimeToSplineEnd();
   double getGripperWidth(const char* gripperFrameName);
   bool getGripperIsGrasping(const char* gripperFrameName);
   bool getGripperIsClose(const char* gripperFrameName);

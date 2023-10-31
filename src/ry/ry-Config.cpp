@@ -336,7 +336,7 @@ To get really precise distances and penetrations use the FS.distance feature wit
   .def("view_fxycxy", [](shared_ptr<rai::Configuration>& self){
     OpenGL& gl = self->viewer()->ensure_gl();
     rai::Camera& cam = self->viewer()->displayCamera();
-    return cam.getFxycxy(gl.width, gl.height);
+    return cam.getFxyCxy(gl.width, gl.height);
   }, "return (fx, fy, cx, cy): the focal length and image center in PIXEL UNITS")
 
   .def("view_setCamera", [](shared_ptr<rai::Configuration>& self, rai::Frame* frame){

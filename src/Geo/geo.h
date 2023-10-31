@@ -314,7 +314,7 @@ struct Camera {
   void unproject_fromPixelsAndTrueDepth(arr& x, double width, double height) const;
   void unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) const;
 
-  arr getFxycxy(double width, double height);
+  arr getFxyCxy(double width, double height);
   arr getIntrinsicMatrix(double width, double height) const;
 
   //retired

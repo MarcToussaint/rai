@@ -1338,8 +1338,8 @@ template<class T> void
 Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
   uint i, j, k;
   if(dim==1) {
-    resize(steps+1, 1);
-    for(i=0; i<d0; i++) operator()(i, 0)=lo+(hi-lo)*i/steps;
+    resize(steps+1);
+    for(i=0; i<d0; i++) elem(i)=lo+(hi-lo)*i/steps;
     return;
   }
   if(dim==2) {

@@ -364,7 +364,7 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps);
 /// return a grid (1D: range) split in 'steps' steps
 inline arr grid(uint dim, double lo, double hi, uint steps) { arr g;  g.setGrid(dim, lo, hi, steps);  return g; }
 /// return a 1D-grid
-inline arr range(double lo, double hi, uint steps) { arr g;  g.setGrid(1, lo, hi, steps);  g.reshape(-1);  return g; }
+inline arr range(double lo, double hi, uint steps) { arr g;  g.setGrid(1, lo, hi, steps);  return g; }
 //inline uintA range(uint n) { uintA r;  r.setStraightPerm(n);  return r; }
 
 arr repmat(const arr& A, uint m, uint n);
