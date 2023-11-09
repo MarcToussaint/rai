@@ -1,5 +1,5 @@
 _make/config.mk
-
+/lib
 unity.cxx
 
 %% compile temporaries

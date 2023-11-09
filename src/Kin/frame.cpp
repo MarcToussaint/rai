@@ -587,6 +587,76 @@ rai::Frame& rai::Frame::setJointState(const arr& q) {
   return *this;
 }
 
+void rai::Frame::makeAutoJoint(rai::JointType jointType, rai::Frame* parent, bool autoLimits){
+  Transformation orgX = ensure_X();
+
+  //THIS is the new STANDARD! (was the version that works for the crawler; works also for pnp LGP test - but not when picking link-shapes only!)
+  C.reconfigureRoot(this, true);
+
+  //create a new joint
+  setParent(parent, false, true); //checkForLoop might throw an error
+  setJoint(jointType);
+  CHECK(jointType!=JT_none, "");
+
+  Transformation rel = 0;
+  if(jointType==JT_transXYPhi || jointType==JT_transXY){
+    rel.pos.set(0, 0, .5*(shapeSize(parent) + shapeSize(this)));
+  }
+  if(!rel.isZero()) insertPreLink(rel);
+
+  {//copy init
+    Q = orgX / parent->ensure_X();
+    if(joint->dim>0) {
+      arr q = joint->calcDofsFromConfig();
+      Q.setZero();
+      joint->setDofs(q, 0);
+    }
+  }
+
+  //-- auto limits
+  if(autoLimits){
+    if(jointType==JT_free){
+      double maxsize = 0.;
+      rai::Shape* from = parent->shape;
+      if(from && from->type()!=rai::ST_marker){
+        if(from->type()==rai::ST_sphere || from->type()==rai::ST_cylinder || from->type()==rai::ST_ssCylinder){
+          maxsize += 2.*from->size(0);
+        }else{
+          maxsize += absMax(from->size);
+        }
+      }else if(from){
+        CHECK_EQ(from->type(), ST_marker, "");
+      }
+      rai::Shape* to = this->shape;
+      if(to && to->type()!=rai::ST_marker){
+        if(to->type()==rai::ST_sphere || to->type()==rai::ST_cylinder || to->type()==rai::ST_ssCylinder){
+          maxsize += 2.*to->size(0);
+        }else{
+          maxsize += absMax(to->size);
+        }
+      }
+      if(maxsize>1e-4){
+        joint->limits =
+        { -.9*maxsize, .9*maxsize,
+          -.9*maxsize, .9*maxsize,
+          -.9*maxsize, .9*maxsize,
+          //            0., 1.1, -.5,.5, -.5,.5, -.5,.5 }; //no limits on rotation
+          -1.1,1.1, -1.1,1.1, -1.1,1.1, -1.1,1.1 }; //no limits on rotation
+      }
+      //        f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
+    } else if(jointType==JT_transXY || jointType==JT_transXYPhi){
+      rai::Shape* on = parent->shape;
+      CHECK_EQ(on->type(), rai::ST_ssBox, "");
+      joint->limits = { -.5*on->size(0), .5*on->size(0),
+                        -.5*on->size(1), .5*on->size(1) };
+      if(jointType==JT_transXYPhi) joint->limits.append({-RAI_2PI,RAI_2PI});
+    }
+    //sample heuristic
+    joint->q0 = joint->calcDofsFromConfig();
+  }
+
+}
+
 arr rai::Frame::getSize() const {
   if(!shape) return {};
   return shape->size;
@@ -703,7 +773,7 @@ bool rai::Frame::isChildOf(const rai::Frame* par, int order) const {
 void rai::Dof::setRandom(uint timeSlices_d1, int verbose){
   if(sampleUniform>0. && (sampleUniform>=1. || sampleUniform>=rnd.uni())){
     //** UNIFORM
-    if(verbose>0) LOG(0) <<"init '" <<frame->name <<'[' <<frame->ID <<',' <<(timeSlices_d1?frame->ID/timeSlices_d1:0) <<']' <<"' uniform in limits " <<limits <<" relative to '" <<frame->parent->name <<"'";
+    if(verbose>0) LOG(0) <<"init '" <<frame->name <<'[' <<frame->ID <<',' <<(timeSlices_d1?frame->ID/timeSlices_d1:0) <<']' <<"' uniform in limits " <<limits <<" relative to '" <<frame->parent->name <<"'" <<" (" <<frame->parent->ensure_X() <<")";
 
     if(frame->prev){
       frame->set_X() = frame->prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
@@ -746,7 +816,7 @@ void rai::Dof::setRandom(uint timeSlices_d1, int verbose){
     //gauss
     arr q = calcDofsFromConfig();
     rndGauss(q, sampleSdv, true);
-    if(verbose>0) LOG(0) <<"init '" <<frame->name <<'[' <<frame->ID <<',' <<(timeSlices_d1?frame->ID/timeSlices_d1:0) <<']' <<"' adding noise: " <<q;
+    if(verbose>0) LOG(0) <<"init '" <<frame->name <<'[' <<frame->ID <<',' <<(timeSlices_d1?frame->ID/timeSlices_d1:0) <<']' <<"' adding noise: " <<q <<" relative to '" <<frame->parent->name <<"'";
 
     //clip
     if(limits.N){

@@ -169,6 +169,8 @@ struct Frame : NonCopyable {
   Frame& setAttribute(const char* key, double value);
   Frame& setJointState(const arr& q); ///< throws error if this frame is not also a joint, and if q.size() != joint->dim
 
+  void makeAutoJoint(JointType jointType, Frame* parent, bool autoLimits); //create an articulated joint, automatically adding relative transform frame if necessary, automatically setting limits
+
   arr getPose() { return ensure_X().getArr7d(); }
   arr getPosition() { return ensure_X().pos.getArr(); }
   arr getQuaternion() { return ensure_X().rot.getArr4d(); }

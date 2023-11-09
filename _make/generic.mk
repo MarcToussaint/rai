@@ -309,6 +309,7 @@ pywrapper: $(OUTPUT) $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 
 %.so: $(PREOBJS) $(BUILDS) $(OBJS)
 	$(LINK) $(LDFLAGS) -o $@ $(OBJS) $(LIBS) $(SHAREFLAG)
+	@mkdir -p $(BASE)/lib
 	cp $@ $(BASE)/lib
 
 #%.so: $(PREOBJS) $(BUILDS) z.unity.o
@@ -320,6 +321,7 @@ pywrapper: $(OUTPUT) $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 
 %.a: $(PREOBJS) $(BUILDS) $(OBJS)
 	ar -crvs $@ $(OBJS)
+	@mkdir -p $(BASE)/lib
 	cp $@ $(BASE)/lib
 
 #%.a: $(PREOBJS) $(BUILDS)

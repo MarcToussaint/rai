@@ -9,6 +9,7 @@ namespace rai{
 PathDof::PathDof(Frame& a, PathDof* copy){
   frame = &a;
   dim = 1;
+  limits = {0., 1.};
   frame->C.reset_q();
   frame->pathDof=this;
   if(copy) {
@@ -45,7 +46,6 @@ void PathDof::read(const Graph& ats) {
     fil.cd_file();
     path.read(fil.getIs());
   }
-  limits = {0., 1.};
 
   ats.get(sampleUniform, "sampleUniform");
 }

@@ -188,7 +188,9 @@ bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, doubl
     {
       auto _dataLock = gl->dataLock(RAI_HERE);
       drawSubFrames = F[t];
-      drawText.clear() <<tag <<" (config:" <<t <<'/' <<F.d0 <<")";
+      drawText.clear() <<tag <<"\n(slice " <<t <<'/' <<F.d0;
+      if(phaseFactor>0.) drawText <<", phase " <<phaseFactor*(double(t)+phaseOffset);
+      drawText <<")";
     }
 
     if(delay<0.) {

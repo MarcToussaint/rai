@@ -40,6 +40,9 @@ void TEST(MeshTools) {
     cout <<"== mesh info ==";
     cout <<"  #vertices: " <<mesh.V.d0
         <<"\n  #triangles: " <<mesh.T.d0
+        <<"\n  #colors: " <<mesh.C.d0
+        <<"\n  #Vnormals: " <<mesh.Vn.d0
+        <<"\n  #Tnormals: " <<mesh.Tn.d0
        <<"\n  bounds: " <<mesh.getBounds()
       <<"\n  center: " <<mesh.getMean()
      <<"\n  area: " <<(mesh.T.N?mesh.getArea():0)

@@ -6,7 +6,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
       addSwitch({time}, true, JT_free, SWInit_copy, from, to);
     } else { //SY_stableOn
       Transformation rel = 0;
-      rel.pos.set(0, 0, .5*(shapeSize(world, from) + shapeSize(world, to)));
+      rel.pos.set(0, 0, .5*(shapeSize(world.getFrame(from)) + shapeSize(world.getFrame(to))));
       addSwitch({time}, true, JT_transXYPhi, SWInit_copy, from, to, rel);
     }
 
@@ -66,7 +66,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 
   if(newMode==SY_dynamicOn) {
     Transformation rel = 0;
-    rel.pos.set(0, 0, .5*(shapeSize(world, from) + shapeSize(world, to)));
+    rel.pos.set(0, 0, .5*(shapeSize(world.getFrame(from)) + shapeSize(world.getFrame(to))));
     addSwitch({time}, true, JT_transXYPhi, SWInit_copy, from, to, rel);
     if(k_order>=2) addObjective({time, endTime}, FS_pose, {to}, OT_eq, {3e1}, NoArr, k_order, +0, -1);
     //  else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
@@ -79,7 +79,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 
   if(newMode==SY_quasiStaticOn) {
     Transformation rel = 0;
-    rel.pos.set(0, 0, .5*(shapeSize(world, from) + shapeSize(world, to)));
+    rel.pos.set(0, 0, .5*(shapeSize(world.getFrame(from)) + shapeSize(world.getFrame(to))));
     addSwitch({time}, true, JT_transXYPhi, SWInit_copy, from, to, rel);
 #if 0
     addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(world, to, 0., false), OT_eq, {1e2}, NoArr, 1, +0, -1);
@@ -129,7 +129,7 @@ void KOMO::setDiscreteOpt(uint k) {
 
 void KOMO::addSwitch_on(double time, const char* from, const char* to, bool copyInitialization) {
   Transformation rel = 0;
-  rel.pos.set(0, 0, .5*(shapeSize(world, from) + shapeSize(world, to)));
+  rel.pos.set(0, 0, .5*(shapeSize(world.getFrame(from)) + shapeSize(world.getFrame(to))));
   addSwitch({time}, true, JT_transXYPhi, (copyInitialization?SWInit_copy:SWInit_zero), from, to, rel);
 }
 
@@ -171,7 +171,7 @@ void KOMO_ext::setPlace(double time, const char* endeff, const char* object, con
   //connect object to placeRef
 #if 0
   Transformation rel = 0;
-  rel.pos.set(0, 0, .5*(shapeSize(world, object) + shapeSize(world, placeRef)));
+  rel.pos.set(0, 0, .5*(shapeSize(world.getFrame(object)) + shapeSize(world.getFrame(placeRef))));
 //  setKinematicSwitch(time, true, "transXYPhiZero", placeRef, object, rel );
   addSwitch({time}, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, placeRef, object, world, SWInit_zero, 0, rel));
 
@@ -343,7 +343,7 @@ void KOMO_ext::setKS_slider(double time, double endTime, bool before, const char
   String sliderb = STRING(slider <<'b');
 
   Transformation rel = 0;
-  rel.addRelativeTranslation(0., 0., .5*(shapeSize(world, obj) + shapeSize(world, table)));
+  rel.addRelativeTranslation(0., 0., .5*(shapeSize(world.getFrame(obj)) + shapeSize(world.getFrame(table))));
 
 //  setKinematicSwitch(time, true, "transXYPhiZero", table, slidera, rel);
 //  setKinematicSwitch(time, true, "hingeZZero", sliderb, obj);
@@ -404,7 +404,7 @@ void KOMO_ext::setImpact(double time, const char* a, const char* b) {
 }
 
 void KOMO_ext::setOverTheEdge(double time, const char* object, const char* from, double margin) {
-//  double negMargin = margin + .5*shapeSize(world, object, 0); //how much outside the bounding box?
+//  double negMargin = margin + .5*shapeSize(world.getFrame(object), 0); //how much outside the bounding box?
   NIY;
 //  addObjective({time, time+.5},
 //               make_shared<F_Max>(make_shared<TM_AboveBox>(world, object, from, -negMargin), true), //this is the max selection -- only one of the four numbers need to be outside the BB
@@ -543,7 +543,7 @@ void KOMO_ext::setPush(double startTime, double endTime, const char* stick, cons
 //  setTask(startTime, endTime, new TM_Default(TMT_vecAlign, world, stick, Vector_x, nullptr, Vector_z), OT_sos, {0.}, 1e1);
   add_touch(startTime, endTime, stick, table);
 
-  double dist = .05; //.5*shapeSize(world, object, 0)+.01;
+  double dist = .05; //.5*shapeSize(world.getFrame(object), 0)+.01;
   addObjective({startTime, endTime}, make_shared<F_InsideBox>(), {"slider1b", stick}, OT_ineq);
   HALT("ivec = Vector(dist, .0, .0) is missing");
   Vector(dist, .0, .0),
@@ -559,7 +559,7 @@ void KOMO_ext::setPush(double startTime, double endTime, const char* stick, cons
 #if 0
   //connect object to placeRef
   Transformation rel = 0;
-  rel.pos.set(0, 0, .5*(shapeSize(world, object) + shapeSize(world, table)));
+  rel.pos.set(0, 0, .5*(shapeSize(world.getFrame(object)) + shapeSize(world.getFrame(table))));
   addSwitch({endTime}, true, "transXYPhiZero", table, object, rel);
 //  auto *o = addObjective({startTime, endTime}, make_shared<TM_ZeroQVel>(world, object), OT_eq, {3e1}, NoArr, 1, +1);
 //  o->prec(-1)=o->prec(-2)=0.;
@@ -614,7 +614,7 @@ void KOMO_ext::setGraspSlide(double time, const char* endeff, const char* object
 
   //-- slide constraints!
   //keep height of object above table
-//  double h = .5*(shapeSize(world, object) + shapeSize(world, placeRef));
+//  double h = .5*(shapeSize(world.getFrame(object)) + shapeSize(world.getFrame(placeRef)));
   HALT("TODO: fix syntax:")
 //  addObjective(startTime, endTime,
 //          make_shared<TM_Default>(TMT_posDiff, world, object, NoVector, placeRef),
@@ -639,7 +639,7 @@ void KOMO_ext::setSlideAlong(double time, const char* stick, const char* object,
   //stick horizontal is orthogonal to world vertical
   addObjective({time, time+1.}, make_shared<F_ScalarProduct>(Vector_x, Vector_z), {stick}, OT_sos, {1e1}, {0.});
 
-//  double dist = .5*shapeSize(world, object, 0)+.01;
+//  double dist = .5*shapeSize(world.getFrame(object), 0)+.01;
   addObjective({time, time+1.}, make_shared<F_InsideBox>(), {object, stick}, OT_ineq);
   HALT("ivec = Vector(dist, .0, .0), is missing");
 
@@ -652,7 +652,7 @@ void KOMO_ext::setSlideAlong(double time, const char* stick, const char* object,
 
   Transformation rel = 0;
   rel.rot.setDeg(-90, {1, 0, 0});
-  rel.pos.set(0, -.5*(shapeSize(world, wall, 1) - shapeSize(world, object)), +.5*(shapeSize(world, wall, 2) + shapeSize(world, object, 1)));
+  rel.pos.set(0, -.5*(shapeSize(world.getFrame(wall), 1) - shapeSize(world.getFrame(object))), +.5*(shapeSize(world.getFrame(wall), 2) + shapeSize(world.getFrame(object), 1)));
   addSwitch({time}, true, JT_transX, SWInit_zero, wall, object);
   HALT("deprecated")//addSwitch({time}, true, new KinematicSwitch(SW_insertEffJoint, JT_transZ, nullptr, object, world, SWInit_zero, 0, rel));
   //    setKinematicSwitch(time, true, "insert_trans3", nullptr, object);

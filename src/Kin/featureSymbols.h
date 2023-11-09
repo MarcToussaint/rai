@@ -75,6 +75,7 @@ enum FeatureSymbol {
 
 namespace rai {
 struct Configuration;
+struct Frame;
 }
 struct Feature;
 
@@ -84,4 +85,4 @@ inline shared_ptr<Feature> make_feature(FeatureSymbol feat, const StringA& frame
   return symbols2feature(feat, frames, C, scale, target, order);
 }
 
-double shapeSize(const rai::Configuration& K, const char* name, uint i=2);
+double shapeSize(const rai::Frame *f, uint i=2);

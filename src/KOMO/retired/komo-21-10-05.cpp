@@ -23,7 +23,7 @@ void KOMO::addSwitch_dynamicTrans(double time, double endTime, const char* from,
 
 void KOMO::addSwitch_dynamicOn(double time, double endTime, const char* from, const char* to) {
   Transformation rel = 0;
-  rel.pos.set(0, 0, .5*(shapeSize(world, from) + shapeSize(world, to)));
+  rel.pos.set(0, 0, .5*(shapeSize(world.getFrame(from)) + shapeSize(world.getFrame(to))));
   addSwitch({time}, true, JT_transXYPhi, SWInit_zero, from, to, rel);
   if(k_order>=2) addObjective({time, endTime}, FS_pose, {to}, OT_eq, {3e1}, NoArr, k_order, +0, -1);
 //  else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
@@ -31,7 +31,7 @@ void KOMO::addSwitch_dynamicOn(double time, double endTime, const char* from, co
 
 void KOMO::addSwitch_dynamicOnNewton(double time, double endTime, const char* from, const char* to) {
   Transformation rel = 0;
-  rel.pos.set(0, 0, .5*(shapeSize(world, from) + shapeSize(world, to)));
+  rel.pos.set(0, 0, .5*(shapeSize(world.getFrame(from)) + shapeSize(world.getFrame(to))));
   addSwitch({time}, true, JT_transXYPhi, SWInit_zero, from, to, rel);
   if(k_order>=2) addObjective({time, endTime}, make_shared<F_NewtonEuler>(), {to}, OT_eq, {1e0}, NoArr, k_order, +0, -1);
 }

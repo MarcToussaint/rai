@@ -1,6 +1,7 @@
 #include <KOMO/skeleton.h>
 #include <KOMO/komo.h>
 #include <Kin/viewer.h>
+#include <Kin/dof_path.h>
 #include <PathAlgos/ConfigurationProblem.h>
 #include <PathAlgos/RRT_PathFinder.h>
 #include <KOMO/pathTools.h>
@@ -37,17 +38,26 @@ int main(int argc,char **argv){
 
   uint samples = rai::getParameter<uint>("samples", 10);
   bool collisions = rai::getParameter<bool>("collisions", false);
+  bool final = rai::getParameter<bool>("final", true);
   bool ways = rai::getParameter<bool>("ways", true);
   bool rrt = rai::getParameter<bool>("rrt", false);
   bool path = rai::getParameter<bool>("path", false);
   double rrtStopEvals =  rai::getParameter<double>("rrtStopEvals", 10000);
   double rrtTolerance =  rai::getParameter<double>("rrtTolerance", .03);
   double rrtStepsize =  rai::getParameter<double>("rrtStepsize", .05);
+  StringA floating = rai::getParameter<StringA>("floating", {});
 
   LOG(0) <<"used parameters: " <<rai::params();
 
   rai::Configuration C;
   C.addFile(confFile);
+
+  if(floating.N){
+    floating.reshape(-1, 3);
+    for(uint i=0;i<floating.d0;i++){
+      C[floating(i,1)]->makeAutoJoint(rai::Enum<rai::JointType>(floating(i,2)), C[floating(i,0)], true);
+    }
+  }
 
   rai::Skeleton S;
   S.read(FILE(sktFile));
@@ -61,12 +71,34 @@ int main(int argc,char **argv){
   for(uint i=0;i<samples;i++){
     cout <<"=== SAMPLE " <<i <<" ===" <<endl;
 
+    komo_way = S.getKomo_waypoints(C);
+    komo_path = S.getKomo_path(C);
+    komo_final = S.getKomo_finalSlice(C);
+
+    //-- final
+    if(final){
+      komo_final->initRandom();
+      komo_final->pathConfig.gl().setTitle("FINAL");
+      komo_final->view(true, STRING("random init sample " <<i));
+      {
+        auto ret = NLP_Solver() .setProblem(komo_way->nlp()) .solve();
+        cout <<komo_final->report(false, true) <<endl;
+        cout <<*ret <<endl;
+
+        rai::wait(.1);
+        komo_final->pathConfig.viewer()->raiseWindow();
+        komo_final->view(true, STRING("solved sample " <<i <<"\n" <<*ret));
+        //if(!ret->feasible) continue;
+      }
+    }
+
     //-- waypoints
     komo_way->initRandom(0);
     komo_way->pathConfig.gl().setTitle("WAYPOINTS");
     komo_way->view(true, STRING("random init sample " <<i));
     if(!ways) continue;
     {
+      komo_way->opt.animateOptimization=2;
       NLP_Solver sol;
       sol.setProblem(komo_way->nlp());
       auto ret = sol.solve();
@@ -94,6 +126,7 @@ int main(int argc,char **argv){
         rai::Configuration C;
         arr q0, qT;
         rai::Skeleton::getTwoWaypointProblem(t, C, q0, qT, *komo_way);
+        if(q0.N==0 && qT.N==0) continue;
         //cout <<C.getJointNames() <<endl;
         ConfigurationProblem cp(C, true, rrtTolerance);
         if(S.explicitCollisions.N) cp.setExplicitCollisionPairs(S.explicitCollisions);
@@ -127,6 +160,25 @@ int main(int argc,char **argv){
       komo_path->pathConfig.viewer()->raiseWindow();
       komo_path->view(true, STRING("solved sample " <<i <<"\n" <<*ret));
       while(komo_path->view_play(true));
+    }
+
+    //-- readout in case of float
+    if(floating.N){
+      arr X = komo_path->getPath_X();
+      for(uint i=0;i<floating.d0;i++){
+        rai::Frame *f = C[floating(i,1)];
+        rai::String pathFile = STRING("guide_"<<floating(i,1)<<".dat");
+        arr path = X.sub(0,-1,f->ID,f->ID,0,-1);
+        FILE(pathFile) <<path;
+        rai::Frame *g = C.addFrame(f->name+"_guide");
+        if(!g->shape) g->shape = new rai::Shape(*g, f->shape); //copy shap
+        if(!g->pathDof) g->pathDof = new rai::PathDof(*g);
+        g->pathDof->path = path;
+        if(!g->ats) g->ats = make_shared<rai::Graph>();
+        g->ats->add<rai::String>("path", pathFile);
+      }
+      FILE("z.floating.g") <<C <<endl;
+      while(C.animate()!='q');
     }
   }
 

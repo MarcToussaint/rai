@@ -11,8 +11,9 @@
 
 namespace rai {
 
-Array<SkeletonSymbol> skeletonModes = { SY_stable, SY_stableOn, SY_stableYPhi, SY_stableZero, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans,
-                                      SY_stableOnX, SY_stableOnY };
+Array<SkeletonSymbol> skeletonModes = { SY_stable, SY_stableOn, SY_stableYPhi, SY_stableZero, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn,
+                                        //SY_magicTrans,
+                                        SY_stableOnX, SY_stableOnY };
 
 void SkeletonEntry::write(std::ostream& os) const {
   os <<"[" <<phase0 <<", " <<phase1 <<"] " <<symbol <<' ';
@@ -496,7 +497,7 @@ void Skeleton::addObjectives(KOMO& komo) const {
         //        rai::Frame* box = world.getFrame(s.frames(1));
         //        CHECK(box, "");
         //        CHECK(box->shape && box->shape->type()==rai::ST_ssBox, "");
-        double boxSize = shapeSize(komo.world, s.frames(1), 0);
+        double boxSize = shapeSize(komo.world.getFrame(s.frames(1)), 0);
         komo.addObjective({s.phase0}, FS_positionDiff, {s.frames(0), s.frames(1)}, OT_eq, {{1, 3}, {1e2, .0, .0}}, {.5*boxSize, 0., 0.}); //arr({1,3},{0,0,1e2})
         komo.addObjective({s.phase0}, FS_scalarProductXZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2}, {1.});
         //        komo.addObjective({s.phase0}, FS_scalarProductYZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2});
@@ -507,7 +508,7 @@ void Skeleton::addObjectives(KOMO& komo) const {
         //rai::Frame* box = world.getFrame(s.frames(1));
         //        CHECK(box, "");
         //        CHECK(box->shape && box->shape->type()==rai::ST_ssBox, "");
-        double boxSize = shapeSize(komo.world, s.frames(1), 1);
+        double boxSize = shapeSize(komo.world.getFrame(s.frames(1)), 1);
         komo.addObjective({s.phase0}, FS_positionDiff, {s.frames(0), s.frames(1)}, OT_eq, {{1, 3}, {0., 1e2, .0}}, {0,.5*boxSize, 0.});
         komo.addObjective({s.phase0}, FS_scalarProductYZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2}, {1.});
         //        komo.addObjective({s.phase0}, FS_scalarProductYZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2});
@@ -520,9 +521,9 @@ void Skeleton::addObjectives(KOMO& komo) const {
         CHECK(box->shape, "");
         double boxSize = 0.;
         if(box->shape->type()==rai::ST_ssBox) {
-          boxSize = shapeSize(komo.world, s.frames(1), 2);
+          boxSize = shapeSize(komo.world.getFrame(s.frames(1)), 2);
         } else if(box->shape->type()==rai::ST_cylinder) {
-          boxSize = shapeSize(komo.world, s.frames(1), 1);
+          boxSize = shapeSize(komo.world.getFrame(s.frames(1)), 1);
         } else HALT("");
         komo.addObjective({s.phase0}, FS_positionDiff, {s.frames(0), s.frames(1)}, OT_eq, {{1, 3}, {0., 0., 1e2}}, {0, 0, .5*boxSize}); //arr({1,3},{0,0,1e2})
         komo.addObjective({s.phase0}, FS_scalarProductZZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2}, {1.});
@@ -617,9 +618,12 @@ void Skeleton::addObjectives(KOMO& komo) const {
       case SY_quasiStatic:
       case SY_quasiStaticOn:
         break;
-      case SY_magicTrans: //addSwitch_magicTrans(s.phase0, s.phase1, world.frames.first()->name, s.frames(0), 0.);  break;
+      case SY_magicTrans:{
+        komo.addSwitch({s.phase0}, true, false, JT_transXY, SWInit_copy, s.frames(0), s.frames(1));
+        break;
+      }
       case SY_magic: {
-            komo.addSwitch({s.phase0}, true, false, JT_free, SWInit_copy, komo.world.frames.first()->name, s.frames(0));
+        komo.addSwitch({s.phase0}, true, false, JT_free, SWInit_copy, komo.world.frames.first()->name, s.frames(0));
 //            komo.addSwitch_magic(s.phase0, s.phase1, komo.world.frames.first()->name, s.frames(0), 0., 0.);  break;
         } break;
       case SY_follow: {

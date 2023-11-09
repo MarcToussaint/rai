@@ -3,6 +3,7 @@
 #include <map>
 #include <Core/graph.h>
 #include <Kin/switch.h>
+#include <Kin/frame.h>
 #include <Optim/NLP_Solver.h>
 
 using namespace std;
@@ -157,6 +158,57 @@ void testHandover(uint order){
 
 //===========================================================================
 
+void testFloat(uint order){
+  rai::Configuration C(rai::getParameter<rai::String>("model"));
+  C.view(true);
+
+  C.getFrame("obj")->makeAutoJoint(rai::JT_transXYPhi, C["floor"], true);
+
+  KOMO komo;
+  komo.setConfig(C, false);
+
+  double phases = 1.;
+  if(order==2){
+    komo.setTiming(phases, 10, 5., 2);
+    komo.addControlObjective({}, 2, 1.);
+//    komo.addControlObjective({}, 0, 1e-1);
+  } else if(order==1) {
+    komo.setTiming(phases, 10, 1., 1);
+    komo.addControlObjective({}, 1, 1e0);
+    komo.addControlObjective({}, 0, 1e-2);
+  } else if(order==0) {
+    komo.setTiming(phases, 1, 1., 1);
+    komo.addControlObjective({}, 0, 1e0);
+  }else NIY;
+  komo.addQuaternionNorms();
+
+
+//  komo.addFlexiSwitch({0., -1.}, false, false, rai::JT_transXYPhi, {"floor", "obj"}, true, true, false);
+//  komo.addObjective({0.2, -1.}, FS_qItself, {"obj"}, OT_sos, {1e-1}, {}, 1);
+
+  komo.addObjective({1.}, FS_positionDiff, {"obj", "goal"}, OT_eq);
+  if(komo.k_order>1) komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e1}, {}, 1);
+
+  cout <<komo.report(true) <<endl;
+
+  komo.opt.verbose = 4;
+  //komo.optimize();
+  //komo.checkGradients();
+
+  NLP_Solver sol;
+  auto ret = sol.setProblem(komo.nlp()) .solve();
+  cout <<*ret <<endl;
+
+//  cout <<"REPORT\n" <<komo.report(false, true) <<endl;
+//  cout <<"GRADS\n" <<sol.reportLangrangeGradients(komo.featureNames) <<endl;
+
+  komo.view(true, "optimized motion");
+  while(komo.view_play(true, -1.));
+
+}
+
+//===========================================================================
+
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
@@ -164,9 +216,11 @@ int main(int argc,char** argv){
 //  testPickAndPlace(1);
 //  testPickAndPlace(0);
 
-  testHandover(2);
-  testHandover(1);
-  testHandover(0);
+//  testHandover(2);
+//  testHandover(1);
+//  testHandover(0);
+
+  testFloat(0);
 
   return 0;
 }

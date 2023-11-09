@@ -319,7 +319,7 @@ void KOMO::addStableFrame(SkeletonSymbol newMode, const char* parent, const char
       f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
     }
   } else if(newMode==SY_stableOn) {
-    double height = .5*(shapeSize(world, parent) + shapeSize(world, toShape));
+    double height = .5*(shapeSize(world.getFrame(parent)) + shapeSize(world.getFrame(toShape)));
     Transformation rel = 0;
     rel.pos.set(0, 0, height);
 //    rai::Frame* f = addStableFrame(JT_free, parent, name);
@@ -341,7 +341,7 @@ void KOMO::addStableFrame(SkeletonSymbol newMode, const char* parent, const char
     }
   } else if(newMode==SY_stableOnX) {
     Transformation rel = 0;
-    rel.pos.set(.5*(shapeSize(world, parent, 0) + shapeSize(world, name, 2)), 0., 0.);
+    rel.pos.set(.5*(shapeSize(world.getFrame(parent), 0) + shapeSize(world.getFrame(name), 2)), 0., 0.);
     rel.rot.addY(.5*RAI_PI);
     rai::Frame* f = addStableFrame(JT_transXYPhi, parent, name, 0, rel);
     if(f){
@@ -358,7 +358,7 @@ void KOMO::addStableFrame(SkeletonSymbol newMode, const char* parent, const char
     }
   } else if(newMode==SY_stableOnY) {
     Transformation rel = 0;
-    rel.pos.set(0., 0, -.5*(shapeSize(world, parent, 2) + shapeSize(world, name, 1)));
+    rel.pos.set(0., 0, -.5*(shapeSize(world.getFrame(parent), 2) + shapeSize(world.getFrame(name), 1)));
     rel.rot.addX(.5*RAI_PI);
     rai::Frame* f = addStableFrame(JT_generic, parent, name, 0, rel);
     f->joint->setGeneric("xzb");
@@ -453,8 +453,8 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       addSwitch(times, true, true, JT_rigid, SWInit_zero, frames(0), frames(1));
     } else if(newMode==SY_stableOn) {
       Transformation rel = 0;
-	//relTransformOn(world, frames(0), frames(1));
-      rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
+        //relTransformOn(world, frames(0), frames(1));
+      rel.pos.set(0, 0, .5*(shapeSize(world.getFrame(frames(0))) + shapeSize(world.getFrame(frames(1)))));
       rai::Frame* f = addSwitch(times, true, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
       //f->joint->setGeneric("xyc");
       if(f){
@@ -471,7 +471,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       }
     } else if(newMode==SY_stableOnX) {
       Transformation rel = 0;
-      rel.pos.set(.5*(shapeSize(world, frames(0), 0) + shapeSize(world, frames(1), 2)), 0., 0.);
+      rel.pos.set(.5*(shapeSize(world.getFrame(frames(0)), 0) + shapeSize(world.getFrame(frames(1)), 2)), 0., 0.);
       rel.rot.addY(.5*RAI_PI);
       rai::Frame* f = addSwitch(times, true, true, JT_transXYPhi, SWInit_zero, frames(0), frames(1), rel);
       if(f){
@@ -488,7 +488,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       }
     } else if(newMode==SY_stableOnY) {
       Transformation rel = 0;
-      rel.pos.set(0., 0, -.5*(shapeSize(world, frames(0), 2) + shapeSize(world, frames(1), 1)));
+      rel.pos.set(0., 0, -.5*(shapeSize(world.getFrame(frames(0)), 2) + shapeSize(world.getFrame(frames(1)), 1)));
       rel.rot.addX(.5*RAI_PI);
       rai::Frame* f = addSwitch(times, true, true, JT_generic, SWInit_zero, frames(0), frames(1), rel);
       f->joint->setGeneric("xzb");
@@ -506,7 +506,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       }
     } else if(newMode==SY_stableYPhi) {
       Transformation rel = 0;
-//      rel.pos.set(0, 0, -.5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
+//      rel.pos.set(0, 0, -.5*(shapeSize(world.getFrame(frames(0))) + shapeSize(world.getFrame(frames(1)))));
       addSwitch(times, true, true, JT_transY, SWInit_copy, frames(0), frames(1), rel);
     } else NIY;
 
@@ -568,7 +568,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
   } else if(newMode==SY_dynamicOn) {
     CHECK_EQ(frames.N, 2, "");
     Transformation rel = 0;
-    rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
+    rel.pos.set(0, 0, .5*(shapeSize(world.getFrame(frames(0))) + shapeSize(world.getFrame(frames(1)))));
 
     addSwitch(times, true, false, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
     //new contacts don't exist in step [-1], so we rather impose only zero acceleration at [-2,-1,0]
@@ -586,7 +586,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
   } else if(newMode==SY_quasiStaticOn) {
     CHECK_GE(frames.N, 2, "");
     Transformation rel = 0;
-    rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
+    rel.pos.set(0, 0, .5*(shapeSize(world.getFrame(frames(0))) + shapeSize(world.getFrame(frames(1)))));
 //    addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
     rai::Frame* f = addSwitch(times, true, make_shared<KinematicSwitch>(SW_joint, JT_transXYPhi, frames(0), frames(1), world, SWInit_copy, 0, rel, NoTransformation));
     if(f){
@@ -634,7 +634,10 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       0, 0, 0, 0, 1, 0
     });
 #endif
-  } else NIY;
+  } else{
+    LOG(-1) <<"newMode=" <<newMode;
+    NIY;
+  }
 }
 
 void KOMO::addContact_slide(double startTime, double endTime, const char* from, const char* to) {
@@ -1510,6 +1513,8 @@ int KOMO::view(bool pause, const char* txt){
 
 int KOMO::view_play(bool pause, double delay, const char* saveVideoPath){
   view(false, 0);
+  pathConfig.viewer()->phaseOffset = 1.-double(k_order);
+  pathConfig.viewer()->phaseFactor = 1./double(stepsPerPhase);
   return pathConfig.viewer()->playVideo(timeSlices.d0, timeSlices.d1, pause, delay*tau*T, saveVideoPath);
 }
 

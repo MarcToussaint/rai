@@ -82,11 +82,10 @@ auto getCtrlFramesAndScale(const rai::Configuration& C) {
   return R;
 }
 
-double shapeSize(const rai::Configuration& K, const char* name, uint i) {
-  rai::Frame* f = K.getFrame(name);
+double shapeSize(const rai::Frame *f, uint i) {
   rai::Shape* s = f->shape;
   if(!s) {
-    for(rai::Frame* b:f->children) if(b->name==name && b->shape) { s=b->shape; break; }
+    for(rai::Frame* b:f->children) if(b->name==f->name && b->shape) { s=b->shape; break; }
   }
   if(!s) return 0;
   if(s->type()==rai::ST_marker) return 0.;
@@ -137,7 +136,7 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
   else if(feat==FS_aboveBox) {  f=make_shared<F_AboveBox>(); }
   else if(feat==FS_insideBox) {  f=make_shared<F_InsideBox>(); }
   else if(feat==FS_standingAbove) {
-//    double h = .5*(shapeSize(C, frames(0)) + shapeSize(C, frames(1)));
+//    double h = .5*(shapeSize(C.getFrame( frames(0))) + shapeSize(C.getFrame( frames(1))));
 //    f = make_shared<TM_Default>(TMT_posDiff, C, frames(0), rai::Vector(0., 0., h), frames(1), NoVector);
     NIY;
     f->scale = arr({1, 3}, {0., 0., 1.});

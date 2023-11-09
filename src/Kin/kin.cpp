@@ -3310,6 +3310,7 @@ int Configuration::animate(Inotify* ino) {
   checkConsistency();
   StringA jointNames = getJointNames();
 
+  viewer()->raiseWindow();
   viewer()->resetPressedKey();
   for(uint i=x0.N; i--;) {
     x=x0;

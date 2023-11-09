@@ -14,7 +14,7 @@ void reportAfterPhiComputation(KOMO& komo) {
     cout <<komo.getReport(true) <<endl;
   }
   if(komo.opt.animateOptimization>0) {
-    komo.view(komo.opt.animateOptimization>1, STRING("optAnim komoEvals: " <<komo.evalCount));
+    komo.view(komo.opt.animateOptimization>1, STRING("optAnim komoEvals: " <<komo.evalCount /*<<"\n" <<komo.pathConfig.getJointState()*/));
     if(komo.opt.animateOptimization>3){
       komo.view_play(komo.opt.animateOptimization>4);
     }
