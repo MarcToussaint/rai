@@ -56,7 +56,17 @@ void init_Frame(pybind11::module& m) {
 	}
      }, "", pybind11::arg("points"), pybind11::arg("colors") = pybind11::array_t<byte>{} )
 
+    .def("setMesh", [](std::shared_ptr<rai::Frame>& self, const arr& vertices, const uintA& triangles, const arr& colors) {
+      rai::Mesh m;
+      m.V = vertices;
+      m.T = triangles;
+      m.C = colors;
+      self->setMesh(m);
+    }, "set mesh", pybind11::arg("vertices"), pybind11::arg("triangles"),  pybind11::arg("colors") )
+
     .def("setShape", &rai::Frame::setShape, "", pybind11::arg("type"), pybind11::arg("size") )
+    .def("setConvexMesh", &rai::Frame::setConvexMesh, "", pybind11::arg("points"), pybind11::arg("points"), pybind11::arg("radius") )
+    .def("setDensity", &rai::Frame::setDensity, "", pybind11::arg("data"), pybind11::arg("size") )
 
     .def("setParent", &rai::Frame::setParent, "", pybind11::arg("parent"), pybind11::arg("keepAbsolutePose_and_adaptRelativePose") = false, pybind11::arg("checkForLoop") = false)
     .def("unLink", &rai::Frame::unLink )

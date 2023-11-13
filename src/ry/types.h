@@ -242,7 +242,7 @@ namespace detail {
     }
 
     static handle cast(const uintA& src, return_value_policy /* policy */, handle /* parent */) {
-      pybind11::array_t<double> ret = Array2numpy<uint>(src);
+      pybind11::array_t<uint> ret = Array2numpy<uint>(src);
       return ret.release();
     }
   };
@@ -252,16 +252,22 @@ namespace detail {
   public:
     PYBIND11_TYPE_CASTER(rai::Array<T>, _("Array<T>"));
 
-    /// Python->C++
+    /// Python -> C++
     bool load(pybind11::handle src, bool) {
-      value = vec2Array<T>( src.cast<std::vector<T>>() );
+      auto buf = pybind11::array_t<T>::ensure(src);
+      if(!buf) return false;
+      value = numpy2arr<T>(buf);
       return !PyErr_Occurred();
+//      value = vec2Array<T>( src.cast<std::vector<T>>() );
+//      return !PyErr_Occurred();
     }
 
     /// C++ -> Python
     static handle cast(const rai::Array<T>& src, return_value_policy /* policy */, handle /* parent */) {
-      std::vector<T> x = Array2vec<T>(src);
-      return pybind11::cast(x).release();
+      pybind11::array_t<T> ret = Array2numpy<T>(src);
+      return ret.release();
+//      std::vector<T> x = Array2vec<T>(src);
+//      return pybind11::cast(x).release();
     }
   };
 

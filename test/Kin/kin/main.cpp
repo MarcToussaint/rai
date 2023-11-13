@@ -318,6 +318,19 @@ void TEST(Limits){
 }
 
 //===========================================================================
+
+void testShapes(){
+  rai::Configuration C;
+
+  rai::Graph G("/home/mtoussai/git/repair/z.vol");
+
+  rai::Frame* f = C.addFrame("density");
+  f->setDensity(G.get<floatA>("data"), G.get<arr>("size"));
+
+  C.view(true);
+}
+
+//===========================================================================
 //
 // set state test
 //
@@ -657,6 +670,7 @@ int MAIN(int argc,char **argv){
   //testDynamics();
   testContacts();
   testLimits();
+  testShapes();
 #ifdef RAI_ODE
 //  testMeshShapesInOde();
   testPlayTorqueSequenceInOde();

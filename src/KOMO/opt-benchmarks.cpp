@@ -2,6 +2,22 @@
 
 #include "../KOMO/komo.h"
 
+OptBench_InvKin_Simple::OptBench_InvKin_Simple(){
+  rai::Configuration C(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
+  rai::Frame* f = C.addFrame("target", "table");
+  f->setRelativePosition({.3, .2, .2});
+  f->setShape(rai::ST_sphere, {.02}) .setColor({1., 1., 0.});
+
+  komo = make_unique<KOMO>();
+  komo->setConfig(C, false);
+  komo->setTiming(1., 1, 1., 0);
+
+  komo->addControlObjective({}, 0, 1e-1);
+  komo->addObjective({}, FS_positionDiff, {"l_gripper", "target"}, OT_eq, {1e1});
+
+  nlp = komo->nlp();
+}
+
 OptBench_InvKin_Endeff::OptBench_InvKin_Endeff(const char* modelFile, bool unconstrained){
   rai::Configuration C(modelFile);
   komo = make_unique<KOMO>();
@@ -58,7 +74,7 @@ OptBench_Skeleton_Pick::OptBench_Skeleton_Pick(rai::ArgWord sequenceOrPath){
   rai::Skeleton S = {
     //grasp
     { 1., 1., rai::SY_touch, {"R_endeff", "box3"} },
-    { 1., 1.2, rai::SY_stable, {"R_endeff", "box3"} },
+    { 1., 1., rai::SY_stable, {"R_endeff", "box3"} },
   };
   create(rai::raiPath("test/KOMO/skeleton/model2.g"), S, sequenceOrPath);
 }
@@ -141,3 +157,4 @@ OptBench_Skeleton_StackAndBalance::OptBench_Skeleton_StackAndBalance(rai::ArgWor
   };
   create(rai::raiPath("test/KOMO/skeleton/model2.g"), S, sequenceOrPath);
 }
+

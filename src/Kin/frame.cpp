@@ -539,6 +539,15 @@ rai::Frame& rai::Frame::setSdf(const SDF_GridData& sdf) {
   return *this;
 }
 
+rai::Frame& rai::Frame::setDensity(const floatA& data, const arr& size) {
+  getShape().type() = ST_density;
+  getShape().sdf().lo = -.5*size;
+  getShape().sdf().up = +.5*size;
+  getShape().sdf().gridData = data;
+  getShape().sdf()._densityDisplayData = make_shared<DensityDisplayData>(getShape().sdf());
+  return *this;
+}
+
 rai::Frame& rai::Frame::setColor(const arr& color) {
   getShape().mesh().C = color;
   return *this;
@@ -1746,6 +1755,8 @@ void rai::Shape::glDraw(OpenGL& gl) {
         cam.read(*frame.ats);
         glDrawCamera(cam); //gl.camera);
       }
+    } else if(_type==rai::ST_density){
+      sdf()._densityDisplayData->glDraw(gl);
     } else {
       if(!mesh().V.N) {
         LOG(-1) <<"trying to draw empty mesh (shape type:" <<_type <<")";
@@ -1811,8 +1822,15 @@ void rai::Shape::createMeshes() {
 //      if(!mesh().V.N) LOG(-1) <<"mesh needs to be loaded";
       break;
     case rai::ST_sdf: {
-      if(!mesh().V.N){
+      if(!sdf().lo.N) sdf().lo = -.5*size;
+      if(!sdf().up.N) sdf().up = +.5*size;
+      if(!mesh().V.N && sdf().gridData.N){
         mesh().setImplicitSurface(sdf().gridData, sdf().lo, sdf().up);
+      }
+    } break;
+    case rai::ST_density: {
+      if(sdf().gridData.N){
+        sdf()._densityDisplayData = make_shared<DensityDisplayData>(sdf());
       }
     } break;
     case rai::ST_quad: {

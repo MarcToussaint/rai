@@ -1,6 +1,7 @@
 #pragma once
 
 #include "geo.h"
+#include "mesh.h"
 
 //===========================================================================
 //
@@ -87,10 +88,20 @@ struct SDF_Transformed : SDF {
   double f(arr& g, arr& H, const arr& x);
 };
 
+struct DensityDisplayData : GLDrawer{
+  rai::Mesh box;
+  byteA volumeImgZ, volumeImgY, volumeImgX;
+  rai::Array<rai::Mesh> volumeZ, volumeY, volumeX;
+
+  DensityDisplayData(struct SDF_GridData& sdf);
+  void glDraw(struct OpenGL&);
+};
+
 struct SDF_GridData : SDF {
   rai::Transformation pose=0;
   floatA gridData;
   arr lo, up;
+  shared_ptr<DensityDisplayData> _densityDisplayData;
 
   SDF_GridData(const rai::Transformation& _pose, const floatA& _data, const arr& _lo, const arr& _up)
     : pose(_pose), gridData(_data), lo(_lo), up(_up) {}

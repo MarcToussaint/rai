@@ -497,6 +497,114 @@ void SDF_GridData::getNeighborsAndWeights(uintA& neigh, arr& weights, const arr&
            ((_x+1)*gridData.d1+_y+1)*gridData.d2+(_z+1) };
 }
 
+void fillVolumeImg(byteA& vol, const floatA& dat){
+  vol.resize(dat.N, 4);
+  byte *volp=vol.p;
+  float *datp=dat.p;
+  for(uint i=0;i<dat.N;i++){
+    float d = *(datp++);
+    d = .5*(1.-d);
+    if(d<0.) d=0; else if(d>1.) d=1.;
+    d *= 255.f;
+    for(uint j=0;j<4;j++) (*volp++) = byte(d); //all four values (rgba) are set to density
+    //rgba(x,i,3) = 128.*d;
+  }
+  vol.reshape({dat.d0, dat.d1, dat.d2, 4});
+}
+
+DensityDisplayData::DensityDisplayData(SDF_GridData& sdf){
+  arr totalSize = sdf.up - sdf.lo;
+  box.setBox(true);
+  box.scale(totalSize);
+  box.C = {0.,0.,.5};
+
+  {
+    floatA dat;
+    tensorPermutation(dat, sdf.gridData, {2,1,0}); //zyx
+    fillVolumeImg(volumeImgZ, dat);
+  }
+  {
+    floatA dat;
+    tensorPermutation(dat, sdf.gridData, {1,2,0}); //yzx
+    fillVolumeImg(volumeImgY, dat);
+  }
+  {
+    fillVolumeImg(volumeImgX, sdf.gridData); //xyz
+  }
+
+  if(!volumeZ.N){ //zyx
+    volumeZ.resize(volumeImgZ.d0);
+    for(uint i=0;i<volumeZ.N;i++){
+      volumeZ(i).setQuad(totalSize(0), totalSize(1), volumeImgZ[i], true, true);
+      volumeZ(i).C = {1., 1., 1., 1.};
+      volumeZ(i).translate(0, 0, totalSize(2)*(double(i)/double(volumeZ.N-1)-.5));
+    }
+  }else{
+    for(uint i=0;i<volumeZ.N;i++) volumeZ(i).deleteGlTexture();
+  }
+  if(!volumeY.N){ //yzx
+    volumeY.resize(volumeImgY.d0);
+    rai::Transformation T=0;
+    T.addRelativeRotationDeg(90,1,0,0);
+    for(uint i=0;i<volumeY.N;i++){
+      volumeY(i).setQuad(totalSize(0), totalSize(2), volumeImgY[i], true, true);
+      volumeY(i).C = {1., 1., 1., 1.};
+      volumeY(i).transform(T);
+      volumeY(i).translate(0, totalSize(1)*(double(i)/double(volumeY.N-1)-.5), 0);
+    }
+  }else{
+    for(uint i=0;i<volumeY.N;i++) volumeY(i).deleteGlTexture();
+  }
+  if(!volumeX.N){ //xyz
+    volumeX.resize(volumeImgX.d0);
+    rai::Transformation T=0;
+    T.addRelativeRotationDeg(-90,0,1,0);
+    for(uint i=0;i<volumeX.N;i++){
+      volumeX(i).setQuad(totalSize(2), totalSize(1), volumeImgX[i], true, true);
+      volumeX(i).C = {1., 1., 1., 1.};
+      volumeX(i).transform(T);
+      volumeX(i).translate(totalSize(0)*(double(i)/double(volumeX.N-1)-.5), 0, 0);
+    }
+  }else{
+    for(uint i=0;i<volumeX.N;i++) volumeX(i).deleteGlTexture();
+  }
+}
+
+void DensityDisplayData::glDraw(OpenGL& gl){
+  box.glDraw(gl);
+  gl.drawOptions.enableLighting=false;
+  //get view direction
+  arr view = gl.camera.X.rot.getZ().getArr();
+  glDisable(GL_CULL_FACE);
+  uint side = argmax(fabs(view));
+  switch(side){
+    case 0:{
+      if(view(0)<0.){
+        for(uint i=0;i<volumeX.N;i++) volumeX(i).glDraw(gl);
+      }else{
+        for(uint i=volumeX.N;i--;) volumeX(i).glDraw(gl);
+      }
+    } break;
+    case 1:{
+      if(view(1)<0.){
+        for(uint i=0;i<volumeY.N;i++) volumeY(i).glDraw(gl);
+      }else{
+        for(uint i=volumeY.N;i--;) volumeY(i).glDraw(gl);
+      }
+    } break;
+    case 2:{
+      if(view(2)<0.){
+        for(uint i=0;i<volumeZ.N;i++) volumeZ(i).glDraw(gl);
+      }else{
+        for(uint i=volumeZ.N;i--;) volumeZ(i).glDraw(gl);
+      }
+    } break;
+  }
+
+  glEnable(GL_CULL_FACE);
+  gl.drawOptions.enableLighting=true;
+}
+
 void SDF_GridData::write(std::ostream& os) const {
 #if 1
   rai::Graph G;

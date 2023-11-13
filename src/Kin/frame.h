@@ -162,6 +162,7 @@ struct Frame : NonCopyable {
   Frame& setConvexMesh(const arr& points, const byteA& colors={}, double radius=0.);
   Frame& setMesh(const rai::Mesh& m);
   Frame& setSdf(const SDF_GridData& sdf);
+  Frame& setDensity(const floatA& data, const arr& size);
   Frame& setColor(const arr& color);
   Frame& setJoint(rai::JointType jointType);
   Frame& setContact(int cont);

@@ -20,6 +20,12 @@ template<> const char* rai::Enum<ObjectiveType>::names []= {
   "none", "f", "sos", "ineq", "eq", "ineqB", "ineqP", nullptr
 };
 
+template <class T> rai::Array<rai::Enum<T>> EnumArr(const rai::Array<T>& x){
+  rai::Array<rai::Enum<T>> z(x.N);
+  for(uint i=0;i<x.N;i++) z.elem(i) = x.elem(i);
+  return z;
+}
+
 //===========================================================================
 
 arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
@@ -53,7 +59,8 @@ arr NLP::getInitializationSample(const arr& previousOptima) {
 
 void NLP::report(std::ostream& os, int verbose, const char* msg) {
   os <<"NLP of type '" <<rai::niceTypeidName(typeid(*this)) <<"' -- no special reporting implemented";
-  os <<"NLP signature:\n  dimension:" <<dimension <<"\n  featureTypes:" <<featureTypes <<"\n  bounds: " <<bounds_lo <<bounds_up;
+  os <<"-- signature:\n  dimension:" <<dimension <<"\n  featureTypes: " <<EnumArr(featureTypes) <<"\n  bounds: " <<bounds_lo <<bounds_up;
+  os <<endl;
 }
 
 double NLP::eval_scalar(arr& g, arr& H, const arr& x) {
