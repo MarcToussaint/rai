@@ -336,7 +336,7 @@ Frame* Configuration::addCopies(const FrameL& F, const DofL& _dofs) {
     FId2thisId(f->ID) = f_new->ID;
 
     //convert constant joints to mimic joints
-    if(f->joint && f->ats && f->joint->isStable){
+    if(f->joint && f->joint->isStable){
       Frame *f_orig = getFrame(f_new->name); //identify by name!!!
       if(f_orig!=f_new){
         CHECK(f_orig->joint, "");
