@@ -267,6 +267,10 @@ void Simulation::setSplineRef(const arr& _x, const arr& _times, bool append){
   else self->ref.overwriteSmooth(path, times, time);
 }
 
+void Simulation::resetSplineRef(){
+  self->ref.initialize(C.getJointState(), NoArr, time);
+}
+
 bool getFingersForGripper(rai::Frame*& gripper, rai::Joint*& joint, rai::Frame*& fing1, rai::Frame*& fing2, rai::Configuration& C, const char* gripperFrameName) {
   gripper = C.getFrame(gripperFrameName);
   joint=0;

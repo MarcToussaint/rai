@@ -402,7 +402,8 @@ void testMotors(){
   C.addFile("../bullet/bots.g");
 //  C.addFile("../kin/arm3.g");
   arr q0 = C.getJointState();
-  arr v0 = zeros(q0.N);
+  arr qT = q0;
+  qT(0) += 1.;
 
   rai::Simulation S(C, S._physx, 2);
 //  rai::wait();
@@ -413,15 +414,24 @@ void testMotors(){
   rai::system("mkdir -p z.vid/; rm -f z.vid/*.ppm");
 
   arr X, V, q, qDot;
-  S.getState(X, V, q, qDot);
+  S.getState(X, q, V, qDot);
   cout <<q <<qDot <<endl;
+
+  S.setSplineRef(qT, {1.});
 
   for(uint t=0;t<4./tau;t++){
     tic.waitForTic();
 
-    S.step((q0,v0).reshape(2,-1), tau, S._posVel);
+//    q0(0) += .01;
+//    S.step(q0, tau, S._position);
+    S.step({}, tau, S._spline);
 
-    if(!(t%100)){ S.setState(X, V, q, qDot); }
+    if(!(t%100)){
+      S.setState(X, q, V, qDot);
+      q0 = q;
+      S.resetSplineRef();
+      S.setSplineRef(qT, {1.});
+    }
 
     write_ppm(S.getScreenshot(), STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
   }

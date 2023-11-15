@@ -54,6 +54,9 @@ void init_Simulation(pybind11::module& m) {
        pybind11::arg("append") = true
        )
 
+   .def("resetSplineRef", &rai::Simulation::resetSplineRef,
+      "reset the spline reference, i.e., clear the current spline buffer and initialize it to constant spline at current position (to which setSplineRef can append)")
+
   .def("getTimeToSplineEnd", &rai::Simulation::getTimeToSplineEnd)
 
   .def("get_q", &rai::Simulation::get_q)

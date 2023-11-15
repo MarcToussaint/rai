@@ -43,6 +43,7 @@ struct Simulation {
 
   //-- adapt the spline reference to genreate motion (default way)
   void setSplineRef(const arr& _q, const arr& _times, bool append=true);
+  void resetSplineRef();
 
   //-- send a gripper command
   void moveGripper(const char* gripperFrameName, double width=.075, double speed=.3);
