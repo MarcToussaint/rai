@@ -145,7 +145,9 @@ Simulation::Simulation(Configuration& _C, Engine _engine, int _verbose)
 }
 
 Simulation::~Simulation() {
-  LOG(0) <<"shutting down Simulation";
+  if(verbose>0){
+    LOG(0) <<"shutting down Simulation";
+  }
 }
 
 void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
@@ -205,7 +207,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
       self->physx->pushFrameStates(C, NoArr, true); //kinematicOnly (usually none anyway)
       if(q_ref.N){
         C.setJointState(q_ref);
-        self->physx->setMotorQ(C); //qDot_ref, motor control
+        self->physx->pushMotorStates(C); //qDot_ref, motor control
       }
     }else{
       if(q_ref.N) C.setJointState(q_ref); //kinematic control
@@ -455,7 +457,7 @@ void Simulation::setState(const arr& frameState, const arr& q, const arr& frameV
 void Simulation::pushConfigurationToSimulator(const arr& frameVelocities, const arr& qDot) {
   if(engine==_physx) {
     self->physx->pushFrameStates(C, frameVelocities);
-    self->physx->setMotorQ(C, true, qDot);
+    self->physx->pushMotorStates(C, true, qDot);
   } else if(engine==_bullet) {
     self->bullet->pushFullState(C, frameVelocities);
   } else NIY;

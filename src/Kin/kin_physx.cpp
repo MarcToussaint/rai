@@ -889,40 +889,7 @@ void PhysXInterface::postAddObject(rai::Frame* f) {
   }
 }
 
-void PhysXInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){
-  if(qDot_ref.N){ CHECK_EQ(q_ref.N, qDot_ref.N, ""); }
-  uint qIdx = 0;
-  if(self->opt.multiBody){
-    for(PxRigidActor* a : self->actors) {
-      if(!a) continue;
-      rai::Frame *f = ((rai::Frame*)a->userData);
-      PxArticulationLink* actor = a->is<PxArticulationLink>();
-      if(!actor) continue;
-      PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
-      if(!joint) continue;
-      if(!f->joint->active) continue;
-      CHECK_EQ(f->joint->qIndex, qIdx, "inconsistent q indexing");
-
-      auto axis = self->jointAxis(f->ID);
-      CHECK_LE(axis, self->jointAxis(0)-1, "");
-      if(q_ref.N) joint->setDriveTarget(axis, q_ref(qIdx));
-      if(qDot_ref.N) joint->setDriveVelocity(axis, qDot_ref(qIdx));
-      qIdx++;
-    }
-  }else if(self->opt.jointedBodies){
-    for(PxRevoluteJoint* j:self->joints) if(j){
-      double qi = j->getAngle();
-      double v_ref = self->opt.motorKp * (q_ref(qIdx) - qi);
-      //cout <<' ' <<v_ref <<' ' <<qi;
-      j->setDriveVelocity(v_ref);
-      qIdx++;
-    }
-    //cout <<endl;
-  }
-  if(q_ref.N) CHECK_EQ(qIdx, q_ref.N, ""); //make this only a warning?
-}
-
-void PhysXInterface::setMotorQ(const rai::Configuration& C, bool setHardInstantly, const arr& qDot){
+void PhysXInterface::pushMotorStates(const rai::Configuration& C, bool setInstantly, const arr& qDot){
   if(self->opt.multiBody){
     for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)){
       PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
@@ -932,13 +899,17 @@ void PhysXInterface::setMotorQ(const rai::Configuration& C, bool setHardInstantl
 
       auto axis = self->jointAxis(f->ID);
       CHECK_LE(axis, self->jointAxis(0)-1, "");
-      if(setHardInstantly){
-        //LOG(0) <<"setting joint pos hard: " <<f->name <<' ' <<f->joint->get_q();
-        joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
-        if(!!qDot && qDot.N) joint->setDriveVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
-        else joint->setDriveVelocity(axis, 0.);
-      }
+
+      if(setInstantly) joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
       joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
+
+      if(!!qDot && qDot.N){ //also setting vel reference!
+        if(setInstantly) joint->setJointVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
+        joint->setDriveVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
+      }else{
+        if(setInstantly) joint->setJointVelocity(axis, 0.);
+        joint->setDriveVelocity(axis, 0.);
+      }
     }
   }else if(self->opt.jointedBodies){
     NIY;
