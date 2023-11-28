@@ -504,6 +504,16 @@ Quaternion& Quaternion::invert() { w=-w; return *this; }
 /// flips the sign of the quaterion -- which still represents the same rotation
 void Quaternion::flipSign() { w=-w; x=-x; y=-y; z=-z; }
 
+void Quaternion::uniqueSign(){
+if(w<0.) flipSign();
+else if(w==0.){
+  if(x<0.) flipSign();
+  else if(x==0.){
+    if(y<0.) flipSign();
+  }
+}
+}
+
 /// multiplies the rotation by a factor f (i.e., makes f-times the rotation)
 void Quaternion::multiply(double f) {
   normalize();

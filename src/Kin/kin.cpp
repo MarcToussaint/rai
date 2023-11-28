@@ -613,7 +613,8 @@ arr Configuration::getDofState(const DofL& dofs) const {
 arr Configuration::getFrameState(const FrameL& F) const {
   arr X(F.N, 7);
   for(uint i=0; i<X.d0; i++) {
-    const rai::Transformation& Xi = F.elem(i)->ensure_X();
+    rai::Transformation Xi = F.elem(i)->ensure_X();
+    Xi.rot.uniqueSign();
     memmove(X.p+7*i+0, &Xi.pos.x, 3*X.sizeT);
     memmove(X.p+7*i+3, &Xi.rot.w, 4*X.sizeT);
 //    X[i] = Xi.getArr7d();

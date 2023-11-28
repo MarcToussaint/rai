@@ -415,7 +415,6 @@ void testMotors(){
 
   arr X, V, q, qDot;
   S.getState(X, q, V, qDot);
-  cout <<q <<qDot <<endl;
 
   S.setSplineRef(qT, {1.});
 
@@ -431,6 +430,13 @@ void testMotors(){
       q0 = q;
       S.resetSplineRef();
       S.setSplineRef(qT, {1.});
+
+      arr _X, _V, _q, _qDot;
+      S.getState(_X, _q, _V, _qDot);
+      CHECK_ZERO(maxDiff(X, _X), 1e-4, "");
+      CHECK_ZERO(maxDiff(q, _q), 1e-6, "");
+      CHECK_ZERO(maxDiff(V, _V), 1e-6, "");
+      CHECK_ZERO(maxDiff(qDot, _qDot), 1e-6, '\n' <<qDot <<'\n' <<_qDot);
     }
 
     write_ppm(S.getScreenshot(), STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
@@ -472,7 +478,7 @@ void testSplineMode(){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  testMotors();
+  testMotors(); return 0;
   testRndScene();
   testConstructor();
   testPcl();

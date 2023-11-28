@@ -377,7 +377,7 @@ void NLP_Traced::report(std::ostream& os, int verbose, const char* msg) {
 
 //===========================================================================
 
-void NLP_Viewer::display(double mu) {
+void NLP_Viewer::display(double mu, double muLB) {
   uint d = P->getDimension();
   CHECK_EQ(d, 2, "can only display 2D problems for now");
 
@@ -400,8 +400,8 @@ void NLP_Viewer::display(double mu) {
   if(phi.N>1) {
     lag = make_shared<LagrangianProblem>(P);
     lag->mu = mu;
-    //lag->muLB = mu;
-    //lag->useLB = true;
+    lag->muLB = muLB;
+    if(muLB>0.) lag->useLB = true;
     nlp_save = P;
     P.reset();
     P = make_shared<Conv_ScalarProblem_NLP>(*lag, d);
@@ -459,4 +459,23 @@ void SolverReturn::write(std::ostream& os) const{
     os <<"{ time: " <<time <<", evals: " <<evals;
     os <<", done: " <<done <<", feasible: " <<feasible;
     os <<", sos: " <<sos <<", f: " <<f <<", ineq: " <<ineq <<", eq: " <<eq <<" }";
+}
+
+//===========================================================================
+
+RegularizedNLP::RegularizedNLP(NLP& _P, double _mu) : P(_P), mu(_mu) {
+  copySignature(P);
+  featureTypes.append(OT_sos, dimension);
+}
+
+void RegularizedNLP::setRegularization(const arr& _x_mean, double x_var){
+  x_mean = _x_mean;
+  mu=sqrt(0.5/x_var);
+}
+
+void RegularizedNLP::evaluate(arr& phi, arr& J, const arr& x){
+  P.evaluate(phi, J, x);
+  if(rai::isSparse(J)) J = J.sparse().unsparse();
+  phi.append(mu*(x-x_mean));
+  J.append(mu*eye(x.N));
 }

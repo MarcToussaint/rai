@@ -120,9 +120,9 @@ void Conv_KOMO_NLP::getFHessian(arr& H, const arr& x) {
 }
 
 void Conv_KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
-  komo.reportProblem(os);
-  if(verbose>1 && komo.featureValues.N) os <<komo.getReport(verbose>3);
-  if(verbose>2) komo.view(false/*verbose>3*/, STRING("KOMO nlp report - " <<msg));
+//  komo.reportProblem(os);
+//  if(verbose>1 && komo.featureValues.N) os <<komo.getReport(verbose>3);
+  if(verbose>2) komo.view(verbose>3, STRING("KOMO nlp report - " <<msg));
   if(verbose>4) komo.view_play(false);
   if(verbose>6){
     rai::system("mkdir -p z.vid");

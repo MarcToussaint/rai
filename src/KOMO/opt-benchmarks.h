@@ -7,7 +7,7 @@
 
 struct OptBench_InvKin_Simple {
   OptBench_InvKin_Simple();
-  unique_ptr<KOMO> komo;
+  shared_ptr<KOMO> komo;
   shared_ptr<NLP> nlp;
 };
 

@@ -149,8 +149,21 @@ struct NLP_Viewer {
 
   NLP_Viewer(const shared_ptr<NLP>& P, const shared_ptr<NLP_Traced>& T={}) : P(P), T(T) {}
 
-  void display(double mu=1e3);
+  void display(double mu=1e3, double muLB=-1.);
   void plotCostTrace();
+};
+
+//===========================================================================
+
+struct RegularizedNLP : NLP {
+  NLP& P;
+  arr x_mean;
+  double mu;
+
+  RegularizedNLP(NLP& _P, double _mu=1.);
+
+  void setRegularization(const arr& _x_mean, double x_var);
+  void evaluate(arr& phi, arr& J, const arr& x);
 };
 
 //===========================================================================

@@ -139,6 +139,7 @@ struct Quaternion {
   void add(const Quaternion b, double w_b=1., double w_this=1.);
   Quaternion& invert();
   void flipSign();
+  void uniqueSign();
   void normalize();
   void multiply(double f);
   void alignWith(const Vector& v);

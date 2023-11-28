@@ -8,11 +8,12 @@ OptBench_InvKin_Simple::OptBench_InvKin_Simple(){
   f->setRelativePosition({.3, .2, .2});
   f->setShape(rai::ST_sphere, {.02}) .setColor({1., 1., 0.});
 
-  komo = make_unique<KOMO>();
+  komo = make_shared<KOMO>();
   komo->setConfig(C, false);
   komo->setTiming(1., 1, 1., 0);
 
   komo->addControlObjective({}, 0, 1e-1);
+  komo->add_jointLimits();
   komo->addObjective({}, FS_positionDiff, {"l_gripper", "target"}, OT_eq, {1e1});
 
   nlp = komo->nlp();

@@ -34,8 +34,11 @@ void TEST(Solver) {
   if(x_init.N) S.setInitialization(x_init);
   if(sid==NLPS_augmentedLag || sid==NLPS_squaredPenalty || sid==NLPS_logBarrier){
     while(!S.step()){
-      NLP_Viewer(nlp, S.P). display(S.optCon->L.mu);
-      rai::wait(.1);
+      if(sid==NLPS_logBarrier)
+        NLP_Viewer(nlp, S.P). display(S.optCon->L.mu, S.optCon->L.muLB);
+      else
+        NLP_Viewer(nlp, S.P). display(S.optCon->L.mu);
+      rai::wait();
     }
   }else{
     S.solve();
