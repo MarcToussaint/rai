@@ -516,7 +516,6 @@ else if(w==0.){
 
 /// multiplies the rotation by a factor f (i.e., makes f-times the rotation)
 void Quaternion::multiply(double f) {
-  normalize();
   if(w<0.) flipSign();
   if(1.-w<1e-10 || f==1.) return;
   double phi=acos(w);
@@ -629,17 +628,9 @@ void Quaternion::setZero() { memset(this, 0, sizeof(Quaternion));  w=1.; isZero=
 
 /// samples the rotation uniformly from the whole SO(3)
 rai::Quaternion& Quaternion::setRandom() {
-  double s, s1, s2, t1, t2;
-  s=rnd.uni();
-  s1=sqrt(1-s);
-  s2=sqrt(s);
-  t1=RAI_2PI*rnd.uni();
-  t2=RAI_2PI*rnd.uni();
-  w=cos(t2)*s2;
-  x=sin(t1)*s1;
-  y=cos(t1)*s1;
-  z=sin(t2)*s2;
-  isZero=false;
+  arr q = randn(4);
+  set(q);
+  normalize();
   return *this;
 }
 
