@@ -1122,8 +1122,7 @@ PhysXInterface::~PhysXInterface() { NICO }
 void PhysXInterface::step(double tau) { NICO }
 void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& frameVelocities, bool onlyKinematic){ NICO }
 void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& vels) { NICO }
-void PhysXInterface::setMotorQ(const arr& q_ref, const arr& qDot_ref){ NICO }
-void PhysXInterface::setMotorQ(const rai::Configuration& C, bool setHardInstantly, const arr& qDot){ NICO }
+void PhysXInterface::pushMotorStates(const rai::Configuration& C, bool setInstantly, const arr& qDot){ NICO }
 void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot){ NICO }
 void PhysXInterface::postAddObject(rai::Frame* f) { NICO }
 

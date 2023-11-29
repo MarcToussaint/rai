@@ -96,7 +96,7 @@ bool NLP_Walker::step(double maxStep){
   arr y;
   arr xbar = x;
   if(h.N) xbar += alpha*delta;
-  for(uint s=0;;s++){ //``line search''
+  for(uint i=0;;i++){ //``line search''
     clipBeta(dir, xbar, beta_lo, beta_up);
 
     double beta=0.;
@@ -114,24 +114,28 @@ bool NLP_Walker::step(double maxStep){
 //          LOG(0) <<evals <<"uniform";
         }
       }
+    }else{
+      if(absMax(delta)<1e-6) break; //no step in the feasible -> not ok
     }
 
     samples++;
     y = xbar + beta*dir;
-
     eval(y, true);
-    if(!g.N || max(gpos) <= max(gpos0)) break;
+
+    if((!g.N || max(gpos) <= max(gpos0)) //constraints are good
+       && (sum(s) <= sum(s0) + eps + .1 * expectedSlackDecrease) ){ //Wolfe accept
+      if(maxDiff(y, x)<1e-6){
+        LOG(-1) <<"why?" <<delta <<s <<s0 <<expectedSlackDecrease;
+      }
+      x = y;
+      return true;
+    }
 
     CHECK(g.N, "you shouldn't be here if there are no ineqs!");
-    if(s>=10) break; //give up
+    if(i>=10) break; //give up
     if(beta_up<=beta_lo) break;
   }
 
-  if(sum(s) <= eps + sum(s0) + .1 * expectedSlackDecrease){ //Wolfe accept
-    x = y;
-    //      alpha *= 1.2; if(alpha>1.) alpha=1.;
-    return true;
-  }
 
   //-- bad
   //reset evaluations:
@@ -140,15 +144,16 @@ bool NLP_Walker::step(double maxStep){
   h=h0; Jh=Jh0;
   s=s0; Js=Js0;
   gpos=gpos0;
-  //    alpha *= .8;
   return false; //line search in 10 steps failed
 }
 
 bool NLP_Walker::step_delta(){
-  eval(x, true);
+  if(!phi.N) eval(x, true);
+
   arr dir, delta;
   get_rnd_direction(dir, delta);
   x += delta;
+  eval(x, true);
   return true;
 }
 
@@ -244,6 +249,7 @@ arr sample_direct(NLP& nlp, uint K, int verbose){
   arr data;
 
   for(;data.d0<K;){
+    arr x0 = walk.x;
     bool good = walk.step();
 
     if(good){
@@ -281,6 +287,45 @@ arr sample_restarts(NLP& nlp, uint K, int verbose){
       if(good) break;
 //      komo->pathConfig.setJointState(sam.x);
 //      komo->view(true, STRING(k <<' ' <<t <<' ' <<sam.err <<' ' <<good));
+    }
+
+    if(good){
+      for(uint t=0;t<10;t++){
+        walk.step_delta();
+        if(walk.err<=.01) break;
+      }
+      if(walk.err>.01) good=false;
+    }
+
+    if(good){
+      data.append(walk.x);
+      data.reshape(-1, nlp.getDimension());
+      if(!(data.d0%10)) cout <<'.' <<std::flush;
+    }
+
+    if(verbose>1 || (good && verbose>0)){
+      nlp.report(cout, 2+verbose, STRING("sample_restarts it: " <<data.d0 <<" good: " <<good));
+    }
+  }
+  cout <<"\nsteps/sample: " <<double(walk.samples)/K <<" evals/sample: " <<double(walk.evals)/K <<" #sam: " <<data.d0 <<endl;
+  return data;
+}
+
+//===========================================================================
+
+arr sample_greedy(NLP& nlp, uint K, int verbose){
+  NLP_Walker walk(nlp);
+
+  arr data;
+
+  for(;data.d0<K;){
+    arr x = nlp.bounds_lo + rand(nlp.getDimension()) % (nlp.bounds_up - nlp.bounds_lo);
+    walk.initialize(x);
+
+    bool good = false;
+    for(uint t=0;t<100;t++){
+      walk.step_delta();
+      if(walk.err<=.01){ good=true; break; }
     }
 
     if(good){
@@ -350,6 +395,14 @@ arr sample_denoise(NLP& nlp, uint K, int verbose){
 //    if(walk.err>2.*walk.eps) good=false;
 
     if(good){
+      for(uint t=0;t<10;t++){
+        walk.step_delta();
+        if(walk.err<=.01) break;
+      }
+      if(walk.err>.01) good=false;
+    }
+
+    if(good){
       data.append(x);
       data.reshape(-1, nlp.getDimension());
       if(!(data.d0%10)) cout <<'.' <<std::flush;
@@ -392,3 +445,4 @@ AlphaSchedule::AlphaSchedule(AlphaSchedule::Mode mode, uint T, double beta){
     }
   }
 }
+

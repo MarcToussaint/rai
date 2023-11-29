@@ -3,8 +3,8 @@
 //===========================================================================
 
 struct NLP_Walker{
-
   NLP& nlp;
+
   //evaluation data
   arr x;
   arr phi, J;
@@ -19,17 +19,16 @@ struct NLP_Walker{
   //h-threshold
   double eps = .05;
 
-  //steps
+  //slack step rate
   double alpha = .1;
 
+  //counters
   uint samples=0;
   uint evals=0;
 
   NLP_Walker(NLP& _nlp) : nlp(_nlp) {}
 
   void initialize(const arr& _x){ x=_x; phi.clear(); }
-
-
 
   bool step(double maxStep = 1e6);
   bool step_delta();
@@ -38,8 +37,6 @@ protected:
   void clipBeta(const arr& d, const arr& xbar, double& beta_lo, double& beta_up);
   void get_rnd_direction(arr& dir, arr& delta);
   void eval(const arr& _x, bool update_phi);
-
-
 };
 
 //===========================================================================
@@ -55,4 +52,5 @@ struct AlphaSchedule {
 
 arr sample_direct(NLP& nlp, uint K=1000, int verbose=1);
 arr sample_restarts(NLP& nlp, uint K=1000, int verbose=1);
+arr sample_greedy(NLP& nlp, uint K=1000, int verbose=1);
 arr sample_denoise(NLP& nlp, uint K=1000, int verbose=1);
