@@ -157,6 +157,17 @@ void init_Simulation(pybind11::module& m) {
        pybind11::arg("jointVelocities") = NoArr
        )
 
+          .def("attach", &rai::Simulation::attach,
+               "",
+               pybind11::arg("gripper"),
+               pybind11::arg("obj")
+              )
+
+          .def("detach", &rai::Simulation::detach,
+               "",
+               pybind11::arg("obj")
+              )
+
   .def("depthData2pointCloud", [](std::shared_ptr<rai::Simulation>& self, const pybind11::array_t<float>& depth, const std::vector<double>& fxycxy) {
     arr points;
     floatA _depth = numpy2arr<float>(depth);

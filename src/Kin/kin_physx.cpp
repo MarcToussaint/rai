@@ -150,7 +150,7 @@ struct PhysXInterface_self {
   rai::Array<PxRigidActor*> actors;
   rai::Array<rai::BodyType> actorTypes;
   rai::Array<PxArticulationAxis::Enum> jointAxis;
-  rai::Array<PxRevoluteJoint*> joints;
+  rai::Array<PxJoint*> joints;
 
   rai::PhysX_Options opt;
 
@@ -292,11 +292,11 @@ void PhysXInterface_self::addJoint(const rai::Joint* jj) {
   while(joints.N <= jj->frame->ID)
     joints.append(nullptr);
 
-  rai::Transformation rel;
+  rai::Transformation rel=0;
   rai::Frame* to = jj->frame;
   rai::Frame* from = jj->frame->parent->getUpwardLink(rel);
 
-  LOG(0) <<"ADDING JOINT " <<from->name <<'-' <<to->name <<" of type " <<jj->type;
+  LOG(0) <<"ADDING JOINT " <<from->name <<'-' <<to->name <<" of type " <<jj->type <<" with rel " <<rel;
 
 //  if(!to->inertia || !from || !from->inertia) return;
 //  CHECK(to->inertia, "this joint belongs to a frame '" <<to->name <<"' without inertia");
@@ -356,10 +356,11 @@ void PhysXInterface_self::addJoint(const rai::Joint* jj) {
     }
     break;
     case rai::JT_rigid: {
-      // PxFixedJoint* desc =
-      PxFixedJointCreate(*core->mPhysics, actors(jj->from()->ID), A, actors(to->ID), B.getInverse());
+      PxTransform A = conv_Transformation2PxTrans(rel * to->get_Q()); //add the current relative transform!
+      PxFixedJoint* joint = PxFixedJointCreate(*core->mPhysics, actors(from->ID), A, actors(to->ID), B.getInverse());
       // desc->setProjectionLinearTolerance(1e10);
       // desc->setProjectionAngularTolerance(3.14);
+      joints(to->ID) = joint;
     }
     break;
     case rai::JT_trans3: {
@@ -849,6 +850,8 @@ void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& frameVelociti
         frameVelocities(f->ID, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());
         frameVelocities(f->ID, 1, {}) = conv_PxVec3_arr(px_body->getAngularVelocity());
       }
+
+//      if(f->parent) LOG(0) <<f->parent->name <<f->ensure_X().pos <<f->parent->ensure_X().pos <<f->get_Q().pos;
     }
   }
 
@@ -856,7 +859,10 @@ void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& frameVelociti
   if(self->opt.jointedBodies){
     arr q = C.getJointState();
     for(rai::Dof *d:C.activeDofs) if(self->joints(d->frame->ID)){
-      q(d->qIndex) = self->joints(d->frame->ID)->getAngle();
+      PxRevoluteJoint *revJoint = self->joints(d->frame->ID)->is<PxRevoluteJoint>();
+      if(revJoint){
+        q(d->qIndex) = revJoint->getAngle();
+      }
     }
     C.setJointState(q);
   }
@@ -875,6 +881,18 @@ void PhysXInterface::changeObjectType(rai::Frame* f, int _type) {
     ((PxRigidDynamic*)a)->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
   } else NIY;
   self->actorTypes(f->ID) = type;
+}
+
+void PhysXInterface::addJoint(rai::Joint* j){
+  self->addJoint(j);
+}
+
+void PhysXInterface::removeJoint(rai::Joint* j){
+  rai::Frame* to = j->frame;
+  rai::Frame* from = j->frame->parent->getUpwardLink();
+  LOG(0) <<"REMOVING JOINT " <<from <<'-' <<to <<" of type " <<j->type;
+  PxJoint* joint = self->joints(to->ID);
+  if(joint) joint->release();
 }
 
 void PhysXInterface::postAddObject(rai::Frame* f) {

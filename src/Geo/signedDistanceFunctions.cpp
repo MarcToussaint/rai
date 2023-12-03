@@ -503,7 +503,7 @@ void fillVolumeImg(byteA& vol, const floatA& dat){
   float *datp=dat.p;
   for(uint i=0;i<dat.N;i++){
     float d = *(datp++);
-    d = .5*(1.-d);
+//    d = .5*(1.-d);
     if(d<0.) d=0; else if(d>1.) d=1.;
     d *= 255.f;
     for(uint j=0;j<4;j++) (*volp++) = byte(d); //all four values (rgba) are set to density

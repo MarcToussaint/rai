@@ -324,17 +324,7 @@ void Simulation::moveGripper(const char* gripperFrameName, double width, double 
   //reattach object to world frame, and make it physical
   if(obj) {
     if(verbose>1) LOG(1) <<"initiating opening gripper " <<gripper->name <<" and releasing obj " <<obj->name <<" width:" <<width <<" speed:" <<speed;
-
-    //C.attach(C.frames(0), obj);
-    obj = obj->getUpwardLink();
-    obj->unLink();
-    obj->inertia->type = BT_dynamic;
-    if(engine==_physx) {
-      self->physx->changeObjectType(obj, rai::BT_dynamic);
-    } else if(engine==_bullet) {
-      self->bullet->changeObjectType(obj, rai::BT_dynamic);
-    } else if(engine==_kinematic) {
-    } else NIY;
+    detach(obj);
   }else{
     if(verbose>1) LOG(1) <<"initiating opening gripper " <<gripper->name <<" (without releasing obj)" <<" width:" <<width <<" speed:" <<speed;
   }
@@ -721,6 +711,47 @@ Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Joint* _joint,  Frame* _fing
   }
 }
 
+void Simulation::attach(Frame* gripper, Frame* obj){
+  obj = obj->getUpwardLink();
+  gripper = gripper->getUpwardLink();
+  Joint *j = C.attach(gripper, obj);
+#if 0
+  obj->inertia->type = BT_kinematic;
+
+  // tell engine that object is now kinematic, not dynamic
+  if(engine==_physx) {
+    self->physx->changeObjectType(obj, BT_kinematic);
+  } else if(engine==_bullet){
+    self->bullet->changeObjectType(obj, BT_kinematic);
+  } else if(engine==_kinematic){
+  } else NIY;
+#else
+  if(engine==_physx) {
+    self->physx->addJoint(j);
+  } else if(engine==_bullet){
+    NIY;
+  } else if(engine==_kinematic){
+  } else NIY;
+#endif
+}
+
+void Simulation::detach(rai::Frame* obj) {
+  obj = obj->getUpwardLink();
+#if 0
+  obj->unLink();
+  obj->inertia->type = BT_dynamic;
+  if(engine==_physx) {
+    self->physx->changeObjectType(obj, rai::BT_dynamic);
+  } else if(engine==_bullet) {
+    self->bullet->changeObjectType(obj, rai::BT_dynamic);
+  } else if(engine==_kinematic) {
+  } else NIY;
+#else
+  self->physx->removeJoint(obj->joint);
+  obj->unLink();
+#endif
+}
+
 void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
   if(killMe) return;
 
@@ -757,20 +788,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
 
       if(sumOfSqr(y) < 0.1) { //good enough -> success!
 #if 1
-        if(obj){
-          // kinematically attach object to gripper
-          obj = obj->getUpwardLink();
-          S.C.attach(gripper, obj);
-          obj->inertia->type = BT_kinematic;
-
-          // tell engine that object is now kinematic, not dynamic
-          if(S.engine==S._physx) {
-            S.self->physx->changeObjectType(obj, BT_kinematic);
-          } else if(S.engine==S._bullet){
-            S.self->bullet->changeObjectType(obj, BT_kinematic);
-          } else if(S.engine==S._kinematic){
-          } else NIY;
-        }
+        if(obj) S.attach(gripper, obj);
 #endif
 
         //allows the user to know that gripper grasps something

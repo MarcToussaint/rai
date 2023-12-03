@@ -41,6 +41,8 @@ struct PhysXInterface : GLDrawer {
   void pullMotorStates(rai::Configuration& C, arr& qDot);
 
   void changeObjectType(rai::Frame* f, int type);
+  void addJoint(rai::Joint* j);
+  void removeJoint(rai::Joint* j);
   void postAddObject(rai::Frame* f);
   void setArticulatedBodiesKinematic(const rai::Configuration& C);
 
