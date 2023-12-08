@@ -840,18 +840,18 @@ arr Configuration::getNaturalCtrlMetric(double power) const {
 }
 
 /// returns the vector of joint limts */
-arr Configuration::getLimits(const DofL& dofs) const {
+arr Configuration::getJointLimits(const DofL& dofs) const {
   uint N=0;
   for(Dof* d:dofs) if(!d->mimic) N += d->dim;
-  arr limits(N, 2);
+  arr limits(2, N);
   limits.setZero();
-  for(uint i=0;i<N;i++) limits(i,1)=-1.;
+  for(uint i=0;i<N;i++) limits(1,i)=-1.;
   N=0;
   for(Dof* d:dofs) if(!d->mimic) {
     for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
       if(d->limits.N) {
-        limits(N+k, 0) = d->limits.elem(2*k+0); //lo
-        limits(N+k, 1) = d->limits.elem(2*k+1); //up
+        limits(0, N+k) = d->limits.elem(2*k+0); //lo
+        limits(1, N+k) = d->limits.elem(2*k+1); //up
       }
     }
     N += d->dim;
@@ -2045,8 +2045,6 @@ void Configuration::inverseDynamics(arr& tau, const arr& qd, const arr& qdd, boo
 std::shared_ptr<ConfigurationViewer>& Configuration::viewer(const char* window_title, bool offscreen) {
   if(!self->viewer) {
     self->viewer = make_shared<ConfigurationViewer>();
-    rai::Frame *camF = getFrame("camera_gl", false);
-    if(camF) self->viewer->setCamera(camF);
   }
   return self->viewer;
 }
@@ -3306,7 +3304,7 @@ void _glDrawOdeWorld(dWorldID world)
 int Configuration::animate(Inotify* ino) {
   arr x, x0;
   x0 = getJointState();
-  arr lim = getLimits();
+  arr lim = getJointLimits();
   const int steps = 50;
   checkConsistency();
   StringA jointNames = getJointNames();
@@ -3315,8 +3313,8 @@ int Configuration::animate(Inotify* ino) {
   viewer()->resetPressedKey();
   for(uint i=x0.N; i--;) {
     x=x0;
-    double upper_lim = lim(i, 1);
-    double lower_lim = lim(i, 0);
+    double upper_lim = lim(1, i);
+    double lower_lim = lim(0, i);
     double delta = upper_lim - lower_lim;
     double center = lower_lim + .5*delta;
     if(delta<=1e-10) { center=x0(i); delta=1.; }

@@ -124,6 +124,12 @@ void init_Config(pybind11::module& m) {
       "get the joint state as a numpy vector, optionally only for a subset of joints specified as list of joint names"
       )
 
+  .def("getJointLimits", [](shared_ptr<rai::Configuration>& self) {
+    return self->getJointLimits();
+  },
+    "get the joint limits as a n-by-2 matrix; for dofs that do not have limits defined, the entries are [0,-1] (i.e. upper limit < lower limit)"
+      )
+
   .def("getDofIDs", [](std::shared_ptr<rai::Configuration>& self){
       uintA dofIDs = self->getDofIDs();
       return Array2vec<uint>(dofIDs);

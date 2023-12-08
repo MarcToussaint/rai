@@ -380,11 +380,13 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
 bool PoseTool::checkLimits(const arr& limits, bool solve, bool assert){
   //get bounds
   arr B;
-  if(limits.N) B = ~limits;
-  else B = ~C.getLimits();
+  if(limits.N) B = limits;
+  else B = C.getJointLimits();
 
   //check
   arr q = C.getJointState();
+  CHECK_EQ(B.d0, 2, "");
+  CHECK_EQ(B.d1, q.N, "");
   bool good = boundCheck(q, B[0], B[1]);
   if(good) return true;
 

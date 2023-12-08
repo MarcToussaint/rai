@@ -9,8 +9,8 @@ ConfigurationProblem::ConfigurationProblem(const rai::Configuration& _C, bool _c
     collisionTolerance(_collisionTolerance){
 
   q0 = C.getJointState();
-  limits = C.getLimits();
-  max_step = zeros(limits.d0);
+  limits = C.getJointLimits();
+  max_step = zeros(limits.d1);
 
   for(rai::Dof *dof: C.activeDofs) {
     uint i=dof->qIndex;
@@ -39,7 +39,7 @@ void ConfigurationProblem::setExplicitCollisionPairs(const StringA& _collisionPa
 shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
   if(limits.N){
     for(uint i=0;i<x.N;i++){
-      if(limits(i,1)>limits(i,0) && (x.elem(i)<limits(i,0) || x.elem(i)>limits(i,1))){
+      if(limits(1,i)>limits(0,i) && (x.elem(i)<limits(0,i) || x.elem(i)>limits(1,i))){
         //LOG(-1) <<"QUERY OUT OF LIMIT: joint " <<i <<": " <<x.elem(i) <<' ' <<limits[i];
       }
     }

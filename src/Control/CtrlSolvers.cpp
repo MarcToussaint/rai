@@ -565,7 +565,7 @@ uint CtrlProblem_NLP::getDimension() {
 }
 
 void CtrlProblem_NLP::getBounds(arr& bounds_lo, arr& bounds_up) {
-  arr limits = ~CP.komo.world.getLimits();
+  arr limits = CP.komo.world.getJointLimits();
   bounds_lo = limits[0];
   bounds_up = limits[1];
 

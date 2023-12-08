@@ -186,7 +186,7 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
 #if 1
     t.resize(rrt_A.getNode(0).N);
     for(uint i=0;i<t.N;i++){
-      double lo=P.limits(i,0), up=P.limits(i,1);
+      double lo=P.limits(0,i), up=P.limits(1,i);
       CHECK_GE(up-lo, 1e-3,"limits are null interval: " <<i <<' ' <<P.C.getJointNames());
       t.elem(i) = lo + rnd.uni()*(up-lo);
     }

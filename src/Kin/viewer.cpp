@@ -293,6 +293,8 @@ void rai::ConfigurationViewer::recopyMeshes(const rai::Configuration& _C) {
 //        f->shape->_mesh = make_shared<Mesh> (*org.get());
 //      }
   }
+  rai::Frame *camF = C.getFrame("camera_gl", false);
+  if(camF) setCamera(camF);
 }
 
 void rai::ConfigurationViewer::glDraw(OpenGL& gl) {

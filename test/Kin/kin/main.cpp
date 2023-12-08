@@ -289,7 +289,7 @@ void TEST(Contacts){
 void TEST(Limits){
   rai::Configuration G("arm7.g");
 
-  arr limits = G.getLimits();
+  arr limits = G.getJointLimits();
   cout <<"limits: " <<limits <<endl;
 //  VectorFunction F = [&G, &limits](arr& y, arr& J, const arr& x){
 //    G.setJointState(x);
@@ -315,19 +315,6 @@ void TEST(Limits){
       G.view();
     }
   }
-}
-
-//===========================================================================
-
-void testShapes(){
-  rai::Configuration C;
-
-  rai::Graph G("/home/mtoussai/git/repair/z.vol");
-
-  rai::Frame* f = C.addFrame("density");
-  f->setDensity(G.get<floatA>("data"), G.get<arr>("size"));
-
-  C.view(true);
 }
 
 //===========================================================================
@@ -670,7 +657,6 @@ int MAIN(int argc,char **argv){
   //testDynamics();
   testContacts();
   testLimits();
-  testShapes();
 #ifdef RAI_ODE
 //  testMeshShapesInOde();
   testPlayTorqueSequenceInOde();

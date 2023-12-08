@@ -1761,7 +1761,7 @@ void KOMO::setupPathConfig() {
 }
 
 void KOMO::getBounds(arr& bounds_lo, arr& bounds_up) {
-  arr limits = ~pathConfig.getLimits();
+  arr limits = pathConfig.getJointLimits();
   bounds_lo = limits[0];
   bounds_up = limits[1];
 }
