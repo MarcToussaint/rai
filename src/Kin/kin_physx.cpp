@@ -1146,6 +1146,8 @@ void PhysXInterface::postAddObject(rai::Frame* f) { NICO }
 
 void PhysXInterface::disableGravity(rai::Frame* f, bool disable){ NICO }
 void PhysXInterface::changeObjectType(rai::Frame* f, int _type) { NICO }
+void PhysXInterface::addJoint(rai::Joint* j){ NICO }
+void PhysXInterface::removeJoint(rai::Joint* j){ NICO }
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) { NICO }
 void PhysXInterface::watch(bool pause, const char* txt) { NICO }
 void PhysXInterface::glDraw(OpenGL&) { NICO }
