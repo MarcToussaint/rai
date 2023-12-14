@@ -32,45 +32,17 @@
 }
 */
 
-void NLP_Walker::clipBeta(const arr& d, const arr& xbar, double& beta_lo, double& beta_up){
-  //cut with constraints
-  arr gbar = g + Jg*(xbar-x);
-  arr a = Jg*d;
-  for(uint i=0;i<gbar.N;i++){
-    double ai = a.elem(i);
-    if(fabs(ai)>1e-6){
-      double beta = -gbar.elem(i) / ai;
-      if(ai<0. && beta>beta_lo) beta_lo=beta;
-      if(ai>0. && beta<beta_up) beta_up=beta;
+double eval_beta(double beta, const arr& b, const arr& s){
+  double p=1.;
+  for(uint i=0;i<b.N;i++){
+    if(fabs(s(i))>1e-6){
+      p *= rai::sigmoid( (beta-b(i))/s(i) );
+    }else{
+      if(beta<b(i)){ p = 0.; break; } //single hard barrier violated
     }
   }
-
-  //cut with lower bound
-  gbar = nlp.bounds_lo - xbar;
-  a = -d;
-  for(uint i=0;i<gbar.N;i++){
-    double ai = a.elem(i);
-    if(fabs(ai)>1e-6){
-      double beta = -gbar.elem(i) / ai;
-      if(ai<0. && beta>beta_lo) beta_lo=beta;
-      if(ai>0. && beta<beta_up) beta_up=beta;
-    }
-  }
-
-  //cut with upper bound
-  gbar = xbar - nlp.bounds_up;
-  a = d;
-  for(uint i=0;i<gbar.N;i++){
-    double ai = a.elem(i);
-    if(fabs(ai)>1e-6){
-      double beta = -gbar.elem(i) / ai;
-      if(ai<0. && beta>beta_lo) beta_lo=beta;
-      if(ai>0. && beta<beta_up) beta_up=beta;
-    }
-  }
-
+  return p;
 }
-
 
 bool NLP_Walker::step(double maxStep){
   //    eval_gAb_hCd(x, true);
@@ -91,55 +63,75 @@ bool NLP_Walker::step(double maxStep){
   double expectedSlackDecrease = alpha * sum(Js*delta);
 
   //get lo/up lambda
-  double beta_lo=-maxStep, beta_up=maxStep;
 
-  arr y;
+  arr x0 = x;
   arr xbar = x;
   if(h.N) xbar += alpha*delta;
+  LineSampler LS;
+  LS.clip_beta(nlp.bounds_lo - xbar, -dir); //cut with lower bound
+  LS.clip_beta(xbar - nlp.bounds_up, dir); //cut with upper bound
+  LS.add_constraints(g + Jg*(xbar-x), Jg*dir, temperature);
   for(uint i=0;;i++){ //``line search''
-    clipBeta(dir, xbar, beta_lo, beta_up);
+#if 0
+    //cut with constraints
+    LS.clip_beta(g + Jg*(xbar-x), Jg*dir);
 
     double beta=0.;
-    if(beta_up>beta_lo){
+    if(LS.beta_up>LS.beta_lo){
       if(beta_sdv<0.){
-        beta = beta_lo + rnd.uni()*(beta_up-beta_lo);
+        beta = LS.sample_beta_uniform();
       }else{ //Gaussian beta
         bool good=false;
         for(uint k=0;k<10;k++){
           beta = beta_mean + beta_sdv*rnd.gauss();
-          if(beta>=beta_lo && beta<=beta_up){ good=true; break; }
+          if(beta>=LS.beta_lo && beta<=LS.beta_up){ good=true; break; }
         }
         if(!good){
-          beta = beta_lo + rnd.uni()*(beta_up-beta_lo);
+          beta = LS.sample_beta_uniform();
 //          LOG(0) <<evals <<"uniform";
         }
       }
     }else{
       if(absMax(delta)<1e-6) break; //no step in the feasible -> not ok
     }
-
+#else
+    //LS.add_constraints(g + Jg*(xbar-x), Jg*dir, temperature);
+    double beta = LS.sample_beta();
+    if(isnan(beta)) break;
+//    cout <<"beta: " <<beta <<" p(beta): " <<LS.p_beta <<endl;
+    if(LS.p_beta<1e-10) break;
+#endif
+    x = xbar + beta*dir;
     samples++;
-    y = xbar + beta*dir;
-    eval(y, true);
+    eval(x, true);
 
+#if 0
     if((!g.N || max(gpos) <= max(gpos0)) //constraints are good
        && (sum(s) <= sum(s0) + eps + .1 * expectedSlackDecrease) ){ //Wolfe accept
-      if(maxDiff(y, x)<1e-6){
+      if(maxDiff(x, x0)<1e-6){
         LOG(-1) <<"why?" <<delta <<s <<s0 <<expectedSlackDecrease;
       }
-      x = y;
       return true;
     }
+#else
+    LS.add_constraints(g + Jg*(xbar-x), Jg*dir, temperature);
+    double p_beta = sqrt(LS.eval_beta(beta));
+    cout <<"beta: " <<beta <<" p(beta): " <<LS.p_beta <<" p(beta) " <<p_beta <<endl;
+    if(p_beta >= 1e-2*LS.p_beta){
+      return true;
+    }
+#endif
 
     CHECK(g.N, "you shouldn't be here if there are no ineqs!");
     if(i>=10) break; //give up
-    if(beta_up<=beta_lo) break;
+    if(LS.beta_up<=LS.beta_lo) break;
   }
 
 
   //-- bad
   //reset evaluations:
-  phi=phi0; J0=J;
+  x = x0;
+  phi=phi0; J=J0;
   g=g0; Jg=Jg0;
   h=h0; Jh=Jh0;
   s=s0; Js=Js0;
@@ -163,7 +155,7 @@ void NLP_Walker::get_rnd_direction(arr& dir, arr& delta){
     //Gauss-Newton direction
     arr H = 2. * ~Js * Js;
     arr grad = 2. * ~Js * s;
-    arr Hinv = pseudoInverse(H);
+    arr Hinv = pseudoInverse(H, NoArr, 1e-6);
     delta = -(Hinv * grad);
   }else{
     delta = zeros(x.N);
@@ -241,8 +233,8 @@ void NLP_Walker::eval(const arr& _x, bool update_phi){
 
 //===========================================================================
 
-arr sample_direct(NLP& nlp, uint K, int verbose){
-  NLP_Walker walk(nlp);
+arr sample_direct(NLP& nlp, uint K, int verbose, double temperature){
+  NLP_Walker walk(nlp, temperature);
 
   walk.initialize(nlp.getInitializationSample());
 
@@ -446,3 +438,80 @@ AlphaSchedule::AlphaSchedule(AlphaSchedule::Mode mode, uint T, double beta){
   }
 }
 
+
+double LineSampler::eval_beta(double beta){
+  double p=1.;
+  for(uint i=0;i<b.N;i++){
+    if(fabs(s(i))>1e-6){
+      p *= rai::sigmoid( (beta-b(i))/s(i) );
+    }else{
+      if(beta<b(i)){ p = 0.; break; } //single hard barrier violated
+    }
+  }
+  return p;
+}
+
+void LineSampler::add_constraints(const arr& gbar, const arr& gd, double temperature){
+  uint n=b.N;
+  b.append(zeros(gbar.N));
+  s.append(zeros(gbar.N));
+  for(uint i=0;i<gbar.N;i++){
+    double gdi = gd.elem(i);
+    if(fabs(gdi)>1e-6) s(n+i) = -1./gdi;
+    b(n+i) = gbar(i) * s(n+i);
+  }
+  s *= temperature;
+}
+
+void LineSampler::clip_beta(const arr& gbar, const arr& gd){
+  for(uint i=0;i<gbar.N;i++){
+    double gdi = gd.elem(i);
+    if(fabs(gdi)>1e-6){
+      double beta = -gbar.elem(i) / gdi;
+      if(gdi<0. && beta>beta_lo) beta_lo=beta;
+      if(gdi>0. && beta<beta_up) beta_up=beta;
+    }
+  }
+}
+
+double LineSampler::sample_beta(){
+  //-- find outer interval
+  double z = 3.;
+  for(uint i=0;i<b.N;i++){
+    if(s(i)>0. && b(i)-z*s(i)>beta_lo) beta_lo=b(i)-z*s(i);
+    if(s(i)<0. && b(i)-z*s(i)<beta_up) beta_up=b(i)-z*s(i);
+  }
+
+  if(beta_up<beta_lo) return NAN;
+
+  //-- sample uniformly in the interval
+  arr betas = rand(10);
+  betas *= beta_up-beta_lo;
+  betas += beta_lo;
+
+  //-- evaluate all samples
+  arr p_betas(betas.N);
+  for(uint i=0;i<betas.N;i++) p_betas(i) = eval_beta(betas(i));
+
+  //-- SUS from these samples
+  arr sum_p = integral(p_betas);
+  double total_p = sum_p(-1);
+  if(total_p<1e-10) return NAN;
+  double r = rnd.uni() * total_p;
+  uint i = 0;
+  for(;i<sum_p.N;i++){ if(r<sum_p(i)) break; }
+  p_beta = p_betas(i);
+  return betas(i);
+}
+
+double LineSampler::sample_beta_uniform(){ return beta_lo + rnd.uni()*(beta_up-beta_lo); }
+
+void LineSampler::plot(){
+  arr betas = range(-2., 2., 100);
+  arr p_betas(betas.N);
+  for(uint i=0;i<betas.N;i++) p_betas(i) = eval_beta(betas(i));
+
+  FILE("z.dat") <<rai::catCol({betas, p_betas}).modRaw() <<endl;
+  gnuplot("plot 'z.dat' us 1:2");
+  rai::wait();
+}
