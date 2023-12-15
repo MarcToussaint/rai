@@ -13,7 +13,7 @@ OptBench_InvKin_Simple::OptBench_InvKin_Simple(){
   komo->setTiming(1., 1, 1., 0);
 
   komo->addControlObjective({}, 0, 1e-1);
-  komo->add_jointLimits();
+//  komo->add_jointLimits();
   komo->addObjective({}, FS_positionDiff, {"l_gripper", "target"}, OT_eq, {1e1});
 
   nlp = komo->nlp();

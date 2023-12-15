@@ -17,20 +17,24 @@ struct NLP_Walker{
 
   //evaluation data
   arr x;
-  arr phi, J;
-  arr g, Jg;
-  arr h, Jh;
-  arr s, Js;
-  arr r, Jr;
-  arr gpos;
-  double beta_mean, beta_sdv;
-  double err;
+  struct Eval{
+    arr x;
+    arr phi, J;
+    arr g, Jg;
+    arr h, Jh, Ph;
+    arr s, Js;
+    arr r, Jr;
+    arr gpos;
+    double err;
+    void eval(const arr& _x, NLP_Walker& walker);
+  } ev;
 
   //h-threshold
   double eps = .05;
 
   //slack step rate
   double alpha = .1;
+  double maxStep = .5;
 
   double temperature;
 
@@ -40,14 +44,18 @@ struct NLP_Walker{
 
   NLP_Walker(NLP& _nlp, double _temperature=0.) : nlp(_nlp), temperature(_temperature) {}
 
-  void initialize(const arr& _x){ x=_x; phi.clear(); }
+  void initialize(const arr& _x){ x=_x; ev.phi.clear(); ev.x.clear(); }
 
-  bool step(double maxStep = 1e6);
+  bool step();
   bool step_delta();
+  bool step_slack();
+  bool step_hit_and_run(double maxStep);
 
 protected:
-  void get_rnd_direction(arr& dir, arr& delta);
-  void eval(const arr& _x, bool update_phi);
+  void clipBeta(const arr& d, const arr& xbar, double& beta_lo, double& beta_up);
+  arr get_delta();
+  arr get_rnd_direction();
+  void get_beta_mean(double& beta_mean, double& beta_sdv, const arr& dir, const arr& xbar);
 };
 
 //===========================================================================
@@ -57,11 +65,12 @@ struct LineSampler{
   double beta_lo=-1e6, beta_up=1e6;
   double p_beta;
 
-  LineSampler(){}
+  LineSampler(double maxStep) : beta_lo(-maxStep), beta_up(maxStep){}
 
   double eval_beta(double beta);
 
   void add_constraints(const arr& gbar, const arr& gd, double temperature);
+  void add_constraints_eq(const arr& hbar, const arr& hd, double temperature);
 
   void clip_beta(const arr& gbar, const arr& gd);
 
@@ -69,7 +78,6 @@ struct LineSampler{
   double sample_beta_uniform();
 
   void plot();
-
 };
 
 //===========================================================================
@@ -83,7 +91,7 @@ struct AlphaSchedule {
 
 //===========================================================================
 
-arr sample_direct(NLP& nlp, uint K=1000, int verbose=1, double temperature=.1);
-arr sample_restarts(NLP& nlp, uint K=1000, int verbose=1);
-arr sample_greedy(NLP& nlp, uint K=1000, int verbose=1);
+arr sample_direct(NLP& nlp, uint K=1000, int verbose=1, double temperature=0.);
+arr sample_restarts(NLP& nlp, uint K=1000, int verbose=1, double temperature=0.);
+arr sample_greedy(NLP& nlp, uint K=1000, int verbose=1, double temperature=0.);
 arr sample_denoise(NLP& nlp, uint K=1000, int verbose=1);

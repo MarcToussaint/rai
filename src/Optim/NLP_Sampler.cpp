@@ -44,144 +44,159 @@ double eval_beta(double beta, const arr& b, const arr& s){
   return p;
 }
 
-bool NLP_Walker::step(double maxStep){
-  //    eval_gAb_hCd(x, true);
-  if(!phi.N) eval(x, true);
+bool NLP_Walker::step(){
+  ev.eval(x, *this);
 
-  //store:
-  arr phi0=phi, J0=J,
-      g0=g, Jg0=Jg,
-      h0=h, Jh0=Jh,
-      s0=s, Js0=Js,
-      gpos0=gpos;
-
-  //rnd direction
-  arr dir, delta;
-  get_rnd_direction(dir, delta);
-
-  //remember sufficient accept conditions
-  double expectedSlackDecrease = alpha * sum(Js*delta);
-
-  //get lo/up lambda
-
-  arr x0 = x;
-  arr xbar = x;
-  if(h.N) xbar += alpha*delta;
-  LineSampler LS;
-  LS.clip_beta(nlp.bounds_lo - xbar, -dir); //cut with lower bound
-  LS.clip_beta(xbar - nlp.bounds_up, dir); //cut with upper bound
-  LS.add_constraints(g + Jg*(xbar-x), Jg*dir, temperature);
-  for(uint i=0;;i++){ //``line search''
-#if 0
-    //cut with constraints
-    LS.clip_beta(g + Jg*(xbar-x), Jg*dir);
-
-    double beta=0.;
-    if(LS.beta_up>LS.beta_lo){
-      if(beta_sdv<0.){
-        beta = LS.sample_beta_uniform();
-      }else{ //Gaussian beta
-        bool good=false;
-        for(uint k=0;k<10;k++){
-          beta = beta_mean + beta_sdv*rnd.gauss();
-          if(beta>=LS.beta_lo && beta<=LS.beta_up){ good=true; break; }
-        }
-        if(!good){
-          beta = LS.sample_beta_uniform();
-//          LOG(0) <<evals <<"uniform";
-        }
-      }
-    }else{
-      if(absMax(delta)<1e-6) break; //no step in the feasible -> not ok
-    }
-#else
-    //LS.add_constraints(g + Jg*(xbar-x), Jg*dir, temperature);
-    double beta = LS.sample_beta();
-    if(isnan(beta)) break;
-//    cout <<"beta: " <<beta <<" p(beta): " <<LS.p_beta <<endl;
-    if(LS.p_beta<1e-10) break;
-#endif
-    x = xbar + beta*dir;
-    samples++;
-    eval(x, true);
-
-#if 0
-    if((!g.N || max(gpos) <= max(gpos0)) //constraints are good
-       && (sum(s) <= sum(s0) + eps + .1 * expectedSlackDecrease) ){ //Wolfe accept
-      if(maxDiff(x, x0)<1e-6){
-        LOG(-1) <<"why?" <<delta <<s <<s0 <<expectedSlackDecrease;
-      }
-      return true;
-    }
-#else
-    LS.add_constraints(g + Jg*(xbar-x), Jg*dir, temperature);
-    double p_beta = sqrt(LS.eval_beta(beta));
-    cout <<"beta: " <<beta <<" p(beta): " <<LS.p_beta <<" p(beta) " <<p_beta <<endl;
-    if(p_beta >= 1e-2*LS.p_beta){
-      return true;
-    }
-#endif
-
-    CHECK(g.N, "you shouldn't be here if there are no ineqs!");
-    if(i>=10) break; //give up
-    if(LS.beta_up<=LS.beta_lo) break;
+  get_delta();
+  bool good = true;
+  if(!ev.Ph.N || trace(ev.Ph)>1e-6){
+    good = step_hit_and_run(maxStep);
   }
 
+//  bool good = step_delta();
+  good = step_slack();
 
-  //-- bad
-  //reset evaluations:
-  x = x0;
-  phi=phi0; J=J0;
-  g=g0; Jg=Jg0;
-  h=h0; Jh=Jh0;
-  s=s0; Js=Js0;
-  gpos=gpos0;
+  return good;
+}
+
+bool NLP_Walker::step_hit_and_run(double maxStep){
+  if(!ev.x.N) ev.eval(x, *this);
+  Eval ev0 = ev;
+
+  arr dir = get_rnd_direction();
+
+  double beta_mean, beta_sdv;
+  get_beta_mean(beta_mean, beta_sdv, dir, x);
+
+  boundClip(x, nlp.bounds_lo, nlp.bounds_up);
+
+  LineSampler LS(2.*maxStep);
+  LS.clip_beta(nlp.bounds_lo - x, -dir); //cut with lower bound
+  LS.clip_beta(x - nlp.bounds_up, dir); //cut with upper bound
+  LS.add_constraints(ev.g + ev.Jg*(x-ev.x), ev.Jg*dir, temperature);
+  for(uint i=0;i<10;i++){ //``line search''
+    double beta = NAN;
+    if(!temperature){
+      //cut with constraints
+      LS.clip_beta(ev.g + ev.Jg*(x-ev.x), ev.Jg*dir);
+
+      if(LS.beta_up>LS.beta_lo){
+        if(beta_sdv<0.){
+          beta = LS.sample_beta_uniform();
+        }else{ //Gaussian beta
+          bool good=false;
+          for(uint k=0;k<10;k++){
+            beta = beta_mean + beta_sdv*rnd.gauss();
+            if(beta>=LS.beta_lo && beta<=LS.beta_up){ good=true; break; }
+          }
+          if(!good){
+            beta = LS.sample_beta_uniform();
+            //          LOG(0) <<evals <<"uniform";
+          }
+        }
+      }else{
+        break; //no step in the feasible -> not ok
+      }
+    }else{
+      if(LS.beta_up>LS.beta_lo){
+        beta = LS.sample_beta();
+        //    cout <<"beta: " <<beta <<" p(beta): " <<LS.p_beta <<endl;
+        if(LS.p_beta<1e-10) beta=NAN;
+      }
+      if(isnan(beta)) break;
+    }
+
+    x += beta*dir;
+    samples++;
+    ev.eval(x, *this);
+
+    if(!temperature){
+      if((!ev.g.N || max(ev.gpos) <= max(ev0.gpos)) //ineq constraints are good
+         && sum(ev.s) <= sum(ev0.s) + eps){ //total slack didn't increase too much
+        return true;
+      }
+    }else{
+      if(sum(ev.s) <= sum(ev0.s) + temperature + eps){ //total slack didn't increase too much
+        if(!ev.g.N) return true;
+        LS.add_constraints(ev.g + ev.Jg*(x-ev.x), ev.Jg*dir, temperature);
+        double p_beta = sqrt(LS.eval_beta(beta));
+        //      cout <<"beta: " <<beta <<" p(beta): " <<LS.p_beta <<" p(beta) " <<p_beta <<endl;
+        if(p_beta >= 1e-3*LS.p_beta){
+          return true;
+        }
+      }
+    }
+  }
+
+  ev = ev0;
+  x = ev.x;
   return false; //line search in 10 steps failed
 }
 
-bool NLP_Walker::step_delta(){
-  if(!phi.N) eval(x, true);
+bool NLP_Walker::step_slack(){
+  ev.eval(x, *this);
 
-  arr dir, delta;
-  get_rnd_direction(dir, delta);
-  x += delta;
-  eval(x, true);
+  arr s0 = temperature * randn(ev.s.N);
+  arr delta_s = alpha * (s0 - ev.s);
+  arr delta = pseudoInverse(ev.Js) * delta_s;
+
+  double l = length(delta);
+  if(l>maxStep) delta *= maxStep/l;
+
+  x += alpha * delta;
+  boundClip(x, nlp.bounds_lo, nlp.bounds_up);
+
+  ev.eval(x, *this);
   return true;
 }
 
-void NLP_Walker::get_rnd_direction(arr& dir, arr& delta){
-  //slack step
-  if(s.N && absMax(s)>1e-9){
-    //Gauss-Newton direction
-    arr H = 2. * ~Js * Js;
-    arr grad = 2. * ~Js * s;
-    arr Hinv = pseudoInverse(H, NoArr, 1e-6);
-    delta = -(Hinv * grad);
-  }else{
-    delta = zeros(x.N);
-  }
+bool NLP_Walker::step_delta(){
+  ev.eval(x, *this);
 
-  arr Ph;
-  if(h.N){ //equality constraints
+  arr delta = get_delta();
+  if(!delta.N) return false;
+
+  x += alpha * delta;
+  if(temperature){
+    x += temperature * randn(x.N);
+  }
+  ev.eval(x, *this);
+  return true;
+}
+
+arr NLP_Walker::get_delta(){
+  arr delta;
+  if(ev.s.N && absMax(ev.s)>1e-9){
     //Gauss-Newton direction
-    arr H = 2. * ~Jh * Jh;
+    arr H = 2. * ~ev.Js * ev.Js;
+    arr grad = 2. * ~ev.Js * ev.s;
     arr Hinv = pseudoInverse(H);
-    Ph = (eye(x.N) - Hinv * H); //tangent projection
-  }else{
-    Ph = eye(x.N);
+    delta = -(Hinv * grad);
   }
 
-  //rnd direction
-  dir = randn(x.N);
-  if(h.N) dir = Ph * dir;
-  dir /= length(dir);
+  if(ev.h.N){ //equality constraints
+    //Gauss-Newton direction
+    arr H = 2. * ~ev.Jh * ev.Jh;
+    arr Hinv = pseudoInverse(H);
+    if(true || !temperature){
+      ev.Ph = eye(x.N) - Hinv * H; //tangent projection
+    }else{
+      double a = exp(-10./temperature);
+      ev.Ph = eye(x.N) - a * (Hinv * H); //tangent projection
+    }
+  }else{
+    ev.Ph.clear();
+  }
 
-  //sos step and precision matrix
+  return delta;
+}
+
+void NLP_Walker::get_beta_mean(double& beta_mean, double& beta_sdv, const arr& dir, const arr& xbar) {
   beta_mean = 0.;
   beta_sdv = -1.;
-  if(r.N){
-    arr r_bar = r + Jr*(alpha*delta);
-    arr Jr_d = Jr * dir;
+  if(ev.r.N){
+    arr r_bar = ev.r + ev.Jr*(xbar - ev.x);
+    arr Jr_d = ev.Jr * dir;
     double Jr_d_2 = sumOfSqr(Jr_d);
     if(Jr_d_2>1e-6){
       beta_mean = - scalarProduct(r_bar, Jr_d) / Jr_d_2;
@@ -190,24 +205,34 @@ void NLP_Walker::get_rnd_direction(arr& dir, arr& delta){
   }
 }
 
-void NLP_Walker::eval(const arr& _x, bool update_phi){
-  if(update_phi){
-    evals++;
-    phi, J;
-    nlp.evaluate(phi, J, _x);
-    if(rai::isSparse(J)) J = J.sparse().unsparse();
+arr NLP_Walker::get_rnd_direction(){
+  arr dir = randn(x.N);
+  if(ev.Ph.N) dir = ev.Ph * dir;
+  dir /= length(dir);
+  return dir;
+}
+
+void NLP_Walker::Eval::eval(const arr& _x, NLP_Walker& walker){
+  if(x.N && maxDiff(_x, x)<1e-10){
+    return; //already evaluated
   }
+  x = _x;
+  walker.evals++;
+
+  phi, J;
+  walker.nlp.evaluate(phi, J, _x);
+  if(rai::isSparse(J)) J = J.sparse().unsparse();
 
   {//grab ineqs
     uintA ineqIdx;
-    for(uint i=0;i<nlp.featureTypes.N;i++) if(nlp.featureTypes(i)==OT_ineq) ineqIdx.append(i);
+    for(uint i=0;i<walker.nlp.featureTypes.N;i++) if(walker.nlp.featureTypes(i)==OT_ineq) ineqIdx.append(i);
     g = phi.sub(ineqIdx);
     Jg = J.sub(ineqIdx);
   }
 
   {//grab eqs
     uintA eqIdx;
-    for(uint i=0;i<nlp.featureTypes.N;i++) if(nlp.featureTypes(i)==OT_eq) eqIdx.append(i);
+    for(uint i=0;i<walker.nlp.featureTypes.N;i++) if(walker.nlp.featureTypes(i)==OT_eq) eqIdx.append(i);
     h = phi.sub(eqIdx);
     Jh = J.sub(eqIdx);
   }
@@ -225,7 +250,7 @@ void NLP_Walker::eval(const arr& _x, bool update_phi){
 
   {//grab sos
     uintA sosIdx;
-    for(uint i=0;i<nlp.featureTypes.N;i++) if(nlp.featureTypes(i)==OT_sos) sosIdx.append(i);
+    for(uint i=0;i<walker.nlp.featureTypes.N;i++) if(walker.nlp.featureTypes(i)==OT_sos) sosIdx.append(i);
     r = phi.sub(sosIdx);
     Jr = J.sub(sosIdx);
   }
@@ -235,13 +260,15 @@ void NLP_Walker::eval(const arr& _x, bool update_phi){
 
 arr sample_direct(NLP& nlp, uint K, int verbose, double temperature){
   NLP_Walker walk(nlp, temperature);
+  walk.eps = .1;
+  walk.alpha = 1.;
+  walk.maxStep = .5;
 
   walk.initialize(nlp.getInitializationSample());
 
   arr data;
 
   for(;data.d0<K;){
-    arr x0 = walk.x;
     bool good = walk.step();
 
     if(good){
@@ -262,8 +289,11 @@ arr sample_direct(NLP& nlp, uint K, int verbose, double temperature){
 
 //===========================================================================
 
-arr sample_restarts(NLP& nlp, uint K, int verbose){
-  NLP_Walker walk(nlp);
+arr sample_restarts(NLP& nlp, uint K, int verbose, double temperature){
+  NLP_Walker walk(nlp, temperature);
+  walk.eps = .1;
+  walk.alpha = 1.;
+  walk.maxStep = .5;
 
   arr data;
 
@@ -273,20 +303,22 @@ arr sample_restarts(NLP& nlp, uint K, int verbose){
     walk.initialize(x);
 
     bool good = false;
-    for(uint t=0;t<100;t++){
-      good = walk.step();
-      if(t<50 && walk.err>2.*walk.eps) good=false;
-      if(good) break;
+    for(uint t=0;t<20;t++){
+      if(verbose>1){
+        nlp.report(cout, 2+verbose, STRING("sample_greedy data: " <<data.d0 <<" iters: " <<t <<" good: " <<good));
+      }
+      walk.step();
+      if(!temperature && walk.ev.err<=.01){ good=true; break; }
 //      komo->pathConfig.setJointState(sam.x);
 //      komo->view(true, STRING(k <<' ' <<t <<' ' <<sam.err <<' ' <<good));
     }
+    if(temperature) good=true;
 
-    if(good){
+    if(good && !temperature){
       for(uint t=0;t<10;t++){
-        walk.step_delta();
-        if(walk.err<=.01) break;
+        walk.step_slack();
+        if(walk.ev.err<=.01){ good=true; break; }
       }
-      if(walk.err>.01) good=false;
     }
 
     if(good){
@@ -305,8 +337,10 @@ arr sample_restarts(NLP& nlp, uint K, int verbose){
 
 //===========================================================================
 
-arr sample_greedy(NLP& nlp, uint K, int verbose){
-  NLP_Walker walk(nlp);
+arr sample_greedy(NLP& nlp, uint K, int verbose, double temperature){
+  NLP_Walker walk(nlp, temperature);
+  walk.alpha = 1.;
+  walk.maxStep = 10.;
 
   arr data;
 
@@ -315,10 +349,16 @@ arr sample_greedy(NLP& nlp, uint K, int verbose){
     walk.initialize(x);
 
     bool good = false;
-    for(uint t=0;t<100;t++){
-      walk.step_delta();
-      if(walk.err<=.01){ good=true; break; }
+    uint t=0;
+    for(;t<20;t++){
+      if(verbose>1){
+        nlp.report(cout, 2+verbose, STRING("sample_greedy data: " <<data.d0 <<" iters: " <<t <<" good: " <<good));
+      }
+      walk.step_slack();
+//      walk.step_delta();
+      if(!temperature && walk.ev.err<=.01){ good=true; break; }
     }
+    if(temperature) good=true;
 
     if(good){
       data.append(walk.x);
@@ -327,7 +367,7 @@ arr sample_greedy(NLP& nlp, uint K, int verbose){
     }
 
     if(verbose>1 || (good && verbose>0)){
-      nlp.report(cout, 2+verbose, STRING("sample_restarts it: " <<data.d0 <<" good: " <<good));
+      nlp.report(cout, 2+verbose, STRING("sample_greedy data: " <<data.d0 <<" iters: " <<t <<" good: " <<good));
     }
   }
   cout <<"\nsteps/sample: " <<double(walk.samples)/K <<" evals/sample: " <<double(walk.evals)/K <<" #sam: " <<data.d0 <<endl;
@@ -389,9 +429,9 @@ arr sample_denoise(NLP& nlp, uint K, int verbose){
     if(good){
       for(uint t=0;t<10;t++){
         walk.step_delta();
-        if(walk.err<=.01) break;
+        if(walk.ev.err<=.01) break;
       }
-      if(walk.err>.01) good=false;
+      if(walk.ev.err>.01) good=false;
     }
 
     if(good){
@@ -438,6 +478,7 @@ AlphaSchedule::AlphaSchedule(AlphaSchedule::Mode mode, uint T, double beta){
   }
 }
 
+//===========================================================================
 
 double LineSampler::eval_beta(double beta){
   double p=1.;
@@ -457,11 +498,28 @@ void LineSampler::add_constraints(const arr& gbar, const arr& gd, double tempera
   s.append(zeros(gbar.N));
   for(uint i=0;i<gbar.N;i++){
     double gdi = gd.elem(i);
-    if(fabs(gdi)>1e-6) s(n+i) = -1./gdi;
-    b(n+i) = gbar(i) * s(n+i);
+    double si = 0.;
+    if(fabs(gdi)>1e-6) si = -1./gdi;
+    s(n+i) = si * temperature;
+    b(n+i) = gbar(i) * si;
   }
-  s *= temperature;
 }
+
+void LineSampler::add_constraints_eq(const arr& hbar, const arr& hd, double temperature){
+  uint n=b.N;
+  b.append(zeros(2*hbar.N));
+  s.append(zeros(2*hbar.N));
+  for(uint i=0;i<hbar.N;i++){
+    double hdi = hd.elem(i);
+    double si = 0.;
+    if(fabs(hdi)>1e-6) si = -1./hdi;
+    s(n+2*i) = si * temperature;
+    b(n+2*i) = hbar(i) * si - rai::sign(si)*(temperature+.1);
+    s(n+2*i+1) = -si * temperature;
+    b(n+2*i+1) = hbar(i) * si + rai::sign(si)*(temperature+.1);
+  }
+}
+
 
 void LineSampler::clip_beta(const arr& gbar, const arr& gd){
   for(uint i=0;i<gbar.N;i++){
