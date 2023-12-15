@@ -246,10 +246,11 @@ struct OpenGL {
 
   //general callbacks (used by all implementations)
   rai::Vector downVec, downPos, downFoc;
+  int downModifiers;
   rai::Quaternion downRot;
 protected:
-  void Key(unsigned char key, int mods, bool released);
-  void MouseButton(int button, int updown, int x, int y, int mods);
+  void Key(unsigned char key, int mods, bool _keyIsDown);
+  void MouseButton(int button, int buttonIsUp, int x, int y, int mods);
   void MouseMotion(double x, double y);
   void Reshape(int w, int h);
   void Scroll(int wheel, int direction);

@@ -23,7 +23,7 @@ void draw1(void*,OpenGL& gl){
 void TEST(Teapot) {
   OpenGL gl;
 
-  gl.camera.setDefault();
+//  gl.camera.setDefault();
 
   gl.reportEvents = true;
   gl.add(glStandardScene);
@@ -392,7 +392,7 @@ void TEST(Image) {
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc,argv);
 
-  testTeapot();
+  testTeapot(); return 0;
   testOfflineRendering();
   testGrab();
   testMultipleViews();

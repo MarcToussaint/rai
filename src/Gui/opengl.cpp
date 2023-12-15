@@ -1830,8 +1830,8 @@ void OpenGL::Draw(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
 
   //draw focus?
   if(drawFocus && mode!=GL_SELECT) {
-    glColor(1., .7, .3);
-    double size = .005 * (camera.X.pos-camera.foc).length();
+    glColor(1., 1., .0);
+    double size = .02 * (camera.X.pos-camera.foc).length()/camera.focalLength;
     glDrawDiamond(camera.foc.x, camera.foc.y, camera.foc.z, size, size, size);
   }
   /*if(topSelection && mode!=GL_SELECT){
@@ -2206,9 +2206,7 @@ void getSphereVector(rai::Vector& vec, double x, double y, int le, int ri, int b
   int minwh = w<h?w:h;
   x=x-le-.5*w;  x*= 2./minwh;
   y=y-bo-.5*h;  y*= -2./minwh;
-  vec.x=x;
-  vec.y=y;
-  vec.z=.5-(x*x+y*y);
+  vec.set(x, y, .5-(x*x+y*y));
   if(vec.z<0.) vec.z=0.;
   vec.isZero=false;
 }
@@ -2285,14 +2283,14 @@ void OpenGL::Key(unsigned char key, int mods, bool _keyIsDown) {
   if(_keyIsDown && !mods && key!='%') watching.setStatus(0);
 }
 
-void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) {
+void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
 //  auto _dataLock = dataLock(RAI_HERE);
   int w=width, h=height;
   bool needsUpdate=false;
   _y = h-_y;
-  CALLBACK_DEBUG(this, "Mouse Click Callback: " <<button <<' ' <<_x <<' ' <<_y <<" down:" <<downPressed <<" mods:" <<mods);
+  CALLBACK_DEBUG(this, "Mouse Click Callback: " <<button <<' ' <<_x <<' ' <<_y <<" up:" <<buttonIsUp <<" mods:" <<mods);
   mouse_button=1+button;
-  if(downPressed) mouse_button=-1-mouse_button;
+  if(buttonIsUp) mouse_button=-1-mouse_button;
   mouseposx=_x; mouseposy=_y;
   modifiers = mods;
   lastEvent.set(mouse_button, -1, _x, _y, 0., 0.);
@@ -2315,8 +2313,8 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   }
   CALLBACK_DEBUG(this, "associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
 
-  if(!downPressed) {  //down press
-    if(mouseIsDown) {  return; } //the button is already down (another button was pressed...)
+  if(!buttonIsUp) {  //down press
+    if(mouseIsDown) { return; } //the button is already down (another button was pressed...)
     //CHECK(!mouseIsDown, "I thought the mouse is up...");
     mouseIsDown=true;
     if(_NONE(modifiers)) drawFocus = true;
@@ -2325,17 +2323,19 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
     //CHECK(mouseIsDown, "mouse-up event although the mouse is not down???");
     mouseIsDown=false;
     drawFocus = false;
+    needsUpdate=true;
   }
   //store where you've clicked
   downVec=vec;
   downRot=cam->X.rot;
   downPos=cam->X.pos;
   downFoc=cam->foc;
+  downModifiers = modifiers;
 
   //-- shift-ctrl-LEFT -> check object clicked on
   if(mouse_button==1 && !hideCameraControls && _SHIFT(modifiers) && _CTRL(modifiers)) {
     drawFocus = false;
-    if(!downPressed) {
+    if(!buttonIsUp) {
       drawOptions.drawMode_idColor = true;
       drawOptions.drawColors = false;
       beginNonThreadedDraw(true);
@@ -2360,8 +2360,8 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   }
 
   //mouse scroll wheel:
-  if(mouse_button==4 && !hideCameraControls && !downPressed) cam->X.pos += downRot*Vector_z * (.1 * (downPos-downFoc).length());
-  if(mouse_button==5 && !hideCameraControls && !downPressed) cam->X.pos -= downRot*Vector_z * (.1 * (downPos-downFoc).length());
+  if(mouse_button==4 && !hideCameraControls && !buttonIsUp) cam->X.pos += downRot*Vector_z * (.1 * (downPos-downFoc).length());
+  if(mouse_button==5 && !hideCameraControls && !buttonIsUp) cam->X.pos -= downRot*Vector_z * (.1 * (downPos-downFoc).length());
 
   //-- RIGHT -> focus on selected point
   if(mouse_button==3 && (_NONE(modifiers))) {
@@ -2413,13 +2413,13 @@ void OpenGL::Scroll(int wheel, int direction) {
 
     //-- SCROLL -> zoom
     if(_NONE(modifiers)){
-      cam->X.pos += cam->X.rot*Vector_z * (dz * (cam->X.pos-cam->foc).length());
+      cam->X.pos += cam->X.rot.getZ() * (dz * (cam->X.pos-cam->foc).length());
     }
 
-    //-- shift-LEFT -> translation
+    //-- shift -> translation
     if(_SHIFT(modifiers) && !_CTRL(modifiers)) {
-      cam->X.pos += cam->X.rot*Vector_z * (.1*dz);
-      cam->foc += cam->X.rot*Vector_z * (.1*dz);
+      cam->X.pos += cam->X.rot.getZ() * (dz * (cam->X.pos-cam->foc).length());
+      cam->foc += cam->X.rot.getZ() * (dz * (cam->X.pos-cam->foc).length());
     }
 
     //-- ctrl -> focal length
@@ -2459,29 +2459,35 @@ void OpenGL::MouseMotion(double _x, double _y) {
   bool needsUpdate=false;
   
   //-- LEFT -> rotation
-  if(mouse_button==1 && _NONE(modifiers) && !downVec.isZero) {
+  if(mouse_button==1 && _NONE(downModifiers) && !downVec.isZero) {
     rai::Quaternion rot;
     if(downVec.z<.1) {
-      //margin:
+      //at the margin:
+      downVec.z=0; downVec.normalize();
+      vec.z = 0.; vec.normalize();
       rot.setDiff(vec, downVec);  //consider imagined sphere rotation of mouse-move
     } else {
-      //inside: use starndard xy to rotate
-      rot.setVec(2.*(vec-downVec) ^ -Vector_z); //consider only xy-mouse-move
+      //not at margin: use starndard xy to rotate
+      rai::Vector diff = vec - downVec;
+      diff.set(-diff.y, diff.x, 0); //no rotation about
+      rot.setVec(3.*diff); //consider only xy-mouse-move
     }
     //rotate about focus
     cam->X.rot = downRot * rot;   //rotate camera's direction
     rot = downRot * rot / downRot; //interpret rotation relative to current viewing
     cam->X.pos = downFoc + rot * (downPos - downFoc);   //rotate camera's position
+    drawFocus=true;
     needsUpdate=true;
   }
   
   //-- shift-LEFT -> translation
-  if(mouse_button==1 && (!hideCameraControls && _SHIFT(modifiers) && !_CTRL(modifiers)) && !downVec.isZero) {
-    rai::Vector trans = vec - downVec;
-    trans.z = 0.;
-    trans *= .1*(downFoc - downPos).length();
-    trans = downRot * trans;
-    cam->X.pos = downPos - trans;
+  if(mouse_button==1 && (!hideCameraControls && _SHIFT(downModifiers) && !_CTRL(downModifiers)) && !downVec.isZero) {
+    rai::Vector diff = vec - downVec;
+    diff.z = 0.;
+    diff *= .5*(downFoc - downPos).length()/cam->focalLength;
+    diff = downRot * diff;
+    cam->X.pos = downPos - diff;
+    drawFocus=true;
     needsUpdate=true;
   }
   
