@@ -548,6 +548,19 @@ rai::Frame& rai::Frame::setDensity(const floatA& data, const arr& size) {
   return *this;
 }
 
+rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, uint blur, double resample){
+  getShape().type() = ST_mesh;
+  SDF_GridData sdf(0, data, -.5*size, +.5*size);
+  sdf.smooth(3, blur);
+  if(resample>0.){
+    arr d = size/resample;
+    LOG(0) <<" uniform resampling resolution: " <<1000.*resample <<"mm  grid size: " <<d;
+    sdf.resample(d(0), d(1), d(2));
+  }
+  getShape().mesh().setImplicitSurface(sdf.gridData, sdf.lo, sdf.up);
+  return *this;
+}
+
 rai::Frame& rai::Frame::setColor(const arr& color) {
   getShape().mesh().C = color;
   return *this;

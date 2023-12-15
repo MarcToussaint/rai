@@ -2483,7 +2483,8 @@ void Configuration::writeCollada(const char* filename, const char* format) const
       node->mMetaData = new aiMetadata();
       node->mMetaData->Add<double>("mass", f->inertia->mass);
     }
-    f->get_Q().getAffineMatrix(T.p);
+    if(f->parent) f->get_Q().getAffineMatrix(T.p);
+    else f->get_X().getAffineMatrix(T.p);
     for(uint j=0; j<4; j++) for(uint k=0; k<4; k++) {
       node->mTransformation[j][k] = T(j, k);
     }

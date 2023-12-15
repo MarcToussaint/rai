@@ -390,11 +390,20 @@ reloads, displays and animates the configuration whenever the file is changed"
   .def("write", [](shared_ptr<rai::Configuration>& self) { rai::String str; self->write(str);  return pybind11::str(str.p, str.N); },
   "write the full configuration in a string (roughly yaml), e.g. for file export")
 
+  .def("writeMesh", &rai::Configuration::writeMesh,
+       "write the full configuration in a ply mesh file",
+       pybind11::arg("filename") )
+
+  .def("writeMeshes", &rai::Configuration::writeMeshes,
+       "write all object meshes in a directory",
+       pybind11::arg("pathPrefix") )
+
   .def("writeURDF", [](shared_ptr<rai::Configuration>& self) { rai::String str; self->writeURDF(str);  return pybind11::str(str.p, str.N); },
   "write the full configuration as URDF in a string, e.g. for file export")
 
   .def("writeCollada", &rai::Configuration::writeCollada,
-  "write the full configuration in a collada file for export")
+       "write the full configuration in a collada file for export",
+       pybind11::arg("filename"), pybind11::arg("format")="collada" )
 
   ;
 

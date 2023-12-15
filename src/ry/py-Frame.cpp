@@ -67,6 +67,7 @@ void init_Frame(pybind11::module& m) {
     .def("setShape", &rai::Frame::setShape, "", pybind11::arg("type"), pybind11::arg("size") )
     .def("setConvexMesh", &rai::Frame::setConvexMesh, "", pybind11::arg("points"), pybind11::arg("points"), pybind11::arg("radius") )
     .def("setDensity", &rai::Frame::setDensity, "", pybind11::arg("data"), pybind11::arg("size") )
+    .def("setImplicitSurface", &rai::Frame::setImplicitSurface, "", pybind11::arg("data"), pybind11::arg("size"), pybind11::arg("blur"), pybind11::arg("resample")=-1.)
 
     .def("setParent", &rai::Frame::setParent, "", pybind11::arg("parent"), pybind11::arg("keepAbsolutePose_and_adaptRelativePose") = false, pybind11::arg("checkForLoop") = false)
     .def("unLink", &rai::Frame::unLink )

@@ -1690,7 +1690,8 @@ void Mesh::glDraw(struct OpenGL& gl) {
   }
 
   if(T.d1==2) { //-- draw lines
-//    glLineWidth(3.f);
+    //    glLineWidth(3.f);
+    //    glShadeModel(GL_FLAT);
     glShadeModel(GL_SMOOTH);
 #if 0
     uint v;
@@ -1705,8 +1706,6 @@ void Mesh::glDraw(struct OpenGL& gl) {
     }
     glEnd();
 #else
-    //  glShadeModel(GL_FLAT);
-    glShadeModel(GL_SMOOTH);
     glEnableClientState(GL_VERTEX_ARRAY);
     if(glDrawOptions(gl).drawColors) {
       if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
@@ -1760,8 +1759,9 @@ void Mesh::glDraw(struct OpenGL& gl) {
   if((!C.N || C.nd==1 || !glDrawOptions(gl).drawColors || (C.d0==V.d0 && !lightingEnabled))  //we have colors for each vertex
       && (!tex.N || !Tt.N)) { //we have no tex or tex coords for each vertex -> use index arrays
 
-    //  glShadeModel(GL_FLAT);
-    glShadeModel(GL_SMOOTH);
+//    glShadeModel(GL_FLAT); //triangles with constant reflection
+    glShadeModel(GL_SMOOTH); //smoothed over vertices
+
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
     if(glDrawOptions(gl).drawColors) {
@@ -1815,7 +1815,8 @@ void Mesh::glDraw(struct OpenGL& gl) {
     if(tex.N) CHECK_EQ(Tt.d0, T.d0, "this needs tex coords for each tri");
     if(tex.N && glDrawOptions(gl).drawColors) glEnable(GL_TEXTURE_2D);
 
-    glShadeModel(GL_SMOOTH);
+//    glShadeModel(GL_FLAT); //triangles with constant reflection
+    glShadeModel(GL_SMOOTH); //smoothed over vertices
 
     glBegin(GL_TRIANGLES);
     for(i=0; i<T.d0; i++) {
