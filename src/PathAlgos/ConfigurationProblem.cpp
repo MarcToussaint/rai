@@ -58,6 +58,7 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
       C.proxies(i).d = -0.;
     }
     for(rai::Proxy& p:C.proxies) p.calc_coll();
+    C._state_proxies_isGood = true;
   }
   evals++;
 
@@ -65,74 +66,80 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
 
   shared_ptr<QueryResult> qr = make_shared<QueryResult>();
 
-  //collision features
-  uint N = C.proxies.N;
-  qr->collisions.resize(N, 2).setZero();
-  qr->coll_y.resize(N, 1).setZero();
-  qr->coll_J.resize(N, 1, x.N).setZero();
-  qr->normal_y.resize(N, 3).setZero();
-  qr->normal_J.resize(N, 3, x.N).setZero();
-  qr->side_J.resize(N, 3, x.N).setZero();
+  if(!computeCollisionFeatures){
+    double p = C.getTotalPenetration();
+    qr->isFeasible = (p<collisionTolerance);
+  }else{
+    //collision features
+    uint N = C.proxies.N;
+    qr->collisions.resize(N, 2).setZero();
+    qr->coll_y.resize(N, 1).setZero();
+    qr->coll_J.resize(N, 1, x.N).setZero();
+    qr->normal_y.resize(N, 3).setZero();
+    qr->normal_J.resize(N, 3, x.N).setZero();
+    qr->side_J.resize(N, 3, x.N).setZero();
 
-  uint i=0;
-  for(const rai::Proxy& p:C.proxies){
-    qr->collisions[i] =  uintA{p.a->ID, p.b->ID};
-    arr Jp1, Jp2, Jx1, Jx2;
-    {
-      C.jacobian_pos(Jp1, C(p.a->ID), p.collision->p1);
-      C.jacobian_pos(Jp2, C(p.b->ID), p.collision->p2);
-      C.jacobian_angular(Jx1, C(p.a->ID));
-      C.jacobian_angular(Jx2, C(p.b->ID));
-    }
-    p.collision->kinDistance(qr->coll_y[i].noconst(), qr->coll_J[i].noconst(), Jp1, Jp2);
-    p.collision->kinNormal(qr->normal_y[i].noconst(), qr->normal_J[i].noconst(), Jp1, Jp2, Jx1, Jx2);
+    uint i=0;
+    for(const rai::Proxy& p:C.proxies){
+      qr->collisions[i] =  uintA{p.a->ID, p.b->ID};
+      arr Jp1, Jp2, Jx1, Jx2;
+      {
+        C.jacobian_pos(Jp1, C(p.a->ID), p.collision->p1);
+        C.jacobian_pos(Jp2, C(p.b->ID), p.collision->p2);
+        C.jacobian_angular(Jx1, C(p.a->ID));
+        C.jacobian_angular(Jx2, C(p.b->ID));
+      }
+      p.collision->kinDistance(qr->coll_y[i].noconst(), qr->coll_J[i].noconst(), Jp1, Jp2);
+      p.collision->kinNormal(qr->normal_y[i].noconst(), qr->normal_J[i].noconst(), Jp1, Jp2, Jx1, Jx2);
 
-    arr a, b, Ja, Jb;
-    {
-      C.kinematicsPos(a, Ja, C(p.a->ID));
-      C.kinematicsPos(b, Jb, C(p.b->ID));
-    }
+      arr a, b, Ja, Jb;
+      {
+        C.kinematicsPos(a, Ja, C(p.a->ID));
+        C.kinematicsPos(b, Jb, C(p.b->ID));
+      }
 #if 0
-    arr z = a-b;
-    z /= length(z);
+      arr z = a-b;
+      z /= length(z);
 #else
-    arr z = qr->normal_y[i];
+      arr z = qr->normal_y[i];
 #endif
-    qr->side_J[i] = (eye(3) - (z^z))* (Ja - Jb);
+      qr->side_J[i] = (eye(3) - (z^z))* (Ja - Jb);
 
-    i++;
-  }
-  CHECK_EQ(i, N, "");
-  qr->coll_J.reshape(qr->coll_y.N, x.N);
-
-  //is feasible?
-  qr->isFeasible = (!qr->coll_y.N || min(qr->coll_y)>=-collisionTolerance);
-
-  //goal features
-  N=0;
-  for(shared_ptr<GroundedObjective>& ob : objectives) N += ob->feat->dim(ob->frames);
-  qr->goal_y.resize(N);
-  qr->goal_J.resize(N, x.N);
-
-  i=0;
-//  arr z, Jz;
-  for(shared_ptr<GroundedObjective>& ob : objectives){
-    arr z = ob->feat->eval(ob->frames);
-    for(uint j=0;j<z.N;j++){
-      qr->goal_y(i+j) = z(j);
-      qr->goal_J[i+j] = z.J()[j];
+      i++;
     }
-    i += z.N;
-  }
-  CHECK_EQ(i, N, "");
+    CHECK_EQ(i, N, "");
+    qr->coll_J.reshape(qr->coll_y.N, x.N);
 
-  //is goal?
-  qr->isGoal= (absMax(qr->goal_y)<1e-2);
+    //is feasible?
+    qr->isFeasible = (!qr->coll_y.N || min(qr->coll_y)>=-collisionTolerance);
+
+    //goal features
+    N=0;
+    for(shared_ptr<GroundedObjective>& ob : objectives) N += ob->feat->dim(ob->frames);
+    qr->goal_y.resize(N);
+    qr->goal_J.resize(N, x.N);
+
+    i=0;
+    //  arr z, Jz;
+    for(shared_ptr<GroundedObjective>& ob : objectives){
+      arr z = ob->feat->eval(ob->frames);
+      for(uint j=0;j<z.N;j++){
+        qr->goal_y(i+j) = z(j);
+        qr->goal_J[i+j] = z.J()[j];
+      }
+      i += z.N;
+    }
+    CHECK_EQ(i, N, "");
+
+    //is goal?
+    qr->isGoal= (absMax(qr->goal_y)<1e-2);
+  }
 
   //display (link of last joint)
   qr->disp3d = C.activeDofs.elem(-1)->frame->getPosition();
-
-  if(verbose) C.view(verbose>1, STRING("ConfigurationProblem query:\n" <<*qr));
+  if(verbose){
+    C.view(verbose>1, STRING("ConfigurationProblem query:\n" <<*qr));
+  }
 
   return qr;
 }

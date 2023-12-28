@@ -43,6 +43,7 @@ struct ConfigurationProblem {
 
   //what collisions are evaluated?
   bool computeAllCollisions;
+  bool computeCollisionFeatures=true;
   uintA collisionPairs;
   double collisionTolerance;
 

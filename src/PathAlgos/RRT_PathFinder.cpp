@@ -66,7 +66,7 @@ uint RRT_SingleTree::add(const arr& q, uint parentID, const shared_ptr<QueryResu
 
   CHECK_EQ(parent.N, ann.X.d0, "");
   CHECK_EQ(queries.N, ann.X.d0, "");
-  CHECK_EQ(disp3d.d0, ann.X.d0, "");
+  //CHECK_EQ(disp3d.d0, ann.X.d0, "");
   drawMutex.unlock();
   return parent.N-1;
 }
@@ -240,8 +240,8 @@ RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, con
   arr qT = _goals;
   auto q0ret = P.query(q0);
   auto qTret = P.query(qT);
-  if(!q0ret->isFeasible){ if(verbose>0) LOG(0) <<"initializing with infeasible q0"; if(verbose>1) q0ret->writeDetails(std::cout, P); }
-  if(!qTret->isFeasible){ if(verbose>0) LOG(0) <<"initializing with infeasible qT"; if(verbose>1) qTret->writeDetails(std::cout, P); }
+  if(!q0ret->isFeasible){ LOG(0) <<"initializing with infeasible q0"; q0ret->writeDetails(std::cout, P); }
+  if(!qTret->isFeasible){ LOG(0) <<"initializing with infeasible qT"; qTret->writeDetails(std::cout, P); }
   rrt0 = make_shared<RRT_SingleTree>(q0, q0ret);
   rrtT = make_shared<RRT_SingleTree>(qT, qTret);
 

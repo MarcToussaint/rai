@@ -2212,7 +2212,16 @@ void Configuration::stepSwift() {
 
 void Configuration::stepFcl(double cutoff) {
   //-- get the frame state of collision objects
+#if 0
   arr X = getFrameState();
+#else
+  arr X(frames.N, 7);
+  X.setZero();
+  for(uint i=0;i<X.d0;i++){
+    rai::Frame *f = frames.elem(i);
+    if(f->shape && f->shape->cont) X[i] = f->ensure_X().getArr7d();
+  }
+#endif
   //-- step fcl
   fcl()->step(X, cutoff);
   //-- add as proxies

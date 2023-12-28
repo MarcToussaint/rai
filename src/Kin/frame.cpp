@@ -609,24 +609,26 @@ rai::Frame& rai::Frame::setJointState(const arr& q) {
   return *this;
 }
 
-void rai::Frame::makeAutoJoint(rai::JointType jointType, rai::Frame* parent, bool autoLimits){
+void rai::Frame::makeManipJoint(rai::JointType jointType, rai::Frame* parent, bool autoLimits){
   Transformation orgX = ensure_X();
 
   //THIS is the new STANDARD! (was the version that works for the crawler; works also for pnp LGP test - but not when picking link-shapes only!)
   C.reconfigureRoot(this, true);
 
-  //create a new joint
+  //-- create a new joint
   setParent(parent, false, true); //checkForLoop might throw an error
   setJoint(jointType);
   CHECK(jointType!=JT_none, "");
 
+  //-- create a pre transformation link, if necessary
   Transformation rel = 0;
   if(jointType==JT_transXYPhi || jointType==JT_transXY){
     rel.pos.set(0, 0, .5*(shapeSize(parent) + shapeSize(this)));
   }
   if(!rel.isZero()) insertPreLink(rel);
 
-  {//copy init
+  //-- initialize with current relative transformation
+  {
     Q = orgX / parent->ensure_X();
     if(joint->dim>0) {
       arr q = joint->calcDofsFromConfig();
@@ -635,7 +637,7 @@ void rai::Frame::makeAutoJoint(rai::JointType jointType, rai::Frame* parent, boo
     }
   }
 
-  //-- auto limits
+  //-- automatic limits
   if(autoLimits){
     if(jointType==JT_free){
       double maxsize = 0.;

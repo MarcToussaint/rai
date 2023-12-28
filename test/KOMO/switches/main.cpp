@@ -162,7 +162,7 @@ void testFloat(uint order){
   rai::Configuration C(rai::getParameter<rai::String>("model"));
   C.view(true);
 
-  C.getFrame("obj")->makeAutoJoint(rai::JT_transXYPhi, C["floor"], true);
+  C.getFrame("obj")->makeManipJoint(rai::JT_transXYPhi, C["floor"], true);
 
   KOMO komo;
   komo.setConfig(C, false);
@@ -212,14 +212,16 @@ void testFloat(uint order){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-//  testPickAndPlace(2);
-//  testPickAndPlace(1);
-//  testPickAndPlace(0);
+  testPickAndPlace(2);
+  testPickAndPlace(1);
+  testPickAndPlace(0);
 
-//  testHandover(2);
-//  testHandover(1);
-//  testHandover(0);
+  testHandover(2);
+  testHandover(1);
+  testHandover(0);
 
+  testFloat(2);
+  testFloat(1);
   testFloat(0);
 
   return 0;
