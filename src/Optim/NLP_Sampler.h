@@ -36,14 +36,17 @@ struct NLP_Walker{
   double alpha = .1;
   double maxStep = .5;
 
-  double temperature;
+  double a, sig;
 
   //counters
   uint samples=0;
   uint evals=0;
 
-  NLP_Walker(NLP& _nlp, double _temperature=0.) : nlp(_nlp), temperature(_temperature) {}
+  NLP_Walker(NLP& _nlp, double alpha_bar=1.) : nlp(_nlp) {
+    set_alpha_bar(alpha_bar);
+  }
 
+  void set_alpha_bar(double alpha_bar);
   void initialize(const arr& _x){ x=_x; ev.phi.clear(); ev.x.clear(); }
 
   bool step();
@@ -62,6 +65,7 @@ protected:
 
 struct LineSampler{
   arr b, s;
+  double num_constraints=0.;
   double beta_lo=-1e6, beta_up=1e6;
   double p_beta;
 
@@ -69,8 +73,8 @@ struct LineSampler{
 
   double eval_beta(double beta);
 
-  void add_constraints(const arr& gbar, const arr& gd, double temperature);
-  void add_constraints_eq(const arr& hbar, const arr& hd, double temperature);
+  void add_constraints(const arr& gbar, const arr& gd, double sig);
+  void add_constraints_eq(const arr& hbar, const arr& hd, double sig);
 
   void clip_beta(const arr& gbar, const arr& gd);
 
@@ -91,7 +95,8 @@ struct AlphaSchedule {
 
 //===========================================================================
 
-arr sample_direct(NLP& nlp, uint K=1000, int verbose=1, double temperature=0.);
-arr sample_restarts(NLP& nlp, uint K=1000, int verbose=1, double temperature=0.);
-arr sample_greedy(NLP& nlp, uint K=1000, int verbose=1, double temperature=0.);
+arr sample_direct(NLP& nlp, uint K=1000, int verbose=1, double alpha_bar=0.);
+arr sample_restarts(NLP& nlp, uint K=1000, int verbose=1, double alpha_bar=0.);
+arr sample_greedy(NLP& nlp, uint K=1000, int verbose=1, double alpha_bar=0.);
 arr sample_denoise(NLP& nlp, uint K=1000, int verbose=1);
+arr sample_denoise_direct(NLP& nlp, uint K=1000, int verbose=1);

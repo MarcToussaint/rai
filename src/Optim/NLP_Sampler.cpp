@@ -32,16 +32,14 @@
 }
 */
 
-double eval_beta(double beta, const arr& b, const arr& s){
-  double p=1.;
-  for(uint i=0;i<b.N;i++){
-    if(fabs(s(i))>1e-6){
-      p *= rai::sigmoid( (beta-b(i))/s(i) );
-    }else{
-      if(beta<b(i)){ p = 0.; break; } //single hard barrier violated
-    }
+void NLP_Walker::set_alpha_bar(double alpha_bar){
+  if(alpha_bar==1.){
+    a = 1.;
+    sig = 0.;
+  }else{
+    a = ::sqrt(alpha_bar);
+    sig = ::sqrt(1.-alpha_bar);
   }
-  return p;
 }
 
 bool NLP_Walker::step(){
@@ -53,7 +51,7 @@ bool NLP_Walker::step(){
     good = step_hit_and_run(maxStep);
   }
 
-//  bool good = step_delta();
+  //  bool good = step_delta();
   good = step_slack();
 
   return good;
@@ -73,29 +71,27 @@ bool NLP_Walker::step_hit_and_run(double maxStep){
   LineSampler LS(2.*maxStep);
   LS.clip_beta(nlp.bounds_lo - x, -dir); //cut with lower bound
   LS.clip_beta(x - nlp.bounds_up, dir); //cut with upper bound
-  LS.add_constraints(ev.g + ev.Jg*(x-ev.x), ev.Jg*dir, temperature);
+  LS.add_constraints(a*ev.g + ev.Jg*(x-a*ev.x), ev.Jg*dir, sig);
   for(uint i=0;i<10;i++){ //``line search''
     double beta = NAN;
-    if(!temperature){
+    if(!sig){
       //cut with constraints
       LS.clip_beta(ev.g + ev.Jg*(x-ev.x), ev.Jg*dir);
 
-      if(LS.beta_up>LS.beta_lo){
-        if(beta_sdv<0.){
-          beta = LS.sample_beta_uniform();
-        }else{ //Gaussian beta
-          bool good=false;
-          for(uint k=0;k<10;k++){
-            beta = beta_mean + beta_sdv*rnd.gauss();
-            if(beta>=LS.beta_lo && beta<=LS.beta_up){ good=true; break; }
-          }
-          if(!good){
-            beta = LS.sample_beta_uniform();
-            //          LOG(0) <<evals <<"uniform";
-          }
+      if(LS.beta_lo >= LS.beta_up) break; //failure
+
+      if(beta_sdv<0.){
+        beta = LS.sample_beta_uniform();
+      }else{ //Gaussian beta
+        bool good=false;
+        for(uint k=0;k<10;k++){
+          beta = beta_mean + beta_sdv*rnd.gauss();
+          if(beta>=LS.beta_lo && beta<=LS.beta_up){ good=true; break; }
         }
-      }else{
-        break; //no step in the feasible -> not ok
+        if(!good){
+          beta = LS.sample_beta_uniform();
+          //          LOG(0) <<evals <<"uniform";
+        }
       }
     }else{
       if(LS.beta_up>LS.beta_lo){
@@ -110,16 +106,16 @@ bool NLP_Walker::step_hit_and_run(double maxStep){
     samples++;
     ev.eval(x, *this);
 
-    if(!temperature){
+    if(!sig){
       if((!ev.g.N || max(ev.gpos) <= max(ev0.gpos)) //ineq constraints are good
          && sum(ev.s) <= sum(ev0.s) + eps){ //total slack didn't increase too much
         return true;
       }
     }else{
-      if(sum(ev.s) <= sum(ev0.s) + temperature + eps){ //total slack didn't increase too much
+      if(sum(ev.s) <= sum(ev0.s) + sig + eps){ //total slack didn't increase too much
         if(!ev.g.N) return true;
-        LS.add_constraints(ev.g + ev.Jg*(x-ev.x), ev.Jg*dir, temperature);
-        double p_beta = sqrt(LS.eval_beta(beta));
+        LS.add_constraints(a*ev.g + ev.Jg*(x-a*ev.x), ev.Jg*dir, sig);
+        double p_beta = LS.eval_beta(beta);
         //      cout <<"beta: " <<beta <<" p(beta): " <<LS.p_beta <<" p(beta) " <<p_beta <<endl;
         if(p_beta >= 1e-3*LS.p_beta){
           return true;
@@ -136,15 +132,33 @@ bool NLP_Walker::step_hit_and_run(double maxStep){
 bool NLP_Walker::step_slack(){
   ev.eval(x, *this);
 
-  arr s0 = temperature * randn(ev.s.N);
+#if 0
+  arr s0 = sig * randn(ev.s.N);
   arr delta_s = alpha * (s0 - ev.s);
   arr delta = pseudoInverse(ev.Js) * delta_s;
 
   double l = length(delta);
   if(l>maxStep) delta *= maxStep/l;
 
-  x += alpha * delta;
+  x += delta;
   boundClip(x, nlp.bounds_lo, nlp.bounds_up);
+#else
+//  if(!ev.h.N) return true;
+  arr Jinv = pseudoInverse(ev.Js);
+  arr delta = -alpha *( Jinv * ev.s );
+  arr Ph = Jinv * ev.Js;
+
+  double l = length(delta);
+  if(l>maxStep) delta *= maxStep/l;
+
+  x += delta;
+  x *= a;
+  if(sig){
+    x += Ph * (sig * randn(x.N));
+  }
+  boundClip(x, nlp.bounds_lo, nlp.bounds_up);
+
+#endif
 
   ev.eval(x, *this);
   return true;
@@ -157,8 +171,8 @@ bool NLP_Walker::step_delta(){
   if(!delta.N) return false;
 
   x += alpha * delta;
-  if(temperature){
-    x += temperature * randn(x.N);
+  if(sig){
+    x += sig * randn(x.N);
   }
   ev.eval(x, *this);
   return true;
@@ -178,12 +192,7 @@ arr NLP_Walker::get_delta(){
     //Gauss-Newton direction
     arr H = 2. * ~ev.Jh * ev.Jh;
     arr Hinv = pseudoInverse(H);
-    if(true || !temperature){
-      ev.Ph = eye(x.N) - Hinv * H; //tangent projection
-    }else{
-      double a = exp(-10./temperature);
-      ev.Ph = eye(x.N) - a * (Hinv * H); //tangent projection
-    }
+    ev.Ph = eye(x.N) - Hinv * H; //tangent projection
   }else{
     ev.Ph.clear();
   }
@@ -258,8 +267,8 @@ void NLP_Walker::Eval::eval(const arr& _x, NLP_Walker& walker){
 
 //===========================================================================
 
-arr sample_direct(NLP& nlp, uint K, int verbose, double temperature){
-  NLP_Walker walk(nlp, temperature);
+arr sample_direct(NLP& nlp, uint K, int verbose, double alpha_bar){
+  NLP_Walker walk(nlp, alpha_bar);
   walk.eps = .1;
   walk.alpha = 1.;
   walk.maxStep = .5;
@@ -289,8 +298,8 @@ arr sample_direct(NLP& nlp, uint K, int verbose, double temperature){
 
 //===========================================================================
 
-arr sample_restarts(NLP& nlp, uint K, int verbose, double temperature){
-  NLP_Walker walk(nlp, temperature);
+arr sample_restarts(NLP& nlp, uint K, int verbose, double alpha_bar){
+  NLP_Walker walk(nlp, alpha_bar);
   walk.eps = .1;
   walk.alpha = 1.;
   walk.maxStep = .5;
@@ -308,13 +317,13 @@ arr sample_restarts(NLP& nlp, uint K, int verbose, double temperature){
         nlp.report(cout, 2+verbose, STRING("sample_greedy data: " <<data.d0 <<" iters: " <<t <<" good: " <<good));
       }
       walk.step();
-      if(!temperature && walk.ev.err<=.01){ good=true; break; }
+      if(!walk.sig && walk.ev.err<=.01){ good=true; break; }
 //      komo->pathConfig.setJointState(sam.x);
 //      komo->view(true, STRING(k <<' ' <<t <<' ' <<sam.err <<' ' <<good));
     }
-    if(temperature) good=true;
+    if(walk.sig) good=true;
 
-    if(good && !temperature){
+    if(good && !walk.sig){
       for(uint t=0;t<10;t++){
         walk.step_slack();
         if(walk.ev.err<=.01){ good=true; break; }
@@ -337,8 +346,53 @@ arr sample_restarts(NLP& nlp, uint K, int verbose, double temperature){
 
 //===========================================================================
 
-arr sample_greedy(NLP& nlp, uint K, int verbose, double temperature){
-  NLP_Walker walk(nlp, temperature);
+arr sample_denoise_direct(NLP& nlp, uint K, int verbose){
+  AlphaSchedule A(AlphaSchedule::_cosine, 50);
+  cout <<A.alpha_bar <<endl;
+
+  NLP_Walker walk(nlp, A.alpha_bar(-1));
+  walk.eps = .1;
+  walk.alpha = 1.;
+  walk.maxStep = .5;
+
+  arr data;
+  for(;data.d0<K;){
+    arr x = nlp.bounds_lo + rand(nlp.getDimension()) % (nlp.bounds_up - nlp.bounds_lo);
+    walk.initialize(x);
+
+    for(uint t=20;t--;){
+      walk.set_alpha_bar(A.alpha_bar(t));
+      if(verbose>1){
+        nlp.report(cout, 2+verbose, STRING("sample_denoise_direct data: " <<data.d0 <<" iters: " <<t <<" err: " <<walk.ev.err));
+      }
+      walk.step();
+    }
+
+    bool good=false;
+    for(uint t=0;t<10;t++){
+      walk.step_slack();
+//      if(walk.ev.err<=.01)
+      { good=true; break; }
+    }
+
+    if(good){
+      data.append(walk.x);
+      data.reshape(-1, nlp.getDimension());
+      if(!(data.d0%10)) cout <<'.' <<std::flush;
+    }
+
+    if(verbose>1 || (good && verbose>0)){
+      nlp.report(cout, 2+verbose, STRING("sample_denoise_direct it: " <<data.d0 <<" good: " <<good));
+    }
+  }
+  cout <<"\nsteps/sample: " <<double(walk.samples)/K <<" evals/sample: " <<double(walk.evals)/K <<" #sam: " <<data.d0 <<endl;
+  return data;
+}
+
+//===========================================================================
+
+arr sample_greedy(NLP& nlp, uint K, int verbose, double alpha_bar){
+  NLP_Walker walk(nlp, alpha_bar);
   walk.alpha = 1.;
   walk.maxStep = 10.;
 
@@ -356,9 +410,9 @@ arr sample_greedy(NLP& nlp, uint K, int verbose, double temperature){
       }
       walk.step_slack();
 //      walk.step_delta();
-      if(!temperature && walk.ev.err<=.01){ good=true; break; }
+      if(!walk.sig && walk.ev.err<=.01){ good=true; break; }
     }
-    if(temperature) good=true;
+    if(walk.sig) good=true;
 
     if(good){
       data.append(walk.x);
@@ -480,19 +534,25 @@ AlphaSchedule::AlphaSchedule(AlphaSchedule::Mode mode, uint T, double beta){
 
 //===========================================================================
 
+double normalCDF(double value){
+   return 0.5 * erfc(-value * M_SQRT1_2);
+}
+
 double LineSampler::eval_beta(double beta){
   double p=1.;
   for(uint i=0;i<b.N;i++){
     if(fabs(s(i))>1e-6){
-      p *= rai::sigmoid( (beta-b(i))/s(i) );
+//      p *= rai::sigmoid( (beta-b(i))/s(i) );
+      p *= normalCDF( (beta-b(i))/s(i) );
     }else{
       if(beta<b(i)){ p = 0.; break; } //single hard barrier violated
     }
   }
+  p = ::pow(p, 1./num_constraints );
   return p;
 }
 
-void LineSampler::add_constraints(const arr& gbar, const arr& gd, double temperature){
+void LineSampler::add_constraints(const arr& gbar, const arr& gd, double sig){
   uint n=b.N;
   b.append(zeros(gbar.N));
   s.append(zeros(gbar.N));
@@ -500,12 +560,13 @@ void LineSampler::add_constraints(const arr& gbar, const arr& gd, double tempera
     double gdi = gd.elem(i);
     double si = 0.;
     if(fabs(gdi)>1e-6) si = -1./gdi;
-    s(n+i) = si * temperature;
+    s(n+i) = si * sig;
     b(n+i) = gbar(i) * si;
   }
+  num_constraints++;
 }
 
-void LineSampler::add_constraints_eq(const arr& hbar, const arr& hd, double temperature){
+void LineSampler::add_constraints_eq(const arr& hbar, const arr& hd, double sig){
   uint n=b.N;
   b.append(zeros(2*hbar.N));
   s.append(zeros(2*hbar.N));
@@ -513,10 +574,10 @@ void LineSampler::add_constraints_eq(const arr& hbar, const arr& hd, double temp
     double hdi = hd.elem(i);
     double si = 0.;
     if(fabs(hdi)>1e-6) si = -1./hdi;
-    s(n+2*i) = si * temperature;
-    b(n+2*i) = hbar(i) * si - rai::sign(si)*(temperature+.1);
-    s(n+2*i+1) = -si * temperature;
-    b(n+2*i+1) = hbar(i) * si + rai::sign(si)*(temperature+.1);
+    s(n+2*i) = si * sig;
+    b(n+2*i) = hbar(i) * si - rai::sign(si)*(sig+.1);
+    s(n+2*i+1) = -si * sig;
+    b(n+2*i+1) = hbar(i) * si + rai::sign(si)*(sig+.1);
   }
 }
 
