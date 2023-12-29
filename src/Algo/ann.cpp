@@ -22,14 +22,14 @@ struct sANN {
 };
 
 ANN::ANN() {
-  bufferSize = 1 <<10;
+  bufferSize = 100;
   self = make_unique<sANN>();
   self->tree = 0;
   self->treeSize = 0;
 }
 
 ANN::ANN(const ANN& ann) {
-  bufferSize = 1 <<10;
+  bufferSize = 100;
   self = make_unique<sANN>();
   self->tree = 0;
   self->treeSize = 0;
@@ -93,9 +93,11 @@ void ANN::getkNN(arr& dists, uintA& idx, const arr& x, uint k, double eps, bool 
   }
 
   //now check if in the rest of X there are even nearer points
+  arr Xi;
   for(uint i=restStartsAt; i<X.d0; i++) {
     for(uint j=0; j<=idx.N && j<k; j++) {
-      double d=sqrDistance(X[i], x);
+      Xi.referToDim(X,i);
+      double d = sqrDistance(Xi, x);
       if(j==idx.N || d < dists(j)) {
         idx.insert(j, i);
         dists.insert(j, d);

@@ -171,12 +171,12 @@ void rai::Frame::_state_updateAfterTouchingQ() {
 
 void rai::Frame::getRigidSubFrames(FrameL& F, bool includeRigidJoints) const {
   for(Frame* child:children)
-    if(!child->joint || /*!child->joint->active ||*/ (includeRigidJoints && child->joint->type==JT_rigid)) { F.append(child); child->getRigidSubFrames(F, includeRigidJoints); }
+    if(!child->joint || (includeRigidJoints && child->joint->type==JT_rigid)) { F.append(child); child->getRigidSubFrames(F, includeRigidJoints); }
 }
 
 void rai::Frame::getPartSubFrames(FrameL& F) const {
   for(Frame* child:children)
-    if(!child->joint || /*!child->joint->active ||*/ !child->joint->isPartBreak()) { F.append(child); child->getPartSubFrames(F); }
+    if(!child->joint || !child->joint->isPartBreak()) { F.append(child); child->getPartSubFrames(F); }
 }
 
 void rai::Frame::getSubtree(FrameL& F) const {

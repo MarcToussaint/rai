@@ -54,7 +54,7 @@ struct RRT_PathFinder {
   double stepsize;
   uint maxIters=5000;
   int verbose;
-  bool intermediateCheck;
+  uint subsampleChecks=0;
   double p_forwardStep=.5;
   double p_sideStep=.0;
   double p_backwardStep=.0;
@@ -66,7 +66,7 @@ struct RRT_PathFinder {
   //output
   arr path;
 
-  RRT_PathFinder(ConfigurationProblem& _P, const arr& starts, const arr& goals, double _stepsize = .2, int _verbose=0, bool _intermediateCheck=false);
+  RRT_PathFinder(ConfigurationProblem& _P, const arr& starts, const arr& goals, double _stepsize = .2, int _verbose=0, uint _subsampleChecks=0);
   ~RRT_PathFinder(){}
 
   int stepConnect();

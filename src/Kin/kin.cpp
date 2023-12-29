@@ -1284,80 +1284,30 @@ Joint* Configuration::attach(const char* _a, const char* _b) {
   return attach(getFrame(_a), getFrame(_b));
 }
 
-void exclude(uintA& ex, FrameL& F1, FrameL& F2) {
-  for(Frame* f1:F1) {
-    for(Frame* f2:F2) {
-      if(f1->ID < f2->ID) {
-        ex.append(uintA{f1->ID, f2->ID});
-      }
-    }
-  }
-}
 
-uintA Configuration::getCollisionExcludeIDs(bool verbose) {
-  uintA ex;
-  for(Frame* f: frames) if(f->shape){
-    if(!f->shape->cont) ex.append(f->ID);
-  }
-  return ex;
-}
+uintAA Configuration::getCollisionExcludePairIDs(int verbose) {
+  uintAA ex(frames.N);
 
-uintA Configuration::getCollisionExcludePairIDs(bool verbose) {
-  /* exclude collision pairs:
-    -- no collisions between shapes of same body
-    -- no collisions between linked bodies
-    -- no collisions between bodies liked via the tree via 3 links
-  */
-
-  uintA ex;
-
-  //shapes within a link
-  FrameL links = getLinks();
-  for(Frame* f: links) {
+  //go through all parts, within each part, check pair-wise
+  FrameL parts = getParts();
+  for(Frame* f: parts) {
     FrameL F = {f};
-    f->getRigidSubFrames(F, false);
-    for(uint i=F.N; i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
-    if(F.N>1) {
-      if(verbose) {
-        LOG(0) <<"excluding intra-link collisions: ";
-        cout <<"           ";
-        for(Frame *ff:F) cout <<ff->name <<' ';
-        cout <<endl;
-      }
-      exclude(ex, F, F);
+    f->getPartSubFrames(F);
+    if(f->parent){//add also parent link frames as potential excludes
+      rai::Frame *p = f->parent->getUpwardLink();
+      F.append(p);
+      p->getPartSubFrames(F);
     }
-  }
-
-  //deactivate upward, depending on cont parameter (-1 indicates deactivate with parent)
-  for(Frame* f: frames) {
-    if(f->shape && f->shape->cont<0) {
-      FrameL F, P;
-      Frame* p = f->getUpwardLink();
-      F = {p};
-      p->getRigidSubFrames(F, false);
-      for(uint i=F.N; i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
-
-      for(char i=0; i<-f->shape->cont; i++) {
-        p = p->parent;
-        if(!p) break;
-        p = p->getUpwardLink();
-        P = {p};
-        p->getRigidSubFrames(P, false);
-        for(uint i=P.N; i--;) if(!P(i)->shape || !P(i)->shape->cont) P.remove(i);
-
-        if(F.N && P.N) {
-          if(verbose) {
-            LOG(0) <<"excluding between-sets collisions: ";
-            cout <<"           ";  for(Frame *ff:F) cout <<ff->name <<' ';  cout <<endl;
-            cout <<"           ";  for(Frame *ff:P) cout <<ff->name <<' ';  cout <<endl;
-          }
-          exclude(ex, F, P);
+    for(Frame* f1: F) if(f1->shape && f1->shape->cont){
+      for(Frame* f2: F) if(f2->ID>f1->ID && f2->shape && f2->shape->cont){
+        bool canCollide = f1->shape->canCollideWith(f2);
+        if(!canCollide){
+          if(verbose) LOG(0) <<"excluding: "  <<f1->ID <<'.' <<f1->name  <<' ' <<f2->ID <<'.' <<f2->name;
+          ex(f1->ID).setAppendInSorted(f2->ID);
         }
       }
     }
   }
-
-  ex.reshape(-1,2);
   return ex;
 }
 
@@ -2068,16 +2018,18 @@ std::shared_ptr<SwiftInterface> Configuration::swift() {
 
 std::shared_ptr<FclInterface> Configuration::fcl() {
   if(!self->fcl) {
-    Array<shared_ptr<Mesh>> geometries(frames.N);
+    Array<Shape*> geometries(frames.N);
+    Array<Shape*>::memMove=1;
+    geometries.setZero();
     for(Frame* f:frames) {
       if(f->shape && f->shape->cont) {
         CHECK(f->shape->type()!=rai::ST_marker, "collision object can't be a marker");
         if(!f->shape->mesh().V.N) f->shape->createMeshes();
         CHECK(f->shape->mesh().V.N, "collision object with no vertices");
-        geometries(f->ID) = f->shape->_mesh;
+        geometries(f->ID) = f->shape;
       }
     }
-    self->fcl = make_shared<FclInterface>(geometries, -1.); //-1.=broadphase only -> many proxies, 0.=binary, .1=exact margin (slow)
+    self->fcl = make_shared<FclInterface>(geometries, getCollisionExcludePairIDs(), FclInterface::_broadPhaseOnly); //-1.=broadphase only -> many proxies, 0.=binary, .1=exact margin (slow)
   }
   return self->fcl;
 }
@@ -2164,35 +2116,29 @@ void Configuration::glGetMasks(int w, int h, bool rgbIndices) {
 
 
 void Configuration::addProxies(const uintA& collisionPairs) {
-  //-- filter the collisions
-  boolA filter(collisionPairs.d0);
-  uint n=0;
-#if 1
-  for(uint i=0; i<collisionPairs.d0; i++) {
-    bool canCollide = frames.elem(collisionPairs(i, 0))->shape->canCollideWith(frames.elem(collisionPairs(i, 1)));
-    filter(i) = canCollide;
-    if(canCollide) n++;
-  }
-#else
-  filter = true;
-  n = collisionPairs.d0;
-#endif
   //-- copy them into proxies
   uint j = proxies.N;
-  proxies.resizeCopy(j+n);
+  proxies.resizeCopy(j+collisionPairs.d0);
   for(uint i=0; i<collisionPairs.d0; i++) {
-    if(filter(i)) {
-      uint a = collisionPairs(i, 0);
-      uint b = collisionPairs(i, 1);
-      if(a<b){ uint z=a; a=b; b=z; }
-      Proxy& p = proxies(j);
-      p.a = frames.elem(a);
-      p.b = frames.elem(b);
-      p.d = -0.;
-      p.posA = frames.elem(a)->getPosition();
-      p.posB = frames.elem(b)->getPosition();
-      j++;
+    uint a = collisionPairs.elem(2*i);
+    uint b = collisionPairs.elem(2*i+1);
+    if(a<b){ uint z=a; a=b; b=z; }
+    rai::Frame *f1 = frames.elem(a);
+    rai::Frame *f2 = frames.elem(b);
+#if 1
+    bool canCollide = f1->shape->canCollideWith(f2);
+    if(!canCollide){
+      LOG(0) <<"you should not be here! filtering out: " <<f1->ID <<'.' <<f1->name  <<' ' <<f2->ID <<'.' <<f2->name;
+      continue;
     }
+#endif
+    Proxy& p = proxies.elem(j);
+    p.a = f1;
+    p.b = f2;
+    p.d = -0.;
+    p.posA = f1->getPosition();
+    p.posB = f2->getPosition();
+    j++;
   }
 }
 
@@ -2215,8 +2161,8 @@ void Configuration::stepFcl(double cutoff) {
 #if 0
   arr X = getFrameState();
 #else
-  arr X(frames.N, 7);
-  X.setZero();
+  static arr X;
+  X.resize(frames.N, 7).setZero();
   for(uint i=0;i<X.d0;i++){
     rai::Frame *f = frames.elem(i);
     if(f->shape && f->shape->cont) X[i] = f->ensure_X().getArr7d();

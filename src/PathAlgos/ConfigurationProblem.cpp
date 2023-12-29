@@ -1,5 +1,6 @@
 #include "../Kin/proxy.h"
 #include "../Optim/constrained.h"
+#include "../Geo/fclInterface.h"
 
 #include "ConfigurationProblem.h"
 
@@ -16,8 +17,13 @@ ConfigurationProblem::ConfigurationProblem(const rai::Configuration& _C, bool _c
     uint i=dof->qIndex;
     uint d=dof->dim;
     if(d){
-          for(uint k=0; k<d; k++) max_step(i+k) = 1.;
+      for(uint k=0; k<d; k++) max_step(i+k) = 1.;
     }
+  }
+
+  computeCollisionFeatures = false;
+  if(!computeCollisionFeatures){
+    C.fcl()->mode = rai::FclInterface::_binaryCollisionSingle;
   }
 }
 
@@ -49,7 +55,7 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
   if(computeAllCollisions){
     //C.stepSwift();
     C.stepFcl();
-    for(rai::Proxy& p:C.proxies) p.ensure_coll();
+    //for(rai::Proxy& p:C.proxies) p.ensure_coll();
   }else if(collisionPairs.N){
     C.proxies.resize(collisionPairs.d0);
     for(uint i=0;i<collisionPairs.d0;i++){
@@ -67,8 +73,14 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
   shared_ptr<QueryResult> qr = make_shared<QueryResult>();
 
   if(!computeCollisionFeatures){
+#if 1
+    double feas=true;
+    for(rai::Proxy& p:C.proxies) if(p.d<=0.){ feas=false; break; }
+    qr->isFeasible = feas;
+#else
     double p = C.getTotalPenetration();
     qr->isFeasible = (p<collisionTolerance);
+#endif
   }else{
     //collision features
     uint N = C.proxies.N;

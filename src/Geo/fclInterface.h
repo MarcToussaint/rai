@@ -8,25 +8,27 @@
 
 #pragma once
 
-#include "mesh.h"
+#include "../Kin/frame.h"
 
 namespace rai {
 
 struct FclInterface {
   struct FclInterface_self* self=0;
+  enum QueryMode { _broadPhaseOnly, _binaryCollisionSingle, _binaryCollisionAll, _distanceCutoff, _fine } mode;
   
-  double cutoff=-1.; //0 -> perform fine boolean collision check; >0 -> perform fine distance computations; <0 -> only broadphase
+  double cutoff=-1.;
+  uintAA excludes;
   uintA collisions; //return values!
   arr X_lastQuery;  //memory to check whether an object has moved in consecutive queries
 
-  FclInterface(const Array<shared_ptr<Mesh>>& geometries, double _cutoff=0.);
+  FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes, QueryMode _mode, double _cutoff=-1.);
   ~FclInterface();
 
   void step(const arr& X, double _cutoff=-2.);
 
 protected:
   friend FclInterface_self;
-  void addCollision(void* userData1, void* userData2);
+  void addCollision(uint a, uint b);
 };
 
 }

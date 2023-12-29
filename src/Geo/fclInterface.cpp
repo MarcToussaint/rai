@@ -58,45 +58,57 @@ struct FclInterface_self{
   static bool BroadphaseCallback(CollObject* o1, CollObject* o2, void* cdata_);
 };
 
-FclInterface::FclInterface(const Array<shared_ptr<Mesh>>& geometries, double _cutoff)
-  : cutoff(_cutoff) {
+FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes, QueryMode _mode, double _cutoff)
+  : mode(_mode), cutoff(_cutoff), excludes(_excludes) {
   self = new FclInterface_self;
   
   self->convexGeometryData.resize(geometries.N);
   for(long int i=0; i<geometries.N; i++) {
-    if(geometries(i)) {
-      Mesh& mesh = *geometries(i);
+    Shape *shape = geometries(i);
+    if(shape) {
+      std::shared_ptr<fcl::CollisionGeometry> geom;
+      if(shape->type()==ST_capsule){
+        geom = make_shared<fcl::Capsule>(shape->size(-1), shape->size(-2));
+      }else if(shape->type()==ST_cylinder){
+        geom = make_shared<fcl::Cylinder>(shape->size(-1), shape->size(-2));
+      }else if(shape->type()==ST_sphere){
+        geom = make_shared<fcl::Sphere>(shape->size(-1));
+//      }else if(shape->type()==ST_box){
+//        geom = make_shared<fcl::Box>(shape->size(0), shape->size(1), shape->size(2));
+      }else{
+        Mesh& mesh = shape->mesh();
 #if 0
-      auto model = make_shared<fcl::BVHModel<fcl::OBBRSS>>();
-      model->beginModel();
-      for(uint i=0; i<mesh.T.d0; i++)
-        model->addTriangle(Vec3f(&mesh.V(mesh.T(i, 0), 0)), Vec3f(&mesh.V(mesh.T(i, 1), 0)), Vec3f(&mesh.V(mesh.T(i, 2), 0)));
-      model->endModel();
+        auto model = make_shared<fcl::BVHModel<fcl::OBBRSS>>();
+        model->beginModel();
+        for(uint i=0; i<mesh.T.d0; i++)
+          model->addTriangle(Vec3f(&mesh.V(mesh.T(i, 0), 0)), Vec3f(&mesh.V(mesh.T(i, 1), 0)), Vec3f(&mesh.V(mesh.T(i, 2), 0)));
+        model->endModel();
 #elif 1
-      CHECK(!mesh.cvxParts.N, "NIY")
-      //rai::Mesh mesh;
-      //mesh.V = mesh_org.V;
-      //mesh.makeConvexHull();
-      mesh.computeNormals();
-      std::shared_ptr<ConvexGeometryData> dat = make_shared<ConvexGeometryData>();
-      dat->plane_dis = mesh.computeTriDistances();
-      copy<int>(dat->polygons, mesh.T);
-      dat->polygons.insColumns(0);
-      for(uint i=0; i<dat->polygons.d0; i++) dat->polygons(i, 0) = 3;
+        CHECK(!mesh.cvxParts.N, "NIY")
+            //rai::Mesh mesh;
+            //mesh.V = mesh_org.V;
+            //mesh.makeConvexHull();
+            mesh.computeNormals();
+        std::shared_ptr<ConvexGeometryData> dat = make_shared<ConvexGeometryData>();
+        dat->plane_dis = mesh.computeTriDistances();
+        copy<int>(dat->polygons, mesh.T);
+        dat->polygons.insColumns(0);
+        for(uint i=0; i<dat->polygons.d0; i++) dat->polygons(i, 0) = 3;
 #if FCL_MINOR_VERSION >= 7
-      auto verts = make_shared<std::vector<fcl::Vector3<float>>>(mesh.V.d0);
-      auto faces = make_shared<std::vector<int>>(mesh.T.N);
-      for(uint i=0;i<verts->size();i++) (*verts)[i] = {(float)mesh.V(i,0), (float)mesh.V(i,1), (float)mesh.V(i,2)};
-      for(uint i=0;i<faces->size();i++) (*faces)[i] = mesh.T.elem(i);
-      auto model = make_shared<fcl::Convex<float>>(verts, mesh.T.d0, faces, true);
+        auto verts = make_shared<std::vector<fcl::Vector3<float>>>(mesh.V.d0);
+        auto faces = make_shared<std::vector<int>>(mesh.T.N);
+        for(uint i=0;i<verts->size();i++) (*verts)[i] = {(float)mesh.V(i,0), (float)mesh.V(i,1), (float)mesh.V(i,2)};
+        for(uint i=0;i<faces->size();i++) (*faces)[i] = mesh.T.elem(i);
+        auto model = make_shared<fcl::Convex<float>>(verts, mesh.T.d0, faces, true);
 #else
-      auto model = make_shared<fcl::Convex>((fcl::Vec3f*)mesh.Tn.p, dat->plane_dis.p, mesh.T.d0, (fcl::Vec3f*)mesh.V.p, mesh.V.d0, (int*)dat->polygons.p);
+        geom = make_shared<fcl::Convex>((fcl::Vec3f*)mesh.Tn.p, dat->plane_dis.p, mesh.T.d0, (fcl::Vec3f*)mesh.V.p, mesh.V.d0, (int*)dat->polygons.p);
 #endif
-      self->convexGeometryData(i) = dat;
+        self->convexGeometryData(i) = dat;
 #else
-      auto model = make_shared<fcl::Sphere>(mesh.getRadius());
+        auto model = make_shared<fcl::Sphere>(mesh.getRadius());
 #endif
-      CollObject* obj = new CollObject(model, fcl::Transform3f());
+      }
+      CollObject* obj = new CollObject(geom, fcl::Transform3f());
       obj->setUserData((void*)(i));
       self->objects.push_back(obj);
     }
@@ -125,8 +137,9 @@ void FclInterface::step(const arr& X, double _cutoff) {
   for(auto* obj:self->objects) {
     uint i = (long int)obj->getUserData();
     if(i<X_lastQuery.d0 && maxDiff(X_lastQuery[i], X[i])<1e-8) continue;
-    obj->setTranslation(Vec3f(X(i, 0), X(i, 1), X(i, 2)));
-    obj->setQuatRotation(Quaternionf(X(i, 3), X(i, 4), X(i, 5), X(i, 6)));
+    double* T=&X(i,0);
+    obj->setTranslation(Vec3f(T[0], T[1], T[2]));
+    obj->setQuatRotation(Quaternionf(T[3], T[4], T[5], T[6]));
     obj->computeAABB();
   }
   self->manager->update();
@@ -143,9 +156,7 @@ void FclInterface::step(const arr& X, double _cutoff) {
   X_lastQuery = X;
 }
 
-void FclInterface::addCollision(void* userData1, void* userData2) {
-  uint a = (long int)userData1;
-  uint b = (long int)userData2;
+void FclInterface::addCollision(uint a, uint b) {
   collisions.resizeCopy(collisions.N+2);
   collisions.elem(-2) = a;
   collisions.elem(-1) = b;
@@ -154,20 +165,36 @@ void FclInterface::addCollision(void* userData1, void* userData2) {
 bool FclInterface_self::BroadphaseCallback(CollObject* o1, CollObject* o2, void* cdata_) {
   FclInterface* fcl = static_cast<FclInterface*>(cdata_);
 
+  uint a = (long int)o1->getUserData();
+  uint b = (long int)o2->getUserData();
+  if(fcl->excludes.N){
+    if(a<b){
+      if(fcl->excludes(a).containsInSorted(b)) return false;
+    }else{
+      if(fcl->excludes(b).containsInSorted(a)) return false;
+    }
+  }
+
   if(fcl->cutoff>=0) LOG(-1) <<"fcl fine collision (ccd) is buggy - might stall - cutoff:" <<fcl->cutoff;
 
-  if(fcl->cutoff==0.) { //fine boolean collision query
+  if(fcl->mode==fcl->_broadPhaseOnly){
+    fcl->addCollision(a,b);
+  }else if(fcl->mode==fcl->_binaryCollisionSingle || fcl->mode==fcl->_binaryCollisionAll) { //fine boolean collision query
     CollisionRequest request;
     CollisionResult result;
     fcl::collide(o1, o2, request, result);
-    if(result.isCollision()) fcl->addCollision(o1->getUserData(), o2->getUserData());
-  } else if(fcl->cutoff>0.) { //fine distance query
+    if(result.isCollision()){
+      fcl->addCollision(a,b);
+      if(fcl->mode==fcl->_binaryCollisionSingle) return true; //can stop now
+    }
+  } else if(fcl->mode==fcl->_distanceCutoff){
+    CHECK(fcl->cutoff>0., "")
     DistanceRequest request;
     DistanceResult result;
     fcl::distance(o1, o2, request, result);
-    if(result.min_distance<fcl->cutoff) fcl->addCollision(o1->getUserData(), o2->getUserData());
-  } else { //just broadphase
-    fcl->addCollision(o1->getUserData(), o2->getUserData());
+    if(result.min_distance<fcl->cutoff) fcl->addCollision(a,b);
+  } else {
+    NIY;
   }
   return false;
 }

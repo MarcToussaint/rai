@@ -182,8 +182,7 @@ struct Configuration : GLDrawer {
   bool checkConsistency() const;
   Joint* attach(Frame* a, Frame* b);
   Joint* attach(const char* a, const char* b);
-  uintA getCollisionExcludeIDs(bool verbose=false);
-  uintA getCollisionExcludePairIDs(bool verbose=false);
+  uintAA getCollisionExcludePairIDs(int verbose=0);
   FrameL getCollisionAllPairs();
   void prefixNames(bool clear=false);
 

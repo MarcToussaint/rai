@@ -9,13 +9,13 @@
 #endif
 
 double corput(uint n, uint base){
-  double q=0;
-  double bk=(double)1/base;
+  double q = 0.;
+  double bk = 1./double(base);
 
   while (n > 0) {
     q += (n % base)*bk;
     n /= base;
-    bk /= base;
+    bk /= double(base);
   }
   return q;
 }
@@ -23,10 +23,10 @@ double corput(uint n, uint base){
 bool checkConnection(ConfigurationProblem& P,
                      const arr &start,
                      const arr &end,
-                     const uint disc,
+                     const uint num,
                      const bool binary){
   if (binary){
-    for (uint i=1; i<disc; ++i){
+    for (uint i=1; i<num; ++i){
       double ind = corput(i, 2);
       arr p = start + ind * (end-start);
 
@@ -37,8 +37,8 @@ bool checkConnection(ConfigurationProblem& P,
     }
   }
   else{
-    for (uint i=1; i<disc-1; ++i){
-      arr p = start + 1.0 * i / (disc-1) * (end-start);
+    for (uint i=1; i<num-1; ++i){
+      arr p = start + 1.0 * i / (num-1) * (end-start);
 
       // TODO: change to check feasibility properly (with path constraints)
       if(!P.query(p)->isFeasible){
@@ -165,7 +165,7 @@ bool RRT_PathFinder::growTreeTowardsRandom(RRT_SingleTree& rrt){
 
   auto qr = P.query(q);
   if(qr->isFeasible){
-    if (intermediateCheck && !checkConnection(P, start, q, 20, true)){
+    if (subsampleChecks && !checkConnection(P, start, q, subsampleChecks, true)){
       return false;
     }
 
@@ -218,7 +218,7 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
   // TODO: add checking motion
   if(qr->isFeasible){
     const arr start = rrt_A.ann.X[rrt_A.nearestID];
-    if (intermediateCheck && !checkConnection(P, start, q, 20, true)){
+    if (subsampleChecks && !checkConnection(P, start, q, subsampleChecks, true)){
       return false;
     }
 
@@ -231,11 +231,11 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
 
 //===========================================================================
 
-RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, const arr& _goals, double _stepsize, int _verbose, bool _intermediateCheck)
+RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, const arr& _goals, double _stepsize, int _verbose, uint _subsampleChecks)
   : P(_P),
     stepsize(_stepsize),
     verbose(_verbose),
-    intermediateCheck(_intermediateCheck) {
+    subsampleChecks(_subsampleChecks) {
   arr q0 = _starts;
   arr qT = _goals;
   auto q0ret = P.query(q0);

@@ -55,7 +55,7 @@ int main(int argc,char **argv){
   if(floating.N){
     floating.reshape(-1, 3);
     for(uint i=0;i<floating.d0;i++){
-      C[floating(i,1)]->makeAutoJoint(rai::Enum<rai::JointType>(floating(i,2)), C[floating(i,0)], true);
+      C[floating(i,1)]->makeManipJoint(rai::Enum<rai::JointType>(floating(i,2)), C[floating(i,0)], true);
     }
   }
 

@@ -1206,12 +1206,10 @@ template<class T> void Array<T>::referToRange(const Array<T>& a, int i_lo, int i
 
   if(a.nd==1) {
     referTo(a.p+i_lo, i_up+1-i_lo);
-  }
-  if(a.nd==2) {
+  } else if(a.nd==2) {
     referTo(a.p+i_lo*a.d1, (i_up+1-i_lo)*a.d1);
     nd=2;  d0=i_up+1-i_lo;  d1=a.d1;
-  }
-  if(a.nd==3) {
+  } else if(a.nd==3) {
     referTo(a.p+i_lo*a.d1*a.d2, (i_up+1-i_lo)*a.d1*a.d2);
     nd=3;  d0=i_up+1-i_lo;  d1=a.d1;  d2=a.d2;
   }
@@ -1230,8 +1228,7 @@ template<class T> void Array<T>::referToRange(const Array<T>& a, int i, int j_lo
 
   if(a.nd==2) {
     referTo(&a(i, j_lo), (j_up+1-j_lo));
-  }
-  if(a.nd==3) {
+  } else if(a.nd==3) {
     referTo(&a(i, j_lo, 0), (j_up+1-j_lo)*a.d2);
     nd=2;  d0=j_up+1-j_lo;  d1=a.d2;
   }
@@ -1264,12 +1261,10 @@ template<class T> void Array<T>::referToDim(const Array<T>& a, int i) {
 
   if(a.nd==2) {
     referTo(a.p+i*a.d1, a.d1);
-  }
-  if(a.nd==3) {
+  } else if(a.nd==3) {
     referTo(a.p+i*a.d1*a.d2, a.d1*a.d2);
     nd=2;  d0=a.d1;  d1=a.d2;
-  }
-  if(a.nd>3) {
+  } else if(a.nd>3) {
     uint n=a.N/a.d0;
     referTo(a.p+i*n, n);
     nd=a.nd-1;  d0=a.d1;  d1=a.d2;  d2=a.d[3];
@@ -1296,12 +1291,10 @@ template<class T> void Array<T>::referToDim(const Array<T>& a, uint i, uint j, u
 
   if(a.nd==4) {
     referTo(&a(i, j, k), a.d[3]);
-  }
-  if(a.nd==5) {
+  } else if(a.nd==5) {
     NIY;
 //    nd=2; d0=a.d[3]; d1=a.d[4]; d2=0; N=d0*d1;
-  }
-  if(a.nd>5) {
+  } else if(a.nd>5) {
     NIY;
 //    nd=a.nd-3; d0=a.d[3]; d1=a.d[4]; d2=a.d[5]; N=a.N/(a.d0*a.d1*a.d2);
 //    resetD();
