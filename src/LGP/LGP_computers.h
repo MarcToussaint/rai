@@ -178,7 +178,7 @@ namespace rai {
     }
 
 //        if(opt.verbose>0) LOG(0) <<*ret;
-//        if(opt.verbose>1) cout <<komoPath.getReport(opt.verbose>2);
+//        if(opt.verbose>1) cout <<komoPath.report(false, true, opt.verbose>2);
 //        if(opt.verbose>0) komoPath.view(opt.verbose>1, STRING("optimized path\n" <<*ret));
 //        //komoPath.checkGradients();
 //        if(opt.verbose>1) while(komoPath.view_play(opt.verbose>2));

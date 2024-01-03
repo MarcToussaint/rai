@@ -32,12 +32,12 @@ void WaypointMPC::solve(int verbose){
   komo.opt.verbose=0;
   komo.timeTotal=0.;
   komo.pathConfig.setJointStateCount=0;
-//  komo.reportProblem();
+//  cout <<komo.report(true, false) <<endl;
 //  komo.initWithConstant(qHome);
 //  komo.opt.animateOptimization=2;
   komo.optimize(.0, opt);
 //  komo.checkGradients();
-//  cout <<komo.getReport(false) <<endl;
+//  cout <<komo.report() <<endl;
 
   //is feasible?
   feasible=komo.sos<50. && komo.ineq<.1 && komo.eq<.1;
@@ -46,7 +46,7 @@ void WaypointMPC::solve(int verbose){
   tau = komo.getPath_tau();
 
   msg.clear() <<"WAY it " <<steps <<" feasible: " <<(feasible?" good":" FAIL") <<" -- queries: " <<komo.pathConfig.setJointStateCount <<" time:" <<komo.timeTotal <<"\t sos:" <<komo.sos <<"\t ineq:" <<komo.ineq <<"\t eq:" <<komo.eq <<endl;
-  if(!feasible) msg <<komo.getReport(false);
+  if(!feasible) msg <<komo.report();
 
   if(verbose>0){
     komo.view(false, msg);

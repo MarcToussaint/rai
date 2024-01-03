@@ -73,7 +73,7 @@ void testPickAndPlace(uint order){
   auto ret = sol.setProblem(komo.nlp()) .solve();
   cout <<*ret <<endl;
 
-  cout <<"REPORT\n" <<komo.report(false, true) <<endl;
+  cout <<"REPORT\n" <<komo.report(false, true, true) <<endl;
   cout <<"GRADS\n" <<sol.reportLangrangeGradients(komo.featureNames) <<endl;
 
   //komo.optimize();

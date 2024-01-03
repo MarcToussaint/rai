@@ -220,7 +220,7 @@ double PathProblem::optimize(arr& x) {
   Conv_KOMO_ConstrainedProblem CP(MP.komo_problem);
   OptConstrained opt(x, NoArr, CP, OPT(verbose=2, damping = 1e-1, stopTolerance=1e-2, maxStep=.5));
   opt.run();
-  cout <<MP.getReport();
+  cout <<MP.report();
 //  for(;;)
   displayTrajectory(x, 1, MP.world, MP.switches, "planned configs", .02);
   return opt.L.get_costs();

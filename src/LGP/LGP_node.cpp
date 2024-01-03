@@ -170,10 +170,8 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     if(komo->logFile){
       (*komo->logFile) <<getTreePathString() <<'\n' <<endl;
       skeleton->write(*komo->logFile, skeleton->getSwitches(komo->world));
-      (*komo->logFile) <<'\n';
-      komo->reportProblem(*komo->logFile);
-      (*komo->logFile) <<'\n';
-      (*komo->logFile) <<komo->getProblemGraph(false);
+      (*komo->logFile) <<'\n' <<komo->report(true, false);
+//      (*komo->logFile) <<'\n' <<komo->getProblemGraph(false);
     }
 
     if(komo->opt.verbose>1) {
@@ -181,15 +179,15 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     }
 
     DEBUG(FILE("z.fol") <<fol;);
-    DEBUG(komo->getReport(false, 1, FILE("z.problem")););
+    DEBUG(FILE("z.problem") <<komo->report(););
 
-    if(komo->opt.verbose>1) komo->reportProblem();
+    if(komo->opt.verbose>1) cout <<komo->report(true, false) <<endl;
     if(komo->opt.verbose>5) komo->opt.animateOptimization = komo->opt.verbose-5;
   }
 
   //-- optimize
   try {
-    komo->run();
+    komo->optimize(0.);
 
 //    NLP_Solver sol;
 //    sol.setProblem(*problem(bound).nlp);
@@ -209,8 +207,8 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   tree.COUNT_time += komo->timeTotal;
   count(bound)++;
 
-  DEBUG(komo->getReport(false, 1, FILE("z.problem")););
-  Graph result = komo->getReport((komo->opt.verbose>0 && bound>=2));
+  DEBUG(FILE("z.problem") <<komo->report(););
+  Graph result = komo->report(false, true, (komo->opt.verbose>0 && bound>=2));
   DEBUG(FILE("z.problem.cost") <<result;);
 //  cout <<komo->getCollisionPairs() <<endl;
   //if(bound==BD_seqPath || bound==BD_path) cout <<result <<endl;

@@ -2,6 +2,7 @@
 
 #include "../KOMO/komo.h"
 #include "../Kin/viewer.h"
+#include "../Optim/NLP_Solver.h"
 
 arr ReceedingHorizonPathSmoother::run(int verbose) {
   bool disp = false;
@@ -54,7 +55,11 @@ arr ReceedingHorizonPathSmoother::run(int verbose) {
     komo.addObjective({1}, FS_qItself, {}, OT_eq, {1e1}, NoArr, 1);
 
 
-    komo.run(rai::OptOptions().set_stopIters(10));
+
+    NLP_Solver sol;
+    sol.setProblem(komo.nlp());
+    sol.opt.set_stopIters(10);
+    sol.solve();
 
     // get results from komo
     for(uint j=0; j<horizon; ++j) {
@@ -62,7 +67,7 @@ arr ReceedingHorizonPathSmoother::run(int verbose) {
     }
 
     if(disp) {
-      std::cout << komo.getReport(true, 0) << std::endl;
+      std::cout << komo.report() << std::endl;
       if(!V) V = make_unique<rai::ConfigurationViewer>();
       V->setConfiguration(komo.pathConfig, "smoothing...", true);
 //      rai::wait();

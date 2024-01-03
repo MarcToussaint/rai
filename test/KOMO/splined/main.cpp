@@ -23,7 +23,7 @@ void createPath(){
   komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e2});
 //  komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e2}, {}, 1);
   komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e0});
-  komo.reportProblem();
+  cout <<komo.report(true, false) <<endl;
 
   std::shared_ptr<NLP> skomo = make_shared<SplinedKOMO>(3, 8, komo);
 

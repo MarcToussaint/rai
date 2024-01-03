@@ -182,7 +182,7 @@ arr Skeleton::solve(const rai::Configuration& C, ArgWord sequenceOrPath, int ver
   komoPath->optimize();
   //  komo->checkGradients();
 
-  if(verbose>0) komoPath->getReport(true);
+  if(verbose>0) komoPath->report(false, true, true);
   if(verbose>1) komoPath->view(true, "optimized motion");
   if(verbose>2){
     while(komoPath->view_play(true));

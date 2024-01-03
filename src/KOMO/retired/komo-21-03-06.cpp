@@ -311,7 +311,7 @@ void KOMO::setState(const arr& x, const uintA& selectedVariablesOnly) {
   if(animateOptimization>0) {
     if(animateOptimization>1) {
 //      if(animateOptimization>2)
-//        cout <<getReport(true) <<endl;
+//        cout <<report(false, true, true) <<endl;
       displayPath(true);
     } else {
       displayPath(false);

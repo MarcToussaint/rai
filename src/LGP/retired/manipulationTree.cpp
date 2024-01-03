@@ -129,7 +129,7 @@ void MNode::solvePoseProblem() {
   komo.MP->reportFeatures(true, FILE("z.problem"));
   komo.run();
 
-  Graph result = komo.getReport();
+  Graph result = komo.report();
   double cost = result.get<double>({"total", "sqrCosts"});
   if(!pose.N || cost<poseCost) {
     poseCost = cost;
@@ -238,7 +238,7 @@ void MNode::solveSeqProblem(int verbose) {
   komo.MP->reportFeatures(true, FILE("z.problem"));
 //  komo.checkGradients();
 
-  Graph result = komo.getReport();
+  Graph result = komo.report();
   double cost = result.get<double>({"total", "sqrCosts"});
   if(!pose.N || cost<poseCost) {
     poseCost = cost;
@@ -307,7 +307,7 @@ void MNode::solvePathProblem(uint microSteps, int verbose) {
   komo.MP->reportFeatures(true, FILE("z.problem"));
   komo.run();
 
-  Graph result = komo.getReport();
+  Graph result = komo.report();
   double cost = result.get<double>({"total", "sqrCosts"});
   if(!pose.N || cost<poseCost) {
     poseCost = cost;
@@ -522,7 +522,7 @@ void MNode::solvePoseProblem() {
 
   DEBUG(komo.getReport(false, 1, FILE("z.problem"));)
 
-  Graph result = komo.getReport();
+  Graph result = komo.report();
   DEBUG(FILE("z.problem.cost") <<result;)
   double cost_here = result.get<double>({"total", "sqrCosts"});
   double constraints_here = result.get<double>({"total", "constraints"});
@@ -595,7 +595,7 @@ void MNode::solveSeqProblem(int verbose) {
   DEBUG(komo.getReport(false, 1, FILE("z.problem"));)
   //  komo.checkGradients();
 
-  Graph result = komo.getReport();
+  Graph result = komo.report();
   DEBUG(FILE("z.problem.cost") <<result;)
   double cost_here = result.get<double>({"total", "sqrCosts"});
   double constraints_here = result.get<double>({"total", "constraints"});
@@ -657,7 +657,7 @@ void MNode::solvePathProblem(uint microSteps, int verbose) {
   DEBUG(komo.getReport(false, 1, FILE("z.problem"));)
   //  komo.checkGradients();
 
-  Graph result = komo.getReport();
+  Graph result = komo.report();
   DEBUG(FILE("z.problem.cost") <<result;)
   double cost_here = result.get<double>({"total", "sqrCosts"});
   double constraints_here = result.get<double>({"total", "constraints"});

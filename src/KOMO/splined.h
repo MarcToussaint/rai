@@ -22,7 +22,7 @@ struct SplinedKOMO : NLP {
   virtual arr getInitializationSample(const arr& previousOptima= {});
 
   virtual void report(ostream& os, int verbose, const char* msg=0){
-    os <<komo.getReport();
+     os <<komo.report();
   }
 };
 

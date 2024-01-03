@@ -632,7 +632,7 @@ void KOMO::run_sub(const uintA& X, const uintA& Y) {
          <<" (kin:" <<timeKinematics <<" coll:" <<timeCollisions <<" feat:" <<timeFeatures <<" newton: " <<timeNewton <<")"
          <<" setJointStateCount=" <<Configuration::setJointStateCount <<endl;
   }
-  if(verbose>0) cout <<getReport(verbose>1) <<endl;
+  if(verbose>0) cout <<report(false, true, verbose>1) <<endl;
 }
 
 rai::Configuration& KOMO::getConfiguration(double phase) {

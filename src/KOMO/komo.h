@@ -114,7 +114,7 @@ struct KOMO : NonCopyable {
   void addContact_ComplementarySlide(double startTime, double endTime, const char* from, const char* to);
   //  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);
 
-  void getBounds(arr& bounds_lo, arr& bounds_up);       ///< define the bounds (passed to the constrained optimization) based on the limit definitions of all DOFs
+  arr getBounds() { return pathConfig.getJointLimits(); }       ///< define the bounds (passed to the constrained optimization) based on the limit definitions of all DOFs
 
   //===========================================================================
   //
@@ -173,7 +173,7 @@ public:
 
   //advanced
   void run_prepare(double addInitializationNoise);   ///< ensure the configurations are setup, decision variable is initialized, and noise added (if >0)
-  void run(rai::OptOptions options=NOOPT);          ///< run the solver iterations (configurations and decision variable needs to be setup before)
+  void deprecated_run(rai::OptOptions options=NOOPT);          ///< run the solver iterations (configurations and decision variable needs to be setup before)
   void setSpline(uint splineT);      ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
 
   //-- reading results
@@ -192,10 +192,10 @@ public:
 
   arr getActiveConstraintJacobian();
 
-  rai::Graph report(bool specs=false, bool plotOverTime=false);
-  void reportProblem(ostream& os=std::cout);
-  rai::Graph getReport(bool plotOverTime=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot objective costs; output detailed cost features per time slice)
-  rai::Graph getProblemGraph(bool includeValues, bool includeSolution=true);
+  rai::Graph report(bool specs=false, bool listObjectives=true, bool plotOverTime=false);
+  void deprecated_reportProblem(ostream& os=std::cout);
+  rai::Graph deprecated_getReport(bool plotOverTime=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot objective costs; output detailed cost features per time slice)
+  rai::Graph deprecated_getProblemGraph(bool includeValues, bool includeSolution=true);
   double getConstraintViolations();
   double getCosts();
   StringA getCollisionPairs(double belowMargin=.01); ///< report the proxies (collisions) for each time slice

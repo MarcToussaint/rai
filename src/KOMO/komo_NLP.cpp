@@ -11,7 +11,7 @@ namespace rai{
 void reportAfterPhiComputation(KOMO& komo) {
   if(komo.opt.verbose>6 || komo.opt.animateOptimization>2) {
     //  komo.reportProxies();
-    cout <<komo.getReport(true) <<endl;
+    cout <<komo.report(false, true, true) <<endl;
   }
   if(komo.opt.animateOptimization>0) {
     komo.view(komo.opt.animateOptimization>1, STRING("optAnim komoEvals: " <<komo.evalCount /*<<"\n" <<komo.pathConfig.getJointState()*/));
@@ -121,7 +121,7 @@ void Conv_KOMO_NLP::getFHessian(arr& H, const arr& x) {
 
 void Conv_KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
 //  komo.reportProblem(os);
-//  if(verbose>1 && komo.featureValues.N) os <<komo.getReport(verbose>3);
+//  if(verbose>1 && komo.featureValues.N) os <<komo.report(false, true, verbose>3);
   if(verbose>2) komo.view(verbose>3, STRING("KOMO nlp report - " <<msg));
   if(verbose>4) komo.view_play(false);
   if(verbose>6){
@@ -133,7 +133,9 @@ void Conv_KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
 Conv_KOMO_NLP::Conv_KOMO_NLP(KOMO& _komo, bool sparse) : komo(_komo), sparse(sparse) {
   dimension = komo.pathConfig.getJointStateDimension();
 
-  komo.getBounds(bounds_lo, bounds_up);
+  arr bounds = komo.getBounds();
+  bounds_lo = bounds[0];
+  bounds_up = bounds[1];
 
   //-- feature types
   uint M=0;
@@ -285,7 +287,9 @@ void Conv_KOMO_FactoredNLP::subSelect(const uintA& activeVariables, const uintA&
 
   //NLP signature
   dimension = komo.pathConfig.getJointStateDimension();
-  komo.getBounds(bounds_lo, bounds_up);
+  arr bounds = komo.getBounds();
+  bounds_lo = bounds[0];
+  bounds_up = bounds[1];
 
   //create NLP_Factored signature
   variableDimensions.resize(varsN());
@@ -397,8 +401,8 @@ void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose, const char* ms
   if(verbose<=2){ reportDetails(os, verbose, msg); return; }
 
   komo.pathConfig.ensure_q();
-  komo.reportProblem(os);
-  if(verbose>1 && komo.featureValues.N) os <<komo.getReport(verbose>3);
+  os <<komo.report(true) <<endl;
+  if(verbose>1 && komo.featureValues.N) os <<komo.report(false, true, verbose>3);
   if(verbose>2) komo.view(false/*verbose>3*/, STRING("KOMO nlp_Factored report - " <<msg));
   if(verbose>4) komo.view_play(verbose>5);
   if(verbose>6){

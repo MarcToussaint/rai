@@ -120,18 +120,11 @@ void init_KOMO(pybind11::module& m) {
 	return graph2list(G);
       })
 
-    .def("report", [](std::shared_ptr<KOMO>& self, bool specs, bool plotOverTime) {
-        rai::Graph R = self->report(specs, plotOverTime);
-        return graph2dict(R);
-      },
-      "returns a dict with full report on features, optionally also on problem specs and plotting costs/violations over time",
+    .def("report", &KOMO::report,
+      "returns a dict with full list of features, optionally also on problem specs and plotting costs/violations over time",
       pybind11::arg("specs") = false,
+      pybind11::arg("listObjectives") = true,
       pybind11::arg("plotOverTime") = false)
-
-    .def("getReport", [](std::shared_ptr<KOMO>& self, bool plotOverTime) {
-        rai::Graph R = self->getReport(plotOverTime);
-	return graph2dict(R);
-      })
 
     .def("getFeatureNames", [](std::shared_ptr<KOMO>& self) {
         return self->featureNames;

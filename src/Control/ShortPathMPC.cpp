@@ -17,7 +17,7 @@ ShortPathMPC::ShortPathMPC(rai::Configuration& C, uint steps, double _defaultTau
   komo.addControlObjective({}, 2, .1);
 //  komo.addControlObjective({}, 0, 1e0);
   //komo.add_collision();
-//  komo.reportProblem();
+//  cout <<komo.report(true, false) <<endl;
 }
 
 void ShortPathMPC::reinit_taus(double timeToConstraint){
@@ -46,7 +46,7 @@ void ShortPathMPC::reinit_taus(double timeToConstraint){
   komo._addObjective(ob2, intA{{1,2},{sliceOfConstraint, sliceOfConstraint+1}});
 #endif
 
-//  komo.reportProblem();  rai::wait();
+//  cout <<komo.report(true, false) <<endl;  rai::wait();
 }
 
 void ShortPathMPC::reinit(const arr& x, const arr& v){
@@ -118,7 +118,7 @@ void ShortPathMPC::solve(bool alsoVels, int verbose){
     times.prepend(0.);
 
   }else{
-    cout <<komo.getReport(false);
+    cout <<komo.report();
     path.clear();
     times.clear();
 //    komo.reset();

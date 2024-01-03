@@ -38,13 +38,13 @@ void tutorialBasics(){
 //  komo.setSlow(1., -1., 1e1);
 
   //-- check the defined problem
-  komo.reportProblem(cout);
+  cout <<komo.report(true, false);
   
   //-- call the optimizer
   //  komo.animateOptimization = 1; //activate this to see how optimization is incrementally improving the path
   komo.optimize();
   komo.checkGradients(); //this checks all gradients of the problem by finite difference
-  komo.getReport(true); //true -> plot the cost curves
+  komo.report(false, false, true); //true -> plot the cost curves
   komo.view(true, "solution"); //illustrate the solution as an overlayed path
   //  for(uint i=0;i<2;i++) komo.view_play(true); //play the trajectory
 
@@ -96,7 +96,7 @@ void tutorialInverseKinematics(){
   //  komo.animateOptimization = 1;
   komo.optimize();
   //  komo.checkGradients(); //this checks all gradients of the problem by finite difference
-  komo.getReport(); //true -> plot the cost curves
+  komo.report(); //true -> plot the cost curves
   komo.view(true, "solution"); //illustrate the solution as an overlayed path
   //  for(uint i=0;i<2;i++) komo.view_play(true); //play the trajectory
 }

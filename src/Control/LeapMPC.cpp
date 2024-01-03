@@ -19,7 +19,7 @@ LeapMPC::LeapMPC(rai::Configuration& C, double timingScale){
     komo.addObjective({2}, make_shared<F_qTime>(), {"world"}, OT_f, {timingScale}, {});
     komo.addObjective({2}, make_shared<F_qTime>(), {"world"}, OT_ineq, {-1e1}, {.1}); //lower bound on timing
   }
-  komo.reportProblem();
+  cout <<komo.report(true, false) <<endl;
 
   komo.timeSlices(-1,0)->setJointState({100.}); //this should be the tau joint!
 #else
@@ -27,7 +27,7 @@ LeapMPC::LeapMPC(rai::Configuration& C, double timingScale){
 
   //control costs at short horizon
   komo.addControlObjective({}, 1, 1e-1);
-  komo.reportProblem();
+  cout <<komo.report(true, false) <<endl;
 #endif
 
 

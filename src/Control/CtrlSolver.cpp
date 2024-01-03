@@ -135,7 +135,7 @@ arr CtrlSolver::solve() {
   komo.opt.verbose=0;
   komo.opt.animateOptimization=animate;
   komo.optimize(0., opt);
-  optReport = komo.getReport(false);
+  optReport = komo.report();
   if(optReport.get<double>("sos")>1.1
      || optReport.get<double>("eq")>.01
      || optReport.get<double>("ineq")>.01){

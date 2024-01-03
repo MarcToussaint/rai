@@ -26,7 +26,7 @@ void TEST(Easy){
   komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e2}, {}, 1);
   komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e0});
 
-  komo.reportProblem();
+  cout <<komo.report(true) <<endl;
 
 //  komo.setSpline(5);
   komo.optimize();
@@ -162,7 +162,7 @@ void TEST(Thin){
   komo.addObjective({}, FS_distance, {"wall", "ball"}, OT_ineqB, {1.});
   komo.addObjective({}, make_shared<MyFeature>(), {"ball", "wall"}, OT_sos, {1e1}, {}, 1);
 
-  komo.reportProblem();
+  cout <<komo.report(true) <<endl;
 
   komo.view(true, "init");
 

@@ -28,7 +28,7 @@ void TEST(KomoSequence){
 
   komo.optimize();
 
-  rai::Graph result = komo.getReport(true);
+  rai::Graph result = komo.report(false, true, true);
 
   for(uint i=0;i<2;i++) if(!komo.displayTrajectory(.1, true)) break;
 }

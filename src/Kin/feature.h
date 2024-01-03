@@ -51,6 +51,7 @@ protected:
   uint dim(const FrameL& F) { uint d=dim_phi2(F); return applyLinearTrans_dim(d); }
   fct vf2(const FrameL& F);
 
+  virtual const char* typeString(){ return rai::niceTypeidName(typeid(*this)); }
   virtual rai::String shortTag(const rai::Configuration& C);
   virtual rai::Graph getSpec(const rai::Configuration& C) { return rai::Graph({{"description", shortTag(C)}}); }
   virtual std::shared_ptr<Feature> deepCopy();

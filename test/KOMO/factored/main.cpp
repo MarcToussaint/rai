@@ -51,7 +51,7 @@ void testFactored(){
   komo.addObjective({2.}, FS_qItself, {}, OT_eq, {}, {}, 1);
   komo.addObjective({1.9,2.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
 
-  komo.reportProblem();
+  komo.report(true, false);
 
   //== get info from the factored problem
   {
@@ -108,7 +108,7 @@ void testFactored(){
       .solve();
 
   nlp->report(cout, 3);
-  komo.reportProblem();
+  komo.report(true, false);
   komo.view(true);
 }
 

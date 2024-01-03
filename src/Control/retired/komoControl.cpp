@@ -63,7 +63,7 @@ void KOMO_Control::step(const arr& real_q) {
   optimize(0., opt);
 
   {
-    rai::Graph R = getReport(false);
+    rai::Graph R = report();
     sos = R.get<double>("sos");
     eq = R.get<double>("eq");
     ineq = R.get<double>("ineq");

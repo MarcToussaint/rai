@@ -46,10 +46,10 @@ void plan(){
   // final target for ball2
   komo.addObjective({3., 3.}, make_shared<TM_Default>(TMT_posDiff, K, "ball2"), OT_sos, {+2.,-0.,.3}, 1e1);
 
-  komo.reportProblem();
+  cout <<komo.report(true, false) <<endl;
   komo.verbose=2;
   komo.optimize();
-  komo.getReport(true);
+  komo.report(false, false, true);
   komo.checkGradients();
 
   for(uint i=0;i<2;i++) komo.displayTrajectory(-.01, true, "vid/z.");

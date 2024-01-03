@@ -239,7 +239,7 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
 
     //if not feasible -> add explicit collision pairs (from proxies presently in komo.pathConfig)
     if(!feasible){
-      //cout <<komo.getReport(false);
+      //cout <<komo.report();
       //komo.pathConfig.reportProxies();
       StringA collisionPairs = komo.getCollisionPairs(.01);
       if(collisionPairs.N){
@@ -355,7 +355,7 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
         komo.optimize(0., OptOptions().set_verbose(0).set_stopTolerance(1e-3));
 
         if(komo.ineq>1e-1){
-          LOG(-1) <<"solveForFeasible failed!" <<komo.getReport();
+          LOG(-1) <<"solveForFeasible failed!" <<komo.report();
           if(verbose>1) komo.view(verbose>2, "FAILED!");
           return false;
         }else{
@@ -452,7 +452,7 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
   komo.optimize(0., rai::OptOptions().set_verbose(0).set_stopTolerance(1e-3));
 
   if(komo.ineq>1e-1){
-    if(verbose) LOG(-1) <<"solveForFeasible failed!" <<komo.getReport();
+    if(verbose) LOG(-1) <<"solveForFeasible failed!" <<komo.report();
     if(verbose>1) komo.view(verbose>2, "collision resolution failed");
     if(assert) HALT("collision resolution failed");
     return false;

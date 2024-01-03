@@ -24,7 +24,7 @@ void createPath(){
   komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e2}, {}, 1);
   komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e0});
 
-  komo.reportProblem();
+  cout <<komo.report(true, false) <<endl;
 
   auto ret = NLP_Solver()
       .setProblem(komo.nlp())

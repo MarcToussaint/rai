@@ -35,7 +35,7 @@ SecMPC::SecMPC(KOMO& komo, int subSeqStart, int subSeqStop, double timeCost, dou
 
   if(opt.verbose>0){
     LOG(0) <<"new SecMPC with following waypoint komo:";
-    waypointMPC.komo.reportProblem();
+    cout <<waypointMPC.komo.report(true, false) <<endl;
   }
 }
 
@@ -162,7 +162,7 @@ void SecMPC::updateShortPath(const rai::Configuration& C){
 //  cout <<q_ref <<endl <<qDot_ref <<endl;
 //  cout <<init <<endl <<shortMPC.path <<endl;
 //  rai::wait();
-//  shortMPC.komo.reportProblem();
+//  cout <<shortMPC.komo.report(true, false) <<endl;
 
   msg <<" \tPATH #" <<shortMPC.komo.pathConfig.setJointStateCount;
   msg <<' ' <<shortMPC.komo.sos <<'|' <<shortMPC.komo.ineq + shortMPC.komo.eq;

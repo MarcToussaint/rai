@@ -133,6 +133,20 @@ void Node::swapParent(uint i, Node* p) {
 }
 
 
+void _writeString(std::ostream& os, const String& str, bool yamlMode) {
+  if(yamlMode) {
+    os <<'"' <<str <<'"';
+  } else {
+    bool onlyLetters=true;
+    for(uint i=0; i<str.N; i++) {
+      char c=str(i);
+      if(!((c>='a'&& c<='z') || (c>='A'&& c<='Z') || c=='_')) {  onlyLetters=false;  break;  }
+    }
+    if(onlyLetters) os <<str;
+    else os <<'"' <<str <<'"';
+  }
+}
+
 void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const {
   if(!container.isIndexed) container.index();
 
@@ -155,7 +169,7 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
 
   //-- boolean special
   if(is<bool>()) {
-    bool x = *getValue<bool>();
+    bool x = as<bool>();
     if(yamlMode) { if(x) os <<": True"; else os <<": False"; }
     else { if(!x) os <<'!'; }
     return;
@@ -173,24 +187,11 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
     }
   } else if(is<NodeL>()) {
     os <<"(";
-    for(Node* it: (*getValue<NodeL>())) os <<' ' <<it->key;
+    for(Node* it: (as<NodeL>())) os <<' ' <<it->key;
     os <<" )";
   } else if(is<String>()) {
-    if(yamlMode) {
-      os <<'"' <<*getValue<String>() <<'"';
-    } else {
-      const String& str = *getValue<String>();
-      bool onlyLetters=true;
-      for(uint i=0; i<str.N; i++) {
-        char c=str(i);
-        if(!((c>='a'&& c<='z') || (c>='A'&& c<='Z'))) {
-          onlyLetters=false;
-          break;
-        }
-      }
-      if(onlyLetters) os <<str;
-      else os <<'"' <<str <<'"';
-    }
+    const String& str = as<String>();
+    _writeString(os, str, yamlMode);
   } else if(is<FileToken>()) {
     os <<'<' <<getValue<FileToken>()->autoPath() <<'>';
   } else if(is<arr>()) {
@@ -214,15 +215,19 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
   } else if(is<intAA>()) {
     getValue<intAA>()->write(os, ", ", nullptr, "[]");
   } else if(is<StringA>()) {
-    os <<"[";
-    for(const String& s:as<StringA>()) os <<'\"' <<s <<"\", ";
+    os <<'[';
+    const StringA& strs = as<StringA>();
+    for(uint i=0;i<strs.N;i++){
+      if(i) os <<", ";
+      _writeString(os, strs.elem(i), yamlMode);
+    }
     os <<']';
   } else if(is<double>()) {
-    os <<*getValue<double>();
+    os <<as<double>();
   } else if(is<int>()) {
-    os <<*getValue<int>();
+    os <<as<int>();
   } else if(is<uint>()) {
-    os <<*getValue<uint>();
+    os <<as<uint>();
   } else if(is<Type*>()) {
     as<Type*>()->write(os);
   } else {

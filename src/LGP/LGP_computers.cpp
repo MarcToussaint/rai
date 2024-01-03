@@ -242,7 +242,7 @@ void rai::LGPcomp_Waypoints::untimedCompute(){
 
   //    checkJacobianCP(*komoWaypoints->nlp_SparseNonFactored(), komoWaypoints->x, 1e-6);
   if(sket->verbose()>0) LOG(0) <<"ways " <<*ret;
-  //if(sket->verbose()>1) cout <<komoWaypoints->getReport(sket->verbose()>3);
+  //if(sket->verbose()>1) cout <<komoWaypoints->report(false, true, sket->verbose()>3);
   if(sket->verbose()>3){
     //    komoWaypoints->pathConfig.reportProxies();
     komoWaypoints->pathConfig.reportLimits();
@@ -446,7 +446,7 @@ void rai::LGPcomp_OptimizePath::untimedCompute(){
     if(sket->verbose()>0) komoPath->pathConfig.gl().drawOptions.drawVisualsOnly=true;
 
     if(sket->verbose()>0) LOG(0) <<"path " <<*sol.ret;
-    if(sket->verbose()>1) cout <<komoPath->getReport(sket->verbose()>2);
+    if(sket->verbose()>1) cout <<komoPath->report(false, true, sket->verbose()>2);
     if(sket->verbose()>0) komoPath->view(sket->verbose()>2, STRING(name <<" - optimized \n" <<*sol.ret <<"\n" <<sket->planString <<"\n"));
     //komoPath->checkGradients();
     if(sket->verbose()>1) while(komoPath->view_play(sket->verbose()>1 && sol.ret->feasible));
@@ -466,7 +466,7 @@ void rai::LGPcomp_OptimizePath::untimedCompute(){
         komoPath->view_play(false, .1, path);
         ofstream fil (path + "info.txt");
         fil <<*sol.ret <<"\n\nSkeleton:{" <<sket->planString <<"\n}" <<endl;
-        fil <<komoPath->getReport(false) <<endl;
+        fil <<komoPath->report() <<endl;
         fil <<sol.optCon->L.reportGradients(komoPath->featureNames) <<endl;
         ofstream cfil (path + "last.g");
         komoPath->world.setFrameState(komoPath->getConfiguration_X(komoPath->T-1));

@@ -82,7 +82,7 @@ int main(int argc,char **argv){
       komo_final->view(true, STRING("random init sample " <<i));
       {
         auto ret = NLP_Solver() .setProblem(komo_way->nlp()) .solve();
-        cout <<komo_final->report(false, true) <<endl;
+        cout <<komo_final->report(false, true, true) <<endl;
         cout <<*ret <<endl;
 
         rai::wait(.1);
@@ -102,7 +102,7 @@ int main(int argc,char **argv){
       NLP_Solver sol;
       sol.setProblem(komo_way->nlp());
       auto ret = sol.solve();
-      cout <<komo_way->report(false, true) <<endl;
+      cout <<komo_way->report(false, true, true) <<endl;
       cout <<*ret <<endl;
       cout <<komo_way->getPath_qAll();
 
@@ -153,7 +153,7 @@ int main(int argc,char **argv){
       NLP_Solver sol;
       sol.setProblem(komo_path->nlp());
       auto ret = sol.solve();
-      cout <<komo_path->report(false, true) <<endl;
+      cout <<komo_path->report(false, true, true) <<endl;
       cout <<*ret <<endl;
 
       rai::wait(.1);
