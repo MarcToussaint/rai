@@ -84,7 +84,19 @@ void F_VectorDiff::phi2(arr& y, arr& J, const FrameL& F){
 //===========================================================================
 
 void F_VectorRel::phi2(arr& y, arr& J, const FrameL& F){
-  NIY;
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::Frame *f1 = F.elem(0);
+  rai::Frame *f2 = F.elem(1);
+  arr y1 = f1->C.kinematics_vec(f1, vec);
+  arr Rinv = ~(f2->ensure_X().rot.getArr());
+  y = Rinv * y1;
+  grabJ(y,J);
+  if(!!J) {
+    arr A;
+    f2->C.jacobian_angular(A, f2);
+    J -= Rinv * crossProduct(A, y1);
+  }
 }
 
 //===========================================================================

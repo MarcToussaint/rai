@@ -118,3 +118,29 @@ void F_GraspOppose::phi2(arr& y, arr& J, const FrameL& F) {
     if(!!J) J=y.J_reset();
   }
 }
+
+//===========================================================================
+
+arr F_TorusGraspEq::phi(const FrameL& F) {
+  arr pos = F_PositionRel().eval(F);
+  arr vec = F_VectorRel(Vector_x).eval(F);
+
+  arr vec_z = arr{0., 0., 1.};
+  //    arr vec_z = F_Vector(Vector_z).eval({F.elem(1)});
+  //    arr posDiff = F_PositionDiff().eval(F);
+  arr tangent;
+  op_crossProduct(tangent, vec_z, pos);
+  arr y1 = ~tangent * vec;
+
+  arr y2 = arr{{1,3},{0.,0.,1.}} * pos;
+
+  arr y3 = ~pos * pos;
+  y3 -= r1*r1;
+
+  arr y = zeros(3);
+  F.elem(0)->C.jacobian_zero(y.J(), y.N);
+  y.setVectorBlock(y1, 0);
+  y.setVectorBlock(y2, 1);
+  y.setVectorBlock(y3, 2);
+  return y;
+}

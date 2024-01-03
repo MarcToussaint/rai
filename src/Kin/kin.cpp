@@ -2156,7 +2156,7 @@ void Configuration::stepSwift() {
 }
 */
 
-void Configuration::stepFcl(double cutoff) {
+void Configuration::stepFcl() {
   //-- get the frame state of collision objects
 #if 0
   arr X = getFrameState();
@@ -2169,7 +2169,7 @@ void Configuration::stepFcl(double cutoff) {
   }
 #endif
   //-- step fcl
-  fcl()->step(X, cutoff);
+  fcl()->step(X);
   //-- add as proxies
   proxies.clear();
   addProxies(fcl()->collisions);
@@ -3284,7 +3284,7 @@ int Configuration::animate(Inotify* ino) {
       // Joint limits
       checkNan(x);
       setJointState(x);
-      int key = view(false, STRING("DOF = " <<i <<" : " <<jointNames(i) <<lim[i]));
+      int key = view(false, STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lower_lim <<", " <<upper_lim <<']'));
 
       if(key==13 || key==27 || key=='q') {
         setJointState(x0);

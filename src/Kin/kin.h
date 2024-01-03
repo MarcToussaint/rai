@@ -204,6 +204,7 @@ struct Configuration : GLDrawer {
   void jacobian_zero(arr& J, uint n) const;
 
   arr kinematics_pos(Frame* a, const Vector& rel=NoVector) const { arr y,J; kinematicsPos(y, J, a, rel); if(!!J) y.J()=J; return y; }
+  arr kinematics_vec(Frame* a, const Vector& vec=NoVector) const { arr y,J; kinematicsVec(y, J, a, vec); if(!!J) y.J()=J; return y; }
 
   void kinematicsZero(arr& y, arr& J, uint n) const;
   void kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel=NoVector) const;
@@ -251,7 +252,7 @@ struct Configuration : GLDrawer {
   void glAdd(void (*call)(void*, OpenGL&), void* classP);
   int glAnimate();
   void view_close();
-  void stepFcl(double cutoff=-1.);
+  void stepFcl();
   void stepPhysx(double tau);
   void stepOde(double tau);
   void stepDynamics(arr& qdot, const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);

@@ -66,6 +66,7 @@ void testKinematics(bool withCollisions, uint N=100000){
 
   if(withCollisions){
     C.fcl()->mode = rai::FclInterface::_binaryCollisionAll;
+//    C.fcl()->mode = rai::FclInterface::_distanceCutoff;  C.fcl()->cutoff = .0;
   }
 
   double time = -rai::cpuTime();

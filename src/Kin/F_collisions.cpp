@@ -58,7 +58,7 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     if(!m2->V.N) m2 = &dot;
   }
 
-  if(m1->V.d0==1 && m2->V.d0>2 && !m2->T.N){ //PclCollision!
+  if((type==_negScalar || type==_vector) && m1->V.d0==1 && m2->V.d0>2 && !m2->T.N){ //PclCollision!
     arr Jp1, Jp2, Jx1, Jx2;
     if(!!J){
       f1->C.jacobian_pos(Jp1, f1, f1->ensure_X().pos);

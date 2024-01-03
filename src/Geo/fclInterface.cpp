@@ -58,8 +58,8 @@ struct FclInterface_self{
   static bool BroadphaseCallback(CollObject* o1, CollObject* o2, void* cdata_);
 };
 
-FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes, QueryMode _mode, double _cutoff)
-  : mode(_mode), cutoff(_cutoff), excludes(_excludes) {
+FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes, QueryMode _mode)
+  : mode(_mode), excludes(_excludes) {
   self = new FclInterface_self;
   
   self->convexGeometryData.resize(geometries.N);
@@ -129,7 +129,7 @@ FclInterface::~FclInterface() {
   delete self;
 }
 
-void FclInterface::step(const arr& X, double _cutoff) {
+void FclInterface::step(const arr& X) {
   CHECK_EQ(X.nd, 2, "");
   CHECK_EQ(X.d0, self->convexGeometryData.N, "");
   CHECK_EQ(X.d1, 7, "");
@@ -144,14 +144,14 @@ void FclInterface::step(const arr& X, double _cutoff) {
   }
   self->manager->update();
 
-  double defaultCutoff = cutoff;
-  if(_cutoff!=-2.) cutoff = _cutoff;
+//  double defaultCutoff = cutoff;
+//  if(_cutoff!=-2.) cutoff = _cutoff;
 
   collisions.clear();
   self->manager->collide(this, FclInterface_self::BroadphaseCallback);
   collisions.reshape(-1, 2);
 
-  if(_cutoff!=-2.) cutoff = defaultCutoff;
+//  if(_cutoff!=-2.) cutoff = defaultCutoff;
 
   X_lastQuery = X;
 }
@@ -175,7 +175,7 @@ bool FclInterface_self::BroadphaseCallback(CollObject* o1, CollObject* o2, void*
     }
   }
 
-  if(fcl->cutoff>=0) LOG(-1) <<"fcl fine collision (ccd) is buggy - might stall - cutoff:" <<fcl->cutoff;
+//  if(fcl->cutoff>=0) LOG(-1) <<"fcl fine collision (ccd) is buggy - might stall - cutoff:" <<fcl->cutoff;
 
   if(fcl->mode==fcl->_broadPhaseOnly){
     fcl->addCollision(a,b);
@@ -188,7 +188,7 @@ bool FclInterface_self::BroadphaseCallback(CollObject* o1, CollObject* o2, void*
       if(fcl->mode==fcl->_binaryCollisionSingle) return true; //can stop now
     }
   } else if(fcl->mode==fcl->_distanceCutoff){
-    CHECK(fcl->cutoff>0., "")
+    CHECK(fcl->cutoff>=0., "")
     DistanceRequest request;
     DistanceResult result;
     fcl::distance(o1, o2, request, result);

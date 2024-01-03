@@ -78,6 +78,7 @@ public:
   bool checkHessian(const arr& x, double tolerance);
   bool checkInBound(const arr& x);
   void boundClip(arr& x);
+  arr getUniformSample(){ return bounds_lo + rand(dimension) % (bounds_up - bounds_lo); }
 };
 
 //===========================================================================

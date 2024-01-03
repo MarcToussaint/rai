@@ -45,3 +45,13 @@ struct F_GraspOppose : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { if(central>0.) return 6; return 3; }
 };
+
+//===========================================================================
+
+struct F_TorusGraspEq: Feature {
+  double r1, r2;
+  F_TorusGraspEq(double _r1, double _r2): r1(_r1), r2(_r2) {}
+
+  uint dim_phi2(const FrameL& F) { return 3; }
+  arr phi(const FrameL& F);
+};

@@ -488,8 +488,7 @@ arr F_fex_ForceIsNormal::phi(const FrameL& F) {
   return y;
 }
 
-arr F_fex_ForceInFrictionCone::phi(const FrameL& F)
-{
+arr F_fex_ForceInFrictionCone::phi(const FrameL& F) {
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
   if(!ex){ arr y; F.elem(0)->C.kinematicsZero(y, y.J(), dim_phi2(F)); return y; }
 

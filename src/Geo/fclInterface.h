@@ -21,10 +21,10 @@ struct FclInterface {
   uintA collisions; //return values!
   arr X_lastQuery;  //memory to check whether an object has moved in consecutive queries
 
-  FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes, QueryMode _mode, double _cutoff=-1.);
+  FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes, QueryMode _mode);
   ~FclInterface();
 
-  void step(const arr& X, double _cutoff=-2.);
+  void step(const arr& X);
 
 protected:
   friend FclInterface_self;

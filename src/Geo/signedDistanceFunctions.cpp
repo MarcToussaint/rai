@@ -8,6 +8,15 @@
 
 //===========================================================================
 
+double SDF::f(arr& g, arr& H, const arr& x){
+  arr rot = pose.rot.getArr();
+  arr x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
+  double f = f_raw(g, H, x_rel);
+  g = rot*g;
+  H = rot*H*(~rot);
+  return f;
+}
+
 arr SDF::eval(const arr& samples){
   CHECK_EQ(samples.nd, 2, "");
   CHECK_EQ(samples.d1, 3, "");
@@ -22,6 +31,13 @@ floatA SDF::evalFloat(const arr& samples){
   floatA y(samples.d0);
   for(uint i=0;i<y.N;i++) y.elem(i) = f(NoArr, NoArr, samples[i]);
   return y;
+}
+
+floatA SDF::evalGrid(uint d0, int d1, int d2){
+  if(d1<0) d1=d0;
+  if(d2<0) d2=d0;
+  arr X = grid(lo, up, {d0,(uint)d1,(uint)d2});
+  return evalFloat(X).reshape(d0+1,d1+1,d2+1);
 }
 
 void SDF::viewSlice(OpenGL& gl, double z, const arr& lo, const arr& hi){
@@ -320,7 +336,8 @@ double interpolate3D(double v000, double v100, double v010, double v110, double 
 }
 
 SDF_GridData::SDF_GridData(uint N, const arr& _lo, const arr& _up, bool isoGrid)
-  : lo(_lo), up(_up) {
+  : SDF(0) {
+  lo=_lo; up=_up;
   if(isoGrid){
     double vol = product(up-lo);
     arr scale = (up-lo)/pow(vol, 1./3.);
@@ -331,22 +348,13 @@ SDF_GridData::SDF_GridData(uint N, const arr& _lo, const arr& _up, bool isoGrid)
 }
 
 SDF_GridData::SDF_GridData(SDF& f, const arr& _lo, const arr& _up, const uintA& res)
-  : lo(_lo), up(_up) {
+  : SDF(0) {
+  lo=_lo; up=_up;
   //compute grid data
   arr samples = ::grid(lo, up, res);
   arr values = f.eval(samples);
   copy(gridData, values);
   gridData.reshape({res(0)+1, res(1)+1, res(2)+1});
-}
-
-double SDF_Transformed::f(arr& g, arr& H, const arr& x){
-  arr rot = pose.rot.getArr();
-  arr x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
-
-  double f = sdf->f(g, H, x_rel);
-  g = rot*g;
-  H = rot*H*(~rot);
-  return f;
 }
 
 double SDF_GridData::f(arr& g, arr& H, const arr& x){
@@ -682,10 +690,15 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
 };
 
 
-double SDF_Torus::f(arr& g, arr& H, const arr& _x){
-    double x=_x(0), y=_x(1), z=_x(2);
-    double r=sqrt(x*x + y*y);
-    return z*z + (1.-r)*(1.-r) - .1;
+SDF_Torus::SDF_Torus(double _r1, double _r2) : SDF(0), r1(_r1), r2(_r2) {
+  up = arr{ r1+r2, r1+r2, r2 };
+  lo = -up;
+}
+
+double SDF_Torus::f_raw(arr& g, arr& H, const arr& _x){
+  double x=_x(0), y=_x(1), z=_x(2);
+  double d = r1-sqrt(x*x + y*y);
+  return z*z + d*d - r2*r2;
 }
 
 //===========================================================================

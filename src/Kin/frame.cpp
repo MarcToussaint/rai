@@ -108,7 +108,9 @@ void rai::Frame::calc_X_from_parent() {
   }
 
   _state_X_isGood=true;
-  C._state_proxies_isGood = false;
+  if(shape && shape->cont){
+    C._state_proxies_isGood = false;
+  }
 }
 
 void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
@@ -532,19 +534,21 @@ rai::Frame& rai::Frame::setMesh(const rai::Mesh& m) {
   return *this;
 }
 
-rai::Frame& rai::Frame::setSdf(const SDF_GridData& sdf) {
+rai::Frame& rai::Frame::setSdf(std::shared_ptr<SDF>& sdf) {
   getShape().type() = ST_sdf;
-  getShape().sdf() = sdf;
+  getShape()._sdf = sdf;
   getShape().createMeshes();
   return *this;
 }
 
 rai::Frame& rai::Frame::setDensity(const floatA& data, const arr& size) {
   getShape().type() = ST_density;
-  getShape().sdf().lo = -.5*size;
-  getShape().sdf().up = +.5*size;
-  getShape().sdf().gridData = data;
-  getShape().sdf()._densityDisplayData = make_shared<DensityDisplayData>(getShape().sdf());
+  std::shared_ptr<SDF_GridData> sdf = make_shared<SDF_GridData>();
+  sdf->lo = -.5*size;
+  sdf->up = +.5*size;
+  sdf->gridData = data;
+  sdf->_densityDisplayData = make_shared<DensityDisplayData>(*sdf);
+  getShape()._sdf = sdf;
   return *this;
 }
 
@@ -1771,7 +1775,10 @@ void rai::Shape::glDraw(OpenGL& gl) {
         glDrawCamera(cam); //gl.camera);
       }
     } else if(_type==rai::ST_density){
-      sdf()._densityDisplayData->glDraw(gl);
+      auto gridSdf = std::dynamic_pointer_cast<SDF_GridData>(_sdf);
+      if(gridSdf){
+        gridSdf->_densityDisplayData->glDraw(gl);
+      }
     } else {
       if(!mesh().V.N) {
         LOG(-1) <<"trying to draw empty mesh (shape type:" <<_type <<")";
@@ -1839,13 +1846,19 @@ void rai::Shape::createMeshes() {
     case rai::ST_sdf: {
       if(!sdf().lo.N) sdf().lo = -.5*size;
       if(!sdf().up.N) sdf().up = +.5*size;
-      if(!mesh().V.N && sdf().gridData.N){
-        mesh().setImplicitSurface(sdf().gridData, sdf().lo, sdf().up);
+      if(!mesh().V.N){
+        auto gridSdf = std::dynamic_pointer_cast<SDF_GridData>(_sdf);
+        if(gridSdf && gridSdf->gridData.N){
+          mesh().setImplicitSurface(gridSdf->gridData, sdf().lo, sdf().up);
+        }else{
+          mesh().setImplicitSurface(sdf().evalGrid(30), sdf().lo, sdf().up);
+        }
       }
     } break;
     case rai::ST_density: {
-      if(sdf().gridData.N){
-        sdf()._densityDisplayData = make_shared<DensityDisplayData>(sdf());
+      auto gridSdf = std::dynamic_pointer_cast<SDF_GridData>(_sdf);
+      if(gridSdf && gridSdf->gridData.N){
+        gridSdf->_densityDisplayData = make_shared<DensityDisplayData>(*gridSdf);
       }
     } break;
     case rai::ST_quad: {

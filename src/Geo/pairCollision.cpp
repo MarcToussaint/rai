@@ -42,10 +42,7 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
 
   //-- special cases: point to pcl
   if(mesh1.V.d0==1 && mesh2.V.d0>2 && !mesh2.T.N){
-    if(!_mesh2.ann){
-      _mesh2.ann = make_shared<ANN>();
-      _mesh2.ann->setX(_mesh2.V);
-    }
+    _mesh2.ensure_ann();
 
     arr x = mesh1.V;
     x.reshape(3);

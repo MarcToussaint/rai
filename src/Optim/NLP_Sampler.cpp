@@ -40,15 +40,18 @@ void NLP_Walker::set_alpha_bar(double alpha_bar){
     a = ::sqrt(alpha_bar);
     sig = ::sqrt(1.-alpha_bar);
   }
+  if(!opt.useCentering){
+    a = 1.;
+  }
 }
 
 bool NLP_Walker::step(){
-  ev.eval(x, *this);
+  ensure_eval();
 
   get_delta();
   bool good = true;
   if(!ev.Ph.N || trace(ev.Ph)>1e-6){
-    good = step_hit_and_run(maxStep);
+    good = step_hit_and_run(opt.maxStep);
   }
 
   //  bool good = step_delta();
@@ -58,7 +61,7 @@ bool NLP_Walker::step(){
 }
 
 bool NLP_Walker::step_hit_and_run(double maxStep){
-  if(!ev.x.N) ev.eval(x, *this);
+  ensure_eval();
   Eval ev0 = ev;
 
   arr dir = get_rnd_direction();
@@ -104,15 +107,15 @@ bool NLP_Walker::step_hit_and_run(double maxStep){
 
     x += beta*dir;
     samples++;
-    ev.eval(x, *this);
+    ensure_eval();
 
     if(!sig){
       if((!ev.g.N || max(ev.gpos) <= max(ev0.gpos)) //ineq constraints are good
-         && sum(ev.s) <= sum(ev0.s) + eps){ //total slack didn't increase too much
+         && sum(ev.s) <= sum(ev0.s) + opt.eps){ //total slack didn't increase too much
         return true;
       }
     }else{
-      if(sum(ev.s) <= sum(ev0.s) + sig + eps){ //total slack didn't increase too much
+      if(sum(ev.s) <= sum(ev0.s) + sig + opt.eps){ //total slack didn't increase too much
         if(!ev.g.N) return true;
         LS.add_constraints(a*ev.g + ev.Jg*(x-a*ev.x), ev.Jg*dir, sig);
         double p_beta = LS.eval_beta(beta);
@@ -130,7 +133,7 @@ bool NLP_Walker::step_hit_and_run(double maxStep){
 }
 
 bool NLP_Walker::step_slack(){
-  ev.eval(x, *this);
+  ensure_eval();
 
 #if 0
   arr s0 = sig * randn(ev.s.N);
@@ -145,36 +148,24 @@ bool NLP_Walker::step_slack(){
 #else
 //  if(!ev.h.N) return true;
   arr Jinv = pseudoInverse(ev.Js);
-  arr delta = -alpha *( Jinv * ev.s );
+  arr delta = -opt.alpha *( Jinv * ev.s );
   arr Ph = Jinv * ev.Js;
 
   double l = length(delta);
-  if(l>maxStep) delta *= maxStep/l;
+  if(l>opt.maxStep) delta *= opt.maxStep/l;
 
   x += delta;
   x *= a;
   if(sig){
     x += Ph * (sig * randn(x.N));
   }
-  boundClip(x, nlp.bounds_lo, nlp.bounds_up);
+  if(!sig){
+    boundClip(x, nlp.bounds_lo, nlp.bounds_up);
+  }
 
 #endif
 
-  ev.eval(x, *this);
-  return true;
-}
-
-bool NLP_Walker::step_delta(){
-  ev.eval(x, *this);
-
-  arr delta = get_delta();
-  if(!delta.N) return false;
-
-  x += alpha * delta;
-  if(sig){
-    x += sig * randn(x.N);
-  }
-  ev.eval(x, *this);
+  ensure_eval();
   return true;
 }
 
@@ -269,11 +260,9 @@ void NLP_Walker::Eval::eval(const arr& _x, NLP_Walker& walker){
 
 arr sample_direct(NLP& nlp, uint K, int verbose, double alpha_bar){
   NLP_Walker walk(nlp, alpha_bar);
-  walk.eps = .1;
-  walk.alpha = 1.;
-  walk.maxStep = .5;
 
-  walk.initialize(nlp.getInitializationSample());
+//  walk.initialize(nlp.getInitializationSample());
+  walk.initialize(nlp.getUniformSample());
 
   arr data;
 
@@ -300,16 +289,12 @@ arr sample_direct(NLP& nlp, uint K, int verbose, double alpha_bar){
 
 arr sample_restarts(NLP& nlp, uint K, int verbose, double alpha_bar){
   NLP_Walker walk(nlp, alpha_bar);
-  walk.eps = .1;
-  walk.alpha = 1.;
-  walk.maxStep = .5;
 
   arr data;
 
   for(;data.d0<K;){
 //    arr x = nlp.getInitializationSample();
-    arr x = nlp.bounds_lo + rand(nlp.getDimension()) % (nlp.bounds_up - nlp.bounds_lo);
-    walk.initialize(x);
+    walk.initialize(nlp.getUniformSample());
 
     bool good = false;
     for(uint t=0;t<20;t++){
@@ -323,7 +308,7 @@ arr sample_restarts(NLP& nlp, uint K, int verbose, double alpha_bar){
     }
     if(walk.sig) good=true;
 
-    if(good && !walk.sig){
+    if(!good && !walk.sig){
       for(uint t=0;t<10;t++){
         walk.step_slack();
         if(walk.ev.err<=.01){ good=true; break; }
@@ -347,18 +332,14 @@ arr sample_restarts(NLP& nlp, uint K, int verbose, double alpha_bar){
 //===========================================================================
 
 arr sample_denoise_direct(NLP& nlp, uint K, int verbose){
-  AlphaSchedule A(AlphaSchedule::_cosine, 50);
+  AlphaSchedule A(AlphaSchedule::_cosine, 30);
   cout <<A.alpha_bar <<endl;
 
   NLP_Walker walk(nlp, A.alpha_bar(-1));
-  walk.eps = .1;
-  walk.alpha = 1.;
-  walk.maxStep = .5;
 
   arr data;
   for(;data.d0<K;){
-    arr x = nlp.bounds_lo + rand(nlp.getDimension()) % (nlp.bounds_up - nlp.bounds_lo);
-    walk.initialize(x);
+    walk.initialize(nlp.getUniformSample());
 
     for(uint t=20;t--;){
       walk.set_alpha_bar(A.alpha_bar(t));
@@ -369,6 +350,7 @@ arr sample_denoise_direct(NLP& nlp, uint K, int verbose){
     }
 
     bool good=false;
+    walk.set_alpha_bar(1.);
     for(uint t=0;t<10;t++){
       walk.step_slack();
 //      if(walk.ev.err<=.01)
@@ -393,14 +375,11 @@ arr sample_denoise_direct(NLP& nlp, uint K, int verbose){
 
 arr sample_greedy(NLP& nlp, uint K, int verbose, double alpha_bar){
   NLP_Walker walk(nlp, alpha_bar);
-  walk.alpha = 1.;
-  walk.maxStep = 10.;
 
   arr data;
 
   for(;data.d0<K;){
-    arr x = nlp.bounds_lo + rand(nlp.getDimension()) % (nlp.bounds_up - nlp.bounds_lo);
-    walk.initialize(x);
+    walk.initialize(nlp.getUniformSample());
 
     bool good = false;
     uint t=0;
@@ -409,7 +388,6 @@ arr sample_greedy(NLP& nlp, uint K, int verbose, double alpha_bar){
         nlp.report(cout, 2+verbose, STRING("sample_greedy data: " <<data.d0 <<" iters: " <<t <<" good: " <<good));
       }
       walk.step_slack();
-//      walk.step_delta();
       if(!walk.sig && walk.ev.err<=.01){ good=true; break; }
     }
     if(walk.sig) good=true;
@@ -441,11 +419,11 @@ arr sample_denoise(NLP& nlp, uint K, int verbose){
   arr data;
 
   for(;data.d0<K;){
-    arr x = nlp.bounds_lo + rand(nlp.getDimension()) % (nlp.bounds_up - nlp.bounds_lo);
+    arr x = nlp.getUniformSample();
     arr trace = x;
     trace.append(x);
     walk.initialize(x);
-    walk.x = nlp.bounds_lo + rand(nlp.getDimension()) % (nlp.bounds_up - nlp.bounds_lo);
+    walk.x = nlp.getUniformSample();
 
     for(int t=A.alpha_bar.N-1;t>0;t--){
       //get the alpha
@@ -482,7 +460,7 @@ arr sample_denoise(NLP& nlp, uint K, int verbose){
 
     if(good){
       for(uint t=0;t<10;t++){
-        walk.step_delta();
+        walk.step_slack();
         if(walk.ev.err<=.01) break;
       }
       if(walk.ev.err>.01) good=false;

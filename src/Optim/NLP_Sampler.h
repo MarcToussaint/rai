@@ -8,11 +8,21 @@
 
 #pragma once
 
-#include <Optim/NLP.h>
+#include "../Optim/NLP.h"
+#include "../Core/util.h"
 
 //===========================================================================
 
+struct NLP_Sampler_Options {
+  RAI_PARAM("sam/", double, eps, .05)
+  RAI_PARAM("sam/", double, alpha, 1.)
+  RAI_PARAM("sam/", double, maxStep, .5)
+  RAI_PARAM("sam/", bool, useCentering, true)
+};
+
 struct NLP_Walker{
+  NLP_Sampler_Options opt;
+
   NLP& nlp;
 
   //evaluation data
@@ -30,11 +40,6 @@ struct NLP_Walker{
   } ev;
 
   //h-threshold
-  double eps = .05;
-
-  //slack step rate
-  double alpha = .1;
-  double maxStep = .5;
 
   double a, sig;
 
@@ -48,9 +53,9 @@ struct NLP_Walker{
 
   void set_alpha_bar(double alpha_bar);
   void initialize(const arr& _x){ x=_x; ev.phi.clear(); ev.x.clear(); }
+  void ensure_eval(){ ev.eval(x, *this); }
 
   bool step();
-  bool step_delta();
   bool step_slack();
   bool step_hit_and_run(double maxStep);
 
