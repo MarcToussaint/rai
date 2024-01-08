@@ -243,7 +243,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   if(verbose>0) self->updateDisplayData(time, C);
 
-  if(verbose>3){
+  if(engine==_physx && verbose>3){
     if(!self->glDebug){
       self->glDebug = make_shared<OpenGL>("physx sim DEBUG", 500, 300);
       self->glDebug->camera.setDefault();

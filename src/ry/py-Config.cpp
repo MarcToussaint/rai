@@ -80,20 +80,22 @@ void init_Config(pybind11::module& m) {
     pybind11::arg("tau")=1.
   )
 
-  .def("getFrame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName) {
-    rai::Frame *f = self->getFrame(frameName.c_str(), true);
+  .def("getFrame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName, bool warnIfNotExist) {
+    rai::Frame *f = self->getFrame(frameName.c_str(), warnIfNotExist);
     return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
   },
   "get access to a frame by name; use the Frame methods to set/get frame properties",
-  pybind11::arg("frameName")
+  pybind11::arg("frameName"),
+  pybind11::arg("warnIfNotExist")=true
       )
 
-  .def("frame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName) {
-    rai::Frame *f = self->getFrame(frameName.c_str(), true);
+  .def("frame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName, bool warnIfNotExist) {
+    rai::Frame *f = self->getFrame(frameName.c_str(), warnIfNotExist);
     return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
   },
   "get access to a frame by name; use the Frame methods to set/get frame properties",
-  pybind11::arg("frameName")
+  pybind11::arg("frameName"),
+  pybind11::arg("warnIfNotExist")=true
       )
 
   .def("frames", [](shared_ptr<rai::Configuration>& self) {
@@ -327,6 +329,10 @@ To get really precise distances and penetrations use the FS.distance feature wit
 
   .def("view_close", &rai::Configuration::view_close,
   "close the view")
+
+  .def("view_raise", [](shared_ptr<rai::Configuration>& self){
+		       self->viewer()->raiseWindow();
+  }, "raise the view")
 
   .def("view_pose", [](shared_ptr<rai::Configuration>& self){
     rai::Camera& cam = self->viewer()->displayCamera();

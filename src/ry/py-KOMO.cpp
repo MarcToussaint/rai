@@ -50,8 +50,8 @@ void init_KOMO(pybind11::module& m) {
 
     .def("clearObjectives", &KOMO::clearObjectives)
 
-    .def("addObjective", [](std::shared_ptr<KOMO>& self, const arr& times, const FeatureSymbol& feature, const std::vector<std::string>& frames, const ObjectiveType& type, const arr& scale, const arr& target, int order) {
-      self->addObjective(times, feature, strvec2StringA(frames), type, scale, target, order);
+    .def("addObjective", [](std::shared_ptr<KOMO>& self, const arr& times, const FeatureSymbol& feature, const StringA& frames, const ObjectiveType& type, const arr& scale, const arr& target, int order) {
+      self->addObjective(times, feature, frames, type, scale, target, order);
     }, "central method to define objectives in the KOMO NLP:"
        "\n* times: the time intervals (subset of configurations in a path) over which this feature is active (irrelevant for IK)"
   "\n* feature: the feature symbol (see advanced `Feature` tutorial)"
@@ -61,7 +61,7 @@ void init_KOMO(pybind11::module& m) {
   "\n* target: the offset which is substracted from the feature (before scaling)",
       pybind11::arg("times"),
       pybind11::arg("feature"),
-      pybind11::arg("frames")=std::vector<std::string>(),
+      pybind11::arg("frames"),
       pybind11::arg("type"),
       pybind11::arg("scale")=arr(),
       pybind11::arg("target")=arr(),
@@ -121,6 +121,10 @@ void init_KOMO(pybind11::module& m) {
       })
 
     .def("report", &KOMO::report,
+//         [](std::shared_ptr<KOMO>& self, bool specs, bool listObjectives, bool plotOverTime) {
+//          rai::Graph G = self->report(specs, listObjectives, plotOverTime);
+//          return graph2dict(G);
+//        },
       "returns a dict with full list of features, optionally also on problem specs and plotting costs/violations over time",
       pybind11::arg("specs") = false,
       pybind11::arg("listObjectives") = true,
@@ -132,7 +136,7 @@ void init_KOMO(pybind11::module& m) {
 
     .def("reportProblem", [](std::shared_ptr<KOMO>& self) {
         rai::String str;
-	self->reportProblem(str);
+        str <<self->report(true, false);
 	return pybind11::str(str.p, str.N);
       })
 
