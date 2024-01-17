@@ -126,6 +126,7 @@ struct Configuration : GLDrawer {
   arr getJointState(const FrameL& F) const { return getDofState(getDofs(F, true, true)); }
   arr getJointState(const uintA& F) const { return getJointState(getFrames(F)); } ///< same as getJointState() with getFrames()
   arr getJointStateSlice(uint t, bool activesOnly=true){  return getJointState(getJointsSlice(t, activesOnly));  }
+  arr getDofHomeState(const DofL& dofs) const;
   arr getFrameState() const { return getFrameState(frames); } ///< same as getFrameState() for all \ref frames
   arr getFrameState(const FrameL& F) const;
   arr getFrameState(const uintA& F) const { return getFrameState(getFrames(F)); } ///< same as getFrameState() with getFrames()

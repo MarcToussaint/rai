@@ -798,11 +798,11 @@ void KOMO::setIKOpt() {
 }
 
 void KOMO::setConfiguration_qAll(int t, const arr& q) {
-  pathConfig.setDofState(q, pathConfig.getDofs(timeSlices[k_order+t], true, true));
+  pathConfig.setDofState(q, pathConfig.getDofs(timeSlices[k_order+t], true, false));
 }
 
 arr KOMO::getConfiguration_qAll(int t) {
-  return pathConfig.getDofState(pathConfig.getDofs(timeSlices[k_order+t], true, true));
+  return pathConfig.getDofState(pathConfig.getDofs(timeSlices[k_order+t], true, false));
 }
 
 void KOMO::setConfiguration_X(int t, const arr& X) {
@@ -857,11 +857,11 @@ void KOMO::getConfiguration_full(Configuration& C, int t, int verbose){
 }
 
 arr KOMO::getConfiguration_qOrg(int t) {
-  return pathConfig.getDofState(pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t,0)->ID), true, true));
+  return pathConfig.getDofState(pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t,0)->ID), true, false));
 }
 
 void KOMO::setConfiguration_qOrg(int t, const arr& q) {
-  pathConfig.setDofState(q, pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t,0)->ID), true, true));
+  pathConfig.setDofState(q, pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t,0)->ID), true, false));
 }
 
 
@@ -976,9 +976,9 @@ void KOMO::initPhaseWithDofsPath(uint t_phase, const uintA& dofIDs, const arr& p
   }
 }
 
-uintA KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, bool interpolate, int verbose) {
+uintA KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, bool interpolate, double qHomeInterpolate, int verbose) {
 
-  //compute in which steps (configuration time slices) the waypoints are imposed
+  //-- compute in which steps (configuration time slices) the waypoints are imposed
   uintA steps(waypoints.N);
   for(uint i=0; i<steps.N; i++) {
     steps(i) = conv_time2step(conv_step2time(i, waypointStepsPerPhase), stepsPerPhase);
@@ -988,7 +988,7 @@ uintA KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase,
     view(true, STRING("initWithWaypoints - before"));
   }
 
-  //set the path piece-wise CONSTANT at waypoints and the subsequent steps (each waypoint may have different dimension!...)
+  //-- set the path piece-wise CONSTANT at waypoints and the subsequent steps (each waypoint may have different dimension!...)
   if(!opt.mimicStable){ //depends on sw->isStable -> mimic !!
     for(uint i=0; i<steps.N; i++) {
       uint Tstop=T;
@@ -1025,78 +1025,80 @@ uintA KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase,
     view(true, STRING("initWithWaypoints - after keyframes->constant"));
   }
 
-  if(!interpolate){
-    run_prepare(0.);
-    return steps;
-  }
 
-  //then interpolate w.r.t. non-switching frames within the intervals
+  //-- interpolate w.r.t. non-switching frames within the intervals
+  if(interpolate){
 #if 1
-  auto F = getCtrlFramesAndScale(world);
-  //F.frames.reshape(1,-1,2); F_qItself qfeat;
-  arr signs;
-  DofL dofs;
-  for(uint i=0; i<steps.N; i++) {
-    uint t0=0; if(i) t0 = steps(i-1);
-    uint t1=steps(i);
+    auto F = getCtrlFramesAndScale(world);
+    arr qHome = world.getDofHomeState(world.activeDofs);
+    //F.frames.reshape(1,-1,2); F_qItself qfeat;
+    arr signs;
+    DofL dofs;
+    for(uint i=0; i<steps.N; i++) {
+      uint t0=0; if(i) t0 = steps(i-1);
+      uint t1=steps(i);
 
-    //interpolate the controlled DOFs, using qItself to also use the pair-wise joint indexing for flipped joints (walker case)
+      //interpolate the controlled DOFs, using qItself to also use the pair-wise joint indexing for flipped joints (walker case)
 #if 0
-    if(t1-1<T) {
-      uintA nonSwitched = getNonSwitchedFrames(timeSlices[k_order+t0], timeSlices[k_order+t1]);
-      arr q0 = pathConfig.getJointState(timeSlices[k_order+t0].sub(nonSwitched));
-      arr q1 = pathConfig.getJointState(timeSlices[k_order+t1].sub(nonSwitched));
-      for(uint t=t0+1; t<t1; t++) {
-        double phase = double(t-t0)/double(t1-t0);
-        arr q = q0 + (.5*(1.-cos(RAI_PI*phase))) * (q1-q0); //p = p0 + phase * (p1-p0);
-        pathConfig.setJointState(q, timeSlices[k_order+t].sub(nonSwitched));
-        //view(true, STRING("interpolating: step:" <<i <<" t: " <<j));
-      }
-    }
-#else
-    if(t1-1<T) {
-      getDofsAndSignFromFramePairs(dofs, signs, pathConfig.getFrames(F.frames + timeSlices(k_order+t0,0)->ID));
-      arr q0 = signs%pathConfig.getDofState(dofs);
-      getDofsAndSignFromFramePairs(dofs, signs, pathConfig.getFrames(F.frames + timeSlices(k_order+t1,0)->ID));
-      arr q1 = signs%pathConfig.getDofState(dofs);
-      //TODO: check if all dofs are rotational joints!
-      makeMod2Pi(q0, q1);
-      pathConfig.setDofState(signs%q1, dofs);
-//      arr q0 = qfeat.eval(pathConfig.getFrames(F.frames + timeSlices(k_order+t0,0)->ID));  q0.J_reset();
-//      arr q1 = qfeat.eval(pathConfig.getFrames(F.frames + timeSlices(k_order+t1,0)->ID));  q1.J_reset();
-      for(uint t=t0+1; t<t1; t++) {
-        double phase = double(t-t0)/double(t1-t0);
-        arr q = q0 + (.5*(1.-cos(RAI_PI*phase))) * (q1-q0); //p = p0 + phase * (p1-p0);
-        getDofsAndSignFromFramePairs(dofs, signs, pathConfig.getFrames(F.frames + timeSlices(k_order+t,0)->ID));
-        pathConfig.setDofState(signs%q, dofs);
-//        setQByPairs(pathConfig, pathConfig.getFrames(F.frames + timeSlices(k_order+t,0)->ID), q);
-        //view(true, STRING("interpolating: step:" <<i <<" t: " <<t));
-      }
-    }
-#endif
-
-    //motion profile for switched object positions
-#if 0 //that doesn't work for walking!!
-    if(t1-1<T) {
-      uintA switched = getSwitchedFrames(timeSlices[k_order+t0], timeSlices[k_order+t1]);
-      for(uint k:switched){
-        if(timeSlices(k_order+t0,k)->joint && timeSlices(k_order+t0,k)->joint->isStable) continue; //don't interpolate stable joints
-        arr p0 = timeSlices(k_order+t0,k)->getPosition();
-        arr p1 = timeSlices(k_order+t1,k)->getPosition();
+      if(t1-1<T) {
+        uintA nonSwitched = getNonSwitchedFrames(timeSlices[k_order+t0], timeSlices[k_order+t1]);
+        arr q0 = pathConfig.getJointState(timeSlices[k_order+t0].sub(nonSwitched));
+        arr q1 = pathConfig.getJointState(timeSlices[k_order+t1].sub(nonSwitched));
         for(uint t=t0+1; t<t1; t++) {
           double phase = double(t-t0)/double(t1-t0);
-          arr p = p0 + (.5*(1.-cos(RAI_PI*phase))) * (p1-p0); //p = p0 + phase * (p1-p0);
-          timeSlices(k_order+t, k)->setPosition(p);
+          arr q = q0 + (.5*(1.-cos(RAI_PI*phase))) * (q1-q0); //p = p0 + phase * (p1-p0);
+          pathConfig.setJointState(q, timeSlices[k_order+t].sub(nonSwitched));
           //view(true, STRING("interpolating: step:" <<i <<" t: " <<j));
         }
       }
-    }
-#endif
-  }
+#else
+      if(t1-1<T) {
+        getDofsAndSignFromFramePairs(dofs, signs, pathConfig.getFrames(F.frames + timeSlices(k_order+t0,0)->ID));
+        arr q0 = signs%pathConfig.getDofState(dofs);
+        getDofsAndSignFromFramePairs(dofs, signs, pathConfig.getFrames(F.frames + timeSlices(k_order+t1,0)->ID));
+        arr q1 = signs%pathConfig.getDofState(dofs);
+        //TODO: check if all dofs are rotational joints!
+        makeMod2Pi(q0, q1);
+        pathConfig.setDofState(signs%q1, dofs);
+        //      arr q0 = qfeat.eval(pathConfig.getFrames(F.frames + timeSlices(k_order+t0,0)->ID));  q0.J_reset();
+        //      arr q1 = qfeat.eval(pathConfig.getFrames(F.frames + timeSlices(k_order+t1,0)->ID));  q1.J_reset();
+        for(uint t=t0+1; t<t1; t++) {
+          double phase = double(t-t0)/double(t1-t0);
+          arr q = q0 + (.5*(1.-cos(RAI_PI*phase))) * (q1-q0); //p = p0 + phase * (p1-p0);
+          if(qHomeInterpolate>0.){ //also interpolate to qHome
+            q += qHomeInterpolate*sin(RAI_PI*phase)*(qHome-q);
+          }
+          getDofsAndSignFromFramePairs(dofs, signs, pathConfig.getFrames(F.frames + timeSlices(k_order+t,0)->ID));
+          pathConfig.setDofState(signs%q, dofs);
+          //        setQByPairs(pathConfig, pathConfig.getFrames(F.frames + timeSlices(k_order+t,0)->ID), q);
+          //view(true, STRING("interpolating: step:" <<i <<" t: " <<t));
+        }
+      }
 #endif
 
-  if(verbose>0){
-    view(true, STRING("initWithWaypoints - done"));
+      //motion profile for switched object positions
+#if 0 //that doesn't work for walking!!
+      if(t1-1<T) {
+        uintA switched = getSwitchedFrames(timeSlices[k_order+t0], timeSlices[k_order+t1]);
+        for(uint k:switched){
+          if(timeSlices(k_order+t0,k)->joint && timeSlices(k_order+t0,k)->joint->isStable) continue; //don't interpolate stable joints
+          arr p0 = timeSlices(k_order+t0,k)->getPosition();
+          arr p1 = timeSlices(k_order+t1,k)->getPosition();
+          for(uint t=t0+1; t<t1; t++) {
+            double phase = double(t-t0)/double(t1-t0);
+            arr p = p0 + (.5*(1.-cos(RAI_PI*phase))) * (p1-p0); //p = p0 + phase * (p1-p0);
+            timeSlices(k_order+t, k)->setPosition(p);
+            //view(true, STRING("interpolating: step:" <<i <<" t: " <<j));
+          }
+        }
+      }
+#endif
+    }
+#endif
+
+    if(verbose>0){
+      view(true, STRING("initWithWaypoints - done"));
+    }
   }
 
   run_prepare(0.);

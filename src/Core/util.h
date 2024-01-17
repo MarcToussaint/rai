@@ -221,6 +221,7 @@ inline String operator+(const String& a, const char* b) { String s=a; s <<b; ret
 
 } //namespace
 
+typedef rai::String str;
 
 void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 

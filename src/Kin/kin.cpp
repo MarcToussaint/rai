@@ -609,6 +609,24 @@ arr Configuration::getDofState(const DofL& dofs) const {
   return x;
 }
 
+arr Configuration::getDofHomeState(const DofL& dofs) const {
+  ((Configuration*)this)->ensure_indexedJoints();
+
+  uint n=0;
+  for(Dof* dof: dofs) if(!dof->mimic) n += dof->dim;
+
+  arr x(n);
+  n=0;
+  for(Dof *dof:dofs) {
+    if(!dof->mimic){
+      for(uint ii=0; ii<dof->dim; ii++) x(n+ii) = dof->q0.elem(ii);
+      n += dof->dim;
+    }
+  }
+  CHECK_EQ(n, x.N, "");
+  return x;
+}
+
 /// get the (F.N,7)-matrix of all poses for all given frames
 arr Configuration::getFrameState(const FrameL& F) const {
   arr X(F.N, 7);
