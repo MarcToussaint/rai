@@ -45,6 +45,8 @@ pybind11::dict graph2dict(const rai::Graph& G) {
       dict[key.p] = Array2vec(n->as<uintA>());
     } else if(n->is<boolA>()) {
       dict[key.p] = Array2vec(n->as<boolA>());
+    } else if(n->is<StringA>()) {
+      dict[key.p] = StringA2list(n->as<StringA>());
     } else if(n->is<rai::Enum<rai::ShapeType>>()) {
       dict[key.p] = n->as<rai::Enum<rai::ShapeType>>().name();
     } else if(n->is<rai::Enum<rai::JointType>>()) {

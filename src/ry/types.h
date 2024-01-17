@@ -155,9 +155,8 @@ inline rai::Graph map2Graph(const std::map<std::string, std::string>& x) {
 namespace pybind11 {
 namespace detail {
 
-  //** String <--> std::string
+  //== String -- std::string
   template <> struct type_caster<rai::String> {
-  public:
     PYBIND11_TYPE_CASTER(rai::String, _("rai::String"));
 
     bool load(pybind11::handle src, bool) {
@@ -170,68 +169,53 @@ namespace detail {
     }
   };
 
-  //** StringA <--> vector<std::string>
+  //== StringA -- list<std::string>
   template <> struct type_caster<StringA> {
-  public:
     PYBIND11_TYPE_CASTER(StringA, _("StringA"));
 
-    /// Python->C++
     bool load(pybind11::handle src, bool) {
       value = strvec2StringA( src.cast<std::vector<std::string>>() );
       return !PyErr_Occurred();
     }
 
-    /// C++ -> Python
-    static handle cast(const StringA& src, return_value_policy /* policy */, handle /* parent */) {
-      //LOG(0) <<"return " <<rai::niceTypeidName(typeid(src));
+    static handle cast(const StringA& src, return_value_policy, handle) {
       return StringA2list(src).release();
     }
   };
 
-  //** arrA <--> vector<numpy>
+  //== arrA <--> list<numpy>
   template <> struct type_caster<arrA> {
-  public:
     PYBIND11_TYPE_CASTER(arrA, _("arrA"));
 
-    /// Python->C++
     bool load(pybind11::handle src, bool) {
       value = npvec2arrA( src.cast<std::vector<pybind11::array_t<double>>>() );
       return !PyErr_Occurred();
     }
 
-    /// C++ -> Python
-    static handle cast(const arrA& src, return_value_policy /* policy */, handle /* parent */) {
-      //LOG(0) <<"return " <<rai::niceTypeidName(typeid(src));
+    static handle cast(const arrA& src, return_value_policy, handle) {
       return arrA2nplist(src).release();
     }
   };
 
-  //** arr <--> numpy
+  //== arr -- numpy
   template <> struct type_caster<arr> {
-  public:
     PYBIND11_TYPE_CASTER(arr, _("arr"));
 
-    /// Conversion part 1 (Python->C++): convert numpy array to rai::Array<T>
     bool load(pybind11::handle src, bool) {
       auto buf = pybind11::array_t<double>::ensure(src);
-      if(!buf) {
-        //LOG(-1) <<"THIS IS NOT A NUMPY ARRAY!";
-        return false;
-      }
+      if(!buf) return false;
       value = numpy2arr<double>(buf);
       return !PyErr_Occurred();
     }
 
-    /// Conversion part 2 (C++ -> Python): convert rai::Array<T> instance to numpy array
-    static handle cast(const arr& src, return_value_policy /* policy */, handle /* parent */) {
+    static handle cast(const arr& src, return_value_policy, handle) {
       pybind11::array_t<double> ret = arr2numpy(src);
       return ret.release();
     }
   };
 
-  //** uintA <--> numpy
+  //== uintA -- numpy
   template <> struct type_caster<uintA> {
-  public:
     PYBIND11_TYPE_CASTER(uintA, _("uintA"));
 
     bool load(pybind11::handle src, bool) {
@@ -241,33 +225,40 @@ namespace detail {
       return !PyErr_Occurred();
     }
 
-    static handle cast(const uintA& src, return_value_policy /* policy */, handle /* parent */) {
+    static handle cast(const uintA& src, return_value_policy, handle) {
       pybind11::array_t<uint> ret = Array2numpy<uint>(src);
       return ret.release();
     }
   };
 
-  //vector<T> <--> Array<T>
+  //== Array<T> -- numpy<T>
   template <class T> struct type_caster<rai::Array<T>> {
-  public:
     PYBIND11_TYPE_CASTER(rai::Array<T>, _("Array<T>"));
 
-    /// Python -> C++
     bool load(pybind11::handle src, bool) {
       auto buf = pybind11::array_t<T>::ensure(src);
       if(!buf) return false;
       value = numpy2arr<T>(buf);
       return !PyErr_Occurred();
-//      value = vec2Array<T>( src.cast<std::vector<T>>() );
-//      return !PyErr_Occurred();
     }
 
-    /// C++ -> Python
-    static handle cast(const rai::Array<T>& src, return_value_policy /* policy */, handle /* parent */) {
+    static handle cast(const rai::Array<T>& src, return_value_policy, handle) {
       pybind11::array_t<T> ret = Array2numpy<T>(src);
       return ret.release();
-//      std::vector<T> x = Array2vec<T>(src);
-//      return pybind11::cast(x).release();
+    }
+  };
+
+  //== rai::Graph -- pybind11::dict
+  template <> struct type_caster<rai::Graph> {
+    PYBIND11_TYPE_CASTER(rai::Graph, _("rai::Graph"));
+
+    bool load(pybind11::handle src, bool) {
+      value = dict2graph(src.cast<pybind11::dict>());
+      return !PyErr_Occurred();
+    }
+
+    static handle cast(const rai::Graph& G, return_value_policy, handle) {
+      return graph2dict(G).release();
     }
   };
 

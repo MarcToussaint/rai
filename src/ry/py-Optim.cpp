@@ -134,6 +134,7 @@ void init_Optim(pybind11::module& m) {
     MEMBER(double, muMax, 1e4)
     MEMBER(double, muLBInit, .1)
     MEMBER(double, muLBDec, .2)
+    MEMBER(double, maxLambda, -1.)
     #undef MEMBER
 
       .def("dict", [](std::shared_ptr<rai::OptOptions>& self) {
@@ -154,6 +155,7 @@ void init_Optim(pybind11::module& m) {
                     MEMBER(double, muMax, 1e4)
                     MEMBER(double, muLBInit, .1)
                     MEMBER(double, muLBDec, .2)
+                    MEMBER(double, maxLambda, -1.)
                     #undef MEMBER
                           });
 
@@ -205,6 +207,7 @@ void init_Optim(pybind11::module& m) {
          MEMBER(double, muMax, 1e4)
          MEMBER(double, muLBInit, .1)
          MEMBER(double, muLBDec, .2)
+         MEMBER(double, maxLambda, -1.)
          #undef MEMBER
            ){
     self->opt
@@ -224,6 +227,7 @@ void init_Optim(pybind11::module& m) {
     MEMBER(double, muMax, 1e4)
     MEMBER(double, muLBInit, .1)
     MEMBER(double, muLBDec, .2)
+    MEMBER(double, maxLambda, -1.)
     #undef MEMBER
         ;
         return self;
@@ -244,6 +248,7 @@ void init_Optim(pybind11::module& m) {
     MEMBER(double, muMax, 1e4)
     MEMBER(double, muLBInit, .1)
     MEMBER(double, muLBDec, .2)
+    MEMBER(double, maxLambda, -1.)
     #undef MEMBER
     )
 
