@@ -796,9 +796,9 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
         //allows the user to know that gripper grasps something
         S.grasps.append(gripper);
 
-        if(S.verbose>1) LOG(1) <<"terminating grasp of object " <<obj->name <<" - SUCCESS (distances d1:" <<d1 <<" d2:" <<d2 <<" oppose:" <<y <<")";
+        if(S.verbose>1) LOG(1) <<"terminating grasp of object " <<obj->name <<" - SUCCESS (distances d1:" <<d1 <<" d2:" <<d2 <<" oppose:" <<y.noJ() <<")";
       } else { //unsuccessful
-        if(S.verbose>1) LOG(1) <<"terminating grasp of object " <<obj->name <<" - FAILURE (distances d1:" <<d1 <<" d2:" <<d2 <<" oppose:" <<y <<")";
+        if(S.verbose>1) LOG(1) <<"terminating grasp of object " <<obj->name <<" - FAILURE (distances d1:" <<d1 <<" d2:" <<d2 <<" oppose:" <<y.noJ() <<")";
       }
       killMe = true;
     }

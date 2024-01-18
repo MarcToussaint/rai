@@ -49,6 +49,9 @@ struct Avoid{
 arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome,
                      const rai::Array<Avoid>& avoids={},
                      StringA endeffectors={}, bool endeffApproach=false, bool endeffRetract=false);
+arr getStartGoalPath_new(rai::Configuration& C, const arr& qTarget, const arr& qHome,
+                     const rai::Array<Avoid>& avoids={},
+                     StringA endeffectors={}, bool endeffApproach=false, bool endeffRetract=false);
 
 //-- PATH MODIFICATION
 

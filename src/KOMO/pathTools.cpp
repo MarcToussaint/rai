@@ -8,7 +8,7 @@
 
 #include "pathTools.h"
 #include "komo.h"
-
+#include "manipTools.h"
 #include "../Kin/F_collisions.h"
 
 arr getVelocities_centralDifference(const arr& q, double tau) {
@@ -43,7 +43,7 @@ double getMinDuration(const arr& q, double maxVel, double maxAcc) {
 
   v = getVelocities_centralDifference(q, tau);
   a = getAccelerations_centralDifference(q, tau);
-  cout <<absMax(v) <<' ' <<absMax(a) <<endl;
+  //cout <<absMax(v) <<' ' <<absMax(a) <<endl;
 
   return q.d0*tau;
 }
@@ -256,6 +256,25 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
   arr path = komo.getPath_qOrg();
 
   return path;
+}
+
+//===========================================================================
+
+arr getStartGoalPath_new(rai::Configuration& C, const arr& qTarget, const arr& qHome, const rai::Array<Avoid>& avoids, StringA endeffectors, bool endeffApproach, bool endeffRetract) {
+  auto info = STRING("end to end motion");
+  arr qStart = C.getJointState();
+  ManipulationModelling M(C, info, endeffectors);
+  M.setup_point_to_point_motion(qStart, qTarget);
+  for(auto& gripper:endeffectors){
+    if(endeffRetract) M.retract({.0, .2}, gripper);
+    if(endeffApproach) M.approach({.8, 1.}, gripper);
+  }
+  for(const Avoid& a:avoids){
+    M.komo->addObjective(a.times, FS_distance, a.frames, OT_ineq, {1e1}, {-a.dist});
+  }
+  M.solve();
+  cout <<"  " <<info <<" -- " <<*M.ret <<endl;
+  return M.path;
 }
 
 //===========================================================================

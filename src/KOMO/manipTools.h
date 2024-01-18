@@ -22,10 +22,10 @@ void addBoxPlaceObjectives(KOMO& komo, double time,
 
 
 struct ManipulationModelling{
-  rai::String info;
-  std::shared_ptr<KOMO> komo;
   rai::Configuration* C;
+  str info;
   StringA helpers;
+  std::shared_ptr<KOMO> komo;
   std::shared_ptr<SolverReturn> ret;
   arr path;
 
@@ -37,13 +37,13 @@ struct ManipulationModelling{
 
   void setup_point_to_point_motion(const arr& q0, const arr& q1, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool quaternion_norms=false);
 
-  void grasp_top_box(double time, const char* gripper, const char* obj, rai::String grasp_direction="xz");
+  void grasp_top_box(double time, const char* gripper, const char* obj, str grasp_direction="xz");
 
-  void grasp_box(double time, const char* gripper, const char* obj, const char* palm, rai::String grasp_direction="x", double margin=.02);
+  void grasp_box(double time, const char* gripper, const char* obj, const char* palm, str grasp_direction="x", double margin=.02);
 
   void grasp_cylinder(double time, const char* gripper, const char* obj, const char* palm, double margin=.02);
 
-  void place_box(double time, const char* obj, const char* table, const char* palm, rai::String place_direction="z", double margin=.02);
+  void place_box(double time, const char* obj, const char* table, const char* palm, str place_direction="z", double margin=.02);
 
   void no_collision(const arr& time_interval, const char* obj1, const char* obj2, double margin=.001);
 

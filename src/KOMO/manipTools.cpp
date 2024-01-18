@@ -211,7 +211,7 @@ void ManipulationModelling::setup_point_to_point_motion(const arr& q0, const arr
   komo->addObjective({1.}, FS_qItself, {}, OT_eq, {1e0}, q1);
 }
 
-void ManipulationModelling::grasp_top_box(double time, const char* gripper, const char* obj, rai::String grasp_direction){
+void ManipulationModelling::grasp_top_box(double time, const char* gripper, const char* obj, str grasp_direction){
   // grasp a box with a centered top grasp (axes fully aligned);
   rai::Array<FeatureSymbol> align;
   if (grasp_direction == "xz"){
@@ -239,23 +239,23 @@ void ManipulationModelling::grasp_top_box(double time, const char* gripper, cons
   komo->addObjective({time-.2,time}, align(2), {obj, gripper}, OT_eq, {1e0});
 }
 
-void ManipulationModelling::grasp_box(double time, const char* gripper, const char* obj, const char* palm, rai::String grasp_direction, double margin){
+void ManipulationModelling::grasp_box(double time, const char* gripper, const char* obj, const char* palm, str grasp_direction, double margin){
   // general grasp of a box, squeezing along provided grasp_axis (-> 3
   // possible grasps of a box), where and angle of grasp is decided by
   // inequalities on grasp plan and no-collision of box and palm
   arr xLine, yzPlane;
   rai::Array<FeatureSymbol> align;
   if (grasp_direction == "x"){
-    xLine = arr{{1,0,0}};
-    yzPlane = arr{{0,1,0},{0,0,1}};
+    xLine = arr{1,0,0};
+    yzPlane = arr{{2,3}, {0,1,0,0,0,1}};
     align = {FS_scalarProductXY, FS_scalarProductXZ};
   } else if(grasp_direction == "y"){
-    xLine = arr{{0,1,0}};
-    yzPlane = arr{{1,0,0},{0,0,1}};
+    xLine = arr{0,1,0};
+    yzPlane = arr{{2,3}, {1,0,0,0,0,1}};
     align = {FS_scalarProductXX, FS_scalarProductXZ};
   } else if(grasp_direction == "z"){
-    xLine = arr{{0,0,1}};
-    yzPlane = arr{{1,0,0},{0,1,0}};
+    xLine = arr{0,0,1};
+    yzPlane = arr{{2,3}, {1,0,0,0,1,0}};
     align = {FS_scalarProductXX, FS_scalarProductXY};
   } else{
     LOG(-2) <<"grasp_direction not defined:" <<grasp_direction;
@@ -283,9 +283,9 @@ void ManipulationModelling::grasp_cylinder(double time, const char* gripper, con
   arr size = C->getFrame(obj)->getSize();
 
   // position: center along axis, stay within z-range
-  komo->addObjective({time}, FS_positionRel, {gripper, obj}, OT_eq, arr{{1,0,0},{0,1,0}}*1e1);
-  komo->addObjective({time}, FS_positionRel, {gripper, obj}, OT_ineq, arr{{0,0,1}}*1e1, arr{0.,0.,.5*size(0)-margin});
-  komo->addObjective({time}, FS_positionRel, {gripper, obj}, OT_ineq, arr{{0,0,1}}*(-1e1), arr{0.,0.,-.5*size(0)+margin});
+  komo->addObjective({time}, FS_positionRel, {gripper, obj}, OT_eq, arr{{2,3}, {1,0,0,0,1,0}}*1e1);
+  komo->addObjective({time}, FS_positionRel, {gripper, obj}, OT_ineq, arr{0,0,1}*1e1, arr{0.,0.,.5*size(0)-margin});
+  komo->addObjective({time}, FS_positionRel, {gripper, obj}, OT_ineq, arr{0,0,1}*(-1e1), arr{0.,0.,-.5*size(0)+margin});
 
   // orientation: grasp axis orthoginal to target plane X-specific
   komo->addObjective({time-.2,time}, FS_scalarProductXZ, {gripper, obj}, OT_eq, {1e0});
@@ -294,7 +294,7 @@ void ManipulationModelling::grasp_cylinder(double time, const char* gripper, con
   komo->addObjective({time-.3,time}, FS_distance, {palm, obj}, OT_ineq, {1e1}, {-.001});
 }
 
-void ManipulationModelling::place_box(double time, const char* obj, const char* table, const char* palm, rai::String place_direction, double margin){
+void ManipulationModelling::place_box(double time, const char* obj, const char* table, const char* palm, str place_direction, double margin){
   // placement of one box on another
   arr zVectorTarget = arr{0.,0.,1.};
   arr boxSize = C->getFrame(obj)->getSize();  boxSize.resizeCopy(3);
@@ -407,21 +407,30 @@ void ManipulationModelling::approach(const arr& time_interval, const char* gripp
 }
 
 arr ManipulationModelling::solve(int verbose){
-  auto sol = NLP_Solver();
+  NLP_Solver sol;
   sol.setProblem(komo->nlp());
-  sol.opt.set_damping(1e-3). set_verbose(verbose). set_stopTolerance(1e-3). set_maxLambda(100.). set_stopEvals(200);
+  sol.opt.set_damping(1e-3). set_verbose(verbose-1). set_stopTolerance(1e-3). set_maxLambda(100.). set_stopEvals(200);
   ret = sol.solve();
-  path = komo->getPath_qOrg();
+  if(ret->feasible){
+    path = komo->getPath_qOrg();
+  }else{
+    path.clear();
+  }
   if(!ret->feasible){
     if(verbose>0){
       cout <<"  -- infeasible:" <<info <<"\n     " <<*ret <<endl;
+      if(verbose>1){
+        cout <<komo->report(false, true) <<endl;
+      }
       komo->view(true, STRING("failed: " <<info <<"\n" <<*ret));
     }
   }else{
     if(verbose>1){
       cout <<"  -- feasible:" <<info <<"\n     " <<*ret <<endl;
+      if(verbose>2){
+        komo->view(true, STRING("success: " <<info <<"\n" <<*ret));
+      }
     }
   }
-  if(ret->feasible) return path;
-  return {};
+  return path;
 }
