@@ -294,6 +294,7 @@ arr sample_restarts(NLP& nlp, uint K, int verbose, double alpha_bar){
 
   for(;data.d0<K;){
 //    arr x = nlp.getInitializationSample();
+    walk.set_alpha_bar(alpha_bar);
     walk.initialize(nlp.getUniformSample());
 
     bool good = false;
@@ -306,9 +307,9 @@ arr sample_restarts(NLP& nlp, uint K, int verbose, double alpha_bar){
 //      komo->pathConfig.setJointState(sam.x);
 //      komo->view(true, STRING(k <<' ' <<t <<' ' <<sam.err <<' ' <<good));
     }
-    if(walk.sig) good=true;
 
-    if(!good && !walk.sig){
+    if(walk.sig){
+      walk.set_alpha_bar(1.);
       for(uint t=0;t<10;t++){
         walk.step_slack();
         if(walk.ev.err<=.01){ good=true; break; }
@@ -343,8 +344,8 @@ arr sample_denoise_direct(NLP& nlp, uint K, int verbose){
 
     for(uint t=20;t--;){
       walk.set_alpha_bar(A.alpha_bar(t));
-      if(verbose>1){
-        nlp.report(cout, 2+verbose, STRING("sample_denoise_direct data: " <<data.d0 <<" iters: " <<t <<" err: " <<walk.ev.err));
+      if(verbose>2){
+        nlp.report(cout, 1+verbose, STRING("sample_denoise_direct data: " <<data.d0 <<" iters: " <<t <<" err: " <<walk.ev.err));
       }
       walk.step();
     }
@@ -353,8 +354,7 @@ arr sample_denoise_direct(NLP& nlp, uint K, int verbose){
     walk.set_alpha_bar(1.);
     for(uint t=0;t<10;t++){
       walk.step_slack();
-//      if(walk.ev.err<=.01)
-      { good=true; break; }
+      if(walk.ev.err<=.01){ good=true; break; }
     }
 
     if(good){
@@ -379,18 +379,26 @@ arr sample_greedy(NLP& nlp, uint K, int verbose, double alpha_bar){
   arr data;
 
   for(;data.d0<K;){
+    walk.set_alpha_bar(alpha_bar);
     walk.initialize(nlp.getUniformSample());
 
     bool good = false;
     uint t=0;
     for(;t<20;t++){
-      if(verbose>1){
-        nlp.report(cout, 2+verbose, STRING("sample_greedy data: " <<data.d0 <<" iters: " <<t <<" good: " <<good));
+      if(verbose>2){
+        nlp.report(cout, 1+verbose, STRING("sample_greedy data: " <<data.d0 <<" iters: " <<t <<" good: " <<good));
       }
       walk.step_slack();
       if(!walk.sig && walk.ev.err<=.01){ good=true; break; }
     }
-    if(walk.sig) good=true;
+
+    if(walk.sig){
+      walk.set_alpha_bar(1.);
+      for(uint t=0;t<10;t++){
+        walk.step_slack();
+        if(walk.ev.err<=.01){ good=true; break; }
+      }
+    }
 
     if(good){
       data.append(walk.x);
