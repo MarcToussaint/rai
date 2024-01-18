@@ -747,7 +747,9 @@ void Simulation::detach(rai::Frame* obj) {
   } else if(engine==_kinematic) {
   } else NIY;
 #else
-  self->physx->removeJoint(obj->joint);
+  if(engine==_physx) {
+    self->physx->removeJoint(obj->joint);
+  }
   obj->unLink();
 #endif
 }

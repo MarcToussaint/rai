@@ -462,6 +462,10 @@ void LagrangianProblem::aulaUpdate(const rai::OptOptions& opt, bool anyTimeVaria
   if(opt.muInc>0.){ mu *= opt.muInc; if(mu>opt.muMax) mu=opt.muMax; }
   if(opt.muLBDec>0. && muLB>1e-8) muLB *= opt.muLBDec;
 
+  if(opt.maxLambda>0.){
+    clip(lambda, -opt.maxLambda, opt.maxLambda);
+  }
+
   //-- recompute the Lagrangian with the new parameters (its current value, gradient & hessian)
   if(L_x || !!dL_x || !!HL_x) {
     double L = lagrangian(dL_x, HL_x, x); //reevaluate gradients and hessian (using buffered info)
