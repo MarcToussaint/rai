@@ -211,6 +211,12 @@ void ManipulationModelling::setup_point_to_point_motion(const arr& q0, const arr
   komo->addObjective({1.}, FS_qItself, {}, OT_eq, {1e0}, q1);
 }
 
+void ManipulationModelling::setup_point_to_point_rrt(const arr& q0, const arr& q1, const StringA& explicitCollisionPairs){
+  rrt = make_shared<rai::PathFinder>();
+  rrt->setProblem(*C, q0, q1);
+  if(explicitCollisionPairs.N) rrt->setExplicitCollisionPairs(explicitCollisionPairs);
+}
+
 void ManipulationModelling::grasp_top_box(double time, const char* gripper, const char* obj, str grasp_direction){
   // grasp a box with a centered top grasp (axes fully aligned);
   rai::Array<FeatureSymbol> align;
@@ -383,15 +389,6 @@ void ManipulationModelling::bias(double time, arr& qBias, double scale){
   komo->addObjective({time}, FS_qItself, {}, OT_sos, {scale}, qBias);
 }
 
-void ManipulationModelling::endeff_forward_motion(const arr& time_interval, const char* gripper, arr& q){
-  C->setJointState(q);
-  arr ori = C->getFrame(gripper)->getRotationMatrix();
-  arr x = ori({0,0});
-  arr yz = ori({1,2});
-  komo->addObjective(time_interval, FS_position, {gripper}, OT_eq, 1e2*x, {}, 1);
-  komo->addObjective(time_interval, FS_angularVel, {gripper}, OT_eq, 1e1*yz, {}, 1);
-}
-
 void ManipulationModelling::retract(const arr& time_interval, const char* gripper, double dist){
   auto helper = STRING("_" <<gripper <<"_start");
   komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1,0,0}});
@@ -407,30 +404,81 @@ void ManipulationModelling::approach(const arr& time_interval, const char* gripp
 }
 
 arr ManipulationModelling::solve(int verbose){
-  NLP_Solver sol;
-  sol.setProblem(komo->nlp());
-  sol.opt.set_damping(1e-3). set_verbose(verbose-1). set_stopTolerance(1e-3). set_maxLambda(100.). set_stopEvals(200);
-  ret = sol.solve();
-  if(ret->feasible){
-    path = komo->getPath_qOrg();
-  }else{
-    path.clear();
-  }
-  if(!ret->feasible){
-    if(verbose>0){
-      cout <<"  -- infeasible:" <<info <<"\n     " <<*ret <<endl;
-      if(verbose>1){
-        cout <<komo->report(false, true) <<endl;
-      }
-      komo->view(true, STRING("failed: " <<info <<"\n" <<*ret));
+  if(komo){
+    NLP_Solver sol;
+    sol.setProblem(komo->nlp());
+    sol.opt.set_damping(1e-3). set_verbose(verbose-1). set_stopTolerance(1e-3). set_maxLambda(100.). set_stopEvals(200);
+    ret = sol.solve();
+    if(ret->feasible){
+      path = komo->getPath_qOrg();
+    }else{
+      path.clear();
     }
-  }else{
-    if(verbose>1){
-      cout <<"  -- feasible:" <<info <<"\n     " <<*ret <<endl;
-      if(verbose>2){
-        komo->view(true, STRING("success: " <<info <<"\n" <<*ret));
+    if(!ret->feasible){
+      if(verbose>0){
+        cout <<"  -- infeasible:" <<info <<"\n     " <<*ret <<endl;
+        if(verbose>1){
+          cout <<komo->report(false, true) <<endl;
+        }
+        komo->view(true, STRING("failed: " <<info <<"\n" <<*ret));
+      }
+    }else{
+      if(verbose>0){
+        cout <<"  -- feasible:" <<info <<"\n     " <<*ret <<endl;
+        if(verbose>2){
+          komo->view(true, STRING("success: " <<info <<"\n" <<*ret));
+        }
       }
     }
+
+  }else if(rrt){
+    rrt->rrtSolver->verbose=verbose;
+    ret = rrt->solve();
+    if(ret->feasible) path = ret->x;
+    else path.clear();
+  }else{
+    NIY
   }
   return path;
+}
+
+void ManipulationModelling::getSubProblem(uint phase, rai::Configuration& C, arr& q0, arr& q1){
+  komo->getConfiguration_full(C, phase-1, 0);
+  if(!phase) C.selectJoints(DofL{}, true);
+  C.ensure_indexedJoints();
+  DofL acts = C.activeDofs;
+  for(rai::Dof *d:acts){
+    if(!d->joint() || d->isStable){
+      d->setActive(false);
+    }
+    if(d->frame->ats){
+      bool* activeKey = d->frame->ats->find<bool>("joint_active");
+      if(activeKey && !(*activeKey)) d->setActive(false);
+    }
+  }
+  q0 = C.getJointState();
+  //  FILE("z.g") <<C <<endl;  C.view(true, "JETZT!");
+  C.setFrameState(komo->getConfiguration_X(phase), C.frames({0,komo->world.frames.N-1}));
+  q1 = C.getJointState();
+  //  C.view(true);
+}
+
+std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_motion(uint phase, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool quaternion_norms){
+  rai::Configuration C;
+  arr q0, q1;
+  getSubProblem(phase, C, q0, q1);
+
+  std::shared_ptr<ManipulationModelling> manip = make_shared<ManipulationModelling>(C, STRING("sub_motion"<<phase<<"--"<<info), helpers);
+  manip->setup_point_to_point_motion(q0, q1, homing_scale, acceleration_scale, accumulated_collisions, quaternion_norms);
+  return manip;
+}
+
+std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_rrt(uint phase, const StringA& explicitCollisionPairs){
+  rai::Configuration C;
+  arr q0, q1;
+  getSubProblem(phase, C, q0, q1);
+
+  std::shared_ptr<ManipulationModelling> manip = make_shared<ManipulationModelling>(C, STRING("sub_rrt"<<phase<<"--"<<info), helpers);
+  manip->setup_point_to_point_rrt(q0, q1, explicitCollisionPairs);
+  return manip;
 }

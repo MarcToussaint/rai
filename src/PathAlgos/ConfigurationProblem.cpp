@@ -227,11 +227,17 @@ void QueryResult::write(std::ostream& os) const{
 
 void QueryResult::writeDetails(std::ostream& os, const ConfigurationProblem& P, double margin) const{
   write(os);
-  for(uint i=0;i<coll_y.N;i++){
-    if(coll_y.elem(i)<margin){
-      os <<"\ncoll " <<i <<':' <<collisions[i]
-           <<':' <<P.C.frames(collisions(i,0))->name <<'-' <<P.C.frames(collisions(i,1))->name
-          <<" y:" <<coll_y.elem(i) <<" normal:" <<normal_y[i];
+  if(!P.computeCollisionFeatures){
+    for(const rai::Proxy& p:P.C.proxies) if(p.d<=0.){
+      os <<"\nproxy: " <<p;
+    }
+  }else{
+    for(uint i=0;i<coll_y.N;i++){
+      if(coll_y.elem(i)<margin){
+        os <<"\ncoll " <<i <<':' <<collisions[i]
+             <<':' <<P.C.frames(collisions(i,0))->name <<'-' <<P.C.frames(collisions(i,1))->name
+            <<" y:" <<coll_y.elem(i) <<" normal:" <<normal_y[i];
+      }
     }
   }
   os <<std::endl;

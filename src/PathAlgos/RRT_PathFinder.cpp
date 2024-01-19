@@ -52,7 +52,7 @@ bool checkConnection(ConfigurationProblem& P,
 //===========================================================================
 
 RRT_SingleTree::RRT_SingleTree(const arr& q0, const shared_ptr<QueryResult>& q0_qr){
-  if(!q0_qr->isFeasible) LOG(0) <<"rooting RRT with infeasible start configuration -- that's likely to fail: query is:\n" <<*q0_qr;
+//  if(!q0_qr->isFeasible) LOG(0) <<"rooting RRT with infeasible start configuration -- that's likely to fail: query is:\n" <<*q0_qr;
   add(q0, 0, q0_qr);
 }
 
@@ -240,8 +240,8 @@ RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, con
   arr qT = _goals;
   auto q0ret = P.query(q0);
   auto qTret = P.query(qT);
-  if(!q0ret->isFeasible){ LOG(0) <<"initializing with infeasible q0"; q0ret->writeDetails(std::cout, P); }
-  if(!qTret->isFeasible){ LOG(0) <<"initializing with infeasible qT"; qTret->writeDetails(std::cout, P); }
+  if(!q0ret->isFeasible){ LOG(0) <<"initializing with infeasible q0:"; q0ret->writeDetails(std::cout, P); }
+  if(!qTret->isFeasible){ LOG(0) <<"initializing with infeasible qT:"; qTret->writeDetails(std::cout, P); }
   rrt0 = make_shared<RRT_SingleTree>(q0, q0ret);
   rrtT = make_shared<RRT_SingleTree>(qT, qTret);
 
@@ -328,13 +328,13 @@ int RRT_PathFinder::stepConnect(){
 
   if(success){
     if(verbose>0){
-      std::cout <<"\nSUCCESS!" <<std::endl;
-      std::cout <<"  RRT queries=" <<P.evals <<" tree sizes = " <<rrt0->getNumberNodes()  <<' ' <<rrtT->getNumberNodes() <<std::endl;
-      std::cout <<"  forwardSteps: " <<(100.*n_forwardStepGood/n_forwardStep) <<"%/" <<n_forwardStep;
-      std::cout <<"  backSteps: " <<(100.*n_backStepGood/n_backStep) <<"%/" <<n_backStep;
-      std::cout <<"  rndSteps: " <<(100.*n_rndStepGood/n_rndStep) <<"%/" <<n_rndStep;
-      std::cout <<"  sideSteps: " <<(100.*n_sideStepGood/n_sideStep) <<"%/" <<n_sideStep;
-      std::cout <<std::endl;
+      std::cout <<"  -- rrt success:";
+      std::cout <<" queries:" <<P.evals <<" tree sizes: " <<rrt0->getNumberNodes()  <<' ' <<rrtT->getNumberNodes() <<std::endl;
+//      std::cout <<"  forwardSteps: " <<(100.*n_forwardStepGood/n_forwardStep) <<"%/" <<n_forwardStep;
+//      std::cout <<"  backSteps: " <<(100.*n_backStepGood/n_backStep) <<"%/" <<n_backStep;
+//      std::cout <<"  rndSteps: " <<(100.*n_rndStepGood/n_rndStep) <<"%/" <<n_rndStep;
+//      std::cout <<"  sideSteps: " <<(100.*n_sideStepGood/n_sideStep) <<"%/" <<n_sideStep;
+//      std::cout <<std::endl;
     }
 
     path = rrt0->getPathFromNode(rrt0->nearestID);

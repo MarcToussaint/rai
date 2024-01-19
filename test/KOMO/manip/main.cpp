@@ -35,7 +35,7 @@ void testPickAndPlace(){
     auto info = STRING("placement " <<i <<": grasp " <<graspDirection <<" place " <<placeDirection <<" place_pos " <<place_position <<" place_ori " <<place_orientation);
     cout <<"===" <<info <<endl;
 
-    ManipulationModelling M1(C, info);
+    ManipulationModelling M1(C, info, {gripper});
     M1.setup_pick_and_place_waypoints(gripper, box);
     M1.grasp_top_box(1., gripper, box, graspDirection);
     M1.place_box(2., box, table, palm, placeDirection);
@@ -44,26 +44,28 @@ void testPickAndPlace(){
     M1.solve();
     if(!M1.ret->feasible) continue;
 
-    auto M2 = ManipulationModelling(C, info, {gripper});
-    M2.setup_point_to_point_motion(qStart, M1.path[0]);
-    //      auto M2 = M.sub_path(0);
-    M2.retract({.0, .2}, gripper);
-    M2.approach({.8, 1.}, gripper);
-    M2.solve();
-    if(!M2.ret->feasible) continue;
-    M2.play();
+    {
+      auto R1 = M1.sub_rrt(1);
+      R1->solve(1);
+      if(!R1->ret->feasible) continue;
+    }
 
-    C.attach(gripper, box);
+    auto M2 = M1.sub_motion(0);
+    M2->retract({.0, .2}, gripper);
+    M2->approach({.8, 1.}, gripper);
+    M2->solve();
+    if(!M2->ret->feasible) continue;
 
-    auto M3 = ManipulationModelling(C);
-    M3.setup_point_to_point_motion(M1.path[0], M1.path[1]);
-    M3.no_collision({}, table, box);
-    M3.no_collision({}, box, "obstacle");
+    auto M3 = M1.sub_motion(1);
+    M3->no_collision({}, table, box);
+    M3->no_collision({}, box, "obstacle");
     //M3.bias(.5, qHome, 1e0);
-    M3.solve();
-    if(!M3.ret->feasible) continue;
-    M3.play();
+    M3->solve();
+    if(!M3->ret->feasible) continue;
 
+    M2->play(C);
+    C.attach(gripper, box);
+    M3->play(C);
     C.attach(table, box);
   }
 }
