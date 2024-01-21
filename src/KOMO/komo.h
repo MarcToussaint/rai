@@ -218,7 +218,7 @@ public:
   void setupPathConfig();
   void checkBounds(const arr& x);
   void addStableFrame(rai::SkeletonSymbol newMode, const char* parent, const char* name, const char* toShape);
-  rai::Frame* addStableFrame(rai::JointType jointType, const char* parent, const char* name, const char* initFrame=0, const rai::Transformation& rel=0);
+  rai::Frame* addStableFrame(rai::JointType jointType, const char* parent, const char* name, const char* initFrame=0, rai::Transformation rel=0);
   rai::Frame* applySwitch(const rai::KinematicSwitch& sw);
   void retrospectApplySwitches();
   void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);

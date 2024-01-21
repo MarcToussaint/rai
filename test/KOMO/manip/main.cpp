@@ -72,12 +72,114 @@ void testPickAndPlace(){
 
 //===========================================================================
 
+void testPush(){
+  rai::Configuration C;
+  C.addFile("scene.g");
+
+  rai::Joint *j = C["l_panda_finger_joint1"]->joint;
+  j->setDofs(arr{.0});
+
+  auto gripper = "l_gripper";
+  auto palm = "l_palm";
+  auto obj = "box";
+  auto table = "table";
+  auto qHome = C.getJointState();
+
+
+  C[obj]->setRelativePosition({-.0,.3-.055,.095});
+  C[obj]->setRelativeQuaternion({1.,0,0,0});
+
+  for(uint i=0;i<7;i++){
+    arr qStart = C.getJointState();
+
+    str info = STRING("push");
+    ManipulationModelling manip(C, info);
+    manip.setup_pick_and_place_waypoints(gripper, obj);
+
+    //start frame
+    rai::Frame *f = manip.komo->addStableFrame(rai::JT_hingeZ, table, "push", obj);
+    f->setShape(rai::ST_marker, {.2});
+    f->setColor({1.,0., 1.});
+    f->joint->sampleSdv=1.;
+    f->joint->setRandom(manip.komo->timeSlices.d1, 2);
+
+    //end frame
+    rai::Frame *f2 = manip.komo->addStableFrame(rai::JT_transXYPhi, table, "end", obj);
+    f2->setShape(rai::ST_marker, {.2});
+    f2->setColor({1.,0., 1.});
+    f2->joint->sampleSdv=1.;
+    f2->joint->setRandom(manip.komo->timeSlices.d1, 2);
+
+    //couple both frames symmetricaly
+    //aligned orientation
+    manip.komo->addObjective({1.}, FS_vectorYDiff, {"push", "end"}, OT_eq, {1e1});
+
+    //aligned position
+    manip.komo->addObjective({1.}, FS_positionRel, {"end", "push"}, OT_eq, 1e1*arr{{2,3},{1.,0.,0.,0.,0.,1.}});
+    manip.komo->addObjective({1.}, FS_positionRel, {"push", "end"}, OT_eq, 1e1*arr{{2,3},{1.,0.,0.,0.,0.,1.}});
+
+    //at least 2cm appart, in positive!!! direction
+    manip.komo->addObjective({1.}, FS_positionRel, {"end", "push"}, OT_ineq, -1e2*arr{{1,3},{0.,1.,0.}}, {.0, .02, .0});
+    manip.komo->addObjective({1.}, FS_positionRel, {"push", "end"}, OT_ineq, 1e2*arr{{1,3},{0.,1.,0.}}, {.0, -.02, .0});
+
+
+    manip.komo->addObjective({2.}, FS_positionDiff, {obj, "end"}, OT_eq, {1e1});
+
+
+    //push orientation
+
+
+//    arr norm = diff;  norm /= length(norm);
+//    arr up = norm + arr{0.,0.,1.};     up /= length(up);
+//    arr side = crossProduct(diff, arr{0.,0.,1.});     side /= length(side);
+
+//    arr proj = eye(3) - (norm^norm);
+//    arr along = ~norm;
+
+
+    // touch
+    manip.komo->addObjective({1.}, FS_negDistance, {gripper, obj}, OT_eq, {1e1}, {-.02});
+
+    //push gripper pose
+    //position
+    manip.komo->addObjective({1.}, FS_positionRel, {gripper, "push"}, OT_eq, 1e1*arr{{2,3},{1.,0.,0.,0.,0.,1.}});
+    manip.komo->addObjective({1.}, FS_positionRel, {gripper, "push"}, OT_ineq, 1e1*arr{{1,3},{0.,1.,0.}}, {.0,-.02,.0});
+    //orientation
+    manip.komo->addObjective({1.}, FS_scalarProductYY, {gripper, "push"}, OT_ineq, {-1e1}, {.2});
+    manip.komo->addObjective({1.}, FS_scalarProductYZ, {gripper, "push"}, OT_ineq, {-1e1}, {.2});
+    manip.komo->addObjective({1.}, FS_vectorXDiff, {gripper, "push"}, OT_eq, {1e1});
+
+    // target: unchanged orientation
+    manip.komo->addObjective({2.}, FS_quaternion, {obj}, OT_eq, {1e1}, {}, 1); //qobjPose.rot.getArr4d());
+
+    // target position
+    arr diff = .4*rand(3) - .2;
+    diff(2) = 0.;
+    manip.komo->addObjective({2.}, FS_position, {obj}, OT_eq, {1e1}, diff, 1);
+
+
+//    manip.target_relative_xy_position(2., obj, table,  + arr{0., .3} );
+
+//    manip.komo->addObjective({time}, FS_positionRel, {obj, table}, OT_ineq, 1e1*arr{{2,3},{1,0,0,0,1,0}}, .5*tableSize-margin);
+//    manip.komo->addObjective({time}, FS_positionRel, {obj, table}, OT_ineq, -1e1*arr{{2,3},{1,0,0,0,1,0}}, -.5*tableSize+margin);
+
+    manip.solve(4);
+    if(!manip.ret->feasible) continue;
+
+//    manip.play(C);
+
+  }
+}
+
+//===========================================================================
+
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
   //  rnd.clockSeed();
 
-  testPickAndPlace();
+//  testPickAndPlace();
+  testPush();
 
   return 0;
 }

@@ -1600,10 +1600,18 @@ void KOMO::plotPhaseTrajectory() {
 
 //===========================================================================
 
-rai::Frame* KOMO::addStableFrame(JointType jointType, const char* parent, const char* name, const char* initFrame, const rai::Transformation& rel) {
-  //-- which slices?
+rai::Frame* KOMO::addStableFrame(JointType jointType, const char* parent, const char* name, const char* initFrame, rai::Transformation rel) {
 
   Frame* p0 = world[parent];
+
+  Frame *init = 0;
+  if(initFrame){
+    init = world[initFrame];
+    if(rel.isZero()){
+      rel = init->ensure_X()/p0->ensure_X();
+    }
+  }
+
   {
     Frame *f = world.addFrame(name);
     if(rel.isZero()){
@@ -1615,8 +1623,6 @@ rai::Frame* KOMO::addStableFrame(JointType jointType, const char* parent, const 
       f->setParent(r, false);
     }
   }
-  Frame *init = 0;
-  if(initFrame) init = world[initFrame];
 
   FrameL F, R;
   Frame *f0=0;

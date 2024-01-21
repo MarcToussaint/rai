@@ -421,12 +421,18 @@ arr ManipulationModelling::solve(int verbose){
           cout <<komo->report(false, true) <<endl;
         }
         komo->view(true, STRING("failed: " <<info <<"\n" <<*ret));
+        if(verbose>2){
+          while(komo->view_play(true, 1.));
+        }
       }
     }else{
       if(verbose>0){
         cout <<"  -- feasible:" <<info <<"\n     " <<*ret <<endl;
         if(verbose>2){
           komo->view(true, STRING("success: " <<info <<"\n" <<*ret));
+          if(verbose>3){
+            while(komo->view_play(true, 1.));
+          }
         }
       }
     }

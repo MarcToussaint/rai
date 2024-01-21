@@ -131,7 +131,7 @@ FclInterface::~FclInterface() {
 
 void FclInterface::step(const arr& X) {
   CHECK_EQ(X.nd, 2, "");
-  CHECK_EQ(X.d0, self->convexGeometryData.N, "");
+  CHECK_GE(X.d0, self->convexGeometryData.N, "");
   CHECK_EQ(X.d1, 7, "");
 
   for(auto* obj:self->objects) {
