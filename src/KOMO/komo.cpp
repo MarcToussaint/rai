@@ -1644,6 +1644,7 @@ rai::Frame* KOMO::addStableFrame(JointType jointType, const char* parent, const 
       f->setJoint(jointType);
       if(f0) f->joint->setMimic(f0->joint);
       else f0=f;
+      f->joint->isStable=true;
     }
     f->setShape(ST_marker, {.3});
     f->setColor({1.,0.,1., .5});

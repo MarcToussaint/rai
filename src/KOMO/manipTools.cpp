@@ -217,6 +217,14 @@ void ManipulationModelling::setup_point_to_point_rrt(const arr& q0, const arr& q
   if(explicitCollisionPairs.N) rrt->setExplicitCollisionPairs(explicitCollisionPairs);
 }
 
+void ManipulationModelling::add_helper_frame(rai::JointType type, const char* parent, const char* name, const char* initFrame){
+  rai::Frame *f = komo->addStableFrame(type, parent, name, initFrame);
+  f->setShape(rai::ST_marker, {.2});
+  f->setColor({1.,0., 1.});
+  f->joint->sampleSdv=1.;
+  f->joint->setRandom(komo->timeSlices.d1, 0);
+}
+
 void ManipulationModelling::grasp_top_box(double time, const char* gripper, const char* obj, str grasp_direction){
   // grasp a box with a centered top grasp (axes fully aligned);
   rai::Array<FeatureSymbol> align;
@@ -353,6 +361,37 @@ void ManipulationModelling::place_box(double time, const char* obj, const char* 
   komo->addObjective({time-.3,time}, FS_distance, {palm, table}, OT_ineq, {1e1}, {-.001});
 }
 
+void ManipulationModelling::straight_push(arr times, str obj, str gripper, str table){
+  //start & end helper frames
+  add_helper_frame(rai::JT_hingeZ, table, "_push_start", obj);
+  add_helper_frame(rai::JT_transXYPhi, table, "_push_end", obj);
+
+  //-- couple both frames symmetricaly
+  //aligned orientation
+  komo->addObjective({times(0)}, FS_vectorYDiff, {"_push_start", "_push_end"}, OT_eq, {1e1});
+  //aligned position
+  komo->addObjective({times(0)}, FS_positionRel, {"_push_end", "_push_start"}, OT_eq, 1e1*arr{{2,3},{1.,0.,0.,0.,0.,1.}});
+  komo->addObjective({times(0)}, FS_positionRel, {"_push_start", "_push_end"}, OT_eq, 1e1*arr{{2,3},{1.,0.,0.,0.,0.,1.}});
+  //at least 2cm appart, in positive!!! direction
+  komo->addObjective({times(0)}, FS_positionRel, {"_push_end", "_push_start"}, OT_ineq, -1e2*arr{{1,3},{0.,1.,0.}}, {.0, .02, .0});
+  komo->addObjective({times(0)}, FS_positionRel, {"_push_start", "_push_end"}, OT_ineq, 1e2*arr{{1,3},{0.,1.,0.}}, {.0, -.02, .0});
+
+  //gripper touch
+  komo->addObjective({times(0)}, FS_negDistance, {gripper, obj}, OT_eq, {1e1}, {-.02});
+  //gripper start position
+  komo->addObjective({times(0)}, FS_positionRel, {gripper, "_push_start"}, OT_eq, 1e1*arr{{2,3},{1.,0.,0.,0.,0.,1.}});
+  komo->addObjective({times(0)}, FS_positionRel, {gripper, "_push_start"}, OT_ineq, 1e1*arr{{1,3},{0.,1.,0.}}, {.0,-.02,.0});
+  //gripper start orientation
+  komo->addObjective({times(0)}, FS_scalarProductYY, {gripper, "_push_start"}, OT_ineq, {-1e1}, {.2});
+  komo->addObjective({times(0)}, FS_scalarProductYZ, {gripper, "_push_start"}, OT_ineq, {-1e1}, {.2});
+  komo->addObjective({times(0)}, FS_vectorXDiff, {gripper, "_push_start"}, OT_eq, {1e1});
+
+  //obj end position
+  komo->addObjective({times(1)}, FS_positionDiff, {obj, "_push_end"}, OT_eq, {1e1});
+  //obj end orientation: unchanged
+  komo->addObjective({times(1)}, FS_quaternion, {obj}, OT_eq, {1e1}, {}, 1); //qobjPose.rot.getArr4d());
+}
+
 void ManipulationModelling::no_collision(const arr& time_interval, const char* obj1, const char* obj2, double margin){
   // inequality on distance between two objects
   komo->addObjective(time_interval, FS_negDistance, {obj1, obj2}, OT_ineq, {1e1}, {-margin});
@@ -391,16 +430,35 @@ void ManipulationModelling::bias(double time, arr& qBias, double scale){
 
 void ManipulationModelling::retract(const arr& time_interval, const char* gripper, double dist){
   auto helper = STRING("_" <<gripper <<"_start");
-  komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1,0,0}});
+  komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1,3},{1,0,0}});
   komo->addObjective(time_interval, FS_quaternionDiff, {gripper, helper}, OT_eq, {1e2});
-  komo->addObjective({time_interval(1)}, FS_positionRel, {gripper, helper}, OT_ineq, -1e2 * arr{{0,0,1}}, {0., 0., dist});
+  komo->addObjective({time_interval(1)}, FS_positionRel, {gripper, helper}, OT_ineq, -1e2 * arr{{1,3},{0,0,1}}, {0., 0., dist});
 }
 
 void ManipulationModelling::approach(const arr& time_interval, const char* gripper, double dist){
   auto helper = STRING("_" <<gripper <<"_end");
-  komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1,0,0}});
+  komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1,3},{1,0,0}});
   komo->addObjective(time_interval, FS_quaternionDiff, {gripper, helper}, OT_eq, {1e2});
-  komo->addObjective({time_interval(0)}, FS_positionRel, {gripper, helper}, OT_ineq, -1e2 * arr{{0,0,1}}, {0., 0., dist});
+  komo->addObjective({time_interval(0)}, FS_positionRel, {gripper, helper}, OT_ineq, -1e2 * arr{{1,3},{0,0,1}}, {0., 0., dist});
+}
+
+void ManipulationModelling::retractPush(const arr& time_interval, const char* gripper, double dist){
+  auto helper = STRING("_" <<gripper <<"_start");
+//  komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1,3},{1,0,0}});
+//  komo->addObjective(time_interval, FS_quaternionDiff, {gripper, helper}, OT_eq, {1e2});
+  komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1,3},{1,0,0}});
+  komo->addObjective({time_interval(1)}, FS_positionRel, {gripper, helper}, OT_ineq, 1e2 * arr{{1,3},{0,1,0}}, {0., -dist, 0.});
+  komo->addObjective({time_interval(1)}, FS_positionRel, {gripper, helper}, OT_ineq, -1e2 * arr{{1,3},{0,0,1}}, {0., 0., dist});
+}
+
+void ManipulationModelling::approachPush(const arr& time_interval, const char* gripper, double dist, str _helper){
+//  if(!helper.N) helper = STRING("_push_start");
+//  komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{2,3},{1,0,0,0,0,1}});
+//  komo->addObjective({time_interval(0)}, FS_positionRel, {gripper, helper}, OT_ineq, 1e2 * arr{{1,3},{0,1,0}}, {0., -dist, 0.});
+  auto helper = STRING("_" <<gripper <<"_end");
+  komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1,3},{1,0,0}});
+  komo->addObjective({time_interval(0)}, FS_positionRel, {gripper, helper}, OT_ineq, 1e2 * arr{{1,3},{0,1,0}}, {0., -dist, 0.});
+  komo->addObjective({time_interval(0)}, FS_positionRel, {gripper, helper}, OT_ineq, -1e2 * arr{{1,3},{0,0,1}}, {0., 0., dist});
 }
 
 arr ManipulationModelling::solve(int verbose){
@@ -454,6 +512,7 @@ void ManipulationModelling::getSubProblem(uint phase, rai::Configuration& C, arr
   C.ensure_indexedJoints();
   DofL acts = C.activeDofs;
   for(rai::Dof *d:acts){
+    if(d->mimic==d){ d->mimicers.removeValue(d->mimic); d->mimic=0; }
     if(!d->joint() || d->isStable){
       d->setActive(false);
     }

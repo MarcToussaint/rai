@@ -1420,6 +1420,7 @@ void rai::Joint::setType(rai::JointType _type) {
     type = _type;
     dim = getDimFromType();
     frame->C.reset_q();
+    q0 = calcDofsFromConfig();
   }
 }
 
