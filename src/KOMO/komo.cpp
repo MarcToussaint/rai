@@ -977,7 +977,6 @@ void KOMO::initPhaseWithDofsPath(uint t_phase, const uintA& dofIDs, const arr& p
 }
 
 uintA KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, bool interpolate, double qHomeInterpolate, int verbose) {
-
   //-- compute in which steps (configuration time slices) the waypoints are imposed
   uintA steps(waypoints.N);
   for(uint i=0; i<steps.N; i++) {

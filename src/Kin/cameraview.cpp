@@ -87,8 +87,10 @@ void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
     C.copy(newC);
     //deep copy meshes!
     for(rai::Frame* f:C.frames) if(f->shape) {
-        shared_ptr<Mesh> org = f->shape->_mesh;
-        f->shape->_mesh = make_shared<Mesh> (*org.get());
+        if(f->shape->_mesh){
+          shared_ptr<Mesh> org = f->shape->_mesh;
+          f->shape->_mesh = make_shared<Mesh> (*org.get());
+        }
       }
     if(renderMode==seg) { //update frameIDmap
       frameIDmap.resize(C.frames.N).setZero();
