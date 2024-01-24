@@ -209,6 +209,8 @@ public:
   void plotTrajectory();
   void plotPhaseTrajectory();
 
+  void getSubProblem(uint phase, rai::Configuration& C, arr& q0, arr& q1);
+
   //===========================================================================
   //
   // internal (kind of private)

@@ -1597,6 +1597,28 @@ void KOMO::plotPhaseTrajectory() {
   gnuplot("load 'z.phase.plt'");
 }
 
+void KOMO::getSubProblem(uint phase, Configuration& C, arr& q0, arr& q1){
+  getConfiguration_full(C, phase-1, 0);
+  if(!phase) C.selectJoints(DofL{}, true);
+  C.ensure_indexedJoints();
+  DofL acts = C.activeDofs;
+  for(rai::Dof *d:acts){
+    if(d->mimic==d){ d->mimicers.removeValue(d->mimic); d->mimic=0; }
+    if(!d->joint() || d->isStable){
+      d->setActive(false);
+    }
+    if(d->frame->ats){
+      bool* activeKey = d->frame->ats->find<bool>("joint_active");
+      if(activeKey && !(*activeKey)) d->setActive(false);
+    }
+  }
+  q0 = C.getJointState();
+  //  FILE("z.g") <<C <<endl;  C.view(true, "JETZT!");
+  C.setFrameState(getConfiguration_X(phase), C.frames({0,world.frames.N-1}));
+  q1 = C.getJointState();
+  //  C.view(true);
+}
+
 //===========================================================================
 
 rai::Frame* KOMO::addStableFrame(JointType jointType, const char* parent, const char* name, const char* initFrame, rai::Transformation rel) {

@@ -64,7 +64,6 @@ struct ManipulationModelling{
 
   arr solve(int verbose=1);
 
-  void getSubProblem(uint phase, rai::Configuration& C, arr& q0, arr& q1);
   std::shared_ptr<ManipulationModelling> sub_motion(uint phase, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool quaternion_norms=false);
   std::shared_ptr<ManipulationModelling> sub_rrt(uint phase, const StringA& explicitCollisionPairs={});
 

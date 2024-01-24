@@ -79,6 +79,12 @@ void init_KOMO(pybind11::module& m) {
     .def("addInteraction_elasticBounce", &KOMO::addContact_elasticBounce, "", pybind11::arg("time"), pybind11::arg("from"), pybind11::arg("to"),
 	 pybind11::arg("elasticity") = .8, pybind11::arg("stickiness") = 0. )
 
+    .def("addStableFrame", [](shared_ptr<KOMO>& self, rai::JointType jointType, const char* parent, const char* name, const char* initFrame){
+          rai::Frame* f = self->addStableFrame(jointType, parent, name, initFrame);
+          return shared_ptr<rai::Frame>(f, &null_deleter); //giving it a non-sense deleter!
+      }, "complicated...",
+      pybind11::arg("jointType"), pybind11::arg("parent"), pybind11::arg("name"), pybind11::arg("init")=0 )
+
     //-- initialize (=set state)
 
     .def("initOrg", &KOMO::initOrg, "" )
@@ -145,6 +151,15 @@ void init_KOMO(pybind11::module& m) {
     //-- update
     .def("updateRootObjects", &KOMO::updateRootObjects,
          "update root frames (without parents) within all KOMO configurations", pybind11::arg("config"))
+
+    .def("getSubProblem", [](std::shared_ptr<KOMO>& self, uint phase) {
+          auto C = make_shared<rai::Configuration>();
+          arr q0, q1;
+          self->getSubProblem(phase, *C, q0, q1);
+          return pybind11::make_tuple(C, arr2numpy(q0), arr2numpy(q1));
+     },
+      "return a tuple of (configuration, start q0, end q1) for given phase of this komo problem",
+      pybind11::arg("phase"))
 
     //-- display
 

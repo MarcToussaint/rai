@@ -506,32 +506,10 @@ arr ManipulationModelling::solve(int verbose){
   return path;
 }
 
-void ManipulationModelling::getSubProblem(uint phase, rai::Configuration& C, arr& q0, arr& q1){
-  komo->getConfiguration_full(C, phase-1, 0);
-  if(!phase) C.selectJoints(DofL{}, true);
-  C.ensure_indexedJoints();
-  DofL acts = C.activeDofs;
-  for(rai::Dof *d:acts){
-    if(d->mimic==d){ d->mimicers.removeValue(d->mimic); d->mimic=0; }
-    if(!d->joint() || d->isStable){
-      d->setActive(false);
-    }
-    if(d->frame->ats){
-      bool* activeKey = d->frame->ats->find<bool>("joint_active");
-      if(activeKey && !(*activeKey)) d->setActive(false);
-    }
-  }
-  q0 = C.getJointState();
-  //  FILE("z.g") <<C <<endl;  C.view(true, "JETZT!");
-  C.setFrameState(komo->getConfiguration_X(phase), C.frames({0,komo->world.frames.N-1}));
-  q1 = C.getJointState();
-  //  C.view(true);
-}
-
 std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_motion(uint phase, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool quaternion_norms){
   rai::Configuration C;
   arr q0, q1;
-  getSubProblem(phase, C, q0, q1);
+  komo->getSubProblem(phase, C, q0, q1);
 
   std::shared_ptr<ManipulationModelling> manip = make_shared<ManipulationModelling>(C, STRING("sub_motion"<<phase<<"--"<<info), helpers);
   manip->setup_point_to_point_motion(q0, q1, homing_scale, acceleration_scale, accumulated_collisions, quaternion_norms);
@@ -541,7 +519,7 @@ std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_motion(uint ph
 std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_rrt(uint phase, const StringA& explicitCollisionPairs){
   rai::Configuration C;
   arr q0, q1;
-  getSubProblem(phase, C, q0, q1);
+  komo->getSubProblem(phase, C, q0, q1);
 
   std::shared_ptr<ManipulationModelling> manip = make_shared<ManipulationModelling>(C, STRING("sub_rrt"<<phase<<"--"<<info), helpers);
   manip->setup_point_to_point_rrt(q0, q1, explicitCollisionPairs);
