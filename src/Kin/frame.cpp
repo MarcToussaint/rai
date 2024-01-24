@@ -494,9 +494,11 @@ rai::Frame& rai::Frame::setRelativeQuaternion(const arr& quat) {
 }
 
 rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors) {
+  C.view_lock(RAI_HERE);
   getShape().type() = ST_pointCloud;
   if(!points.N) {
     cerr <<"given point cloud has zero size" <<endl;
+    C.view_unlock();
     return *this;
   }
   rai::Mesh& mesh = getShape().mesh();
@@ -506,10 +508,12 @@ rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors) {
     mesh.C = (convert<double>(byteA(colors))/255.).reshape(-1, 3);
     if(mesh.C.N <= 4){ mesh.C.reshape(-1); }
   }
+  C.view_unlock();
   return *this;
 }
 
 rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, double radius) {
+  C.view_lock(RAI_HERE);
   if(!radius) {
     getShape().type() = ST_mesh;
     getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
@@ -525,23 +529,29 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
   if(colors.N) {
     getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
   }
+  C.view_unlock();
   return *this;
 }
 
 rai::Frame& rai::Frame::setMesh(const rai::Mesh& m) {
+  C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
   getShape().mesh() = m;
+  C.view_unlock();
   return *this;
 }
 
 rai::Frame& rai::Frame::setSdf(std::shared_ptr<SDF>& sdf) {
+  C.view_lock(RAI_HERE);
   getShape().type() = ST_sdf;
   getShape()._sdf = sdf;
   getShape().createMeshes();
+  C.view_unlock();
   return *this;
 }
 
 rai::Frame& rai::Frame::setDensity(const floatA& data, const arr& size) {
+  C.view_lock(RAI_HERE);
   getShape().type() = ST_density;
   std::shared_ptr<SDF_GridData> sdf = make_shared<SDF_GridData>();
   sdf->lo = -.5*size;
@@ -549,10 +559,12 @@ rai::Frame& rai::Frame::setDensity(const floatA& data, const arr& size) {
   sdf->gridData = data;
   sdf->_densityDisplayData = make_shared<DensityDisplayData>(*sdf);
   getShape()._sdf = sdf;
+  C.view_unlock();
   return *this;
 }
 
 rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, uint blur, double resample){
+  C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
   SDF_GridData sdf(0, data, -.5*size, +.5*size);
   sdf.smooth(3, blur);
@@ -562,11 +574,14 @@ rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, 
     sdf.resample(d(0), d(1), d(2));
   }
   getShape().mesh().setImplicitSurface(sdf.gridData, sdf.lo, sdf.up);
+  C.view_unlock();
   return *this;
 }
 
 rai::Frame& rai::Frame::setColor(const arr& color) {
+  C.view_lock(RAI_HERE);
   getShape().mesh().C = color;
+  C.view_unlock();
   return *this;
 }
 

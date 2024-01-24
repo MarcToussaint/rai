@@ -2021,6 +2021,18 @@ OpenGL& Configuration::gl(){
   return viewer()->ensure_gl();
 }
 
+void Configuration::view_lock(const char* _lockInfo){
+  if(self->viewer){
+    viewer()->ensure_gl().dataLock.lock(_lockInfo);
+  }
+}
+
+void Configuration::view_unlock(){
+  if(self->viewer){
+    viewer()->ensure_gl().dataLock.unlock();
+  }
+}
+
 /// return a Swift extension
 /*
 std::shared_ptr<SwiftInterface> Configuration::swift() {

@@ -285,8 +285,9 @@ void rai::ConfigurationViewer::recopyMeshes(const rai::Configuration& _C) {
   ensure_gl();
 
   {
-    auto _dataLock = gl->dataLock(RAI_HERE);
+    gl->dataLock.lock(RAI_HERE);
     C.copy(_C, false);
+    gl->dataLock.unlock();
     //deep copy meshes!
 //    for(rai::Frame* f:C.frames) if(f->shape) {
 //        shared_ptr<Mesh> org = f->shape->_mesh;

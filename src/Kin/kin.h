@@ -241,6 +241,8 @@ struct Configuration : GLDrawer {
   /// @name extensions on demand
   std::shared_ptr<ConfigurationViewer>& viewer(const char* window_title=nullptr, bool offscreen=false);
   OpenGL& gl();
+  void view_lock(const char* _lockInfo);
+  void view_unlock();
   //std::shared_ptr<SwiftInterface> swift();
   std::shared_ptr<FclInterface> fcl();
   void swiftDelete();
