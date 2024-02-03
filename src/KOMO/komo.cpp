@@ -48,13 +48,6 @@ using namespace rai;
 
 //===========================================================================
 
-template<> const char* rai::Enum<rai::KOMOsolver>::names []= {
-  "dense", "sparse", "banded", "sparseFactored", "NLopt", "Ipopt", "Ceres", nullptr
-};
-
-
-//===========================================================================
-
 struct getQFramesAndScale_Return { uintA frames; arr scale; };
 getQFramesAndScale_Return getCtrlFramesAndScale(const rai::Configuration& C);
 
@@ -112,7 +105,6 @@ void KOMO::setConfig(const Configuration& C, bool _computeCollisions) {
   if(&C!=&world) world.copy(C, _computeCollisions);
   computeCollisions = _computeCollisions;
   if(computeCollisions) {
-    //if(!opt.useFCL) world.swift();
     world.fcl();
   }
   world.ensure_q();
@@ -791,7 +783,7 @@ void KOMO::setLiftDownUp(double time, const char* endeff, double timeToLift) {
 //
 
 void KOMO::setIKOpt() {
-  solver = rai::KS_dense;
+  opt.sparse = false;
   setTiming(1., 1, 1., 1);
   addControlObjective({}, 1, 1e-1);
   addQuaternionNorms();
@@ -1248,8 +1240,7 @@ void KOMO::run_prepare(double addInitializationNoise) {
 void KOMO::deprecated_run(OptOptions options) {
   Configuration::setJointStateCount=0;
   if(opt.verbose>0) {
-    cout <<"** KOMO::run solver:"
-        <<rai::Enum<KOMOsolver>(solver)
+    cout <<"** KOMO::run "
        <<" collisions:" <<computeCollisions
       <<" x-dim:" <<x.N
       <<" T:" <<T <<" k:" <<k_order <<" phases:" <<double(T)/stepsPerPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau;
@@ -1262,50 +1253,11 @@ void KOMO::deprecated_run(OptOptions options) {
   CHECK(T, "");
   if(logFile)(*logFile) <<"KOMO_run_log: [" <<endl;
 
-  if(solver==rai::KS_none) {
-    HALT("you need to choose a KOMO solver");
-
-  } else if(solver==rai::KS_dense || solver==rai::KS_sparse) {
+  {
     OptConstrained _opt(x, dual, nlp(), options, logFile);
     _opt.run();
     timeNewton += _opt.newton.timeNewton;
-
-  } else if(solver==rai::KS_sparseFactored) {
-    Conv_KOMO_NLP P(*this, true);
-    OptConstrained _opt(x, dual, P.ptr(), options, logFile);
-    _opt.run();
-    timeNewton += _opt.newton.timeNewton;
-
-  } else if(solver==rai::KS_banded) {
-    pathConfig.jacMode = rai::Configuration::JM_rowShifted;
-    auto P = make_shared<Conv_KOMO_FactoredNLP>(*this, pathConfig.getPartsDofs());
-    Conv_FactoredNLP_BandedNLP C(P, 0);
-    C.maxBandSize = (k_order+1)*max(P->variableDimensions);
-    OptConstrained opt(x, dual, C.ptr(), options, logFile);
-    opt.run();
-
-  } else if(solver==rai::KS_NLopt) {
-    Conv_KOMO_NLP P(*this, false);
-    NLoptInterface nlopt(P.ptr());
-    x = nlopt.solve();
-    set_x(x);
-
-  } else if(solver==rai::KS_Ipopt) {
-    Conv_KOMO_NLP P(*this, false);
-    IpoptInterface ipopt(P.ptr());
-    x = ipopt.solve();
-    set_x(x);
-
-  } else if(solver==rai::KS_Ceres) {
-    Conv_KOMO_NLP P(*this, false);
-//    Conv_KOMO_FactoredNLP P(*this);
-    LagrangianProblem L(P.ptr(), options);
-    auto P2 = make_shared<Conv_NLP_TrivialFactoreded>(L.ptr());
-    CeresInterface ceres(P2);
-    x = ceres.solve();
-    set_x(x);
-
-  } else NIY;
+  }
 
   timeTotal += rai::cpuTime();
 
@@ -1485,22 +1437,8 @@ void KOMO::checkGradients() {
 #else
   double tolerance=1e-4;
 
-  shared_ptr<NLP_Factored> SP;
-  shared_ptr<NLP> CP;
+  shared_ptr<NLP> CP = nlp();
 
-  if(solver==rai::KS_none) {
-    NIY;
-  } else if(solver==rai::KS_banded) {
-    SP = make_shared<Conv_KOMO_FactoredNLP>(*this, pathConfig.getPartsDofs());
-    auto BP = make_shared<Conv_FactoredNLP_BandedNLP>(SP, 0);
-    BP->maxBandSize = (k_order+1)*max(SP->variableDimensions);
-    CP = BP;
-  } else if(solver==rai::KS_sparseFactored) {
-    SP = make_shared<Conv_KOMO_FactoredNLP>(*this, pathConfig.getPartsDofs());
-    CP = make_shared<Conv_FactoredNLP_BandedNLP>(SP, 0, true);
-  } else {
-    CP = make_shared<Conv_KOMO_NLP>(*this, solver==rai::KS_sparse);
-  }
 
   VectorFunction F = [CP](const arr& x) -> arr{
     arr phi, J;
@@ -1777,8 +1715,6 @@ void KOMO::setupPathConfig() {
 
   if(computeCollisions) {
     CHECK(!fcl, "");
-    //CHECK(!swift, "");
-    //if(!opt.useFCL) swift = C.swift();
     fcl = C.fcl();
     fcl->mode = fcl->_broadPhaseOnly;
   }
@@ -1853,8 +1789,6 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
     uintA collisionPairs;
     for(uint s=k_order;s<timeSlices.d0;s++){
       X = pathConfig.getFrameState(timeSlices[s]);
-      //if(!opt.useFCL){
-      //  collisionPairs = swift->step(X);
       {
         fcl->step(X);
         collisionPairs = fcl->collisions;
@@ -1877,7 +1811,7 @@ void KOMO::checkConsistency(){
 }
 
 std::shared_ptr<NLP> KOMO::nlp(){
-  return make_shared<Conv_KOMO_NLP>(*this, solver==rai::KS_sparse);
+  return make_shared<Conv_KOMO_NLP>(*this); //solver==rai::KS_sparse);
 }
 
 shared_ptr<NLP_Factored> KOMO::nlp_FactoredTime(){

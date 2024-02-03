@@ -33,7 +33,7 @@ struct ManipulationModelling{
 
   ManipulationModelling(rai::Configuration& _C, const str& _info={}, const StringA& helpers={});
 
-  void setup_inverse_kinematics(double homing_scale=1e-1, bool accumulated_collisions=true, bool quaternion_norms=false);
+  void setup_inverse_kinematics(double homing_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
   void setup_pick_and_place_waypoints(const char* gripper, const char* obj, double homing_scale=1e-2, double velocity_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
   void setup_point_to_point_motion(const arr& q0, const arr& q1, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool quaternion_norms=false);
   void setup_point_to_point_rrt(const arr& q0, const arr& q1, const StringA& explicitCollisionPairs);

@@ -31,7 +31,7 @@ void Conv_KOMO_NLP::evaluate(arr& phi, arr& J, const arr& x) {
 
   //-- set the trajectory
   komo.set_x(x);
-  if(sparse){
+  if(komo.opt.sparse){
     komo.pathConfig.jacMode = Configuration::JM_sparse;
   }else {
     komo.pathConfig.jacMode = Configuration::JM_dense;
@@ -39,7 +39,7 @@ void Conv_KOMO_NLP::evaluate(arr& phi, arr& J, const arr& x) {
 
   phi.resize(featureTypes.N);
   if(!!J) {
-    if(sparse) {
+    if(komo.opt.sparse) {
       J.sparse().resize(phi.N, x.N, 0);
     } else {
       J.resize(phi.N, x.N).setZero();
@@ -84,7 +84,7 @@ void Conv_KOMO_NLP::evaluate(arr& phi, arr& J, const arr& x) {
       else if(ob->type==OT_eq) komo.eq += sumOfAbs(y) / scale;
 
       if(!!J) {
-        if(sparse){
+        if(komo.opt.sparse){
           yJ.sparse().reshape(J.d0, J.d1);
           yJ.sparse().colShift(M);
           J += yJ;
@@ -130,7 +130,7 @@ void Conv_KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
   }
 }
 
-Conv_KOMO_NLP::Conv_KOMO_NLP(KOMO& _komo, bool sparse) : komo(_komo), sparse(sparse) {
+Conv_KOMO_NLP::Conv_KOMO_NLP(KOMO& _komo) : komo(_komo) {
   dimension = komo.pathConfig.getJointStateDimension();
 
   arr bounds = komo.getBounds();

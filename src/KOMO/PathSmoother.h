@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ConfigurationProblem.h"
+#include "../PathAlgos/ConfigurationProblem.h"
 
 struct ReceedingHorizonPathSmoother {
   ConfigurationProblem& P;

@@ -20,7 +20,6 @@
 
 namespace rai {
   struct FclInterface;
-  enum KOMOsolver { KS_none=-1, KS_dense=0, KS_sparse, KS_banded, KS_sparseFactored, KS_NLopt, KS_Ipopt, KS_Ceres };
 }
 
 //===========================================================================
@@ -31,9 +30,9 @@ namespace rai {
     RAI_PARAM("KOMO/", int, verbose, 1)
     RAI_PARAM("KOMO/", int, animateOptimization, 0)
     RAI_PARAM("KOMO/", bool, mimicStable, true)
-    RAI_PARAM("KOMO/", bool, useFCL, true)
     RAI_PARAM("KOMO/", bool, unscaleEqIneqReport, false)
     RAI_PARAM("KOMO/", double, sampleRate_stable, .0)
+    RAI_PARAM("KOMO/", bool, sparse, true)
   };
 }//namespace
 
@@ -43,8 +42,8 @@ struct KOMO : NonCopyable {
   uint stepsPerPhase=0;        ///< time slices per phase
   uint T=0;                    ///< total number of time steps
   double tau=0.;               ///< real time duration of single step (used when evaluating feature space velocities/accelerations)
-  uint k_order=0;              ///< the (Markov) order of the KOMO problem (default 2)
-  ObjectiveL objectives;    ///< list of running objectives (each for a running interval of indexed time slices)
+  uint k_order=0;              ///< the (Markov) order of the KOMO problem
+  ObjectiveL objectives;       ///< list of running objectives (each for a running interval of indexed time slices)
   rai::Array<shared_ptr<GroundedObjective>> objs;  ///< list of grounded objective (each for only a single tuple of frames (not running intervals))
   rai::Array<shared_ptr<rai::KinematicSwitch>> switches;  ///< list of kinematic switches along the motion -- only as record: they are applied immediately at addSwitch
 
@@ -55,10 +54,8 @@ struct KOMO : NonCopyable {
   FrameL timeSlices;              ///< the original timeSlices of the pathConfig (when switches add frames, pathConfig.frames might differ from timeSlices - otherwise not)
   bool computeCollisions=true;    ///< whether swift or fcl (collisions/proxies) is evaluated whenever new configurations are set (needed if features read proxy list)
   shared_ptr<rai::FclInterface> fcl;
-  //shared_ptr<SwiftInterface> swift;
 
   //-- optimizer
-  rai::KOMOsolver solver=rai::KS_sparse;
   arr x, dual;                    ///< the primal and dual solution
 
   //-- options
@@ -70,7 +67,7 @@ struct KOMO : NonCopyable {
   arrA featureJacobians;       ///< storage of all features in all time slices
   ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
   StringA featureNames;
-  double timeTotal=0.;           ///< measured run time
+  double timeTotal=0.;         ///< measured run time
   double timeCollisions=0., timeKinematics=0., timeNewton=0., timeFeatures=0.;
   uint evalCount=0;
   ofstream* logFile=0;

@@ -22,7 +22,7 @@ OptBench_InvKin_Simple::OptBench_InvKin_Simple(){
 OptBench_InvKin_Endeff::OptBench_InvKin_Endeff(const char* modelFile, bool unconstrained){
   rai::Configuration C(modelFile);
   komo = make_unique<KOMO>();
-  komo->solver = rai::KS_dense;
+  komo->opt.sparse = false;
   komo->setConfig(C, false);
   komo->setTiming(1., 1, 1., 1);
   komo->addControlObjective({}, 1, 1.);
@@ -43,11 +43,6 @@ void OptBench_Skeleton::create(const char* modelFile, const rai::Skeleton& S, ra
   rai::Configuration C(modelFile);
 
   komo = make_unique<KOMO>();
-  if(sequenceOrPath==rai::_sequence){
-    komo->solver = rai::KS_dense;
-  }else{
-    komo->solver = rai::KS_sparse;
-  }
   komo->setConfig(C, false);
 
   double maxPhase = S.getMaxPhase();

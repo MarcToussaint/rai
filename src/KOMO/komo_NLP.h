@@ -7,11 +7,10 @@ namespace rai {
 //default - transcription as sparse, but non-factored NLP
 struct Conv_KOMO_NLP : NLP {
   KOMO& komo;
-  bool sparse;
 
   arr quadraticPotentialLinear, quadraticPotentialHessian;
 
-  Conv_KOMO_NLP(KOMO& _komo, bool sparse=true);
+  Conv_KOMO_NLP(KOMO& _komo);
 
   virtual arr getInitializationSample(const arr& previousOptima= {});
   virtual void evaluate(arr& phi, arr& J, const arr& x);

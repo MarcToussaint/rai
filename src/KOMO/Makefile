@@ -4,7 +4,7 @@ OUTPUT = lib$(NAME).so
 
 OPTIM = fast_debug
 
-DEPEND = Core Geo Kin Optim Logic
+DEPEND = Core Geo Kin Optim PathAlgos Logic
 
 GL = 1
 

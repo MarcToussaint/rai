@@ -140,17 +140,19 @@ ManipulationModelling::ManipulationModelling(rai::Configuration& _C, const str& 
   }
 }
 
-void ManipulationModelling::setup_inverse_kinematics(double homing_scale, bool accumulated_collisions, bool quaternion_norms){
+void ManipulationModelling::setup_inverse_kinematics(double homing_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms){
   // setup a 1 phase single step problem
   komo = make_shared<KOMO>(*C, 1., 1, 0, accumulated_collisions);
   komo->addControlObjective({}, 0, homing_scale);
-  if (quaternion_norms){
-    komo->addQuaternionNorms();
-  }
   if (accumulated_collisions){
     komo->addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e0});
   }
-  komo->addObjective({}, FS_jointLimits, {}, OT_ineq, {1e0});
+  if (joint_limits){
+    komo->addObjective({}, FS_jointLimits, {}, OT_ineq, {1e0});
+  }
+  if (quaternion_norms){
+    komo->addQuaternionNorms();
+  }
 }
 
 void ManipulationModelling::setup_pick_and_place_waypoints(const char* gripper, const char* obj, double homing_scale, double velocity_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms){
