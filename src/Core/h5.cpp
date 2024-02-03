@@ -1,5 +1,7 @@
 #include "h5.h"
 
+#ifdef RAI_H5
+
 #include <H5Cpp.h>
 
 //===========================================================================
@@ -11,6 +13,8 @@ template<> H5::DataType get_h5type<int>(){ return H5::PredType::NATIVE_INT; }
 template<> H5::DataType get_h5type<uint>(){ return H5::PredType::NATIVE_UINT; }
 template<> H5::DataType get_h5type<int16_t>(){ return H5::PredType::NATIVE_INT16; }
 template<> H5::DataType get_h5type<uint16_t>(){ return H5::PredType::NATIVE_UINT16; }
+template<> H5::DataType get_h5type<char>(){ return H5::PredType::NATIVE_CHAR; }
+template<> H5::DataType get_h5type<unsigned char>(){ return H5::PredType::NATIVE_UCHAR; }
 
 //===========================================================================
 
@@ -33,6 +37,8 @@ template void H5_Writer::add<int>(const char* name, const rai::Array<int>& x);
 template void H5_Writer::add<uint>(const char* name, const rai::Array<uint>& x);
 template void H5_Writer::add<int16_t>(const char* name, const rai::Array<int16_t>& x);
 template void H5_Writer::add<uint16_t>(const char* name, const rai::Array<uint16_t>& x);
+template void H5_Writer::add<char>(const char* name, const rai::Array<char>& x);
+template void H5_Writer::add<unsigned char>(const char* name, const rai::Array<unsigned char>& x);
 
 //===========================================================================
 
@@ -88,3 +94,6 @@ herr_t file_callback(hid_t loc_id, const char* name, const H5L_info_t* linfo, vo
 void H5_Reader::readAll(){
   H5Literate(file->getId(), H5_INDEX_NAME, H5_ITER_INC, NULL, file_callback, this);
 }
+
+#else
+#endif

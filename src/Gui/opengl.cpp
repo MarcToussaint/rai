@@ -632,9 +632,9 @@ void glStandardLight(void*, OpenGL& gl) {
 void glStandardScene(void*, OpenGL& gl) {
   glPushAttrib(GL_CURRENT_BIT);
   glStandardLight(nullptr, gl);
-  glDrawFloor(10, .5, .55, .6);
-  // glDrawFloor(10, 1.5, 0.83, .0);
-  // glDrawFloor(10., 108./255., 123./255., 139./255.);
+  glDrawFloor(10, .4, .45, .5);
+//   glDrawFloor(10, 1.5, 0.83, .0);
+//   glDrawFloor(10., 108./255., 123./255., 139./255.);
   glDrawAxes(.1);
   glPopAttrib();
 }
@@ -835,26 +835,26 @@ void glDrawFloor(float x, float r, float g, float b) {
   glVertex3f(-x, -x, 0.);
   glEnd();
 #if 1
-  glColor(.75, .75, .75);
-  for(int i=-4; i<=4; i++) {
+  glColor(r+.1, g+.1, b+.1);
+  for(int i=-5; i<=5; i++) {
     glBegin(GL_LINES);
-    glVertex3f(i*x/5., -x, 0.001);
-    glVertex3f(i*x/5., x, 0.001);
+    glVertex3f(i*x/5., -x, 0.002);
+    glVertex3f(i*x/5., x, 0.002);
     glEnd();
     glBegin(GL_LINES);
-    glVertex3f(-x, i*x/5., 0.001);
-    glVertex3f(x, i*x/5., 0.001);
+    glVertex3f(-x, i*x/5., 0.002);
+    glVertex3f(x, i*x/5., 0.002);
     glEnd();
   }
 
-  glColor(.25, .25, .25);
-  glBegin(GL_LINE_STRIP);
-  glVertex3f(-x, -x, 0.002);
-  glVertex3f(-x, x, 0.002);
-  glVertex3f(x, x, 0.002);
-  glVertex3f(x, -x, 0.002);
-  glVertex3f(-x, -x, 0.002);
-  glEnd();
+//  glColor(.25, .25, .25);
+//  glBegin(GL_LINE_STRIP);
+//  glVertex3f(-x, -x, 0.002);
+//  glVertex3f(-x, x, 0.002);
+//  glVertex3f(x, x, 0.002);
+//  glVertex3f(x, -x, 0.002);
+//  glVertex3f(-x, -x, 0.002);
+//  glEnd();
 #endif
 }
 
@@ -939,7 +939,7 @@ void glDrawDiamond(float x, float y, float z, float dx, float dy, float dz) {
 }
 
 void glDrawAxis(double scale) {
-//    glDisable(GL_CULL_FACE);
+  glDisable(GL_CULL_FACE);
   if(scale>=0) glPushMatrix();
   if(scale>=0) glScalef(scale, scale, scale);
   GLUquadric* style=gluNewQuadric();
@@ -947,12 +947,12 @@ void glDrawAxis(double scale) {
   glVertex3f(0, 0, 0);
   glVertex3f(.95, 0, 0);
   glEnd();
-  glTranslatef(.8, 0, 0);
+  glTranslatef(.9, 0, 0);
   glRotatef(90, 0, 1, 0);
-  gluCylinder(style, .08, 0, .2, 20, 1);
+  gluCylinder(style, .04, 0, .1, 16, 1);
   gluDeleteQuadric(style);
   if(scale>=0) glPopMatrix();
-//    glEnable(GL_CULL_FACE);
+  glEnable(GL_CULL_FACE);
 }
 
 void glDrawAxes(double scale, bool colored) {

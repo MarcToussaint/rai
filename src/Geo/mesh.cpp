@@ -13,6 +13,7 @@
 #include "../Algo/ann.h"
 #include "../Optim/newton.h"
 #include "../Core/graph.h"
+#include "../Core/h5.h"
 
 #include <limits>
 #include <algorithm>
@@ -1350,7 +1351,7 @@ void Mesh::readPlyFile(std::istream& is) {
   }
 }
 
-#ifdef RAI_PLY
+#if 1 //def RAI_PLY
 void Mesh::writePLY(const char* fn, bool bin) {
   struct Face { unsigned char nverts;  int* verts; };
   struct Vertex { float x, y, z;  byte r, g, b;  };
@@ -1367,9 +1368,12 @@ void Mesh::writePLY(const char* fn, bool bin) {
 //    {"nz", Float64, Float64, offsetof( Vertex,nz ), 0, 0, 0, 0}
   };
 
-  PlyProperty face_props[]  = { /* list of property information for a PlyFace */
-    {"vertex_indices", Int32, Int32, offsetof(Face, verts), 1, Uint8, Uint8, offsetof(Face, nverts)},
-  };
+  PlyProperty face_props[1]; /* list of property information for a PlyFace */
+  if(V.d0<65535) {
+    face_props[0] = {"vertex_indices", Int16, Int32, offsetof(Face, verts), 1, Uint8, Uint8, offsetof(Face, nverts)};
+  }else{
+    face_props[0] = {"vertex_indices", Int32, Int32, offsetof(Face, verts), 1, Uint8, Uint8, offsetof(Face, nverts)};
+  }
 
   PlyFile*    ply;
   FILE*       fp = fopen(fn, "w");
@@ -1557,12 +1561,23 @@ void Mesh::readJson(std::istream& is){
 void Mesh::writeArr(std::ostream& os) {
   Graph G;
   G.add("V", convert<float>(V));
-  if(V.d0<65535) G.add("T", convert<uint16_t>(T)); else  G.add("T", T);
+  if(V.d0<65535) G.add("T", convert<uint16_t>(T)); else G.add("T", T);
   if(C.N) G.add("C", convert<float>(C));
   if(cvxParts.N) G.add("cvxParts", cvxParts);
   if(tex.N) G.add("tex", tex);
   if(texImg.N) G.add("texImg", texImg);
   G.write(os, ",\n", "{\n\n}", -1, false, true);
+}
+
+//#ifdef RAI_H5
+void Mesh::writeH5(const char* filename){
+  H5_Writer H(filename);
+  H.add("V", convert<float>(V));
+  if(V.d0<65535) H.add("T", convert<uint16_t>(T)); else H.add("T", T);
+  if(C.N) H.add("C", convert<float>(C));
+  if(cvxParts.N) H.add("cvxParts", cvxParts);
+  if(tex.N) H.add("tex", tex);
+  if(texImg.N) H.add("texImg", texImg);
 }
 
 void Mesh::readArr(std::istream& is) {

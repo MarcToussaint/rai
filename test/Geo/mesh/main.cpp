@@ -8,7 +8,7 @@
 
 #include <math.h>
 
-void drawInit(void*, OpenGL& gl){
+void drawScene(void*, OpenGL& gl){
   glStandardLight(nullptr, gl);
   glDrawAxes(1.);
   glColor(1.,.5,0.);
@@ -20,7 +20,7 @@ void TEST(Primitives) {
   rai::Mesh mesh;
 
   OpenGL gl;
-  gl.add(drawInit,0);
+  gl.add(drawScene,0);
   gl.add(mesh);
   gl.drawOptions.drawWires=true;
 
@@ -45,7 +45,7 @@ void TEST(FuseVertices) {
   OpenGL gl;
   rai::Mesh mesh;
   mesh.readFile("../../../../rai-robotModels/pr2/head_v0/head_pan.stl");
-  gl.add(drawInit,0);
+  gl.add(drawScene,0);
   gl.add(mesh);
   gl.watch();
 
@@ -69,7 +69,7 @@ void TEST(AddMesh) {
   if(!rai::FileToken("../../../../rai-robotModels/pr2/head_v0/head_pan.stl", false).exists()) return;
   rai::Mesh mesh1,mesh2;
   OpenGL gl;
-  gl.add(drawInit,0);
+  gl.add(drawScene,0);
   gl.add(mesh1);
   mesh1.readTriFile(FILE("z.e3.tri"));
   mesh2.readTriFile(FILE("z.e3.tri"));
@@ -89,7 +89,7 @@ void TEST(Meshes3) {
   if(!rai::FileToken("../../../../rai-robotModels/pr2/head_v0/head_pan.stl", false).exists()) return;
   rai::Mesh mesh;
   OpenGL gl;
-  gl.add(drawInit,0);
+  gl.add(drawScene,0);
   gl.add(mesh);
   //MeshSetSphere(mesh,0);
   mesh.readTriFile(FILE("z.e4.tri"));

@@ -12,20 +12,22 @@ Usage:  meshTool file.* <tags...>\n\
 \n\
 Tags can be -hide, -box, -fuse, -clean, -center, -scale, -qhull, -flip \n";
 
-void drawInit(void*, OpenGL& gl){
+void drawScene(void*, OpenGL& gl){
   glStandardLight(nullptr, gl);
   glDrawAxes(1.);
-  glColor(1.,.5,0.);
+  glColor(1., .5, 0.);
 }
 
-void TEST(MeshTools) {
+int main(int argc,char **argv){
+  rai::initCmdLine(argc, argv);
+
   if(!rai::checkCmdLineTag("hide")) cout <<USAGE <<endl;
 
-  rai::String file;
-  if(rai::argc>=2) file=rai::argv[1];
-  else HALT("the first argument needs to be a mesh file");
+  rai::String file=rai::getParameter<rai::String>("file",STRING("none"));
+  if(rai::argc>=2 && rai::argv[1][0]!='-') file=rai::argv[1];
+  LOG(0) <<"== opening mesh file `" <<file <<"'" <<endl;
 
-  cout <<"== mesh file: " <<file <<endl;
+  if(file=="none") return 0;
 
   OpenGL *gl=nullptr;
 
@@ -52,8 +54,11 @@ void TEST(MeshTools) {
 
     if(!gl) gl=new OpenGL;
     gl->clear();
+    gl->camera.setPosition(2., -2., 2.);
+    gl->camera.focus(0., 0., 0., true);
+    gl->clearColor = {.7f, .7f, .7f};
     gl->text = "before operations";
-    gl->add(drawInit);
+    gl->add(drawScene);
     gl->add(mesh);
     gl->watch();
   }
@@ -123,7 +128,7 @@ void TEST(MeshTools) {
     if(!gl) gl=new OpenGL;
     gl->clear();
     gl->text = "after operations";
-    gl->add(drawInit);
+    gl->add(drawScene);
     gl->add(mesh);
     gl->watch();
   }
@@ -132,14 +137,9 @@ void TEST(MeshTools) {
   mesh.writePLY("z.ply", true);
   mesh.writeArr(FILE("z.arr"));
   mesh.writeJson(FILE("z.msh"));
+  mesh.writeH5("z.h5");
 
   cout <<"== bye bye ==" <<endl;
-}
-
-int MAIN(int argc, char** argv){
-  rai::initCmdLine(argc, argv);
-
-  testMeshTools();
 
   return 0;
 }
