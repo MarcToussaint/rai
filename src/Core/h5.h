@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Core/array.h>
 #include <Core/graph.h>
 

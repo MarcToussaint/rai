@@ -635,7 +635,9 @@ void glStandardScene(void*, OpenGL& gl) {
   glDrawFloor(10, .4, .45, .5);
 //   glDrawFloor(10, 1.5, 0.83, .0);
 //   glDrawFloor(10., 108./255., 123./255., 139./255.);
-  glDrawAxes(.1);
+  if(!gl.drawOptions.drawVisualsOnly){
+    glDrawAxes(.1);
+  }
   glPopAttrib();
 }
 
@@ -824,16 +826,7 @@ void glDrawPolygon(const arr& P) {
 
 void glDrawFloor(float x, float r, float g, float b) {
   x/=2.;
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  glColor(r, g, b);
-  glBegin(GL_POLYGON);
-  glNormal3f(0, 0, 1);
-  glVertex3f(-x, -x, 0.);
-  glVertex3f(x, -x, 0.);
-  glVertex3f(x, x, 0.);
-  glVertex3f(-x, x, 0.);
-  glVertex3f(-x, -x, 0.);
-  glEnd();
+
 #if 1
   glColor(r+.1, g+.1, b+.1);
   for(int i=-5; i<=5; i++) {
@@ -856,6 +849,17 @@ void glDrawFloor(float x, float r, float g, float b) {
 //  glVertex3f(-x, -x, 0.002);
 //  glEnd();
 #endif
+
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  glColor(r, g, b);
+  glBegin(GL_POLYGON);
+  glNormal3f(0, 0, 1);
+  glVertex3f(-x, -x, 0.);
+  glVertex3f(x, -x, 0.);
+  glVertex3f(x, x, 0.);
+  glVertex3f(-x, x, 0.);
+  glVertex3f(-x, -x, 0.);
+  glEnd();
 }
 
 void glDrawBox(float x, float y, float z, bool linesOnly) {
@@ -1454,15 +1458,20 @@ void glRasterImage(float x, float y, byteA& img, float zoom) {
   };
 }
 
-void glRemakeList(GLDrawer& drawer, OpenGL& gl){
-  if(drawer.listId>=0){
-    glDeleteLists(drawer.listId, 1);
-  }else{
+void glDrawAsList(GLDrawer& drawer, OpenGL& gl){
+  if(!drawer.listId){
     drawer.listId = glGenLists(1);
+    CHECK_GE(drawer.listId, 1, "I expected id>=1");
+    drawer.listId *= -1;
   }
-  glNewList(drawer.listId, GL_COMPILE);
-  drawer.glDraw(gl);
-  glEndList();
+  if(drawer.listId<0){ //negative: require recreation!
+    drawer.listId *= -1;
+    glNewList(drawer.listId, GL_COMPILE_AND_EXECUTE);
+    drawer.glDraw(gl);
+    glEndList();
+  }else{
+    glCallList(drawer.listId);
+  }
 }
 
 int OpenGL::watchImage(const floatA& _img, bool wait, float _zoom) {

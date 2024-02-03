@@ -505,9 +505,11 @@ rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors) {
   mesh.V = points;
   mesh.V.reshape(-1, 3);
   if(colors.N) {
-    mesh.C = (convert<double>(byteA(colors))/255.).reshape(-1, 3);
+    mesh.C = convert<double>(colors).reshape(-1, 3);
+    mesh.C /= 255.;
     if(mesh.C.N <= 4){ mesh.C.reshape(-1); }
   }
+  if(mesh.listId>0) mesh.listId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -529,6 +531,7 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
   if(colors.N) {
     getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
   }
+  if(getShape().mesh().listId>0) getShape().mesh().listId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -537,6 +540,7 @@ rai::Frame& rai::Frame::setMesh(const rai::Mesh& m) {
   C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
   getShape().mesh() = m;
+  if(getShape().mesh().listId>0) getShape().mesh().listId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -546,6 +550,7 @@ rai::Frame& rai::Frame::setSdf(std::shared_ptr<SDF>& sdf) {
   getShape().type() = ST_sdf;
   getShape()._sdf = sdf;
   getShape().createMeshes();
+  if(getShape().mesh().listId>0) getShape().mesh().listId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -559,6 +564,7 @@ rai::Frame& rai::Frame::setDensity(const floatA& data, const arr& size) {
   sdf->gridData = data;
   sdf->_densityDisplayData = make_shared<DensityDisplayData>(*sdf);
   getShape()._sdf = sdf;
+  if(getShape().mesh().listId>0) getShape().mesh().listId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -574,6 +580,7 @@ rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, 
     sdf.resample(d(0), d(1), d(2));
   }
   getShape().mesh().setImplicitSurface(sdf.gridData, sdf.lo, sdf.up);
+  if(getShape().mesh().listId>0) getShape().mesh().listId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -581,6 +588,7 @@ rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, 
 rai::Frame& rai::Frame::setColor(const arr& color) {
   C.view_lock(RAI_HERE);
   getShape().mesh().C = color;
+  if(getShape().mesh().listId>0) getShape().mesh().listId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -1807,9 +1815,17 @@ void rai::Shape::glDraw(OpenGL& gl) {
       } else {
         if(!mesh().T.N && size.N) glPointSize(size.last());
         if(!mesh().C.N) glColor(.8, .8, .8);
-        if(mesh().listId<0) glRemakeList(mesh(), gl);
-        glCallList(mesh().listId);
-//        mesh().glDraw(gl);
+        if(_type==rai::ST_mesh){
+          if(gl.drawOptions.drawVisualsOnly || mesh().T.d1==3){ //visual -> surface meshes only
+#if 1 //use list
+            glDrawAsList(mesh(), gl);
+#else
+            mesh().glDraw(gl);
+#endif
+          }
+        }else{
+          mesh().glDraw(gl);
+        }
         if(!mesh().T.N && size.N) glPointSize(1.);
       }
     }
@@ -1939,6 +1955,7 @@ void rai::Shape::createMeshes() {
       HALT("createMeshes not possible for shape type '" <<_type <<"'");
     }
   }
+  if(mesh().listId>0) mesh().listId *= -1;
 //  auto func = functional(false);
 //  if(func){
 //    mesh().setImplicitSurfaceBySphereProjection(*func, 2.);

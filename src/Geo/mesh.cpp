@@ -41,9 +41,6 @@ extern void glColorId(uint id);
 extern void glColor(float r, float g, float b, float alpha);
 extern arr id2color(uint id);
 
-//#define sphereSweptFactor *1.08
-#define sphereSweptFactor
-
 namespace rai {
 
 //==============================================================================
@@ -295,12 +292,28 @@ void Mesh::setCylinder(double r, double l, uint fineness) {
 
 void Mesh::setSSBox(double x_width, double y_width, double z_height, double r, uint fineness) {
   CHECK(r>=0. && x_width>=2.*r && y_width>=2.*r && z_height>=2.*r, "width/height includes radius!");
+  arr size = {x_width, y_width, z_height};
   setSphere(fineness);
-  scale(r sphereSweptFactor);
-  for(uint i=0; i<V.d0; i++) {
-    V(i, 0) += sign(V(i, 0))*(.5*x_width-r);
-    V(i, 1) += sign(V(i, 1))*(.5*y_width-r);
-    V(i, 2) += sign(V(i, 2))*(.5*z_height-r);
+  //duplicate axis points
+  for(uint j=0; j<3; j++){
+    for(uint i=0; i<V.d0; i++) {
+      if(!V(i, j)){
+        V.append(V[i]);
+        V(i,j) -= 1e-6;
+        V(-1,j) += 1e-6;
+      }
+    }
+  }
+
+  scale(r);
+
+  //push apart
+  for(uint j=0;j<3;j++){
+    double del = .5*size(j)-r;
+    for(uint i=0; i<V.d0; i++) {
+      double& v = V(i, j);
+      v += sign(v)*del;
+    }
   }
   makeConvexHull();
 }
@@ -570,7 +583,7 @@ void Mesh::setSSCvx(const arr& core, double r, uint fineness) {
   if(r>0.) {
     Mesh ball;
     ball.setSphere(fineness);
-    ball.scale(r sphereSweptFactor);
+    ball.scale(r);
 
     arr c=C;
     clear();
@@ -1774,7 +1787,7 @@ void Mesh::glDraw(struct OpenGL& gl) {
   }
 
   //-- draw the mesh
-  if((!C.N || C.nd==1 || !glDrawOptions(gl).drawColors || (C.d0==V.d0 && !lightingEnabled))  //we have colors for each vertex
+  if(false && (!C.N || C.nd==1 || !glDrawOptions(gl).drawColors || (C.d0==V.d0 && !lightingEnabled))  //we have colors for each vertex
       && (!tex.N || !Tt.N)) { //we have no tex or tex coords for each vertex -> use index arrays
 
     glShadeModel(GL_FLAT); //triangles with constant reflection

@@ -30,16 +30,6 @@ template<class T> void H5_Writer::add(const char* name, const rai::Array<T>& x){
   dataset.write(x.p, h5type);
 }
 
-// explicit instantiations
-template void H5_Writer::add<double>(const char* name, const rai::Array<double>& x);
-template void H5_Writer::add<float>(const char* name, const rai::Array<float>& x);
-template void H5_Writer::add<int>(const char* name, const rai::Array<int>& x);
-template void H5_Writer::add<uint>(const char* name, const rai::Array<uint>& x);
-template void H5_Writer::add<int16_t>(const char* name, const rai::Array<int16_t>& x);
-template void H5_Writer::add<uint16_t>(const char* name, const rai::Array<uint16_t>& x);
-template void H5_Writer::add<char>(const char* name, const rai::Array<char>& x);
-template void H5_Writer::add<unsigned char>(const char* name, const rai::Array<unsigned char>& x);
-
 //===========================================================================
 
 H5_Reader::H5_Reader(const char* filename, bool readAll) {
@@ -96,4 +86,19 @@ void H5_Reader::readAll(){
 }
 
 #else
+
+H5_Writer::H5_Writer(const char* filename){ NICO }
+template<class T> void H5_Writer::add(const char* name, const rai::Array<T>& x){ NICO }
+H5_Reader::H5_Reader(const char* filename, bool readAll) { NICO }
+
 #endif
+
+// explicit instantiations
+template void H5_Writer::add<double>(const char* name, const rai::Array<double>& x);
+template void H5_Writer::add<float>(const char* name, const rai::Array<float>& x);
+template void H5_Writer::add<int>(const char* name, const rai::Array<int>& x);
+template void H5_Writer::add<uint>(const char* name, const rai::Array<uint>& x);
+template void H5_Writer::add<int16_t>(const char* name, const rai::Array<int16_t>& x);
+template void H5_Writer::add<uint16_t>(const char* name, const rai::Array<uint16_t>& x);
+template void H5_Writer::add<char>(const char* name, const rai::Array<char>& x);
+template void H5_Writer::add<unsigned char>(const char* name, const rai::Array<unsigned char>& x);

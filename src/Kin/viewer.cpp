@@ -94,9 +94,12 @@ int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, con
       if(s->_type != r->_type){ copyMeshes=true; break; }
       if(s->size != r->size){ copyMeshes=true; break; }
       if(s->_mesh && r->_mesh && (s->_mesh.get() != r->_mesh.get())){ copyMeshes=true; break; }
+      if(s->_mesh && s->_mesh->listId<0){ copyMeshes=true; break; }
     }
   }
   if(copyMeshes) recopyMeshes(_C);
+
+  CHECK_EQ(_C.frames.N, C.frames.N, "");
 
   ensure_gl();
 
@@ -108,7 +111,15 @@ int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, con
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
     for(rai::Frame* f:_C.frames) CHECK(f->_state_X_isGood, "");
+#if 0
     framePath = _C.getFrameState();
+#else
+    framePath.resize(_C.frames.N, 7).setZero();
+    for(uint i=0;i<framePath.d0;i++){
+      rai::Frame *f = _C.frames.elem(i);
+      if(f->shape) framePath[i] = f->ensure_X().getArr7d();
+    }
+#endif
     framePath.reshape(1, _C.frames.N, 7);
     drawTimeSlice=0;
     drawSubFrames.clear();
@@ -291,7 +302,10 @@ void rai::ConfigurationViewer::recopyMeshes(const rai::Configuration& _C) {
     //deep copy meshes!
 //    for(rai::Frame* f:C.frames) if(f->shape) {
 //        shared_ptr<Mesh> org = f->shape->_mesh;
-//        f->shape->_mesh = make_shared<Mesh> (*org.get());
+//        if(org){
+//          f->shape->_mesh = make_shared<Mesh> (*org.get());
+//          f->shape->_mesh->listId=0;
+//        }
 //      }
   }
   rai::Frame *camF = C.getFrame("camera_gl", false);

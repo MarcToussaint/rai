@@ -46,7 +46,6 @@ void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, flo
   if(std::isnan(cy)) cy=.5*H;
 
   pts.resize(H*W, 3);
-  pts.setZero();
   double* pt=pts.p;
   float* de=depth.p;
 
@@ -64,9 +63,13 @@ void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, flo
         *(pt++) =  d;
 #endif
       } else {
-        pt += 3;
+        *(pt++) = 0.;
+        *(pt++) = 0.;
+        *(pt++) = 0.;
       }
     }
+
+  CHECK_EQ(pt, pts.p+pts.N, "");
 
   pts.reshape(H, W, 3);
 

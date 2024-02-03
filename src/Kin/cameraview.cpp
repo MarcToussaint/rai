@@ -79,10 +79,16 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName) {
 }
 
 void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
-  arr X = newC.getFrameState();
   auto _dataLock = gl.dataLock(RAI_HERE);
-  if(X.d0==C.frames.N) {
-    C.setFrameState(X);
+  if(newC.frames.N==C.frames.N) {
+#if 0
+    C.setFrameState(newC.getFrameState());
+#else
+    for(uint i=0;i<C.frames.N;i++){
+      rai::Frame *f = newC.frames.elem(i);
+      if(f->shape) C.frames.elem(i)->set_X() = f->ensure_X();
+    }
+#endif
   } else {
     C.copy(newC);
     //deep copy meshes!
@@ -90,6 +96,7 @@ void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
         if(f->shape->_mesh){
           shared_ptr<Mesh> org = f->shape->_mesh;
           f->shape->_mesh = make_shared<Mesh> (*org.get());
+          f->shape->_mesh->listId = 0;
         }
       }
     if(renderMode==seg) { //update frameIDmap

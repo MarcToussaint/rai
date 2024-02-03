@@ -141,7 +141,7 @@ Simulation::Simulation(Configuration& _C, Engine _engine, int _verbose)
     //nothing
   } else NIY;
   self->ref.initialize(C.getJointState(), NoArr, time);
-  if(verbose>0) self->display = make_shared<Simulation_DisplayThread>(C);
+  if(verbose>0) self->display = make_shared<Simulation_DisplayThread>();
 }
 
 Simulation::~Simulation() {
@@ -230,7 +230,9 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->bridgeC.view(false, "bullet bridge");
 #endif
   } else if(engine==_kinematic) {
-    C.setJointState(q_ref);
+    if(q_ref.N){
+      C.setJointState(q_ref);
+    }
   } else NIY;
 
 
@@ -566,19 +568,18 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
   double time;
   byteA image;
   floatA depth;
+  byteA depthImage;
   byteA segmentation;
   byteA screenshot;
   uint pngCount=0;
+  uint drawCount=0;
 
-  Simulation_DisplayThread(const Configuration& C)
-    : Thread("Sim_DisplayThread", .05),
-      Ccopy(C),
-      gl("Simulation Display") {
+  Simulation_DisplayThread() : Thread("Sim_DisplayThread", .05), gl("Simulation Display") {
     gl.add(*this);
     gl.camera.setDefault();
-//    gl.drawOptions.drawVisualsOnly=true;
+    gl.drawOptions.drawVisualsOnly=true;
 
-    if(Ccopy.getFrame("camera_gl",false)) gl.camera.X = Ccopy["camera_gl"]->ensure_X();
+//    if(Ccopy.getFrame("camera_gl",false)) gl.camera.X = Ccopy["camera_gl"]->ensure_X();
 
     threadLoop();
     while(step_count<2) rai::wait(.05);
@@ -595,18 +596,18 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
   }
 
   void glDraw(OpenGL& gl) {
+    drawCount++;
 #ifdef RAI_GL
     mux.lock(RAI_HERE);
     glStandardScene(nullptr, gl);
     Ccopy.glDraw(gl);
 
     if(image.N && depth.N) {
-      static byteA dep;
-      resizeAs(dep, depth);
+      resizeAs(depthImage, depth);
       float x;
-      for(uint i=0; i<dep.N; i++) {
-        x = 100.f * depth.elem(i); //this means that the RGB values are cm distance (up to 255cm distance)
-        dep.elem(i) = (x<0.)?0:((x>255.)?255:x);
+      for(uint i=0; i<depthImage.N; i++) {
+        x = 100.f * depth.p[i]; //this means that the RGB values are cm distance (up to 255cm distance)
+        depthImage.p[i] = (x<0.f)?0.f:((x>255.f)?255.f:x);
       }
       float scale = .3*float(gl.width)/image.d1;
       float top = 1. - scale*float(image.d0)/gl.height;
@@ -618,7 +619,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
       glOrtho(0, 1., 1., 0., -1., 1.); //only affects the offset - the rest is done with raster zooms
       glDisable(GL_DEPTH_TEST);
       glRasterImage(.0, top, image, scale);
-      glRasterImage(.7, top, dep, scale);
+      glRasterImage(.7, top, depthImage, scale);
     }
 
     screenshot.resize(gl.height, gl.width, 3);
@@ -633,8 +634,10 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
 
 void Simulation_self::updateDisplayData(double _time, const rai::Configuration& _C) {
   CHECK(display, "");
+  if(!display->drawCount) return; //don't update when not even drawn once.. to save compute
   display->mux.lock(RAI_HERE);
   display->time = _time;
+  display->drawCount = 0;
 
   bool copyMeshes = false;
   if(_C.frames.N!=display->Ccopy.frames.N) copyMeshes = true;
@@ -653,11 +656,22 @@ void Simulation_self::updateDisplayData(double _time, const rai::Configuration& 
     display->Ccopy.copy(_C, false);
     //deep copy meshes!
     for(rai::Frame* f:display->Ccopy.frames) if(f->shape) {
-      f->shape->_mesh = make_shared<Mesh> (*f->shape->_mesh.get());
+      if(f->shape->_mesh){
+        f->shape->_mesh = make_shared<Mesh> (*f->shape->_mesh.get());
+        f->shape->_mesh->listId = 0;
+      }
     }
     LOG(0) <<"simulation frames changed: #frames: " <<display->Ccopy.frames.N <<" last: " <<display->Ccopy.frames(-1)->name;
   }
+#if 0
   display->Ccopy.setFrameState(_C.getFrameState());
+#else
+  for(uint i=0;i<_C.frames.N;i++){
+    rai::Frame *f = _C.frames.elem(i);
+    if(f->shape) display->Ccopy.frames.elem(i)->set_X() = f->ensure_X();
+  }
+#endif
+
   display->Ccopy.copyProxies(_C.proxies);
   display->mux.unlock();
 }
