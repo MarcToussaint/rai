@@ -51,6 +51,59 @@ struct Conv_NLP_ScalarProblem : ScalarFunction {
   double scalar(arr& g, arr& H, const arr& x);
 };
 
+struct Conv_NLP_SlackLeastSquares : NLP {
+  std::shared_ptr<NLP> P;
+  uintA pick;
+
+  Conv_NLP_SlackLeastSquares(std::shared_ptr<NLP> _P) : P(_P) {
+    dimension = P->getDimension();
+    bounds_lo = P->bounds_lo;
+    bounds_up = P->bounds_up;
+
+    //pick constraints
+    for(uint i=0;i<P->featureTypes.N;i++){
+      ObjectiveType f = P->featureTypes(i);
+      if(f==OT_eq || f==OT_ineq) pick.append(i);
+    }
+    featureTypes.resize(pick.N) = OT_sos;
+  }
+
+  virtual void evaluate(arr& phi, arr& J, const arr& x){
+    arr Pphi, PJ;
+    P->evaluate(Pphi, PJ, x);
+    phi = Pphi.sub(pick);
+    J = PJ.sub(pick);
+    for(uint i=0;i<pick.N;i++){
+      if(P->featureTypes(pick(i))==OT_ineq){
+        if(phi(i)<0.){ phi(i)=0.; J[i]=0.; } //ReLu for g
+      }else if(P->featureTypes(pick(i))==OT_eq){
+        if(phi(i)<0.){ phi(i)*=-1.; J[i]*=-1.; } //make positive
+      }else{
+        NIY;
+      }
+    }
+  }
+};
+
+struct NLP_LinTransformed : NLP {
+  std::shared_ptr<NLP> P;
+  arr A, b;
+
+  NLP_LinTransformed(std::shared_ptr<NLP> _P, const arr& _A, const arr& _b) : P(_P), A(_A), b(_b) {
+    dimension = P->getDimension();
+    featureTypes = P->featureTypes;
+    arr Ainv = inverse(A);
+    bounds_lo = Ainv*(P->bounds_lo-b);
+    bounds_up = Ainv*(P->bounds_up-b);
+  }
+
+  virtual void evaluate(arr& phi, arr& J, const arr& x){
+    arr y = A*x+b;
+    P->evaluate(phi, J, y);
+    J = J*A;
+  }
+};
+
 
 //===========================================================================
 //

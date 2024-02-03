@@ -1454,6 +1454,17 @@ void glRasterImage(float x, float y, byteA& img, float zoom) {
   };
 }
 
+void glRemakeList(GLDrawer& drawer, OpenGL& gl){
+  if(drawer.listId>=0){
+    glDeleteLists(drawer.listId, 1);
+  }else{
+    drawer.listId = glGenLists(1);
+  }
+  glNewList(drawer.listId, GL_COMPILE);
+  drawer.glDraw(gl);
+  glEndList();
+}
+
 int OpenGL::watchImage(const floatA& _img, bool wait, float _zoom) {
   static byteA img;
   resizeAs(img, _img);

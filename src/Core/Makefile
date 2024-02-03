@@ -12,6 +12,7 @@ PTHREAD = 1
 ROS = 1
 JSON = 1
 YAML = 1
+H5 = 1
 EIGEN = 1
 CXXFLAGS += -DRAI_ROOT_PATH=\"`pwd`/../..\"
 

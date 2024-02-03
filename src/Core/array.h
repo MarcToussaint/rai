@@ -363,9 +363,10 @@ template <class T> std::ostream& operator<<(std::ostream& os, const ArrayModList
 typedef rai::Array<uint>   uintA;
 typedef rai::Array<int>    intA;
 typedef rai::Array<char>   charA;
-typedef rai::Array<float>   floatA;
+typedef rai::Array<float>  floatA;
 typedef rai::Array<byte>   byteA;
 typedef rai::Array<byte>   boolA;
+typedef rai::Array<int16_t>   int16A;
 typedef rai::Array<uint16_t>   uint16A;
 typedef rai::Array<uint32_t>   uint32A;
 typedef rai::Array<intA>   intAA;

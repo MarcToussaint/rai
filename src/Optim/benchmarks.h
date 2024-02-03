@@ -223,6 +223,7 @@ struct NLP_CircleLine : NLP {
 
     phi.append(sumOfSqr(x)-.25);  if(!!J) J.append(2.*x);       //feasible=IN circle of radius .5
     phi.append(x(0));             if(!!J) { J.append(zeros(x.N)); J.elem(-x.N) = 1.; }
+//    phi.append(0.);             if(!!J) { J.append(zeros(x.N)); }
   }
 };
 

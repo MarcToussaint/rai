@@ -193,9 +193,15 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
     }
     stbi_image_free(data);
 
-    CHECK_EQ(M.Tt.d0, M.T.d0, "");
-    CHECK_EQ(M.tex.d0, M.V.d0, "");
-    CHECK_EQ(M.texImg.nd, 3, "");
+    if(!M.Tt.d0){
+      M.Tt.clear();
+      M.tex.clear();
+      M.texImg.clear();
+    }else{
+      CHECK_EQ(M.Tt.d0, M.T.d0, "");
+      CHECK_EQ(M.tex.d0, M.V.d0, "");
+      CHECK_EQ(M.texImg.nd, 3, "");
+    }
   }
 
   return M;

@@ -1805,14 +1805,12 @@ void rai::Shape::glDraw(OpenGL& gl) {
       if(!mesh().V.N) {
         LOG(-1) <<"trying to draw empty mesh (shape type:" <<_type <<")";
       } else {
-        if(!mesh().T.N){
-          if(size.N) glPointSize(size.last());
-          else glPointSize(1.f);
-        }
-        if(!mesh().C.N){
-          glColor(.8, .8, .8);
-        }
-        mesh().glDraw(gl);
+        if(!mesh().T.N && size.N) glPointSize(size.last());
+        if(!mesh().C.N) glColor(.8, .8, .8);
+        if(mesh().listId<0) glRemakeList(mesh(), gl);
+        glCallList(mesh().listId);
+//        mesh().glDraw(gl);
+        if(!mesh().T.N && size.N) glPointSize(1.);
       }
     }
   }

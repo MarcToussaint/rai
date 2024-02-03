@@ -49,6 +49,7 @@ struct Mesh : GLDrawer {
   uint _support_vertex=0;
 
   Mesh();
+  ~Mesh();
 
   /// @name set or create
   void clear();

@@ -17,6 +17,7 @@ struct NLP_Sampler_Options {
   RAI_PARAM("sam/", double, eps, .05)
   RAI_PARAM("sam/", double, alpha, 1.)
   RAI_PARAM("sam/", double, maxStep, .5)
+  RAI_PARAM("sam/", double, eqMargin, .1)
   RAI_PARAM("sam/", bool, useCentering, true)
 };
 
@@ -37,6 +38,7 @@ struct NLP_Walker{
     arr gpos;
     double err;
     void eval(const arr& _x, NLP_Walker& walker);
+    void convert_eq_to_ineq(double margin);
   } ev;
 
   //h-threshold
@@ -58,10 +60,13 @@ struct NLP_Walker{
   bool step();
   bool step_slack();
   bool step_hit_and_run(double maxStep);
+  bool step_hit_and_run_eq(bool includeEqualities=true);
+  bool step_noise(double sig=-1.);
+  bool step_noise_covariance(double sig=-1.);
+  bool step_bound_clip();
 
 protected:
   void clipBeta(const arr& d, const arr& xbar, double& beta_lo, double& beta_up);
-  arr get_delta();
   arr get_rnd_direction();
   void get_beta_mean(double& beta_mean, double& beta_sdv, const arr& dir, const arr& xbar);
 };
@@ -74,12 +79,14 @@ struct LineSampler{
   double beta_lo=-1e6, beta_up=1e6;
   double p_beta;
 
-  LineSampler(double maxStep) : beta_lo(-maxStep), beta_up(maxStep){}
+  LineSampler(double maxStep=-1.) { if(maxStep>0.) init(maxStep); }
+
+  void init(double maxStep){ beta_lo=-maxStep; beta_up=maxStep; }
 
   double eval_beta(double beta);
 
-  void add_constraints(const arr& gbar, const arr& gd, double sig);
-  void add_constraints_eq(const arr& hbar, const arr& hd, double sig);
+  void add_constraints(const arr& gbar, const arr& gd);
+  void add_constraints_eq(const arr& hbar, const arr& hd, double margin);
 
   void clip_beta(const arr& gbar, const arr& gd);
 
@@ -100,7 +107,7 @@ struct AlphaSchedule {
 
 //===========================================================================
 
-arr sample_direct(NLP& nlp, uint K=1000, int verbose=1, double alpha_bar=0.);
+arr sample_NLPwalking(NLP& nlp, uint K=1000, int verbose=1, double alpha_bar=0.);
 arr sample_restarts(NLP& nlp, uint K=1000, int verbose=1, double alpha_bar=0.);
 arr sample_greedy(NLP& nlp, uint K=1000, int verbose=1, double alpha_bar=0.);
 arr sample_denoise(NLP& nlp, uint K=1000, int verbose=1);

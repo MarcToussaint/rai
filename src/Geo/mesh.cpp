@@ -58,8 +58,14 @@ template<> const char* Enum<ShapeType>::names []= {
 
 Mesh::Mesh()
   : glX(0)
-    /*parsing_pos_start(0),
-    parsing_pos_end(std::numeric_limits<long>::max())*/{}
+  /*parsing_pos_start(0),
+      parsing_pos_end(std::numeric_limits<long>::max())*/{}
+
+Mesh::~Mesh(){
+#ifdef RAI_GL
+  if(listId>=0) glDeleteLists(listId, 1);
+#endif
+}
 
 void Mesh::clear() {
   V.clear(); Vn.clear();
@@ -1517,6 +1523,8 @@ void Mesh::readPLY(const char* fn) {
 
   free_ply(ply);
   fclose(fp);
+
+  if(C.N && ::max(C)>1.) C /= 255.;
 }
 
 #else
@@ -1651,8 +1659,7 @@ void Mesh::glDraw(struct OpenGL& gl) {
     }
   }
 
-  if(!T.N) { //-- draw point cloud
-    if(!V.N) return;
+  if(!T.N && V.N) { //-- draw point cloud
     CHECK_EQ(V.nd, 2, "wrong dimension");
     CHECK_EQ(V.d1, 3, "wrong dimension");
     glDisable(GL_LIGHTING);
@@ -1686,7 +1693,6 @@ void Mesh::glDraw(struct OpenGL& gl) {
     }
 
     if(lightingEnabled) glEnable(GL_LIGHTING);
-    return;
   }
 
   if(T.d1==2) { //-- draw lines
@@ -1727,9 +1733,6 @@ void Mesh::glDraw(struct OpenGL& gl) {
 
     if(C.N==V.N) glEnable(GL_LIGHTING);
 #endif
-
-
-    return;
   }
 
   //-- draw a mesh
@@ -1759,8 +1762,8 @@ void Mesh::glDraw(struct OpenGL& gl) {
   if((!C.N || C.nd==1 || !glDrawOptions(gl).drawColors || (C.d0==V.d0 && !lightingEnabled))  //we have colors for each vertex
       && (!tex.N || !Tt.N)) { //we have no tex or tex coords for each vertex -> use index arrays
 
-//    glShadeModel(GL_FLAT); //triangles with constant reflection
-    glShadeModel(GL_SMOOTH); //smoothed over vertices
+    glShadeModel(GL_FLAT); //triangles with constant reflection
+//    glShadeModel(GL_SMOOTH); //smoothed over vertices
 
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
@@ -1815,8 +1818,8 @@ void Mesh::glDraw(struct OpenGL& gl) {
     if(tex.N) CHECK_EQ(Tt.d0, T.d0, "this needs tex coords for each tri");
     if(tex.N && glDrawOptions(gl).drawColors) glEnable(GL_TEXTURE_2D);
 
-//    glShadeModel(GL_FLAT); //triangles with constant reflection
-    glShadeModel(GL_SMOOTH); //smoothed over vertices
+    glShadeModel(GL_FLAT); //triangles with constant reflection
+//    glShadeModel(GL_SMOOTH); //smoothed over vertices
 
     glBegin(GL_TRIANGLES);
     for(i=0; i<T.d0; i++) {
@@ -1824,9 +1827,10 @@ void Mesh::glDraw(struct OpenGL& gl) {
         if(C.d1==3) glColor(C(i, 0), C(i, 1), C(i, 2), 1.);
         if(C.d1==1) glColorId(C(i, 0));
       }
-      v=T(i, 0);  glNormal3dv(&Vn(v, 0));  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));  glVertex3dv(&V(v, 0));
-      v=T(i, 1);  glNormal3dv(&Vn(v, 0));  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 1), 0));  glVertex3dv(&V(v, 0));
-      v=T(i, 2);  glNormal3dv(&Vn(v, 0));  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 2), 0));  glVertex3dv(&V(v, 0));
+      glNormal3dv(&Tn(i, 0));  if(C.nd==2 && C.d0==T.d0) glColor(C(i,0),C(i,1),C(i,2),1.f);
+      v=T(i, 0);  /*glNormal3dv(&Vn(v, 0));*/  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));  glVertex3dv(&V(v, 0));
+      v=T(i, 1);  /*glNormal3dv(&Vn(v, 0));*/  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 1), 0));  glVertex3dv(&V(v, 0));
+      v=T(i, 2);  /*glNormal3dv(&Vn(v, 0));*/  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 2), 0));  glVertex3dv(&V(v, 0));
     }
     glEnd();
     if(Tt.N && texImg.N && glDrawOptions(gl).drawColors) {
@@ -1870,6 +1874,9 @@ void Mesh::glDraw(struct OpenGL& gl) {
     glDrawElements(GL_LINE_STRIP, T.N, GL_UNSIGNED_INT, T.p);
 #endif
   }
+
+//  glEndList();
+//  }
 
 }
 

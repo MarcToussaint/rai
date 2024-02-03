@@ -2920,30 +2920,6 @@ const Proxy* Configuration::getContact(uint a, uint b) const {
 
 void Configuration::glDraw(OpenGL& gl) {
   glDraw_sub(gl, frames);
-
-#if 0
-  bool displayUncertainties = false;
-  for(Dof* j:activeJoints) if(j->uncertainty) {
-      displayUncertainties=true; break;
-    }
-
-  if(displayUncertainties) {
-    arr q_org = getJointState();
-    for(Dof* j:activeJoints) if(j->uncertainty) {
-        for(uint i=0; i<j->dim; i++) {
-          arr q=q_org;
-          q(j->qIndex+i) -= j->uncertainty->sigma(i);
-          setJointState(q);
-          glDraw_sub(gl, frames);
-          q=q_org;
-          q(j->qIndex+i) += j->uncertainty->sigma(i);
-          setJointState(q);
-          glDraw_sub(gl, frames);
-        }
-      }
-    setJointState(q_org);
-  }
-#endif
 }
 
 /// GL routine to draw a Configuration

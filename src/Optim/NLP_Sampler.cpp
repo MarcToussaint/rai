@@ -48,16 +48,52 @@ void NLP_Walker::set_alpha_bar(double alpha_bar){
 bool NLP_Walker::step(){
   ensure_eval();
 
-  get_delta();
   bool good = true;
   if(!ev.Ph.N || trace(ev.Ph)>1e-6){
-    good = step_hit_and_run(opt.maxStep);
+//    good = step_hit_and_run_eq(); //(opt.maxStep);
   }
 
-  //  bool good = step_delta();
+  step_noise(.2);
+  step_bound_clip();
+
+  good = step_slack();
   good = step_slack();
 
   return good;
+}
+
+bool NLP_Walker::step_hit_and_run_eq(bool includeEqualities){
+  ensure_eval();
+  if(includeEqualities) ev.convert_eq_to_ineq(opt.eqMargin);
+  Eval ev0 = ev;
+  double g0 = rai::MAX(max(ev0.g), 0.);
+
+  arr dir = get_rnd_direction();
+
+  LineSampler LS(2.*opt.maxStep);
+  LS.clip_beta(nlp.bounds_lo - x, -dir); //cut with lower bound
+  LS.clip_beta(x - nlp.bounds_up, dir); //cut with upper bound
+  for(uint i=0;i<10;i++){ //``line search''
+    //cut with inequalities
+    LS.clip_beta(ev.g + ev.Jg*(x-ev.x), ev.Jg*dir);
+
+    if(LS.beta_lo >= LS.beta_up) break; //failure
+
+    double beta = LS.sample_beta_uniform();
+
+    x += beta*dir;
+    ensure_eval();
+    if(includeEqualities) ev.convert_eq_to_ineq(opt.eqMargin);
+
+    if((!ev.g.N || max(ev.g) <= g0) //ineq constraints are good
+       && sum(ev.s) <= sum(ev0.s) + opt.eps){ //total slack didn't increase too much
+      return true;
+    }
+  }
+
+  ev = ev0;
+  x = ev.x;
+  return false; //line search in 10 steps failed
 }
 
 bool NLP_Walker::step_hit_and_run(double maxStep){
@@ -74,7 +110,7 @@ bool NLP_Walker::step_hit_and_run(double maxStep){
   LineSampler LS(2.*maxStep);
   LS.clip_beta(nlp.bounds_lo - x, -dir); //cut with lower bound
   LS.clip_beta(x - nlp.bounds_up, dir); //cut with upper bound
-  LS.add_constraints(a*ev.g + ev.Jg*(x-a*ev.x), ev.Jg*dir, sig);
+  LS.add_constraints(a*ev.g + ev.Jg*(x-a*ev.x), ev.Jg*dir);
   for(uint i=0;i<10;i++){ //``line search''
     double beta = NAN;
     if(!sig){
@@ -117,7 +153,7 @@ bool NLP_Walker::step_hit_and_run(double maxStep){
     }else{
       if(sum(ev.s) <= sum(ev0.s) + sig + opt.eps){ //total slack didn't increase too much
         if(!ev.g.N) return true;
-        LS.add_constraints(a*ev.g + ev.Jg*(x-a*ev.x), ev.Jg*dir, sig);
+        LS.add_constraints(a*ev.g + ev.Jg*(x-a*ev.x), ev.Jg*dir);
         double p_beta = LS.eval_beta(beta);
         //      cout <<"beta: " <<beta <<" p(beta): " <<LS.p_beta <<" p(beta) " <<p_beta <<endl;
         if(p_beta >= 1e-3*LS.p_beta){
@@ -134,62 +170,57 @@ bool NLP_Walker::step_hit_and_run(double maxStep){
 
 bool NLP_Walker::step_slack(){
   ensure_eval();
+  Eval ev0 = ev;
 
-#if 0
-  arr s0 = sig * randn(ev.s.N);
-  arr delta_s = alpha * (s0 - ev.s);
-  arr delta = pseudoInverse(ev.Js) * delta_s;
-
-  double l = length(delta);
-  if(l>maxStep) delta *= maxStep/l;
-
-  x += delta;
-  boundClip(x, nlp.bounds_lo, nlp.bounds_up);
-#else
-//  if(!ev.h.N) return true;
-  arr Jinv = pseudoInverse(ev.Js);
-  arr delta = -opt.alpha *( Jinv * ev.s );
-  arr Ph = Jinv * ev.Js;
+  double lambda = 1e-2;
+  arr Hinv = lapack_inverseSymPosDef((2.*~ev.Js)*ev.Js+lambda*eye(x.N));
+  arr delta = -2. * Hinv * (~ev.Js) * ev.s;
+  delta *= opt.alpha;
 
   double l = length(delta);
   if(l>opt.maxStep) delta *= opt.maxStep/l;
 
   x += delta;
-  x *= a;
-  if(sig){
-    x += Ph * (sig * randn(x.N));
-  }
-  if(!sig){
-    boundClip(x, nlp.bounds_lo, nlp.bounds_up);
-  }
-
-#endif
-
   ensure_eval();
+
+  if(sum(ev.s) > sum(ev0.s)){
+    x -= .5*delta;
+    ensure_eval();
+  }
+
   return true;
 }
 
-arr NLP_Walker::get_delta(){
-  arr delta;
-  if(ev.s.N && absMax(ev.s)>1e-9){
-    //Gauss-Newton direction
-    arr H = 2. * ~ev.Js * ev.Js;
-    arr grad = 2. * ~ev.Js * ev.s;
-    arr Hinv = pseudoInverse(H);
-    delta = -(Hinv * grad);
-  }
+bool NLP_Walker::step_noise(double _sig){
+  if(_sig<0.) _sig = sig;
 
-  if(ev.h.N){ //equality constraints
-    //Gauss-Newton direction
-    arr H = 2. * ~ev.Jh * ev.Jh;
-    arr Hinv = pseudoInverse(H);
-    ev.Ph = eye(x.N) - Hinv * H; //tangent projection
-  }else{
-    ev.Ph.clear();
-  }
+  x += _sig * randn(x.N);
 
-  return delta;
+  return true;
 }
+
+bool NLP_Walker::step_noise_covariance(double _sig){
+  ensure_eval();
+
+  if(_sig<0.) _sig = sig;
+
+  double lambda = 1e0;
+  arr Hinv = lapack_inverseSymPosDef((2.*~ev.Js)*ev.Js+lambda*eye(x.N));
+  arr C;
+  lapack_cholesky(C, Hinv);
+//  arr cov =  2. * ~ev.Js*ev.Js+lambda*eye(x.N);
+  arr z = C * randn(x.N);
+
+  x += _sig * z;
+
+  return true;
+}
+
+bool NLP_Walker::step_bound_clip(){
+  boundClip(x, nlp.bounds_lo, nlp.bounds_up);
+  return true;
+}
+
 
 void NLP_Walker::get_beta_mean(double& beta_mean, double& beta_sdv, const arr& dir, const arr& xbar) {
   beta_mean = 0.;
@@ -254,11 +285,31 @@ void NLP_Walker::Eval::eval(const arr& _x, NLP_Walker& walker){
     r = phi.sub(sosIdx);
     Jr = J.sub(sosIdx);
   }
+
+  if(h.N){ //projection of equality constraints
+    //Gauss-Newton direction
+//    double lambda = 1e-2;
+//    arr H = 2. * ~Jh * Jh;
+//    for(uint i=0;i<H.d0;i++) H(i,i) += lambda;
+//    arr Hinv = inverse_SymPosDef(H);
+    arr H = 2. * ~Jh * Jh;
+    arr Hinv = pseudoInverse(H);
+    Ph = eye(x.N) - Hinv * H; //tangent projection
+  }else{
+    Ph.clear();
+  }
+}
+
+void NLP_Walker::Eval::convert_eq_to_ineq(double margin){
+  g.append(h-margin);
+  Jg.append(Jh);
+  g.append(-h-margin);
+  Jg.append(-Jh);
 }
 
 //===========================================================================
 
-arr sample_direct(NLP& nlp, uint K, int verbose, double alpha_bar){
+arr sample_NLPwalking(NLP& nlp, uint K, int verbose, double alpha_bar){
   NLP_Walker walk(nlp, alpha_bar);
 
 //  walk.initialize(nlp.getInitializationSample());
@@ -388,16 +439,20 @@ arr sample_greedy(NLP& nlp, uint K, int verbose, double alpha_bar){
       if(verbose>2){
         nlp.report(cout, 1+verbose, STRING("sample_greedy data: " <<data.d0 <<" iters: " <<t <<" good: " <<good));
       }
+      if(walk.sig) walk.step_noise_covariance(walk.sig);
+      walk.step_bound_clip();
       walk.step_slack();
       if(!walk.sig && walk.ev.err<=.01){ good=true; break; }
     }
 
     if(walk.sig){
-      walk.set_alpha_bar(1.);
-      for(uint t=0;t<10;t++){
-        walk.step_slack();
-        if(walk.ev.err<=.01){ good=true; break; }
-      }
+//      walk.set_alpha_bar(1.);
+//      for(uint t=0;t<10;t++){
+//        walk.step_bound_clip();
+//        walk.step_slack();
+//        if(walk.ev.err<=.01){ good=true; break; }
+//      }
+      good = true;
     }
 
     if(good){
@@ -538,7 +593,7 @@ double LineSampler::eval_beta(double beta){
   return p;
 }
 
-void LineSampler::add_constraints(const arr& gbar, const arr& gd, double sig){
+void LineSampler::add_constraints(const arr& gbar, const arr& gd){
   uint n=b.N;
   b.append(zeros(gbar.N));
   s.append(zeros(gbar.N));
@@ -546,13 +601,13 @@ void LineSampler::add_constraints(const arr& gbar, const arr& gd, double sig){
     double gdi = gd.elem(i);
     double si = 0.;
     if(fabs(gdi)>1e-6) si = -1./gdi;
-    s(n+i) = si * sig;
-    b(n+i) = gbar(i) * si;
+    s(n+i) = si;
+    b(n+i) = gbar(i);
   }
   num_constraints++;
 }
 
-void LineSampler::add_constraints_eq(const arr& hbar, const arr& hd, double sig){
+void LineSampler::add_constraints_eq(const arr& hbar, const arr& hd, double margin){
   uint n=b.N;
   b.append(zeros(2*hbar.N));
   s.append(zeros(2*hbar.N));
@@ -560,10 +615,10 @@ void LineSampler::add_constraints_eq(const arr& hbar, const arr& hd, double sig)
     double hdi = hd.elem(i);
     double si = 0.;
     if(fabs(hdi)>1e-6) si = -1./hdi;
-    s(n+2*i) = si * sig;
-    b(n+2*i) = hbar(i) * si - rai::sign(si)*(sig+.1);
-    s(n+2*i+1) = -si * sig;
-    b(n+2*i+1) = hbar(i) * si + rai::sign(si)*(sig+.1);
+    s(n+2*i) = si;
+    b(n+2*i) = hbar(i) * si - rai::sign(si)*margin;
+    s(n+2*i+1) = -si;
+    b(n+2*i+1) = hbar(i) * si + rai::sign(si)*margin;
   }
 }
 

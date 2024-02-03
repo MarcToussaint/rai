@@ -40,6 +40,9 @@ tags
 
 *.orig
 
+# Data
+*.h5
+
 # PYTHON
 *.pyc
 _*.py
