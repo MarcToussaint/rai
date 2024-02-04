@@ -29,15 +29,19 @@ void rai::ConfigurationViewer::setCamera(rai::Frame* camF){
   rai::Camera& cam = gl->camera;
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
-    cam.X = camF->ensure_X();
+    if(camF){
+      cam.X = camF->ensure_X();
 
-    rai::Node *at=0;
-    if((at=camF->ats->getNode("focalLength"))) cam.setFocalLength(at->as<double>());
-    if((at=camF->ats->getNode("orthoAbsHeight"))) cam.setHeightAbs(at->as<double>());
-    if((at=camF->ats->getNode("zRange"))){ arr z=at->as<arr>(); cam.setZRange(z(0), z(1)); }
-    if((at=camF->ats->getNode("width"))) gl->width=at->as<double>();
-    if((at=camF->ats->getNode("height"))) gl->height=at->as<double>();
-//    cam.setWHRatio((double)gl->width/gl->height);
+      rai::Node *at=0;
+      if((at=camF->ats->getNode("focalLength"))) cam.setFocalLength(at->as<double>());
+      if((at=camF->ats->getNode("orthoAbsHeight"))) cam.setHeightAbs(at->as<double>());
+      if((at=camF->ats->getNode("zRange"))){ arr z=at->as<arr>(); cam.setZRange(z(0), z(1)); }
+      if((at=camF->ats->getNode("width"))) gl->width=at->as<double>();
+      if((at=camF->ats->getNode("height"))) gl->height=at->as<double>();
+      //    cam.setWHRatio((double)gl->width/gl->height);
+    }else{
+      gl->camera.setDefault();
+    }
   }
   gl->resize(gl->width, gl->height);
 }

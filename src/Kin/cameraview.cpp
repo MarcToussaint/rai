@@ -16,7 +16,7 @@ rai::CameraView::CameraView(const rai::Configuration& _C, bool _offscreen)
   : gl("CameraView", 640, 480, _offscreen) {
 
   updateConfiguration(_C);
-
+  gl.camera.setDefault();
   gl.add(*this);
 }
 

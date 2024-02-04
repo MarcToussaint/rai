@@ -1575,7 +1575,7 @@ void Mesh::writeArr(std::ostream& os) {
   Graph G;
   G.add("V", convert<float>(V));
   if(V.d0<65535) G.add("T", convert<uint16_t>(T)); else G.add("T", T);
-  if(C.N) G.add("C", convert<float>(C));
+  if(C.N) G.add("C", convert<byte>(C*255.f));
   if(cvxParts.N) G.add("cvxParts", cvxParts);
   if(tex.N) G.add("tex", tex);
   if(texImg.N) G.add("texImg", texImg);
@@ -1587,7 +1587,7 @@ void Mesh::writeH5(const char* filename){
   H5_Writer H(filename);
   H.add("V", convert<float>(V));
   if(V.d0<65535) H.add("T", convert<uint16_t>(T)); else H.add("T", T);
-  if(C.N) H.add("C", convert<float>(C));
+  if(C.N) H.add("C", convert<byte>(C*255.));
   if(cvxParts.N) H.add("cvxParts", cvxParts);
   if(tex.N) H.add("tex", tex);
   if(texImg.N) H.add("texImg", texImg);
@@ -1599,7 +1599,7 @@ void Mesh::readArr(std::istream& is) {
   rai::Node *n;
   n=G["V"]; if(n){ if(n->is<arr>()) V = n->as<arr>(); else V = convert<double>( n->as<floatA>() ); }
   n=G["T"]; if(n){ if(n->is<uintA>()) T = n->as<uintA>(); else{ if(n->is<Array<int16_t>>()) T = convert<uint>( n->as<Array<int16_t>>() ); else T = convert<uint>( n->as<uint16A>() ); } }
-  n=G["C"]; if(n){ if(n->is<arr>()) C = n->as<arr>(); else C = convert<double>( n->as<floatA>() ); }
+  n=G["C"]; if(n){ if(n->is<arr>()) C = n->as<arr>(); else{ if(n->is<byteA>()) C = convert<double>( n->as<byteA>() )/255.; else C = convert<double>( n->as<floatA>() ); } }
   G.get(cvxParts, "cvxParts");
   G.get(tex, "tex");
   G.get(texImg, "texImg");

@@ -493,7 +493,28 @@ rai::Frame& rai::Frame::setRelativeQuaternion(const arr& quat) {
   return *this;
 }
 
-rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors) {
+rai::Frame& rai::Frame::setMesh(const arr& verts, const uintA& tris, const byteA& colors, const uintA& cvxParts) {
+  C.view_lock(RAI_HERE);
+  getShape().type() = ST_mesh;
+  rai::Mesh& mesh = getShape().mesh();
+  mesh.V = verts;
+  mesh.V.reshape(-1, 3);
+  mesh.T = tris;
+  mesh.T.reshape(-1, 3);
+  if(colors.N) {
+    mesh.C = convert<double>(colors).reshape(-1, 3);
+    mesh.C /= 255.;
+    if(mesh.C.N <= 4){ mesh.C.reshape(-1); }
+  }
+  if(cvxParts.N){
+    mesh.cvxParts = cvxParts;
+  }
+  if(mesh.listId>0) mesh.listId *= -1;
+  C.view_unlock();
+  return *this;
+}
+
+rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors, const arr& normals) {
   C.view_lock(RAI_HERE);
   getShape().type() = ST_pointCloud;
   if(!points.N) {
@@ -509,6 +530,10 @@ rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors) {
     mesh.C /= 255.;
     if(mesh.C.N <= 4){ mesh.C.reshape(-1); }
   }
+  if(normals.N){
+    mesh.Vn = normals;
+    mesh.Vn.reshape(-1, 3);
+  }
   if(mesh.listId>0) mesh.listId *= -1;
   C.view_unlock();
   return *this;
@@ -516,27 +541,30 @@ rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors) {
 
 rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, double radius) {
   C.view_lock(RAI_HERE);
-  if(!radius) {
+  rai::Mesh& mesh = getShape().mesh();
+  if(radius<=0.) {
     getShape().type() = ST_mesh;
-    getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
-    getShape().mesh().makeConvexHull();
+    mesh.V.clear().operator=(points).reshape(-1, 3);
+    mesh.makeConvexHull();
     getShape().size.clear();
   } else {
     getShape().type() = ST_ssCvx;
     getShape().sscCore().V.clear().operator=(points).reshape(-1, 3);
     getShape().sscCore().makeConvexHull();
-    getShape().mesh().setSSCvx(getShape().sscCore().V, radius);
+    mesh.setSSCvx(getShape().sscCore().V, radius);
     getShape().size = arr{radius};
   }
   if(colors.N) {
-    getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
+    mesh.C = convert<double>(colors).reshape(-1, 3);
+    mesh.C /= 255.;
+    if(mesh.C.N <= 4){ mesh.C.reshape(-1); }
   }
-  if(getShape().mesh().listId>0) getShape().mesh().listId *= -1;
+  if(mesh.listId>0) mesh.listId *= -1;
   C.view_unlock();
   return *this;
 }
 
-rai::Frame& rai::Frame::setMesh(const rai::Mesh& m) {
+rai::Frame& rai::Frame::setMesh2(const rai::Mesh& m) {
   C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
   getShape().mesh() = m;

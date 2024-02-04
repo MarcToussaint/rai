@@ -45,22 +45,16 @@ void init_Frame(pybind11::module& m) {
     .def("setJointState", &rai::Frame::setJointState )
     .def("setContact", &rai::Frame::setContact )
     .def("setMass", &rai::Frame::setMass )
-    .def("setPointCloud", [](std::shared_ptr<rai::Frame>& self, const pybind11::array& points, const pybind11::array_t<byte>& colors) {
-	arr _points = numpy2arr<double>(points);
-	byteA _colors = numpy2arr<byte>(colors);
-        self->setPointCloud(_points, _colors);
-     }, "", pybind11::arg("points"), pybind11::arg("colors") = pybind11::array_t<byte>{} )
-
-    .def("setMesh", [](std::shared_ptr<rai::Frame>& self, const arr& vertices, const uintA& triangles, const arr& colors) {
-      rai::Mesh m;
-      m.V = vertices;
-      m.T = triangles;
-      m.C = colors;
-      self->setMesh(m);
-    }, "set mesh", pybind11::arg("vertices"), pybind11::arg("triangles"),  pybind11::arg("colors") )
-
     .def("setShape", &rai::Frame::setShape, "", pybind11::arg("type"), pybind11::arg("size") )
-    .def("setConvexMesh", &rai::Frame::setConvexMesh, "", pybind11::arg("points"), pybind11::arg("points"), pybind11::arg("radius") )
+    .def("setMesh", &rai::Frame::setMesh,
+         "attach a mesh shape",
+         pybind11::arg("vertices"), pybind11::arg("triangles"), pybind11::arg("colors")=byteA{}, pybind11::arg("cvxParts")=uintA{} )
+    .def("setPointCloud", &rai::Frame::setPointCloud,
+         "attach a point cloud shape",
+         pybind11::arg("points"), pybind11::arg("colors") = byteA{}, pybind11::arg("normals") = arr{}  )
+    .def("setConvexMesh", &rai::Frame::setConvexMesh,
+         "attach a convex mesh as shape",
+         pybind11::arg("points"), pybind11::arg("colors") = byteA{}, pybind11::arg("radius")=0. )
     .def("setDensity", &rai::Frame::setDensity, "", pybind11::arg("data"), pybind11::arg("size") )
     .def("setImplicitSurface", &rai::Frame::setImplicitSurface, "", pybind11::arg("data"), pybind11::arg("size"), pybind11::arg("blur"), pybind11::arg("resample")=-1.)
 
