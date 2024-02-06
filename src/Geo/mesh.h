@@ -102,6 +102,7 @@ struct Mesh : GLDrawer {
 
   /// @name internal computations & cleanup
   void computeNormals();
+  void computeFaceColors();
   arr computeTriDistances();
   void buildGraph();
   void deleteUnusedVertices();

@@ -98,7 +98,7 @@ int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, con
       if(s->_type != r->_type){ copyMeshes=true; break; }
       if(s->size != r->size){ copyMeshes=true; break; }
       if(s->_mesh && r->_mesh && (s->_mesh.get() != r->_mesh.get())){ copyMeshes=true; break; }
-      if(s->_mesh && s->_mesh->listId<0){ copyMeshes=true; break; }
+      if(s->_mesh && s->glListId<0){ copyMeshes=true; break; }
     }
   }
   if(copyMeshes) recopyMeshes(_C);

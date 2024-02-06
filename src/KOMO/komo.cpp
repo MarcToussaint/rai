@@ -829,7 +829,7 @@ void KOMO::getConfiguration_full(Configuration& C, int t, int verbose){
     f->ensure_X();
     if(f->parent && !F.contains(f->parent)) F.append(f->parent);
   }
-  C.addCopies(F, {}); //, pathConfig.getDofs(F, false));
+  C.addCopy(F, {}); //, pathConfig.getDofs(F, false));
   C.frames.reshape(-1);
   //C.checkConsistency();
 #else
@@ -1725,7 +1725,7 @@ void KOMO::setupPathConfig() {
 //    }
 
 //    uint nBefore = pathConfig.frames.N;
-    pathConfig.addCopies(C.frames, C.otherDofs);
+    pathConfig.addCopy(C.frames, C.otherDofs);
 //    timeSlices[s] = pathConfig.frames({nBefore, -1});
 
   }

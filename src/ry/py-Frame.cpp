@@ -27,7 +27,7 @@
 //}
 
 void init_Frame(pybind11::module& m) {
-  pybind11::class_<rai::Frame, shared_ptr<rai::Frame>>(m, "Frame", "A (coordinate) of a configuration, which can have a parent, and associated shape, joint, and/or inertia")
+  pybind11::class_<rai::Frame, shared_ptr<rai::Frame>>(m, "Frame", "A (coordinate) frame of a configuration, which can have a parent, and associated shape, joint, and/or inertia")
 
     .def("setColor", &rai::Frame::setColor )
 

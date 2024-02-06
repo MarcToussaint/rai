@@ -22,7 +22,8 @@ struct H5_Reader {
   rai::Graph G;
   int verbose=0;
 
-  H5_Reader(const char* filename, bool readAll=true);
+  H5_Reader(const char* filename);
   void readAll();
+  template<class T> rai::Array<T> read(const char* name);
 };
 

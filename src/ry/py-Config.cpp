@@ -73,10 +73,12 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("args") = std::string()
       )
 
-  .def("addConfigurationCopy", [](shared_ptr<rai::Configuration>& self, shared_ptr<rai::Configuration>& other, double tau){
-    self->addConfiguration(*other, tau);
+  .def("addConfigurationCopy", [](shared_ptr<rai::Configuration>& self, shared_ptr<rai::Configuration>& other, const str& prefix, double tau){
+    rai::Frame* f = self->addConfigurationCopy(*other, prefix, tau);
+    return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
   }, "",
     pybind11::arg("config"),
+    pybind11::arg("prefix")=str{},
     pybind11::arg("tau")=1.
   )
 
@@ -361,6 +363,10 @@ reloads, displays and animates the configuration whenever the file is changed"
 
   .def("animate", [](shared_ptr<rai::Configuration>& self) { self->animate(); },
      "displays while articulating all dofs in a row")
+
+  .def("animateSpline", &rai::Configuration::animateSpline,
+     "animate with random spline in limits bounding box [T=#spline points]",
+      pybind11::arg("T")=3)
 
   .def("report", [](shared_ptr<rai::Configuration>& self) {
     rai::String str;

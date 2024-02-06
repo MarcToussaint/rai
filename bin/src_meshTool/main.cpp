@@ -25,7 +25,7 @@ int main(int argc,char **argv){
 
   rai::String file=rai::getParameter<rai::String>("file",STRING("none"));
   if(rai::argc>=2 && rai::argv[1][0]!='-') file=rai::argv[1];
-  LOG(0) <<"== opening mesh file `" <<file <<"'" <<endl;
+  LOG(0) <<"== opening mesh file `" <<file <<"'";
 
   if(file=="none") return 0;
 

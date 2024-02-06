@@ -658,7 +658,7 @@ void Simulation_self::updateDisplayData(double _time, const rai::Configuration& 
     for(rai::Frame* f:display->Ccopy.frames) if(f->shape) {
       if(f->shape->_mesh){
         f->shape->_mesh = make_shared<Mesh> (*f->shape->_mesh.get());
-        f->shape->_mesh->listId = 0;
+        f->shape->glListId = 0;
       }
     }
     LOG(0) <<"simulation frames changed: #frames: " <<display->Ccopy.frames.N <<" last: " <<display->Ccopy.frames(-1)->name;

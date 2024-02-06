@@ -26,6 +26,7 @@
 #include "../Geo/mesh_readAssimp.h"
 #include "../Gui/opengl.h"
 #include "../Algo/algos.h"
+#include "../Algo/spline.h"
 #include <iomanip>
 #include <algorithm>
 #include <sstream>
@@ -323,7 +324,7 @@ Frame* Configuration::addObject(const char* name, const char* parent, ShapeType 
 #endif
 
 /// add copies of all given frames and forces, which can be from another Configuration -> \ref frames array becomes sliced! (a matrix)
-Frame* Configuration::addCopies(const FrameL& F, const DofL& _dofs) {
+Frame* Configuration::addCopy(const FrameL& F, const DofL& _dofs, const str& prefix) {
   //prepare an index FId -> thisId
   uint maxId=0;
   for(Frame* f:F) if(f->ID>maxId) maxId=f->ID;
@@ -374,13 +375,19 @@ Frame* Configuration::addCopies(const FrameL& F, const DofL& _dofs) {
 
   if(!(frames.N%F.N)) frames.reshape(-1, F.N);
 
-  return frames.elem(FId2thisId(F.first()->ID));
+  uint startId = FId2thisId(F.first()->ID);
+  if(prefix.N){
+    for(uint i=startId;i<frames.N;i++) frames.elem(i)->name.prepend(prefix);
+  }
+
+  return frames.elem(startId);
 }
 
 /// same as addCopies() with C.frames and C.forces
-void Configuration::addConfiguration(const Configuration& C, double tau){
-  Frame* f=addCopies(C.frames, C.otherDofs);
+Frame* Configuration::addConfigurationCopy(const Configuration& C, const str& prefix, double tau){
+  Frame* f=addCopy(C.frames, C.otherDofs, prefix);
   if(tau>=0.) f->tau=tau;
+  return f;
 }
 
 /// get first frame with given name
@@ -2997,6 +3004,9 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
   }
 
   //shapes
+  //first clear all listIDs within meshes - shapes organize them
+  for(Frame* f: F) if(f->shape && f->shape->_mesh) f->shape->_mesh->glListId=0;
+
   if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==1) {
     //first non-transparent
     for(Frame* f: F) if(f->shape && f->shape->alpha()==1.) {
@@ -3262,6 +3272,23 @@ void _glDrawOdeWorld(dWorldID world)
   glPopName();
 }
 */
+
+void Configuration::animateSpline(uint T) {
+  arr x0 = getJointState();
+  arr X = rand(T+2, x0.N);
+  arr bounds = getJointLimits();
+  X = X%(bounds[1]-bounds[0]) + repmat(~bounds[0],T+2,1);
+  X[0] = x0;
+  X[-1] = x0;
+  rai::BSpline S;
+  S.set(2, X, grid(1, 0., double(T+1), T+1));
+  double tau = .02;
+  for(double t=0.;t<=T+1;t+=tau){
+    setJointState(S.eval(t));
+    view();
+    rai::wait(tau);
+  }
+}
 
 int Configuration::animate(Inotify* ino) {
   arr x, x0;

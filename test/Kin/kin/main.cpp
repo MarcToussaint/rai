@@ -347,6 +347,11 @@ void TEST(PlayStateSequence){
   }
 }
 
+void testPlaySpline(){
+  rai::Configuration C(rai::raiPath("../rai-robotModels/panda/panda.g"));
+  C.animateSpline(5);
+}
+
 //===========================================================================
 //
 // ODE test
@@ -648,6 +653,7 @@ int MAIN(int argc,char **argv){
   testCopy();
   testGraph();
   testPlayStateSequence();
+  testPlaySpline();
   testViewerUpdate();
   testKinematics();
   testQuaternionKinematics();

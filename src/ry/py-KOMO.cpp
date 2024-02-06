@@ -17,7 +17,7 @@
 #include "../Kin/viewer.h"
 
 void init_KOMO(pybind11::module& m) {
-  pybind11::class_<KOMO, std::shared_ptr<KOMO>>(m, "KOMO", "Constrained solver to optimize configurations or paths. (KOMO = k-order Markov Optimization) -- see https://marctoussaint.github.io/robotics-course/tutorials/1c-komo.html")
+  pybind11::class_<KOMO, std::shared_ptr<KOMO>>(m, "KOMO", "A framework to define manipulation problems (IK, path optimization, sequential manipulation) as Nonlinear Mathematical Program (NLP). The actual NLP_Solver class is separate. (KOMO = k-order Markov Optimization) -- see https://marctoussaint.github.io/robotics-course/tutorials/1c-komo.html")
 
     .def(pybind11::init<>(), "[deprecated] please use the other constructor")
 

@@ -66,7 +66,7 @@ struct NonCopyable {
 struct OpenGL;
 struct OpenGLDrawOptions;
 struct GLDrawer {
-  int listId=0;
+  int glListId=0;
   virtual void glDraw(OpenGL&) = 0;
   virtual ~GLDrawer() {}
   static OpenGLDrawOptions& glDrawOptions(OpenGL&);

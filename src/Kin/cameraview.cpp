@@ -96,7 +96,7 @@ void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
         if(f->shape->_mesh){
           shared_ptr<Mesh> org = f->shape->_mesh;
           f->shape->_mesh = make_shared<Mesh> (*org.get());
-          f->shape->_mesh->listId = 0;
+          f->shape->glListId = 0;
         }
       }
     if(renderMode==seg) { //update frameIDmap

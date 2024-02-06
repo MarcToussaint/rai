@@ -32,9 +32,23 @@ template<class T> void H5_Writer::add(const char* name, const rai::Array<T>& x){
 
 //===========================================================================
 
-H5_Reader::H5_Reader(const char* filename, bool readAll) {
+H5_Reader::H5_Reader(const char* filename) {
   file = make_shared<H5::H5File>(filename, H5F_ACC_RDONLY);
-  if(readAll) this->readAll();
+}
+
+uintA get_dim(H5::DataSet& dataset){
+  H5::DataSpace dataspace = dataset.getSpace();
+  rai::Array<hsize_t> _dim(dataspace.getSimpleExtentNdims());
+  dataspace.getSimpleExtentDims(_dim.p, NULL);
+  return rai::convert<uint>(_dim);
+}
+
+template<class T> rai::Array<T> H5_Reader::read(const char* name){
+  H5::DataSet dataset = file->openDataSet(name);
+  rai::Array<T> x;
+  x.resize(get_dim(dataset));
+  dataset.read(x.p, get_h5type<T>());
+  return x;
 }
 
 template<class T> void readDatasetToGraph(rai::Graph& G, H5::DataSet& dataset, const uintA& dim, const char* name){
@@ -48,10 +62,7 @@ herr_t file_callback(hid_t loc_id, const char* name, const H5L_info_t* linfo, vo
   if(L->verbose) cout <<"== loading: " <<name <<endl;
 
   H5::DataSet dataset = L->file->openDataSet(name);
-  H5::DataSpace dataspace = dataset.getSpace();
-  rai::Array<hsize_t> _dim(dataspace.getSimpleExtentNdims());
-  dataspace.getSimpleExtentDims(_dim.p, NULL);
-  uintA dim = rai::convert<uint>(_dim);
+  uintA dim = get_dim(dataset);
   if(L->verbose) cout <<"   dim: " <<dim << endl;
 
   H5T_class_t type_class = dataset.getTypeClass();
@@ -89,7 +100,8 @@ void H5_Reader::readAll(){
 
 H5_Writer::H5_Writer(const char* filename){ NICO }
 template<class T> void H5_Writer::add(const char* name, const rai::Array<T>& x){ NICO }
-H5_Reader::H5_Reader(const char* filename, bool readAll) { NICO }
+H5_Reader::H5_Reader(const char* filename) { NICO }
+template<class T> rai::Array<T> H5_Reader::read(const char* name){ NICO }
 
 #endif
 
@@ -102,3 +114,12 @@ template void H5_Writer::add<int16_t>(const char* name, const rai::Array<int16_t
 template void H5_Writer::add<uint16_t>(const char* name, const rai::Array<uint16_t>& x);
 template void H5_Writer::add<char>(const char* name, const rai::Array<char>& x);
 template void H5_Writer::add<unsigned char>(const char* name, const rai::Array<unsigned char>& x);
+
+template rai::Array<double> H5_Reader::read<double>(const char* name);
+template rai::Array<float> H5_Reader::read<float>(const char* name);
+template rai::Array<int> H5_Reader::read<int>(const char* name);
+template rai::Array<uint> H5_Reader::read<uint>(const char* name);
+template rai::Array<int16_t> H5_Reader::read<int16_t>(const char* name);
+template rai::Array<uint16_t> H5_Reader::read<uint16_t>(const char* name);
+template rai::Array<char> H5_Reader::read<char>(const char* name);
+template rai::Array<byte> H5_Reader::read<byte>(const char* name);

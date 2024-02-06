@@ -56,7 +56,7 @@ void glStandardLight(void*, OpenGL& gl);
 void glStandardScene(void*, OpenGL&);
 void glStandardOriginAxes(void*, OpenGL&);
 
-void glColor(float r, float g, float b, float a=1.f);
+void glColor(float r, float g, float b, float a=1.f, GLboolean lightingEnabled=2);
 void glColor(int col);
 void glColor(const arr& col);
 void glColorId(uint id);
@@ -102,7 +102,7 @@ void glDrawTexQuad(const byteA& img,
 //grabImage: use OpenGL::capture instead!
 void glRasterImage(float x, float y, byteA& img, float zoom=1.);
 
-void glDrawAsList(GLDrawer& drawer, OpenGL& gl);
+void glDrawAsList(GLDrawer& drawer, int& listId, OpenGL& gl);
 
 void read_png(byteA& img, const char* file_name, bool swap_rows);
 void write_png(const byteA& img, const char* file_name, bool swap_rows=true);

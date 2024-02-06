@@ -652,17 +652,18 @@ void glColor(int col) {
     {1.0, 0.0, 0.0, 1.0}, // red
     {0.7, 0.7, 0.7, 1.0}, // gray
     {1.0, 1.0, 1.0, 1.0}, // white
-    {0.2, 1.0, 0.2, 1.0}
-  }; // green
+    {0.2, 1.0, 0.2, 1.0}  // green
+  };
 
   col = col%6; //if(col<0) col=0; if(col>5) col=5;
   glColor(colorsTab[col][0], colorsTab[col][1], colorsTab[col][2], colorsTab[col][3]);
 }
 
-void glColor(float r, float g, float b, float alpha) {
-  GLboolean lightingEnabled=true;
-  glGetBooleanv(GL_LIGHTING, &lightingEnabled);
-  if(lightingEnabled){
+void glColor(float r, float g, float b, float alpha, GLboolean lightingEnabled) {
+  if(lightingEnabled>1){
+    glGetBooleanv(GL_LIGHTING, &lightingEnabled);
+  }
+  if(lightingEnabled==1){
     float diff=1.f;
     GLfloat diffuse[4]  = { r*diff, g*diff, b*diff, alpha };
 #if 1
@@ -1458,19 +1459,19 @@ void glRasterImage(float x, float y, byteA& img, float zoom) {
   };
 }
 
-void glDrawAsList(GLDrawer& drawer, OpenGL& gl){
-  if(!drawer.listId){
-    drawer.listId = glGenLists(1);
-    CHECK_GE(drawer.listId, 1, "I expected id>=1");
-    drawer.listId *= -1;
+void glDrawAsList(GLDrawer& drawer, int& listId, OpenGL& gl){
+  if(!listId){
+    listId = glGenLists(1);
+    CHECK_GE(listId, 1, "I expected id>=1");
+    listId *= -1;
   }
-  if(drawer.listId<0){ //negative: require recreation!
-    drawer.listId *= -1;
-    glNewList(drawer.listId, GL_COMPILE_AND_EXECUTE);
+  if(listId<0){ //negative: require recreation!
+    listId *= -1;
+    glNewList(listId, GL_COMPILE_AND_EXECUTE);
     drawer.glDraw(gl);
     glEndList();
   }else{
-    glCallList(drawer.listId);
+    glCallList(listId);
   }
 }
 

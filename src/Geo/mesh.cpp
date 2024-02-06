@@ -38,7 +38,7 @@
 #endif
 
 extern void glColorId(uint id);
-extern void glColor(float r, float g, float b, float alpha);
+extern void glColor(float r, float g, float b, float alpha, GLboolean lightingEnabled);
 extern arr id2color(uint id);
 
 namespace rai {
@@ -60,9 +60,6 @@ Mesh::Mesh()
       parsing_pos_end(std::numeric_limits<long>::max())*/{}
 
 Mesh::~Mesh(){
-#ifdef RAI_GL
-  if(listId>=0) glDeleteLists(listId, 1);
-#endif
 }
 
 void Mesh::clear() {
@@ -628,6 +625,24 @@ void Mesh::computeNormals() {
   }
   Vector d;
   for(uint i=0; i<Vn.d0; i++) { d.set(&Vn(i, 0)); Vn[i]/=d.length(); }
+}
+
+void Mesh::computeFaceColors(){
+  CHECK_EQ(C.nd, 2, "");
+  CHECK_EQ(C.d0, V.d0, "");
+  CHECK_EQ(C.d1, 3, "");
+  arr CV = C;
+  C.resize(T.d0, 3);
+  for(uint i=0; i<T.d0; i++) {
+    uint* t=T.p+3*i;
+    double* a = CV.p+3*t[0];
+    double* b = CV.p+3*t[1];
+    double* c = CV.p+3*t[2];
+    double* d = C.p+3*i;
+    d[0] = (a[0]+b[0]+c[0])/3.;
+    d[1] = (a[1]+b[1]+c[1])/3.;
+    d[2] = (a[2]+b[2]+c[2])/3.;
+  }
 }
 
 arr Mesh::computeTriDistances() {
@@ -1841,8 +1856,6 @@ void Mesh::glDraw(struct OpenGL& gl) {
 //    }
 //    glEnd();
   } else { //basic vertex-wise
-    uint i, v;
-
     if(tex.N) CHECK_EQ(Tt.d0, T.d0, "this needs tex coords for each tri");
     if(tex.N && glDrawOptions(gl).drawColors) glEnable(GL_TEXTURE_2D);
 
@@ -1850,15 +1863,18 @@ void Mesh::glDraw(struct OpenGL& gl) {
 //    glShadeModel(GL_SMOOTH); //smoothed over vertices
 
     glBegin(GL_TRIANGLES);
-    for(i=0; i<T.d0; i++) {
-      if(C.d0==T.d0) {
-        if(C.d1==3) glColor(C(i, 0), C(i, 1), C(i, 2), 1.);
+    for(uint i=0; i<T.d0; i++) {
+      glNormal3dv(Tn.p+3*i);
+      if(C.nd==2 && C.d0==T.d0) {
+        if(C.d1==3){ double* c = C.p+3*i; glColor(c[0], c[1], c[2], 1.f, lightingEnabled); }
         if(C.d1==1) glColorId(C(i, 0));
       }
-      glNormal3dv(&Tn(i, 0));  if(C.nd==2 && C.d0==T.d0) glColor(C(i,0),C(i,1),C(i,2),1.f);
-      v=T(i, 0);  /*glNormal3dv(&Vn(v, 0));*/  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));  glVertex3dv(&V(v, 0));
-      v=T(i, 1);  /*glNormal3dv(&Vn(v, 0));*/  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 1), 0));  glVertex3dv(&V(v, 0));
-      v=T(i, 2);  /*glNormal3dv(&Vn(v, 0));*/  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 2), 0));  glVertex3dv(&V(v, 0));
+      uint* t = T.p+3*i;
+      for(uint j=0;j<3;j++){
+        if(C.nd==2 && C.d0==V.d0){ double* c = C.p+3*t[j]; glColor(c[0], c[1], c[2], 1.f, lightingEnabled); }
+        if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));
+        glVertex3dv(V.p+3*t[j]);
+      }
     }
     glEnd();
     if(Tt.N && texImg.N && glDrawOptions(gl).drawColors) {

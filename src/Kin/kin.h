@@ -96,8 +96,8 @@ struct Configuration : GLDrawer {
   Frame* addFrame(const char* name, const char* parent=nullptr, const char* args=nullptr, bool warnDuplicateName=true);
   Frame* addFile(const char* filename, const char* namePrefix=0);
   Frame* addAssimp(const char* filename);
-  Frame* addCopies(const FrameL& F, const DofL& _dofs);
-  void addConfiguration(const Configuration& C, double tau=1.);
+  Frame* addCopy(const FrameL& F, const DofL& _dofs, const str& prefix={});
+  Frame* addConfigurationCopy(const Configuration& C, const str& prefix={}, double tau=1.);
 
   /// @name get frames
   Frame* operator[](const char* name) const { return getFrame(name, true); }  ///< same as getFrame()
@@ -275,6 +275,7 @@ struct Configuration : GLDrawer {
 
   void watchFile(const char* filename);
   int animate(struct Inotify* ino=nullptr);
+  void animateSpline(uint T=3);
 
   //some info
   void report(std::ostream& os=cout) const;
