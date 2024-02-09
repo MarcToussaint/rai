@@ -92,7 +92,7 @@ void init_params(pybind11::module& m){
     if(fil.good()) rai::params()->read(fil);
     else LOG(0) <<"could not add params file '" <<filename <<"'";
   }, "add parameters from a file");
-  m.def("params_print", [](){ LOG(0) <<rai::params()(); }, "print the parameters");
+  m.def("params_print", [](){ cout <<rai::params()(); }, "print the parameters");
   m.def("params_clear", [](){ rai::params()->clear(); }, "clear all parameters");
 }
 

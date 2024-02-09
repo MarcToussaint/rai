@@ -56,7 +56,7 @@ void glStandardLight(void*, OpenGL& gl);
 void glStandardScene(void*, OpenGL&);
 void glStandardOriginAxes(void*, OpenGL&);
 
-void glColor(float r, float g, float b, float a=1.f, GLboolean lightingEnabled=2);
+void glColor(float r, float g, float b, float a=1.f, unsigned char lightingEnabled=2);
 void glColor(int col);
 void glColor(const arr& col);
 void glColorId(uint id);

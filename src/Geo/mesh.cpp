@@ -1898,7 +1898,7 @@ void Mesh::glDraw(struct OpenGL& gl) {
 
   if(glDrawOptions(gl).drawWires) { //on top of mesh
 #if 1
-    glColor(0,0,0,1);
+    glColor(0,0,0,1, 2);
     uint t;
     for(t=0; t<T.d0; t++) {
       glBegin(GL_LINE_LOOP);

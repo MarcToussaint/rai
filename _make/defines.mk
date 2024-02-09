@@ -14,6 +14,13 @@ LPATHS += ../build ../../build $(BASE)/../build
 LIBS += -lrai
 endif
 
+ifeq ($(RAI_ROBOTIC),1)
+DEPEND :=
+PY_VER = $(shell python3 -c "import sys; print(str(sys.version_info[0])+'.'+str(sys.version_info[1]))")
+LPATHS += $(HOME)/.local/lib/python${PY_VER}/site-packages/robotic/
+LIBS += -lrai
+endif
+
 ifeq ($(JSON),1)
 DEPEND_UBUNTU += libjsoncpp-dev
 CXXFLAGS += -DRAI_JSON

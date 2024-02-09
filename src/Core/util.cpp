@@ -565,6 +565,8 @@ void initCmdLine(int _argc, char* _argv[], bool quiet) {
   }
 
   initParameters(argc, argv, false, !quiet);
+
+  if(checkParameter<rai::String>("raiPath")) setRaiPath(getParameter<rai::String>("raiPath"));
 }
 
 /// returns true if the tag was found on command line
