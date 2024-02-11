@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Core/array.h>
-#include <Core/graph.h>
+#include "array.h"
+#include "graph.h"
 
 namespace H5{ class H5File; }
 
@@ -25,5 +25,6 @@ struct H5_Reader {
   H5_Reader(const char* filename);
   void readAll();
   template<class T> rai::Array<T> read(const char* name);
+  bool exists(const char* name);
 };
 

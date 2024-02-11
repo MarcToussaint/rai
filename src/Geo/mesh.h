@@ -146,6 +146,7 @@ struct Mesh : GLDrawer {
   void readJson(std::istream&);
   void writeArr(std::ostream&);
   void writeH5(const char* filename);
+  void readH5(const char* filename);
   void readArr(std::istream&);
   void readPts(std::istream&);
 

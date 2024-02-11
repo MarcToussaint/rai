@@ -26,8 +26,8 @@
 #include "../Core/graph.h"
 
 void init_CfgFileParameters(){
-  char* argv[2] = {(char*)"rai-pybind", (char*)"-python"};
-  int argc = 2;
+  char* argv[1] = {(char*)"rai-pybind"};
+  int argc = 1;
   rai::initCmdLine(argc, argv);
 }
 

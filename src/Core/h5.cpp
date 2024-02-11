@@ -43,6 +43,10 @@ uintA get_dim(H5::DataSet& dataset){
   return rai::convert<uint>(_dim);
 }
 
+bool H5_Reader::exists(const char* name){
+  return file->nameExists(name);
+}
+
 template<class T> rai::Array<T> H5_Reader::read(const char* name){
   H5::DataSet dataset = file->openDataSet(name);
   rai::Array<T> x;
@@ -102,6 +106,7 @@ H5_Writer::H5_Writer(const char* filename){ NICO }
 template<class T> void H5_Writer::add(const char* name, const rai::Array<T>& x){ NICO }
 H5_Reader::H5_Reader(const char* filename) { NICO }
 template<class T> rai::Array<T> H5_Reader::read(const char* name){ NICO }
+bool H5_Reader::exists(const char* name){ NICO }
 
 #endif
 

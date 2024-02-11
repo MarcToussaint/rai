@@ -1291,6 +1291,7 @@ void Mesh::read(std::istream& is, const char* fileExtension, const char* filenam
   else if(!strcmp(fileExtension, "nts")) { readPts(is); } //points
   else if(!strcmp(fileExtension, "pts")) { readPts(is); }
   else if(!strcmp(fileExtension, "msh")) { readJson(is); }
+  else if(!strcmp(fileExtension, ".h5")) { readH5(filename); }
   else if(!strcmp(fileExtension, "off")) { readOffFile(is); }
   else if(!strcmp(fileExtension, "ply")) { readPLY(filename); }
   else if(!strcmp(fileExtension, "tri")) { readTriFile(is); }
@@ -1597,15 +1598,24 @@ void Mesh::writeArr(std::ostream& os) {
   G.write(os, ",\n", "{\n\n}", -1, false, true);
 }
 
-//#ifdef RAI_H5
 void Mesh::writeH5(const char* filename){
   H5_Writer H(filename);
-  H.add("V", convert<float>(V));
-  if(V.d0<65535) H.add("T", convert<uint16_t>(T)); else H.add("T", T);
-  if(C.N) H.add("C", convert<byte>(C*255.));
-  if(cvxParts.N) H.add("cvxParts", cvxParts);
-  if(tex.N) H.add("tex", tex);
-  if(texImg.N) H.add("texImg", texImg);
+  H.add("mesh/vertices", convert<float>(V));
+  if(V.d0<65535) H.add("mesh/faces", convert<uint16_t>(T)); else H.add("mesh/faces", T);
+  if(C.N) H.add("mesh/colors", convert<byte>(C*255.));
+  if(cvxParts.N) H.add("mesh/parts", cvxParts);
+  if(tex.N) H.add("mesh/tex", tex);
+  if(texImg.N) H.add("mesh/texImg", texImg);
+}
+
+void Mesh::readH5(const char* filename){
+  H5_Reader H(filename);
+  V = H.read<double>("mesh/vertices");
+  T = H.read<uint>("mesh/faces");
+  if(H.exists("mesh/colors")) C = convert<double>(H.read<byte>("mesh/colors"))/255.;
+  if(H.exists("mesh/parts")) cvxParts = H.read<uint>("mesh/parts");
+  if(H.exists("mesh/tex")) tex = H.read<double>("mesh/tex");
+  if(H.exists("mesh/texImg")) texImg = H.read<byte>("mesh/texImg");
 }
 
 void Mesh::readArr(std::istream& is) {
