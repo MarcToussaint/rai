@@ -943,6 +943,13 @@ double Configuration::getTotalPenetration() {
   return D;
 }
 
+bool Configuration::getCollisionFree(){
+  fcl()->mode = rai::FclInterface::_binaryCollisionAll;
+  ensure_proxies(false);
+  bool feas=true;
+  for(const rai::Proxy& p:proxies) if(p.d<=0.){ feas=false; break; }
+  return feas;
+}
 
 Graph Configuration::reportForces() {
   Graph G;

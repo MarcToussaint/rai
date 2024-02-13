@@ -36,7 +36,7 @@ endif
 ifeq ($(H5),1)
 DEPEND_UBUNTU += libhdf5-dev
 CXXFLAGS += -DRAI_H5 `pkg-config --cflags hdf5`
-LIBS     += `pkg-config --libs hdf5` -lhdf5_cpp
+LIBS     += -lhdf5_cpp `pkg-config --libs hdf5`
 endif
 
 ifeq ($(OPENMP),1)

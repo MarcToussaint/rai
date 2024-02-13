@@ -23,7 +23,7 @@ ConfigurationProblem::ConfigurationProblem(const rai::Configuration& _C, bool _c
 
   computeCollisionFeatures = false;
   if(!computeCollisionFeatures){
-    C.fcl()->mode = rai::FclInterface::_binaryCollisionSingle;
+    C.fcl()->mode = rai::FclInterface::_binaryCollisionAll; //Single;
   }
 }
 
@@ -74,7 +74,7 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
 
   if(!computeCollisionFeatures){
 #if 1
-    double feas=true;
+    bool feas=true;
     for(rai::Proxy& p:C.proxies) if(p.d<=0.){ feas=false; break; }
     qr->isFeasible = feas;
 #else

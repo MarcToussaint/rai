@@ -161,6 +161,7 @@ struct Configuration : GLDrawer {
   arr getTorqueLimits(const DofL& dofs, uint index=4) const;
   double getEnergy(const arr& qdot);
   double getTotalPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
+  bool getCollisionFree();
   Graph reportForces();
   bool checkUniqueNames(bool makeUnique=false);
   FrameL calc_topSort() const;

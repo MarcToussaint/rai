@@ -2,6 +2,7 @@
 #include <Optim/NLP_Solver.h>
 #include <PathAlgos/RRT_PathFinder.h>
 #include <Geo/fclInterface.h>
+#include <Kin/proxy.h>
 
 void run_rrt(rai::Configuration& C, const arr& q0, const arr& q1, int verbose) {
   bool useFcl = rai::getParameter<bool>("useFcl", true);
@@ -70,17 +71,24 @@ void testKinematics(bool withCollisions, uint N=100000){
   }
 
   double time = -rai::cpuTime();
+  uint count=0;
   for(uint i=0;i<N;i++){
     rndGauss(q);
     C.setJointState(q);
     for(rai::Frame *f:C.frames) if(f->shape && f->shape->cont) f->ensure_X(); //compute pose of all relevant frames
 
     if(withCollisions){
+#if 0
       C.stepFcl();
+      bool feas = !C.proxies.N;
+#else
+      bool feas = C.getCollisionFree();
+#endif
+      if(!feas) count++;
     }
   }
   time += rai::cpuTime();
-  cout <<"kinematics (collisions=" <<withCollisions <<") time: " <<time <<"sec or " <<1000.*time/double(N) <<"msec/query" <<endl;
+  cout <<"kinematics (collisions=" <<withCollisions <<") time: " <<time <<"sec or " <<1000.*time/double(N) <<"msec/query" <<" (#collisions: " <<double(count)/N <<")" <<endl;
 }
 
 // =============================================================================
@@ -88,7 +96,7 @@ void testKinematics(bool withCollisions, uint N=100000){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  rnd.clockSeed();
+//  rnd.clockSeed();
 
   cout <<"=== RRT test" <<endl;
   testRRT();
