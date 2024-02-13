@@ -67,7 +67,7 @@ PYBIND11_MODULE(_robotic, m) {
   init_params(m);
   init_Frame(m);
   init_Config(m);
-  init_Feature(m);
+//  init_Feature(m);
   init_KOMO(m);
   init_Skeleton(m);
   init_PathAlgos(m);

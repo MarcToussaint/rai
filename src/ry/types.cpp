@@ -16,7 +16,7 @@
 pybind11::dict graph2dict(const rai::Graph& G) {
   pybind11::dict dict;
   for(rai::Node* n:G) {
-    rai::String key;
+    str key;
     if(n->key.N) key=n->key;
     else key <<n->index;
 
@@ -31,8 +31,8 @@ pybind11::dict graph2dict(const rai::Graph& G) {
       dict[key.p] = n->as<uint>();
     } else if(n->is<bool>()) {
       dict[key.p] = n->as<bool>();
-    } else if(n->is<rai::String>()) {
-      dict[key.p] = n->as<rai::String>().p;
+    } else if(n->is<str>()) {
+      dict[key.p] = n->as<str>().p;
     } else if(n->is<rai::FileToken>()) {
       dict[key.p] = n->as<rai::FileToken>().autoPath().p;
     } else if(n->is<arr>()) {
@@ -61,7 +61,7 @@ pybind11::dict graph2dict(const rai::Graph& G) {
 rai::Graph dict2graph(const pybind11::dict& dict) {
   rai::Graph G;
   for(auto item:dict) {
-    rai::String key = item.first.cast<std::string>().c_str();
+    str key = item.first.cast<std::string>().c_str();
     pybind11::handle value = item.second;
 
     if(pybind11::isinstance<pybind11::bool_>(value)) {
@@ -96,7 +96,7 @@ rai::Graph dict2graph(const pybind11::dict& dict) {
       G.add<arr>(key, numpy2arr(val));
 
     }else if(pybind11::isinstance<pybind11::str>(value)) {
-      G.add<rai::String>(key, value.cast<std::string>().c_str());
+      G.add<str>(key, value.cast<std::string>().c_str());
 
     }else if(pybind11::isinstance<pybind11::dict>(value)) {
       G.addSubgraph(key) = dict2graph(value.cast<pybind11::dict>());
@@ -114,8 +114,8 @@ pybind11::list graph2list(const rai::Graph& G) {
     //-- write value
     if(n->is<rai::Graph>()) {
       list.append(graph2dict(n->as<rai::Graph>()));
-    } else if(n->is<rai::String>()) {
-      list.append(n->as<rai::String>().p);
+    } else if(n->is<str>()) {
+      list.append(n->as<str>().p);
     } else if(n->is<arr>()) {
       list.append(n->as<arr>().vec());
     } else if(n->is<double>()) {

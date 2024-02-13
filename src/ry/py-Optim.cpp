@@ -60,9 +60,9 @@ void init_Optim(pybind11::module& m) {
       )
 
   .def("report",  [](std::shared_ptr<NLP>& self, int verbose) {
-    rai::String str;
-    self->report(str, verbose);
-    return std::string(str.p);
+    str s;
+    self->report(s, verbose);
+    return std::string(s.p);
   },
   "displays semantic information on the last query"
       )
@@ -268,7 +268,7 @@ void init_Optim(pybind11::module& m) {
       .def_readwrite("sos", &SolverReturn::sos)
       .def_readwrite("ineq", &SolverReturn::ineq)
       .def_readwrite("eq", &SolverReturn::eq)
-      .def("__str__", [](std::shared_ptr<SolverReturn>& self) {  rai::String str;  str <<(*self);  return std::string(str.p); } )
+      .def("__str__", [](std::shared_ptr<SolverReturn>& self) {  str s;  s <<(*self);  return std::string(s.p); } )
 
   .def("dict", [](std::shared_ptr<SolverReturn>& self) {
     return graph2dict(rai::Graph{

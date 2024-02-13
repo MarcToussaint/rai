@@ -926,7 +926,8 @@ double Configuration::getEnergy(const arr& qdot) {
 
 /// get the sum of all shape penetrations -- PRECONDITION: proxies have been computed (with stepFcl())
 double Configuration::getTotalPenetration() {
-  CHECK(_state_proxies_isGood, "");
+  fcl()->mode = rai::FclInterface::_broadPhaseOnly;
+  ensure_proxies(true);
 
   double D=0.;
   for(const Proxy& p:proxies) {
@@ -946,6 +947,7 @@ double Configuration::getTotalPenetration() {
 bool Configuration::getCollisionFree(){
   fcl()->mode = rai::FclInterface::_binaryCollisionAll;
   ensure_proxies(false);
+
   bool feas=true;
   for(const rai::Proxy& p:proxies) if(p.d<=0.){ feas=false; break; }
   return feas;

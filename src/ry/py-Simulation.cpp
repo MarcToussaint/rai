@@ -117,26 +117,6 @@ void init_Simulation(pybind11::module& m) {
        pybind11::arg("sensorName")
       )
 
-  .def("getGroundTruthPosition", [](std::shared_ptr<rai::Simulation>& self, const char* frame) {
-    rai::Frame* f = self->C.getFrame(frame);
-    arr x = f->getPosition();
-    return arr2numpy(x);
-  })
-
-  .def("getGroundTruthRotationMatrix", [](std::shared_ptr<rai::Simulation>& self, const char* frame) {
-    rai::Frame* f = self->C.getFrame(frame);
-    arr x = f->getRotationMatrix();
-    return arr2numpy(x);
-  })
-
-  .def("getGroundTruthSize", [](std::shared_ptr<rai::Simulation>& self, const char* frame) {
-    rai::Frame* f = self->C.getFrame(frame);
-    arr x = f->getSize();
-    return arr2numpy(x);
-  })
-
-  .def("addImp", &rai::Simulation::addImp)
-
   .def("getState", [](std::shared_ptr<rai::Simulation>& self) {
     arr X, V, x, v;
     self->getState(X, x, V, v);
@@ -176,9 +156,6 @@ void init_Simulation(pybind11::module& m) {
   })
 
   .def("getScreenshot", &rai::Simulation::getScreenshot)
-
-  .def("loadTeleopCallbacks", &rai::Simulation::loadTeleopCallbacks)
-
 
   ;
 

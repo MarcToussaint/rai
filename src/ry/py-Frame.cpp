@@ -87,7 +87,7 @@ void init_Frame(pybind11::module& m) {
 
     .def("info", [](shared_ptr<rai::Frame>& self) {
 	rai::Graph G;
-	G.add<rai::String>("name", self->name);
+        G.add<str>("name", self->name);
 	G.add<int>("ID", self->ID);
 	self->write(G);
 	if(!G["X"]) G.add<arr>("X", self->ensure_X().getArr7d());
@@ -120,7 +120,7 @@ void init_enums(pybind11::module& m){
 //#define ENUMVAL(x) m.attr(#x) = pybind11::int_(int(rai::x));
 #define ENUMVAL(x) .value(#x, rai::x)
 
-  pybind11::enum_<rai::ArgWord>(m, "ArgWord")
+  pybind11::enum_<rai::ArgWord>(m, "ArgWord", "[todo: replace by str]")
   ENUMVAL(_left)
   ENUMVAL(_right)
   ENUMVAL(_sequence)
@@ -247,16 +247,6 @@ void init_enums(pybind11::module& m){
   ENUMVAL(velocity)
   ENUMVAL(acceleration)
   ENUMVAL(spline)
-  .export_values();
-
-  pybind11::enum_<rai::Simulation::ImpType>(m, "ImpType")
-  ENUMVAL(closeGripper)
-  ENUMVAL(moveGripper)
-  ENUMVAL(depthNoise)
-  ENUMVAL(rgbNoise)
-  ENUMVAL(adversarialDropper)
-  ENUMVAL(objectImpulses)
-  ENUMVAL(noPenetrations)
   .export_values();
 
 }

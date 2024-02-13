@@ -76,8 +76,6 @@ void init_KOMO(pybind11::module& m) {
          pybind11::arg("target")=arr(), pybind11::arg("deltaFromSlice")=0, pybind11::arg("deltaToSlice")=0 )
 
     .def("addModeSwitch", &KOMO::addModeSwitch, "", pybind11::arg("times"), pybind11::arg("newMode"), pybind11::arg("frames"), pybind11::arg("firstSwitch")=true )
-    .def("addInteraction_elasticBounce", &KOMO::addContact_elasticBounce, "", pybind11::arg("time"), pybind11::arg("from"), pybind11::arg("to"),
-	 pybind11::arg("elasticity") = .8, pybind11::arg("stickiness") = 0. )
 
     .def("addStableFrame", [](shared_ptr<KOMO>& self, rai::JointType jointType, const char* parent, const char* name, const char* initFrame){
           rai::Frame* f = self->addStableFrame(jointType, parent, name, initFrame);
@@ -90,7 +88,7 @@ void init_KOMO(pybind11::module& m) {
     .def("initOrg", &KOMO::initOrg, "" )
     .def("initRandom", &KOMO::initRandom, "", pybind11::arg("verbose")=0 )
     .def("initWithConstant", &KOMO::initWithConstant, "", pybind11::arg("q") )
-    .def("initWithPath_qOrg", &KOMO::initWithPath_qOrg, "", pybind11::arg("q") )
+    .def("initWithPath", &KOMO::initWithPath_qOrg, "", pybind11::arg("q") )
     .def("initWithWaypoints", &KOMO::initWithWaypoints, "",
          pybind11::arg("waypoints"), pybind11::arg("waypointSlicesPerPhase")=1, pybind11::arg("interpolate")=false, pybind11::arg("qHomeInterpolate")=0., pybind11::arg("verbose")=-1 )
     .def("initPhaseWithDofsPath", &KOMO::initPhaseWithDofsPath, "", pybind11::arg("t_phase"), pybind11::arg("dofIDs"), pybind11::arg("path"), pybind11::arg("autoResamplePath")=false )
@@ -142,9 +140,9 @@ void init_KOMO(pybind11::module& m) {
      }, "returns a long list of features (per time slice!), to be used by an NLP_Solver")
 
     .def("reportProblem", [](std::shared_ptr<KOMO>& self) {
-        rai::String str;
-        str <<self->report(true, false);
-	return pybind11::str(str.p, str.N);
+        str s;
+        s <<self->report(true, false);
+        return pybind11::str(s.p, s.N);
       })
 
 

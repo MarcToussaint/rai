@@ -19,6 +19,7 @@
 #include "../Kin/viewer.h"
 #include "../Kin/cameraview.h"
 #include "../Kin/simulation.h"
+#include "../Geo/fclInterface.h"
 #include "../Gui/viewer.h"
 #include "../LGP/LGP_tree.h"
 #include "../Geo/depth2PointCloud.h"
@@ -44,15 +45,6 @@ void init_Config(pybind11::module& m) {
   .def("clear", [](shared_ptr<rai::Configuration>& self) {
     self->clear();
   }, "clear all frames and additional data; becomes the empty configuration, with no frames")
-
-  .def("copy", [](shared_ptr<rai::Configuration>& self, shared_ptr<rai::Configuration>& C2) {
-    self->copy(*C2);
-  },
-  "make C a (deep) copy of the given C2",
-  pybind11::arg("C2")
-      )
-
-//-- setup/edit the configuration
 
   .def("addFile", [](shared_ptr<rai::Configuration>& self, const char* filename, const char* namePrefix){
     rai::Frame* f = self->addFile(filename, namePrefix);
@@ -134,28 +126,11 @@ void init_Config(pybind11::module& m) {
     "get the joint limits as a n-by-2 matrix; for dofs that do not have limits defined, the entries are [0,-1] (i.e. upper limit < lower limit)"
       )
 
-  .def("getDofIDs", [](std::shared_ptr<rai::Configuration>& self){
-      uintA dofIDs = self->getDofIDs();
-      return Array2vec<uint>(dofIDs);
-  }, "" )
-
-//  .def("setJointState", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& q, const uintA& joints) {
-//    if(joints.N) {
-//      self->setJointState(arr(q, true), joints);
-//    } else {
-//      self->setJointState(arr(q, true));
-//    }
-////  },
-//  "set the joint state, optionally only for a subset of joints specified as list of frameIDs",
-//  pybind11::arg("q"),
-//  pybind11::arg("joints") = uintA()
-//  )
-
   .def("setJointState", [](std::shared_ptr<rai::Configuration>& self, const arr& q, const pybind11::list& joints) {
     if(!joints.size()) {
       self->setJointState(q);
     } else {
-      self->setJointState(q, self->getFrames(list2arr<rai::String>(joints)));
+      self->setJointState(q, self->getFrames(list2arr<str>(joints)));
     }
   },
   "set the joint state, optionally only for a subset of joints specified as list of joint names",
@@ -186,13 +161,6 @@ void init_Config(pybind11::module& m) {
   "get the frame state as a n-times-7 numpy matrix, with a 7D pose per frame"
       )
 
-  .def("getFrameState", [](shared_ptr<rai::Configuration>& self, const char* frame) {
-    arr X;
-    rai::Frame* f = self->getFrame(frame, true);
-    if(f) X = f->ensure_X().getArr7d();
-    return arr2numpy(X);
-  }, "TODO remove -> use individual frame!")
-
   .def("setFrameState", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& X, const std::vector<std::string>& frames) {
     arr _X (X, true);
     _X.reshape(_X.N/7, 7);
@@ -221,18 +189,18 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("frames") = std::vector<std::string>()
       )
 
-  .def("feature", [](shared_ptr<rai::Configuration>& self, FeatureSymbol featureSymbol, const std::vector<std::string>& frameNames, const std::vector<double>& scale, const std::vector<double>& target, int order) {
-    return symbols2feature(featureSymbol, strvec2StringA(frameNames), *self, arr(scale, true), arr(target, true), order);
-  },
-  "create a feature (a differentiable map from joint state to a vector space), as they're typically used for IK or optimization. See the dedicated tutorial for details. \
-featureSymbol defines which mapping this is (position, vectors, collision distance, etc). \
-many mapping refer to one or several frames, which need to be specified using frameNames",
-  pybind11::arg("featureSymbol"),
-  pybind11::arg("frameNames")=std::vector<std::string>(),
-    pybind11::arg("scale")=std::vector<double>(),
-    pybind11::arg("target")=std::vector<double>(),
-    pybind11::arg("order")=-1
-    )
+//  .def("feature", [](shared_ptr<rai::Configuration>& self, FeatureSymbol featureSymbol, const std::vector<std::string>& frameNames, const std::vector<double>& scale, const std::vector<double>& target, int order) {
+//    return symbols2feature(featureSymbol, strvec2StringA(frameNames), *self, arr(scale, true), arr(target, true), order);
+//  },
+//  "create a feature (a differentiable map from joint state to a vector space), as they're typically used for IK or optimization. See the dedicated tutorial for details. \
+//featureSymbol defines which mapping this is (position, vectors, collision distance, etc). \
+//many mapping refer to one or several frames, which need to be specified using frameNames",
+//  pybind11::arg("featureSymbol"),
+//  pybind11::arg("frameNames")=std::vector<std::string>(),
+//    pybind11::arg("scale")=std::vector<double>(),
+//    pybind11::arg("target")=std::vector<double>(),
+//    pybind11::arg("order")=-1
+//    )
 
   .def("eval", [](shared_ptr<rai::Configuration>& self, FeatureSymbol fs, const StringA& frames, const arr& scale, const arr& target, int order) {
     arr y = self->eval(fs, frames, scale, target, order);
@@ -254,12 +222,6 @@ part of the joint state and define the number of DOFs",
   pybind11::arg("notThose") = false
       )
 
-  .def("makeObjectsConvex", [](shared_ptr<rai::Configuration>& self) {
-    makeConvexHulls(self->frames);
-  },
-  "remake all meshes associated with all frames to become their convex hull"
-      )
-
   .def("attach", [](shared_ptr<rai::Configuration>& self, const std::string& frame1, const std::string& frame2) {
     self->attach(frame1.c_str(), frame2.c_str());
   },
@@ -271,11 +233,14 @@ topological order from frame2 to the broken joint"
   .def("computeCollisions", [](shared_ptr<rai::Configuration>& self) {
     self->ensure_proxies();
   },
-  "call the broadphase collision engine (SWIFT++ or FCL) to generate the list of collisions (or near proximities) \
+  "[should be obsolete; getCollision* methods auto ensure proxies] call the broadphase collision engine (SWIFT++ or FCL) to generate the list of collisions (or near proximities) \
 between all frame shapes that have the collision tag set non-zero"
       )
 
   .def("getCollisions", [](shared_ptr<rai::Configuration>& self, double belowMargin) {
+    self->fcl()->mode = rai::FclInterface::_broadPhaseOnly;
+    self->ensure_proxies(true);
+
     pybind11::list ret;
     for(const rai::Proxy& p: self->proxies) {
       if(!p.collision)((rai::Proxy*)&p)->calc_coll();
@@ -296,8 +261,11 @@ To get really precise distances and penetrations use the FS.distance feature wit
   pybind11::arg("belowMargin") = 1.
       )
 
-  .def("getTotalPenetration", &rai::Configuration::getTotalPenetration,
-       "returns the sum of all penetrations")
+  .def("getCollisionsTotalPenetration", &rai::Configuration::getTotalPenetration,
+       "returns the sum of all penetrations (using FCL for broadphase; and low-level GJK/MRP for fine pair-wise distance/penetration computation)")
+
+  .def("getCollisionFree", &rai::Configuration::getCollisionFree,
+       "returns if the configuration is collision free (using FCL only; collidable objects need to have contact flag)")
 
   .def("view",  &rai::Configuration::view,
        "open a view window for the configuration",
@@ -369,37 +337,12 @@ reloads, displays and animates the configuration whenever the file is changed"
       pybind11::arg("T")=3)
 
   .def("report", [](shared_ptr<rai::Configuration>& self) {
-    rai::String str;
-    self->report(str);
-    return pybind11::str(str.p, str.N);
-  }
-  )
+      str s;
+      self->report(s);
+      return pybind11::str(s.p, s.N);
+  }, "return a string with basic info (#frames, etc)" )
   
-  .def("sortFrames", [](shared_ptr<rai::Configuration>& self) {
-    self->sortFrames();
-  }, "resort the internal order of frames according to the tree topology. This is important before saving the configuration.")
-
-  .def("equationOfMotion", [](shared_ptr<rai::Configuration>& self, std::vector<double>& qdot, bool gravity) {
-    arr M, F;
-    self->equationOfMotion(M, F, arr(qdot, true), gravity);
-    return pybind11::make_tuple(arr2numpy(M), arr2numpy(F));
-  }, "",
-  pybind11::arg("qdot"),
-  pybind11::arg("gravity"))
-
-  .def("stepDynamics", [](shared_ptr<rai::Configuration>& self, std::vector<double>& qdot, std::vector<double>& u_control, double tau, double dynamicNoise, bool gravity) {
-    arr _qdot(qdot, false);
-    self->stepDynamics(_qdot, arr(u_control, true), tau, dynamicNoise, gravity);
-    return arr2numpy(_qdot);
-  }, "",
-  pybind11::arg("qdot"),
-  pybind11::arg("u_control"),
-  pybind11::arg("tau"),
-  pybind11::arg("dynamicNoise"),
-  pybind11::arg("gravity"))
-
-
-  .def("write", [](shared_ptr<rai::Configuration>& self) { rai::String str; self->write(str);  return pybind11::str(str.p, str.N); },
+  .def("write", [](shared_ptr<rai::Configuration>& self) { str s; self->write(s);  return pybind11::str(s.p, s.N); },
   "write the full configuration in a string (roughly yaml), e.g. for file export")
 
   .def("writeMesh", &rai::Configuration::writeMesh,
@@ -410,7 +353,7 @@ reloads, displays and animates the configuration whenever the file is changed"
        "write all object meshes in a directory",
        pybind11::arg("pathPrefix") )
 
-  .def("writeURDF", [](shared_ptr<rai::Configuration>& self) { rai::String str; self->writeURDF(str);  return pybind11::str(str.p, str.N); },
+  .def("writeURDF", [](shared_ptr<rai::Configuration>& self) { str s; self->writeURDF(s);  return pybind11::str(s.p, s.N); },
   "write the full configuration as URDF in a string, e.g. for file export")
 
   .def("writeCollada", &rai::Configuration::writeCollada,
