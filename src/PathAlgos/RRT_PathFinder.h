@@ -52,9 +52,9 @@ struct RRT_PathFinder {
 
   //parameters
   double stepsize;
-  uint maxIters=5000;
+  int maxIters=5000;
   int verbose;
-  uint subsampleChecks=0;
+  int subsampleChecks=0;
   double p_forwardStep=.5;
   double p_sideStep=.0;
   double p_backwardStep=.0;
@@ -66,7 +66,7 @@ struct RRT_PathFinder {
   //output
   arr path;
 
-  RRT_PathFinder(ConfigurationProblem& _P, const arr& starts, const arr& goals, double _stepsize = .2, int _verbose=0, uint _subsampleChecks=0);
+  RRT_PathFinder(ConfigurationProblem& _P, const arr& starts, const arr& goals, double _stepsize = -1., int _subsampleChecks=-1, int maxIters=-1, int _verbose=-1);
   ~RRT_PathFinder(){}
 
   int stepConnect();
@@ -97,8 +97,6 @@ struct PathFinder : NonCopyable {
   PathFinder& setExplicitCollisionPairs(const StringA& collisionPairs);
 
   shared_ptr<SolverReturn> solve();
-
-  bool step();
 };
 
 } //namespace

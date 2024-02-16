@@ -4,10 +4,11 @@
 
 #include "ConfigurationProblem.h"
 
-ConfigurationProblem::ConfigurationProblem(const rai::Configuration& _C, bool _computeCollisions, double _collisionTolerance)
+ConfigurationProblem::ConfigurationProblem(const rai::Configuration& _C, bool _computeCollisions, double _collisionTolerance, int _verbose)
   : C(_C),
     computeAllCollisions(_computeCollisions),
-    collisionTolerance(_collisionTolerance){
+    collisionTolerance(_collisionTolerance),
+    verbose(_verbose){
 
   q0 = C.getJointState();
   limits = C.getJointLimits();
@@ -23,7 +24,7 @@ ConfigurationProblem::ConfigurationProblem(const rai::Configuration& _C, bool _c
 
   computeCollisionFeatures = false;
   if(!computeCollisionFeatures){
-    C.fcl()->mode = rai::FclInterface::_binaryCollisionAll; //Single;
+    C.fcl(verbose)->mode = rai::FclInterface::_binaryCollisionAll; //Single;
   }
 }
 
@@ -58,6 +59,7 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
     //for(rai::Proxy& p:C.proxies) p.ensure_coll();
   }else if(collisionPairs.N){
     C.proxies.resize(collisionPairs.d0);
+    collisionPairs.reshape(-1,2);
     for(uint i=0;i<collisionPairs.d0;i++){
       C.proxies(i).a = C.frames(collisionPairs(i,0));
       C.proxies(i).b = C.frames(collisionPairs(i,1));

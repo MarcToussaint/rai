@@ -2062,7 +2062,7 @@ std::shared_ptr<SwiftInterface> Configuration::swift() {
 }
 */
 
-std::shared_ptr<FclInterface> Configuration::fcl() {
+std::shared_ptr<FclInterface> Configuration::fcl(int verbose) {
   if(!self->fcl) {
     Array<Shape*> geometries(frames.N);
     Array<Shape*>::memMove=1;
@@ -2073,6 +2073,9 @@ std::shared_ptr<FclInterface> Configuration::fcl() {
         if(!f->shape->mesh().V.N) f->shape->createMeshes();
         CHECK(f->shape->mesh().V.N, "collision object with no vertices");
         geometries(f->ID) = f->shape;
+        if(verbose>0) LOG(0) <<"  adding to FCL interface: " <<f->name;
+      }else{
+        if(verbose>0) LOG(0) <<"  SKIPPING from FCL interface: " <<f->name;
       }
     }
     self->fcl = make_shared<FclInterface>(geometries, getCollisionExcludePairIDs(), FclInterface::_broadPhaseOnly); //-1.=broadphase only -> many proxies, 0.=binary, .1=exact margin (slow)

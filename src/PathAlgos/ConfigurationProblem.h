@@ -48,13 +48,13 @@ struct ConfigurationProblem {
   double collisionTolerance;
 
   //user info
-  int verbose=0; //-> verbose
+  int verbose=0;
   uint evals=0;
 
-  ConfigurationProblem(const rai::Configuration& _C, bool _computeCollisions=true, double _collisionTolerance=1e-3);
+  ConfigurationProblem(const rai::Configuration& _C, bool _computeCollisions=true, double _collisionTolerance=1e-3, int _verbose=0);
 
-  shared_ptr<GroundedObjective> addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr);
   void setExplicitCollisionPairs(const StringA& _collisionPairs);
 
+  shared_ptr<GroundedObjective> addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr);
   shared_ptr<QueryResult> query(const arr& x);
 };

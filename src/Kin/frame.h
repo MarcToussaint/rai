@@ -166,7 +166,7 @@ struct Frame : NonCopyable {
   Frame& setDensity(const floatA& data, const arr& size);
   Frame& setImplicitSurface(const floatA& data, const arr& size, uint blur, double resample);
   Frame& setColor(const arr& color);
-  Frame& setJoint(rai::JointType jointType);
+  Frame& setJoint(rai::JointType jointType, const arr& limits={});
   Frame& setContact(int cont);
   Frame& setMass(double mass);
   Frame& setAttribute(const char* key, double value);

@@ -4,33 +4,55 @@
 #include <Geo/fclInterface.h>
 #include <Kin/proxy.h>
 
-void run_rrt(rai::Configuration& C, const arr& q0, const arr& q1, int verbose) {
-  bool useFcl = rai::getParameter<bool>("useFcl", true);
-  double rrtStepsize = rai::getParameter<double>("rrtStepsize", .1);
-  double rrtSubsamples = rai::getParameter<int>("rrtSubsamples", 4);
 
-  ConfigurationProblem P(C, useFcl, 1e-3);
+// =============================================================================
+
+void run_rrt(rai::Configuration& C, const arr& q0, const arr& q1) {
+  int verbose = rai::getParameter<int>("rrt/verbose", 3);
+  bool useFcl = rai::getParameter<bool>("useFcl", true);
+
+  ConfigurationProblem P(C, useFcl, 1e-3, verbose-2);
+  P.verbose=0;
   if(!useFcl){
     StringA pairs = rai::getParameter<StringA>("collisionPairs", {});
     for(rai::String& s:pairs) P.collisionPairs.append(C[s]->ID);
     P.collisionPairs.reshape(-1,2);
   }
 
-  RRT_PathFinder rrt(P, q0, q1, rrtStepsize, verbose, rrtSubsamples);
+  RRT_PathFinder rrt(P, q0, q1);
   double time = -rai::cpuTime();
   rrt.run();
   time += rai::cpuTime();
 
   cout <<"rrt time: " <<time <<"sec or " <<1000.*time/double(rrt.iters) <<"msec/iter (tree sizes: " <<rrt.rrt0->getNumberNodes() <<' ' <<rrt.rrtT->getNumberNodes() <<")" <<endl;
-//  cout <<"used params:\n" <<rai::params()() <<endl;
 }
 
+// =============================================================================
+
+void test_minimalistic(){
+  rai::Configuration C;
+  C.addFrame("base") -> setPosition({0.,0.,.05});
+  C.addFrame("ego", "base")-> setShape(rai::ST_ssBox, {.05, .5, .1, .01}) .setJoint(rai::JT_transXYPhi, {-1.,1.,-1.,1.,-3.,3.}) .setContact(1);
+  C.addFrame("obstacle")-> setShape(rai::ST_ssBox, {.05, .5, .1, .01}) .setPosition({.0, .0, .05}) .setContact(1);
+
+  arr q0 = {-.5, .0, .0};
+  arr qT = {.5, .0, .0};
+
+//  C.setJointState(q0);
+//  C.view(true);
+//  C.setJointState(qT);
+//  C.view(true);
+
+  run_rrt(C, q0, qT);
+
+}
+
+// =============================================================================
+
 void TEST(RRT){
-  int verbose = rai::getParameter<int>("rrtVerbose", 3);
   rai::Configuration C;
   C.addFile("scene.g");
   C.optimizeTree();
-  if(verbose) C.view();
 
   arr q0,q1;
 
@@ -53,7 +75,7 @@ void TEST(RRT){
     cout <<"start pose: " <<*ret <<endl;
   }
 
-  run_rrt(C, q0, q1, verbose);
+  run_rrt(C, q0, q1);
 }
 
 // =============================================================================
@@ -97,6 +119,8 @@ int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
 //  rnd.clockSeed();
+//  test_minimalistic(); return 0;
+
 
   cout <<"=== RRT test" <<endl;
   testRRT();
@@ -106,6 +130,11 @@ int MAIN(int argc,char **argv){
 
   cout <<"=== kinematics+FCL test" <<endl;
   testKinematics(true, 10000);
+
+  int verbose = rai::getParameter<int>("rrt/verbose", 3);
+  if(verbose>2){
+    cout <<"used params:\n" <<rai::params()() <<endl;
+  }
 
   return 0;
 }

@@ -165,7 +165,7 @@ bool RRT_PathFinder::growTreeTowardsRandom(RRT_SingleTree& rrt){
 
   auto qr = P.query(q);
   if(qr->isFeasible){
-    if (subsampleChecks && !checkConnection(P, start, q, subsampleChecks, true)){
+    if (subsampleChecks>0 && !checkConnection(P, start, q, subsampleChecks, true)){
       return false;
     }
 
@@ -218,24 +218,31 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
   // TODO: add checking motion
   if(qr->isFeasible){
     const arr start = rrt_A.ann.X[rrt_A.nearestID];
-    if (subsampleChecks && !checkConnection(P, start, q, subsampleChecks, true)){
+    if (subsampleChecks>0 && !checkConnection(P, start, q, subsampleChecks, true)){
       return false;
     }
 
     rrt_A.add(q, rrt_A.nearestID, qr);
     double dist = rrt_B.getNearest(q);
-    if(dist<stepsize) return true;
+    if(subsampleChecks>0){ if(dist<stepsize/subsampleChecks) return true; }
+    else{ if(dist<stepsize) return true; }
   }
   return false;
 }
 
 //===========================================================================
 
-RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, const arr& _goals, double _stepsize, int _verbose, uint _subsampleChecks)
+RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, const arr& _goals, double _stepsize, int _subsampleChecks, int _maxIters, int _verbose)
   : P(_P),
     stepsize(_stepsize),
     verbose(_verbose),
     subsampleChecks(_subsampleChecks) {
+
+  if(stepsize<0.) stepsize = rai::getParameter<double>("rrt/stepsize", .1);
+  if(subsampleChecks<0) subsampleChecks = rai::getParameter<int>("rrt/subsamples", 4);
+  if(maxIters<0) maxIters = rai::getParameter<double>("rrt/maxIters", 5000);
+  if(verbose<0) verbose = rai::getParameter<int>("rrt/verbose", 0);
+
   arr q0 = _starts;
   arr qT = _goals;
   auto q0ret = P.query(q0);
@@ -367,7 +374,7 @@ int RRT_PathFinder::stepConnect(){
 arr RRT_PathFinder::planConnect(){
   int r=0;
   while(!r){ r = stepConnect(); }
-  if(r==-1) return NoArr;
+  if(r==-1) path.clear();
   return path;
 }
 
@@ -389,36 +396,30 @@ arr RRT_PathFinder::run(double timeBudget){
 namespace rai {
 
 PathFinder& PathFinder::setProblem(const Configuration& C, const arr& starts, const arr& goals){
-    problem = make_shared<ConfigurationProblem>(C, true, .01);
-    for(Frame *f:problem->C.frames) f->ensure_X();
-    rrtSolver = make_shared<RRT_PathFinder>(*problem, starts, goals, .05);
-    return *this;
+  problem = make_shared<ConfigurationProblem>(C, true, .01);
+  for(Frame *f:problem->C.frames) f->ensure_X();
+  rrtSolver = make_shared<RRT_PathFinder>(*problem, starts, goals);
+  return *this;
 }
 
 PathFinder& PathFinder::setExplicitCollisionPairs(const StringA& collisionPairs){
-    problem->setExplicitCollisionPairs(collisionPairs);
-    return *this;
+  problem->setExplicitCollisionPairs(collisionPairs);
+  return *this;
 }
 
 shared_ptr<SolverReturn> PathFinder::solve(){
-    while(!step());
-    return ret;
-}
+  if(!ret) ret = make_shared<SolverReturn>();
 
-bool PathFinder::step(){
-    if(!ret) ret = make_shared<SolverReturn>();
+  ret->time -= rai::cpuTime();
+  rrtSolver->run();
+  ret->time += rai::cpuTime();
 
-    ret->time -= rai::cpuTime();
-    int r = rrtSolver->stepConnect();
-    ret->time += rai::cpuTime();
+  ret->done = true; //(r!=0);
+  ret->feasible = rrtSolver->path.N; //(r==1);
+  ret->x = rrtSolver->path;
+  ret->evals = rrtSolver->iters;
 
-    ret->done = (r!=0);
-    ret->feasible = (r==1);
-    if(r==1) ret->x = rrtSolver->path;
-    if(r-=1) ret->x.clear();
-    ret->evals++;
-
-    return ret->done;
+  return ret;
 }
 
 } //namespace

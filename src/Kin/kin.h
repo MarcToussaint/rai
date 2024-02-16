@@ -245,7 +245,7 @@ struct Configuration : GLDrawer {
   void view_lock(const char* _lockInfo);
   void view_unlock();
   //std::shared_ptr<SwiftInterface> swift();
-  std::shared_ptr<FclInterface> fcl();
+  std::shared_ptr<FclInterface> fcl(int verbose=0);
   void swiftDelete();
   PhysXInterface& physx();
   OdeInterface& ode();

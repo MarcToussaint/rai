@@ -621,11 +621,14 @@ rai::Frame& rai::Frame::setColor(const arr& color) {
   return *this;
 }
 
-rai::Frame& rai::Frame::setJoint(rai::JointType jointType) {
+rai::Frame& rai::Frame::setJoint(rai::JointType jointType, const arr& limits) {
   CHECK(parent, "a frame needs a parent to have a joint");
   if(joint) { delete joint; joint=nullptr; }
   if(jointType != JT_none) {
     new Joint(*this, jointType);
+  }
+  if(limits.N){
+    joint->limits = limits;
   }
 //  if(jointType == JT_free) { joint->limits = {-10.,10,-10,10,-10,10, -1.,1,-1,1,-1,1,-1,1}; } //WTF!
   return *this;
