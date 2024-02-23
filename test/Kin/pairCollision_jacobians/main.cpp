@@ -302,8 +302,8 @@ void testSweepingSDFs(){
   }
 
   rai::Configuration C;
-  C.addConfiguration(C0);
-  C.addConfiguration(C0);
+  C.addConfigurationCopy(C0);
+  C.addConfigurationCopy(C0);
   FrameL F ({2,2},{C.frames(0,1), C.frames(0,2), C.frames(1,1), C.frames(1,2)});
 
   C.addFrame("a") ->setParent(F(0,0)). setShape(rai::ST_marker, {.3}). setColor({1.,0.,0.});

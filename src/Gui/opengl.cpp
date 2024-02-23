@@ -344,6 +344,9 @@ struct GlfwSpinner : Thread {
     mutex.lock(RAI_HERE);
     glwins.removeValue(gl);
 //    if(!glwins.N) stop=true; //stop looping
+    glfwMakeContextCurrent(gl->self->window);
+    for(GLDrawer* d:gl->drawers) d->glDeinit(*gl);
+    glfwMakeContextCurrent(nullptr);
     mutex.unlock();
 
 //    if(stop) threadStop(); //stop looping
@@ -499,6 +502,10 @@ void OpenGL::raiseWindow(){
   }
 }
 
+bool OpenGL::hasWindow(){
+  return self->window;
+}
+
 void OpenGL::setTitle(const char* _title) {
   if(_title) title = _title;
   if(self->window) {
@@ -639,6 +646,7 @@ void glStandardScene(void*, OpenGL& gl) {
     glDrawAxes(.1);
   }
   glPopAttrib();
+  glColor(.8, .8, .8);
 }
 
 void glStandardOriginAxes(void*, OpenGL&) {

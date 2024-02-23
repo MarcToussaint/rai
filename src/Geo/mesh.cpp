@@ -1600,6 +1600,7 @@ void Mesh::writeArr(std::ostream& os) {
 
 void Mesh::writeH5(const char* filename){
   H5_Writer H(filename);
+  H.addGroup("mesh");
   H.add("mesh/vertices", convert<float>(V));
   if(V.d0<65535) H.add("mesh/faces", convert<uint16_t>(T)); else H.add("mesh/faces", T);
   if(C.N) H.add("mesh/colors", convert<byte>(C*255.));

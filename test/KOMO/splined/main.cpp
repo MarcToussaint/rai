@@ -45,7 +45,7 @@ void createPath(){
   skomo->checkJacobian(ret->x, 1e-4, komo.featureNames);
 //  komo.optimize();
 
-  komo.view(false, "result");
+  komo.view(true, "result");
   while(komo.view_play(true));
 
   FILE("z.path") <<komo.getPath_qOrg();

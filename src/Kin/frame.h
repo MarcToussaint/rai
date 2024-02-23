@@ -342,6 +342,7 @@ struct Shape : NonCopyable, GLDrawer {
   void write(std::ostream& os) const;
   void write(Graph& g);
   void glDraw(OpenGL&);
+  void glDeinit(OpenGL&);
 };
 
 //===========================================================================

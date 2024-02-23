@@ -3,7 +3,7 @@
 This repo contains core sources related to Robotic AI. Users are
 not recommended to use this repo alone.  Please have a look at example
 projects that use this bare code as a submodule and expose and explain
-one particular functionality. E.g., KOMO or the [robotic python lib](https://github.com/MarcToussaint/robotic/).
+some subset of functionalities. Esp. the [robotic python lib](https://github.com/MarcToussaint/robotic/), which now co-installs C++ headers and a compiled shared lib.
 
 'bare code' means that this repo contains only sources, a minimal
 Ubuntu-specific build system, and development tests. It is mostly used
@@ -15,7 +15,7 @@ out-of-source build system.
 Parts of the code have there origin at around 2004 (Edinburgh). The
 code grew over the years to a large repo with many projects from all
 lab members, but a somewhat consistent scope of code shared between
-projects. This repo exports a selection of the code shared between
+projects. This repo includes a selection of the code shared between
 projects and contains a set of representations and methods for
 Robotics, ML and AI. As the functionality is diverse I don't even try
 to explain.
@@ -68,6 +68,4 @@ throught the project using
 make dependAll
 make -j4
 ```
-
-
 

@@ -165,7 +165,7 @@ template<class T> struct Array {
   void referToDim(const Array<T>& a, uint i, uint j);
   void referToDim(const Array<T>& a, uint i, uint j, uint k);
   void takeOver(Array<T>& a);  //a is cleared (earlier: becomes a reference to its previously owned memory)
-  void setGrid(uint dim, T lo, T hi, uint steps);
+  Array<T>& setGrid(uint dim, T lo, T hi, uint steps);
 
   /// @name access by reference (direct memory access)
   Array<T> ref() const; //a reference on this

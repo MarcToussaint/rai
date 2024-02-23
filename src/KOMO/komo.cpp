@@ -849,11 +849,11 @@ void KOMO::getConfiguration_full(Configuration& C, int t, int verbose){
 }
 
 arr KOMO::getConfiguration_qOrg(int t) {
-  return pathConfig.getDofState(pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t,0)->ID), true, false));
+  return pathConfig.getDofState(pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t,0)->ID), true, true)); //also inactive ones, as the orgJointIndices are explicit
 }
 
 void KOMO::setConfiguration_qOrg(int t, const arr& q) {
-  pathConfig.setDofState(q, pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t,0)->ID), true, false));
+  pathConfig.setDofState(q, pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t,0)->ID), true, true)); //also inactive ones, as the orgJointIndices are explicit
 }
 
 
@@ -1477,7 +1477,7 @@ void KOMO::checkGradients() {
 }
 
 int KOMO::view(bool pause, const char* txt){
-  pathConfig.viewer()->recopyMeshes(pathConfig);
+//  pathConfig.viewer()->recopyMeshes(pathConfig);
   return pathConfig.view(pause, txt);
 }
 

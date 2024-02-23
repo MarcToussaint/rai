@@ -77,7 +77,6 @@ void tutorialInverseKinematics(){
   rai::Configuration G("model.g");
 
   KOMO komo;
-  komo.solver = rai::KS_dense; //not necessary, but makes Jacobians simpler
 
   komo.setConfig(G, false);
 

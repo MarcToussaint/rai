@@ -25,7 +25,7 @@ void TEST(LoadSave){
 
   rai::Configuration C2("z.g");
   C.view();
-  C2.view(true);
+  C2.view();
 }
 
 //===========================================================================
@@ -50,15 +50,30 @@ void testJacobianInFile(const char* filename, const char* shape){
 
 //===========================================================================
 
-void TEST(ViewerUpdate){
+void TEST(Viewer){
 
-  rai::Configuration C(rai::raiPath("../rai-robotModels/pr2/pr2.g"));
-  C.view(true);
+  rai::Configuration C(rai::raiPath("../rai-robotModels/panda/panda.g"));
 
-//  for(uint k=0;k<10;k++){
-//    C.setJointState(C.getJointState() + .1);
-//    rai::wait();
-//  }
+  rai::Frame *f = C.addFrame("changer");
+//  f->setShape(rai::ST_mesh, {});
+  f->setConvexMesh({}, {255,0,0}, .05);
+  C.view();
+
+//  rai::Configuration C2;
+//  C2.addConfigurationCopy(C);
+//  C2.view();
+
+  f->setPosition({.5, .5, 1.});
+  arr pts = .2*randn({10,3});
+  f->setConvexMesh(pts, {255,0,0}, .05);
+  C.view();
+
+  for(uint k=0;k<200;k++){
+    arr pts = .2*randn({10,3});
+    f->setConvexMesh(pts, {255,0,0}, .05);
+    rai::wait(.01);
+    if(!(k%10)) C.view(false, STRING(k));
+  }
 }
 
 //===========================================================================
@@ -411,7 +426,7 @@ void TEST(FollowRedundantSequence){
   G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t] += y; //adjust coordinates to be inside the arm range
   plot()->Line(Z);
-  G.viewer()->add(plot()());
+  G.viewer()->_add(plot()());
   G.view(false);
   //-- follow the trajectory kinematically
   for(t=0;t<T;t++){
@@ -609,42 +624,6 @@ void TEST(BlenderImport){
 #endif
 
 // =============================================================================
-void TEST(InverseKinematics) {
-  // we're testing some big steps / target positions, some of which are not
-  // reachable to check if the IK handle it
-  rai::Configuration world("drawer.g");
-
-  rai::Frame* drawer = world.getFrame("cabinet_drawer");
-  rai::Frame* marker = world.getFrame("marker");
-  arr destination = conv_vec2arr(marker->ensure_X().pos);
-
-  cout << "destination: " << destination << endl;
-  cout << "world state: " << world.q << endl;
-  world.view(true, STRING("press key to continue"));
-
-  world.inverseKinematicsPos(*drawer, destination);
-  cout << "destination: " << destination << endl;
-  cout << "world state: " << world.q << endl;
-  world.view(true, STRING("press key to continue"));
-
-  cout << "moving destination (can't be reached)" << endl;
-  marker->set_X()->pos.set(2., 1., 1);
-  destination = conv_vec2arr(marker->ensure_X().pos);
-  world.inverseKinematicsPos(*drawer, destination);
-  cout << "destination: " << destination << endl;
-  cout << "world state: " << world.q << endl;
-  world.view(true, STRING("press key to continue"));
-
-  cout << "moving destination (can't be reached)" << endl;
-  marker->set_X()->pos.set(-2., 0.1, 1.2);
-  destination = conv_vec2arr(marker->ensure_X().pos);
-  world.inverseKinematicsPos(*drawer, destination);
-  cout << "destination: " << destination << endl;
-  cout << "world state: " << world.q << endl;
-  world.view(true, STRING("press key to continue"));
-}
-
-// =============================================================================
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
@@ -654,12 +633,11 @@ int MAIN(int argc,char **argv){
   testGraph();
   testPlayStateSequence();
   testPlaySpline();
-  testViewerUpdate();
+  testViewer();
   testKinematics();
   testQuaternionKinematics();
   testKinematicSpeed();
   testFollowRedundantSequence();
-  testInverseKinematics();
   //testDynamics();
   testContacts();
   testLimits();

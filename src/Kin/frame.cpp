@@ -1847,10 +1847,10 @@ void rai::Shape::glDraw(OpenGL& gl) {
       if(!mesh().V.N) {
         LOG(-1) <<"trying to draw empty mesh (shape type:" <<_type <<")";
       } else {
-        if(!mesh().T.N && size.N) glPointSize(size.last());
-        if(!mesh().C.N) glColor(.8, .8, .8);
-        if(_type==rai::ST_mesh){
-          if(gl.drawOptions.drawVisualsOnly || mesh().T.d1==3){ //visual -> surface meshes only
+        if(!gl.drawOptions.drawVisualsOnly || mesh().T.d1==3){ //visual -> surface meshes only
+          if(!mesh().T.N && size.N) glPointSize(size.last());
+          if(!mesh().C.N) glColor(.8, .8, .8);
+          if(_type==rai::ST_mesh){
 #if 1 //use list
             if(_mesh->glListId) glListId = _mesh->glListId; //this ensures that Shapes with identical (shared) meshes share also the same glListId
             glDrawAsList(mesh(), glListId, gl);
@@ -1858,11 +1858,11 @@ void rai::Shape::glDraw(OpenGL& gl) {
 #else
             mesh().glDraw(gl);
 #endif
+          }else{
+            mesh().glDraw(gl);
           }
-        }else{
-          mesh().glDraw(gl);
+          if(!mesh().T.N && size.N) glPointSize(1.);
         }
-        if(!mesh().T.N && size.N) glPointSize(1.);
       }
     }
   }
@@ -1882,6 +1882,14 @@ void rai::Shape::glDraw(OpenGL& gl) {
 
   glPopName();
 #endif
+}
+
+void rai::Shape::glDeinit(OpenGL&){
+  if(_type==rai::ST_mesh && _mesh){
+    if(_mesh->glListId==-1) glListId = 0;
+    if(glListId) glDeleteLists(glListId, 1);
+    _mesh->glListId = -1;
+  }
 }
 
 void rai::Shape::createMeshes() {

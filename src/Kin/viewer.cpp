@@ -8,20 +8,82 @@
 
 #include "viewer.h"
 #include "frame.h"
+#include "../Core/thread.h"
 #include "../Gui/opengl.h"
 #include <iomanip>
 
-rai::ConfigurationViewer::~ConfigurationViewer() {
-  if(gl) gl.reset();
-}
+rai::ViewableConfigCopy::~ViewableConfigCopy(){ close_gl(); }
 
-OpenGL& rai::ConfigurationViewer::ensure_gl() {
+OpenGL& rai::ViewableConfigCopy::ensure_gl() {
   if(!gl) {
     gl = make_shared<OpenGL>("ConfigurationViewer");
     gl->camera.setDefault();
     gl->add(*this);
   }
   return *gl;
+}
+
+void rai::ViewableConfigCopy::close_gl(){
+  if(gl) gl.reset();
+}
+
+void rai::ViewableConfigCopy::recopyMeshes(const rai::Configuration& _C) {
+  ensure_gl();
+
+  {
+    gl->dataLock.lock(RAI_HERE);
+    if(gl->hasWindow()){
+      gl->beginNonThreadedDraw(true);
+      C.glDeinit(*gl);
+      gl->endNonThreadedDraw(true);
+    }
+    C.copy(_C, false);
+    gl->dataLock.unlock();
+    //deep copy meshes!
+//    for(rai::Frame* f:C.frames) if(f->shape) {
+//        shared_ptr<Mesh> org = f->shape->_mesh;
+//        if(org){
+//          f->shape->_mesh = make_shared<Mesh> (*org.get());
+//          f->shape->_mesh->listId=0;
+//        }
+//      }
+  }
+}
+
+void rai::ViewableConfigCopy::updateConfiguration(const rai::Configuration& newC) {
+
+  bool copyMeshes = false;
+  if(newC.frames.N!=C.frames.N) copyMeshes = true;
+  else{
+    for(uint i=0;i<C.frames.N;i++){
+      rai::Shape *s = newC.frames.elem(i)->shape;
+      rai::Shape *r = C.frames.elem(i)->shape;
+      if((!s) != (!r)){ copyMeshes=true; break; }
+      if(!s) continue;
+      if(s->_type != r->_type){ copyMeshes=true; break; }
+      if(s->size != r->size){ copyMeshes=true; break; }
+      if(s->_mesh && r->_mesh && (s->_mesh.get() != r->_mesh.get())){ copyMeshes=true; break; }
+      if(s->_mesh && s->glListId<0){ copyMeshes=true; break; }
+    }
+  }
+  if(copyMeshes) recopyMeshes(newC);
+
+  CHECK_EQ(newC.frames.N, C.frames.N, "");
+
+  ensure_gl();
+
+  {
+    auto _dataLock = gl->dataLock(RAI_HERE);
+    for(uint i=0;i<C.frames.N;i++){
+      rai::Frame *f = newC.frames.elem(i);
+      if(f->shape) C.frames.elem(i)->set_X() = f->ensure_X();
+    }
+  }
+
+//  if(newC.proxies.N) {
+//    auto _dataLock = gl->dataLock(RAI_HERE);
+//    C.copyProxies(newC.proxies);
+//  }
 }
 
 void rai::ConfigurationViewer::setCamera(rai::Frame* camF){
@@ -46,13 +108,13 @@ void rai::ConfigurationViewer::setCamera(rai::Frame* camF){
   gl->resize(gl->width, gl->height);
 }
 
-int rai::ConfigurationViewer::update(const char* text, bool nonThreaded) { ensure_gl(); return gl->update(text, nonThreaded); }
+int rai::ConfigurationViewer::_update(const char* text, bool nonThreaded) { ensure_gl(); return gl->update(text, nonThreaded); }
 
-int rai::ConfigurationViewer::watch(const char* text) { ensure_gl(); return gl->watch(text); }
+int rai::ConfigurationViewer::_watch(const char* text) { ensure_gl(); return gl->watch(text); }
 
-void rai::ConfigurationViewer::add(GLDrawer& c) { ensure_gl(); gl->add(c); }
+void rai::ConfigurationViewer::_add(GLDrawer& c) { ensure_gl(); gl->add(c); }
 
-void rai::ConfigurationViewer::resetPressedKey() { ensure_gl(); gl->pressedkey=0; }
+void rai::ConfigurationViewer::_resetPressedKey() { ensure_gl(); gl->pressedkey=0; }
 
 void rai::ConfigurationViewer::clear(){
   auto _dataLock = gl->dataLock(RAI_HERE);
@@ -87,6 +149,8 @@ void rai::ConfigurationViewer::raiseWindow(){
 }
 
 int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, const char* text, bool watch) {
+  updateConfiguration(_C);
+  /*
   bool copyMeshes = false;
   if(_C.frames.N!=C.frames.N) copyMeshes = true;
   else{
@@ -111,6 +175,7 @@ int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, con
     auto _dataLock = gl->dataLock(RAI_HERE);
     C.copyProxies(_C.proxies);
   }
+  */
 
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
@@ -125,28 +190,15 @@ int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, con
     }
 #endif
     framePath.reshape(1, _C.frames.N, 7);
-    drawTimeSlice=0;
+    drawTimeSlice=-1;
     drawSubFrames.clear();
     if(text) drawText = text;
   }
 
+  rai::Frame *camF = C.getFrame("camera_gl", false);
+  if(camF) setCamera(camF);
+
   return update(watch);
-}
-
-int rai::ConfigurationViewer::setPath(ConfigurationL& Cs, const char* text, bool watch) {
-  CHECK(C.frames.N, "setPath requires that you setConfiguration first");
-
-  uintA frames;
-  frames.setStraightPerm(Cs.first()->frames.N);
-
-  arr X(Cs.N, frames.N, 7);
-  for(uint t=0; t<X.d0; t++) {
-    for(uint i=0; i<X.d1; i++) {
-      X(t, i, {}) = Cs(t)->frames(frames(i))->getPose();
-    }
-  }
-
-  return setPath(X, text, watch);
 }
 
 int rai::ConfigurationViewer::setPath(rai::Configuration& _C, const arr& jointPath, const char* text, bool watch, bool full) {
@@ -194,10 +246,11 @@ bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, doubl
 
   CHECK_GE(C.frames.N, T*nFrames, "");
 
-  FrameL F;
-  if(C.frames.nd==1) F = C.frames({0,T*nFrames-1});
-  else F = C.frames;
+  FrameL F = C.frames;
+  F.resizeCopy(T*nFrames);
   F.reshape(T, nFrames);
+
+  Metronome tic(delay / F.d0);
 
   for(uint t=0; t<F.d0; t++) {
     {
@@ -211,8 +264,8 @@ bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, doubl
     if(delay<0.) {
       update(true);
     } else {
+      if(t && delay) tic.waitForTic(); //rai::wait(delay / F.d0);
       update(false);
-      if(delay) rai::wait(delay / F.d0);
     }
 
     {
@@ -296,26 +349,6 @@ floatA rai::ConfigurationViewer::getDepth() {
   return depth;
 }
 
-void rai::ConfigurationViewer::recopyMeshes(const rai::Configuration& _C) {
-  ensure_gl();
-
-  {
-    gl->dataLock.lock(RAI_HERE);
-    C.copy(_C, false);
-    gl->dataLock.unlock();
-    //deep copy meshes!
-//    for(rai::Frame* f:C.frames) if(f->shape) {
-//        shared_ptr<Mesh> org = f->shape->_mesh;
-//        if(org){
-//          f->shape->_mesh = make_shared<Mesh> (*org.get());
-//          f->shape->_mesh->listId=0;
-//        }
-//      }
-  }
-  rai::Frame *camF = C.getFrame("camera_gl", false);
-  if(camF) setCamera(camF);
-}
-
 void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
 #ifdef RAI_GL
   glStandardScene(NULL, gl);
@@ -355,21 +388,19 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
 
     C.setFrameState(framePath[t]);
     C.glDraw_sub(gl, C.frames, 0);
-  } else {
-    if(drawFullPath) {
-      CHECK_EQ(framePath.d1, C.frames.N, "");
-      CHECK_EQ(framePath.d2, 7, "");
-      for(uint t=0; t<framePath.d0; t++) {
-        C.setFrameState(framePath[t]);
-        C.glDraw_sub(gl, C.frames, 1); //opaque
-      }
-      for(uint t=0; t<framePath.d0; t++) {
-        C.setFrameState(framePath[t]);
-        C.glDraw_sub(gl, C.frames, 2); //transparent
-      }
-    } else {
-      NIY;
+  } else if(drawFullPath) {
+    CHECK_EQ(framePath.d1, C.frames.N, "");
+    CHECK_EQ(framePath.d2, 7, "");
+    for(uint t=0; t<framePath.d0; t++) {
+      C.setFrameState(framePath[t]);
+      C.glDraw_sub(gl, C.frames, 1); //opaque
     }
+    for(uint t=0; t<framePath.d0; t++) {
+      C.setFrameState(framePath[t]);
+      C.glDraw_sub(gl, C.frames, 2); //transparent
+    }
+  } else {
+    C.glDraw_sub(gl, C.frames, 0);
   }
 
   glPopMatrix();

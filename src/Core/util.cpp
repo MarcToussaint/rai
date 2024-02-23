@@ -450,6 +450,7 @@ bool wait(bool useX11) {
 
 #ifdef RAI_X11
 int x11_getKey() {
+  rai::wait(.05);
   rai::String txt="PRESS KEY";
   int key=0;
 
@@ -1348,7 +1349,7 @@ void gnuplot(const char* command, bool pauseMouse, bool persist, const char* PDF
         <<"\nset terminal pop\n";
   }
 
-  if(pauseMouse) cmd <<"\n pause mouse" <<endl;
+  if(pauseMouse) cmd <<"\n pause mouse key" <<endl;
   gnuplotServer()->send(cmd.p, persist);
 
   if(!rai::getInteractivity()) {

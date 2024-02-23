@@ -89,7 +89,7 @@ void testPush(){
   C[obj]->setRelativePosition({-.0,.3-.055,.095});
   C[obj]->setRelativeQuaternion({1.,0,0,0});
 
-  for(uint i=0;i<50;i++){
+  for(uint i=0;i<20;i++){
     arr qStart = C.getJointState();
 
     str info = STRING("push");
@@ -132,7 +132,7 @@ int main(int argc,char** argv){
 
   //  rnd.clockSeed();
 
-//  testPickAndPlace();
+  testPickAndPlace();
   testPush();
 
   return 0;

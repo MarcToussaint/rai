@@ -22,6 +22,10 @@ H5_Writer::H5_Writer(const char* filename){
   file = make_shared<H5::H5File>(filename, H5F_ACC_TRUNC);
 }
 
+void H5_Writer::addGroup(const char* group){
+  file->createGroup(group);
+}
+
 template<class T> void H5_Writer::add(const char* name, const rai::Array<T>& x){
   rai::Array<hsize_t> dim = rai::convert<hsize_t>(x.dim());
   H5::DataSpace dataspace(dim.N, dim.p);

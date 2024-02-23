@@ -1327,13 +1327,12 @@ template<class T> void Array<T>::takeOver(Array<T>& a) {
 /** @brief return a `dim'-dimensional grid with `steps' intervals
   filling the range [lo, hi] in each dimension. Note: returned array is
   `flat', rather than grid-shaped. */
-template<class T> void
-Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
+template<class T> Array<T>& Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
   uint i, j, k;
   if(dim==1) {
     resize(steps+1);
     for(i=0; i<d0; i++) elem(i)=lo+(hi-lo)*i/steps;
-    return;
+    return *this;
   }
   if(dim==2) {
     resize(steps+1, steps+1, 2);
@@ -1342,7 +1341,7 @@ Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
         operator()(i, j, 1)=lo+(hi-lo)*j/steps;
       }
     reshape(d0*d1, 2);
-    return;
+    return *this;
   }
   if(dim==3) {
     resize(uintA{steps+1, steps+1, steps+1, 3});
@@ -1359,9 +1358,10 @@ Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
       }
     }
     reshape(d0*d1*d2, 3);
-    return;
+    return *this;
   }
-  HALT("not implemented yet");
+  NIY;
+  return *this;
 }
 
 template<class T> T rai::Array<T>::median_nonConst() {

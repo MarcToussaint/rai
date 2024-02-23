@@ -12,12 +12,12 @@
 
 //===========================================================================
 
-rai::CameraView::CameraView(const rai::Configuration& _C, bool _offscreen)
-  : gl("CameraView", 640, 480, _offscreen) {
+rai::CameraView::CameraView(const rai::Configuration& _C, bool _offscreen) {
 
   updateConfiguration(_C);
-  gl.camera.setDefault();
-  gl.add(*this);
+  gl = make_shared<OpenGL>("CameraView", 640, 480, _offscreen);
+  gl->camera.setDefault();
+  gl->add(*this);
 }
 
 rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile) {
@@ -38,7 +38,7 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
   if(sen.frame>=0) cam.X = C.frames.elem(sen.frame)->ensure_X();
 
   //also select sensor
-  gl.resize(sen.width, sen.height);
+  gl->resize(sen.width, sen.height);
   currentSensor=&sen;
 
   return sen;
@@ -73,13 +73,14 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName) {
     return addSensor(sensorName);
   }
 
-  gl.resize(sen->width, sen->height);
+  gl->resize(sen->width, sen->height);
   currentSensor=sen;
   return *sen;
 }
 
+#if 0
 void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
-  auto _dataLock = gl.dataLock(RAI_HERE);
+  auto _dataLock = gl->dataLock(RAI_HERE);
   if(newC.frames.N==C.frames.N) {
 #if 0
     C.setFrameState(newC.getFrameState());
@@ -108,13 +109,14 @@ void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
     }
   }
 }
+#endif
 
 void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
   updateCamera();
   //  renderMode=all;
-  // gl.update(nullptr, true);
-  gl.renderInBack();
-  image = gl.captureImage;
+  // gl->update(nullptr, true);
+  gl->renderInBack();
+  image = gl->captureImage;
   flip_image(image);
   if(renderMode==seg && frameIDmap.N) {
     byteA seg(image.d0*image.d1);
@@ -127,14 +129,14 @@ void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
         seg(i) = 0;
     }
     image = seg;
-    image.reshape(gl.height, gl.width);
+    image.reshape(gl->height, gl->width);
   }
   if(true) { //(!!depth) {
-    depth = gl.captureDepth;
+    depth = gl->captureDepth;
     flip_image(depth);
     for(float& d:depth) {
       if(d==1.f || d==0.f) d=-1.f;
-      else d = gl.camera.glConvertToTrueDepth(d);
+      else d = gl->camera.glConvertToTrueDepth(d);
     }
   }
 }
@@ -142,8 +144,8 @@ void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
 byteA rai::CameraView::computeSegmentationImage() {
   updateCamera();
   renderMode=seg;
-  gl.renderInBack();
-  byteA seg = gl.captureImage;
+  gl->renderInBack();
+  byteA seg = gl->captureImage;
   flip_image(seg);
   return seg;
 }
@@ -163,9 +165,9 @@ void rai::CameraView::updateCamera() {
   }
 
   if(currentSensor) {
-    gl.background = currentSensor->backgroundImage;
-    gl.backgroundZoom = (double)currentSensor->height/gl.background.d0;
-    gl.camera = currentSensor->cam;
+    gl->background = currentSensor->backgroundImage;
+    gl->backgroundZoom = (double)currentSensor->height/gl->background.d0;
+    gl->camera = currentSensor->cam;
   }
 }
 

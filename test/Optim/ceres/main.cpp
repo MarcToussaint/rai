@@ -150,7 +150,6 @@ void tutorialBasics(){
   rai::Configuration C("model.g");
 
   KOMO komo;
-  komo.solver = rai::KS_sparse; //sparseOptimization=true;
   komo.setConfig(C, false);
   komo.setTiming(1, 1, 5., 1);
   komo.addControlObjective({}, 1, 1e0);
@@ -165,7 +164,7 @@ void tutorialBasics(){
   komo.run_prepare(.01);
 
 #if 1
-  komo.solver=rai::KS_dense;
+//  komo.solver=rai::KS_dense;
   auto P1 = komo.nlp();
   auto P = make_shared<Conv_NLP_TrivialFactoreded>(P1);
 

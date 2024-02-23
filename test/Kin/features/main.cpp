@@ -36,9 +36,9 @@ void testFeature() {
   arr q1 = C.getJointState();
 
   rai::Configuration pathConfig;
-  pathConfig.addConfiguration(C);
-  pathConfig.addConfiguration(C);
-  pathConfig.addConfiguration(C);
+  pathConfig.addConfigurationCopy(C);
+  pathConfig.addConfigurationCopy(C);
+  pathConfig.addConfigurationCopy(C);
 //  pathConfig.jacMode = rai::Configuration::JM_rowShifted;
 //  pathConfig.jacMode = rai::Configuration::JM_dense;
   pathConfig.jacMode = rai::Configuration::JM_sparse;

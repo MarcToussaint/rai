@@ -13,11 +13,20 @@
 
 namespace rai {
 
-struct ConfigurationViewer : GLDrawer {
-  ~ConfigurationViewer();
+struct ViewableConfigCopy : GLDrawer {
+  Configuration C;
+  shared_ptr<struct OpenGL> gl;
+
+  ~ViewableConfigCopy();
+  OpenGL& ensure_gl();
+  void close_gl();
+  void recopyMeshes(const Configuration& _C);
+  void updateConfiguration(const rai::Configuration& newC);
+};
+
+struct ConfigurationViewer : ViewableConfigCopy {
 
   int setConfiguration(const Configuration& _C, const char* text=0, bool watch=false);
-  int setPath(ConfigurationL& Cs, const char* text=0, bool watch=false);
   int setPath(rai::Configuration& _C, const arr& jointPath, const char* text=0, bool watch=false, bool full=true);
   int setPath(const arr& _framePath, const char* text=0, bool watch=false, bool full=true);
   bool playVideo(uint T, uint nFrames, bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
@@ -26,26 +35,21 @@ struct ConfigurationViewer : GLDrawer {
   byteA getRgb();
   floatA getDepth();
   void savePng(const char* saveVideoPath="z.vid/");
-  void recopyMeshes(const Configuration& _C);
 
   rai::Configuration& getConfiguration(){ return C; }
-
 
   int update(bool watch=false);
   void raiseWindow();
   void glDraw(OpenGL&);
-  OpenGL& ensure_gl();
   void setCamera(rai::Frame* cam);
 
   //mimic a OpenGL, directly calling the same methods in its gl
-  int update(const char* text=nullptr, bool nonThreaded=false);
-  int watch(const char* text=nullptr);
-  void add(GLDrawer& c);
-  void resetPressedKey();
+  int _update(const char* text=nullptr, bool nonThreaded=false);
+  int _watch(const char* text=nullptr);
+  void _add(GLDrawer& c);
+  void _resetPressedKey();
   void clear();
-
 private://draw data
-  Configuration C;
 
   arr framePath;
   FrameL drawSubFrames;
@@ -56,7 +60,6 @@ private://draw data
   uint pngCount=0;
 public:
   String drawText;
-  shared_ptr<struct OpenGL> gl;
   bool drawFrameLines=true;
   double phaseOffset=0., phaseFactor=-1.;
 };

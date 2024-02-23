@@ -1,7 +1,6 @@
 
 #include <Kin/frame.h>
 #include <Kin/cameraview.h>
-#include <Gui/viewer.h>
 #include <Geo/depth2PointCloud.h>
 
 //===========================================================================
@@ -11,36 +10,41 @@ void TEST(CameraView){
   C.addFile("../../../../rai-robotModels/pr2/pr2.g");
   C.addFile("../../../../rai-robotModels/objects/kitchen.g");
   C.optimizeTree();
+  C.view();
 
   rai::CameraView V(C, true);
 
   V.addSensor("kinect", "endeffKinect", 640, 480, 580./480., -1., {.1, 50.} );
 //  V.selectSensor("kinect");
 
-  Var<byteA> image;
-  Var<floatA> depth;
-  Var<byteA> segmentation;
-  Var<arr> pts;
+  byteA image;
+  floatA depth;
+  byteA segmentation;
+  arr pts;
 
-  PointCloudViewerCallback v(pts, image);
-  ImageViewerCallback v2(image);
-  ImageViewerCallback v3(segmentation);
+  V.computeImageAndDepth(image, depth);
+  segmentation = V.computeSegmentationImage();
+  depthData2pointCloud(pts, depth, V.getFxycxy());
 
-  V.computeImageAndDepth(image.set(), depth.set());
-  segmentation.set() = V.computeSegmentationImage();
-  depthData2pointCloud(pts.set(), depth.get(), V.getFxycxy());
+  arr D = convert<double>(depth);
+  cout <<"depth min max:" <<min(D) <<' ' <<max(D) <<endl;
+  depth *= float(255./max(D));
+
+  OpenGL gl;
+  gl.text="image";  gl.watchImage(image, true);
+  gl.text="depth";  gl.watchImage(depth, true);
+  gl.text="segmentation";  gl.watchImage(segmentation, true);
+
+  rai::Mesh M;
+  M.V = pts.reshape(-1,3);
+  M.C = convert<double>(image).reshape(-1, 3);
+  M.C /= 255.;
+  gl.clear();
+  gl.add(glStandardScene);
+  gl.add(M);
+  gl.watch("point cloud");
 
   rai::wait();
-
-//  V.addCamera("default", "")
-
-//  K.gl().camera.setKinect();
-//  K.gl().camera.X = K.getFrameByName("endeffEyes")->X * K.gl().camera.X;
-//  K.view(true); //if commented, glut/gtk is never initiated
-//  byteA indexRgb, depth;
-//  K.glGetMasks(580, 480);
-//  write_ppm(K.gl().captureImage, "z.rgb.ppm");
-//  write_ppm(convert<byte>(255.f*K.gl().captureDepth), "z.depth.ppm");
 
 }
 

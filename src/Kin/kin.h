@@ -271,6 +271,7 @@ struct Configuration : GLDrawer {
   void read(std::istream& is);
   void glDraw(struct OpenGL&);
   void glDraw_sub(struct OpenGL& viewer, const FrameL& F, int drawOpaqueOrTransparanet=0);
+  void glDeinit(struct OpenGL&);
   Graph getGraph() const;
   void displayDot();
 

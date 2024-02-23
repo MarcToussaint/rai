@@ -265,7 +265,7 @@ To get really precise distances and penetrations use the FS.distance feature wit
        "returns the sum of all penetrations (using FCL for broadphase; and low-level GJK/MRP for fine pair-wise distance/penetration computation)")
 
   .def("getCollisionFree", &rai::Configuration::getCollisionFree,
-       "returns if the configuration is collision free (using FCL only; collidable objects need to have contact flag)")
+       "returns if the configuration is collision free (binary collision check, using FCL only; collidable objects need to have contact flag)")
 
   .def("view",  &rai::Configuration::view,
        "open a view window for the configuration",

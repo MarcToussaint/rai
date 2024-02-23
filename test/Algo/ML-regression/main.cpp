@@ -100,7 +100,7 @@ void testRobustRegression(const char *datafile=nullptr) {
 
   //-- evaluate model on a grid
   arr X_grid,y_grid;
-  X_grid.setGrid(X.d1,-5,5, (X.d1==1?500:30));
+  X_grid.setGrid(X.d1,-5,5, (X.d1==1?500:30)).reshape(-1, X.d1);
   Phi = makeFeatures(X_grid, readFromCfgFileFT, X);
   y_grid = Phi*beta;
   arr s_grid = sqrt(evaluateBayesianRidgeRegressionSigma(Phi, Sigma)/*+rai::sqr(sigma)*/);
@@ -195,7 +195,7 @@ void testKernelReg(const char *datafile=nullptr) {
 
   //-- evaluate model on a grid
   arr X_grid, s_grid;
-  X_grid.setGrid(X.d1, -5., 5., (X.d1==1?500:30));
+  X_grid.setGrid(X.d1, -5., 5., (X.d1==1?500:30)).reshape(-1, X.d1);
   arr y_grid = f.evaluate(X_grid, s_grid);
   s_grid = sqrt(s_grid);
 
@@ -283,7 +283,7 @@ void TEST(KernelLogReg){
   KernelLogisticRegression klr(X,y, defaultKernelFunction, -1., -0.);
 
   arr X_grid;
-  X_grid.setGrid(X.d1,-2, 3, (X.d1==1?500:50));
+  X_grid.setGrid(X.d1,-2, 3, (X.d1==1?500:50)).reshape(-1, X.d1);
   arr p_ba,p_hi,p_lo;
 //  arr p_grid = klr.evaluateF(X_grid, p_ba); p_hi=p_grid+p_ba;  p_lo=p_grid-p_ba;
   arr p_grid = klr.evaluate(X_grid, p_ba, p_hi, p_lo);
@@ -392,7 +392,7 @@ void exercise1() {
 
   //predict on grid
   arr X_grid,y_grid;
-  X_grid.setGrid(X.d1,-3,3,30);
+  X_grid.setGrid(X.d1,-3,3,30).reshape(-1, X.d1);
   Phi = makeFeatures(X_grid,readFromCfgFileFT,X);
   y_grid = Phi*beta;
 

@@ -13,6 +13,7 @@ struct H5_Writer{
   H5_Writer(const char* filename);
 
   template<class T> void add(const char* name, const rai::Array<T>& x);
+  void addGroup(const char* group);
 };
 
 //===========================================================================

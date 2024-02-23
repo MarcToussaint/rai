@@ -9,11 +9,12 @@
 #pragma once
 
 #include "kin.h"
+#include "viewer.h"
 #include "../Gui/opengl.h"
 
 namespace rai {
 
-struct CameraView : GLDrawer {
+struct CameraView : ViewableConfigCopy {
 
   /*! describes a sensor from which we can take 'images' within the simulation (e.g.: kinect, suctionRingView, etc) */
   struct Sensor {
@@ -28,11 +29,9 @@ struct CameraView : GLDrawer {
   };
 
   //-- description of world configuration
-  rai::Configuration C;        //COPY of the configuration
   rai::Array<Sensor> sensors;  //the list of sensors
 
   enum RenderMode { all, seg, visuals };
-  OpenGL gl;
 
   //-- run parameter
   Sensor* currentSensor=0;
@@ -46,10 +45,7 @@ struct CameraView : GLDrawer {
   //-- loading the configuration: the meshes, the robot model, the tote, the sensors; all ends up in K
   Sensor& addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange= {}, const char* backgroundImageFile=0);
   Sensor& addSensor(const char* frameAttached); //read everything from the frame attributes
-
   Sensor& selectSensor(const char* sensorName); //set the OpenGL sensor
-
-  void updateConfiguration(const Configuration& newC);
 
   void computeImageAndDepth(byteA& image, floatA& depth);
   byteA computeSegmentationImage();

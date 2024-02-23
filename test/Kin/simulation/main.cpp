@@ -68,6 +68,8 @@ void testGrasp(){
   C["stick"]->set_Q()->setText("<t(-.3 .6 1.1) d(90 1 0 0) d(20 1 1 0)>");
 
   arr q = C.getJointState();
+  q(-1) -= .5;
+  C.setJointState(q);
 
   rai::Simulation S(C, S._physx, 2);
 
@@ -95,7 +97,7 @@ void testGrasp(){
 //                 .setCentering()
                  .eval(C.getFrames({"finger1", "finger2", "ring4"}));
 //                 C.feature(FS_oppose, {"finger1", "finger2", "ring4"})->eval(C);
-      diff *= rai::MIN(.01/length(diff), .03);
+      diff *= rai::MIN(.01/length(diff), .02);
       q -= pseudoInverse(diff.J(), NoArr, 1e-2) * diff;
     }
 
@@ -272,8 +274,14 @@ void testPcl(){
   floatA depth;
   arr pts;
 
+  arr q = C.getJointState();
+  q = repmat(~q, 2, 1);
+  q(0,1) = .5;
+
+  S.setSplineRef(q, {1., 2.});
+
   double tau=.05;
-  for(uint t=0;t<20;t++){
+  for(double t=0;t<=2.;t+=tau){
     S.getImageAndDepth(img, depth);
     depthData2pointCloud(pts, depth, S.cameraview().currentSensor->getFxycxy());
 
@@ -282,7 +290,7 @@ void testPcl(){
       pcl->setPointCloud(pts, {255,0,0});
     }
 
-    S.step({}, tau, S._none);
+    S.step({}, tau, S._spline);
     C.view();
     rai::wait(tau);
   }
@@ -478,7 +486,7 @@ void testSplineMode(){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  testMotors(); return 0;
+  testMotors();
   testRndScene();
   testConstructor();
   testPcl();

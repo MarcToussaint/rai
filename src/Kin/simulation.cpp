@@ -560,9 +560,7 @@ void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
 
 //===========================================================================
 
-struct Simulation_DisplayThread : Thread, GLDrawer {
-  Configuration Ccopy;
-  OpenGL gl;
+struct Simulation_DisplayThread : Thread, ViewableConfigCopy {
   //data
   Mutex mux;
   double time;
@@ -574,25 +572,30 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
   uint pngCount=0;
   uint drawCount=0;
 
-  Simulation_DisplayThread() : Thread("Sim_DisplayThread", .05), gl("Simulation Display") {
-    gl.add(*this);
-    gl.camera.setDefault();
-    gl.drawOptions.drawVisualsOnly=true;
-
-//    if(Ccopy.getFrame("camera_gl",false)) gl.camera.X = Ccopy["camera_gl"]->ensure_X();
-
+  Simulation_DisplayThread() : Thread("Sim_DisplayThread", .05) {
     threadLoop();
     while(step_count<2) rai::wait(.05);
   }
 
   ~Simulation_DisplayThread() {
-    gl.clear();
     threadClose(.5);
   }
 
+  void open() {
+    gl = make_shared<OpenGL>("Simulation Display");
+    gl->add(*this);
+    gl->camera.setDefault();
+    gl->drawOptions.drawVisualsOnly=true;
+    //    if(Ccopy.getFrame("camera_gl",false)) gl->camera.X = Ccopy["camera_gl"]->ensure_X();
+  }
+
   void step() {
-    gl.update(STRING("Kin/Simulation - time:" <<time), true);
-    //write_png(gl.captureImage, STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"));
+    gl->update(STRING("Kin/Simulation - time:" <<time));
+    //write_png(gl->captureImage, STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"));
+  }
+
+  void close(){
+    close_gl();
   }
 
   void glDraw(OpenGL& gl) {
@@ -600,7 +603,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
 #ifdef RAI_GL
     mux.lock(RAI_HERE);
     glStandardScene(nullptr, gl);
-    Ccopy.glDraw(gl);
+    ViewableConfigCopy::C.glDraw(gl);
 
     if(image.N && depth.N) {
       resizeAs(depthImage, depth);
@@ -638,7 +641,10 @@ void Simulation_self::updateDisplayData(double _time, const rai::Configuration& 
   display->mux.lock(RAI_HERE);
   display->time = _time;
   display->drawCount = 0;
+  display->mux.unlock();
 
+  display->updateConfiguration(_C);
+#if 0
   bool copyMeshes = false;
   if(_C.frames.N!=display->Ccopy.frames.N) copyMeshes = true;
   else{
@@ -673,7 +679,7 @@ void Simulation_self::updateDisplayData(double _time, const rai::Configuration& 
 #endif
 
   display->Ccopy.copyProxies(_C.proxies);
-  display->mux.unlock();
+#endif
 }
 
 void Simulation_self::updateDisplayData(const byteA& _image, const floatA& _depth) {
@@ -983,15 +989,15 @@ std::shared_ptr<PhysXInterface> Simulation::hidden_physx(){
 }
 
 OpenGL& Simulation::hidden_gl(){
-  return self->display->gl;
+  return self->display->ensure_gl();
 }
 
 void Simulation::loadTeleopCallbacks(){
   CHECK(!teleopCallbacks, "");
   teleopCallbacks = make_shared<TeleopCallbacks>(C);
-  self->display->gl.addClickCall(teleopCallbacks.get());
-  self->display->gl.addKeyCall(teleopCallbacks.get());
-  self->display->gl.addHoverCall(teleopCallbacks.get());
+  self->display->gl->addClickCall(teleopCallbacks.get());
+  self->display->gl->addKeyCall(teleopCallbacks.get());
+  self->display->gl->addHoverCall(teleopCallbacks.get());
 }
 
 bool TeleopCallbacks::hasNewMarker(){

@@ -2531,11 +2531,11 @@ void Configuration::writeMeshes(const char* pathPrefix) const {
         (f->shape->type()==ST_mesh || f->shape->type()==ST_ssCvx || f->shape->type()==ST_sdf)) {
       String filename = pathPrefix;
       if(!f->ats) f->ats = make_shared<Graph>();
-      filename <<f->name <<".arr";
+      filename <<f->name <<".mesh";
       f->ats->getNew<FileToken>("mesh").name = filename;
-      if(f->shape->type()==ST_mesh) f->shape->mesh().writeArr(FILE(filename));
-      if(f->shape->type()==ST_ssCvx) f->shape->sscCore().writeArr(FILE(filename));
-      if(f->shape->_sdf){
+      if(f->shape->type()==ST_mesh || f->shape->type()==ST_sdf) f->shape->mesh().writeArr(FILE(filename));
+      else if(f->shape->type()==ST_ssCvx) f->shape->sscCore().writeArr(FILE(filename));
+      else if(f->shape->_sdf){
         filename.clear() <<pathPrefix <<f->name <<".vol";
         f->ats->getNew<FileToken>("sdf").name = filename;
         f->shape->_sdf->write(FILE(filename));
@@ -3038,6 +3038,13 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
 #endif
 }
 
+void Configuration::glDeinit(OpenGL& gl){
+  //first clear all listIDs within meshes - shapes organize them
+  for(Frame* f: frames) if(f->shape && f->shape->_mesh) f->shape->_mesh->glListId=0;
+
+  for(Frame* f: frames) if(f->shape) f->shape->glDeinit(gl);
+}
+
 //===========================================================================
 
 void kinVelocity(arr& y, arr& J, uint frameId, const ConfigurationL& Ktuple, double tau) {
@@ -3311,7 +3318,7 @@ int Configuration::animate(Inotify* ino) {
   StringA jointNames = getJointNames();
 
   viewer()->raiseWindow();
-  viewer()->resetPressedKey();
+  viewer()->_resetPressedKey();
   for(uint i=x0.N; i--;) {
     x=x0;
     double upper_lim = lim(1, i);
@@ -3552,11 +3559,11 @@ void Configuration::watchFile(const char* filename) {
     LOG(0) <<"watching...";
     int key = -1;
     viewer()->recopyMeshes(*this);
-    viewer()->resetPressedKey();
+    viewer()->_resetPressedKey();
     viewer()->drawText = "waiting for file change ('h' for help)";
     for(;;) {
       key = view(false);
-      viewer()->resetPressedKey();
+      viewer()->_resetPressedKey();
       //if(key) cout <<"*** KEY:" <<key <<endl;
       if(key==13 || key==27 || key=='q') break;
       if(!rai::getInteractivity()) break;
