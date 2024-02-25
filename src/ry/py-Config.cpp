@@ -20,7 +20,6 @@
 #include "../Kin/cameraview.h"
 #include "../Kin/simulation.h"
 #include "../Geo/fclInterface.h"
-#include "../Gui/viewer.h"
 #include "../LGP/LGP_tree.h"
 #include "../Geo/depth2PointCloud.h"
 
@@ -267,6 +266,10 @@ To get really precise distances and penetrations use the FS.distance feature wit
   .def("getCollisionFree", &rai::Configuration::getCollisionFree,
        "returns if the configuration is collision free (binary collision check, using FCL only; collidable objects need to have contact flag)")
 
+  .def("getCollidablePairs", [](shared_ptr<rai::Configuration>& self) {
+    return rai::framesToNames(self->getCollidablePairs());
+  }, "returns the list of collisable pairs -- this should help debugging the 'contact' flag settings in a configuration")
+
   .def("view",  &rai::Configuration::view,
        "open a view window for the configuration",
        pybind11::arg("pause")=false,
@@ -361,13 +364,6 @@ reloads, displays and animates the configuration whenever the file is changed"
        pybind11::arg("filename"), pybind11::arg("format")="collada" )
 
   ;
-
-//===========================================================================
-
-  pybind11::class_<rai::ConfigurationViewer, shared_ptr<rai::ConfigurationViewer>>(m, "ConfigurationViewer");
-  pybind11::class_<ImageViewerCallback, shared_ptr<ImageViewerCallback>>(m, "ImageViewer");
-  pybind11::class_<PointCloudViewerCallback, shared_ptr<PointCloudViewerCallback>>(m, "PointCloudViewer");
-
 
 //===========================================================================
 

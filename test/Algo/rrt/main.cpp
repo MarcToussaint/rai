@@ -34,14 +34,16 @@ void test_minimalistic(){
   C.addFrame("base") -> setPosition({0.,0.,.05});
   C.addFrame("ego", "base")-> setShape(rai::ST_ssBox, {.05, .5, .1, .01}) .setJoint(rai::JT_transXYPhi, {-1.,1.,-1.,1.,-3.,3.}) .setContact(1);
   C.addFrame("obstacle")-> setShape(rai::ST_ssBox, {.05, .5, .1, .01}) .setPosition({.0, .0, .05}) .setContact(1);
+  C.addFrame("obstacle0")-> setShape(rai::ST_ssBox, {.05, .5, .1, .01}) .setPosition({.2, .0, .05}) .setContact(1);
 
   arr q0 = {-.5, .0, .0};
   arr qT = {.5, .0, .0};
 
-//  C.setJointState(q0);
-//  C.view(true);
-//  C.setJointState(qT);
-//  C.view(true);
+  C.setJointState(q0);
+  C.view(true);
+  C.setJointState(qT);
+  C.view(true);
+  LOG(0) <<"collidable pairs:\n" <<rai::framesToNames(C.getCollidablePairs());
 
   run_rrt(C, q0, qT);
 
@@ -119,7 +121,7 @@ int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
 //  rnd.clockSeed();
-//  test_minimalistic(); return 0;
+  test_minimalistic(); return 0;
 
 
   cout <<"=== RRT test" <<endl;

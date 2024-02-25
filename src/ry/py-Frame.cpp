@@ -41,7 +41,7 @@ void init_Frame(pybind11::module& m) {
      })
     .def("setRelativePosition", &rai::Frame::setRelativePosition )
     .def("setRelativeQuaternion", &rai::Frame::setRelativeQuaternion )
-    .def("setJoint", &rai::Frame::setJoint )
+    .def("setJoint", &rai::Frame::setJoint, "", pybind11::arg("jointType"), pybind11::arg("limits")=arr{} )
     .def("setJointState", &rai::Frame::setJointState )
     .def("setContact", &rai::Frame::setContact )
     .def("setMass", &rai::Frame::setMass )
@@ -51,7 +51,7 @@ void init_Frame(pybind11::module& m) {
          pybind11::arg("vertices"), pybind11::arg("triangles"), pybind11::arg("colors")=byteA{}, pybind11::arg("cvxParts")=uintA{} )
     .def("setPointCloud", &rai::Frame::setPointCloud,
          "attach a point cloud shape",
-         pybind11::arg("points"), pybind11::arg("colors") = byteA{}, pybind11::arg("normals") = arr{}  )
+         pybind11::arg("points"), pybind11::arg("colors") = byteA{}, pybind11::arg("normals")=arr{}  )
     .def("setConvexMesh", &rai::Frame::setConvexMesh,
          "attach a convex mesh as shape",
          pybind11::arg("points"), pybind11::arg("colors") = byteA{}, pybind11::arg("radius")=0. )

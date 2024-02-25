@@ -1345,7 +1345,7 @@ uintAA Configuration::getCollisionExcludePairIDs(int verbose) {
   return ex;
 }
 
-FrameL Configuration::getCollisionAllPairs(){
+FrameL Configuration::getCollidablePairs(){
   FrameL coll;
 
   //shapes within a link

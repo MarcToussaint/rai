@@ -185,7 +185,7 @@ struct Configuration : GLDrawer {
   Joint* attach(Frame* a, Frame* b);
   Joint* attach(const char* a, const char* b);
   uintAA getCollisionExcludePairIDs(int verbose=0);
-  FrameL getCollisionAllPairs();
+  FrameL getCollidablePairs();
   void prefixNames(bool clear=false);
 
   /// @name computations on the tree

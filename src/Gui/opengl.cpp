@@ -2054,13 +2054,17 @@ int OpenGL::watch(const char* txt) {
     return 'q';
   }
 #ifdef RAI_GL
-  update((txt?STRING(txt <<" - press ENTER to continue"):0), true);
+  if(txt) text.clear() <<txt;
+  rai::String textCopy = text;
+  text <<" - press ENTER to continue";
+  update(0, true);
   if(rai::getInteractivity()) {
     watching.setStatus(1);
     watching.waitForStatusEq(0);
   } else {
     rai::wait(.1);
   }
+  text = textCopy;
 #endif
   return pressedkey;
 }
