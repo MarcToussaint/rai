@@ -17,7 +17,7 @@ void init_PathAlgos(pybind11::module& m) {
 
   .def(pybind11::init<>())
   .def("setProblem", &rai::PathFinder::setProblem, "", pybind11::arg("Configuration"), pybind11::arg("starts"), pybind11::arg("goals") )
-  .def("setExplicitCollisionPairs", &rai::PathFinder::setExplicitCollisionPairs, "", pybind11::arg("collisionPairs") )
+  .def("setExplicitCollisionPairs", &rai::PathFinder::setExplicitCollisionPairs, "only after setProblem", pybind11::arg("collisionPairs") )
   .def("solve", &rai::PathFinder::solve, "" )
 
   ;

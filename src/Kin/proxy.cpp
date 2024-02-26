@@ -31,6 +31,7 @@ void rai::Proxy::copy(const rai::Configuration& C, const rai::Proxy& p) {
 }
 
 void rai::Proxy::calc_coll() {
+  CHECK(a && b, "ill-defined proxies!");
   rai::Shape* s1 = a->shape;
   rai::Shape* s2 = b->shape;
   CHECK(s1 && s2, "");

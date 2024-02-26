@@ -41,6 +41,7 @@ shared_ptr<GroundedObjective> ConfigurationProblem::addObjective(const FeatureSy
 void ConfigurationProblem::setExplicitCollisionPairs(const StringA& _collisionPairs){
   computeAllCollisions = false;
   collisionPairs = C.getFrameIDs(_collisionPairs);
+  collisionPairs.reshape(-1,2);
 }
 
 shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
@@ -59,7 +60,6 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
     //for(rai::Proxy& p:C.proxies) p.ensure_coll();
   }else if(collisionPairs.N){
     C.proxies.resize(collisionPairs.d0);
-    collisionPairs.reshape(-1,2);
     for(uint i=0;i<collisionPairs.d0;i++){
       C.proxies(i).a = C.frames(collisionPairs(i,0));
       C.proxies(i).b = C.frames(collisionPairs(i,1));

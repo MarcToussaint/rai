@@ -104,7 +104,7 @@ inline std::vector<std::string> StringA2strvec(const StringA& x) {
 
 inline pybind11::list StringA2list(const StringA& x) {
   pybind11::list y(x.N);
-  for(uint i=0;i<x.N;i++) y[i] = pybind11::str(x(i).p, x(i).N);
+  for(uint i=0;i<x.N;i++) y[i] = pybind11::str(x.elem(i).p, x.elem(i).N);
   return y;
 }
 

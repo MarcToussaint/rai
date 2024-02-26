@@ -395,16 +395,15 @@ arr RRT_PathFinder::run(double timeBudget){
 
 namespace rai {
 
-PathFinder& PathFinder::setProblem(const Configuration& C, const arr& starts, const arr& goals){
-  problem = make_shared<ConfigurationProblem>(C, true, .01);
-  for(Frame *f:problem->C.frames) f->ensure_X();
+void PathFinder::setProblem(const Configuration& C, const arr& starts, const arr& goals){
+  problem = make_shared<ConfigurationProblem>(C, true, 1e-3, 1);
+  problem->verbose=0;
   rrtSolver = make_shared<RRT_PathFinder>(*problem, starts, goals);
-  return *this;
 }
 
-PathFinder& PathFinder::setExplicitCollisionPairs(const StringA& collisionPairs){
+void PathFinder::setExplicitCollisionPairs(const StringA& collisionPairs){
+  CHECK(problem, "need to set problem first");
   problem->setExplicitCollisionPairs(collisionPairs);
-  return *this;
 }
 
 shared_ptr<SolverReturn> PathFinder::solve(){

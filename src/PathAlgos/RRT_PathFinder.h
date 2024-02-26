@@ -92,9 +92,9 @@ struct PathFinder : NonCopyable {
   std::shared_ptr<RRT_PathFinder> rrtSolver;
   std::shared_ptr<SolverReturn> ret;
 
-  PathFinder& setProblem(const rai::Configuration& C, const arr& starts, const arr& goals);
+  void setProblem(const rai::Configuration& C, const arr& starts, const arr& goals);
 
-  PathFinder& setExplicitCollisionPairs(const StringA& collisionPairs);
+  void setExplicitCollisionPairs(const StringA& collisionPairs);
 
   shared_ptr<SolverReturn> solve();
 };
