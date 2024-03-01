@@ -311,7 +311,7 @@ void RRT_PathFinder::planForward(const arr& q0, const arr& qT){
 
 int RRT_PathFinder::stepConnect(){
   iters++;
-  if(iters>maxIters) return -1;
+  if(iters>(uint)maxIters) return -1;
 
   bool success = growTreeToTree(*rrt0, *rrtT);
   if(!success) success = growTreeToTree(*rrtT, *rrt0);

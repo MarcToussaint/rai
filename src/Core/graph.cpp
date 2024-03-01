@@ -267,7 +267,7 @@ Graph::Graph(const std::map<std::string, std::string>& dict) : Graph() {
 }
 
 Graph::Graph(std::initializer_list<NodeInitializer> list) : Graph() {
-  for(const NodeInitializer& ni:list) add(ni);
+  for(const NodeInitializer& ni:list) addInit(ni);
 }
 
 //Graph::Graph(std::initializer_list<const char*> list) : Graph(){
@@ -314,7 +314,7 @@ void Graph::clear() {
   isIndexed=true;
 }
 
-Graph& Graph::add(const NodeInitializer& ni) {
+Graph& Graph::addInit(const NodeInitializer& ni) {
   Node* clone = ni.n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
   for(const String& s:ni.parents) {
     Node* p = findNode(s, true, false);
@@ -332,11 +332,11 @@ Graph& Graph::addSubgraph(const char* key, const NodeL& parents) {
   return n->value;
 }
 
-Node_typed<int>* Graph::add(const uintA& parentIdxs) {
-  NodeL parents(parentIdxs.N);
-  for(uint i=0; i<parentIdxs.N; i++) parents(i) = NodeL::elem(parentIdxs(i));
-  return add<int>(STRING(NodeL::N), 0, parents);
-}
+//Node_typed<int>* Graph::add(const uintA& parentIdxs) {
+//  NodeL parents(parentIdxs.N);
+//  for(uint i=0; i<parentIdxs.N; i++) parents(i) = NodeL::elem(parentIdxs(i));
+//  return add<int>(STRING(NodeL::N), 0, parents);
+//}
 
 void Graph::appendDict(const std::map<std::string, std::string>& dict) {
   for(const std::pair<std::string, std::string>& p:dict) {

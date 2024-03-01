@@ -48,6 +48,7 @@ struct NLP_Walker{
   //counters
   uint samples=0;
   uint evals=0;
+  Eval stored;
 
   NLP_Walker(NLP& _nlp, double alpha_bar=1.) : nlp(_nlp) {
     set_alpha_bar(alpha_bar);
@@ -56,13 +57,14 @@ struct NLP_Walker{
   void set_alpha_bar(double alpha_bar);
   void initialize(const arr& _x){ x=_x; ev.phi.clear(); ev.x.clear(); }
   void ensure_eval(){ ev.eval(x, *this); }
+  void store_eval(){ ensure_eval(); stored = ev; }
 
   bool step();
-  bool step_slack();
+  bool step_slack(double penaltyMu=1., double alpha=-1., double maxStep=-1., double lambda=1e-2);
   bool step_hit_and_run(double maxStep);
   bool step_hit_and_run_eq(bool includeEqualities=true);
-  bool step_noise(double sig=-1.);
-  bool step_noise_covariance(double sig=-1.);
+  bool step_noise(double sig);
+  bool step_noise_covariant(double sig, double penaltyMu=1., double lambda=1e0);
   bool step_bound_clip();
 
 protected:

@@ -17,18 +17,18 @@ void TEST(Read){
   G.writeParseInfo(cout);
   cout <<"read graph=\n--------------------\n" <<G <<"\n--------------------" <<endl;
 
-//  Node *m = G["modify"];
-//  G.merge(m);
-//  cout <<"'k modify' merged with 'k':" <<*G["k"] <<endl;
+  //  Node *m = G["modify"];
+  //  G.merge(m);
+  //  cout <<"'k modify' merged with 'k':" <<*G["k"] <<endl;
 
-//  rai::Node *n = G.first();
+  //  rai::Node *n = G.first();
 
   G.checkConsistency();
   if(filename) return; //below only for "example.g"
   cout <<"\n** access to individual items:" <<endl;
   cout <<*G["k"] <<endl;
   cout <<G["k"]->graph() <<endl;
-//  cout <<G["val"]->graph()(0)->get<double>() <<endl;
+  //  cout <<G["val"]->graph()(0)->get<double>() <<endl;
   cout <<G["k"]->graph()["z"]->as<rai::String>() <<endl;
   cout <<"DONE" <<endl;
 
@@ -136,8 +136,8 @@ void TEST(Dot){
   rai::Graph G;
   G <<FILE(filename?filename:"coffee_shop.fg");
   G.checkConsistency();
-//  G.sortByDotOrder();
-//  G.checkConsistency();
+  //  G.sortByDotOrder();
+  //  G.checkConsistency();
   G.writeDot(FILE("z.dot").getOs());
 }
 

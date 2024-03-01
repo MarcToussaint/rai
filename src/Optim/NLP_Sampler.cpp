@@ -168,17 +168,19 @@ bool NLP_Walker::step_hit_and_run(double maxStep){
   return false; //line search in 10 steps failed
 }
 
-bool NLP_Walker::step_slack(){
+bool NLP_Walker::step_slack(double penaltyMu, double alpha, double maxStep, double lambda){
   ensure_eval();
   Eval ev0 = ev;
 
-  double lambda = 1e-2;
-  arr Hinv = lapack_inverseSymPosDef((2.*~ev.Js)*ev.Js+lambda*eye(x.N));
-  arr delta = -2. * Hinv * (~ev.Js) * ev.s;
-  delta *= opt.alpha;
+  if(alpha<0.) alpha = opt.alpha;
+  if(maxStep<0.) maxStep = opt.maxStep;
+
+  arr Hinv = lapack_inverseSymPosDef(((2.*penaltyMu)*~ev.Js)*ev.Js+lambda*eye(x.N));
+  arr delta = (-2.*penaltyMu) * Hinv * (~ev.Js) * ev.s;
+  delta *= alpha;
 
   double l = length(delta);
-  if(l>opt.maxStep) delta *= opt.maxStep/l;
+  if(l>maxStep) delta *= maxStep/l;
 
   x += delta;
   ensure_eval();
@@ -191,27 +193,26 @@ bool NLP_Walker::step_slack(){
   return true;
 }
 
-bool NLP_Walker::step_noise(double _sig){
-  if(_sig<0.) _sig = sig;
+bool NLP_Walker::step_noise(double sig){
+  CHECK(sig>0., "");
 
-  x += _sig * randn(x.N);
+  x += sig * randn(x.N);
 
   return true;
 }
 
-bool NLP_Walker::step_noise_covariance(double _sig){
+bool NLP_Walker::step_noise_covariant(double sig, double penaltyMu, double lambda){
   ensure_eval();
 
-  if(_sig<0.) _sig = sig;
+  CHECK(sig>0., "");
 
-  double lambda = 1e0;
-  arr Hinv = lapack_inverseSymPosDef((2.*~ev.Js)*ev.Js+lambda*eye(x.N));
+  arr Hinv = lapack_inverseSymPosDef(((2.*penaltyMu)*~ev.Js)*ev.Js+lambda*eye(x.N));
   arr C;
   lapack_cholesky(C, Hinv);
 //  arr cov =  2. * ~ev.Js*ev.Js+lambda*eye(x.N);
   arr z = C * randn(x.N);
 
-  x += _sig * z;
+  x += sig * z;
 
   return true;
 }
@@ -318,7 +319,9 @@ arr sample_NLPwalking(NLP& nlp, uint K, int verbose, double alpha_bar){
   arr data;
 
   for(;data.d0<K;){
-    bool good = walk.step();
+//    bool good = walk.step();
+    bool good = walk.step_hit_and_run(walk.opt.maxStep);
+    good = walk.step_slack();
 
     if(good){
       data.append(walk.x);
@@ -439,7 +442,7 @@ arr sample_greedy(NLP& nlp, uint K, int verbose, double alpha_bar){
       if(verbose>2){
         nlp.report(cout, 1+verbose, STRING("sample_greedy data: " <<data.d0 <<" iters: " <<t <<" good: " <<good));
       }
-      if(walk.sig) walk.step_noise_covariance(walk.sig);
+      if(walk.sig) walk.step_noise_covariant(walk.sig);
       walk.step_bound_clip();
       walk.step_slack();
       if(!walk.sig && walk.ev.err<=.01){ good=true; break; }

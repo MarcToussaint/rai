@@ -17,7 +17,7 @@ void simGfile(){
   //-- create bullet
   BulletInterface bull_rai(C);
   C.view(true);
-  C.viewer()->resetPressedKey();
+  C.viewer()->_resetPressedKey();
 
   //-- simulate
   double tau = .01;

@@ -123,10 +123,10 @@ struct Graph : NodeL {
   template<class T> Node_typed<T>* add(const char* key, const T& x, const NodeL& parents);
   template<class T> Node_typed<T&>* addRef(const char* key, const T& x);
 
-  Node_typed<int>* add(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
+  //Node_typed<int>* add(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
   Graph& addSubgraph(const char* key=NULL, const NodeL& parents={});
   void appendDict(const std::map<std::string, std::string>& dict);
-  Graph& add(const NodeInitializer& ni); ///< (internal) append a node initializer
+  Graph& addInit(const NodeInitializer& ni); ///< (internal) append a node initializer
 
   //-- deleting nodes
   void delNode(Node* n) { CHECK(n, "can't delete NULL"); delete n; }
@@ -285,7 +285,7 @@ struct NodeInitializer {
 };
 
 /// pipe node initializers into a graph (to append nodes)
-inline Graph& operator<<(Graph& G, const NodeInitializer& n) { G.add(n); return G; }
+inline Graph& operator<<(Graph& G, const NodeInitializer& n) { G.addInit(n); return G; }
 
 //===========================================================================
 //
