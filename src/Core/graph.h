@@ -114,7 +114,7 @@ struct Graph : NodeL {
   NodeL& list() { return *this; }
 
   //-- copy operator
-  Graph& operator=(const Graph& G) {  copy(G);  return *this;  }
+  Graph& operator=(const Graph& G) {  copy(G, false, true);  return *this;  }
   void copy(const Graph& G, bool appendInsteadOfClear=false, bool enforceCopySubgraphToNonsubgraph=false);
 
   //-- adding nodes

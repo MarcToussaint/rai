@@ -74,13 +74,13 @@ void CtrlSolver::update(const arr& q_real, const arr& qDot_real, rai::Configurat
   //-- use the q_real and qDot_real to define the prefix
   //the joint state:
   if(komo.k_order==2){
-    if(qDot_real.N) komo.setConfiguration_qAll(-2, q_real - tau*qDot_real);
-    else komo.setConfiguration_qAll(-2, komo.getConfiguration_qAll(-1));
-    komo.setConfiguration_qAll(-1, q_real);
-    komo.setConfiguration_qAll( 0, q_real);
+    if(qDot_real.N) komo.setConfiguration_qOrg(-2, q_real - tau*qDot_real);
+    else komo.setConfiguration_qOrg(-2, komo.getConfiguration_qOrg(-1));
+    komo.setConfiguration_qOrg(-1, q_real);
+    komo.setConfiguration_qOrg( 0, q_real);
   }else if(komo.k_order==1){
-    komo.setConfiguration_qAll(-1, q_real);
-    komo.setConfiguration_qAll( 0, q_real);
+    komo.setConfiguration_qOrg(-1, q_real);
+    komo.setConfiguration_qOrg( 0, q_real);
   }else NIY;
 
   komo.pathConfig.ensure_q();
@@ -130,14 +130,14 @@ arr CtrlSolver::solve() {
   opt.stopGTolerance = 1e-4;
   opt.stopIters = 20;
 //  opt.nonStrictSteps=-1;
-//  opt.maxStep = .1; //*tau; //maxVel*tau;
-  opt.damping = 1e-1;
+  opt.maxStep = .1; //*tau; //maxVel*tau;
+  opt.damping = 1e-2;
   komo.opt.verbose=0;
   komo.opt.animateOptimization=animate;
   komo.optimize(0., opt);
-  optReport = komo.report();
+  optReport = komo.report().get<rai::Graph>("totals");
   if(optReport.get<double>("sos")>1.1
-     || optReport.get<double>("eq")>.01
+     || optReport.get<double>("eq")>.1
      || optReport.get<double>("ineq")>.01){
       cout <<optReport <<endl <<"something's wrong?" <<endl;
       //UNDO OPTIMIZATION:

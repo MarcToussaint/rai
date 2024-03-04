@@ -36,7 +36,7 @@ void testMinimalSpanningTree(){
   auto T = minimalSpanningTree(X.d0, G);
 
   plot()->Clear();
-  for(uint e: T){
+  for(uint e: get<1>(T)){
     plot()->Line((X[G(e).i], X[G(e).j]).reshape(2,2));
   }
   plot()->update(true);

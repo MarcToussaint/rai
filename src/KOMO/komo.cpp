@@ -797,6 +797,14 @@ arr KOMO::getConfiguration_qAll(int t) {
   return pathConfig.getDofState(pathConfig.getDofs(timeSlices[k_order+t], true, false));
 }
 
+arr KOMO::getConfiguration_qOrg(int t) {
+  return pathConfig.getDofState(pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t,0)->ID), true, true)); //also inactive ones, as the orgJointIndices are explicit
+}
+
+void KOMO::setConfiguration_qOrg(int t, const arr& q) {
+  pathConfig.setDofState(q, pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t,0)->ID), true, true)); //also inactive ones, as the orgJointIndices are explicit
+}
+
 void KOMO::setConfiguration_X(int t, const arr& X) {
   pathConfig.setFrameState(X, timeSlices[k_order+t]);
 }
@@ -846,14 +854,6 @@ void KOMO::getConfiguration_full(Configuration& C, int t, int verbose){
   arr X = getConfiguration_X(t);
   C.setFrameState(X, C.frames({0,X.d0-1}));
 #endif
-}
-
-arr KOMO::getConfiguration_qOrg(int t) {
-  return pathConfig.getDofState(pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t,0)->ID), true, true)); //also inactive ones, as the orgJointIndices are explicit
-}
-
-void KOMO::setConfiguration_qOrg(int t, const arr& q) {
-  pathConfig.setDofState(q, pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t,0)->ID), true, true)); //also inactive ones, as the orgJointIndices are explicit
 }
 
 
