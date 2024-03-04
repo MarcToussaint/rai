@@ -26,6 +26,7 @@ Singleton<rai::PlotModule> plot;
 namespace rai {
 
 struct sPlotModule {
+  str title;
   rai::Array<arr> array;
   rai::Array<byteA> images;
   rai::Array<arr> points;
@@ -67,6 +68,7 @@ void rai::PlotModule::update(bool wait, const char* txt) {
   }
   switch(mode) {
     case gnupl:
+      if(txt) self->title = txt;
       drawGnuplot(*self);
       if(wait) rai::wait();
       break;
@@ -623,6 +625,7 @@ void drawGnuplot(rai::sPlotModule& data) {
 
   //gnuplotcmd <<"set size square\n";
   //if(wait) gnuplotcmd <<"set title 'CLICK LEFT TO CONTINUE'\n";
+  if(data.title.N) gnuplotcmd <<"set title '" <<data.title <<"'\n";
 
   if(data.lines.N+data.points.N) gnuplotcmd <<"\nplot \\\n";
 

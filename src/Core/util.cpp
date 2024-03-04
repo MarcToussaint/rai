@@ -492,6 +492,7 @@ int x11_getKey() {
     }
   }
 
+  XFreeGC(disp, gc);
   XCloseDisplay(disp);
   return key;
 }

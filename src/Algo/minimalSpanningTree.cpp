@@ -31,23 +31,27 @@ struct DisjointSetUnion {
   }
 };
 
-uintA minimalSpanningTree(uint num_vertices, rai::Array<DoubleEdge>& edges){
+std::tuple<double, uintA> minimalSpanningTree(uint num_vertices, const rai::Array<DoubleEdge>& edges){
 
   //sort edges
-  std::sort(edges.p, edges.p+edges.N,
-            [](const DoubleEdge& a, const DoubleEdge& b) -> bool { return a.w <= b.w; }
-  );
+  intA sorting; sorting.setStraightPerm(edges.N);
+
+  std::sort(sorting.p, sorting.p+sorting.N,
+            [&](const int& a, const int& b) -> bool { return edges.elem(a).w < edges.elem(b).w; } );
+
 
   DisjointSetUnion s(num_vertices);
   uintA selected;
+  double cost = 0.;
 
   //add edges when not in same component (which are identified by root)
-  for(DoubleEdge& e : edges) {
+  for(uint a:sorting){
+    const DoubleEdge& e = edges.elem(a);
     if(s.findRoot(e.i) != s.findRoot(e.j)) {
       s.unite(e.i, e.j);
       selected.append(&e - edges.p);
-      //cost += e.w;
+      cost += e.w;
     }
   }
-  return selected;
+  return {cost, selected};
 }

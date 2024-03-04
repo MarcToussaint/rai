@@ -3,6 +3,15 @@
 #include <Core/util.h>
 #include <math.h>
 
+NLP_Sampler_Options::NLP_Sampler_Options(){
+  if(lagevinTauPrime>0.){
+    slackStepAlpha = lagevinTauPrime / penaltyMu;
+    noiseSigma = ::sqrt(2.*lagevinTauPrime / penaltyMu);
+    LOG(0) <<"lagevinTauPrime: " <<lagevinTauPrime <<" overwriting alpha=" <<slackStepAlpha <<" and sigma=" <<noiseSigma;
+  }
+  //    LOG(0) <<"loaded params:\n" <<rai::params()();
+}
+
 /*
  * void NLP_Sampler::step_ball(uint steps){
 #if 0
@@ -62,15 +71,15 @@ bool NLP_Walker::step(){
   return good;
 }
 
-bool NLP_Walker::step_hit_and_run_eq(bool includeEqualities){
+bool NLP_Walker::step_hit_and_run(){
   ensure_eval();
-  if(includeEqualities) ev.convert_eq_to_ineq(opt.eqMargin);
+  if(opt.hitRunEqMargin>0.) ev.convert_eq_to_ineq(opt.hitRunEqMargin);
   Eval ev0 = ev;
   double g0 = rai::MAX(max(ev0.g), 0.);
 
   arr dir = get_rnd_direction();
 
-  LineSampler LS(2.*opt.maxStep);
+  LineSampler LS(2.*opt.slackMaxStep);
   LS.clip_beta(nlp.bounds_lo - x, -dir); //cut with lower bound
   LS.clip_beta(x - nlp.bounds_up, dir); //cut with upper bound
   for(uint i=0;i<10;i++){ //``line search''
@@ -83,7 +92,7 @@ bool NLP_Walker::step_hit_and_run_eq(bool includeEqualities){
 
     x += beta*dir;
     ensure_eval();
-    if(includeEqualities) ev.convert_eq_to_ineq(opt.eqMargin);
+    if(opt.hitRunEqMargin>0.) ev.convert_eq_to_ineq(opt.hitRunEqMargin);
 
     if((!ev.g.N || max(ev.g) <= g0) //ineq constraints are good
        && sum(ev.s) <= sum(ev0.s) + opt.eps){ //total slack didn't increase too much
@@ -96,7 +105,7 @@ bool NLP_Walker::step_hit_and_run_eq(bool includeEqualities){
   return false; //line search in 10 steps failed
 }
 
-bool NLP_Walker::step_hit_and_run(double maxStep){
+bool NLP_Walker::step_hit_and_run_old(double maxStep){
   ensure_eval();
   Eval ev0 = ev;
 
@@ -172,8 +181,8 @@ bool NLP_Walker::step_slack(double penaltyMu, double alpha, double maxStep, doub
   ensure_eval();
   Eval ev0 = ev;
 
-  if(alpha<0.) alpha = opt.alpha;
-  if(maxStep<0.) maxStep = opt.maxStep;
+  if(alpha<0.) alpha = opt.slackStepAlpha;
+  if(maxStep<0.) maxStep = opt.slackMaxStep;
 
   arr Hinv = lapack_inverseSymPosDef(((2.*penaltyMu)*~ev.Js)*ev.Js+lambda*eye(x.N));
   arr delta = (-2.*penaltyMu) * Hinv * (~ev.Js) * ev.s;
@@ -220,6 +229,86 @@ bool NLP_Walker::step_noise_covariant(double sig, double penaltyMu, double lambd
 bool NLP_Walker::step_bound_clip(){
   boundClip(x, nlp.bounds_lo, nlp.bounds_up);
   return true;
+}
+
+void NLP_Walker::run(arr& data, arr& trace){
+
+  //-- init
+  arr x_init = nlp.getUniformSample();
+  initialize(x_init);
+  if(!!trace){
+    trace.append(x_init);
+    trace.reshape(-1, nlp.getDimension());
+  }
+
+  bool good=false;
+  int interiorStepsToDo = opt.interiorSteps;
+
+  for(uint t=0;;t++){
+
+    //-- hit-and-run step
+    if(good && interiorStepsToDo>0){
+      step_hit_and_run();
+      interiorStepsToDo--;
+    }
+
+    //-- noise step
+    bool noiseStep = (int)t<opt.noiseSteps;
+    if(noiseStep){
+      CHECK(opt.noiseSigma>0., "you can't have noise steps without noiseSigma");
+      if(opt.noiseCovariant){
+        step_noise_covariant(opt.noiseSigma, opt.penaltyMu, opt.slackRegLambda);
+      }else{
+        step_noise(opt.noiseSigma);
+      }
+      step_bound_clip();
+    }
+
+    //-- slack step
+    if(opt.slackStepAlpha>0.){
+      step_slack(opt.penaltyMu, opt.slackStepAlpha, opt.slackMaxStep, opt.slackRegLambda);
+      step_bound_clip();
+    }
+
+    //-- accept
+    if(opt.acceptBetter){
+      NIY;
+    }else if(opt.acceptMetropolis){
+      NIY;
+    }
+
+    //-- store trace
+    if(!!trace){
+      trace.append(x);
+    }
+
+    //-- good?
+    good = (ev.err<=.01);
+
+    //-- store?
+    if((good && interiorStepsToDo<=0)
+       || (good && interiorStepsToDo<opt.interiorSteps)){
+      data.append(x);
+      data.reshape(-1, x.N);
+      if(!(data.d0%10)) cout <<'.' <<std::flush;
+    }
+
+    if(opt.verbose>1 || (good && opt.verbose>0)){
+      nlp.report(cout, (good?2:1)+opt.verbose, STRING("sampling t: " <<t <<" data: " <<data.d0 <<" good: " <<good <<" interior: " <<interiorStepsToDo));
+      rai::wait(.1);
+    }
+
+    //-- stopping
+    if((good && interiorStepsToDo<=0)
+       || (t>=(uint)opt.downhillMaxSteps)){
+      if(opt.verbose>1 && (!!trace)){
+        FILE("z.dat") <<trace.modRaw();
+        gnuplot("plot [-2:2][-2:2] 'z.dat' us 1:2 w lp");
+        if(opt.verbose>1) rai::wait();
+      }
+      break;
+    }
+  }
 }
 
 
@@ -320,7 +409,7 @@ arr sample_NLPwalking(NLP& nlp, uint K, int verbose, double alpha_bar){
 
   for(;data.d0<K;){
 //    bool good = walk.step();
-    bool good = walk.step_hit_and_run(walk.opt.maxStep);
+    bool good = walk.step_hit_and_run_old(walk.opt.slackMaxStep);
     good = walk.step_slack();
 
     if(good){
@@ -678,3 +767,4 @@ void LineSampler::plot(){
   gnuplot("plot 'z.dat' us 1:2");
   rai::wait();
 }
+

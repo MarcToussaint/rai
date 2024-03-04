@@ -4,5 +4,5 @@
 
 struct DoubleEdge{ uint i,j; double w; };
 
-uintA minimalSpanningTree(uint num_vertices, rai::Array<DoubleEdge>& edges);
+std::tuple<double, uintA> minimalSpanningTree(uint num_vertices, const rai::Array<DoubleEdge>& edges);
 

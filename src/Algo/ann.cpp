@@ -72,7 +72,7 @@ void ANN::calculate() {
   self->treeSize = X.d0;
 }
 
-void ANN::getkNN(arr& dists, uintA& idx, const arr& x, uint k, double eps, bool verbose) {
+void ANN::getkNN(arr& sqrDists, uintA& idx, const arr& x, uint k, double eps, bool verbose) {
   CHECK_GE(X.d0, k, "data has less (" <<X.d0 <<") than k=" <<k <<" points");
   CHECK_EQ(x.N, X.d1, "query point has wrong dimension. x.N=" << x.N << ", X.d1=" << X.d1);
 
@@ -82,12 +82,12 @@ void ANN::getkNN(arr& dists, uintA& idx, const arr& x, uint k, double eps, bool 
   }
   uint restStartsAt;
   if(self->treeSize>=k) {
-    dists.resize(k);
+    sqrDists.resize(k);
     idx.resize(k);
-    self->tree->annkSearch(x.p, k, (int*)idx.p, dists.p, eps);
+    self->tree->annkSearch(x.p, k, (int*)idx.p, sqrDists.p, eps);
     restStartsAt=self->treeSize;
   } else {
-    dists.clear();
+    sqrDists.clear();
     idx.clear();
     restStartsAt=0;
   }
@@ -98,16 +98,16 @@ void ANN::getkNN(arr& dists, uintA& idx, const arr& x, uint k, double eps, bool 
     for(uint j=0; j<=idx.N && j<k; j++) {
       Xi.referToDim(X,i);
       double d = sqrDistance(Xi, x);
-      if(j==idx.N || d < dists(j)) {
+      if(j==idx.N || d < sqrDists(j)) {
         idx.insert(j, i);
-        dists.insert(j, d);
+        sqrDists.insert(j, d);
         break;
       }
     }
   }
   if(idx.N>k) {
     idx.resizeCopy(k);
-    dists.resizeCopy(k);
+    sqrDists.resizeCopy(k);
   }
 
   if(verbose) {
@@ -120,7 +120,7 @@ void ANN::getkNN(arr& dists, uintA& idx, const arr& x, uint k, double eps, bool 
       std::cout <<' '
                 <<i <<' '
                 <<idx(i) <<'\t'
-                <<sqrt(dists(i)) <<'\t'
+                <<sqrt(sqrDists(i)) <<'\t'
                 <<X[idx(i)] <<std::endl;
     }
   }
