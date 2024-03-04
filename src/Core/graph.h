@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -124,7 +124,7 @@ struct Graph : NodeL {
   template<class T> Node_typed<T&>* addRef(const char* key, const T& x);
 
   //Node_typed<int>* add(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
-  Graph& addSubgraph(const char* key=NULL, const NodeL& parents={});
+  Graph& addSubgraph(const char* key=NULL, const NodeL& parents= {});
   void appendDict(const std::map<std::string, std::string>& dict);
   Graph& addInit(const NodeInitializer& ni); ///< (internal) append a node initializer
 
@@ -233,7 +233,7 @@ struct ArrayG : rai::Array<T*>, GraphEditCallback {
     T* x = 0;
     if(n) x = this->elem(n->index+1);
     else x = this->elem(0);
-    if(!x){
+    if(!x) {
       x = new T(); //...assigned here
       if(n) this->elem(n->index+1) = x;
       else this->elem(0) = x;
@@ -444,17 +444,17 @@ template<class T> std::shared_ptr<T> Node::getPtr() const {
 template<class T> bool Node::getFromDouble(T& x) const {
   if(!is<double>()) return false;
   double y = as<double>();
-  if(typeid(T)==typeid(int)){
+  if(typeid(T)==typeid(int)) {
     CHECK(!modf(y, &y), "numerical parameter " <<key <<" should be integer");
     *((int*)&x)=(int)y;
     return true;
   }
-  if(typeid(T)==typeid(uint)){
+  if(typeid(T)==typeid(uint)) {
     CHECK(!modf(y, &y), "numerical parameter " <<key <<" should be integer");
     *((int*)&x)=(uint)y;
     return true;
   }
-  if(typeid(T)==typeid(bool)){
+  if(typeid(T)==typeid(bool)) {
     CHECK(y==0. || y==1., "numerical parameter " <<key <<" should be boolean");
     *((bool*)&x)=(y==1.);
     return true;
@@ -527,23 +527,21 @@ template<class T> rai::Array<T*> Graph::getValuesOfType(const char* key) {
   return ret;
 }
 
-  template<class T> Node_typed<T>* Graph::add(const char* key) {
-    //if(typeid(bool)==typeid(T)) return new Node_typed<T>(*this, key, true); //initialized boolian
-    return new Node_typed<T>(*this, key);
-  }
+template<class T> Node_typed<T>* Graph::add(const char* key) {
+  //if(typeid(bool)==typeid(T)) return new Node_typed<T>(*this, key, true); //initialized boolian
+  return new Node_typed<T>(*this, key);
+}
 
-  template<class T> Node_typed<T>* Graph::add(const char* key, const T& x) {
-    return new Node_typed<T>(*this, key, x);
-  }
+template<class T> Node_typed<T>* Graph::add(const char* key, const T& x) {
+  return new Node_typed<T>(*this, key, x);
+}
 
-  template<class T> Node_typed<T>* Graph::add(const char* key, const T& x, const NodeL& parents) {
-    return new Node_typed<T>(*this, key, x, parents);
-  }
+template<class T> Node_typed<T>* Graph::add(const char* key, const T& x, const NodeL& parents) {
+  return new Node_typed<T>(*this, key, x, parents);
+}
 
-
-  template<class T> Node_typed<T&>* Graph::addRef(const char* key, const T& x) {
-    return new Node_typed<T&>(*this, key, (T&)x);
-  }
-
+template<class T> Node_typed<T&>* Graph::addRef(const char* key, const T& x) {
+  return new Node_typed<T&>(*this, key, (T&)x);
+}
 
 }//namespace

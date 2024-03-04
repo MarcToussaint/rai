@@ -2,7 +2,6 @@
 #include <Optim/NLP_Solver.h>
 #include <KOMO/komo.h>
 
-
 //===========================================================================
 
 void TEST(KOMO_IK) {

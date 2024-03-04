@@ -54,7 +54,6 @@ void testPcl(){
   gl.add(M0);
   gl.watch();
 
-
   //-- estimate normals
   auto cloud = conv_ArrCloud_PclCloud(pts);
   pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
@@ -107,15 +106,12 @@ void testPcl(){
         }
       }
 
-
   rai::Mesh M;
   M.setImplicitSurface(F-.0, ptsMin, ptsMax);
   M.C = {.9,.9,.9,.6};
   // Concatenate the XYZ and normal fields*
 //  pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_with_normals (new pcl::PointCloud<pcl::PointXYZRGBNormal>);
 //  pcl::concatenateFields (*cloud, *normals, *cloud_with_normals);
-
-
 
   gl.add(M);
   gl.watch();
@@ -126,7 +122,6 @@ void testPcl(){
 void testPcl(){ NICO }
 #endif
 
-
 int main(int argc,char **argv) {
   rai::initCmdLine(argc,argv);
 
@@ -134,8 +129,6 @@ int main(int argc,char **argv) {
 
   return 0;
 }
-
-
 
 #if 0
 pcl::MarchingCubesHoppe<pcl::PointXYZRGBNormal> hoppe;

@@ -1,8 +1,16 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "opt-benchmarks.h"
 
 #include "../KOMO/komo.h"
 
-OptBench_InvKin_Simple::OptBench_InvKin_Simple(){
+OptBench_InvKin_Simple::OptBench_InvKin_Simple() {
   rai::Configuration C(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
   rai::Frame* f = C.addFrame("target", "table");
   f->setRelativePosition({.3, .2, .2});
@@ -19,7 +27,7 @@ OptBench_InvKin_Simple::OptBench_InvKin_Simple(){
   nlp = komo->nlp();
 }
 
-OptBench_InvKin_Endeff::OptBench_InvKin_Endeff(const char* modelFile, bool unconstrained){
+OptBench_InvKin_Endeff::OptBench_InvKin_Endeff(const char* modelFile, bool unconstrained) {
   rai::Configuration C(modelFile);
   komo = make_unique<KOMO>();
   komo->opt.sparse = false;
@@ -30,7 +38,7 @@ OptBench_InvKin_Endeff::OptBench_InvKin_Endeff(const char* modelFile, bool uncon
 
   ObjectiveType ot = OT_eq;
   double prec = 1e0;
-  if(unconstrained){ ot = OT_sos;  prec = 1e2;  }
+  if(unconstrained) { ot = OT_sos;  prec = 1e2;  }
 
   komo->addObjective({}, FS_positionDiff, {"gripper", "box"}, ot, {prec});
   komo->addObjective({}, FS_vectorZDiff, {"gripper", "box"}, ot, {prec});
@@ -46,10 +54,10 @@ void OptBench_Skeleton::create(const char* modelFile, const rai::Skeleton& S, ra
   komo->setConfig(C, false);
 
   double maxPhase = S.getMaxPhase();
-  if(sequenceOrPath==rai::_sequence){
+  if(sequenceOrPath==rai::_sequence) {
     komo->setTiming(maxPhase, 1, 2., 1);
     komo->addControlObjective({}, 1, 1e-1);
-  }else{
+  } else {
     komo->setTiming(maxPhase, 30, 5., 2);
     komo->addControlObjective({}, 2, 1e0);
   }
@@ -66,7 +74,7 @@ void OptBench_Skeleton::create(const char* modelFile, const rai::Skeleton& S, ra
 
 //===========================================================================
 
-OptBench_Skeleton_Pick::OptBench_Skeleton_Pick(rai::ArgWord sequenceOrPath){
+OptBench_Skeleton_Pick::OptBench_Skeleton_Pick(rai::ArgWord sequenceOrPath) {
   rai::Skeleton S = {
     //grasp
     { 1., 1., rai::SY_touch, {"R_endeff", "box3"} },
@@ -77,7 +85,7 @@ OptBench_Skeleton_Pick::OptBench_Skeleton_Pick(rai::ArgWord sequenceOrPath){
 
 //===========================================================================
 
-OptBench_Skeleton_Handover::OptBench_Skeleton_Handover(rai::ArgWord sequenceOrPath){
+OptBench_Skeleton_Handover::OptBench_Skeleton_Handover(rai::ArgWord sequenceOrPath) {
   rai::Skeleton S = {
     //grasp
     { 1., 1., rai::SY_touch, {"R_endeff", "stick"} },
@@ -95,7 +103,7 @@ OptBench_Skeleton_Handover::OptBench_Skeleton_Handover(rai::ArgWord sequenceOrPa
 
 //===========================================================================
 
-OptBench_Skeleton_StackAndBalance::OptBench_Skeleton_StackAndBalance(rai::ArgWord sequenceOrPath){
+OptBench_Skeleton_StackAndBalance::OptBench_Skeleton_StackAndBalance(rai::ArgWord sequenceOrPath) {
   rai::Skeleton S = {
     //pick
     { 1., 1., rai::SY_touch, {"R_endeff", "box0"} },

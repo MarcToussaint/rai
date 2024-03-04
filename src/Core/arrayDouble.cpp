@@ -1,8 +1,8 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
-    This code is distributed under the MIdouble License.
+    This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
@@ -56,8 +56,8 @@ arr& arr::operator=(std::initializer_list<double> values) {
 
 /// set all elements to value \c v
 arr& arr::operator=(const double& v) {
-  if(N){
-    double *x=p, *xstop=p+N;
+  if(N) {
+    double* x=p, *xstop=p+N;
     for(; x!=xstop; x++) *x = v;
   }
   return *this;
@@ -91,14 +91,13 @@ arr& arr::operator=(const arr& a) {
       special = new SparseVector(*((arr*)this), *dynamic_cast<SparseVector*>(a.special));
     } else if(isSparseMatrix(a)) {
       special = new SparseMatrix(*((arr*)this), *dynamic_cast<SparseMatrix*>(a.special));
-    } else if(isNoArr(a)){
+    } else if(isNoArr(a)) {
       setNoArr();
     } else NIY;
   }
   if(a.jac) jac = make_unique<arr>(*a.jac);
   return *this;
 }
-
 
 /// access that invariantly works for sparse and non-sparse matrices
 double& arr::elem(int i, int j) {
@@ -220,16 +219,16 @@ arr arr::sub(Array<uint> elems) const {
   return x;
 }
 
-void rai::ArrayDouble::setMatrixBlock(const rai::ArrayDouble& B, uint lo0, uint lo1){
+void rai::ArrayDouble::setMatrixBlock(const rai::ArrayDouble& B, uint lo0, uint lo1) {
   if(isSparse(*this))
     sparse().add(B, lo0, lo1);
   else
     Array<double>::setMatrixBlock(B, lo0, lo1);
 }
 
-void rai::ArrayDouble::setVectorBlock(const rai::ArrayDouble& B, uint lo){
+void rai::ArrayDouble::setVectorBlock(const rai::ArrayDouble& B, uint lo) {
   Array<double>::setVectorBlock(B, lo);
-  if(B.jac){
+  if(B.jac) {
     CHECK(jac && jac->d1==B.jac->d1, "Jacobian needs to be pre-sized");
     CHECK(!B.jac->jac, "NOT HANDLED YET");
     jac->setMatrixBlock(*B.jac, lo, 0);
@@ -241,36 +240,36 @@ void rai::ArrayDouble::setBlockVector(const rai::ArrayDouble& a, const rai::Arra
   resize(a.N+b.N);
   setVectorBlock(a.noJ(), 0);
   setVectorBlock(b.noJ(), a.N);
-  if(a.jac || b.jac){
-    if(a.jac && b.jac){
+  if(a.jac || b.jac) {
+    if(a.jac && b.jac) {
       J().setBlockMatrix(*a.jac, *b.jac);
     } else NIY;
   }
 }
 
 void rai::ArrayDouble::setBlockMatrix(const rai::ArrayDouble& A, const rai::ArrayDouble& B) {
-    if(!A.special){
-        Array<double>::setBlockMatrix(A, B);
-    }else if(isSparse(A)){
-        CHECK(isSparse(B), "");
-        CHECK(A.d1==B.d1, "");
-        sparse().resize(A.d0+B.d0, A.d1, 0);
-        sparse().add(A.sparse(), 0, 0);
-        sparse().add(B.sparse(), A.d0, 0);
-    } else if(isRowShifted(A)){
+  if(!A.special) {
+    Array<double>::setBlockMatrix(A, B);
+  } else if(isSparse(A)) {
+    CHECK(isSparse(B), "");
+    CHECK(A.d1==B.d1, "");
+    sparse().resize(A.d0+B.d0, A.d1, 0);
+    sparse().add(A.sparse(), 0, 0);
+    sparse().add(B.sparse(), A.d0, 0);
+  } else if(isRowShifted(A)) {
     CHECK(isRowShifted(B), "");
     CHECK(A.d1==B.d1, "");
     rowShifted().resize(A.d0+B.d0, A.d1, rai::MAX(A.rowShifted().rowSize, B.rowShifted().rowSize));
     rowShifted().add(A, 0, 0);
     rowShifted().add(B, A.d0, 0);
-  } else if(isNoArr(A)){
+  } else if(isNoArr(A)) {
     CHECK(isNoArr(B), "");
     setNoArr();
   } else NIY;
 }
 
 void rai::ArrayDouble::write(std::ostream& os, const char* ELEMSEP, const char* LINESEP, const char* BRACKETS, bool dimTag, bool binary) const {
-  if(!special){
+  if(!special) {
     Array<double>::write(os, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
   } else if(isSparseVector(*this)) {
     intA& elems = dynamic_cast<SparseVector*>(special)->elems;
@@ -279,7 +278,7 @@ void rai::ArrayDouble::write(std::ostream& os, const char* ELEMSEP, const char* 
     intA& elems = dynamic_cast<SparseMatrix*>(special)->elems;
     for(uint i=0; i<N; i++) os <<'(' <<elems[i] <<") " <<elem(i) <<endl;
   }
-  if(jac){
+  if(jac) {
     os <<" -- JACOBIAN:\n" <<*jac <<endl;
   }
 }
@@ -294,14 +293,14 @@ void op_transpose(arr& x, const arr& y) {
     for(i=0; i<d0; i++) for(j=0; j<d1; j++) for(k=0; k<d2; k++)
           x(i, j, k) = y(k, j, i);
     //x.p[(i*d1+j)*d2+k]=y.p[(k*d1+j)*d0+i];
-    if(y.jac){ NIY }
+    if(y.jac) { NIY }
     return;
   }
   if(y.nd==2) {
     if(isSparseMatrix(y)) {
       x = y;
       x.sparse().transpose();
-      if(y.jac){ NIY }
+      if(y.jac) { NIY }
       return;
     }
     x.resize(y.d1, y.d0);
@@ -313,13 +312,13 @@ void op_transpose(arr& x, const arr& y) {
       for(; xp!=xstop; xp++, yp+=ystep) *xp = *yp;
 //      for(j=0; j<d1; j++) x.p[i*d1+j]=y.p[j*d0+i];
     }
-    if(y.jac){ NIY }
+    if(y.jac) { NIY }
     return;
   }
   if(y.nd==1) {
     x=y;
     x.reshape(1, y.N);
-    if(y.jac){
+    if(y.jac) {
       // don't do anything
     }
     return;
@@ -388,16 +387,16 @@ arr integral(const arr& x) {
   if(x.nd==2) {
     arr y = x;
     //first pass: sum rows
-    for(uint i=0; i<y.d0; i++) for(uint j=1; j<y.d1; j++) y(i,j) += y(i,j-1);
+    for(uint i=0; i<y.d0; i++) for(uint j=1; j<y.d1; j++) y(i, j) += y(i, j-1);
     //first pass: sum columns
-    for(uint j=0; j<y.d1; j++) for(uint i=1; i<y.d0; i++) y(i,j) += y(i-1,j);
+    for(uint j=0; j<y.d1; j++) for(uint i=1; i<y.d0; i++) y(i, j) += y(i-1, j);
     return y;
   }
   if(x.nd==3) {
     arr y = x;
-    for(uint i=1; i<y.d0; i++) for(uint j=0; j<y.d1; j++) for(uint k=0; k<y.d2; k++) y(i,j,k) += y(i-1,j  ,k  );
-    for(uint i=0; i<y.d0; i++) for(uint j=1; j<y.d1; j++) for(uint k=0; k<y.d2; k++) y(i,j,k) += y(i  ,j-1,k  );
-    for(uint i=0; i<y.d0; i++) for(uint j=0; j<y.d1; j++) for(uint k=1; k<y.d2; k++) y(i,j,k) += y(i  ,j  ,k-1);
+    for(uint i=1; i<y.d0; i++) for(uint j=0; j<y.d1; j++) for(uint k=0; k<y.d2; k++) y(i, j, k) += y(i-1, j, k);
+    for(uint i=0; i<y.d0; i++) for(uint j=1; j<y.d1; j++) for(uint k=0; k<y.d2; k++) y(i, j, k) += y(i, j-1, k);
+    for(uint i=0; i<y.d0; i++) for(uint j=0; j<y.d1; j++) for(uint k=1; k<y.d2; k++) y(i, j, k) += y(i, j, k-1);
     return y;
   }
   NIY;
@@ -412,9 +411,9 @@ arr differencing(const arr& x, uint w) {
   arr y;
   y.resizeAs(x);
   if(x.nd==1) {
-    for(uint i=0;i<y.d0; i++) {
+    for(uint i=0; i<y.d0; i++) {
       double& v = y.elem(i);
-      int i0=CLIP0(i), i1=CLIP1(i,y.d0);
+      int i0=CLIP0(i), i1=CLIP1(i, y.d0);
       v = x.elem(i1);
       if(i0>=0) v -= x.elem(i0);
       v /= (double)(i1-i0);
@@ -422,35 +421,35 @@ arr differencing(const arr& x, uint w) {
     return y;
   }
   if(x.nd==2) {
-    for(uint i=y.d0; i--;) for(uint j=y.d1; j--;){
-      double& v = y(i,j);
-      int i0=CLIP0(i), i1=CLIP1(i,y.d0);
-      int j0=CLIP0(j), j1=CLIP1(j,y.d1);
-      v = x(i1,j1);
-      if(i0>=0) v -= x(i0,j1);
-      if(j0>=0) v -= x(i1,j0);
-      if(i0>=0 && j0>=0) v += x(i0,j0);
-      v /= (double)((i1-i0)*(j1-j0));
-    }
+    for(uint i=y.d0; i--;) for(uint j=y.d1; j--;) {
+        double& v = y(i, j);
+        int i0=CLIP0(i), i1=CLIP1(i, y.d0);
+        int j0=CLIP0(j), j1=CLIP1(j, y.d1);
+        v = x(i1, j1);
+        if(i0>=0) v -= x(i0, j1);
+        if(j0>=0) v -= x(i1, j0);
+        if(i0>=0 && j0>=0) v += x(i0, j0);
+        v /= (double)((i1-i0)*(j1-j0));
+      }
     return y;
   }
   if(x.nd==3) {
     arr y = x;
-    for(uint i=y.d0; i--;) for(uint j=y.d1; j--;) for(uint k=y.d2; k--;){
-      double& v = y(i,j,k);
-      int i0=CLIP0(i), i1=CLIP1(i,y.d0);
-      int j0=CLIP0(j), j1=CLIP1(j,y.d1);
-      int k0=CLIP0(k), k1=CLIP1(k,y.d2);
-      v = x.p[(i1*x.d1+j1)*x.d2+k1]; //x(i1,j1,k1);
-      if(i0>=0) v -= x.p[(i0*x.d1+j1)*x.d2+k1]; //x(i0,j1,k1);
-      if(j0>=0) v -= x.p[(i1*x.d1+j0)*x.d2+k1]; //x(i1,j0,k1);
-      if(k0>=0) v -= x.p[(i1*x.d1+j1)*x.d2+k0]; //x(i1,j1,k0);
-      if(i0>=0 && j0>=0) v += x.p[(i0*x.d1+j0)*x.d2+k1]; //x(i0,j0,k1);
-      if(i0>=0 && k0>=0) v += x.p[(i0*x.d1+j1)*x.d2+k0]; //x(i0,j1,k0);
-      if(j0>=0 && k0>=0) v += x.p[(i1*x.d1+j0)*x.d2+k0]; //x(i1,j0,k0);
-      if(i0>=0 && j0>=0 && k0>=0) v -= x.p[(i0*x.d1+j0)*x.d2+k0]; //x(i0,j0,k0);
-      v /= (double)((i1-i0)*(j1-j0)*(k1-k0));
-    }
+    for(uint i=y.d0; i--;) for(uint j=y.d1; j--;) for(uint k=y.d2; k--;) {
+          double& v = y(i, j, k);
+          int i0=CLIP0(i), i1=CLIP1(i, y.d0);
+          int j0=CLIP0(j), j1=CLIP1(j, y.d1);
+          int k0=CLIP0(k), k1=CLIP1(k, y.d2);
+          v = x.p[(i1*x.d1+j1)*x.d2+k1]; //x(i1,j1,k1);
+          if(i0>=0) v -= x.p[(i0*x.d1+j1)*x.d2+k1]; //x(i0,j1,k1);
+          if(j0>=0) v -= x.p[(i1*x.d1+j0)*x.d2+k1]; //x(i1,j0,k1);
+          if(k0>=0) v -= x.p[(i1*x.d1+j1)*x.d2+k0]; //x(i1,j1,k0);
+          if(i0>=0 && j0>=0) v += x.p[(i0*x.d1+j0)*x.d2+k1]; //x(i0,j0,k1);
+          if(i0>=0 && k0>=0) v += x.p[(i0*x.d1+j1)*x.d2+k0]; //x(i0,j1,k0);
+          if(j0>=0 && k0>=0) v += x.p[(i1*x.d1+j0)*x.d2+k0]; //x(i1,j0,k0);
+          if(i0>=0 && j0>=0 && k0>=0) v -= x.p[(i0*x.d1+j0)*x.d2+k0]; //x(i0,j0,k0);
+          v /= (double)((i1-i0)*(j1-j0)*(k1-k0));
+        }
     return y;
   }
   NIY;
@@ -695,9 +694,9 @@ double absMax(const arr& x) {
   return m;
 }
 
-uint argmin(const arr& x) { CHECK_GE(x.N, 1, ""); uint m=0; for(uint i=1;i<x.N;i++) if(x.p[i]<x.p[m]) m=i; return m; }
+uint argmin(const arr& x) { CHECK_GE(x.N, 1, ""); uint m=0; for(uint i=1; i<x.N; i++) if(x.p[i]<x.p[m]) m=i; return m; }
 
-uint argmax(const arr& x) { CHECK_GE(x.N, 1, ""); uint m=0; for(uint i=1;i<x.N;i++) if(x.p[i]>x.p[m]) m=i; return m; }
+uint argmax(const arr& x) { CHECK_GE(x.N, 1, ""); uint m=0; for(uint i=1; i<x.N; i++) if(x.p[i]>x.p[m]) m=i; return m; }
 
 void argmax(uint& i, uint& j, const arr& x) { CHECK_EQ(x.nd, 2, "needs 2D array"); j=argmax(x); i=j/x.d1; j=j%x.d1; }
 
@@ -748,8 +747,6 @@ arr min(const arr& v, uint d) {
   }
   NIY;
 }
-
-
 
 /// \f$\sum_i x_i\f$
 arr sum(const arr& v, uint d) {
@@ -805,7 +802,7 @@ double sumOfAbs(const arr& v) {
 /// \f$\sum_i |x_i|_+\f$
 double sumOfPos(const arr& v) {
   double t(0);
-  for(uint i=0;i<v.N;i++) if(v.p[i]>0) t+=v.p[i];
+  for(uint i=0; i<v.N; i++) if(v.p[i]>0) t+=v.p[i];
   return t;
 }
 
@@ -877,7 +874,7 @@ double product(const arr& v) {
   \f$\forall_{ik}:~ x_{ik} = \sum_j v_{ij}\, w_{jk}\f$ but also:
   \f$\forall_{i}:~ x_{i} = \sum_j v_{ij}\, w_{j}\f$*/
 void op_innerProduct(arr& x, const arr& y, const arr& z) {
-  if(!y || !z){ x.setNoArr(); return; }
+  if(!y || !z) { x.setNoArr(); return; }
   /*
     if(y.nd==2 && z.nd==2 && y.N==z.N && y.d1==1 && z.d1==1){  //elem-wise
     HALT("make element-wise multiplication explicite!");
@@ -887,18 +884,18 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
   */
   if(y.nd==2 && z.nd==1) {  //matrix x vector -> vector
     CHECK_EQ(y.d1, z.d0, "wrong dimensions for inner product");
-    if(y.d0==1){ //row vector -> scalar product}
+    if(y.d0==1) { //row vector -> scalar product}
       x.resize(1);
-      x.p[0] = scalarProduct(y,z);
-      if(y.jac || z.jac){
+      x.p[0] = scalarProduct(y, z);
+      if(y.jac || z.jac) {
         if(y.jac && !z.jac) x.J() = ~z.noJ() * (*y.jac);
         else if(!y.jac && z.jac) x.J() = y.noJ() * (*z.jac);
         else x.J() = y.noJ() * (*z.jac) + ~z.noJ() * (*y.jac);
       }
-    }else{
+    } else {
       if(isSparseMatrix(y)) { x = y.sparse().At_x(z, false); }
-      else if(rai::useLapack){ blas_MM(x, y, z); }
-      else{
+      else if(rai::useLapack) { blas_MM(x, y, z); }
+      else {
         uint i, d0=y.d0, dk=y.d1;
         double* a, *astop, *b, *c;
         x.resize(d0); x.setZero();
@@ -911,7 +908,7 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
           c++;
         }
       }
-      if(y.jac || z.jac){
+      if(y.jac || z.jac) {
         if(y.jac) NIY;
         x.J() = y * (*z.jac);
       }
@@ -938,7 +935,7 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
       if(isSparseMatrix(z)) { x = z.sparse().B_A(y); return; }
       if(isRowShifted(y)) { x = y.rowShifted().A_B(z); return; }
       if(isRowShifted(z)) { x = z.rowShifted().B_A(y); return; }
-      if(rai::useLapack){ blas_MM(x, y, z); return; }
+      if(rai::useLapack) { blas_MM(x, y, z); return; }
     }
     double* a, *astop, *b, *c;
     x.resize(d0, d1); x.setZero();
@@ -950,19 +947,19 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
         for(; a!=astop; a++, b+=d1)(*c)+=(*a) * (*b);
         c++;
       }
-    if(y.jac || z.jac){
-      if(y.jac && !z.jac){
+    if(y.jac || z.jac) {
+      if(y.jac && !z.jac) {
         CHECK_EQ(y.d0, 1, "");
         x.J().resize(z.d1, y.jac->d1);
-        tensorEquation(x.J(), *y.jac, uintA{2,1}, z, uintA{2,0}, 1);
-      }else NIY;
+        tensorEquation(x.J(), *y.jac, uintA{2, 1}, z, uintA{2, 0}, 1);
+      } else NIY;
     }
     return;
   }
   if(y.nd==1 && z.nd==1 && z.N==1) {  //vector multiplied with scalar (disguised as 1D vector)
     x = y;
     x *= z.p[0];
-    if(y.jac || z.jac){
+    if(y.jac || z.jac) {
       if(y.jac && z.jac) x.J() += y.noJ() * (*z.jac);
       else NIY;
     }
@@ -971,7 +968,7 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
   if(y.nd==1 && z.nd==1 && y.N==1) {  //vector multiplied with scalar (disguised as 1D vector)
     x = z;
     x *= y.p[0];
-    if(y.jac || z.jac){
+    if(y.jac || z.jac) {
       if(y.jac && z.jac) x.J() += z.noJ() * (*y.jac);
       else NIY;
     }
@@ -988,11 +985,11 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
     uint i, j, d0=y.d0, d1=z.d1;
     x.resize(d0, d1);
     for(i=0; i<d0; i++) for(j=0; j<d1; j++) x(i, j)=y(i)*z(0, j);
-    if(y.jac || z.jac){
-      if(y.jac && !z.jac){
+    if(y.jac || z.jac) {
+      if(y.jac && !z.jac) {
         x.J().resize(y.N, z.N, y.jac->d1);
-        tensorEquation(x.J(), *y.jac, uintA{0,2}, z, uintA{3,1}, 1);
-      }else NIY;
+        tensorEquation(x.J(), *y.jac, uintA{0, 2}, z, uintA{3, 1}, 1);
+      } else NIY;
     }
     return;
   }
@@ -1009,7 +1006,7 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
     zz.reshape(z.d0, z.d1*z.d2);
     op_innerProduct(x, y, zz);
     x.reshape(y.d0, z.d1, z.d2);
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac) { NIY }
     return;
   }
   if(y.nd==3 && z.nd==2) {
@@ -1017,7 +1014,7 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
     yy.reshape(y.d0*y.d1, y.d2);
     op_innerProduct(x, yy, z);
     x.reshape(y.d0, y.d1, z.d1);
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac) { NIY }
     return;
   }
   if(y.nd==3 && z.nd==1) {
@@ -1025,7 +1022,7 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
     yy.reshape(y.d0*y.d1, y.d2);
     op_innerProduct(x, yy, z);
     x.reshape(y.d0, y.d1);
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac) { NIY }
     return;
   }
   if(y.nd==1 && z.nd==3) {
@@ -1033,7 +1030,7 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
     zz.reshape(z.d0, z.d1*z.d2);
     op_innerProduct(x, y, zz);
     x.reshape(z.d1, z.d2);
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac) { NIY }
     return;
   }
   if(y.nd==1 && z.nd==1) {  //should be scalar product, but be careful
@@ -1044,7 +1041,7 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
     double s;
     for(s=0, k=0; k<dk; k++) s+=y.p[k]*z.p[k];
     x.p[0]=s;
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac) { NIY }
     return;
   }
   HALT("inner product - not yet implemented for these dimensions: " <<y.nd <<" " <<z.nd);
@@ -1068,14 +1065,14 @@ void op_outerProduct(arr& x, const arr& y, const arr& z) {
       for(; zp!=zstop; zp++, xp++) *xp = yi * *zp;
     }
 #endif
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac) { NIY }
     return;
   }
   if(y.nd==2 && z.nd==1) {
     uint i, j, k, d0=y.d0, d1=y.d1, d2=z.d0;
     x.resize(d0, d1, d2);
     for(i=0; i<d0; i++) for(j=0; j<d1; j++) for(k=0; k<d2; k++) x.p[(i*d1+j)*d2+k] = y.p[i*d1+j] * z.p[k];
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac) { NIY }
     return;
   }
   HALT("outer product - not yet implemented for these dimensions");
@@ -1106,22 +1103,22 @@ void op_indexWiseProduct(arr& x, const arr& y, const arr& z) {
   if(y.nd==1 && z.nd==2) {  //vector x matrix -> index-wise
     CHECK_EQ(y.N, z.d0, "wrong dims for indexWiseProduct:" <<y.N <<"!=" <<z.d0);
     x = z;
-    if(isSparseMatrix(z)){
+    if(isSparseMatrix(z)) {
       CHECK(typeid(double)==typeid(double), "only for double!");
       x.sparse().rowWiseMult(y);
-      if(y.jac || z.jac){ NIY }
+      if(y.jac || z.jac) { NIY }
       return;
     }
-    if(isRowShifted(z)){
+    if(isRowShifted(z)) {
       CHECK(typeid(double)==typeid(double), "only for double!");
       uint rowSize = x.rowShifted().rowSize;
       for(uint i=0; i<x.d0; i++) {
         double yi=y.p[i];
-        double *xp=&x.rowShifted().entry(i,0);
-        double *xstop=xp+rowSize;
+        double* xp=&x.rowShifted().entry(i, 0);
+        double* xstop=xp+rowSize;
         for(; xp!=xstop; xp++) *xp *= yi;
       }
-      if(y.jac || z.jac){ NIY }
+      if(y.jac || z.jac) { NIY }
       return;
     }
     for(uint i=0; i<x.d0; i++) {
@@ -1129,11 +1126,11 @@ void op_indexWiseProduct(arr& x, const arr& y, const arr& z) {
       double* xp=&x(i, 0), *xstop=xp+x.d1;
       for(; xp!=xstop; xp++) *xp *= yi;
     }
-    if(y.jac || z.jac){
-      if(y.jac && !z.jac){
+    if(y.jac || z.jac) {
+      if(y.jac && !z.jac) {
         x.J().resize(z.d0, z.d1, y.jac->d1);
-        tensorEquation(x.J(), *y.jac, uintA{0,2}, z, uintA{0,1});
-      }else NIY;
+        tensorEquation(x.J(), *y.jac, uintA{0, 2}, z, uintA{0, 1});
+      } else NIY;
     }
     return;
   }
@@ -1141,7 +1138,7 @@ void op_indexWiseProduct(arr& x, const arr& y, const arr& z) {
     CHECK_EQ(y.d1, z.N, "wrong dims for indexWiseProduct:" <<y.d1 <<"!=" <<z.N);
     x=y;
     for(uint i=0; i<x.d0; i++) for(uint j=0; j<x.d1; j++) x(i, j) *= z(j);
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac) { NIY }
     return;
   }
   if(y.dim() == z.dim()) { //matrix x matrix -> element-wise
@@ -1149,7 +1146,7 @@ void op_indexWiseProduct(arr& x, const arr& y, const arr& z) {
     x = y;
     double* xp=x.p, *xstop=x.p+x.N, *zp=z.p;
     for(; xp!=xstop; xp++, zp++) *xp *= *zp;
-    if(y.jac || z.jac){
+    if(y.jac || z.jac) {
       NIY;
       //if(!y.jac && z.jac) x.J() = y % (*z.jac);
       //else if(y.jac && !z.jac) x.J() = z % (*y.jac);
@@ -1162,14 +1159,14 @@ void op_indexWiseProduct(arr& x, const arr& y, const arr& z) {
 /** @brief outer product (also exterior or tensor product): \f$\forall_{ijk}:~
   x_{ijk} = v_{ij}\, w_{k}\f$ */
 void op_crossProduct(arr& x, const arr& y, const arr& z) {
-  if(!y || !z){ x.setNoArr(); return; }
+  if(!y || !z) { x.setNoArr(); return; }
   if(y.nd==1 && z.nd==1) {
     CHECK(y.N==3 && z.N==3, "cross product only works for 3D vectors!");
     x.resize(3);
     x.p[0]=y.p[1]*z.p[2]-y.p[2]*z.p[1];
     x.p[1]=y.p[2]*z.p[0]-y.p[0]*z.p[2];
     x.p[2]=y.p[0]*z.p[1]-y.p[1]*z.p[0];
-    if(y.jac || z.jac){
+    if(y.jac || z.jac) {
       if(!y.jac && z.jac) x.J() = skew(y) * (*z.jac);
       else if(y.jac && !z.jac) x.J() = -skew(z) * (*y.jac);
       else x.J() = skew(y.noJ()) * (*z.jac) - skew(z.noJ()) * (*y.jac);
@@ -1179,7 +1176,7 @@ void op_crossProduct(arr& x, const arr& y, const arr& z) {
   if(y.nd==2 && z.nd==1) { //every COLUMN of y is cross-product'd with z!
     CHECK(y.d0==3 && z.N==3, "cross product only works for 3D vectors!");
     x = skew(-z) * y;
-    if(y.jac || z.jac){
+    if(y.jac || z.jac) {
       //above should do autoDiff;
     }
     return;
@@ -1727,7 +1724,6 @@ void tensorMultiply_old(arr& x, const arr& y, const uintA& d, const uintA& ids) 
   }
 }
 
-
 //===========================================================================
 //
 /// @name randomizations
@@ -1803,13 +1799,13 @@ uint softMax(const arr& a, arr& soft, double beta) {
 namespace rai {
 //addition
 arr operator+(const arr& y, const arr& z) { arr x(y); x+=z; return x; }
-arr operator+(double y, const arr& z){                arr x; x.resizeAs(z); x=y; x+=z; return x; }
-arr operator+(const arr& y, double z){                arr x(y); x+=z; return x; }
+arr operator+(double y, const arr& z) {                arr x; x.resizeAs(z); x=y; x+=z; return x; }
+arr operator+(const arr& y, double z) {                arr x(y); x+=z; return x; }
 
 //subtraction
 arr operator-(const arr& y, const arr& z) { arr x(y); x-=z; return x; }
-arr operator-(double y, const arr& z){                arr x; x.resizeAs(z); x=y; x-=z; return x; }
-arr operator-(const arr& y, double z){                arr x(y); x-=z; return x; }
+arr operator-(double y, const arr& z) {                arr x; x.resizeAs(z); x=y; x-=z; return x; }
+arr operator-(const arr& y, double z) {                arr x(y); x-=z; return x; }
 
 /// transpose
 arr operator~(const arr& y) { arr x; op_transpose(x, y); return x; }
@@ -1845,18 +1841,17 @@ arr& operator<<(arr& x, const double& y) { x.append(y); return x; }
 /// x.append(y)
 arr& operator<<(arr& x, const arr& y) { x.append(y); return x; }
 
-
 //core for matrix-matrix (elem-wise) update
 #define UpdateOperator_MM( op )        \
-    if(isNoArr(x)){ return x; } \
-    if(isSparseMatrix(x) && isSparseMatrix(y)){ x.sparse() op y.sparse(); return x; }  \
-    if(isRowShifted(x) && isRowShifted(y)){ x.rowShifted() op y.rowShifted(); return x; }  \
-    CHECK(!isSpecial(x), "");  \
-    CHECK(!isSpecial(y), "");  \
-    CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
-    double *xp=x.p, *xstop=xp+x.N;              \
-    const double *yp=y.p;              \
-    for(; xp!=xstop; xp++, yp++) *xp op *yp;
+  if(isNoArr(x)){ return x; } \
+  if(isSparseMatrix(x) && isSparseMatrix(y)){ x.sparse() op y.sparse(); return x; }  \
+  if(isRowShifted(x) && isRowShifted(y)){ x.rowShifted() op y.rowShifted(); return x; }  \
+  CHECK(!isSpecial(x), "");  \
+  CHECK(!isSpecial(y), "");  \
+  CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
+  double *xp=x.p, *xstop=xp+x.N;              \
+  const double *yp=y.p;              \
+  for(; xp!=xstop; xp++, yp++) *xp op *yp;
 
 //core for matrix-scalar update
 #define UpdateOperator_MS( op ) \
@@ -1867,129 +1862,126 @@ arr& operator<<(arr& x, const arr& y) { x.append(y); return x; }
   double *xp=x.p, *xstop=xp+x.N;              \
   for(; xp!=xstop; xp++) *xp op y;
 
-
-arr& operator+=(arr& x, const arr& y){
+arr& operator+=(arr& x, const arr& y) {
   UpdateOperator_MM(+=);
-  if(y.jac){
+  if(y.jac) {
     if(x.jac) *x.jac += *y.jac;
     else x.J() = *y.jac;
   }
   return x;
 }
-arr& operator+=(arr& x, double y){
+arr& operator+=(arr& x, double y) {
   UpdateOperator_MS(+=);
   return x;
 }
-arr& operator+=(arr&& x, const arr& y){
+arr& operator+=(arr&& x, const arr& y) {
   UpdateOperator_MM(+=);
-  if(y.jac){
+  if(y.jac) {
     if(x.jac) *x.jac += *y.jac;
     else x.J() = *y.jac;
   }
   return x;
 }
-arr& operator+=(arr&& x, double y){
+arr& operator+=(arr&& x, double y) {
   UpdateOperator_MS(+=);
   return x;
 }
 
-arr& operator-=(arr& x, const arr& y){
+arr& operator-=(arr& x, const arr& y) {
   UpdateOperator_MM(-=);
-  if(y.jac){
+  if(y.jac) {
     if(x.jac) *x.jac -= *y.jac;
     else x.J() = -(*y.jac);
   }
   return x;
 }
-arr& operator-=(arr& x, double y){
+arr& operator-=(arr& x, double y) {
   UpdateOperator_MS(-=);
   return x;
 }
-  arr& operator-=(arr&& x, const arr& y){
-    UpdateOperator_MM(-=);
-    if(y.jac){
-      if(x.jac) *x.jac -= *y.jac;
-      else x.J() = -(*y.jac);
-    }
-    return x;
+arr& operator-=(arr&& x, const arr& y) {
+  UpdateOperator_MM(-=);
+  if(y.jac) {
+    if(x.jac) *x.jac -= *y.jac;
+    else x.J() = -(*y.jac);
   }
-  arr& operator-=(arr&& x, double y){
-    UpdateOperator_MS(-=);
-    return x;
-  }
+  return x;
+}
+arr& operator-=(arr&& x, double y) {
+  UpdateOperator_MS(-=);
+  return x;
+}
 
-arr& operator*=(arr& x, const arr& y){
-  if(x.jac || y.jac){
+arr& operator*=(arr& x, const arr& y) {
+  if(x.jac || y.jac) {
     CHECK_EQ(x.nd, 1, "");
     CHECK_EQ(y.nd, 1, "");
     if(x.jac && !y.jac) *x.jac = y % (*x.jac);
     else if(!x.jac && y.jac) x.J() = x % (*y.jac);
-    else{ *x.jac = y.noJ() % (*x.jac); *x.jac += x.noJ() % (*y.jac); }
+    else { *x.jac = y.noJ() % (*x.jac); *x.jac += x.noJ() % (*y.jac); }
   }
   UpdateOperator_MM(*=);
   return x;
 }
-arr& operator*=(arr& x, double y){
+arr& operator*=(arr& x, double y) {
   if(x.jac) *x.jac *= y;
   UpdateOperator_MS(*=);
   return x;
 }
-  arr& operator*=(arr&& x, const arr& y){
-    if(x.jac || y.jac){
-      CHECK_EQ(x.nd, 1, "");
-      if(x.jac && !y.jac) *x.jac = y.noJ() % (*x.jac);
-      else if(!x.jac && y.jac) x.J() = x.noJ() % (*y.jac);
-      else NIY;
-    }
-    UpdateOperator_MM(*=);
-    return x;
+arr& operator*=(arr&& x, const arr& y) {
+  if(x.jac || y.jac) {
+    CHECK_EQ(x.nd, 1, "");
+    if(x.jac && !y.jac) *x.jac = y.noJ() % (*x.jac);
+    else if(!x.jac && y.jac) x.J() = x.noJ() % (*y.jac);
+    else NIY;
   }
-  arr& operator*=(arr&& x, double y){
-    if(x.jac) *x.jac *= y;
-    UpdateOperator_MS(*=);
-    return x;
-  }
+  UpdateOperator_MM(*=);
+  return x;
+}
+arr& operator*=(arr&& x, double y) {
+  if(x.jac) *x.jac *= y;
+  UpdateOperator_MS(*=);
+  return x;
+}
 
-arr& operator/=(arr& x, const arr& y){
+arr& operator/=(arr& x, const arr& y) {
   UpdateOperator_MM(/=);
-  if(x.jac || y.jac){
-    if(x.jac && !y.jac){
+  if(x.jac || y.jac) {
+    if(x.jac && !y.jac) {
       arr yinv(y.N);
-      for(uint i=0;i<y.N;i++) yinv.p[i] = 1./y.p[i];
+      for(uint i=0; i<y.N; i++) yinv.p[i] = 1./y.p[i];
       *x.jac = yinv % (*x.jac);
-    }else if(!x.jac && y.jac){
+    } else if(!x.jac && y.jac) {
       arr coeff(y.N);
-      for(uint i=0;i<y.N;i++) coeff.p[i] = -x.p[i]/y.p[i]; //NOTE: x(i) is already divided by y(i)!
+      for(uint i=0; i<y.N; i++) coeff.p[i] = -x.p[i]/y.p[i]; //NOTE: x(i) is already divided by y(i)!
       x.J() = coeff % (*y.jac);
-    }else{
+    } else {
       arr coeff(y.N);
-      for(uint i=0;i<y.N;i++) coeff.p[i] = 1./y.p[i];
+      for(uint i=0; i<y.N; i++) coeff.p[i] = 1./y.p[i];
       *x.jac = coeff % (*x.jac);
-      for(uint i=0;i<y.N;i++) coeff.p[i] = -x.p[i]/y.p[i];
+      for(uint i=0; i<y.N; i++) coeff.p[i] = -x.p[i]/y.p[i];
       *x.jac += coeff % (*y.jac);
     }
   }
   return x;
 }
-arr& operator/=(arr& x, double y){
+arr& operator/=(arr& x, double y) {
   UpdateOperator_MS(/=);
   if(x.jac) *x.jac /= y;
   return x;
 }
-  arr& operator/=(arr&& x, const arr& y){
-    UpdateOperator_MM(/=);
-    if(x.jac || y.jac){
-      NIY;
-    }
-    return x;
+arr& operator/=(arr&& x, const arr& y) {
+  UpdateOperator_MM(/=);
+  if(x.jac || y.jac) {
+    NIY;
   }
-  arr& operator/=(arr&& x, double y){
-    UpdateOperator_MS(/=);
-    if(x.jac) *x.jac /= y;
-    return x;
-  }
-
-
+  return x;
+}
+arr& operator/=(arr&& x, double y) {
+  UpdateOperator_MS(/=);
+  if(x.jac) *x.jac /= y;
+  return x;
+}
 
 //UpdateOperator(|=)
 //UpdateOperator(^=)
@@ -1997,7 +1989,6 @@ arr& operator/=(arr& x, double y){
 //UpdateOperator(%=)
 #undef UpdateOperator_MM
 #undef UpdateOperator_MS
-
 
 /// allows a notation such as x <<"[0 1; 2 3]"; to initialize an array x
 //arr& operator<<(arr& x, const char* str) { std::istringstream ss(str); ss >>x; return x; }
@@ -2076,7 +2067,7 @@ inline double sigm(double x) {  return 1./(1.+::exp(-x)); }
 inline double sign(double x) {  return (x > 0) - (x < 0); }
 
 #define UnaryFunction( func )         \
-            \
+  \
   arr func (const arr& y){    \
     arr x;           \
     if(&x!=&y) x.resizeAs(y);         \
@@ -2124,7 +2115,7 @@ UnaryFunction(sign)
 //---------- binary functions
 
 #define BinaryFunction( func )            \
-              \
+  \
   arr func(const arr& y, const arr& z){ \
     CHECK_EQ(y.N,z.N,             \
              "binary operator on different array dimensions (" <<y.N <<", " <<z.N <<")"); \
@@ -2134,7 +2125,7 @@ UnaryFunction(sign)
     return x;           \
   }                 \
   \
-              \
+  \
   arr func(const arr& y, double z){     \
     arr x;             \
     x.resizeAs(y);              \
@@ -2142,7 +2133,7 @@ UnaryFunction(sign)
     return x;           \
   }                 \
   \
-              \
+  \
   arr func(double y, const arr& z){     \
     arr x;             \
     x.resizeAs(z);              \
@@ -2188,7 +2179,6 @@ template struct rai::Array<bool>;
 #  include "array_instantiate.cpp"
 #endif
 
-
 //===========================================================================
 //
 // differentiation
@@ -2196,7 +2186,7 @@ template struct rai::Array<bool>;
 
 void arr::J_setId() {
   CHECK(!jac, "");
-  CHECK(nd==1,"");
+  CHECK(nd==1, "");
   jac = make_unique<arr>();
   jac->setId(N);
 }

@@ -4,7 +4,6 @@
 
 #include <Control/control.h>
 
-
 //===========================================================================
 
 struct WheelConstraint : Feature{
@@ -93,7 +92,6 @@ void controlMobile(){
 }
 
 //===========================================================================
-
 
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);

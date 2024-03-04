@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -159,14 +159,14 @@ struct Frame : NonCopyable {
   Frame& setRelativePosition(const arr& pos);
   Frame& setRelativeQuaternion(const arr& quat);
   Frame& setMesh2(const rai::Mesh& m);
-  Frame& setMesh(const arr& verts, const uintA& tris, const byteA& colors={}, const uintA& cvxParts={});
-  Frame& setPointCloud(const arr& points, const byteA& colors={}, const arr& normals={});
-  Frame& setConvexMesh(const arr& points, const byteA& colors={}, double radius=0.);
+  Frame& setMesh(const arr& verts, const uintA& tris, const byteA& colors= {}, const uintA& cvxParts= {});
+  Frame& setPointCloud(const arr& points, const byteA& colors= {}, const arr& normals= {});
+  Frame& setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
   Frame& setSdf(std::shared_ptr<SDF>& sdf);
   Frame& setDensity(const floatA& data, const arr& size);
   Frame& setImplicitSurface(const floatA& data, const arr& size, uint blur, double resample);
   Frame& setColor(const arr& color);
-  Frame& setJoint(rai::JointType jointType, const arr& limits={});
+  Frame& setJoint(rai::JointType jointType, const arr& limits= {});
   Frame& setContact(int cont);
   Frame& setMass(double mass);
   Frame& setAttribute(const char* key, double value);
@@ -220,7 +220,7 @@ struct Dof {
   arr getDofState();
   virtual String name() const = 0;
 
-  void copyParameters(Dof* copy){
+  void copyParameters(Dof* copy) {
     qIndex=copy->qIndex; dim=copy->dim;
     limits=copy->limits; q0=copy->q0;
     active=copy->active;
@@ -300,7 +300,7 @@ struct Inertia : NonCopyable {
   Inertia(Frame& f, rai::Inertia* copyInertia=nullptr);
   ~Inertia();
 
-  void setZero(){ mass=0; com=0; matrix=0; }
+  void setZero() { mass=0; com=0; matrix=0; }
   void add(const Inertia& I, const rai::Transformation& rel);
   void defaultInertiaByShape();
 
@@ -325,9 +325,9 @@ struct Shape : NonCopyable, GLDrawer {
 
   double radius() { if(size.N) return size(-1); return 0.; }
   Enum<ShapeType>& type() { return _type; }
-  Mesh& mesh() { if(!_mesh){ if(_type==ST_none) _type=ST_mesh; _mesh = make_shared<Mesh>(); } return *_mesh; }
-  Mesh& sscCore() { if(!_sscCore){ if(_type==ST_none) _type=ST_ssCvx;  _sscCore = make_shared<Mesh>();  } return *_sscCore; }
-  SDF& sdf() { if(!_sdf){ if(_type==ST_none) _type=ST_sdf; _sdf = make_shared<SDF_GridData>(); } return *_sdf; }
+  Mesh& mesh() { if(!_mesh) { if(_type==ST_none) _type=ST_mesh; _mesh = make_shared<Mesh>(); } return *_mesh; }
+  Mesh& sscCore() { if(!_sscCore) { if(_type==ST_none) _type=ST_ssCvx;  _sscCore = make_shared<Mesh>();  } return *_sscCore; }
+  SDF& sdf() { if(!_sdf) { if(_type==ST_none) _type=ST_sdf; _sdf = make_shared<SDF_GridData>(); } return *_sdf; }
   double alpha() { arr& C=mesh().C; if(C.N==4 || C.N==2) return C(-1); return 1.; }
 
   void createMeshes();

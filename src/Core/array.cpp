@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -74,8 +74,7 @@ const char* arrayBrackets="[]";
 void multiDimIncrement(uint& Ycount, uint* index, uint* limit, uint* Yinc, uint* Ydec, uint nd);
 void getMultiDimIncrement(const uintA& Xdim, const uintA& Yid, uint* Ydim, uint* Yinc, uint* Ydec);
 
-
-arr& getNoArr(){
+arr& getNoArr() {
   static arr __noArr;
   if(!__noArr.special) __noArr.setNoArr();
   return __noArr;
@@ -123,9 +122,9 @@ const SparseVector& arr::sparseVec() const {
 /// make sparse: create the \ref sparse index
 SparseMatrix& arr::sparse() {
   SparseMatrix* s;
-  if(special){
+  if(special) {
     s = dynamic_cast<SparseMatrix*>(special);
-    CHECK(s,"");
+    CHECK(s, "");
     return *s;
   }
 
@@ -170,8 +169,8 @@ RowShifted& arr::rowShifted() {
   return *r;
 }
 
-  /// make sparse: create the \ref sparse index
-const RowShifted& arr::rowShifted() const{
+/// make sparse: create the \ref sparse index
+const RowShifted& arr::rowShifted() const {
   CHECK(isRowShifted(*this), "");
   rai::RowShifted* r = dynamic_cast<RowShifted*>(special);
   CHECK(r, "");
@@ -180,7 +179,7 @@ const RowShifted& arr::rowShifted() const{
 
 /// attach jacobian
 arr& arr::J() {
-  if(!jac){
+  if(!jac) {
     jac = make_unique<arr>();
   }
   return *jac;
@@ -194,10 +193,10 @@ arr arr::noJ() const {
 arr arr::J_reset() {
   CHECK(jac, "");
   arr J;
-  if(jac){
+  if(jac) {
     J = *jac;
     jac.reset();
-  }else J.setNoArr();
+  } else J.setNoArr();
   return J;
 }
 
@@ -217,8 +216,8 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps) {
     if(steps(0)) delta = (hi(0)-lo(0))/steps(0);
 
     X.resize(steps(0)+1, 1);
-    double *Xp = X.p;
-    for(i=0; i<X.d0; i++){
+    double* Xp = X.p;
+    for(i=0; i<X.d0; i++) {
       *(Xp++) = lo.p[0]+delta*i;
     }
     return X;
@@ -228,10 +227,10 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps) {
     for(uint i=0; i<2; i++) if(steps(i)) delta(i) = (hi(i)-lo(i))/steps(i);
 
     X.resize(steps(0)+1, steps(1)+1, 2);
-    double *Xp = X.p;
+    double* Xp = X.p;
     for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) {
-      *(Xp++) = lo.p[0]+delta.p[0]*i;
-      *(Xp++) = lo.p[1]+delta.p[1]*j;
+        *(Xp++) = lo.p[0]+delta.p[0]*i;
+        *(Xp++) = lo.p[1]+delta.p[1]*j;
       }
     X.reshape(X.d0*X.d1, 2);
     return X;
@@ -241,12 +240,12 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps) {
     for(uint i=0; i<3; i++) if(steps(i)) delta(i) = (hi(i)-lo(i))/steps(i);
 
     X.resize(uintA{steps(0)+1, steps(1)+1, steps(2)+1, 3});
-    double *Xp = X.p;
+    double* Xp = X.p;
     for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) for(k=0; k<X.d2; k++) {
-      *(Xp++) = lo.p[0]+delta.p[0]*i;
-      *(Xp++) = lo.p[1]+delta.p[1]*j;
-      *(Xp++) = lo.p[2]+delta.p[2]*k;
-    }
+          *(Xp++) = lo.p[0]+delta.p[0]*i;
+          *(Xp++) = lo.p[1]+delta.p[1]*j;
+          *(Xp++) = lo.p[2]+delta.p[2]*k;
+        }
     X.reshape(X.d0*X.d1*X.d2, 3);
     return X;
   }
@@ -313,7 +312,7 @@ extern bool useLapack;
 
 void normalizeWithJac(arr& y, arr& J, double eps) {
   double l = length(y);
-  if(!eps){
+  if(!eps) {
     if(l<1e-10) {
       LOG(-1) <<"can't normalize vector of length " <<l;
     } else {
@@ -323,7 +322,7 @@ void normalizeWithJac(arr& y, arr& J, double eps) {
         J /= l;
       }
     }
-  }else{
+  } else {
     y /= (eps+l);
     if(!!J && J.N) {
       J -= ((eps+l)/l * (y^y)) * J;
@@ -333,19 +332,19 @@ void normalizeWithJac(arr& y, arr& J, double eps) {
 }
 void op_normalize(arr& y, double eps) {
   double l = length(y);
-  if(!eps){
+  if(!eps) {
     if(l<1e-10) {
       LOG(-1) <<"can't normalize vector of length " <<l;
     } else {
       y /= l;
       if(y.jac) y.J() -= (y.noJ()^y.noJ())*y.J();
     }
-  }else{
+  } else {
     y /= (eps+l);
-    if(y.jac){
-      if(l>1e-3*(eps+l)){
+    if(y.jac) {
+      if(l>1e-3*(eps+l)) {
         y.J() -= ((eps+l)/l * (y.noJ()^y.noJ())) * y.J();
-      }else{  //incorrect, but stable
+      } else { //incorrect, but stable
         y.J() -= (y.noJ()^y.noJ()) * y.J();
       }
     }
@@ -1013,7 +1012,7 @@ bool checkGradient(const ScalarFunction& f,
     LOG(-1) <<"checkGradient -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)";
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
-    if(verbose){
+    if(verbose) {
       cout <<"ANALYTICAL: " <<J <<endl;
       cout <<"EMPIRICAL: " <<JJ <<endl;
     }
@@ -1072,7 +1071,7 @@ bool checkJacobian(const VectorFunction& f,
     JJ >>FILE("z.J_empirical");
     if(verbose) {
       cout <<"J_analytical = " <<J
-          <<"\nJ_empirical  = " <<JJ <<endl;
+           <<"\nJ_empirical  = " <<JJ <<endl;
     }
     return false;
   } else {
@@ -1080,45 +1079,45 @@ bool checkJacobian(const VectorFunction& f,
   }
   return true;
 #else
-  }else{
-    bool succ=true;
-    for(uint i=0; i<J.d0; i++) {
-      uint j;
-      double md=maxDiff(J[i], JJ[i], &j);
-      if(md>tolerance && md>fabs(J(i, j))*tolerance) {
-        if(featureNames.N) {
-          LOG(-1) <<"FAILURE in line " <<i <<featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
-        }
-        succ=false;
+} else {
+  bool succ=true;
+  for(uint i=0; i<J.d0; i++) {
+    uint j;
+    double md=maxDiff(J[i], JJ[i], &j);
+    if(md>tolerance && md>fabs(J(i, j))*tolerance) {
+      if(featureNames.N) {
+        LOG(-1) <<"FAILURE in line " <<i <<featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
       }
+      succ=false;
     }
-    if(!succ){
-      J >>FILE("z.J_analytical");
-      JJ >>FILE("z.J_empirical");
-    }
-    return succ;
   }
+  if(!succ) {
+    J >>FILE("z.J_analytical");
+    JJ >>FILE("z.J_empirical");
+  }
+  return succ;
+}
 #endif
 }
 
 void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
   if(bound_lo.N && bound_up.N) {
     for(uint i=0; i<y.N; i++) if(bound_up.elem(i)>=bound_lo.elem(i)) {
-      if(y.elem(i)>bound_up.elem(i)) y.elem(i) = bound_up.elem(i);
-      if(y.elem(i)<bound_lo.elem(i)) y.elem(i) = bound_lo.elem(i);
-    }
+        if(y.elem(i)>bound_up.elem(i)) y.elem(i) = bound_up.elem(i);
+        if(y.elem(i)<bound_lo.elem(i)) y.elem(i) = bound_lo.elem(i);
+      }
   }
 }
 
-bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps, bool verbose){
+bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps, bool verbose) {
   bool good=true;
   if(bound_lo.N && bound_up.N) {
     CHECK_EQ(x.N, bound_lo.N, "");
     CHECK_EQ(x.N, bound_up.N, "");
     for(uint i=0; i<x.N; i++) if(bound_up.p[i]>=bound_lo.p[i]) {
-      if(x.p[i] < bound_lo.p[i]-eps){ good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.p[i] <<" violates lower bound " <<bound_lo.p[i]; else break; }
-      if(x.p[i] > bound_up.p[i]+eps){ good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.p[i] <<" violates upper bound " <<bound_up.p[i]; else break; }
-    }
+        if(x.p[i] < bound_lo.p[i]-eps) { good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.p[i] <<" violates lower bound " <<bound_lo.p[i]; else break; }
+        if(x.p[i] > bound_up.p[i]+eps) { good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.p[i] <<" violates upper bound " <<bound_up.p[i]; else break; }
+      }
   }
   return good;
 }
@@ -1334,7 +1333,7 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
 //    lapack_EigenDecomp(A, sig, eig);
 #endif
     rai::errStringStream() <<"lapack_Ainv_b_sym error info = " <<INFO
-                   <<". Typically this is because A is not pos-def.";
+                           <<". Typically this is because A is not pos-def.";
 //    \nsmallest "<<k<<" eigenvalues=" <<sig;
     throw(rai::errString());
 //    THROW("lapack_Ainv_b_sym error info = " <<INFO
@@ -1597,7 +1596,7 @@ Eigen::SparseMatrix<double> conv_sparseArr2sparseEigen(const rai::SparseMatrix& 
   E.resize(Z.d0, Z.d1);
   std::vector<Eigen::Triplet<double>> triplets;
   triplets.reserve(Z.N);
-  for(uint k=0; k<Z.N; k++){
+  for(uint k=0; k<Z.N; k++) {
     int i=S.elems.p[2*k];
     int j=S.elems.p[2*k+1];
     if(i>=0 && j>=0) triplets.push_back(Eigen::Triplet<double>(i, j, Z.p[k]));
@@ -1696,29 +1695,29 @@ double rai::RowShifted::elem(uint i, uint j) const {
   return Z.p[i*rowSize+j-rs];
 }
 
-double& rai::RowShifted::elemNew(uint i, uint j){
+double& rai::RowShifted::elemNew(uint i, uint j) {
   CHECK(i<Z.d0 && j<Z.d1,
         "2D range error (" <<Z.nd <<"=2, " <<i <<"<" <<Z.d0 <<", " <<j <<"<" <<Z.d1 <<")");
   uint rs=rowShift.p[i];;
   uint rl=rowLen.p[i];
-  if(!rl){ //first element in this row!
+  if(!rl) { //first element in this row!
     rowShift.p[i] = j;
     rowLen.p[i] = 1;
-    return entry(i,0);
+    return entry(i, 0);
   }
-  if(j<rs){ //need to shift row to the right!
+  if(j<rs) { //need to shift row to the right!
     CHECK_LE(rl+rs-j, Z.d1, ""); //can't shift! (rs+rl<=Z.d1 always!)
-    memmove(&entry(i,rs-j), &entry(i,0), rl*Z.sizeT);
-    memset(&entry(i,0), 0, (rs-j)*Z.sizeT);
+    memmove(&entry(i, rs-j), &entry(i, 0), rl*Z.sizeT);
+    memset(&entry(i, 0), 0, (rs-j)*Z.sizeT);
     rowLen.p[i] += rs-j;
     rowShift.p[i] = j;
-    return entry(i,0);
+    return entry(i, 0);
   }
-  if(j+1>rs+rl){ //need to extend rowLen
+  if(j+1>rs+rl) { //need to extend rowLen
     rowLen.p[i] = j+1-rs;
     CHECK_LE(rowLen.p[i], rowSize, "rowShifted was created too small");
   }
-  return entry(i,j-rs);
+  return entry(i, j-rs);
 }
 
 double& rai::RowShifted::entry(uint i, uint j) const {
@@ -1727,7 +1726,7 @@ double& rai::RowShifted::entry(uint i, uint j) const {
   return Z.p[i*rowSize+j];
 }
 
-void rai::RowShifted::resize(uint d0, uint d1, uint _rowSize){
+void rai::RowShifted::resize(uint d0, uint d1, uint _rowSize) {
   Z.nd=2; Z.d0=d0; Z.d1=d1;
   Z.resizeMEM(d0*_rowSize, false);
   Z.setZero();
@@ -1736,9 +1735,9 @@ void rai::RowShifted::resize(uint d0, uint d1, uint _rowSize){
   rowLen.resize(d0).setZero();
 }
 
-void rai::RowShifted::resizeCopy(uint d0, uint d1, uint n){ NIY; }
+void rai::RowShifted::resizeCopy(uint d0, uint d1, uint n) { NIY; }
 
-void rai::RowShifted::reshape(uint d0, uint d1){ NIY; }
+void rai::RowShifted::reshape(uint d0, uint d1) { NIY; }
 
 void rai::RowShifted::reshift() {
   for(uint i=0; i<Z.d0; i++) {
@@ -1783,12 +1782,12 @@ void rai::RowShifted::checkConsistency() const {
   CHECK_EQ(rowShift.N, Z.d0, "");
   CHECK_EQ(rowLen.N, Z.d0, "");
   CHECK_EQ(rowSize * Z.d0, Z.N, "");
-  for(uint i=0;i<Z.d0;i++){
+  for(uint i=0; i<Z.d0; i++) {
     uint rs=rowShift(i);
     uint rl=rowLen(i);
     CHECK_LE(rl, rowSize, "");
     CHECK_LE(rs+rl, Z.d1, "");
-    for(uint j=rs+rl;j<Z.d1;j++) CHECK_EQ(entry(i,j), 0., "");
+    for(uint j=rs+rl; j<Z.d1; j++) CHECK_EQ(entry(i, j), 0., "");
   }
 }
 
@@ -1895,7 +1894,7 @@ arr rai::RowShifted::At_x(const arr& x) {
     double xi = x.p[i];
     uint rs=rowShift.p[i];
 #if 0
-    for(uint j=0; j<Z.d1; j++) y.p[rs+j] += xi * entry(i,j); // sum += acc(i,j)*x(i);
+    for(uint j=0; j<Z.d1; j++) y.p[rs+j] += xi * entry(i, j); // sum += acc(i,j)*x(i);
 #else //PROFILED
     double* Zp = Z.p + i*rowSize;
     double* yp = y.p + rs;
@@ -1940,9 +1939,9 @@ arr rai::RowShifted::At() {
     uint rs = colPatches(i, 0);
     uint rl = colPatches(i, 1)-rs;
     At_.rowLen(i) = rl;
-    if(rl){
+    if(rl) {
       At_.rowShift(i) = rs;
-      for(uint j=0; j<rl; j++) At_.entry(i,j) = elem(rs+j, i);
+      for(uint j=0; j<rl; j++) At_.entry(i, j) = elem(rs+j, i);
     }
   }
   return At;
@@ -1953,13 +1952,13 @@ arr rai::RowShifted::A_B(const arr& B) const {
   arr X;
   RowShifted& Xr = X.rowShifted();
   Xr.resize(Z.d0, B.d1, B.d1);
-  for(uint i=0; i<X.d0; i++) for(uint k=0;k<B.d1;k++) {
-    uint rs = rowShift.p[i];
-    uint rl = rowLen.p[i];
-    for(uint j=0; j<rl; j++){
-      Xr.elemNew(i,k) += entry(i,j) * B.p[(j+rs)*B.d1+k]; //B(j+rs,k);
+  for(uint i=0; i<X.d0; i++) for(uint k=0; k<B.d1; k++) {
+      uint rs = rowShift.p[i];
+      uint rl = rowLen.p[i];
+      for(uint j=0; j<rl; j++) {
+        Xr.elemNew(i, k) += entry(i, j) * B.p[(j+rs)*B.d1+k]; //B(j+rs,k);
+      }
     }
-  }
   return X;
 }
 
@@ -1968,51 +1967,51 @@ arr rai::RowShifted::B_A(const arr& B) const {
   arr X;
   RowShifted& Xr = X.rowShifted();
   Xr.resize(B.d0, Z.d1, rowSize);
-  for(uint i=0; i<X.d0; i++) for(uint k=0;k<B.d1;k++){
-    uint rs = rowShift.p[k];
-    uint rl = rowLen.p[k];
-    double Bik = B(i,k);
-    for(uint j=0; j<rl; j++){
-      Xr.elemNew(i,j+rs) += Bik*entry(k,j);
+  for(uint i=0; i<X.d0; i++) for(uint k=0; k<B.d1; k++) {
+      uint rs = rowShift.p[k];
+      uint rl = rowLen.p[k];
+      double Bik = B(i, k);
+      for(uint j=0; j<rl; j++) {
+        Xr.elemNew(i, j+rs) += Bik*entry(k, j);
+      }
     }
-  }
   return X;
 }
 
 void rai::RowShifted::rowWiseMult(const arr& a) {
   CHECK_EQ(a.N, Z.d0, "");
-  for(uint i=0; i<Z.d0; i++){
-    for(uint k=0;k<rowSize;k++) entry(i,k) *= a.p[i];
+  for(uint i=0; i<Z.d0; i++) {
+    for(uint k=0; k<rowSize; k++) entry(i, k) *= a.p[i];
   }
 }
 
-void rai::RowShifted::add(const arr& B, uint lo0, uint lo1, double coeff){
-  if(isRowShifted(B)){
+void rai::RowShifted::add(const arr& B, uint lo0, uint lo1, double coeff) {
+  if(isRowShifted(B)) {
     const RowShifted& Br = B.rowShifted();
-    for(uint i=0;i<B.d0;i++){
+    for(uint i=0; i<B.d0; i++) {
       uint rs = Br.rowShift(i);
       uint rl = Br.rowLen(i);
-      if(!lo0 && !lo1 && coeff==1.){
-        for(uint j=0;j<rl;j++) elemNew(i, rs+j) += Br.entry(i, j);
-      }else{
-        for(uint j=0;j<rl;j++) elemNew(lo0 + i, lo1 + rs+j) += coeff*Br.entry(i, j);
+      if(!lo0 && !lo1 && coeff==1.) {
+        for(uint j=0; j<rl; j++) elemNew(i, rs+j) += Br.entry(i, j);
+      } else {
+        for(uint j=0; j<rl; j++) elemNew(lo0 + i, lo1 + rs+j) += coeff*Br.entry(i, j);
       }
     }
-  }else{
-    for(uint i=0;i<B.d0;i++){
-      if(!lo0 && !lo1 && coeff==1.){
-        for(uint j=0;j<B.d1;j++) elemNew(i, j) += B(i, j);
-      }else{
-        for(uint j=0;j<B.d1;j++) elemNew(lo0 + i, lo1 + j) += coeff*B(i, j);
+  } else {
+    for(uint i=0; i<B.d0; i++) {
+      if(!lo0 && !lo1 && coeff==1.) {
+        for(uint j=0; j<B.d1; j++) elemNew(i, j) += B(i, j);
+      } else {
+        for(uint j=0; j<B.d1; j++) elemNew(lo0 + i, lo1 + j) += coeff*B(i, j);
       }
     }
   }
 }
 
-void rai::RowShifted::write(ostream& os) const{
+void rai::RowShifted::write(ostream& os) const {
   os <<"RowShifted: real:" <<Z.d0 <<'x' <<Z.d1 <<"  packed:" <<Z.d0 <<'x' <<rowSize <<endl;
   os <<"packed numbers =\n" <<Z
-      <<"\nrowShifts=" <<rowShift
+     <<"\nrowShifts=" <<rowShift
      <<"\nrowLens=" <<rowLen;
   if(colPatches.N) os <<"\ncolPaches=\n" <<colPatches;
   os  <<"\nunpacked =\n" <<unpack() <<endl;
@@ -2076,7 +2075,7 @@ void SparseMatrix::resizeCopy(uint d0, uint d1, uint n) {
   if(n>Nold) memset(Z.p+Nold, 0, Z.sizeT*(n-Nold));
   elems.resizeCopy(n, 2);
 //  for(uint i=Nold; i<n; i++) elems(i, 0) = elems(i, 1) =-1;
-  for(int *p=elems.p+2*Nold, *pstop=elems.p+2*n; p<pstop; p++) *p = -1;
+  for(int* p=elems.p+2*Nold, *pstop=elems.p+2*n; p<pstop; p++) *p = -1;
 }
 
 void SparseMatrix::reshape(uint d0, uint d1) {
@@ -2099,7 +2098,7 @@ double& SparseMatrix::entry(uint i, uint j, uint k) {
   if(*elemsk==-1) { //new element
     elemsk[0]=i;
     elemsk[1]=j;
-    if(rows.nd){ rows.clear(); cols.clear(); }
+    if(rows.nd) { rows.clear(); cols.clear(); }
   } else {
     CHECK_EQ(elemsk[0], (int)i, "");
     CHECK_EQ(elemsk[1], (int)j, "");
@@ -2146,7 +2145,7 @@ double& SparseMatrix::addEntry(int i, int j) {
   elems.resizeCopy(k+1, 2);
   elems(k, 0)=i;
   elems(k, 1)=j;
-  if(rows.nd){ rows.clear(); cols.clear(); }
+  if(rows.nd) { rows.clear(); cols.clear(); }
   Z.resizeMEM(k+1, true);
   Z.elem(-1)=0.;
   return Z.elem(-1);
@@ -2234,7 +2233,7 @@ void SparseMatrix::setupRowsCols() {
 }
 
 void SparseMatrix::rowShift(int shift) {
-  if(rows.nd){ rows.clear(); cols.clear(); }
+  if(rows.nd) { rows.clear(); cols.clear(); }
   for(uint i=0; i<elems.d0; i++) {
     int& j = elems(i, 1);
     CHECK_GE(j+shift, 0, "");
@@ -2244,7 +2243,7 @@ void SparseMatrix::rowShift(int shift) {
 }
 
 void SparseMatrix::colShift(int shift) {
-  if(rows.nd){ rows.clear(); cols.clear(); }
+  if(rows.nd) { rows.clear(); cols.clear(); }
   for(uint i=0; i<elems.d0; i++) {
     int& j = elems.p[2*i]; //(i, 0);
     CHECK_GE(j+shift, 0, "");
@@ -2259,9 +2258,9 @@ arr SparseMatrix::At_x(const arr& x, bool transpose) const {
   Eigen::SparseMatrix<double> A_eig = conv_sparseArr2sparseEigen(*this);
   Eigen::MatrixXd x_eig = conv_arr2eigen(x);
 
-  if(transpose){
+  if(transpose) {
     x_eig = A_eig.transpose() * x_eig;
-  }else{
+  } else {
     x_eig = A_eig * x_eig;
   }
 
@@ -2289,16 +2288,16 @@ arr SparseMatrix::A_At() const {
 }
 
 arr SparseMatrix::A_B(const arr& B) const {
-  if(!isSparse(B) && B.N<25){
+  if(!isSparse(B) && B.N<25) {
     arr C;
-    SparseMatrix &S = C.sparse();
+    SparseMatrix& S = C.sparse();
     S.resize(B.d0, Z.d1, B.d1*Z.N); //resize to maximal possible
     uint l=0;
-    for(uint k=0;k<Z.N;k++){
-      uint a=elems(k,0);
-      uint b=elems(k,1);
+    for(uint k=0; k<Z.N; k++) {
+      uint a=elems(k, 0);
+      uint b=elems(k, 1);
       double x = Z.elem(k);
-      for(uint j=0;j<B.d1;j++) S.entry(a, j, l++) = B(b,j) * x;
+      for(uint j=0; j<B.d1; j++) S.entry(a, j, l++) = B(b, j) * x;
     }
     CHECK_EQ(l, C.N, "");
     return C;
@@ -2313,16 +2312,16 @@ arr SparseMatrix::A_B(const arr& B) const {
 }
 
 arr SparseMatrix::B_A(const arr& B) const {
-  if(!isSparse(B) && B.N<25){
+  if(!isSparse(B) && B.N<25) {
     arr C;
-    SparseMatrix &S = C.sparse();
+    SparseMatrix& S = C.sparse();
     S.resize(B.d0, Z.d1, B.d0*Z.N); //resize to maximal possible
     uint l=0;
-    for(uint k=0;k<Z.N;k++){
+    for(uint k=0; k<Z.N; k++) {
       uint a=elems.p[2*k]; //(k,0);
       uint b=elems.p[2*k+1]; //(k,1);
       double x = Z.p[k]; //elem(k);
-      for(uint i=0;i<B.d0;i++) S.entry(i, b, l++) = B.p[i*B.d1+a] * x; //B(i,a) * x;
+      for(uint i=0; i<B.d0; i++) S.entry(i, b, l++) = B.p[i*B.d1+a] * x; //B(i,a) * x;
     }
     CHECK_EQ(l, C.N, "");
 //    S.resizeCopy(B.d0, Z.d1, l);
@@ -2354,7 +2353,7 @@ void SparseMatrix::transpose() {
     elems(i, 0) = elems(i, 1);
     elems(i, 1) = k;
   }
-  if(rows.nd){ cols.clear(); rows.clear(); }
+  if(rows.nd) { cols.clear(); rows.clear(); }
 }
 
 void SparseMatrix::rowWiseMult(const arr& a) {
@@ -2376,7 +2375,7 @@ void SparseMatrix::rowWiseMult(const arr& a) {
 //  }
 //}
 
-void SparseMatrix::add(const SparseMatrix& a, uint lo0, uint lo1, double coeff){
+void SparseMatrix::add(const SparseMatrix& a, uint lo0, uint lo1, double coeff) {
   CHECK_LE(lo0+a.Z.d0, Z.d0, "");
   CHECK_LE(lo1+a.Z.d1, Z.d1, "");
   if(!a.Z.N) return; //nothing to add
@@ -2385,14 +2384,14 @@ void SparseMatrix::add(const SparseMatrix& a, uint lo0, uint lo1, double coeff){
   Z.resizeMEM(Nold+a.Z.N, true);
   memmove(Z.p+Nold, a.Z.p, Z.sizeT*a.Z.N);
   elems.append(a.elems);
-  if(coeff){
-    for(double* x=&Z.elem(Nold); x!=Z.p+Z.N; x++) (*x) *= coeff;
+  if(coeff) {
+    for(double* x=&Z.elem(Nold); x!=Z.p+Z.N; x++)(*x) *= coeff;
   }
-  if(lo0){
-    for(int* i=&elems(Nold,0); i!=elems.p+elems.N; i+=2) (*i) += lo0;
+  if(lo0) {
+    for(int* i=&elems(Nold, 0); i!=elems.p+elems.N; i+=2)(*i) += lo0;
   }
-  if(lo1){
-    for(int* i=&elems(Nold,1); i!=elems.p+elems.N+1; i+=2) (*i) += lo1;
+  if(lo1) {
+    for(int* i=&elems(Nold, 1); i!=elems.p+elems.N+1; i+=2)(*i) += lo1;
   }
 #else
   resizeCopy(Z.d0, Z.d1, Z.N + a.Z.N);
@@ -2406,50 +2405,50 @@ void SparseMatrix::add(const SparseMatrix& a, uint lo0, uint lo1, double coeff){
 #endif
 }
 
-void SparseMatrix::add(const arr& B, uint lo0, uint lo1, double coeff){
+void SparseMatrix::add(const arr& B, uint lo0, uint lo1, double coeff) {
   if(!B.N) return; //nothing to add
-  if(B.nd==2){
+  if(B.nd==2) {
     CHECK_LE(lo0+B.d0, Z.d0, "");
     CHECK_LE(lo1+B.d1, Z.d1, "");
-  }else if(B.nd==1){ //add a column! vector
+  } else if(B.nd==1) { //add a column! vector
     CHECK_LE(lo0+B.d0, Z.d0, "");
-  }else NIY;
+  } else NIY;
   uint Nold=Z.N;
   Z.resizeMEM(Nold+B.N, true);
   memmove(Z.p+Nold, B.p, Z.sizeT*B.N);
-  if(isSparseMatrix(B)){
+  if(isSparseMatrix(B)) {
     elems.append(B.sparse().elems);
-  }else if(isSparseVector(B)){
+  } else if(isSparseVector(B)) {
     elems.resizeCopy(Nold+B.N, 2);
-    int *e = &elems(Nold,0);
+    int* e = &elems(Nold, 0);
     const intA& vecElems = B.sparseVec().elems;
-    for(int i:vecElems){
+    for(int i:vecElems) {
       *(e++) = i; //COLUMN vector
       *(e++) = 0;
     }
-  }else{
+  } else {
     elems.resizeCopy(Nold+B.N, 2);
-    int *e = &elems(Nold,0);
-    if(B.nd==2){
-      for(uint i=0;i<B.d0;i++) for(uint j=0;j<B.d1;j++){
-        *(e++) = i;
-        *(e++) = j;
-      }
-    }else if(B.nd==1){
-      for(uint i=0;i<B.d0;i++){
+    int* e = &elems(Nold, 0);
+    if(B.nd==2) {
+      for(uint i=0; i<B.d0; i++) for(uint j=0; j<B.d1; j++) {
+          *(e++) = i;
+          *(e++) = j;
+        }
+    } else if(B.nd==1) {
+      for(uint i=0; i<B.d0; i++) {
         *(e++) = i; //COLUMN vector
         *(e++) = 0;
       }
     };
   }
-  if(coeff){
-    for(double* x=&Z.elem(Nold); x!=Z.p+Z.N; x++) (*x) *= coeff;
+  if(coeff) {
+    for(double* x=&Z.elem(Nold); x!=Z.p+Z.N; x++)(*x) *= coeff;
   }
-  if(lo0){
-    for(int* i=&elems(Nold,0); i!=elems.p+elems.N; i+=2) (*i) += lo0;
+  if(lo0) {
+    for(int* i=&elems(Nold, 0); i!=elems.p+elems.N; i+=2)(*i) += lo0;
   }
-  if(lo1){
-    for(int* i=&elems(Nold,1); i!=elems.p+elems.N+1; i+=2) (*i) += lo1;
+  if(lo1) {
+    for(int* i=&elems(Nold, 1); i!=elems.p+elems.N+1; i+=2)(*i) += lo1;
   }
 }
 
@@ -2467,9 +2466,9 @@ arr SparseMatrix::unsparse() {
   return x;
 }
 
-arr SparseMatrix::getTriplets() const{
+arr SparseMatrix::getTriplets() const {
   arr T(Z.N, 3);
-  for(uint k=0; k<Z.N; k++){
+  for(uint k=0; k<Z.N; k++) {
     T.p[3*k+0] = elems.p[2*k];
     T.p[3*k+1] = elems.p[2*k+1];
     T.p[3*k+2] = Z.p[k];
@@ -2482,21 +2481,21 @@ void SparseMatrix::checkConsistency() const {
   CHECK_EQ(this, Z.special, "");
   CHECK_EQ(elems.d0, Z.N, "");
   CHECK_EQ(elems.d1, 2, "");
-  for(uint i=0; i<Z.N; i++){
-    CHECK_LE(elems(i,0), (int)Z.d0, "");
-    CHECK_LE(elems(i,1), (int)Z.d1, "");
+  for(uint i=0; i<Z.N; i++) {
+    CHECK_LE(elems(i, 0), (int)Z.d0, "");
+    CHECK_LE(elems(i, 1), (int)Z.d1, "");
   }
-  if(cols.N){
+  if(cols.N) {
     CHECK_EQ(rows.N, Z.d0, "");
     CHECK_EQ(cols.N, Z.d1, "");
-    for(uint i=0; i<Z.d0; i++) for(uint k=0;k<rows(i).d0;k++){
-      CHECK_EQ(elems(rows(i)(k,1), 0), (int)i, "");
-      CHECK_EQ(elems(rows(i)(k,1), 1), (int)rows(i)(k,0), "");
-    }
-    for(uint j=0; j<Z.d1; j++) for(uint k=0;k<cols(j).d0;k++){
-      CHECK_EQ(elems(cols(j)(k,1), 1), (int)j, "");
-      CHECK_EQ(elems(cols(j)(k,1), 0), (int)cols(j)(k,0), "");
-    }
+    for(uint i=0; i<Z.d0; i++) for(uint k=0; k<rows(i).d0; k++) {
+        CHECK_EQ(elems(rows(i)(k, 1), 0), (int)i, "");
+        CHECK_EQ(elems(rows(i)(k, 1), 1), (int)rows(i)(k, 0), "");
+      }
+    for(uint j=0; j<Z.d1; j++) for(uint k=0; k<cols(j).d0; k++) {
+        CHECK_EQ(elems(cols(j)(k, 1), 1), (int)j, "");
+        CHECK_EQ(elems(cols(j)(k, 1), 0), (int)cols(j)(k, 0), "");
+      }
 
   }
 }
@@ -2721,7 +2720,7 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
 
 namespace rai {
 
-uint product(const uintA& x){
+uint product(const uintA& x) {
   uint t(1);
   for(uint i=x.N; i--; t *= x.p[i]);
   return t;
@@ -2739,7 +2738,7 @@ float sum(const floatA& v) {
   return s;
 }
 
-uint max(const uintA& x){
+uint max(const uintA& x) {
   CHECK(x.N, "");
   uint i, m=0;
   for(i=1; i<x.N; i++) if(x.p[i]>x.p[m]) m=i;
@@ -2768,7 +2767,6 @@ uintA differencing(const uintA& x, uint w) {
   return uintA();
 }
 
-
 /** \f$Y_{i_Yid(0), i_Yid(1)} = \sum_{i_1} X_{i_0, i_1, i_2}\f$. Get the marginal Y
   from X, where Y will share the slots `Yid' with X */
 template<class T>
@@ -2795,33 +2793,32 @@ template void tensorPermutation(Array<float>& Y, const Array<float>& X, const ui
 
 }
 
-
 //===========================================================================
 //
 // base 64 encoding
 //
 
-int Base64decode_len(const char *bufcoded);
-int Base64decode(char *bufplain, const char *bufcoded);
+int Base64decode_len(const char* bufcoded);
+int Base64decode(char* bufplain, const char* bufcoded);
 int Base64encode_len(int len);
-int Base64encode(char *encoded, const char *string, int len);
+int Base64encode(char* encoded, const char* string, int len);
 
-namespace rai{
-  int b64_codeLen(uint data_len){
-    return Base64encode_len(data_len);
-  }
+namespace rai {
+int b64_codeLen(uint data_len) {
+  return Base64encode_len(data_len);
+}
 
-  void b64_encode(char* code, int code_len, const char* data, int data_len){
-    CHECK_EQ(b64_codeLen(data_len), code_len, "");
-    int code_len2 = Base64encode(code, data, data_len);
-    CHECK_EQ(code_len2, code_len, "");
-  }
+void b64_encode(char* code, int code_len, const char* data, int data_len) {
+  CHECK_EQ(b64_codeLen(data_len), code_len, "");
+  int code_len2 = Base64encode(code, data, data_len);
+  CHECK_EQ(code_len2, code_len, "");
+}
 
-  void b64_decode(char* data, int data_len, const char* code, int code_len){
-    CHECK_EQ(b64_codeLen(data_len), code_len, "");
-    int data_len2 = Base64decode(data, code);
-    CHECK_EQ(data_len2, data_len, "");
-  }
+void b64_decode(char* data, int data_len, const char* code, int code_len) {
+  CHECK_EQ(b64_codeLen(data_len), code_len, "");
+  int data_len2 = Base64decode(data, code);
+  CHECK_EQ(data_len2, data_len, "");
+}
 }
 
 //===========================================================================

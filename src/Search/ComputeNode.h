@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "../Core/util.h"
@@ -6,62 +14,62 @@
 
 namespace rai {
 
-  struct NodeGlobal{
-    RAI_PARAM("LGP/", int, verbose, 1)
-    RAI_PARAM("LGP/", double, level_c0, 1.)
-    RAI_PARAM("LGP/", double, level_cP, 1.)
-    RAI_PARAM("LGP/", double, level_w0, 10.)
-    RAI_PARAM("LGP/", double, level_wP, 2.)
-    RAI_PARAM("LGP/", double, level_eps, 0.)
-  };
+struct NodeGlobal {
+  RAI_PARAM("LGP/", int, verbose, 1)
+  RAI_PARAM("LGP/", double, level_c0, 1.)
+  RAI_PARAM("LGP/", double, level_cP, 1.)
+  RAI_PARAM("LGP/", double, level_w0, 10.)
+  RAI_PARAM("LGP/", double, level_wP, 2.)
+  RAI_PARAM("LGP/", double, level_eps, 0.)
+};
 
-  NodeGlobal& info();
+NodeGlobal& info();
 
-  struct ComputeNode : TreeSearchNode {
-    double c=0.;     //cost invested into completion of THIS node
-    double l=-1.;    //lower bound (also feasibility) computed at completion -> f_prio
-    double c_now=0., c_tot=0.;
-    double baseLevel=0.;
+struct ComputeNode : TreeSearchNode {
+  double c=0.;     //cost invested into completion of THIS node
+  double l=-1.;    //lower bound (also feasibility) computed at completion -> f_prio
+  double c_now=0., c_tot=0.;
+  double baseLevel=0.;
 
-    ComputeNode(ComputeNode* parent) : TreeSearchNode(parent) {}
+  ComputeNode(ComputeNode* parent) : TreeSearchNode(parent) {}
 
-    //-- core Astar methods
-    virtual void compute();
-    virtual void untimedCompute(){ HALT("this or compute needs overload"); }
+  //-- core Astar methods
+  virtual void compute();
+  virtual void untimedCompute() { HALT("this or compute needs overload"); }
 
-    virtual int getNumDecisions() = 0;
-    std::shared_ptr<TreeSearchNode> transition(int i);
+  virtual int getNumDecisions() = 0;
+  std::shared_ptr<TreeSearchNode> transition(int i);
 
-    virtual std::shared_ptr<ComputeNode> createNewChild(int i) = 0;
+  virtual std::shared_ptr<ComputeNode> createNewChild(int i) = 0;
 
 //    virtual double effortHeuristic(){ return 0.; }        //expected effort-to-go (FULL DOWN-STREAM TO LEAF NODE)
 //    virtual double branchingHeuristic(){ return 1.; }
 
-    virtual double computePenalty(){
-      return ::pow(c/info().level_c0, info().level_cP);
-    }
-    virtual double branchingPenalty_child(int i){
-      if(getNumDecisions()>=0) return 0;
-      HALT("need to overload this");
-    }
-    virtual double sample(){ HALT("need to overload"); }  //get a value (at a leaf)
+  virtual double computePenalty() {
+    return ::pow(c/info().level_c0, info().level_cP);
+  }
+  virtual double branchingPenalty_child(int i) {
+    if(getNumDecisions()>=0) return 0;
+    HALT("need to overload this");
+  }
+  virtual double sample() { HALT("need to overload"); } //get a value (at a leaf)
 
-    double level(){
-      return baseLevel + computePenalty();
-    }
+  double level() {
+    return baseLevel + computePenalty();
+  }
 
-    virtual void store(const char* path) const {}
-    virtual void data(Graph& g) const;
+  virtual void store(const char* path) const {}
+  virtual void data(Graph& g) const;
 
-    void backup_c(double c){
-      ComputeNode *n = this;
-      while(n){
-        n->c_tot += c;
-        n = dynamic_cast<ComputeNode*>(n->parent);
-      }
+  void backup_c(double c) {
+    ComputeNode* n = this;
+    while(n) {
+      n->c_tot += c;
+      n = dynamic_cast<ComputeNode*>(n->parent);
     }
-  };
-  stdOutPipe(ComputeNode)
+  }
+};
+stdOutPipe(ComputeNode)
 
 /*
   void printComputeTree(std::ostream& os, rai::Array<ComputeNode*> T){

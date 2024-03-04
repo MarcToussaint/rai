@@ -85,8 +85,6 @@
 // * This change was made by Danny Couture at Epic to speed up the voxelization step.
 // *
 
-
-
 // The history of V-HACD:
 //
 // The initial version was written by John W. Ratcliff and was called 'ACD'
@@ -106,7 +104,6 @@
 // This new release, version4, is a siginficant refactor of the code to fix 
 // some bugs, improve performance, and to make the codebase easier to maintain
 // going forward.
-
 
 #include <stdint.h>
 #include <functional>
@@ -331,7 +328,6 @@ IVHACD* CreateVHACD(void);      // Create a synchronous (blocking) implementatio
 IVHACD* CreateVHACD_ASYNC(void);    // Create an asynchronous (non-blocking) implementation of V-HACD
 } // namespace VHACD
 
-
 #if ENABLE_VHACD_IMPLEMENTATION
 #include <assert.h>
 #include <math.h>
@@ -366,7 +362,6 @@ IVHACD* CreateVHACD_ASYNC(void);    // Create an asynchronous (non-blocking) imp
 // Scoped Timer
 namespace VHACD
 {
-
 
 class Timer
 {
@@ -421,7 +416,6 @@ public:
     Timer       mTimer;
     VHACD::IVHACD::IUserLogger *mLogger{nullptr};
 };
-
 
 }
 
@@ -941,7 +935,6 @@ namespace nd
 		}
 	}
 }
-
 
 namespace nd
 {
@@ -1487,7 +1480,6 @@ namespace nd
 		}
 	}
 }
-
 
 namespace nd
 {
@@ -2056,7 +2048,6 @@ namespace nd
 	}
 }
 
-
 namespace nd
 {
 	namespace VHACD
@@ -2329,7 +2320,6 @@ namespace nd
 		{
 			return m_points;
 		}
-
 
 		void ConvexHull::BuildHull(const double* const vertexCloud, int strideInBytes, int count, double distTol, int maxVertexCount)
 		{
@@ -3411,13 +3401,9 @@ namespace nd
 	}
 }
 
-
-
 //***********************************************************************************************
 // End of ConvexHull generation code by Julio Jerez <jerezjulio0@gmail.com>
 //***********************************************************************************************
-
-
 
 // VertexIndex support
 namespace VERTEX_INDEX
@@ -3473,7 +3459,6 @@ public:
     ~KdTreeNode(void)
     {
     }
-
 
     void addDouble(KdTreeNode* node, Axes dim, const KdTreeInterface* iface)
     {
@@ -3532,7 +3517,6 @@ public:
         }
     }
 
-
     void addFloat(KdTreeNode* node, Axes dim, const KdTreeInterface* iface)
     {
         const float* nodePosition = iface->getPositionFloat(node->mIndex);
@@ -3589,7 +3573,6 @@ public:
             break;
         }
     }
-
 
     uint32_t getIndex(void) const
     {
@@ -3733,7 +3716,6 @@ public:
                 count = maxObjects;
             }
         }
-
 
         if (search1)
             search1->search(axis, pos, radius, count, maxObjects, found, iface);
@@ -3880,7 +3862,6 @@ public:
             }
         }
 
-
         if (search1)
             search1->search(axis, pos, radius, count, maxObjects, found, iface);
 
@@ -3912,7 +3893,6 @@ private:
     KdTreeNode* mRight;
 };
 
-
 #    define MAX_BUNDLE_SIZE                                                                                            \
         1024 // 1024 nodes at a time, to minimize memory allocation and guarantee that pointers are persistent.
 
@@ -3942,7 +3922,6 @@ public:
     uint32_t mIndex;
     KdTreeNode mNodes[MAX_BUNDLE_SIZE];
 };
-
 
 typedef std::vector<double> DoubleVector;
 typedef std::vector<float> FloatVector;
@@ -4253,7 +4232,6 @@ Output, double ENORM0_3D, the Euclidean norm of (P1-P0).
     return value;
 }
 
-
 static double triangle_area_3d(double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3)
 
 /**********************************************************************/
@@ -4319,7 +4297,6 @@ Output, double TRIANGLE_AREA_3D, the area of the triangle.
     return area;
 }
 
-
 double fm_computeArea(const double* p1, const double* p2, const double* p3)
 {
     double ret = 0;
@@ -4328,8 +4305,6 @@ double fm_computeArea(const double* p1, const double* p2, const double* p3)
 
     return ret;
 }
-
-
 
 bool fm_computeCentroid(uint32_t vcount, // number of input data points
                         const double* points, // starting address of points array.
@@ -4392,7 +4367,6 @@ inline double det(const double* p1, const double* p2, const double* p3)
     return p1[0] * p2[1] * p3[2] + p2[0] * p3[1] * p1[2] + p3[0] * p1[1] * p2[2] - p1[0] * p3[1] * p2[2] -
            p2[0] * p1[1] * p3[2] - p3[0] * p2[1] * p1[2];
 }
-
 
 double fm_computeMeshVolume(const double* vertices, uint32_t tcount, const uint32_t* indices)
 {
@@ -4518,7 +4492,6 @@ void fm_getAABB(uint32_t vcount, const double* points, uint32_t pstride, double*
     bmax[1] = points[1];
     bmax[2] = points[2];
 
-
     for (uint32_t i = 1; i < vcount; i++)
     {
         source += pstride;
@@ -4539,7 +4512,6 @@ void fm_getAABB(uint32_t vcount, const double* points, uint32_t pstride, double*
             bmax[2] = p[2];
     }
 }
-
 
 class MyVertexIndex : public fm_VertexIndex
 {
@@ -4565,7 +4537,6 @@ public:
     virtual ~MyVertexIndex(void)
     {
     }
-
 
     double snapToGrid(double p)
     {
@@ -4619,7 +4590,6 @@ public:
             ret = mKdTree.add(p[0], p[1], p[2]);
         }
 
-
         return ret;
     }
 
@@ -4660,7 +4630,6 @@ public:
             newPos = true;
             ret = mKdTree.add(p[0], p[1], p[2]);
         }
-
 
         return ret;
     }
@@ -4724,11 +4693,9 @@ public:
         return mUseDouble;
     }
 
-
     bool saveAsObj(const char* fname, uint32_t tcount, uint32_t* indices)
     {
         bool ret = false;
-
 
         FILE* fph = fopen(fname, "wb");
         if (fph)
@@ -4794,7 +4761,6 @@ void fm_releaseVertexIndex(fm_VertexIndex* vindex)
     delete m;
 }
 
-
 }
 
 //********************************************************************************************************************
@@ -4810,7 +4776,6 @@ enum class VoxelFillMode
     eSurfaceOnly, // Only consider the 'surface', will create 'skins' with hollow centers.
     eRaycastFill // Uses raycasting to determine inside from outside.
 };
-
 
 #define VHACD_VOXEL_BITS 10
 #define VHACD_VOXEL_BITS2 20
@@ -5434,10 +5399,6 @@ inline const bool InsideTriangle(const Vec2<T>& a, const Vec2<T>& b, const Vec2<
 }
 }
 
-
-
-
-
 //********************************************************************************************************************
 // Defining the SimpleMesh class
 //********************************************************************************************************************
@@ -5555,7 +5516,6 @@ public:
                          double& w,
                          double& faceSign,
                          uint32_t& faceIndex) const = 0;
-
 
     virtual bool getClosestPointWithinDistance(const double* point, double maxDistance, double* closestPoint) = 0;
 
@@ -5762,7 +5722,6 @@ inline T Cube(T x)
     return x * x * x;
 }
 
-
 template <typename T = double>
 class XVector3
 {
@@ -5884,7 +5843,6 @@ public:
         return XVector3<T>(-x, -y, -z);
     }
 
-
     T x, y, z;
 };
 
@@ -5915,7 +5873,6 @@ inline double Dot3(const double* v1, const double* v2)
 {
     return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
-
 
 template <typename T>
 inline T Dot(const XVector3<T>& v1, const XVector3<T>& v2)
@@ -6036,8 +5993,6 @@ inline Bounds Intersection(const Bounds& a, const Bounds& b)
     return Bounds(Max(a.lower, b.lower), Min(a.upper, b.upper));
 }
 
-
-
 #define VHACD_CROSS(dest, v1, v2)                                                                                            \
     dest[0] = v1[1] * v2[2] - v1[2] * v2[1];                                                                           \
     dest[1] = v1[2] * v2[0] - v1[0] * v2[2];                                                                           \
@@ -6060,7 +6015,6 @@ inline Bounds Intersection(const Bounds& a, const Bounds& b)
         min = x2;                                                                                                      \
     if (x2 > max)                                                                                                      \
         max = x2;
-
 
 /*======================== 0-tests ========================*/
 
@@ -6136,7 +6090,6 @@ inline Bounds Intersection(const Bounds& a, const Bounds& b)
 
 /*======================== 2-tests ========================*/
 
-
 #define VHACD_AXISTEST_Z12(a, b, fa, fb)                                                                                     \
     p1 = a * v1[0] - b * v1[1];                                                                                        \
     p2 = a * v2[0] - b * v2[1];                                                                                        \
@@ -6202,7 +6155,6 @@ int planeBoxOverlap(double normal[3], double vert[3], double maxbox[3]) // -NJMP
     return 0;
 }
 
-
 int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], double triverts[3][3])
 
 {
@@ -6223,7 +6175,6 @@ int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], double triverts[3]
 
     double normal[3], e0[3], e1[3], e2[3];
 
-
     /* This is the fastest branch on Sun */
 
     /* move everything so that the boxcenter is in (0,0,0) */
@@ -6234,7 +6185,6 @@ int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], double triverts[3]
 
     VHACD_SUB(v2, triverts[2], boxcenter);
 
-
     /* compute triangle edges */
 
     VHACD_SUB(e0, v1, v0); /* tri edge 0 */
@@ -6242,7 +6192,6 @@ int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], double triverts[3]
     VHACD_SUB(e1, v2, v1); /* tri edge 1 */
 
     VHACD_SUB(e2, v0, v2); /* tri edge 2 */
-
 
     /* Bullet 3:  */
 
@@ -6260,7 +6209,6 @@ int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], double triverts[3]
 
     VHACD_AXISTEST_Z12(e0[1], e0[0], fey, fex);
 
-
     fex = fabs(e1[0]);
 
     fey = fabs(e1[1]);
@@ -6272,7 +6220,6 @@ int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], double triverts[3]
     VHACD_AXISTEST_Y02(e1[2], e1[0], fez, fex);
 
     VHACD_AXISTEST_Z0(e1[1], e1[0], fey, fex);
-
 
     fex = fabs(e2[0]);
 
@@ -6286,7 +6233,6 @@ int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], double triverts[3]
 
     VHACD_AXISTEST_Z12(e2[1], e2[0], fey, fex);
 
-
     /* Bullet 1: */
 
     /*  first test overlap in the {x,y,z}-directions */
@@ -6297,14 +6243,12 @@ int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], double triverts[3]
 
     /*  the triangle against the AABB */
 
-
     /* test in 0-direction */
 
     VHACD_FINDMINMAX(v0[0], v1[0], v2[0], min, max);
 
     if (min > boxhalfsize[0] || max < -boxhalfsize[0])
         return 0;
-
 
     /* test in 1-direction */
 
@@ -6313,14 +6257,12 @@ int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], double triverts[3]
     if (min > boxhalfsize[1] || max < -boxhalfsize[1])
         return 0;
 
-
     /* test in 2-direction */
 
     VHACD_FINDMINMAX(v0[2], v1[2], v2[2], min, max);
 
     if (min > boxhalfsize[2] || max < -boxhalfsize[2])
         return 0;
-
 
     /* Bullet 2: */
 
@@ -6335,10 +6277,8 @@ int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], double triverts[3]
     if (!planeBoxOverlap(normal, v0, boxhalfsize))
         return 0; // -NJMP-
 
-
     return 1; /* box and triangle overlaps */
 }
-
 
 bool TriangleBoxOverlap(Vector3 lower, Vector3 upper, Vector3 a, Vector3 b, Vector3 c)
 {
@@ -6615,7 +6555,6 @@ inline Vector3 ClosestPointOnTriangle(const Vector3& a, const Vector3& b, const 
     return a + ab * v + ac * w;
 }
 
-
 class AABBTreeImpl : public AABBTree
 {
 public:
@@ -6632,7 +6571,6 @@ public:
                   double& w,
                   double& faceSign,
                   uint32_t& faceIndex) const;
-
 
     Vector3 GetCenter() const
     {
@@ -6682,7 +6620,6 @@ private:
         Vector3 m_minExtents;
         Vector3 m_maxExtents;
     };
-
 
     struct BoundsAABB
     {
@@ -6740,7 +6677,6 @@ private:
                         double& faceSign,
                         uint32_t& faceIndex) const;
 
-
     bool GetClosestPointWithinDistance(
         const Vector3& point, const double maxDis, double& dis, double& v, double& w, uint32_t& faceIndex, Vector3& closest) const;
 
@@ -6794,7 +6730,6 @@ private:
     uint32_t s_depth{0};
 };
 
-
 AABBTreeImpl::AABBTreeImpl(const Vector3* vertices, uint32_t numVerts, const uint32_t* indices, uint32_t numFaces)
     : m_vertices(vertices), m_numVerts(numVerts), m_indices(indices), m_numFaces(numFaces)
 {
@@ -6841,7 +6776,6 @@ struct FaceSorter
     uint32_t m_numIndices;
     uint32_t m_axis;
 };
-
 
 } // anonymous namespace
 
@@ -7031,7 +6965,6 @@ struct StackEntry
     double m_dist;
 };
 
-
 bool AABBTreeImpl::TraceRay(const Vector3& start,
                             const Vector3& dir,
                             double& outT,
@@ -7145,7 +7078,6 @@ void AABBTreeImpl::GetClosestPointWithinDistanceSqRecursive(uint32_t nodeIndex,
         Vector3 lp = ClosestPointToAABB(point, leftChild.m_minExtents, leftChild.m_maxExtents);
         Vector3 rp = ClosestPointToAABB(point, rightChild.m_minExtents, rightChild.m_maxExtents);
 
-
         uint32_t closest = 0;
         uint32_t furthest = 1;
         double dcSq = LengthSq(point - lp);
@@ -7202,10 +7134,7 @@ AABBTree* AABBTree::create(const double* vertices, uint32_t numVerts, const uint
     return static_cast<AABBTree*>(ret);
 }
 
-
 } // namespace aabbtree
-
-
 
 //******************************************************************************************
 //  Declaration of the RaycastMesh class
@@ -7232,7 +7161,6 @@ public:
                                           uint32_t tcount, // The number of triangles in the source triangle mesh
                                           const uint32_t* indices); // The triangle indices in the format of i1,i2,i3
                                                                     // ... i4,i5,i6, ...
-
 
     // Uses high speed AABB raycasting
     virtual bool raycast(const double* start,
@@ -7290,7 +7218,6 @@ public:
         mAABBTree = VHACD::AABBTree::create(mVertices, mTcount, mIndices, mTcount);
     }
 
-
     ~MyRaycastMesh(void)
     {
         delete[] mVertices;
@@ -7344,7 +7271,6 @@ public:
         return mAABBTree->getClosestPointWithinDistance(point, maxDistance, closestPoint);
     }
 
-
     VHACD::AABBTree* mAABBTree{ nullptr };
     uint32_t mVcount;
     double* mVertices;
@@ -7353,7 +7279,6 @@ public:
 };
 
 }; // namespace RAYCAST_MESH
-
 
 namespace VHACD
 {
@@ -7380,9 +7305,7 @@ RaycastMesh* RaycastMesh::createRaycastMesh(uint32_t vcount, // The number of ve
     return static_cast<RaycastMesh*>(m);
 }
 
-
 } // namespace VHACD
-
 
 //*************************************************************************************************************
 // Definition of the Volume class
@@ -7401,7 +7324,6 @@ enum VOXEL_VALUE
     PRIMITIVE_INSIDE_SURFACE = 3,
     PRIMITIVE_ON_SURFACE = 4
 };
-
 
 struct VoxelEntry
 {
@@ -7481,7 +7403,6 @@ public:
         VHACD::Voxel v(x, y, z);
         mSurfaceVoxels.push_back(v);
     }
-
 
     void addInteriorVoxel(int32_t x, int32_t y, int32_t z)
     {
@@ -7720,8 +7641,6 @@ inline void Volume::Voxelize(const double* const points,
 
 namespace VHACD
 {
-
-
 
 int32_t PlaneBoxOverlap(const Vec3<double>& normal, const Vec3<double>& vert, const Vec3<double>& maxbox)
 {
@@ -8230,7 +8149,6 @@ enum class VoxelValue : uint8_t
     PRIMITIVE_ON_SURFACE = 4
 };
 
-
 class Voxelize
 {
 public:
@@ -8450,18 +8368,7 @@ Voxelize *Voxelize::create(void)
     return static_cast< Voxelize *>(ret);
 }
 
-
 }
-
-
-
-
-
-
-
-
-
-
 
 //******************************************************************************************
 //  ShrinkWrap helper class
@@ -8490,7 +8397,6 @@ namespace VHACD
 
 class SimpleMesh;
 class RaycastMesh;
-
 
 class ShrinkWrap
 {
@@ -8628,12 +8534,7 @@ QuickHull *QuickHull::create(void)
     return static_cast< QuickHull *>(ret);
 }
 
-
-
 } // end of VHACD namespace
-
-
-
 
 //******************************************************************************************
 // Implementation of the ShrinkWrap class
@@ -8659,8 +8560,6 @@ public:
     double y;
     double z;
 };
-
-
 
 class ShrinkWrapImpl : public ShrinkWrap
 {
@@ -8736,11 +8635,7 @@ ShrinkWrap *ShrinkWrap::create(void)
     return static_cast< ShrinkWrap *>(ret);
 }
 
-
 }
-
-
-
 
 //********************************************************************************************************************
 
@@ -8800,8 +8695,6 @@ ThreadPool::ThreadPool(int worker) : closed(false), count(0)
     }
 }
 
-
-
 template<typename F, typename... Args>
 auto ThreadPool::enqueue(F&& f, Args&& ... args)
     -> std::future< typename std::result_of< F( Args... ) >::type>
@@ -8840,14 +8733,11 @@ ThreadPool::~ThreadPool() {
     }
 }
 
-
 }
 #endif
 
-
 namespace VHACD
 {
-
 
 using AABBTreeVector = std::vector< VHACD::AABBTree *>;
 using VoxelVector = std::vector< VHACD::Voxel >;
@@ -8876,7 +8766,6 @@ public:
 
 };
 
-
 enum class SplitAxis
 {
     X_AXIS_NEGATIVE,
@@ -8901,7 +8790,6 @@ public:
     int32_t y{0};
     int32_t z{0};
 };
-
 
 // This class represents a collection of voxels, the convex hull
 // which surrounds them, and a triangle mesh representation of those voxels
@@ -9083,7 +8971,6 @@ public:
         if ( z < mZ1 ) mZ1 = z;
         if ( z > mZ2 ) mZ2 = z;
     }
-
 
     // Here we construct the intitial convex hull around the
     // entire voxel set
@@ -9536,7 +9423,6 @@ public:
             indexY++;
         }
 
-
         // we now compute the first derivitave to find the greatest spot of concavity on the XY plane
         double maxDiff = 0;
         uint32_t maxC = 0;
@@ -9567,7 +9453,6 @@ public:
             }
         }
 
-
         delete []edgeErrorZ;
         delete []edgeErrorY;
 
@@ -9579,10 +9464,8 @@ public:
             ret = true;
         }
 
-
         return ret;
     }
-
 
     // Finding the greatest area of concavity..
     bool findConcavityY(uint32_t &splitLoc)
@@ -9686,10 +9569,8 @@ public:
             ret = true;
         }
 
-
         return ret;
     }
-
 
     // Finding the greatest area of concavity..
     bool findConcavityZ(uint32_t &splitLoc)
@@ -9752,7 +9633,6 @@ public:
             indexY++;
         }
 
-
         // we now compute the first derivitave to find the greatest spot of concavity on the XY plane
         double maxDiff = 0;
         uint32_t maxC = 0;
@@ -9783,7 +9663,6 @@ public:
             }
         }
 
-
         delete []edgeErrorX;
         delete []edgeErrorY;
 
@@ -9795,12 +9674,8 @@ public:
             ret = true;
         }
 
-
         return ret;
     }
-
-
-
 
     // This operation is performed in a background thread.
     //It splits the voxels by a plane
@@ -10091,7 +9966,6 @@ public:
         return ret;
     }
 
-
    
     virtual bool Compute(const double* const points,
                          const uint32_t countPoints,
@@ -10296,7 +10170,6 @@ public:
         return ret;
     }
 
-
     // This copies the input mesh while scaling the input positions
     // to fit into a normalized unit cube. It also re-indexes all of the
     // vertex positions in case they weren't clean coming in. 
@@ -10388,7 +10261,6 @@ public:
             mVertices.resize(vcount*3);
             memcpy(&mVertices[0],vi->getVerticesDouble(),sizeof(double)*vcount*3);
 
-
             VHACD::fm_releaseVertexIndex(vi);
         }
 
@@ -10410,7 +10282,6 @@ public:
             mVoxelize->getBoundsMax(mVoxelBmax);
             progressUpdate(Stages::VOXELIZING_INPUT_MESH,100,"Voxelization complete");
         }
-
 
         mInputMesh.mVertexCount = (uint32_t)mVertices.size()/3;
         mInputMesh.mVertices = &mVertices[0];
@@ -10865,7 +10736,6 @@ public:
         return dot;
     }
 
-
     double computeConcavity(double volumeSeparate,double volumeCombined,double volumeMesh)
     {
         return fabs(volumeSeparate - volumeCombined) / volumeMesh;
@@ -10945,7 +10815,6 @@ public:
 
         ret->m_volume = computeConvexHullVolume(*ret);
 
-
         sw->release();
 
         // Return the convex hull 
@@ -10994,7 +10863,6 @@ public:
         // Return the convex hull 
         return ret;
     }
-
 
     ConvexHull *getHull(uint32_t index)
     {
@@ -11301,7 +11169,6 @@ public:
         free(mIndices);
         mIndices = nullptr;
     }
-
 
     virtual void release(void) // release the HACD_API interface
     {

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -48,7 +48,7 @@
 
 OpenGL& NoOpenGL = *((OpenGL*)(nullptr));
 
-OpenGLDrawOptions& GLDrawer::glDrawOptions(OpenGL& gl){ return gl.drawOptions; }
+OpenGLDrawOptions& GLDrawer::glDrawOptions(OpenGL& gl) { return gl.drawOptions; }
 
 //===========================================================================
 
@@ -280,7 +280,7 @@ struct GlfwSpinner : Thread {
   Mutex mutex;
 
   GlfwSpinner() : Thread("GlfwSpinnerSpinner", .01) {
-    if(rai::getDisableGui()){ HALT("you must not be here with -disableGui"); }
+    if(rai::getDisableGui()) { HALT("you must not be here with -disableGui"); }
 
     glfwSetErrorCallback(error_callback);
     if(!glfwInit()) exit(EXIT_FAILURE);
@@ -377,14 +377,14 @@ struct GlfwSpinner : Thread {
     if(action == GLFW_PRESS) {
       if(key==256) key=27;
       if(key==257) key=13;
-      if(key==GLFW_KEY_LEFT_CONTROL){ mods |= GLFW_MOD_CONTROL; key='%'; }
-      if(key==GLFW_KEY_LEFT_SHIFT){ mods |= GLFW_MOD_SHIFT; key='%'; }
+      if(key==GLFW_KEY_LEFT_CONTROL) { mods |= GLFW_MOD_CONTROL; key='%'; }
+      if(key==GLFW_KEY_LEFT_SHIFT) { mods |= GLFW_MOD_SHIFT; key='%'; }
       if(key>0xff) key='%';
       if(key>='A' && key<='Z') key += 'a' - 'A';
       gl->Key(key, mods, true);
-    }else if(action==GLFW_RELEASE) {
-      if(key==GLFW_KEY_LEFT_CONTROL){ mods &= ~GLFW_MOD_CONTROL; key='%'; }
-      if(key==GLFW_KEY_LEFT_SHIFT){ mods &= ~GLFW_MOD_SHIFT; key='%'; }
+    } else if(action==GLFW_RELEASE) {
+      if(key==GLFW_KEY_LEFT_CONTROL) { mods &= ~GLFW_MOD_CONTROL; key='%'; }
+      if(key==GLFW_KEY_LEFT_SHIFT) { mods &= ~GLFW_MOD_SHIFT; key='%'; }
       if(key>0xff) key='%';
       gl->Key(key, mods, false);
     }
@@ -411,7 +411,7 @@ struct GlfwSpinner : Thread {
     gl->Scroll(0, yoffset);
   }
 
-  static void _Refresh(GLFWwindow* window){
+  static void _Refresh(GLFWwindow* window) {
     OpenGL* gl=(OpenGL*)glfwGetWindowUserPointer(window);
     gl->postRedrawEvent(true);
   }
@@ -443,14 +443,14 @@ void OpenGL::openWindow() {
     }
     if(!title.N) title="GLFW window";
     if(fullscreen) {
-      GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-      const GLFWvidmode * mode = glfwGetVideoMode(monitor);
+      GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+      const GLFWvidmode* mode = glfwGetVideoMode(monitor);
       //glfwSetWindowMonitor( _wnd, _monitor, 0, 0, mode->width, mode->height, 0 );
       self->window = glfwCreateWindow(mode->width, mode->height, title.p, monitor, nullptr);
-    }else{
-      self->window = glfwCreateWindow(width, height, title.p, nullptr, nullptr); 
+    } else {
+      self->window = glfwCreateWindow(width, height, title.p, nullptr, nullptr);
     }
-    if(!offscreen){
+    if(!offscreen) {
       glfwMakeContextCurrent(self->window);
       glfwSetWindowUserPointer(self->window, this);
       glfwSetMouseButtonCallback(self->window, GlfwSpinner::_MouseButton);
@@ -460,8 +460,8 @@ void OpenGL::openWindow() {
       glfwSetWindowSizeCallback(self->window, GlfwSpinner::_Resize);
       glfwSetWindowCloseCallback(self->window, GlfwSpinner::_Close);
       glfwSetWindowRefreshCallback(self->window, GlfwSpinner::_Refresh);
- 
-      if(noCursor){
+
+      if(noCursor) {
         glfwSetInputMode(self->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 //        if (glfwRawMouseMotionSupported()) glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
       }
@@ -476,8 +476,8 @@ void OpenGL::openWindow() {
     fg->mutex.unlock();
 
     fg->addGL(this);
-  }else{
-    if(!offscreen && !glfwGetWindowAttrib(self->window, GLFW_VISIBLE)){
+  } else {
+    if(!offscreen && !glfwGetWindowAttrib(self->window, GLFW_VISIBLE)) {
       glfwShowWindow(self->window);
     }
   }
@@ -496,13 +496,13 @@ void OpenGL::closeWindow() {
   }
 }
 
-void OpenGL::raiseWindow(){
+void OpenGL::raiseWindow() {
   if(self->window) {
     glfwFocusWindow(self->window);
   }
 }
 
-bool OpenGL::hasWindow(){
+bool OpenGL::hasWindow() {
   return self->window;
 }
 
@@ -602,7 +602,7 @@ arr id2color(uint id) {
 #ifdef RAI_GL
 void glStandardLight(void*, OpenGL& gl) {
   glEnable(GL_LIGHTING);
-  if(!gl.drawOptions.enableLighting){
+  if(!gl.drawOptions.enableLighting) {
     glDisable(GL_LIGHTING);
     return;
   }
@@ -642,7 +642,7 @@ void glStandardScene(void*, OpenGL& gl) {
   glDrawFloor(10, .4, .45, .5);
 //   glDrawFloor(10, 1.5, 0.83, .0);
 //   glDrawFloor(10., 108./255., 123./255., 139./255.);
-  if(!gl.drawOptions.drawVisualsOnly){
+  if(!gl.drawOptions.drawVisualsOnly) {
     glDrawAxes(.1);
   }
   glPopAttrib();
@@ -668,10 +668,10 @@ void glColor(int col) {
 }
 
 void glColor(float r, float g, float b, float alpha, GLboolean lightingEnabled) {
-  if(lightingEnabled>1){
+  if(lightingEnabled>1) {
     glGetBooleanv(GL_LIGHTING, &lightingEnabled);
   }
-  if(lightingEnabled==1){
+  if(lightingEnabled==1) {
     float diff=1.f;
     GLfloat diffuse[4]  = { r*diff, g*diff, b*diff, alpha };
 #if 1
@@ -685,7 +685,7 @@ void glColor(float r, float g, float b, float alpha, GLboolean lightingEnabled) 
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular);
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 1.0f);
 #endif
-  }else{
+  } else {
     glColor4f(r, g, b, alpha);
   }
 }
@@ -1009,7 +1009,7 @@ void glDrawCamera(const rai::Camera& cam) {
   glVertex3f(dxNear, -dyNear, zNear);
   glVertex3f(-dxNear, -dyNear, zNear);
   glEnd();
-  if(zFar){
+  if(zFar) {
     glBegin(GL_LINE_STRIP);
     glVertex3f(-dxFar, -dyFar, zFar);
     glVertex3f(-dxFar, dyFar, zFar);
@@ -1028,7 +1028,7 @@ void glDrawCamera(const rai::Camera& cam) {
     glVertex3f(dxFar, dyFar, zFar);
     glEnd();
     glEnd();
-  }else{
+  } else {
     glBegin(GL_LINES);
     glVertex3f(0, 0, 0);
     glVertex3f(-dxNear, -dyNear, zNear);
@@ -1467,18 +1467,18 @@ void glRasterImage(float x, float y, byteA& img, float zoom) {
   };
 }
 
-void glDrawAsList(GLDrawer& drawer, int& listId, OpenGL& gl){
-  if(!listId){
+void glDrawAsList(GLDrawer& drawer, int& listId, OpenGL& gl) {
+  if(!listId) {
     listId = glGenLists(1);
     CHECK_GE(listId, 1, "I expected id>=1");
     listId *= -1;
   }
-  if(listId<0){ //negative: require recreation!
+  if(listId<0) { //negative: require recreation!
     listId *= -1;
     glNewList(listId, GL_COMPILE_AND_EXECUTE);
     drawer.glDraw(gl);
     glEndList();
-  }else{
+  } else {
     glCallList(listId);
   }
 }
@@ -1621,8 +1621,8 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 
 OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen, bool _fullscreen, bool _hideCameraControls, bool _noCursor)
   : title(_title), width(w), height(h), offscreen(_offscreen),
-   reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0),
-   fullscreen(_fullscreen), hideCameraControls(_hideCameraControls), noCursor(_noCursor) {
+    reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0),
+    fullscreen(_fullscreen), hideCameraControls(_hideCameraControls), noCursor(_noCursor) {
   //RAI_MSG("creating OpenGL=" <<this);
   self = make_unique<sOpenGL>(this); //this might call some callbacks (Reshape/Draw) already!
   init();
@@ -1649,7 +1649,7 @@ OpenGL* OpenGL::newClone() const {
 
 void OpenGL::init() {
   drawFocus=false;
-  clearColor={1.,1.,1.};
+  clearColor= {1., 1., 1.};
   pressedkey=0;
   mouseposx=mouseposy=0;
   mouse_button=0;
@@ -1941,7 +1941,7 @@ void OpenGL::Draw(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
   //check matrix stack
   GLint s;
   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &s);
-  if(s!=1){
+  if(s!=1) {
     RAI_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
   }
   //CHECK_LE(s, 1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
@@ -2244,11 +2244,11 @@ void getSphereVector(rai::Vector& vec, double x, double y, int le, int ri, int b
   vec.isZero=false;
 }
 
-bool OpenGL::modifiersNone(){ return _NONE(modifiers); }
-bool OpenGL::modifiersShift(){ return _SHIFT(modifiers); }
-bool OpenGL::modifiersCtrl(){ return _CTRL(modifiers); }
+bool OpenGL::modifiersNone() { return _NONE(modifiers); }
+bool OpenGL::modifiersShift() { return _SHIFT(modifiers); }
+bool OpenGL::modifiersCtrl() { return _CTRL(modifiers); }
 
-arr OpenGL::get3dMousePos(arr& normal){
+arr OpenGL::get3dMousePos(arr& normal) {
   double d = 0;
   if(mouseposy>=0. && mouseposy<=height-1 && mouseposx>=0. && mouseposx<=width-1)
     d = captureDepth(mouseposy, mouseposx);
@@ -2258,7 +2258,7 @@ arr OpenGL::get3dMousePos(arr& normal){
   } else {
     camera.unproject_fromPixelsAndGLDepth(x, width, height);
   }
-  if(!!normal){
+  if(!!normal) {
     arr x1 = {mouseposx-1., mouseposy, captureDepth(mouseposy, mouseposx-1.)};
     camera.unproject_fromPixelsAndGLDepth(x1, width, height);
     arr x2 = {mouseposx+1., mouseposy, captureDepth(mouseposy, mouseposx+1.)};
@@ -2274,7 +2274,7 @@ arr OpenGL::get3dMousePos(arr& normal){
   return x;
 }
 
-uint OpenGL::get3dMouseObjID(){
+uint OpenGL::get3dMouseObjID() {
   drawOptions.drawMode_idColor = true;
   drawOptions.drawColors = false;
   beginNonThreadedDraw(true);
@@ -2385,7 +2385,7 @@ void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
         camera.unproject_fromPixelsAndGLDepth(x, width, height);
       }
       LOG(1) <<"SELECTION: ID: " <<color2id(&captureImage(mouseposy, mouseposx, 0))
-            <<" world coords: " <<x;
+             <<" world coords: " <<x;
     }
   } else {
     drawOptions.drawMode_idColor = false;
@@ -2441,11 +2441,11 @@ void OpenGL::Scroll(int wheel, int direction) {
   bool cont=true;
   for(uint i=0; cont && i<scrollCalls.N; i++) cont = cont && scrollCalls(i)->scrollCallback(*this, direction);
 
-  if(cont){
+  if(cont) {
     double dz = (direction>0.? -.1:.1);
 
     //-- SCROLL -> zoom
-    if(_NONE(modifiers)){
+    if(_NONE(modifiers)) {
       cam->X.pos += cam->X.rot.getZ() * (dz * (cam->X.pos-cam->foc).length());
     }
 
@@ -2490,7 +2490,7 @@ void OpenGL::MouseMotion(double _x, double _y) {
   lastEvent.set(mouse_button, -1, _x, _y, vec.x-downVec.x, vec.y-downVec.y);
 
   bool needsUpdate=false;
-  
+
   //-- LEFT -> rotation
   if(mouse_button==1 && _NONE(downModifiers) && !downVec.isZero) {
     rai::Quaternion rot;
@@ -2512,7 +2512,7 @@ void OpenGL::MouseMotion(double _x, double _y) {
     drawFocus=true;
     needsUpdate=true;
   }
-  
+
   //-- shift-LEFT -> translation
   if(mouse_button==1 && (!hideCameraControls && _SHIFT(downModifiers) && !_CTRL(downModifiers)) && !downVec.isZero) {
     rai::Vector diff = vec - downVec;
@@ -2523,7 +2523,7 @@ void OpenGL::MouseMotion(double _x, double _y) {
     drawFocus=true;
     needsUpdate=true;
   }
-  
+
   //step through all callbacks
   for(uint i=0; i<hoverCalls.N; i++) needsUpdate = needsUpdate || hoverCalls(i)->hoverCallback(*this);
 
@@ -2851,20 +2851,18 @@ void read_png(byteA& img, const char* file_name, bool swap_rows) {
 #endif
 }
 
-
-
 void write_png(const byteA& img, const char* file_name, bool swap_rows) {
 #ifdef RAI_PNG
-  FILE *fp = fopen(file_name, "wb");
+  FILE* fp = fopen(file_name, "wb");
   if(!fp) abort();
 
   png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-  if (!png) abort();
+  if(!png) abort();
 
   png_infop info = png_create_info_struct(png);
-  if (!info) abort();
+  if(!info) abort();
 
-  if (setjmp(png_jmpbuf(png))) abort();
+  if(setjmp(png_jmpbuf(png))) abort();
 
   png_init_io(png, fp);
 

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -16,7 +16,7 @@
 void init_Bullet(pybind11::module& m) {
   pybind11::class_<BulletInterface, std::shared_ptr<BulletInterface>>(m, "BulletInterface")
 
-  .def("step", &BulletInterface::step)
+      .def("step", &BulletInterface::step)
 
   .def("step", [](BulletInterface& self, shared_ptr<rai::Configuration>& C) {
     self.pushKinematicStates(*C);

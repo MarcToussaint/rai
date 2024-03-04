@@ -1,6 +1,14 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "F_LeapCost.h"
 
-CubicSplineLeapCost::CubicSplineLeapCost(const uintA& _selectedFrames){
+CubicSplineLeapCost::CubicSplineLeapCost(const uintA& _selectedFrames) {
   setFrameIDs(_selectedFrames);
 }
 
@@ -13,11 +21,11 @@ void CubicSplineLeapCost::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 2, "");
 //  CHECK_EQ(F.nd, 2, "");
   CHECK_EQ(F.d0, 3, "");
-  arr x0 = F_qItself().eval(F({1,1}));
-  arr xT = F_qItself().eval(F({2,2}));
-  arr V = F_qItself().setOrder(1).eval(F({0,1}));
+  arr x0 = F_qItself().eval(F({1, 1}));
+  arr xT = F_qItself().eval(F({2, 2}));
+  arr V = F_qItself().setOrder(1).eval(F({0, 1}));
 
-  arr tau = F_qTime().eval({F(2,0,0)}); //first frame in last slice
+  arr tau = F_qTime().eval({F(2, 0, 0)}); //first frame in last slice
   double Tau = tau.scalar();
 
   arr D;
@@ -28,14 +36,14 @@ void CubicSplineLeapCost::phi2(arr& y, arr& J, const FrameL& F) {
 
   arr tilD;
   tilD = (s12 * pow(Tau, -1.5)) * D;
-  tilD.J() = (s12 * pow(Tau, -1.5)) * D.J() + (s12 * (-1.5) * pow(Tau,-2.5)) * D * tau.J();
+  tilD.J() = (s12 * pow(Tau, -1.5)) * D.J() + (s12 * (-1.5) * pow(Tau, -2.5)) * D * tau.J();
 
   arr tilV;
   tilV = pow(Tau, -0.5) * V;
-  tilV.J() = pow(Tau, -0.5) * V.J() + ((-0.5) * pow(Tau,-1.5)) * V * tau.J();
+  tilV.J() = pow(Tau, -0.5) * V.J() + ((-0.5) * pow(Tau, -1.5)) * V * tau.J();
 
   y.setBlockVector(tilD, tilV);
-  if(!!J){
+  if(!!J) {
     J.setBlockMatrix(tilD.J(), tilV.J());
   }
 }

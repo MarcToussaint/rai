@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -20,9 +20,9 @@ template<> const char* rai::Enum<ObjectiveType>::names []= {
   "none", "f", "sos", "ineq", "eq", "ineqB", "ineqP", nullptr
 };
 
-template <class T> rai::Array<rai::Enum<T>> EnumArr(const rai::Array<T>& x){
+template <class T> rai::Array<rai::Enum<T>> EnumArr(const rai::Array<T>& x) {
   rai::Array<rai::Enum<T>> z(x.N);
-  for(uint i=0;i<x.N;i++) z.elem(i) = x.elem(i);
+  for(uint i=0; i<x.N; i++) z.elem(i) = x.elem(i);
   return z;
 }
 
@@ -146,13 +146,13 @@ bool NLP::checkHessian(const arr& x, double tolerance) {
   return ::checkHessian(F, x, tolerance);
 }
 
-void NLP::boundClip(arr& x){
+void NLP::boundClip(arr& x) {
   arr bounds_lo, bounds_up;
   getBounds(bounds_lo, bounds_up);
   ::boundClip(x, bounds_lo, bounds_up);
 }
 
-bool NLP::checkInBound(const arr& x){
+bool NLP::checkInBound(const arr& x) {
   arr bound_lo, bound_up;
   getBounds(bound_lo, bound_up);
   CHECK_EQ(x.N, bound_lo.N, "");
@@ -455,10 +455,10 @@ void NLP_Viewer::plotCostTrace() {
 
 //===========================================================================
 
-void SolverReturn::write(std::ostream& os) const{
-    os <<"{ time: " <<time <<", evals: " <<evals;
-    os <<", done: " <<done <<", feasible: " <<feasible;
-    os <<", sos: " <<sos <<", f: " <<f <<", ineq: " <<ineq <<", eq: " <<eq <<" }";
+void SolverReturn::write(std::ostream& os) const {
+  os <<"{ time: " <<time <<", evals: " <<evals;
+  os <<", done: " <<done <<", feasible: " <<feasible;
+  os <<", sos: " <<sos <<", f: " <<f <<", ineq: " <<ineq <<", eq: " <<eq <<" }";
 }
 
 //===========================================================================
@@ -468,12 +468,12 @@ RegularizedNLP::RegularizedNLP(NLP& _P, double _mu) : P(_P), mu(_mu) {
   featureTypes.append(OT_sos, dimension);
 }
 
-void RegularizedNLP::setRegularization(const arr& _x_mean, double x_var){
+void RegularizedNLP::setRegularization(const arr& _x_mean, double x_var) {
   x_mean = _x_mean;
   mu=sqrt(0.5/x_var);
 }
 
-void RegularizedNLP::evaluate(arr& phi, arr& J, const arr& x){
+void RegularizedNLP::evaluate(arr& phi, arr& J, const arr& x) {
   P.evaluate(phi, J, x);
   if(rai::isSparse(J)) J = J.sparse().unsparse();
   phi.append(mu*(x-x_mean));

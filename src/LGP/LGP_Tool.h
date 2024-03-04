@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -37,7 +37,6 @@ struct LGP_Tool {
   LGP_Tool(rai::FOL_World& L, rai::Configuration& C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton);
   ~LGP_Tool();
 
-
   //view and edit the configuration associated to this LGP problem
   void viewConfig();
 
@@ -53,8 +52,8 @@ struct LGP_Tool {
 
   //calls CompletionTree search from the given root, which can be lgproot, or a fixed skeleton
   void solve(const std::shared_ptr<TreeSearchNode>& root);
-  void solve_Skeleton(const rai::Skeleton& skeleton){  solve(make_shared<rai::LGPcomp_Skeleton>(lgproot.get(), skeleton));  }
-  void solve_LGP(){  solve(lgproot);  }
+  void solve_Skeleton(const rai::Skeleton& skeleton) {  solve(make_shared<rai::LGPcomp_Skeleton>(lgproot.get(), skeleton));  }
+  void solve_LGP() {  solve(lgproot);  }
   void solve_Decisions(const String& seq);
 
   //terminal gui debugger - walk through logic tree and call optimizations
@@ -62,8 +61,7 @@ struct LGP_Tool {
 
   void report(ostream& os) const;
 
-
-private:
+ private:
   void walkToNode(const String& seq);
   void displayTreeUsingDot();
   void writeNodeList(ostream& os=cout);
@@ -72,9 +70,9 @@ private:
   void optWaypoints(Skeleton& skeleton, const String& skeletonString);
   void optPath(Skeleton& skeleton, const String& skeletonString);
   void optFinalSlice(Skeleton& skeleton, const String& skeletonString);
-  void optWaypoints(){ Skeleton skeleton; String skeletonString; getSkeleton(skeleton, skeletonString); optWaypoints(skeleton, skeletonString); }
-  void optFinalSlice(){ Skeleton skeleton; String skeletonString; getSkeleton(skeleton, skeletonString); optFinalSlice(skeleton, skeletonString); }
-  void optPath(){ Skeleton skeleton; String skeletonString; getSkeleton(skeleton, skeletonString); optPath(skeleton, skeletonString); }
+  void optWaypoints() { Skeleton skeleton; String skeletonString; getSkeleton(skeleton, skeletonString); optWaypoints(skeleton, skeletonString); }
+  void optFinalSlice() { Skeleton skeleton; String skeletonString; getSkeleton(skeleton, skeletonString); optFinalSlice(skeleton, skeletonString); }
+  void optPath() { Skeleton skeleton; String skeletonString; getSkeleton(skeleton, skeletonString); optPath(skeleton, skeletonString); }
 };
 
 } //namespace

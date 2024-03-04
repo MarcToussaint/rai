@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "ComputeNode.h"
@@ -9,7 +17,7 @@
 // wrapping the user provided ComputeNode with data for the solver
 
 struct CT_Node {
-  CT_Node *parent=0;
+  CT_Node* parent=0;
   std::shared_ptr<rai::ComputeNode> comp;
 
   bool childrenComplete=false; //all possible children are complete
@@ -34,7 +42,6 @@ struct CT_Node {
   void write(ostream& os) const;
 };
 stdOutPipe(CT_Node)
-
 
 //===========================================================================
 // solver
@@ -76,14 +83,14 @@ struct ComputeTree_Solver {
   ComputeTree_Solver(const shared_ptr<rai::ComputeNode>& _root);
 
   void step();
-  void run(double costLimit){ costLimit += totalCost(); while(totalCost()<costLimit) step(); }
+  void run(double costLimit) { costLimit += totalCost(); while(totalCost()<costLimit) step(); }
   void runTrivial(uint k, double maxEffortPerCompute=10.);
   void report();
-  double totalCost(){ return root.c_tot + opt.epsilon*root.y_num; }
+  double totalCost() { return root.c_tot + opt.epsilon*root.y_num; }
 
-private:
+ private:
 
-  void query(CT_Node *n);
+  void query(CT_Node* n);
   CT_Node* select_Thresholded();
   CT_Node* select_RoundRobin();
   CT_Node* selectBestCompute_IterativeLimited();
@@ -95,7 +102,7 @@ private:
   CT_Node* getBestSample_Flat();
   CT_Node* getBestSample_UCT();
 
-  CT_Node* getCheapestIncompleteChild(CT_Node *r);
+  CT_Node* getCheapestIncompleteChild(CT_Node* r);
 
   //--
   uint rr_sample=0, rr_compute=0, rr_compComp=0, rr_compExp=0;
@@ -104,15 +111,14 @@ private:
   double limit_c=1.;
   rai::Array<CT_Node*> rr_computeFifo;
 
-
 };
 
 //===========================================================================
 // helpers
 
 void printTree(ostream& os, CT_Node& root);
-template<class T> uint getDepth(T* n){
+template<class T> uint getDepth(T* n) {
   int i=0;
-  while(n->parent){ n=n->parent; i++; }
+  while(n->parent) { n=n->parent; i++; }
   return i;
 }

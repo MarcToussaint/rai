@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -124,8 +124,8 @@ void MinEigModel::computeConvexHull2() {
   convexHull.T.clear();
   if(!eig.x_lo.N) return;
   arr b0, b1;
-  if(argmax(eig.x_lo)==0) b0 = arr{0, 1, 0} - eig.x_lo*eig.x_lo(1);
-  else                       b0 = arr{1, 0, 0} - eig.x_lo*eig.x_lo(0);
+  if(argmax(eig.x_lo)==0) b0 = arr{0, 1, 0} - eig.x_lo* eig.x_lo(1);
+  else                       b0 = arr{1, 0, 0} - eig.x_lo* eig.x_lo(0);
   b0 /= length(b0);
   b1 = crossProduct(eig.x_lo, b0);
   b1 /= length(b1);

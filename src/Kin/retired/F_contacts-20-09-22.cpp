@@ -1,5 +1,13 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 struct TM_ContactConstraints_Vel : Feature {
-  TM_ContactConstraints_Vel(){ order=1; }
+  TM_ContactConstraints_Vel() { order=1; }
   void phi2(arr& y, arr& J, const FrameL& F);
   uint dim_phi2(const FrameL& F);
 };
@@ -7,17 +15,17 @@ struct TM_ContactConstraints_Vel : Feature {
 void TM_ContactConstraints_Vel::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 1, "");
 
-  rai::ForceExchange* ex = getContact(F(0,0), F(1,0));
+  rai::ForceExchange* ex = getContact(F(0, 0), F(1, 0));
 
   arr poa, poaJ;
   ex->kinPOA(poa, poaJ);
 
   Value p1 = F_Position().eval({&ex->a});
   Value p2 = F_Position().eval({&ex->b});
-  Value v1 = F_Position().setOrder(1).eval({F(0,0), F(1,0)});
-  Value v2 = F_Position().setOrder(1).eval({F(0,1), F(1,1)});
-  Value w1 = F_AngVel().eval({{2,1}, {F(0,0), F(1,0)}});
-  Value w2 = F_AngVel().eval({{2,1}, {F(0,1), F(1,1)}});
+  Value v1 = F_Position().setOrder(1).eval({F(0, 0), F(1, 0)});
+  Value v2 = F_Position().setOrder(1).eval({F(0, 1), F(1, 1)});
+  Value w1 = F_AngVel().eval({{2, 1}, {F(0, 0), F(1, 0)}});
+  Value w2 = F_AngVel().eval({{2, 1}, {F(0, 1), F(1, 1)}});
 
   arr vc1 = v1.y - crossProduct(w1.y, poa - p1.y);
   arr Jvc1 = v1.J - skew(w1.y) * (poaJ - p1.J) + skew(poa-p1.y) * w1.J;
@@ -86,7 +94,6 @@ struct F_StaticStability : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 4; }
 };
-
 
 void F_StaticStability::phi2(arr& y, arr& J, const FrameL& F) {
   NIY;

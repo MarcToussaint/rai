@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -38,7 +38,7 @@ template<class T> struct PriorityQueue : rai::Array<PriorityQueueEntry<T>> {
     rai::Array<PriorityQueueEntry<T>>::insertInSorted(e, PriorityQueueEntry<T>::cmp, FIFOifEqual);
   }
 
-  void append(const T& x){
+  void append(const T& x) {
     PriorityQueueEntry<T> e = {0., x};
     rai::Array<PriorityQueueEntry<T>>::append(e);
   }

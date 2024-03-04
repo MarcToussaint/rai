@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -12,7 +12,7 @@
 #include "../Gui/opengl.h"
 #include <iomanip>
 
-rai::ViewableConfigCopy::~ViewableConfigCopy(){ close_gl(); }
+rai::ViewableConfigCopy::~ViewableConfigCopy() { close_gl(); }
 
 OpenGL& rai::ViewableConfigCopy::ensure_gl() {
   if(!gl) {
@@ -23,7 +23,7 @@ OpenGL& rai::ViewableConfigCopy::ensure_gl() {
   return *gl;
 }
 
-void rai::ViewableConfigCopy::close_gl(){
+void rai::ViewableConfigCopy::close_gl() {
   if(gl) gl.reset();
 }
 
@@ -32,7 +32,7 @@ void rai::ViewableConfigCopy::recopyMeshes(const rai::Configuration& _C) {
 
   {
     gl->dataLock.lock(RAI_HERE);
-    if(gl->hasWindow()){
+    if(gl->hasWindow()) {
       gl->beginNonThreadedDraw(true);
       C.glDeinit(*gl);
       gl->endNonThreadedDraw(true);
@@ -54,16 +54,16 @@ void rai::ViewableConfigCopy::updateConfiguration(const rai::Configuration& newC
 
   bool copyMeshes = false;
   if(newC.frames.N!=C.frames.N) copyMeshes = true;
-  else{
-    for(uint i=0;i<C.frames.N;i++){
-      rai::Shape *s = newC.frames.elem(i)->shape;
-      rai::Shape *r = C.frames.elem(i)->shape;
-      if((!s) != (!r)){ copyMeshes=true; break; }
+  else {
+    for(uint i=0; i<C.frames.N; i++) {
+      rai::Shape* s = newC.frames.elem(i)->shape;
+      rai::Shape* r = C.frames.elem(i)->shape;
+      if((!s) != (!r)) { copyMeshes=true; break; }
       if(!s) continue;
-      if(s->_type != r->_type){ copyMeshes=true; break; }
-      if(s->size != r->size){ copyMeshes=true; break; }
-      if(s->_mesh && r->_mesh && (s->_mesh.get() != r->_mesh.get())){ copyMeshes=true; break; }
-      if(s->_mesh && s->glListId<0){ copyMeshes=true; break; }
+      if(s->_type != r->_type) { copyMeshes=true; break; }
+      if(s->size != r->size) { copyMeshes=true; break; }
+      if(s->_mesh && r->_mesh && (s->_mesh.get() != r->_mesh.get())) { copyMeshes=true; break; }
+      if(s->_mesh && s->glListId<0) { copyMeshes=true; break; }
     }
   }
   if(copyMeshes) recopyMeshes(newC);
@@ -74,8 +74,8 @@ void rai::ViewableConfigCopy::updateConfiguration(const rai::Configuration& newC
 
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
-    for(uint i=0;i<C.frames.N;i++){
-      rai::Frame *f = newC.frames.elem(i);
+    for(uint i=0; i<C.frames.N; i++) {
+      rai::Frame* f = newC.frames.elem(i);
       if(f->shape) C.frames.elem(i)->set_X() = f->ensure_X();
     }
   }
@@ -86,22 +86,22 @@ void rai::ViewableConfigCopy::updateConfiguration(const rai::Configuration& newC
 //  }
 }
 
-void rai::ConfigurationViewer::setCamera(rai::Frame* camF){
+void rai::ConfigurationViewer::setCamera(rai::Frame* camF) {
   ensure_gl();
   rai::Camera& cam = gl->camera;
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
-    if(camF){
+    if(camF) {
       cam.X = camF->ensure_X();
 
-      rai::Node *at=0;
+      rai::Node* at=0;
       if((at=camF->ats->getNode("focalLength"))) cam.setFocalLength(at->as<double>());
       if((at=camF->ats->getNode("orthoAbsHeight"))) cam.setHeightAbs(at->as<double>());
-      if((at=camF->ats->getNode("zRange"))){ arr z=at->as<arr>(); cam.setZRange(z(0), z(1)); }
+      if((at=camF->ats->getNode("zRange"))) { arr z=at->as<arr>(); cam.setZRange(z(0), z(1)); }
       if((at=camF->ats->getNode("width"))) gl->width=at->as<double>();
       if((at=camF->ats->getNode("height"))) gl->height=at->as<double>();
       //    cam.setWHRatio((double)gl->width/gl->height);
-    }else{
+    } else {
       gl->camera.setDefault();
     }
   }
@@ -116,7 +116,7 @@ void rai::ConfigurationViewer::_add(GLDrawer& c) { ensure_gl(); gl->add(c); }
 
 void rai::ConfigurationViewer::_resetPressedKey() { ensure_gl(); gl->pressedkey=0; }
 
-void rai::ConfigurationViewer::clear(){
+void rai::ConfigurationViewer::clear() {
   auto _dataLock = gl->dataLock(RAI_HERE);
   C.clear();
   framePath.clear();
@@ -136,14 +136,14 @@ int rai::ConfigurationViewer::update(bool watch) {
     gl->raiseWindow();
     ret = gl->watch();
     gl->text = drawText;
-  }else{
+  } else {
     ret = gl->update(nullptr, false);
   }
 
   return ret;
 }
 
-void rai::ConfigurationViewer::raiseWindow(){
+void rai::ConfigurationViewer::raiseWindow() {
   ensure_gl();
   gl->raiseWindow();
 }
@@ -184,8 +184,8 @@ int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, con
     framePath = _C.getFrameState();
 #else
     framePath.resize(_C.frames.N, 7).setZero();
-    for(uint i=0;i<framePath.d0;i++){
-      rai::Frame *f = _C.frames.elem(i);
+    for(uint i=0; i<framePath.d0; i++) {
+      rai::Frame* f = _C.frames.elem(i);
       if(f->shape) framePath[i] = f->ensure_X().getArr7d();
     }
 #endif
@@ -195,7 +195,7 @@ int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, con
     if(text) drawText = text;
   }
 
-  rai::Frame *camF = C.getFrame("camera_gl", false);
+  rai::Frame* camF = C.getFrame("camera_gl", false);
   if(camF) setCamera(camF);
 
   return update(watch);
@@ -234,7 +234,7 @@ int rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, b
   return update(watch);
 }
 
-bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, double delay, const char* saveVideoPath){
+bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, double delay, const char* saveVideoPath) {
   if(rai::getDisableGui()) return false;
 
   const rai::String tag = drawText;
@@ -377,7 +377,7 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
     }
   }
 
-  if(drawSubFrames.N){
+  if(drawSubFrames.N) {
 //    C.setFrameState(framePath[t]);
     C.glDraw_sub(gl, drawSubFrames, 0);
   } else if(drawTimeSlice>=0) {

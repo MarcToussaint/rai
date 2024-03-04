@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -67,13 +67,13 @@ const char* MethodName[]= { "NoMethod", "SquaredPenalty", "AugmentedLagrangian",
 OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<NLP>& P, rai::OptOptions _opt, std::ostream* _logFile)
   : L(P, _opt, _dual), newton(_x, L, _opt, _logFile), dual(_dual), opt(_opt), logFile(_logFile) {
 
-  if(opt.boundedNewton){
+  if(opt.boundedNewton) {
     arr lo, up;
     P->getBounds(lo, up);
     if(lo.N || up.N) newton.setBounds(lo, up);
   }
 
-  if(opt.constrainedMethod==rai::logBarrier){
+  if(opt.constrainedMethod==rai::logBarrier) {
     L.useLB=true;
   }
 
@@ -97,7 +97,7 @@ OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<NLP>& P, ra
   //in first iteration, if not squaredPenaltyFixed, increase stop tolerance
   org_stopTol = opt.stopTolerance;
   org_stopGTol = opt.stopGTolerance;
-  if(!its && opt.constrainedMethod!=rai::squaredPenaltyFixed){
+  if(!its && opt.constrainedMethod!=rai::squaredPenaltyFixed) {
     newton.options.stopTolerance = 3.*org_stopTol;
     newton.options.stopGTolerance = 3.*org_stopGTol;
   }
@@ -112,7 +112,7 @@ OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<NLP>& P, ra
     cout <<endl;
   }
 
-  if(trace_lambda && L.lambda.N){
+  if(trace_lambda && L.lambda.N) {
     lambdaTrace.append(L.lambda); lambdaTrace.reshape(-1, L.lambda.N);
     evalsTrace.append(newton.evals);
   }
@@ -127,7 +127,7 @@ uint OptConstrained::run() {
   return newton.evals;
 }
 
-bool OptConstrained::ministep(){
+bool OptConstrained::ministep() {
   //-- first a Newton step
   newton.step();
   if(L.lambda.N) CHECK_EQ(L.lambda.N, L.phi_x.N, "the evaluation (within newton) changed the phi-dimensionality");
@@ -141,9 +141,9 @@ bool OptConstrained::ministep(){
   double g_err = L.get_sumOfGviolations();
   double h_err = L.get_sumOfHviolations();
   double step = absMax(x_beforeNewton-newton.x);
-  if(newton.stopCriterion>OptNewton::stopDeltaConverge){
+  if(newton.stopCriterion>OptNewton::stopDeltaConverge) {
     numBadSteps++;
-  }else{
+  } else {
     numBadSteps=0;
   }
 
@@ -173,11 +173,11 @@ bool OptConstrained::ministep(){
   //main stopping criteron
   if(its>=1 && step < opt.stopTolerance) {
     if(opt.verbose>0) cout <<"==nlp== StoppingCriterion Delta<" <<opt.stopTolerance <<endl;
-    if(opt.stopGTolerance<0. || g_err+h_err<opt.stopGTolerance){
+    if(opt.stopGTolerance<0. || g_err+h_err<opt.stopGTolerance) {
       return true; //good: small step in last loop and err small
-    }else{
+    } else {
       if(opt.verbose>0) cout <<"               -- but err too large " <<g_err+h_err <<'>' <<opt.stopGTolerance <<endl;
-      if(numBadSteps>6){
+      if(numBadSteps>6) {
         cout <<"               -- but numBadSteps > 6" <<endl;
         return true;
       }
@@ -212,14 +212,14 @@ bool OptConstrained::ministep(){
     //START of new Newton loop
     cout <<"==nlp== it:" <<std::setw(4) <<its
          <<"  evals:" <<std::setw(4) <<newton.evals
-        <<"  A(x):" <<std::setw(11) <<newton.fx
-       <<"  mu:" <<L.mu;
+         <<"  A(x):" <<std::setw(11) <<newton.fx
+         <<"  mu:" <<L.mu;
     if(L.useLB) cout <<" muLB:" <<std::setw(11) <<L.muLB;
     if(newton.x.N<5) cout <<" \tlambda:" <<L.lambda;
     cout <<endl;
   }
 
-  if(trace_lambda){
+  if(trace_lambda) {
     lambdaTrace.append(L.lambda); lambdaTrace.reshape(-1, L.lambda.N);
     evalsTrace.append(newton.evals);
   }
@@ -230,8 +230,8 @@ bool OptConstrained::ministep(){
     //START of new Newton loop
     cout <<"==nlp== it:" <<std::setw(4) <<its
          <<"  evals:" <<std::setw(4) <<newton.evals
-        <<"  A(x):" <<std::setw(11) <<newton.fx
-       <<"  mu:" <<L.mu;
+         <<"  A(x):" <<std::setw(11) <<newton.fx
+         <<"  mu:" <<L.mu;
     if(L.useLB) cout <<" muLB:" <<std::setw(11) <<L.muLB;
     if(newton.x.N<5) cout <<" \tlambda:" <<L.lambda;
     cout <<endl;
@@ -249,7 +249,6 @@ bool OptConstrained::ministep(){
 
   return false;
 }
-
 
 void evaluateNLP(const arr& x, NLP& P, std::ostream& os) {
   arr phi_x;

@@ -1,17 +1,25 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "splined.h"
 
 SplinedKOMO::SplinedKOMO(uint degree, uint numCtrlPoints, KOMO& _komo)
-  : komo(_komo){
+  : komo(_komo) {
 
   komo_nlp = komo.nlp();
   x0 = komo.getConfiguration_qOrg(-1);
 
   arr pts(numCtrlPoints+1, x0.N);
   pts[0] = x0;
-  for(uint i=0;i<pts.d0;i++){
+  for(uint i=0; i<pts.d0; i++) {
     pts[i] = komo.getConfiguration_qOrg(komo.T*(double(i)/double(pts.d0-1))-1);
   }
-  S.set(degree, pts, grid(1,0.,komo.tau*komo.T, numCtrlPoints).reshape(-1));
+  S.set(degree, pts, grid(1, 0., komo.tau*komo.T, numCtrlPoints).reshape(-1));
 
   //setup the NLP signature
   dimension = numCtrlPoints*x0.N;
@@ -41,9 +49,9 @@ SplinedKOMO::SplinedKOMO(uint degree, uint numCtrlPoints, KOMO& _komo)
   LOG(0) <<"torque limits:" <<C.getTorqueLimits(C.activeDofs, 4);
 }
 
-void SplinedKOMO::evaluate(arr& phi, arr& J, const arr& x){
-    arr pts = x;
-    pts.prepend(x0);
+void SplinedKOMO::evaluate(arr& phi, arr& J, const arr& x) {
+  arr pts = x;
+  pts.prepend(x0);
   S.setPoints(pts);
 
   arr timeGrid = range(S.knotTimes(0), S.knotTimes(-1), komo.T);
@@ -52,14 +60,14 @@ void SplinedKOMO::evaluate(arr& phi, arr& J, const arr& x){
   arr x_fineJ, Jpoints, tmp, tail;
   x_fineJ.sparse().resize(timeGrid.N * x0.N, dimension, 0);
 //  x_fineJ.resize(uintA{timeGrid.N, x0.N, S.ctrlPoints.d0, x0.N}).setZero();
-  for(uint i=0;i<timeGrid.N;i++){
-      x_fine[i] = S.eval2(timeGrid(i), 0, Jpoints);
-      tmp = Jpoints.sub(0,-1, +1+(S.degree/2), -1-(S.degree/2), 0,-1); //clip the Jacobian w.r.t. head/tail ctrl points AND first const point
-      for(int k=1;k<=int(S.degree/2);k++){ //tricky: the tail ctrlPoints actually all contribute to the last Jpoints (as setPoints overwrites all tail ctrlPoints with same end point)
-          for(uint i=0;i<x0.N;i++) tmp(i,-1,i) += Jpoints(i,-k,i);
-      }
-      tmp.reshape(x0.N, dimension);
-      x_fineJ.sparse().add(tmp,i * x0.N);
+  for(uint i=0; i<timeGrid.N; i++) {
+    x_fine[i] = S.eval2(timeGrid(i), 0, Jpoints);
+    tmp = Jpoints.sub(0, -1, +1+(S.degree/2), -1-(S.degree/2), 0, -1); //clip the Jacobian w.r.t. head/tail ctrl points AND first const point
+    for(int k=1; k<=int(S.degree/2); k++) { //tricky: the tail ctrlPoints actually all contribute to the last Jpoints (as setPoints overwrites all tail ctrlPoints with same end point)
+      for(uint i=0; i<x0.N; i++) tmp(i, -1, i) += Jpoints(i, -k, i);
+    }
+    tmp.reshape(x0.N, dimension);
+    x_fineJ.sparse().add(tmp, i * x0.N);
   }
   //arr Jpos = T.getPosJacobian(S, timeGrid);
 
@@ -121,8 +129,8 @@ void SplinedKOMO::evaluate(arr& phi, arr& J, const arr& x){
 //  }
 }
 
-arr SplinedKOMO::getInitializationSample(const arr& previousOptima){
-    arr ways = S.getPoints();
-    ways.delRows(0);
-    return ways;
+arr SplinedKOMO::getInitializationSample(const arr& previousOptima) {
+  arr ways = S.getPoints();
+  ways.delRows(0);
+  return ways;
 }

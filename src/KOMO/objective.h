@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -40,12 +40,12 @@ struct GroundedObjective {
   GroundedObjective(const shared_ptr<Feature>& _feat, const ObjectiveType& _type, const intA& _timeSlices) : feat(_feat), type(_type), timeSlices(_timeSlices) {}
   ~GroundedObjective() {}
 
-  rai::String name(){ return feat->shortTag(frames.first()->C); }
+  rai::String name() { return feat->shortTag(frames.first()->C); }
 };
 
 //===========================================================================
 
-struct ObjectiveL : rai::Array<shared_ptr<Objective>>{
+struct ObjectiveL : rai::Array<shared_ptr<Objective>> {
 
   shared_ptr<struct Objective> add(const arr& times, const shared_ptr<Feature>& f, ObjectiveType type, const char* name=0);
 

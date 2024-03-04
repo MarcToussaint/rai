@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -24,39 +24,39 @@
 #include "../Geo/depth2PointCloud.h"
 
 //void checkView(shared_ptr<rai::Configuration>& self){ if(self->hasView()) self->view(); }
-void null_deleter(rai::Frame*){}
+void null_deleter(rai::Frame*) {}
 
 void init_Config(pybind11::module& m) {
 
-  m.def("depthImage2PointCloud", [](const pybind11::array_t<float>& depth, const arr& fxycxy){
+  m.def("depthImage2PointCloud", [](const pybind11::array_t<float>& depth, const arr& fxycxy) {
     arr pts;
     depthData2pointCloud(pts, numpy2arr<float>(depth), fxycxy);
     return pts;
   }, "return the point cloud from the depth image",
   pybind11::arg("depth"),
   pybind11::arg("fxycxy")
-  );
+       );
 
   pybind11::class_<rai::Configuration, shared_ptr<rai::Configuration>>(m, "Config", "Core data structure to represent a kinematic configuration (essentially a tree of frames). See https://marctoussaint.github.io/robotics-course/tutorials/1a-configurations.html")
 
-  .def(pybind11::init<>(), "initializes to an empty configuration, with no frames")
+      .def(pybind11::init<>(), "initializes to an empty configuration, with no frames")
 
   .def("clear", [](shared_ptr<rai::Configuration>& self) {
     self->clear();
   }, "clear all frames and additional data; becomes the empty configuration, with no frames")
 
-  .def("addFile", [](shared_ptr<rai::Configuration>& self, const char* filename, const char* namePrefix){
+  .def("addFile", [](shared_ptr<rai::Configuration>& self, const char* filename, const char* namePrefix) {
     rai::Frame* f = self->addFile(filename, namePrefix);
-    return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
+    return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!
   },
-      "add the contents of the file to C",
-      pybind11::arg("filename"),
-      pybind11::arg("namePrefix") = std::string()
+  "add the contents of the file to C",
+  pybind11::arg("filename"),
+  pybind11::arg("namePrefix") = std::string()
       )
 
   .def("addFrame", [](shared_ptr<rai::Configuration>& self, const std::string& name, const std::string& parent, const std::string& args) {
     rai::Frame* f = self->addFrame(name.c_str(), parent.c_str(), args.c_str());
-    return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
+    return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!
   },
   "add a new frame to C; optionally make this a child to the given parent; use the Frame methods to set properties of the new frame",
   pybind11::arg("name"),
@@ -64,18 +64,18 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("args") = std::string()
       )
 
-  .def("addConfigurationCopy", [](shared_ptr<rai::Configuration>& self, shared_ptr<rai::Configuration>& other, const str& prefix, double tau){
+  .def("addConfigurationCopy", [](shared_ptr<rai::Configuration>& self, shared_ptr<rai::Configuration>& other, const str& prefix, double tau) {
     rai::Frame* f = self->addConfigurationCopy(*other, prefix, tau);
-    return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
+    return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!
   }, "",
-    pybind11::arg("config"),
-    pybind11::arg("prefix")=str{},
-    pybind11::arg("tau")=1.
-  )
+  pybind11::arg("config"),
+  pybind11::arg("prefix")=str{},
+  pybind11::arg("tau")=1.
+      )
 
   .def("getFrame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName, bool warnIfNotExist) {
-    rai::Frame *f = self->getFrame(frameName.c_str(), warnIfNotExist);
-    return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
+    rai::Frame* f = self->getFrame(frameName.c_str(), warnIfNotExist);
+    return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!
   },
   "get access to a frame by name; use the Frame methods to set/get frame properties",
   pybind11::arg("frameName"),
@@ -83,8 +83,8 @@ void init_Config(pybind11::module& m) {
       )
 
   .def("frame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName, bool warnIfNotExist) {
-    rai::Frame *f = self->getFrame(frameName.c_str(), warnIfNotExist);
-    return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
+    rai::Frame* f = self->getFrame(frameName.c_str(), warnIfNotExist);
+    return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!
   },
   "get access to a frame by name; use the Frame methods to set/get frame properties",
   pybind11::arg("frameName"),
@@ -93,9 +93,9 @@ void init_Config(pybind11::module& m) {
 
   .def("frames", [](shared_ptr<rai::Configuration>& self) {
     std::vector<shared_ptr<rai::Frame>> F;
-    for(rai::Frame *f:self->frames) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-sense deleter!
+    for(rai::Frame* f:self->frames) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-sense deleter!
     return F;
-  } )
+  })
 
   .def("delFrame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName) {
     rai::Frame* p = self->getFrame(frameName.c_str(), true);
@@ -105,7 +105,7 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("frameName")
       )
 
-  .def("getJointNames", &rai::Configuration::getJointNames, "get the list of joint names" )
+  .def("getJointNames", &rai::Configuration::getJointNames, "get the list of joint names")
 
   .def("getJointDimension", [](shared_ptr<rai::Configuration>& self) {
     return self->getJointStateDimension();
@@ -116,13 +116,13 @@ void init_Config(pybind11::module& m) {
   .def("getJointState", [](shared_ptr<rai::Configuration>& self) {
     return self->getJointState();
   },
-      "get the joint state as a numpy vector, optionally only for a subset of joints specified as list of joint names"
+  "get the joint state as a numpy vector, optionally only for a subset of joints specified as list of joint names"
       )
 
   .def("getJointLimits", [](shared_ptr<rai::Configuration>& self) {
     return self->getJointLimits();
   },
-    "get the joint limits as a n-by-2 matrix; for dofs that do not have limits defined, the entries are [0,-1] (i.e. upper limit < lower limit)"
+  "get the joint limits as a n-by-2 matrix; for dofs that do not have limits defined, the entries are [0,-1] (i.e. upper limit < lower limit)"
       )
 
   .def("setJointState", [](std::shared_ptr<rai::Configuration>& self, const arr& q, const pybind11::list& joints) {
@@ -135,7 +135,7 @@ void init_Config(pybind11::module& m) {
   "set the joint state, optionally only for a subset of joints specified as list of joint names",
   pybind11::arg("q"),
   pybind11::arg("joints") = pybind11::list()
-  )
+      )
 
   .def("setJointStateSlice", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& q, uint t) {
     self->setJointStateSlice(arr(q, true), t);
@@ -161,11 +161,11 @@ void init_Config(pybind11::module& m) {
       )
 
   .def("setFrameState", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& X, const std::vector<std::string>& frames) {
-    arr _X (X, true);
+    arr _X(X, true);
     _X.reshape(_X.N/7, 7);
-    if(frames.size()){
+    if(frames.size()) {
       self->setFrameState(_X, self->getFrames(strvec2StringA(frames)));
-    }else{
+    } else {
       self->setFrameState(_X);
     }
   },
@@ -177,9 +177,9 @@ void init_Config(pybind11::module& m) {
   .def("setFrameState", [](shared_ptr<rai::Configuration>& self, const pybind11::array& X, const std::vector<std::string>& frames) {
     arr _X = numpy2arr<double>(X);
     _X.reshape(_X.N/7, 7);
-    if(frames.size()){
+    if(frames.size()) {
       self->setFrameState(_X, self->getFrames(strvec2StringA(frames)));
-    }else{
+    } else {
       self->setFrameState(_X);
     }
   },
@@ -205,11 +205,11 @@ void init_Config(pybind11::module& m) {
     arr y = self->eval(fs, frames, scale, target, order);
     return pybind11::make_tuple(arr2numpy(y), arr2numpy(y.J()));
   }, "evaluate a feature -- see https://marctoussaint.github.io/robotics-course/tutorials/features.html",
-      pybind11::arg("featureSymbol"),
-      pybind11::arg("frames")=StringA{},
-      pybind11::arg("scale")=NoArr,
-      pybind11::arg("target")=NoArr,
-      pybind11::arg("order")=-1
+  pybind11::arg("featureSymbol"),
+  pybind11::arg("frames")=StringA{},
+  pybind11::arg("scale")=NoArr,
+  pybind11::arg("target")=NoArr,
+  pybind11::arg("order")=-1
       )
 
   .def("selectJoints", [](shared_ptr<rai::Configuration>& self, const std::vector<std::string>& jointNames, bool notThose) {
@@ -284,7 +284,7 @@ To get really precise distances and penetrations use the FS.distance feature wit
   }, "",
   pybind11::arg("delay")=double(1.),
   pybind11::arg("saveVideoPath")=nullptr
-  )
+      )
 
   .def("view_getRgb", [](std::shared_ptr<rai::Configuration>& self) {
     return Array2numpy<byte>(self->viewer()->getRgb());
@@ -298,70 +298,70 @@ To get really precise distances and penetrations use the FS.distance feature wit
     self->viewer()->savePng(pathPrefix);
   }, "saves a png image of the current view, numbered with a global counter, with the intention to make a video",
   pybind11::arg("pathPrefix") = "z.vid/"
-  )
+      )
 
   .def("view_close", &rai::Configuration::view_close,
-  "close the view")
+       "close the view")
 
-  .def("view_raise", [](shared_ptr<rai::Configuration>& self){
-		       self->viewer()->raiseWindow();
+  .def("view_raise", [](shared_ptr<rai::Configuration>& self) {
+    self->viewer()->raiseWindow();
   }, "raise the view")
 
-  .def("view_pose", [](shared_ptr<rai::Configuration>& self){
+  .def("view_pose", [](shared_ptr<rai::Configuration>& self) {
     rai::Camera& cam = self->viewer()->displayCamera();
     return cam.X.getArr7d();
   }, "return the 7D pose of the view camera")
 
-  .def("view_focalLength", [](shared_ptr<rai::Configuration>& self){
+  .def("view_focalLength", [](shared_ptr<rai::Configuration>& self) {
     rai::Camera& cam = self->viewer()->displayCamera();
     return cam.focalLength;
   }, "return the focal length of the view camera (only intrinsic parameter)")
 
-  .def("view_fxycxy", [](shared_ptr<rai::Configuration>& self){
+  .def("view_fxycxy", [](shared_ptr<rai::Configuration>& self) {
     OpenGL& gl = self->viewer()->ensure_gl();
     rai::Camera& cam = self->viewer()->displayCamera();
     return cam.getFxycxy(gl.width, gl.height);
   }, "return (fx, fy, cx, cy): the focal length and image center in PIXEL UNITS")
 
-  .def("view_setCamera", [](shared_ptr<rai::Configuration>& self, rai::Frame* frame){
+  .def("view_setCamera", [](shared_ptr<rai::Configuration>& self, rai::Frame* frame) {
     self->viewer()->setCamera(frame);
   }, "set the camera pose to a frame, and check frame attributes for intrinsic parameters (focalLength, width height)")
 
   .def("watchFile", &rai::Configuration::watchFile,
-  "launch a viewer that listents (inode) to changes of a file (made by you in an editor), and \
+       "launch a viewer that listents (inode) to changes of a file (made by you in an editor), and \
 reloads, displays and animates the configuration whenever the file is changed"
       )
 
   .def("animate", [](shared_ptr<rai::Configuration>& self) { self->animate(); },
-     "displays while articulating all dofs in a row")
+  "displays while articulating all dofs in a row")
 
   .def("animateSpline", &rai::Configuration::animateSpline,
-     "animate with random spline in limits bounding box [T=#spline points]",
-      pybind11::arg("T")=3)
+       "animate with random spline in limits bounding box [T=#spline points]",
+       pybind11::arg("T")=3)
 
   .def("report", [](shared_ptr<rai::Configuration>& self) {
-      str s;
-      self->report(s);
-      return pybind11::str(s.p, s.N);
-  }, "return a string with basic info (#frames, etc)" )
-  
+    str s;
+    self->report(s);
+    return pybind11::str(s.p, s.N);
+  }, "return a string with basic info (#frames, etc)")
+
   .def("write", [](shared_ptr<rai::Configuration>& self) { str s; self->write(s);  return pybind11::str(s.p, s.N); },
   "write the full configuration in a string (roughly yaml), e.g. for file export")
 
   .def("writeMesh", &rai::Configuration::writeMesh,
        "write the full configuration in a ply mesh file",
-       pybind11::arg("filename") )
+       pybind11::arg("filename"))
 
   .def("writeMeshes", &rai::Configuration::writeMeshes,
        "write all object meshes in a directory",
-       pybind11::arg("pathPrefix") )
+       pybind11::arg("pathPrefix"))
 
   .def("writeURDF", [](shared_ptr<rai::Configuration>& self) { str s; self->writeURDF(s);  return pybind11::str(s.p, s.N); },
   "write the full configuration as URDF in a string, e.g. for file export")
 
   .def("writeCollada", &rai::Configuration::writeCollada,
        "write the full configuration in a collada file for export",
-       pybind11::arg("filename"), pybind11::arg("format")="collada" )
+       pybind11::arg("filename"), pybind11::arg("format")="collada")
 
   ;
 
@@ -369,25 +369,26 @@ reloads, displays and animates the configuration whenever the file is changed"
 
   pybind11::class_<rai::CameraView, shared_ptr<rai::CameraView>>(m, "CameraView", "Offscreen rendering")
 
-   .def(pybind11::init<const rai::Configuration&, bool>(), "constructor",
-        pybind11::arg("config"),
-        pybind11::arg("offscreen") = true)
+      .def(pybind11::init<const rai::Configuration&, bool>(), "constructor",
+           pybind11::arg("config"),
+           pybind11::arg("offscreen") = true)
 
-  .def("setCamera", &rai::CameraView::selectSensor, "select a camera, typically a frame that has camera info attributes",
-    pybind11::arg("cameraFrameName"))
+      .def("setCamera", &rai::CameraView::selectSensor, "select a camera, typically a frame that has camera info attributes",
+           pybind11::arg("cameraFrameName"))
 
-  .def("computeImageAndDepth", [](rai::CameraView& self, const rai::Configuration& C,bool visualsOnly) {
-        byteA img;
-        floatA depth;
-        self.updateConfiguration(C);
-        if(visualsOnly) self.renderMode = rai::CameraView::visuals;
-        else self.renderMode = rai::CameraView::all;
-        self.computeImageAndDepth(img, depth);
-        return pybind11::make_tuple(Array2numpy<byte>(img),
-                                    Array2numpy<float>(depth)); },
-      "returns image and depth from a camera sensor; the 'config' argument needs to be the same configuration as in the constructor, but in new state",
-      pybind11::arg("config"),
-      pybind11::arg("visualsOnly") = true )
+  .def("computeImageAndDepth", [](rai::CameraView& self, const rai::Configuration& C, bool visualsOnly) {
+    byteA img;
+    floatA depth;
+    self.updateConfiguration(C);
+    if(visualsOnly) self.renderMode = rai::CameraView::visuals;
+    else self.renderMode = rai::CameraView::all;
+    self.computeImageAndDepth(img, depth);
+    return pybind11::make_tuple(Array2numpy<byte>(img),
+                                Array2numpy<float>(depth));
+  },
+  "returns image and depth from a camera sensor; the 'config' argument needs to be the same configuration as in the constructor, but in new state",
+  pybind11::arg("config"),
+  pybind11::arg("visualsOnly") = true)
 
   .def("getFxycxy", &rai::CameraView::getFxycxy, "return the camera intrinsics f_x, f_y, c_x, c_y")
   .def("computeSegmentationImage", &rai::CameraView::computeSegmentationImage, "return an rgb image encoding the object ID segmentation")

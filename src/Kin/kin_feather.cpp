@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -315,7 +315,7 @@ void FeatherstoneInterface::update() {
         link.com = f->inertia->com;
         link.mass=f->inertia->mass; CHECK(link.mass>0. || link.qIndex==-1, "a moving link without mass -> this will diverge");
         link.inertia=f->inertia->matrix;
-      }else{
+      } else {
 //        CHECK_EQ(link.type, rai::JT_rigid, "frame '" <<f->name <<"' has zero mass but joint");
 //        link.mass=1e-4;
       }
@@ -449,11 +449,11 @@ void Featherstone::RBmci(arr& rbi, double m, double* c, const rai::Matrix& I) {
   II.referTo(&I.m00, 9);
   II.reshape(3, 3);
 
-  rbi.resize(6,6);
-  rbi.setMatrixBlock(II + m*C*~C, 0,0);
-  rbi.setMatrixBlock(m*C, 0,3);
-  rbi.setMatrixBlock(m*~C, 3,0);
-  rbi.setMatrixBlock(m*eye(3), 3,3);
+  rbi.resize(6, 6);
+  rbi.setMatrixBlock(II + m*C*~C, 0, 0);
+  rbi.setMatrixBlock(m*C, 0, 3);
+  rbi.setMatrixBlock(m*~C, 3, 0);
+  rbi.setMatrixBlock(m*eye(3), 3, 3);
   //rbi = [ I + m*C*C', m*C; m*C', m*eye(3) ];
 }
 
@@ -887,7 +887,7 @@ void FeatherstoneInterface::invDynamics(arr& tau,
   for(i=N; i--;) {
     par = tree(i).parent;
     d_i = tree(i).dof();
-    if(d_i!=0){
+    if(d_i!=0) {
       qidx = tree(i).qIndex;
       tau_i(qidx) = ~h(i) * fJ[i];
     }

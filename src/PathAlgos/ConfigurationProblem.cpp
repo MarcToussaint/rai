@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "../Kin/proxy.h"
 #include "../Optim/constrained.h"
 #include "../Geo/fclInterface.h"
@@ -8,27 +16,27 @@ ConfigurationProblem::ConfigurationProblem(const rai::Configuration& _C, bool _c
   : C(_C),
     computeAllCollisions(_computeCollisions),
     collisionTolerance(_collisionTolerance),
-    verbose(_verbose){
+    verbose(_verbose) {
 
   q0 = C.getJointState();
   limits = C.getJointLimits();
   max_step = zeros(limits.d1);
 
-  for(rai::Dof *dof: C.activeDofs) {
+  for(rai::Dof* dof: C.activeDofs) {
     uint i=dof->qIndex;
     uint d=dof->dim;
-    if(d){
+    if(d) {
       for(uint k=0; k<d; k++) max_step(i+k) = 1.;
     }
   }
 
   computeCollisionFeatures = false;
-  if(!computeCollisionFeatures){
+  if(!computeCollisionFeatures) {
     C.fcl(verbose)->mode = rai::FclInterface::_binaryCollisionAll; //Single;
   }
 }
 
-shared_ptr<GroundedObjective> ConfigurationProblem::addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target){
+shared_ptr<GroundedObjective> ConfigurationProblem::addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target) {
   shared_ptr<Feature> f = symbols2feature(feat, frames, C, scale, target, 0);
 
   shared_ptr<GroundedObjective> ob = make_shared<GroundedObjective>(f, type, intA{});
@@ -38,31 +46,31 @@ shared_ptr<GroundedObjective> ConfigurationProblem::addObjective(const FeatureSy
   return ob;
 }
 
-void ConfigurationProblem::setExplicitCollisionPairs(const StringA& _collisionPairs){
+void ConfigurationProblem::setExplicitCollisionPairs(const StringA& _collisionPairs) {
   computeAllCollisions = false;
   collisionPairs = C.getFrameIDs(_collisionPairs);
-  collisionPairs.reshape(-1,2);
+  collisionPairs.reshape(-1, 2);
 }
 
-shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
-  if(limits.N){
-    for(uint i=0;i<x.N;i++){
-      if(limits(1,i)>limits(0,i) && (x.elem(i)<limits(0,i) || x.elem(i)>limits(1,i))){
+shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x) {
+  if(limits.N) {
+    for(uint i=0; i<x.N; i++) {
+      if(limits(1, i)>limits(0, i) && (x.elem(i)<limits(0, i) || x.elem(i)>limits(1, i))) {
         //LOG(-1) <<"QUERY OUT OF LIMIT: joint " <<i <<": " <<x.elem(i) <<' ' <<limits[i];
       }
     }
   }
 
   C.setJointState(x);
-  if(computeAllCollisions){
+  if(computeAllCollisions) {
     //C.stepSwift();
     C.stepFcl();
     //for(rai::Proxy& p:C.proxies) p.ensure_coll();
-  }else if(collisionPairs.N){
+  } else if(collisionPairs.N) {
     C.proxies.resize(collisionPairs.d0);
-    for(uint i=0;i<collisionPairs.d0;i++){
-      C.proxies(i).a = C.frames(collisionPairs(i,0));
-      C.proxies(i).b = C.frames(collisionPairs(i,1));
+    for(uint i=0; i<collisionPairs.d0; i++) {
+      C.proxies(i).a = C.frames(collisionPairs(i, 0));
+      C.proxies(i).b = C.frames(collisionPairs(i, 1));
       C.proxies(i).d = -0.;
     }
     for(rai::Proxy& p:C.proxies) p.calc_coll();
@@ -74,16 +82,16 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
 
   shared_ptr<QueryResult> qr = make_shared<QueryResult>();
 
-  if(!computeCollisionFeatures){
+  if(!computeCollisionFeatures) {
 #if 1
     bool feas=true;
-    for(rai::Proxy& p:C.proxies) if(p.d<=0.){ feas=false; break; }
+    for(rai::Proxy& p:C.proxies) if(p.d<=0.) { feas=false; break; }
     qr->isFeasible = feas;
 #else
     double p = C.getTotalPenetration();
     qr->isFeasible = (p<collisionTolerance);
 #endif
-  }else{
+  } else {
     //collision features
     uint N = C.proxies.N;
     qr->collisions.resize(N, 2).setZero();
@@ -94,7 +102,7 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
     qr->side_J.resize(N, 3, x.N).setZero();
 
     uint i=0;
-    for(const rai::Proxy& p:C.proxies){
+    for(const rai::Proxy& p:C.proxies) {
       qr->collisions[i] =  uintA{p.a->ID, p.b->ID};
       arr Jp1, Jp2, Jx1, Jx2;
       {
@@ -135,9 +143,9 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
 
     i=0;
     //  arr z, Jz;
-    for(shared_ptr<GroundedObjective>& ob : objectives){
+    for(shared_ptr<GroundedObjective>& ob : objectives) {
       arr z = ob->feat->eval(ob->frames);
-      for(uint j=0;j<z.N;j++){
+      for(uint j=0; j<z.N; j++) {
         qr->goal_y(i+j) = z(j);
         qr->goal_J[i+j] = z.J()[j];
       }
@@ -151,33 +159,33 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x){
 
   //display (link of last joint)
   qr->disp3d = C.activeDofs.elem(-1)->frame->getPosition();
-  if(verbose){
+  if(verbose) {
     C.view(verbose>1, STRING("ConfigurationProblem query:\n" <<*qr));
   }
 
   return qr;
 }
 
-void QueryResult::getViolatedContacts(arr& y, arr& J, double margin){
+void QueryResult::getViolatedContacts(arr& y, arr& J, double margin) {
   uintA violated;
-  for(uint i=0;i<coll_y.N;i++) if(coll_y.elem(i)<margin) violated.append(i);
+  for(uint i=0; i<coll_y.N; i++) if(coll_y.elem(i)<margin) violated.append(i);
 
-  if(!violated.N){
+  if(!violated.N) {
     y.resize(0);
-    J.resize(0,coll_J.d1);
-  }else{
+    J.resize(0, coll_J.d1);
+  } else {
     y = coll_y.sub(violated);
     J = coll_J.sub(violated);
   }
 
 }
 
-arr QueryResult::getSideStep(){
+arr QueryResult::getSideStep() {
   arr s = randn(3);
   s /=length(s);
 
   arr S(side_J.d0, 3);
-  for(uint i=0;i<S.d0;i++) S[i] = s;
+  for(uint i=0; i<S.d0; i++) S[i] = s;
 
   arr J = side_J;
 
@@ -185,7 +193,7 @@ arr QueryResult::getSideStep(){
   J.reshape(S.N, -1);
 
 #if 0
-  arr U, sig ,V;
+  arr U, sig, V;
   svd(U, sig, V, J);
   arr d = ~V * sig % V * randn(V.d1); //random step in input space of J!
 #else
@@ -198,17 +206,17 @@ arr QueryResult::getSideStep(){
   return d;
 }
 
-arr QueryResult::getForwardStep(){
+arr QueryResult::getForwardStep() {
   arr goal_JI = pseudoInverse(goal_J);
   arr d = goal_JI * (-goal_y);
   return d;
 }
 
-arr QueryResult::getBackwardStep(double relativeStepLength, double margin, const arr& nullStep){
+arr QueryResult::getBackwardStep(double relativeStepLength, double margin, const arr& nullStep) {
 //  CHECK(!isFeasible, "");
   CHECK(coll_y.N>0, "");
 
-  arr y,J;
+  arr y, J;
   getViolatedContacts(y, J, margin);
   y -= margin;
 
@@ -220,37 +228,37 @@ arr QueryResult::getBackwardStep(double relativeStepLength, double margin, const
   return d;
 }
 
-void QueryResult::write(std::ostream& os) const{
+void QueryResult::write(std::ostream& os) const {
   os <<"query: h_goal: " <<sumOfAbs(goal_y)
-    <<" g_coll: " <<sum(elemWiseHinge(-coll_y))
-   <<" isGoal: " <<isGoal
-  <<" isFeasible: " <<isFeasible;
+     <<" g_coll: " <<sum(elemWiseHinge(-coll_y))
+     <<" isGoal: " <<isGoal
+     <<" isFeasible: " <<isFeasible;
 }
 
-void QueryResult::writeDetails(std::ostream& os, const ConfigurationProblem& P, double margin) const{
+void QueryResult::writeDetails(std::ostream& os, const ConfigurationProblem& P, double margin) const {
   write(os);
-  if(!P.computeCollisionFeatures){
-    for(const rai::Proxy& p:P.C.proxies) if(p.d<=0.){
-      os <<"\nproxy: " <<p;
-    }
-  }else{
-    for(uint i=0;i<coll_y.N;i++){
-      if(coll_y.elem(i)<margin){
+  if(!P.computeCollisionFeatures) {
+    for(const rai::Proxy& p:P.C.proxies) if(p.d<=0.) {
+        os <<"\nproxy: " <<p;
+      }
+  } else {
+    for(uint i=0; i<coll_y.N; i++) {
+      if(coll_y.elem(i)<margin) {
         os <<"\ncoll " <<i <<':' <<collisions[i]
-             <<':' <<P.C.frames(collisions(i,0))->name <<'-' <<P.C.frames(collisions(i,1))->name
-            <<" y:" <<coll_y.elem(i) <<" normal:" <<normal_y[i];
+           <<':' <<P.C.frames(collisions(i, 0))->name <<'-' <<P.C.frames(collisions(i, 1))->name
+           <<" y:" <<coll_y.elem(i) <<" normal:" <<normal_y[i];
       }
     }
   }
   os <<std::endl;
 }
 
-bool makePoseFeasible(arr& x, ConfigurationProblem& P, double IKstepSize, double maxQStepSize, uint trials){
+bool makePoseFeasible(arr& x, ConfigurationProblem& P, double IKstepSize, double maxQStepSize, uint trials) {
   shared_ptr<QueryResult> qr = P.query(x);
-  for(uint k=0;k<trials;k++){
-    if(qr->isFeasible){
+  for(uint k=0; k<trials; k++) {
+    if(qr->isFeasible) {
       break;
-    }else{
+    } else {
     }
     arr delta = qr->getBackwardStep(IKstepSize);
     double l = length(delta);

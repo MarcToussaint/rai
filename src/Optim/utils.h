@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -36,7 +36,7 @@ struct Conv_ScalarProblem_NLP : NLP {
   void getFHessian(arr& H, const arr& x) {
     f(NoArr, H, x);
   }
-  void setBounds(double lo, double up){ bounds_lo.resize(xDim) = lo;  bounds_up.resize(xDim) = up; }
+  void setBounds(double lo, double up) { bounds_lo.resize(xDim) = lo;  bounds_up.resize(xDim) = up; }
 };
 
 struct Conv_NLP_ScalarProblem : ScalarFunction {
@@ -61,24 +61,24 @@ struct Conv_NLP_SlackLeastSquares : NLP {
     bounds_up = P->bounds_up;
 
     //pick constraints
-    for(uint i=0;i<P->featureTypes.N;i++){
+    for(uint i=0; i<P->featureTypes.N; i++) {
       ObjectiveType f = P->featureTypes(i);
       if(f==OT_eq || f==OT_ineq) pick.append(i);
     }
     featureTypes.resize(pick.N) = OT_sos;
   }
 
-  virtual void evaluate(arr& phi, arr& J, const arr& x){
+  virtual void evaluate(arr& phi, arr& J, const arr& x) {
     arr Pphi, PJ;
     P->evaluate(Pphi, PJ, x);
     phi = Pphi.sub(pick);
     J = PJ.sub(pick);
-    for(uint i=0;i<pick.N;i++){
-      if(P->featureTypes(pick(i))==OT_ineq){
-        if(phi(i)<0.){ phi(i)=0.; J[i]=0.; } //ReLu for g
-      }else if(P->featureTypes(pick(i))==OT_eq){
-        if(phi(i)<0.){ phi(i)*=-1.; J[i]*=-1.; } //make positive
-      }else{
+    for(uint i=0; i<pick.N; i++) {
+      if(P->featureTypes(pick(i))==OT_ineq) {
+        if(phi(i)<0.) { phi(i)=0.; J[i]=0.; } //ReLu for g
+      } else if(P->featureTypes(pick(i))==OT_eq) {
+        if(phi(i)<0.) { phi(i)*=-1.; J[i]*=-1.; } //make positive
+      } else {
         NIY;
       }
     }
@@ -97,13 +97,12 @@ struct NLP_LinTransformed : NLP {
     bounds_up = Ainv*(P->bounds_up-b);
   }
 
-  virtual void evaluate(arr& phi, arr& J, const arr& x){
+  virtual void evaluate(arr& phi, arr& J, const arr& x) {
     arr y = A*x+b;
     P->evaluate(phi, J, y);
     J = J*A;
   }
 };
-
 
 //===========================================================================
 //
@@ -112,7 +111,6 @@ struct NLP_LinTransformed : NLP {
 
 bool checkDirectionalGradient(const ScalarFunction& f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction& f, const arr& x, const arr& delta, double tolerance);
-
 
 //===========================================================================
 //
@@ -130,7 +128,6 @@ inline void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& J
     }
   }
 }
-
 
 //===========================================================================
 //

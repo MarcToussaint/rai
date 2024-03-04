@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -33,10 +33,10 @@ struct CtrlStateMsg {
   arr q, qDot; // actual joint state
   arr tauExternalIntegral; // external torques
   int tauExternalCount=0;
-  void initZero(uint n){ q.resize(n).setZero(); qDot.resize(n).setZero(); tauExternalIntegral.resize(n).setZero(); tauExternalCount=0; }
+  void initZero(uint n) { q.resize(n).setZero(); qDot.resize(n).setZero(); tauExternalIntegral.resize(n).setZero(); tauExternalCount=0; }
 };
 
-struct RobotAbstraction{
+struct RobotAbstraction {
   Var<rai::CtrlCmdMsg> cmd;
   Var<rai::CtrlStateMsg> state;
   int writeData=0;
@@ -51,7 +51,7 @@ struct GripperAbstraction {
   virtual void close(double force=.0, //relative to [min,max]
                      double width=.2, //relative to [min,max]
                      double speed=.2) = 0; //relative to [min,max]
-  virtual void closeGrasp(const char* objName, double force=.0, double width=.2, double speed=.2){ close(force, width, speed); }
+  virtual void closeGrasp(const char* objName, double force=.0, double width=.2, double speed=.2) { close(force, width, speed); }
   virtual double pos() = 0;
   virtual bool isDone() = 0;
 };
@@ -59,8 +59,8 @@ struct GripperAbstraction {
 struct CameraAbstraction {
   rai::String name;
   virtual void getImageAndDepth(byteA& image, floatA& depth) = 0;
-  virtual arr getFxycxy(){ return arr{}; } //intrinsics
-  virtual rai::Transformation getPose(){ LOG(-2) <<"not implemented for this camera!"; return 0; } //extrinsics
+  virtual arr getFxycxy() { return arr{}; } //intrinsics
+  virtual rai::Transformation getPose() { LOG(-2) <<"not implemented for this camera!"; return 0; } //extrinsics
   void getPointCloud(byteA& image, arr& pts, bool globalCoordinates);
 };
 

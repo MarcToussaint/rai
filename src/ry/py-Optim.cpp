@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -118,50 +118,50 @@ void init_Optim(pybind11::module& m) {
   pybind11::class_<rai::OptOptions, std::shared_ptr<rai::OptOptions>>(m, "NLP_SolverOptions", "solver options")
 
       .def(pybind11::init<>())
-    #define MEMBER(type, name, x) .def("set_" #name, &rai::OptOptions::set_##name)
-    MEMBER(int, verbose, 1)
-    MEMBER(double, stopTolerance, 1e-2)
-    MEMBER(double, stopFTolerance, -1.)
-    MEMBER(double, stopGTolerance, -1.)
-    MEMBER(int, stopEvals, 1000)
-    MEMBER(double, maxStep, .2)
-    MEMBER(double, damping, 1.)
-    MEMBER(double, stepInc, 1.5)
-    MEMBER(double, stepDec, .5)
-    MEMBER(double, wolfe, .01)
-    MEMBER(double, muInit, 1.)
-    MEMBER(double, muInc, 5.)
-    MEMBER(double, muMax, 1e4)
-    MEMBER(double, muLBInit, .1)
-    MEMBER(double, muLBDec, .2)
-    MEMBER(double, maxLambda, -1.)
-    #undef MEMBER
+#define MEMBER(type, name, x) .def("set_" #name, &rai::OptOptions::set_##name)
+      MEMBER(int, verbose, 1)
+      MEMBER(double, stopTolerance, 1e-2)
+      MEMBER(double, stopFTolerance, -1.)
+      MEMBER(double, stopGTolerance, -1.)
+      MEMBER(int, stopEvals, 1000)
+      MEMBER(double, maxStep, .2)
+      MEMBER(double, damping, 1.)
+      MEMBER(double, stepInc, 1.5)
+      MEMBER(double, stepDec, .5)
+      MEMBER(double, wolfe, .01)
+      MEMBER(double, muInit, 1.)
+      MEMBER(double, muInc, 5.)
+      MEMBER(double, muMax, 1e4)
+      MEMBER(double, muLBInit, .1)
+      MEMBER(double, muLBDec, .2)
+      MEMBER(double, maxLambda, -1.)
+#undef MEMBER
 
-      .def("dict", [](std::shared_ptr<rai::OptOptions>& self) {
-        return graph2dict(rai::Graph{
-                    #define MEMBER(type, name, x) {#name, self->name},
-                    MEMBER(int, verbose, 1)
-                    MEMBER(double, stopTolerance, 1e-2)
-                    MEMBER(double, stopFTolerance, -1.)
-                    MEMBER(double, stopGTolerance, -1.)
-                    MEMBER(int, stopEvals, 1000)
-                    MEMBER(double, maxStep, .2)
-                    MEMBER(double, damping, 1.)
-                    MEMBER(double, stepInc, 1.5)
-                    MEMBER(double, stepDec, .5)
-                    MEMBER(double, wolfe, .01)
-                    MEMBER(double, muInit, 1.)
-                    MEMBER(double, muInc, 5.)
-                    MEMBER(double, muMax, 1e4)
-                    MEMBER(double, muLBInit, .1)
-                    MEMBER(double, muLBDec, .2)
-                    MEMBER(double, maxLambda, -1.)
-                    #undef MEMBER
-                          });
+  .def("dict", [](std::shared_ptr<rai::OptOptions>& self) {
+    return graph2dict(rai::Graph{
+#define MEMBER(type, name, x) {#name, self->name},
+      MEMBER(int, verbose, 1)
+      MEMBER(double, stopTolerance, 1e-2)
+      MEMBER(double, stopFTolerance, -1.)
+      MEMBER(double, stopGTolerance, -1.)
+      MEMBER(int, stopEvals, 1000)
+      MEMBER(double, maxStep, .2)
+      MEMBER(double, damping, 1.)
+      MEMBER(double, stepInc, 1.5)
+      MEMBER(double, stepDec, .5)
+      MEMBER(double, wolfe, .01)
+      MEMBER(double, muInit, 1.)
+      MEMBER(double, muInc, 5.)
+      MEMBER(double, muMax, 1e4)
+      MEMBER(double, muLBInit, .1)
+      MEMBER(double, muLBDec, .2)
+      MEMBER(double, maxLambda, -1.)
+#undef MEMBER
+    });
 
-        })
+  })
 
-      ;
+  ;
 
   //===========================================================================
 
@@ -171,7 +171,7 @@ void init_Optim(pybind11::module& m) {
       .def(pybind11::init<const shared_ptr<NLP>&, int>(), "",
            pybind11::arg("problem"),
            pybind11::arg("verbose")=0
-           )
+          )
 
       .def("setProblem", &NLP_Solver::setProblem)
       .def("setSolver", &NLP_Solver::setSolver)
@@ -184,34 +184,34 @@ void init_Optim(pybind11::module& m) {
       .def("getTrace_phi", &NLP_Solver::getTrace_phi)
       .def("getTrace_J", &NLP_Solver::getTrace_J)
 
-      .def("reportLagrangeGradients", [](std::shared_ptr<NLP_Solver>& self, const StringA& featureNames){
-        rai::Graph R = self->reportLangrangeGradients(featureNames);
-        return graph2dict(R);
-       })
+  .def("reportLagrangeGradients", [](std::shared_ptr<NLP_Solver>& self, const StringA& featureNames) {
+    rai::Graph R = self->reportLangrangeGradients(featureNames);
+    return graph2dict(R);
+  })
 
-      .def("getOptions", [](std::shared_ptr<NLP_Solver>& self){ return self->opt; } )
-      .def("setOptions", [](std::shared_ptr<NLP_Solver>& self
-         #define MEMBER(type, name, x) ,type name
-         MEMBER(int, verbose, 1)
-         MEMBER(double, stopTolerance, 1e-2)
-         MEMBER(double, stopFTolerance, -1.)
-         MEMBER(double, stopGTolerance, -1.)
-         MEMBER(int, stopEvals, 1000)
-         MEMBER(double, maxStep, .2)
-         MEMBER(double, damping, 1.)
-         MEMBER(double, stepInc, 1.5)
-         MEMBER(double, stepDec, .5)
-         MEMBER(double, wolfe, .01)
-         MEMBER(double, muInit, 1.)
-         MEMBER(double, muInc, 5.)
-         MEMBER(double, muMax, 1e4)
-         MEMBER(double, muLBInit, .1)
-         MEMBER(double, muLBDec, .2)
-         MEMBER(double, maxLambda, -1.)
-         #undef MEMBER
-           ){
+  .def("getOptions", [](std::shared_ptr<NLP_Solver>& self) { return self->opt; })
+  .def("setOptions", [](std::shared_ptr<NLP_Solver>& self
+#define MEMBER(type, name, x) ,type name
+                        MEMBER(int, verbose, 1)
+                        MEMBER(double, stopTolerance, 1e-2)
+                        MEMBER(double, stopFTolerance, -1.)
+                        MEMBER(double, stopGTolerance, -1.)
+                        MEMBER(int, stopEvals, 1000)
+                        MEMBER(double, maxStep, .2)
+                        MEMBER(double, damping, 1.)
+                        MEMBER(double, stepInc, 1.5)
+                        MEMBER(double, stepDec, .5)
+                        MEMBER(double, wolfe, .01)
+                        MEMBER(double, muInit, 1.)
+                        MEMBER(double, muInc, 5.)
+                        MEMBER(double, muMax, 1e4)
+                        MEMBER(double, muLBInit, .1)
+                        MEMBER(double, muLBDec, .2)
+                        MEMBER(double, maxLambda, -1.)
+#undef MEMBER
+  ) {
     self->opt
-    #define MEMBER(type, name, x) .set_##name(name)
+#define MEMBER(type, name, x) .set_##name(name)
     MEMBER(int, verbose, 1)
     MEMBER(double, stopTolerance, 1e-2)
     MEMBER(double, stopFTolerance, -1.)
@@ -228,31 +228,31 @@ void init_Optim(pybind11::module& m) {
     MEMBER(double, muLBInit, .1)
     MEMBER(double, muLBDec, .2)
     MEMBER(double, maxLambda, -1.)
-    #undef MEMBER
-        ;
-        return self;
-        }, "set solver options"
-    #define MEMBER(type, name, x) , pybind11::arg(#name) = x
-    MEMBER(int, verbose, 1)
-    MEMBER(double, stopTolerance, 1e-2)
-    MEMBER(double, stopFTolerance, -1.)
-    MEMBER(double, stopGTolerance, -1.)
-    MEMBER(int, stopEvals, 1000)
-    MEMBER(double, maxStep, .2)
-    MEMBER(double, damping, 1.)
-    MEMBER(double, stepInc, 1.5)
-    MEMBER(double, stepDec, .5)
-    MEMBER(double, wolfe, .01)
-    MEMBER(double, muInit, 1.)
-    MEMBER(double, muInc, 5.)
-    MEMBER(double, muMax, 1e4)
-    MEMBER(double, muLBInit, .1)
-    MEMBER(double, muLBDec, .2)
-    MEMBER(double, maxLambda, -1.)
-    #undef MEMBER
-    )
+#undef MEMBER
+    ;
+    return self;
+  }, "set solver options"
+#define MEMBER(type, name, x) , pybind11::arg(#name) = x
+  MEMBER(int, verbose, 1)
+  MEMBER(double, stopTolerance, 1e-2)
+  MEMBER(double, stopFTolerance, -1.)
+  MEMBER(double, stopGTolerance, -1.)
+  MEMBER(int, stopEvals, 1000)
+  MEMBER(double, maxStep, .2)
+  MEMBER(double, damping, 1.)
+  MEMBER(double, stepInc, 1.5)
+  MEMBER(double, stepDec, .5)
+  MEMBER(double, wolfe, .01)
+  MEMBER(double, muInit, 1.)
+  MEMBER(double, muInc, 5.)
+  MEMBER(double, muMax, 1e4)
+  MEMBER(double, muLBInit, .1)
+  MEMBER(double, muLBDec, .2)
+  MEMBER(double, maxLambda, -1.)
+#undef MEMBER
+      )
 
-      ;
+  ;
 
   //===========================================================================
 
@@ -268,7 +268,7 @@ void init_Optim(pybind11::module& m) {
       .def_readwrite("sos", &SolverReturn::sos)
       .def_readwrite("ineq", &SolverReturn::ineq)
       .def_readwrite("eq", &SolverReturn::eq)
-      .def("__str__", [](std::shared_ptr<SolverReturn>& self) {  str s;  s <<(*self);  return std::string(s.p); } )
+  .def("__str__", [](std::shared_ptr<SolverReturn>& self) {  str s;  s <<(*self);  return std::string(s.p); })
 
   .def("dict", [](std::shared_ptr<SolverReturn>& self) {
     return graph2dict(rai::Graph{

@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 .def("add_StableRelativePose", [](std::shared_ptr<KOMO>& self, const std::vector<int>& confs, const char* gripper, const char* object) {
   for(uint i=1; i<confs.size(); i++)
     self->addObjective(arr{confs[0], confs[i]}, FS_poseDiff, {gripper, object}, OT_eq);

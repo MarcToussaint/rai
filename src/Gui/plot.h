@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -16,7 +16,7 @@
 struct OpenGL;
 struct Gaussian;
 namespace rai {
-  template<class T> struct Array;
+template<class T> struct Array;
 }
 
 //typedef struct arr;

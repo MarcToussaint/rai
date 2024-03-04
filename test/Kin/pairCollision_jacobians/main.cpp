@@ -375,7 +375,6 @@ int MAIN(int argc, char** argv){
 //  testGJK_Jacobians2();
 //  testGJK_Jacobians3();
 
-
 //  testFunctional();
   testSweepingSDFs();
 

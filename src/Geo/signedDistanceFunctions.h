@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "geo.h"
@@ -10,13 +18,13 @@
 
 struct SDF : ScalarFunction {
   SDF(const rai::Transformation& _pose)
-    : ScalarFunction( std::bind(&SDF::f, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3) ),
+    : ScalarFunction(std::bind(&SDF::f, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
       pose(_pose) {}
-  ~SDF(){}
+  ~SDF() {}
   rai::Transformation pose;
   arr lo, up;
   virtual double f(arr& g, arr& H, const arr& x);
-  virtual double f_raw(arr& g, arr& H, const arr& x){ NIY; }
+  virtual double f_raw(arr& g, arr& H, const arr& x) { NIY; }
 
   arr eval(const arr& samples);
   floatA evalFloat(const arr& samples);
@@ -43,7 +51,7 @@ struct SDF_ssBox : SDF {
   arr size;
   double r;
   SDF_ssBox(const rai::Transformation& _pose, const arr& _size, double _r=0.)
-      : SDF(_pose), size(_size), r(_r) { if(size.N==4){ r=size(3); size.resizeCopy(3); } }
+    : SDF(_pose), size(_size), r(_r) { if(size.N==4) { r=size(3); size.resizeCopy(3); } }
   double f(arr& g, arr& H, const arr& x);
 };
 
@@ -79,7 +87,7 @@ struct SDF_Capsule : SDF {
 
 struct SDF_Blobby : SDF {
   SDF_Blobby() : SDF(0) {}
-  double f_raw(arr& g, arr& H, const arr& _x){
+  double f_raw(arr& g, arr& H, const arr& _x) {
     double x=_x(0), y=_x(1), z=_x(2);
     return x*x*x*x - 5*x*x+ y*y*y*y - 5*y*y + z*z*z*z - 5*z*z + 11.8;
   }
@@ -91,7 +99,7 @@ struct SDF_Torus : SDF {
   double f_raw(arr& g, arr& H, const arr& _x);
 };
 
-struct DensityDisplayData : GLDrawer{
+struct DensityDisplayData : GLDrawer {
   rai::Mesh box;
   byteA volumeImgZ, volumeImgY, volumeImgX;
   rai::Array<rai::Mesh> volumeZ, volumeY, volumeX;
@@ -105,7 +113,7 @@ struct SDF_GridData : SDF {
   shared_ptr<DensityDisplayData> _densityDisplayData;
 
   SDF_GridData(const rai::Transformation& _pose, const floatA& _data, const arr& _lo, const arr& _up)
-    : SDF(_pose), gridData(_data){  lo = _lo;  up = _up;  }
+    : SDF(_pose), gridData(_data) {  lo = _lo;  up = _up;  }
   SDF_GridData(uint N, const arr& _lo, const arr& _up, bool isoGrid=true);
   SDF_GridData(SDF& f, const arr& _lo, const arr& _up, const uintA& res);
   SDF_GridData() : SDF(0) {}
@@ -120,10 +128,10 @@ struct SDF_GridData : SDF {
 
   //helper
   void getNeighborsAndWeights(uintA& neigh, arr& weights, const arr& x_rel);
-  arr getGridPosition(const uintA& idx){
+  arr getGridPosition(const uintA& idx) {
     arr res = (up-lo) / arr{(double)gridData.d0-1, (double)gridData.d1-1, (double)gridData.d2-1};
     arr x(3);
-    for(uint i=0;i<3;i++) x(i) = lo(i) + idx(i)*res(i);
+    for(uint i=0; i<3; i++) x(i) = lo(i) + idx(i)*res(i);
     return x;
   }
 

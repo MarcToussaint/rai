@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -60,10 +60,10 @@ bool isFeasible(const CtrlSet& CS, const rai::Configuration& pathConfig, bool in
   return isFeasible;
 }
 
-CtrlSet operator+(const CtrlSet& A, const CtrlSet& B){
+CtrlSet operator+(const CtrlSet& A, const CtrlSet& B) {
   CtrlSet CS;
   CS.objectives.resize(A.objectives.N+B.objectives.N);
-  for(uint i=0;i<A.objectives.N;i++) CS.objectives.elem(i) = A.objectives.elem(i);
-  for(uint i=0;i<B.objectives.N;i++) CS.objectives.elem(A.objectives.N+i) = B.objectives.elem(i);
+  for(uint i=0; i<A.objectives.N; i++) CS.objectives.elem(i) = A.objectives.elem(i);
+  for(uint i=0; i<B.objectives.N; i++) CS.objectives.elem(A.objectives.N+i) = B.objectives.elem(i);
   return CS;
 }

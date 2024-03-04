@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -39,7 +39,7 @@ struct Simulation {
   //== controller interface
 
   //-- step the simulation, optionally send a low-level control, or use the spline reference
-  void step(const arr& u_control={}, double tau=.01, ControlMode u_mode = _spline);
+  void step(const arr& u_control= {}, double tau=.01, ControlMode u_mode = _spline);
 
   //-- adapt the spline reference to genreate motion (default way)
   void setSplineRef(const arr& _q, const arr& _times, bool append=true);
@@ -74,10 +74,8 @@ struct Simulation {
   rai::CameraView::Sensor&  selectSensor(const char* name) { return cameraview().selectSensor(name); }
   byteA getScreenshot();
 
-
   //== ground truth interface
   rai::Frame* getGroundTruthFrame(const char* frame) { return C.getFrame("frame"); }
-
 
   //== perturbation/adversarial interface
 
@@ -109,7 +107,7 @@ struct Simulation {
 
 //===========================================================================
 
-struct TeleopCallbacks : OpenGL::GLClickCall, OpenGL::GLKeyCall, OpenGL::GLHoverCall{
+struct TeleopCallbacks : OpenGL::GLClickCall, OpenGL::GLKeyCall, OpenGL::GLHoverCall {
   arr q_ref;
   bool stop=false;
   bool grab=false;
@@ -117,10 +115,10 @@ struct TeleopCallbacks : OpenGL::GLClickCall, OpenGL::GLKeyCall, OpenGL::GLHover
   double mouseDepth=0.;
   uint nMarkers=0;
   rai::Configuration& C;
-  rai::Frame *marker=0;
+  rai::Frame* marker=0;
   bool markerWasSet=false;
 
-  TeleopCallbacks(rai::Configuration& C, rai::Frame *marker=0) : C(C), marker(marker) { q_ref = C.getJointState(); }
+  TeleopCallbacks(rai::Configuration& C, rai::Frame* marker=0) : C(C), marker(marker) { q_ref = C.getJointState(); }
 
   bool hasNewMarker();
   virtual bool clickCallback(OpenGL& gl);

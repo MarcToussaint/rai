@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -16,24 +16,23 @@
 
 //===========================================================================
 
-uint F_PairCollision::dim_phi2(const FrameL& F){
-  if(type==_negScalar){
-    if(F.nd==3){ CHECK_EQ(F.d0, 1, ""); return F.d1; }
+uint F_PairCollision::dim_phi2(const FrameL& F) {
+  if(type==_negScalar) {
+    if(F.nd==3) { CHECK_EQ(F.d0, 1, ""); return F.d1; }
     if(F.nd==2) return F.d0;
     return 1;
   }
   return 3;
 }
 
-
 void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
-  if(F.nd>=2){
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
+  if(F.nd>=2) {
     FrameL _F = F.ref();
     if(F.nd==3) _F.reshape(F.d1, F.d2);
     F.last()->C.kinematicsZero(y, J, dim_phi2(_F));
     arr ysub, Jsub;
-    for(uint i=0;i<_F.d0;i++){
+    for(uint i=0; i<_F.d0; i++) {
       F_PairCollision(type).phi2(ysub, Jsub, _F[i]);
       y.setVectorBlock(ysub, i);
       if(!!J) J.setMatrixBlock(Jsub, i, 0);
@@ -46,21 +45,21 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   double r1=0., r2=0.;
   rai::Mesh dot;
   dot.setDot();
-  rai::Mesh *m1=&dot, *m2=&dot;
-  if(f1->shape && f1->shape->type()!=rai::ST_marker){
+  rai::Mesh* m1=&dot, *m2=&dot;
+  if(f1->shape && f1->shape->type()!=rai::ST_marker) {
     r1 = f1->shape->radius();
     m1 = &f1->shape->sscCore();  if(!m1->V.N) { m1 = &f1->shape->mesh(); r1=0.; }
     if(!m1->V.N) m1 = &dot;
   }
-  if(f2->shape && f2->shape->type()!=rai::ST_marker){
+  if(f2->shape && f2->shape->type()!=rai::ST_marker) {
     r2 = f2->shape->radius();
     m2 = &f2->shape->sscCore();  if(!m2->V.N) { m2 = &f2->shape->mesh(); r2=0.; }
     if(!m2->V.N) m2 = &dot;
   }
 
-  if((type==_negScalar || type==_vector) && m1->V.d0==1 && m2->V.d0>2 && !m2->T.N){ //PclCollision!
+  if((type==_negScalar || type==_vector) && m1->V.d0==1 && m2->V.d0>2 && !m2->T.N) { //PclCollision!
     arr Jp1, Jp2, Jx1, Jx2;
-    if(!!J){
+    if(!!J) {
       f1->C.jacobian_pos(Jp1, f1, f1->ensure_X().pos);
       f2->C.jacobian_pos(Jp2, f2, f2->ensure_X().pos);
       f1->C.jacobian_angular(Jx1, f1);
@@ -70,13 +69,13 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
                            f1->ensure_X(), Jp1, Jx1,
                            f2->ensure_X(), Jp2, Jx2,
                            r1, r2, type==_vector);
-    if(type==_negScalar){
+    if(type==_negScalar) {
       y = -coll.y;
       if(!!J) J = -coll.J;
-    }else if(type==_vector){
+    } else if(type==_vector) {
       y = coll.y;
       if(!!J) J = coll.J;
-    }else NIY;
+    } else NIY;
     if(!!J) checkNan(J);
     return;
   }
@@ -85,9 +84,9 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
 #if 0 //use functionals!
   auto func1=f1->shape->functional();
   auto func2=f2->shape->functional();
-  if(func1 && func2){
+  if(func1 && func2) {
     coll=make_shared<PairCollision>(*func1, *func2, .5*(f1->getPosition()+f2->getPosition()));
-  }else{
+  } else {
     coll=make_shared<PairCollision>(*m1, *m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
   }
 #else
@@ -98,7 +97,7 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
 
   if(type==_negScalar) {
     arr Jp1, Jp2;
-    if(!!J){
+    if(!!J) {
       f1->C.jacobian_pos(Jp1, f1, coll->p1);
       f2->C.jacobian_pos(Jp2, f2, coll->p2);
     }
@@ -129,16 +128,16 @@ void F_AccumulatedCollisions::phi2(arr& y, arr& J, const FrameL& F) {
   C.kinematicsZero(y, J, 1);
   for(rai::Proxy& p: C.proxies) {
     bool isSelected=false;
-    if(selectAll){
-        //select based on indices, e.g. being in a single time slice of a path config
-        isSelected = (p.a->ID>=F.first()->ID && p.a->ID<=F.last()->ID)
-                     || (p.b->ID>=F.first()->ID && p.b->ID<=F.last()->ID);
-    }else{
-        //select by explicitly looking up in F
-        isSelected = (!selectXor && (F.contains(p.a) || F.contains(p.b)))
-                     || (selectXor && (F.contains(p.a) ^ F.contains(p.b)));
+    if(selectAll) {
+      //select based on indices, e.g. being in a single time slice of a path config
+      isSelected = (p.a->ID>=F.first()->ID && p.a->ID<=F.last()->ID)
+                   || (p.b->ID>=F.first()->ID && p.b->ID<=F.last()->ID);
+    } else {
+      //select by explicitly looking up in F
+      isSelected = (!selectXor && (F.contains(p.a) || F.contains(p.b)))
+                   || (selectXor && (F.contains(p.a) ^ F.contains(p.b)));
     }
-    if(isSelected){
+    if(isSelected) {
       CHECK(p.a->shape, "");
       CHECK(p.b->shape, "");
 
@@ -166,13 +165,13 @@ void F_AccumulatedCollisions::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
-namespace rai{
-  template<class T>
-arr block(const Array<T>& A, const Array<T>& B, const Array<T>& C, const Array<T>& D){
+namespace rai {
+template<class T>
+arr block(const Array<T>& A, const Array<T>& B, const Array<T>& C, const Array<T>& D) {
   arr X(A.d0+C.d0, A.d1+B.d1);
-  X.setMatrixBlock(A, 0,0);
-  X.setMatrixBlock(B, 0,A.d1);
-  X.setMatrixBlock(C, A.d0,0);
+  X.setMatrixBlock(A, 0, 0);
+  X.setMatrixBlock(B, 0, A.d1);
+  X.setMatrixBlock(C, A.d0, 0);
   X.setMatrixBlock(D, A.d0, A.d1);
   return X;
 }
@@ -188,13 +187,13 @@ struct SweepingSDFPenetration : ScalarFunction {
   double d1, d2, s;
   arr w1, w2;
 
-  SweepingSDFPenetration(const FrameL& F){
+  SweepingSDFPenetration(const FrameL& F) {
     CHECK_EQ(F.d0, 2, "");
     CHECK_EQ(F.d1, 2, "");
-    sdf1 = F(0,0)->shape->functional();
-    sdf2 = F(0,1)->shape->functional();
-    vel1 = F(0,0)->getPosition() - F(1,0)->getPosition();
-    vel2 = F(0,1)->getPosition() - F(1,1)->getPosition();
+    sdf1 = F(0, 0)->shape->functional();
+    sdf2 = F(0, 1)->shape->functional();
+    vel1 = F(0, 0)->getPosition() - F(1, 0)->getPosition();
+    vel2 = F(0, 1)->getPosition() - F(1, 1)->getPosition();
 
     ScalarFunction::operator=([this](arr& g, arr& H, const arr& x) -> double {
       return this->scalarFunction(g, H, x);
@@ -202,9 +201,9 @@ struct SweepingSDFPenetration : ScalarFunction {
 
   }
 
-  double scalarFunction(arr& g, arr& H, const arr& x_s){
+  double scalarFunction(arr& g, arr& H, const arr& x_s) {
     s = x_s.last();
-    x = x_s({0,-2});
+    x = x_s({0, -2});
     CHECK_EQ(x.N, 3, "");
 //    CHECK_GE(s, 0., "");
 //    CHECK_LE(s, 1., "");
@@ -228,8 +227,8 @@ struct SweepingSDFPenetration : ScalarFunction {
 
     arr tmp1 = -~g1;
     arr tmp2 = -~g2;
-    H1 = ~dz1 * H1 * dz1 + rai::block(zeros(3,3), ~tmp1, tmp1, zeros(1,1));
-    H2 = ~dz2 * H2 * dz2 + rai::block(zeros(3,3), ~tmp2, tmp2, zeros(1,1));
+    H1 = ~dz1 * H1 * dz1 + rai::block(zeros(3, 3), ~tmp1, tmp1, zeros(1, 1));
+    H2 = ~dz2 * H2 * dz2 + rai::block(zeros(3, 3), ~tmp2, tmp2, zeros(1, 1));
     g1 = ((~g1) * dz1).reshape(-1);
     g2 = ((~g2) * dz2).reshape(-1);
 
@@ -243,14 +242,14 @@ struct SweepingSDFPenetration : ScalarFunction {
 
 //===========================================================================
 
-void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
-  if(order==1){
+void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order==1) {
     P.reset();
     P = make_shared<SweepingSDFPenetration>(F);
     ScalarFunction f = *P;
 
-    arr seed = .25*(F(0,0)->getPosition() + F(0,1)->getPosition() +
-                    F(1,0)->getPosition() + F(1,1)->getPosition() );
+    arr seed = .25*(F(0, 0)->getPosition() + F(0, 1)->getPosition() +
+                    F(1, 0)->getPosition() + F(1, 1)->getPosition());
 
     seed.append(0.5);
 
@@ -262,36 +261,36 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
                      .set_verbose(0)
                      .set_stopTolerance(1e-5)
                      .set_maxStep(1.)
-                     .set_damping(1e-10) );
-    newton.setBounds({0.,0.,0.,0.},{-1.,-1.,-1.,1});
+                     .set_damping(1e-10));
+    newton.setBounds({0., 0., 0., 0.}, {-1., -1., -1., 1});
     newton.run();
 
     d1 = P->d1;
     d2 = P->d2;
     x = P->x;
-    g1 = P->g1.sub(0,2);
-    g2 = P->g2.sub(0,2);
+    g1 = P->g1.sub(0, 2);
+    g2 = P->g2.sub(0, 2);
     double s = P->s;
 //    LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" s:" <<s <<" iters:" <<newton.its;
 //    LOG(0) <<"x:" <<x ;
 
-  //  if(!!J) LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" iters:" <<newton.its;
+    //  if(!!J) LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" iters:" <<newton.its;
 
     y.resize(1).scalar() = -d1 -d2;
     if(!!J) {
       arr Jp1a, Jp1b, Jp2a, Jp2b, Jp1c, Jp2c;
-      F(0,0)->C.jacobian_pos(Jp1a, F(0,0), P->z1);
-      F(0,1)->C.jacobian_pos(Jp2a, F(0,1), P->z2);
-      F(0,0)->C.jacobian_pos(Jp1c, F(0,0), F(0,0)->ensure_X().pos);
-      F(0,1)->C.jacobian_pos(Jp2c, F(0,1), F(0,1)->ensure_X().pos);
-      F(1,0)->C.jacobian_pos(Jp1b, F(1,0), F(1,0)->ensure_X().pos);
-      F(1,1)->C.jacobian_pos(Jp2b, F(1,1), F(1,1)->ensure_X().pos);
+      F(0, 0)->C.jacobian_pos(Jp1a, F(0, 0), P->z1);
+      F(0, 1)->C.jacobian_pos(Jp2a, F(0, 1), P->z2);
+      F(0, 0)->C.jacobian_pos(Jp1c, F(0, 0), F(0, 0)->ensure_X().pos);
+      F(0, 1)->C.jacobian_pos(Jp2c, F(0, 1), F(0, 1)->ensure_X().pos);
+      F(1, 0)->C.jacobian_pos(Jp1b, F(1, 0), F(1, 0)->ensure_X().pos);
+      F(1, 1)->C.jacobian_pos(Jp2b, F(1, 1), F(1, 1)->ensure_X().pos);
       J = ~g1*(Jp1a + s*(Jp1b-Jp1c)) + ~g2*(Jp2a + s*(Jp2b-Jp2c));
       checkNan(J);
     }
 
-  }else{
-    if(order>0){  Feature::phi2(y, J, F);  return;  }
+  } else {
+    if(order>0) {  Feature::phi2(y, J, F);  return;  }
     CHECK_EQ(F.N, 2, "");
     rai::Frame* f1 = F.elem(0);
     rai::Frame* f2 = F.elem(1);
@@ -300,7 +299,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
     auto func2=f2->shape->functional();
     CHECK(func1 && func2, "");
 
-    auto f = [&func1, &func2](arr& g, arr& H, const arr& x){
+    auto f = [&func1, &func2](arr& g, arr& H, const arr& x) {
       arr g1, g2, H1, H2;
       double b = 1e1;
       //double c = 1e2;
@@ -324,13 +323,13 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
                      .set_verbose(0)
                      .set_stopTolerance(1e-5)
                      .set_maxStep(1.)
-                     .set_damping(1e-10) );
+                     .set_damping(1e-10));
     newton.run();
 
     d1 = (*func1)(g1, NoArr, x);
     d2 = (*func2)(g2, NoArr, x);
 
-  //  if(!!J) LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" (g1+g2):" <<sumOfSqr(g1+g2) <<" iters:" <<newton.its;
+    //  if(!!J) LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" (g1+g2):" <<sumOfSqr(g1+g2) <<" iters:" <<newton.its;
 
     rai::Proxy prox;
     prox.a = F.elem(0); prox.b = F.elem(1); prox.posA=x-d1*g1; prox.posB=x-d2*g2; prox.normal=g1-g2; prox.d = d1+d2;
@@ -351,7 +350,7 @@ void F_PairFunctional::glDraw(OpenGL&) {
 #ifdef RAI_GL
   glColor(0., 1., 0., 1.);
   glDrawDiamond(x(0), x(1), x(2), .05, .05, .05);
-  if(P){
+  if(P) {
     glColor(0., 1., 1., 1.);
     glDrawDiamond(P->z1(0), P->z1(1), P->z1(2), .05, .05, .05);
     glColor(0., 0., 1., 1.);

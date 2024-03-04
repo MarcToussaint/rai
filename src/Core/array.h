@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -199,7 +199,7 @@ template<class T> struct Array {
   Array<T> rows(uint start_row, uint end_row) const;
   Array<T> col(uint col_index) const;
   Array<T> cols(uint start_col, uint end_col) const;
-  
+
   int findValue(const T& x) const;
   void findValues(Array<uint>& indices, const T& x) const;
   bool contains(const T& x) const { return findValue(x)!=-1; }
@@ -275,7 +275,6 @@ template<class T> struct Array {
   bool operator!() const;
   Array<T>& setNoArr();
 
-
 //protected:
   /// @name kind of private
   void resizeMEM(uint n, bool copy, int Mforce=-1);
@@ -302,54 +301,54 @@ template<class T> std::istream& operator>>(std::istream& is, Array<T>& x);
 template<class T> Array<T>& operator>>(Array<T>& x, std::istream& is);
 template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x);
 
-template<class T> void operator+=(Array<T>& x, const Array<T>& y){
+template<class T> void operator+=(Array<T>& x, const Array<T>& y) {
   CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")");
-  T *xp=x.p, *xstop=xp+x.N;
-  const T *yp=y.p;
+  T* xp=x.p, *xstop=xp+x.N;
+  const T* yp=y.p;
   for(; xp!=xstop; xp++, yp++) *xp += *yp;
 }
-template<class T> void operator+=(Array<T>& x, const T& y){
-  T *xp=x.p, *xstop=xp+x.N;
+template<class T> void operator+=(Array<T>& x, const T& y) {
+  T* xp=x.p, *xstop=xp+x.N;
   for(; xp!=xstop; xp++) *xp += y;
 }
-template<class T> void operator-=(Array<T>& x, const Array<T>& y){
+template<class T> void operator-=(Array<T>& x, const Array<T>& y) {
   CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")");
-  T *xp=x.p, *xstop=xp+x.N;
-  const T *yp=y.p;
+  T* xp=x.p, *xstop=xp+x.N;
+  const T* yp=y.p;
   for(; xp!=xstop; xp++, yp++) *xp -= *yp;
 }
-template<class T> void operator-=(Array<T>& x, const T& y){
-  T *xp=x.p, *xstop=xp+x.N;
+template<class T> void operator-=(Array<T>& x, const T& y) {
+  T* xp=x.p, *xstop=xp+x.N;
   for(; xp!=xstop; xp++) *xp -= y;
 }
-template<class T> void operator*=(Array<T>& x, const T& y){
-  T *xp=x.p, *xstop=xp+x.N;
+template<class T> void operator*=(Array<T>& x, const T& y) {
+  T* xp=x.p, *xstop=xp+x.N;
   for(; xp!=xstop; xp++) *xp *= y;
 }
 template<class T> Array<T> operator+(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x+=z; return x; }
-template<class T> Array<T> operator+(const Array<T>& y, T z){                Array<T> x(y); x+=z; return x; }
+template<class T> Array<T> operator+(const Array<T>& y, T z) {                Array<T> x(y); x+=z; return x; }
 template<class T> Array<T> operator-(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x-=z; return x; }
-template<class T> Array<T> operator-(const Array<T>& y, T z){                Array<T> x(y); x-=z; return x; }
+template<class T> Array<T> operator-(const Array<T>& y, T z) {                Array<T> x(y); x-=z; return x; }
 
 //IO modifiers
-template <class T> struct ArrayModRaw{
-  const Array<T> *x;
+template <class T> struct ArrayModRaw {
+  const Array<T>* x;
   ArrayModRaw(const Array<T>* x) : x(x) {}
-  void write(std::ostream& os) const{
+  void write(std::ostream& os) const {
     x->write(os, " ", "\n", "  ");
   }
 };
-template <class T> ArrayModRaw<T> Array<T>::modRaw() const{ return ArrayModRaw<T>(this); }
+template <class T> ArrayModRaw<T> Array<T>::modRaw() const { return ArrayModRaw<T>(this); }
 template <class T> std::ostream& operator<<(std::ostream& os, const ArrayModRaw<T>& x) { x.write(os); return os; }
 
-template <class T> struct ArrayModList{
-  const Array<T> *x;
+template <class T> struct ArrayModList {
+  const Array<T>* x;
   ArrayModList(const Array<T>* x) : x(x) {}
-  void write(std::ostream& os) const{
+  void write(std::ostream& os) const {
     for(uint i=0; i<x->N; i++) { if(i) os <<' ';  if(x->elem(i)) os <<*x->elem(i); else os <<"<NULL>"; }
   }
 };
-template <class T> ArrayModList<T> Array<T>::modList() const{ return ArrayModList<T>(this); }
+template <class T> ArrayModList<T> Array<T>::modList() const { return ArrayModList<T>(this); }
 
 template <class T> std::ostream& operator<<(std::ostream& os, const ArrayModList<T>& x) { x.write(os); return os; }
 
@@ -382,7 +381,7 @@ typedef rai::Array<rai::String*> StringL;
 // creators
 //
 
-namespace rai{
+namespace rai {
 
 /// return array of c's
 template<class T> Array<T> consts(const T& c, const uintA& d)  {  Array<T> z;  z.resize(d);  z.setUni(c);  return z; }
@@ -396,14 +395,14 @@ template<class T> Array<T> consts(const T& c, uint d0, uint d1, uint d2) { retur
 inline uintA range(uint n) { uintA r;  r.setStraightPerm(n);  return r; }
 inline uintA randperm(uint n) {  uintA z;  z.setRandomPerm(n);  return z; }
 
-template<class T> Array<T*> getCarray(const Array<T>& data){
+template<class T> Array<T*> getCarray(const Array<T>& data) {
   CHECK_EQ(data.nd, 2, "only 2D array gives C-array of type T**");
   Array<T*> Cpointers(data.d0);
   for(uint i=0; i<data.d0; i++) Cpointers(i)=data.p+i*data.d1;
   return Cpointers;
 }
 
-template<class T> Array<Array<T>> getArrayArray(const Array<T>& data){
+template<class T> Array<Array<T>> getArrayArray(const Array<T>& data) {
   CHECK_EQ(data.nd, 2, "only 2D array gives C-array of type T**");
   Array<Array<T>> xx(data.d0);
   for(uint i=0; i<data.d0; i++) xx(i).referTo(data.p+i*data.d1, data.d1);
@@ -417,14 +416,14 @@ template<class T> Array<Array<T>> getArrayArray(const Array<T>& data){
 /// @name concatenating arrays together
 /// @{
 
-namespace rai{
+namespace rai {
 template<class T> Array<T> catCol(const rai::Array<rai::Array<T>*>& X);
 template<class T> Array<T> catCol(std::initializer_list<rai::Array<T>> X);
 template<class T> Array<T> catCol(const rai::Array<rai::Array<T>>& X);
-template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b}); }
-template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c}); }
-template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c, (rai::Array<T>*)&d}); }
-template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c, (rai::Array<T>*)&d, (rai::Array<T>*)&e}); }
+template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b) { return catCol(rai::Array<rai::Array<T>*> {(rai::Array<T>*)&a, (rai::Array<T>*)&b}); }
+template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c) { return catCol(rai::Array<rai::Array<T>*> {(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c}); }
+template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d) { return catCol(rai::Array<rai::Array<T>*> {(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c, (rai::Array<T>*)&d}); }
+template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { return catCol(rai::Array<rai::Array<T>*> {(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c, (rai::Array<T>*)&d, (rai::Array<T>*)&e}); }
 }
 
 //===========================================================================
@@ -432,7 +431,7 @@ template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b
 /// @name twice template functions
 /// @{
 
-namespace rai{
+namespace rai {
 template<class T, class S> void resizeAs(Array<T>& x, const Array<S>& a) {
   x.nd=a.nd; x.d0=a.d0; x.d1=a.d1; x.d2=a.d2;
   x.resetD();
@@ -445,7 +444,7 @@ template<class T, class S> void copy(Array<T>& x, const Array<S>& a) {
   resizeAs(x, a);
   T* xp=x.p, *xstop = xp+x.N;;
   S* ap=a.p;
-  for(;xp!=xstop;xp++,ap++) *xp = (T)*ap;
+  for(; xp!=xstop; xp++, ap++) *xp = (T)*ap;
   //for(uint i=0; i<x.N; i++) x.elem(i)=(T)a.elem(i);
 }
 template<class T, class S> Array<T> convert(const Array<S>& a) {
@@ -465,7 +464,7 @@ bool samedim(const Array<T>& a, const Array<S>& b) {
 /// @name set operations
 //
 
-namespace rai{
+namespace rai {
 
 /// x becomes the section of y and z
 template<class T> Array<T> setSection(const Array<T>& y, const Array<T>& z) {
@@ -483,7 +482,7 @@ template<class T> Array<T> setSection(const Array<T>& y, const Array<T>& z) {
 }
 
 /// x becomes the section of y and z
-template<class T> Array<T> setUnion( const Array<T>& y, const Array<T>& z) {
+template<class T> Array<T> setUnion(const Array<T>& y, const Array<T>& z) {
   Array<T> x;
   uint i, j;
   if(&x!=&y) x=y;
@@ -585,7 +584,7 @@ struct ArrayIterationEnumerated {
 };
 
 template<class T>
-ArrayIterationEnumerated<T> enumerated(const Array<T>& x){ return ArrayIterationEnumerated<T>(x); }
+ArrayIterationEnumerated<T> enumerated(const Array<T>& x) { return ArrayIterationEnumerated<T>(x); }
 
 template<class T>
 struct ArrayItReverse {
@@ -604,7 +603,7 @@ struct ArrayIterationReversed {
 };
 
 template<class T>
-ArrayIterationReversed<T> reversed(const Array<T>& x){ return ArrayIterationReversed<T>(x); }
+ArrayIterationReversed<T> reversed(const Array<T>& x) { return ArrayIterationReversed<T>(x); }
 
 } //namespace
 
@@ -642,7 +641,7 @@ template<class T> void listResizeCopy(rai::Array<T*>& L, uint N) {
 // arr specific
 //
 
-namespace rai{
+namespace rai {
 
 struct SpecialArray {
   enum Type { ST_none, ST_NoArr, ST_EmptyShape, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerSdouble };
@@ -653,40 +652,38 @@ struct SpecialArray {
   SpecialArray& operator=(const SpecialArray&) = delete; //non-copyable
 };
 
-template<class T> bool Array<T>::operator!() const{ return special && special->type==SpecialArray::ST_NoArr; }
+template<class T> bool Array<T>::operator!() const { return special && special->type==SpecialArray::ST_NoArr; }
 template<class T> Array<T>& Array<T>::setNoArr() { special = new SpecialArray(SpecialArray::ST_NoArr); return *this; }
 
 }
-
 
 //===========================================================================
 //
 // numerical operations, also for non double arrays
 //
 
-namespace rai{
-  uint product(const uintA& x);
-  uint max(const uintA& x);
-  uint sum(const uintA& x);
-  float sum(const floatA& x);
-  uintA integral(const uintA& x);
-  uintA differencing(const uintA& x, uint width=1);
+namespace rai {
+uint product(const uintA& x);
+uint max(const uintA& x);
+uint sum(const uintA& x);
+float sum(const floatA& x);
+uintA integral(const uintA& x);
+uintA differencing(const uintA& x, uint width=1);
 
-  template<class T>
-  void tensorPermutation(Array<T>& Y, const Array<T>& X, const uintA& Yid);
+template<class T>
+void tensorPermutation(Array<T>& Y, const Array<T>& X, const uintA& Yid);
 }
-
 
 //===========================================================================
 //
 // base 64 encoding
 //
 
-namespace rai{
-  int b64_codeLen(uint data_len);
-  uint b64_maxDataLen(uint code_len);
-  void b64_encode(char* code, int code_len, const char* data, int data_len);
-  void b64_decode(char* data, int data_len, const char* code, int code_len);
+namespace rai {
+int b64_codeLen(uint data_len);
+uint b64_maxDataLen(uint code_len);
+void b64_encode(char* code, int code_len, const char* data, int data_len);
+void b64_decode(char* data, int data_len, const char* code, int code_len);
 }
 
 //===========================================================================

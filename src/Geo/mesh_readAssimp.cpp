@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -35,7 +35,7 @@ AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ, bool relativeMe
 
   directory = path.substr(0, path.find_last_of('/'));
 
-  if(verbose>0){
+  if(verbose>0) {
     LOG(0) <<"loading " <<path <<" from directory " <<directory;
   }
 
@@ -59,9 +59,9 @@ AssimpLoader::AssimpLoader(const aiScene* scene) {
 rai::Mesh AssimpLoader::getSingleMesh() {
   CHECK(meshes.N, "nothing loaded");
   rai::Mesh M;
-  for(auto& _meshes: meshes) for(auto& mesh:_meshes){
-    M.addMesh(mesh);
-  }
+  for(auto& _meshes: meshes) for(auto& mesh:_meshes) {
+      M.addMesh(mesh);
+    }
   if(!M.tex.N) M.Tt.clear();
   return M;
 }
@@ -77,34 +77,34 @@ void AssimpLoader::loadNode(const aiNode* node, const aiScene* scene, arr T, boo
   arr p = T.sub(0, 2, 3, 3).reshape(3);
   arr Rt = ~R;
   arr scales(3);
-  for(uint i=0;i<3;i++) scales(i) = 1./length(Rt[i]);
+  for(uint i=0; i<3; i++) scales(i) = 1./length(Rt[i]);
   rai::Transformation X;
   X.pos.set(p);
   X.rot.setMatrix((R%scales).p);
 
-  if(verbose>0){
+  if(verbose>0) {
     LOG(0) <<" loading node '" <<node->mName.C_Str() <<"' of parent '" <<(node->mParent?node->mParent->mName.C_Str():"<nil>");
 
     cout <<"Transform: T=\n" <<T <<"\n<" <<X <<'>' <<endl;
     cout <<"Trans scaling: " <<scales <<"ortho: ";
-    cout <<scalarProduct(Rt[0],Rt[1]) <<' '<<scalarProduct(Rt[0],Rt[2]) <<' '<<scalarProduct(Rt[1],Rt[2]) <<endl;
+    cout <<scalarProduct(Rt[0], Rt[1]) <<' '<<scalarProduct(Rt[0], Rt[2]) <<' '<<scalarProduct(Rt[1], Rt[2]) <<endl;
   }
 
   names.append(node->mName.C_Str());
   poses.append(X);
-  if(node->mParent){
+  if(node->mParent) {
     parents.append(node->mParent->mName.C_Str());
-  }else{
+  } else {
     parents.append();
   }
   meshes.append();
 
-  if(node->mMetaData){
+  if(node->mMetaData) {
     CHECK(node->mMetaData->mKeys[0]==aiString("mass"), "");
     double m=0.;
-    node->mMetaData->Get<double>(0,m);
+    node->mMetaData->Get<double>(0, m);
     masses.append(m);
-  }else{
+  } else {
     masses.append(0.);
   }
 
@@ -114,7 +114,7 @@ void AssimpLoader::loadNode(const aiNode* node, const aiScene* scene, arr T, boo
     rai::Mesh& M = meshes.last().last();
     M.V = M.V * ~R;
     for(uint i=0; i<M.V.d0; i++) M.V[i] += p;
-    if(relativeMeshPoses){
+    if(relativeMeshPoses) {
       M.transform(-poses.last());
     }
   }
@@ -127,7 +127,7 @@ void AssimpLoader::loadNode(const aiNode* node, const aiScene* scene, arr T, boo
 }
 
 rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
-  if(verbose>0){
+  if(verbose>0) {
     LOG(0) <<"loading mesh: #V=" <<mesh->mNumVertices;
   }
   rai::Mesh M;
@@ -167,7 +167,7 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
   }
 
   uint nTex = material->GetTextureCount(aiTextureType_DIFFUSE);
-  if(verbose>0){
+  if(verbose>0) {
     cout <<"material: #textures=" <<nTex <<endl;
   }
   if(loadTextures && nTex) {
@@ -175,7 +175,7 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
     aiString str;
     material->GetTexture(aiTextureType_DIFFUSE, 0, &str);
 
-    if(verbose>0){
+    if(verbose>0) {
       cout <<"texture=" <<str.C_Str() <<endl;
     }
 
@@ -193,11 +193,11 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
     }
     stbi_image_free(data);
 
-    if(!M.Tt.d0){
+    if(!M.Tt.d0) {
       M.Tt.clear();
       M.tex.clear();
       M.texImg.clear();
-    }else{
+    } else {
       CHECK_EQ(M.Tt.d0, M.T.d0, "");
       CHECK_EQ(M.tex.d0, M.V.d0, "");
       CHECK_EQ(M.texImg.nd, 3, "");
@@ -223,7 +223,7 @@ void buildAiMesh(const rai::Mesh& M, aiMesh* pMesh) {
 //      pMesh->mTextureCoords[0][ itr - vVertices.begin() ] = aiVector3D( uvs[j].x, uvs[j].y, 0 );
   }
 
-  if(M.T.d1==3){
+  if(M.T.d1==3) {
     pMesh->mFaces = new aiFace[ M.T.d0 ];
     pMesh->mNumFaces = M.T.d0;
 
@@ -235,13 +235,13 @@ void buildAiMesh(const rai::Mesh& M, aiMesh* pMesh) {
       face.mIndices[1] = M.T(i, 1);
       face.mIndices[2] = M.T(i, 2);
     }
-  }else{
+  } else {
     LOG(-1) <<"can't export non tri meshes";
     pMesh->mNumFaces = 0;
   }
 }
 
-void writeAssimp(const rai::Mesh& M, const char* filename, const char* format){
+void writeAssimp(const rai::Mesh& M, const char* filename, const char* format) {
   // create a new scene
   aiScene scene;
   scene.mRootNode = new aiNode("root");

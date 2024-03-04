@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -30,7 +30,7 @@ struct F_fex_Torque : Feature {
 
 struct F_fex_Wrench : Feature {
   void phi2(arr& y, arr& J, const FrameL& F);
-  uint dim_phi2(const FrameL& F){ return 6; }
+  uint dim_phi2(const FrameL& F) { return 6; }
 };
 
 //===========================================================================
@@ -38,14 +38,14 @@ struct F_fex_Wrench : Feature {
 
 struct F_HingeXTorque : Feature {
   void phi2(arr& y, arr& J, const FrameL& F);
-  uint dim_phi2(const FrameL& F){ return 1; }
+  uint dim_phi2(const FrameL& F) { return 1; }
 };
 
 struct F_TotalForce : Feature {
   double gravity=9.81;
   F_TotalForce(bool _zeroGravity=false);
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2(const FrameL& C){ return 6; }
+  virtual uint dim_phi2(const FrameL& C) { return 6; }
 };
 
 //===========================================================================
@@ -57,9 +57,9 @@ struct F_GravityAcceleration : Feature {
   F_GravityAcceleration() {
     gravity = rai::getParameter<double>("gravity", 9.81);
   }
-  Feature& setImpulseInsteadOfAcceleration(){ impulseInsteadOfAcceleration=true; return *this; }
+  Feature& setImpulseInsteadOfAcceleration() { impulseInsteadOfAcceleration=true; return *this; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2(const FrameL& F){ return 6; }
+  virtual uint dim_phi2(const FrameL& F) { return 6; }
 };
 
 struct F_NewtonEuler : Feature {
@@ -185,7 +185,7 @@ struct F_fex_POA_isAtWitnesspoint : Feature {
 
 struct F_PushRadiusPrior : Feature {
   double rad;
-  F_PushRadiusPrior(double _rad) : rad(_rad){}
+  F_PushRadiusPrior(double _rad) : rad(_rad) {}
   virtual arr phi(const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 3; }
 };

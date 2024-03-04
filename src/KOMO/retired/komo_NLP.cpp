@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 //this treats each time slice as its own variable
 struct Conv_KOMO_TimeFactoredNLP : NLP_Factored {
   KOMO& komo;
@@ -20,7 +28,6 @@ struct Conv_KOMO_TimeFactoredNLP : NLP_Factored {
   virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H); //get a single feature block
   virtual void report();
 };
-
 
 struct Conv_KOMO_TimeSliceProblem : NLP {
   KOMO& komo;
@@ -123,7 +130,7 @@ void Conv_KOMO_TimeFactoredNLP::setSingleVariable(uint var_id, const arr& x) {
   komo.set_x(x, {var_id});
 }
 
-void Conv_KOMO_TimeFactoredNLP::report(){
+void Conv_KOMO_TimeFactoredNLP::report() {
   reportAfterPhiComputation(komo);
 }
 
@@ -178,7 +185,7 @@ void Conv_KOMO_TimeFactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, ar
         CHECK(good, "Jacobian is non-zero on variable " <<var <<", but indices say that feature depends on " <<F.varIds);
       }
     }
-  } else if(isRowShifted(phi.J())){
+  } else if(isRowShifted(phi.J())) {
     J = phi.J();
   } else {
     HALT("??");
@@ -239,7 +246,6 @@ void Conv_KOMO_TimeFactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, ar
   }
 #endif
 }
-
 
 //===========================================================================
 

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -513,8 +513,8 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
       for(uint i=0; i<vars.N; i++) values(vars(i)->index) = domainOf(i)(valueIndex(i)); //assign the configuration
 #if 1 //only allow for disjoint assignments -- DISABLED!?
       for(uint i=0; i<values.N && feasible; i++) for(uint j=i+1; j<values.N && feasible; j++) {
-        if(values(i)==values(j)) feasible=false;
-      }
+          if(values(i)==values(j)) feasible=false;
+        }
 #endif
       if(!feasible) continue;
       for(Node* literal:constraints) { //loop through all constraints

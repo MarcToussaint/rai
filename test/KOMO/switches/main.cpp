@@ -182,7 +182,6 @@ void testFloat(uint order){
   }else NIY;
   komo.addQuaternionNorms();
 
-
 //  komo.addFlexiSwitch({0., -1.}, false, false, rai::JT_transXYPhi, {"floor", "obj"}, true, true, false);
 //  komo.addObjective({0.2, -1.}, FS_qItself, {"obj"}, OT_sos, {1e-1}, {}, 1);
 

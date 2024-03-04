@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -50,7 +50,7 @@ struct ConvexGeometryData {
   intA polygons;
 };
 
-struct FclInterface_self{
+struct FclInterface_self {
   Array<shared_ptr<struct ConvexGeometryData>> convexGeometryData;
   std::vector<CollObject*> objects;
   shared_ptr<BroadPhaseCollisionManager> manager;
@@ -61,21 +61,21 @@ struct FclInterface_self{
 FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes, QueryMode _mode)
   : mode(_mode), excludes(_excludes) {
   self = new FclInterface_self;
-  
+
   self->convexGeometryData.resize(geometries.N);
   for(long int i=0; i<geometries.N; i++) {
-    Shape *shape = geometries(i);
+    Shape* shape = geometries(i);
     if(shape) {
       std::shared_ptr<fcl::CollisionGeometry> geom;
-      if(shape->type()==ST_capsule){
+      if(shape->type()==ST_capsule) {
         geom = make_shared<fcl::Capsule>(shape->size(-1), shape->size(-2));
-      }else if(shape->type()==ST_cylinder){
+      } else if(shape->type()==ST_cylinder) {
         geom = make_shared<fcl::Cylinder>(shape->size(-1), shape->size(-2));
-      }else if(shape->type()==ST_sphere){
+      } else if(shape->type()==ST_sphere) {
         geom = make_shared<fcl::Sphere>(shape->size(-1));
 //      }else if(shape->type()==ST_box){
 //        geom = make_shared<fcl::Box>(shape->size(0), shape->size(1), shape->size(2));
-      }else{
+      } else {
         Mesh& mesh = shape->mesh();
 #if 0
         auto model = make_shared<fcl::BVHModel<fcl::OBBRSS>>();
@@ -85,10 +85,10 @@ FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _exclu
         model->endModel();
 #elif 1
         CHECK(!mesh.cvxParts.N, "NIY")
-            //rai::Mesh mesh;
-            //mesh.V = mesh_org.V;
-            //mesh.makeConvexHull();
-            mesh.computeNormals();
+        //rai::Mesh mesh;
+        //mesh.V = mesh_org.V;
+        //mesh.makeConvexHull();
+        mesh.computeNormals();
         std::shared_ptr<ConvexGeometryData> dat = make_shared<ConvexGeometryData>();
         dat->plane_dis = mesh.computeTriDistances();
         copy<int>(dat->polygons, mesh.T);
@@ -97,8 +97,8 @@ FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _exclu
 #if FCL_MINOR_VERSION >= 7
         auto verts = make_shared<std::vector<fcl::Vector3<float>>>(mesh.V.d0);
         auto faces = make_shared<std::vector<int>>(mesh.T.N);
-        for(uint i=0;i<verts->size();i++) (*verts)[i] = {(float)mesh.V(i,0), (float)mesh.V(i,1), (float)mesh.V(i,2)};
-        for(uint i=0;i<faces->size();i++) (*faces)[i] = mesh.T.elem(i);
+        for(uint i=0; i<verts->size(); i++)(*verts)[i] = {(float)mesh.V(i, 0), (float)mesh.V(i, 1), (float)mesh.V(i, 2)};
+        for(uint i=0; i<faces->size(); i++)(*faces)[i] = mesh.T.elem(i);
         auto model = make_shared<fcl::Convex<float>>(verts, mesh.T.d0, faces, true);
 #else
         geom = make_shared<fcl::Convex>((fcl::Vec3f*)mesh.Tn.p, dat->plane_dis.p, mesh.T.d0, (fcl::Vec3f*)mesh.V.p, mesh.V.d0, (int*)dat->polygons.p);
@@ -137,7 +137,7 @@ void FclInterface::step(const arr& X) {
   for(auto* obj:self->objects) {
     uint i = (long int)obj->getUserData();
     if(i<X_lastQuery.d0 && maxDiff(X_lastQuery[i], X[i])<1e-8) continue;
-    double* T=&X(i,0);
+    double* T=&X(i, 0);
     obj->setTranslation(Vec3f(T[0], T[1], T[2]));
     obj->setQuatRotation(Quaternionf(T[3], T[4], T[5], T[6]));
     obj->computeAABB();
@@ -167,38 +167,38 @@ bool FclInterface_self::BroadphaseCallback(CollObject* o1, CollObject* o2, void*
 
   uint a = (long int)o1->getUserData();
   uint b = (long int)o2->getUserData();
-  if(fcl->excludes.N){
-    if(a<b){
+  if(fcl->excludes.N) {
+    if(a<b) {
       if(fcl->excludes(a).containsInSorted(b)) return false;
-    }else{
+    } else {
       if(fcl->excludes(b).containsInSorted(a)) return false;
     }
   }
 
 //  if(fcl->cutoff>=0) LOG(-1) <<"fcl fine collision (ccd) is buggy - might stall - cutoff:" <<fcl->cutoff;
 
-  if(fcl->mode==fcl->_broadPhaseOnly){
-    fcl->addCollision(a,b);
-  }else if(fcl->mode==fcl->_binaryCollisionSingle || fcl->mode==fcl->_binaryCollisionAll) { //fine boolean collision query
+  if(fcl->mode==fcl->_broadPhaseOnly) {
+    fcl->addCollision(a, b);
+  } else if(fcl->mode==fcl->_binaryCollisionSingle || fcl->mode==fcl->_binaryCollisionAll) { //fine boolean collision query
     CollisionRequest request;
     CollisionResult result;
     fcl::collide(o1, o2, request, result);
-    if(result.isCollision()){
-      fcl->addCollision(a,b);
+    if(result.isCollision()) {
+      fcl->addCollision(a, b);
       if(fcl->mode==fcl->_binaryCollisionSingle) return true; //can stop now
     }
-  } else if(fcl->mode==fcl->_distanceCutoff){
+  } else if(fcl->mode==fcl->_distanceCutoff) {
     CHECK(fcl->cutoff>=0., "")
     DistanceRequest request;
     DistanceResult result;
     fcl::distance(o1, o2, request, result);
-    if(result.min_distance<fcl->cutoff) fcl->addCollision(a,b);
+    if(result.min_distance<fcl->cutoff) fcl->addCollision(a, b);
   } else {
     NIY;
   }
   return false;
 }
-  
+
 }//namespace
 
 #else //RAI_FCL

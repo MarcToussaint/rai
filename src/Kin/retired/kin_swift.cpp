@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -217,7 +217,7 @@ void SwiftInterface::pushToSwift(const arr& X) {
 //  CHECK_LE(swiftID.N,  frames.N, "the number of shapes has changed");
   rai::Transformation t;
   rai::Matrix rot;
-  for(uint i=0;i<X.d0;i++){
+  for(uint i=0; i<X.d0; i++) {
     int a = swiftID.elem(i);
     if(a==-1) continue;
     if(i<X_lastQuery.d0 && maxDiff(X_lastQuery[i], X[i])<1e-8) continue;
@@ -270,10 +270,10 @@ uintA SwiftInterface::pullFromSwift(bool dumpReport) {
     }
   }
 
-  uintA collisionPairs(np,2);
+  uintA collisionPairs(np, 2);
   for(k=0, i=0; i<np; i++) {
-    collisionPairs(i,0) = INDEXswift2frame(oids[i <<1]);
-    collisionPairs(i,1) = INDEXswift2frame(oids[(i <<1)+1]);
+    collisionPairs(i, 0) = INDEXswift2frame(oids[i <<1]);
+    collisionPairs(i, 1) = INDEXswift2frame(oids[(i <<1)+1]);
   }
   return collisionPairs;
 
@@ -364,10 +364,10 @@ uintA SwiftInterface::pullFromSwift(bool dumpReport) {
 #endif
 }
 
-void SwiftInterface::deactivate(const uintA& collisionExcludeIDs){
+void SwiftInterface::deactivate(const uintA& collisionExcludeIDs) {
   if(!collisionExcludeIDs.N) return;
   CHECK_EQ(collisionExcludeIDs.nd, 1, "");
-  for(uint i=0;i<collisionExcludeIDs.d0;i++){
+  for(uint i=0; i<collisionExcludeIDs.d0; i++) {
     int a=swiftID(collisionExcludeIDs(i));
     if(a==-1) continue;
     //cout <<"deactivating shape pair " <<s1->name <<'-' <<s2->name <<endl;
@@ -375,12 +375,12 @@ void SwiftInterface::deactivate(const uintA& collisionExcludeIDs){
   }
 }
 
-void SwiftInterface::deactivatePairs(const uintA& collisionExcludePairIDs){
+void SwiftInterface::deactivatePairs(const uintA& collisionExcludePairIDs) {
   if(!collisionExcludePairIDs.N) return;
   CHECK_EQ(collisionExcludePairIDs.nd, 2, "");
-  for(uint i=0;i<collisionExcludePairIDs.d0;i++){
-    int a=swiftID(collisionExcludePairIDs(i,0));
-    int b=swiftID(collisionExcludePairIDs(i,1));
+  for(uint i=0; i<collisionExcludePairIDs.d0; i++) {
+    int a=swiftID(collisionExcludePairIDs(i, 0));
+    int b=swiftID(collisionExcludePairIDs(i, 1));
     if(a==-1 || b==-1) continue;
     //cout <<"deactivating shape pair " <<s1->name <<'-' <<s2->name <<endl;
     scene->Deactivate(a, b);
@@ -416,18 +416,16 @@ uint SwiftInterface::countObjects() {
 
 #include "../Core/util.h"
 
-SwiftInterface::SwiftInterface(const FrameL& frames, double _cutoff, int verbose){ NICO }
-SwiftInterface::~SwiftInterface(){ NICO }
+SwiftInterface::SwiftInterface(const FrameL& frames, double _cutoff, int verbose) { NICO }
+SwiftInterface::~SwiftInterface() { NICO }
 
-uintA SwiftInterface::step(const arr& X, bool dumpReport){ NICO }
+uintA SwiftInterface::step(const arr& X, bool dumpReport) { NICO }
 
-void SwiftInterface::pushToSwift(const arr& X){ NICO }
-uintA SwiftInterface::pullFromSwift(bool dumpReport){ NICO }
+void SwiftInterface::pushToSwift(const arr& X) { NICO }
+uintA SwiftInterface::pullFromSwift(bool dumpReport) { NICO }
 
-void SwiftInterface::deactivate(const uintA& collisionExcludePairIDs){ NICO }
-void SwiftInterface::deactivatePairs(const uintA& collisionExcludePairIDs){ NICO }
-
-
+void SwiftInterface::deactivate(const uintA& collisionExcludePairIDs) { NICO }
+void SwiftInterface::deactivatePairs(const uintA& collisionExcludePairIDs) { NICO }
 
 void SwiftInterface::reinitShape(const rai::Frame* s) { NICO }
 //  void close(){ NICO }

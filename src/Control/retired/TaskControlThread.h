@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -58,24 +58,24 @@ struct TaskControlUserInterface {
 #endif
 
 shared_ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrlTasks,
-                                    Var<rai::Configuration>& ctrl_config,
-                                    const char* name, const shared_ptr<Feature>& map,
-                                    const shared_ptr<CtrlMovingTarget>& ref);
+    Var<rai::Configuration>& ctrl_config,
+    const char* name, const shared_ptr<Feature>& map,
+    const shared_ptr<CtrlMovingTarget>& ref);
 
 shared_ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrlTasks,
-                                    Var<rai::Configuration>& ctrl_config,
-                                    const char* name, FeatureSymbol fs, const StringA& frames,
-                                    const shared_ptr<CtrlMovingTarget>& ref);
+    Var<rai::Configuration>& ctrl_config,
+    const char* name, FeatureSymbol fs, const StringA& frames,
+    const shared_ptr<CtrlMovingTarget>& ref);
 
 shared_ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrlTasks,
-                                    Var<rai::Configuration>& ctrl_config,
-                                    const char* name, FeatureSymbol fs, const StringA& frames,
-                                    double duration);
+    Var<rai::Configuration>& ctrl_config,
+    const char* name, FeatureSymbol fs, const StringA& frames,
+    double duration);
 
 shared_ptr<CtrlObjective> addCompliance(Var<CtrlObjectiveL>& ctrlTasks,
-                                 Var<rai::Configuration>& ctrl_config,
-                                 const char* name, FeatureSymbol fs, const StringA& frames,
-                                 const arr& compliance);
+                                        Var<rai::Configuration>& ctrl_config,
+                                        const char* name, FeatureSymbol fs, const StringA& frames,
+                                        const arr& compliance);
 
 void removeCtrlObjective(Var<CtrlObjectiveL>& ctrlTasks, CtrlObjective* t);
 

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -93,13 +93,13 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
   }
 
   OptConstrained opt(x, NoArr, F.ptr(), rai::OptOptions()
-                       .set_stopTolerance(1e-4)
-                       .set_stopFTolerance(1e-3)
-                       .set_damping(1)
-                       .set_maxStep(-1)
-                       .set_constrainedMethod(rai::augmentedLag)
-                       .set_muInc(1.1)
-                     );
+                     .set_stopTolerance(1e-4)
+                     .set_stopFTolerance(1e-3)
+                     .set_damping(1)
+                     .set_maxStep(-1)
+                     .set_constrainedMethod(rai::augmentedLag)
+                     .set_muInc(1.1)
+                    );
   opt.run();
 
   if(verbose>1) {
@@ -257,14 +257,14 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
   }
 
   OptConstrained opt(x, NoArr, P.ptr(), rai::OptOptions()
-                       .set_stopTolerance(1e-4)
-                       .set_stopFTolerance(1e-3)
-                       .set_damping(1.)
-                       .set_maxStep(.1)
-                       .set_constrainedMethod(rai::augmentedLag)
-                       .set_muInc(1.1)
-                       .set_verbose(3)
-                     );
+                     .set_stopTolerance(1e-4)
+                     .set_stopFTolerance(1e-3)
+                     .set_damping(1.)
+                     .set_maxStep(.1)
+                     .set_constrainedMethod(rai::augmentedLag)
+                     .set_muInc(1.1)
+                     .set_verbose(3)
+                    );
   opt.run();
 
   if(verbose>0) {
@@ -543,11 +543,11 @@ struct FitCapsuleProblem : NLP {
     B.setId();
     B *= 1./l;
     B -= ((a-b)^(a-b)) / (l*l*l);
-    arr A(6,6);
-    A.setMatrixBlock(B, 0,0);
-    A.setMatrixBlock(-B, 0,3);
-    A.setMatrixBlock(-B, 3,0);
-    A.setMatrixBlock(B, 3,3);
+    arr A(6, 6);
+    A.setMatrixBlock(B, 0, 0);
+    A.setMatrixBlock(-B, 0, 3);
+    A.setMatrixBlock(-B, 3, 0);
+    A.setMatrixBlock(B, 3, 3);
     H.setMatrixBlock(A, 0, 0);
     checkNan(H);
   }//zero
@@ -584,21 +584,21 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
 
 #if 1
   OptConstrained opt(x, NoArr, F, rai::OptOptions()
-                       .set_stopTolerance(1e-4)
-                       .set_stopFTolerance(1e-3)
-                       .set_damping(1)
-                       .set_maxStep(-1)
-                       .set_constrainedMethod(rai::augmentedLag)
-                       .set_muInc(1.1)
-                     );
+                     .set_stopTolerance(1e-4)
+                     .set_stopFTolerance(1e-3)
+                     .set_damping(1)
+                     .set_maxStep(-1)
+                     .set_constrainedMethod(rai::augmentedLag)
+                     .set_muInc(1.1)
+                    );
 #else
   OptPrimalDual opt(x, NoArr, F, rai::OptOptions()
-                      .set_stopTolerance(1e-5)
-                      .set_stopFTolerance(1e-5)
-                      .set_damping(1e-0)
-                      .set_maxStep(-1)
-                      .set_muLBInit(1e1)
-                                     );
+                    .set_stopTolerance(1e-5)
+                    .set_stopFTolerance(1e-5)
+                    .set_damping(1e-0)
+                    .set_maxStep(-1)
+                    .set_muLBInit(1e1)
+                   );
 #endif
 
   opt.run();

@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "../Core/array.h"
@@ -7,7 +15,7 @@
 struct SolverReturn;
 
 //A wrapper of TimingOpt optimize the timing (and vels) along given waypoints, and progressing/backtracking the phase
-struct TimingMPC{
+struct TimingMPC {
   //inputs
   arr waypoints;
   arr tangents;
@@ -34,10 +42,10 @@ struct TimingMPC{
 
   shared_ptr<SolverReturn> solve(const arr& x0, const arr& v0, int verbose=1);
 
-  uint nPhases() const{ return waypoints.d0; }
-  bool done() const{ return phase>=nPhases(); }
-  arr getWaypoints() const{ if(done()) return waypoints[-1].copy().reshape(1,-1); return waypoints({phase, -1}).copy(); }
-  arr getTimes() const{ if(done()) return {.1}; return integral(tau({phase, -1})); }
+  uint nPhases() const { return waypoints.d0; }
+  bool done() const { return phase>=nPhases(); }
+  arr getWaypoints() const { if(done()) return waypoints[-1].copy().reshape(1, -1); return waypoints({phase, -1}).copy(); }
+  arr getTimes() const { if(done()) return {.1}; return integral(tau({phase, -1})); }
   arr getVels() const;
 
   bool set_progressedTime(double gap, double tauCutoff=0.);

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -55,11 +55,11 @@ void conv_times2steps(int& fromStep, int& toStep, const arr& times, int stepsPer
 }
 
 intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
-                       int deltaFromStep, int deltaToStep){
+                       int deltaFromStep, int deltaToStep) {
 
-  if(times.N && times.elem(0)==-10.){
-    intA configs (times.N-1);
-    for(uint i=0;i<configs.N;i++) configs(i) = times(i+1);
+  if(times.N && times.elem(0)==-10.) {
+    intA configs(times.N-1);
+    for(uint i=0; i<configs.N; i++) configs(i) = times(i+1);
     configs.reshape(-1, order+1);
     return configs;
   }
@@ -134,7 +134,7 @@ void rai::KinematicSwitch::setTimeOfApplication(const arr& times, bool before, i
   double startTime = times(0);
   double endTime = (times.N==2?times(1): -1.);
   timeOfApplication = (startTime<0.?0:conv_time2step(startTime, stepsPerPhase))+(before?0:1);
-  if(endTime!=-1.){
+  if(endTime!=-1.) {
     timeOfTermination = conv_time2step(endTime, stepsPerPhase);
   }
 }
@@ -160,7 +160,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
 #endif
 
     if(!jB.isZero()) {
-      Frame *newto = new Frame(to->C);
+      Frame* newto = new Frame(to->C);
       newto->name <<'<' <<to->name;
       to->setParent(newto, false);
       to->set_Q() = jB;

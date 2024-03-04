@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "PathResult.h"
@@ -29,15 +37,15 @@ struct RRT_SingleTree : GLDrawer {
   uint add(const arr& q, uint parentID, const shared_ptr<QueryResult>& _qr);
 
   //trivial access routines
-  uint getParent(uint i){ return parent(i); }
-  uint getNumberNodes(){ return ann.X.d0; }
-  uint getDim(){ return ann.X.d1; }
-  arr getNode(uint i){ return ann.X[i].copy(); }
-  arr getLast(){ return ann.X[ann.X.d0-1].copy(); }
-  arr getRandomNode(){ return ann.X[rnd(ann.X.d0)].copy(); }
+  uint getParent(uint i) { return parent(i); }
+  uint getNumberNodes() { return ann.X.d0; }
+  uint getDim() { return ann.X.d1; }
+  arr getNode(uint i) { return ann.X[i].copy(); }
+  arr getLast() { return ann.X[ann.X.d0-1].copy(); }
+  arr getRandomNode() { return ann.X[rnd(ann.X.d0)].copy(); }
   arr getPathFromNode(uint fromID);
 
-  void glDraw(OpenGL &gl);
+  void glDraw(OpenGL& gl);
 
   arr getSideStep(std::shared_ptr<QueryResult> qr);
 };
@@ -67,7 +75,7 @@ struct RRT_PathFinder {
   arr path;
 
   RRT_PathFinder(ConfigurationProblem& _P, const arr& starts, const arr& goals, double _stepsize = -1., int _subsampleChecks=-1, int maxIters=-1, int _verbose=-1);
-  ~RRT_PathFinder(){}
+  ~RRT_PathFinder() {}
 
   int stepConnect();
   void planForward(const arr& q0, const arr& qT);
@@ -78,8 +86,7 @@ struct RRT_PathFinder {
 
   arr run(double timeBudget=1.); //obsolete
 
-
-private:
+ private:
   rai::Configuration DISP;
 };
 

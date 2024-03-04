@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -68,7 +68,7 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName) {
   CHECK(sensorName, "you need to specify a sensor name, nullptr not allowed");
   Sensor* sen=0;
   for(Sensor& s:sensors) if(s.name==sensorName) { sen=&s; break; }
-  if(!sen){
+  if(!sen) {
 //    LOG(0) <<"can't find that sensor: " <<sensorName <<" -- trying to add it";
     return addSensor(sensorName);
   }
@@ -85,8 +85,8 @@ void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
 #if 0
     C.setFrameState(newC.getFrameState());
 #else
-    for(uint i=0;i<C.frames.N;i++){
-      rai::Frame *f = newC.frames.elem(i);
+    for(uint i=0; i<C.frames.N; i++) {
+      rai::Frame* f = newC.frames.elem(i);
       if(f->shape) C.frames.elem(i)->set_X() = f->ensure_X();
     }
 #endif
@@ -94,7 +94,7 @@ void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
     C.copy(newC);
     //deep copy meshes!
     for(rai::Frame* f:C.frames) if(f->shape) {
-        if(f->shape->_mesh){
+        if(f->shape->_mesh) {
           shared_ptr<Mesh> org = f->shape->_mesh;
           f->shape->_mesh = make_shared<Mesh> (*org.get());
           f->shape->glListId = 0;
@@ -249,5 +249,5 @@ void rai::Sim_CameraView::step() {
 
 arr rai::Sim_CameraView::getFxycxy() {
   auto sen = V.currentSensor;
-  return arr{sen->cam.focalLength*sen->height, sen->cam.focalLength*sen->height, .5*(sen->width-1.), .5*(sen->height-1.)};
+  return arr{sen->cam.focalLength* sen->height, sen->cam.focalLength* sen->height, .5*(sen->width-1.), .5*(sen->height-1.)};
 }

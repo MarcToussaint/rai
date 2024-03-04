@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -81,7 +81,7 @@ rai::Frame::~Frame() {
   if(this==C.frames.last()) { //great: this is very efficient to remove without breaking indexing
     CHECK_EQ(ID, C.frames.N-1, "");
     C.frames.resizeCopy(C.frames.N-1);
-  }else{
+  } else {
     CHECK_EQ(this, C.frames.elem(ID), "");
     C.frames.remove(ID);
     for(uint i=0; i<C.frames.N; i++) C.frames.elem(i)->ID=i;
@@ -108,7 +108,7 @@ void rai::Frame::calc_X_from_parent() {
   }
 
   _state_X_isGood=true;
-  if(shape && shape->cont){
+  if(shape && shape->cont) {
     C._state_proxies_isGood = false;
   }
 }
@@ -167,7 +167,7 @@ void rai::Frame::_state_updateAfterTouchingX() {
 void rai::Frame::_state_updateAfterTouchingQ() {
 //  CHECK(parent, "can't set Q for a root frame '" <<name <<"'");
   if(!parent) THROW("can't set Q for a root frame '" <<name <<"'")
-  _state_setXBadinBranch();
+    _state_setXBadinBranch();
   if(joint && joint->dim) C._state_q_isGood = false;
 }
 
@@ -278,60 +278,60 @@ void rai::Frame::prefixSubtree(const char* prefix) {
   for(auto* f:F) f->name.prepend(prefix);
 }
 
-void rai::Frame::computeCompoundInertia(bool clearChildInertias){
+void rai::Frame::computeCompoundInertia(bool clearChildInertias) {
   CHECK(!inertia, "this frame already has inertia");
   FrameL all = {};
   getRigidSubFrames(all, false);
-  Inertia *I = new Inertia(*this);
+  Inertia* I = new Inertia(*this);
   I->setZero();
-  for(rai::Frame *f:all) if(f->inertia) {
-    I->add(*f->inertia, f->ensure_X() / ensure_X());
-    if(clearChildInertias) delete f->inertia;
-  }
+  for(rai::Frame* f:all) if(f->inertia) {
+      I->add(*f->inertia, f->ensure_X() / ensure_X());
+      if(clearChildInertias) delete f->inertia;
+    }
 }
 
-void rai::Frame::convertDecomposedShapeToChildFrames(){
+void rai::Frame::convertDecomposedShapeToChildFrames() {
   CHECK(shape && shape->type()==ST_mesh, "");
-  Mesh &m = shape->mesh();
+  Mesh& m = shape->mesh();
   CHECK(m.cvxParts.N, "");
-  for(uint i=0;i<m.cvxParts.N;i++){
-    rai::Frame *ch = new Frame(this);
+  for(uint i=0; i<m.cvxParts.N; i++) {
+    rai::Frame* ch = new Frame(this);
     ch->name <<name <<'_' <<i;
     ch->setShape(ST_mesh, {});
-    Mesh &s = ch->shape->mesh();
+    Mesh& s = ch->shape->mesh();
     int start = m.cvxParts(i);
     int end = i+1<m.cvxParts.N ? m.cvxParts(i+1)-1 : -1;
     s.V = m.V({start, end});
     s.makeConvexHull();
-    if(!s.V.N){
+    if(!s.V.N) {
       delete ch; //ch->setShape(ST_marker, {.01});
-    }else{
+    } else {
       ch->shape->cont = shape->cont;
     }
   }
   delete shape;
 }
 
-void rai::Frame::transformToDiagInertia(){
+void rai::Frame::transformToDiagInertia() {
   CHECK(inertia, "");
   CHECK(!shape || shape->type()==rai::ST_marker, "can't translate this frame if it has a shape attached");
   CHECK(!joint || joint->type==rai::JT_rigid || joint->type==rai::JT_free, "can't translate this frame if it has a joint attached");
   //LOG(0) <<"translating frame '" <<name <<"' to accomodate for centered compound inertia";
   rai::Transformation t=0;
   //transform COM
-  if(!inertia->com.isZero){
+  if(!inertia->com.isZero) {
     t.pos = inertia->com;
     inertia->com.setZero();
   }
-  if(!inertia->matrix.isDiagonal()){
+  if(!inertia->matrix.isDiagonal()) {
     arr I = inertia->matrix.getArr();
-    arr U,d,V;
+    arr U, d, V;
     svd(U, d, V, I, false);
     inertia->matrix.setDiag(d);
     t.rot.setMatrix(V);
   }
 
-  if(!t.isZero()){
+  if(!t.isZero()) {
     set_X()->appendTransformation(t);
     for(rai::Frame* ch:children) ch->set_Q() = -t * ch->get_Q();
   }
@@ -344,7 +344,7 @@ void rai::Frame::_state_setXBadinBranch() {
   }
 }
 
-bool transFromAts(rai::Transformation& X, const rai::Graph& ats, const char* key){
+bool transFromAts(rai::Transformation& X, const rai::Graph& ats, const char* key) {
   rai::Node* n = ats[key];
   if(!n) return false;
   if(n->is<rai::String>()) X.read(n->as<rai::String>().resetIstream());
@@ -364,7 +364,7 @@ void rai::Frame::read(const Graph& ats) {
 
   if(ats["type"]) ats["type"]->key = "shape"; //compatibility with old convention: 'body { type... }' generates shape
 
-  Node *n;
+  Node* n;
   if((n=ats["joint"])) {
     if(n->as<String>()=="path") {
       new PathDof(*this);
@@ -373,7 +373,7 @@ void rai::Frame::read(const Graph& ats) {
       new Joint(*this);
       joint->read(ats);
     } else {
-        //if(ats["B"]) { //there is an extra transform from the joint into this frame -> create an own joint frame
+      //if(ats["B"]) { //there is an extra transform from the joint into this frame -> create an own joint frame
 //        Frame* f = new Frame(parent);
 //        f->name <<'|' <<name; //the joint frame is actually the link frame of all child frames
 //        this->unLink();
@@ -401,10 +401,10 @@ void rai::Frame::write(Graph& G) {
 
   StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "joint_scale", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
   if(ats) for(Node* n : *ats) {
-    if(!n->key.startsWith("%") && !avoid.contains(n->key)) {
-      n->newClone(G);
+      if(!n->key.startsWith("%") && !avoid.contains(n->key)) {
+        n->newClone(G);
+      }
     }
-  }
 }
 
 void rai::Frame::write(std::ostream& os) const {
@@ -426,11 +426,11 @@ void rai::Frame::write(std::ostream& os) const {
 
   StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "joint_scale", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
   if(ats) for(Node* n : *ats) {
-    if(!n->key.startsWith("%") && !avoid.contains(n->key)){
-      os <<", ";
-      n->write(os, -1, true);
+      if(!n->key.startsWith("%") && !avoid.contains(n->key)) {
+        os <<", ";
+        n->write(os, -1, true);
+      }
     }
-  }
 
   os <<" }\n";
   //  if(mass) os <<"mass:" <<mass <<' ';
@@ -504,9 +504,9 @@ rai::Frame& rai::Frame::setMesh(const arr& verts, const uintA& tris, const byteA
   if(colors.N) {
     mesh.C = convert<double>(colors).reshape(-1, 3);
     mesh.C /= 255.;
-    if(mesh.C.N <= 4){ mesh.C.reshape(-1); }
+    if(mesh.C.N <= 4) { mesh.C.reshape(-1); }
   }
-  if(cvxParts.N){
+  if(cvxParts.N) {
     mesh.cvxParts = cvxParts;
   }
   if(shape->glListId>0) shape->glListId *= -1;
@@ -528,9 +528,9 @@ rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors, co
   if(colors.N) {
     mesh.C = convert<double>(colors).reshape(-1, 3);
     mesh.C /= 255.;
-    if(mesh.C.N <= 4){ mesh.C.reshape(-1); }
+    if(mesh.C.N <= 4) { mesh.C.reshape(-1); }
   }
-  if(normals.N){
+  if(normals.N) {
     mesh.Vn = normals;
     mesh.Vn.reshape(-1, 3);
   }
@@ -557,7 +557,7 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
   if(colors.N) {
     mesh.C = convert<double>(colors).reshape(-1, 3);
     mesh.C /= 255.;
-    if(mesh.C.N <= 4){ mesh.C.reshape(-1); }
+    if(mesh.C.N <= 4) { mesh.C.reshape(-1); }
   }
   if(shape->glListId>0) shape->glListId *= -1;
   C.view_unlock();
@@ -597,12 +597,12 @@ rai::Frame& rai::Frame::setDensity(const floatA& data, const arr& size) {
   return *this;
 }
 
-rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, uint blur, double resample){
+rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, uint blur, double resample) {
   C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
   SDF_GridData sdf(0, data, -.5*size, +.5*size);
   sdf.smooth(3, blur);
-  if(resample>0.){
+  if(resample>0.) {
     arr d = size/resample;
     LOG(0) <<" uniform resampling resolution: " <<1000.*resample <<"mm  grid size: " <<d;
     sdf.resample(d(0), d(1), d(2));
@@ -627,7 +627,7 @@ rai::Frame& rai::Frame::setJoint(rai::JointType jointType, const arr& limits) {
   if(jointType != JT_none) {
     new Joint(*this, jointType);
   }
-  if(limits.N){
+  if(limits.N) {
     joint->limits = limits;
   }
 //  if(jointType == JT_free) { joint->limits = {-10.,10,-10,10,-10,10, -1.,1,-1,1,-1,1,-1,1}; } //WTF!
@@ -651,9 +651,9 @@ rai::Frame& rai::Frame::setMass(double mass) {
 
 rai::Frame& rai::Frame::setAttribute(const char* key, double value) {
   if(!ats) ats = make_shared<Graph>();
-  if(ats->find<double>(key)){
+  if(ats->find<double>(key)) {
     ats->get<double>(key) = value;
-  }else{
+  } else {
     ats->add<double>(key, value);
   }
   return *this;
@@ -667,7 +667,7 @@ rai::Frame& rai::Frame::setJointState(const arr& q) {
   return *this;
 }
 
-void rai::Frame::makeManipJoint(rai::JointType jointType, rai::Frame* parent, bool autoLimits){
+void rai::Frame::makeManipJoint(rai::JointType jointType, rai::Frame* parent, bool autoLimits) {
   Transformation orgX = ensure_X();
 
   //THIS is the new STANDARD! (was the version that works for the crawler; works also for pnp LGP test - but not when picking link-shapes only!)
@@ -680,7 +680,7 @@ void rai::Frame::makeManipJoint(rai::JointType jointType, rai::Frame* parent, bo
 
   //-- create a pre transformation link, if necessary
   Transformation rel = 0;
-  if(jointType==JT_transXYPhi || jointType==JT_transXY){
+  if(jointType==JT_transXYPhi || jointType==JT_transXY) {
     rel.pos.set(0, 0, .5*(shapeSize(parent) + shapeSize(this)));
   }
   if(!rel.isZero()) insertPreLink(rel);
@@ -696,42 +696,44 @@ void rai::Frame::makeManipJoint(rai::JointType jointType, rai::Frame* parent, bo
   }
 
   //-- automatic limits
-  if(autoLimits){
-    if(jointType==JT_free){
+  if(autoLimits) {
+    if(jointType==JT_free) {
       double maxsize = 0.;
       rai::Shape* from = parent->shape;
-      if(from && from->type()!=rai::ST_marker){
-        if(from->type()==rai::ST_sphere || from->type()==rai::ST_cylinder || from->type()==rai::ST_ssCylinder){
+      if(from && from->type()!=rai::ST_marker) {
+        if(from->type()==rai::ST_sphere || from->type()==rai::ST_cylinder || from->type()==rai::ST_ssCylinder) {
           maxsize += 2.*from->size(0);
-        }else{
+        } else {
           maxsize += absMax(from->size);
         }
-      }else if(from){
+      } else if(from) {
         CHECK_EQ(from->type(), ST_marker, "");
       }
       rai::Shape* to = this->shape;
-      if(to && to->type()!=rai::ST_marker){
-        if(to->type()==rai::ST_sphere || to->type()==rai::ST_cylinder || to->type()==rai::ST_ssCylinder){
+      if(to && to->type()!=rai::ST_marker) {
+        if(to->type()==rai::ST_sphere || to->type()==rai::ST_cylinder || to->type()==rai::ST_ssCylinder) {
           maxsize += 2.*to->size(0);
-        }else{
+        } else {
           maxsize += absMax(to->size);
         }
       }
-      if(maxsize>1e-4){
-        joint->limits =
-        { -.9*maxsize, .9*maxsize,
+      if(maxsize>1e-4) {
+        joint->limits = {
           -.9*maxsize, .9*maxsize,
-          -.9*maxsize, .9*maxsize,
-          //            0., 1.1, -.5,.5, -.5,.5, -.5,.5 }; //no limits on rotation
-          -1.1,1.1, -1.1,1.1, -1.1,1.1, -1.1,1.1 }; //no limits on rotation
+            -.9*maxsize, .9*maxsize,
+            -.9*maxsize, .9*maxsize,
+            //            0., 1.1, -.5,.5, -.5,.5, -.5,.5 }; //no limits on rotation
+            -1.1, 1.1, -1.1, 1.1, -1.1, 1.1, -1.1, 1.1
+          }; //no limits on rotation
       }
       //        f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
-    } else if(jointType==JT_transXY || jointType==JT_transXYPhi){
+    } else if(jointType==JT_transXY || jointType==JT_transXYPhi) {
       rai::Shape* on = parent->shape;
       CHECK_EQ(on->type(), rai::ST_ssBox, "");
       joint->limits = { -.5*on->size(0), .5*on->size(0),
-                        -.5*on->size(1), .5*on->size(1) };
-      if(jointType==JT_transXYPhi) joint->limits.append({-RAI_2PI,RAI_2PI});
+                        -.5*on->size(1), .5*on->size(1)
+                      };
+      if(jointType==JT_transXYPhi) joint->limits.append({-RAI_2PI, RAI_2PI});
     }
     //sample heuristic
     joint->q0 = joint->calcDofsFromConfig();
@@ -826,7 +828,7 @@ rai::Frame& rai::Frame::setParent(rai::Frame* _parent, bool keepAbsolutePose_and
   CHECK(!parent, "this frame ('" <<name <<"') already has a parent");
   if(parent==_parent) return *this;
 
-  if(checkForLoop){
+  if(checkForLoop) {
     rai::Frame* f=_parent;
     while(f) {
       CHECK(f!=this, "loop at frame '" <<f->name <<"'");
@@ -858,43 +860,43 @@ bool rai::Frame::isChildOf(const rai::Frame* par, int order) const {
 
 //===========================================================================
 
-void rai::Dof::setRandom(uint timeSlices_d1, int verbose){
-  if(sampleUniform>0. && (sampleUniform>=1. || sampleUniform>=rnd.uni())){
+void rai::Dof::setRandom(uint timeSlices_d1, int verbose) {
+  if(sampleUniform>0. && (sampleUniform>=1. || sampleUniform>=rnd.uni())) {
     //** UNIFORM
     if(verbose>0) LOG(0) <<"init '" <<frame->name <<'[' <<frame->ID <<',' <<(timeSlices_d1?frame->ID/timeSlices_d1:0) <<']' <<"' uniform in limits " <<limits <<" relative to '" <<frame->parent->name <<"'" <<" (" <<frame->parent->ensure_X() <<")";
 
-    if(frame->prev){
+    if(frame->prev) {
       frame->set_X() = frame->prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
     }
     arr q = calcDofsFromConfig();
 
-    if(joint() && joint()->type==rai::JT_quatBall && limits(0)<=-1. && limits(1)>=1.){ //special case handler for quaternions
+    if(joint() && joint()->type==rai::JT_quatBall && limits(0)<=-1. && limits(1)>=1.) { //special case handler for quaternions
       CHECK_EQ(q.N, 4, "");
       q = randn(4);
       q /= length(q);
       if(q0.N) q0=q;
-    }else{
+    } else {
       CHECK(limits.N>=2*dim, "uniform sampling (for '" <<frame->name <<"') requires limits!")
-          for(uint k=0; k<dim; k++){
+      for(uint k=0; k<dim; k++) {
         double lo = limits.elem(2*k+0); //lo
         double up = limits.elem(2*k+1); //up
-        if(up>=lo){
-          q(k) = rnd.uni(lo,up);
+        if(up>=lo) {
+          q(k) = rnd.uni(lo, up);
           if(q0.N) q0(k) = q(k); //CRUCIAL to impose a bias to that random initialization
         }
       }
     }
     setDofs(q);
 
-  }else{
+  } else {
     //** GAUSS
     //mean: q0 or prev
-    if(q0.N){ //has default mean
+    if(q0.N) { //has default mean
       setDofs(q0); //also sets it for all mimicers
-    }else if(frame->prev){
+    } else if(frame->prev) {
       CHECK(frame->prev, "");
       if(verbose>0) LOG(0) <<"init '" <<frame->name <<'[' <<frame->ID <<',' <<(timeSlices_d1?frame->ID/timeSlices_d1:0) <<']'
-                          <<"' pose-X-equal to prevSlice frame '" <<frame->prev->name <<"' relative to '" <<frame->parent->name <<"'";
+                             <<"' pose-X-equal to prevSlice frame '" <<frame->prev->name <<"' relative to '" <<frame->parent->name <<"'";
       //init from relative pose (as in applySwitch)
       frame->set_X() = frame->prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
       arr q = calcDofsFromConfig();
@@ -907,7 +909,7 @@ void rai::Dof::setRandom(uint timeSlices_d1, int verbose){
     if(verbose>0) LOG(0) <<"init '" <<frame->name <<'[' <<frame->ID <<',' <<(timeSlices_d1?frame->ID/timeSlices_d1:0) <<']' <<"' adding noise: " <<q <<" relative to '" <<frame->parent->name <<"'";
 
     //clip
-    if(limits.N){
+    if(limits.N) {
       for(uint k=0; k<dim; k++) { //in case joint has multiple dimensions
         double lo = limits.elem(2*k+0); //lo
         double up = limits.elem(2*k+1); //up
@@ -919,21 +921,21 @@ void rai::Dof::setRandom(uint timeSlices_d1, int verbose){
   }
 }
 
-arr rai::Dof::getDofState(){
+arr rai::Dof::getDofState() {
   return frame->C.getDofState(DofL{this});
 }
 
-void rai::Dof::setActive(bool _active){
-  if(mimic){ mimic->setActive(_active); return; }
+void rai::Dof::setActive(bool _active) {
+  if(mimic) { mimic->setActive(_active); return; }
   active = _active;
   for(Joint* j:mimicers) j->active=_active;
   qIndex=UINT_MAX;
   if(frame) frame->C.reset_q();
 }
 
-const rai::Joint* rai::Dof::joint() const{ return dynamic_cast<const Joint*>(this); }
+const rai::Joint* rai::Dof::joint() const { return dynamic_cast<const Joint*>(this); }
 
-const rai::ForceExchange* rai::Dof::fex() const{ return dynamic_cast<const ForceExchange*>(this); }
+const rai::ForceExchange* rai::Dof::fex() const { return dynamic_cast<const ForceExchange*>(this); }
 
 void rai::Dof::write(std::ostream& os) const {
   os <<"DOF of frame '" <<frame->name <<"'";
@@ -960,10 +962,10 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint) {
     sampleUniform=copyJoint->sampleUniform;  sampleSdv=copyJoint->sampleSdv;
     code=copyJoint->code;
 
-    if(copyJoint->mimic){
-      if(copyJoint->mimic->frame->ID<frame->C.frames.N){
+    if(copyJoint->mimic) {
+      if(copyJoint->mimic->frame->ID<frame->C.frames.N) {
         setMimic(frame->C.frames.elem(copyJoint->mimic->frame->ID)->joint);
-      }else{
+      } else {
         setMimic(0);
       }
     }
@@ -982,7 +984,7 @@ rai::Joint::Joint(Frame& from, Frame& f, Joint* copyJoint)
 rai::Joint::~Joint() {
   frame->C.reset_q();
   frame->joint = nullptr;
-  for(Joint *j:mimicers) j->mimic=0;
+  for(Joint* j:mimicers) j->mimic=0;
   if(mimic &&  mimic!=(Joint*)1) mimic->mimicers.removeValue(this);
 }
 
@@ -994,17 +996,17 @@ const rai::Transformation& rai::Joint::Q() const {
   return frame->get_Q();
 }
 
-void rai::Joint::setMimic(rai::Joint* j, bool unsetPreviousMimic){
-  if(!j){
+void rai::Joint::setMimic(rai::Joint* j, bool unsetPreviousMimic) {
+  if(!j) {
     if(mimic) mimic->mimicers.removeValue(this);
     mimic=0;
-  }else{
-    if(mimic && unsetPreviousMimic){
+  } else {
+    if(mimic && unsetPreviousMimic) {
       mimic->mimicers.removeValue(this);
       mimic=0;
     }
     CHECK_EQ(j->type, type, "can't mimic joints of different type [could be generalized to dim]:" <<*this->frame <<" -- " <<*j->frame);
-    CHECK(!mimic,"");
+    CHECK(!mimic, "");
     mimic=j;
     mimic->mimicers.append(this);
   }
@@ -1027,13 +1029,13 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
     qp = q_copy->p;
   }
   if(mimic) {
-    if(type!=JT_tau){
+    if(type!=JT_tau) {
       Q = mimic->frame->get_Q();
-      if(scale==-1.){
+      if(scale==-1.) {
         Q.pos = -Q.pos;
         Q.rot.invert();
       }
-    }else{
+    } else {
       frame->tau = mimic->frame->tau;
     }
   } else {
@@ -1093,8 +1095,8 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
       } break;
 
       case JT_generic: {
-        for(uint i=0;i<code.N;i++){
-          switch(code[i]){
+        for(uint i=0; i<code.N; i++) {
+          switch(code[i]) {
             case 't':
               frame->tau = 1e-1 * qp[i];
               if(frame->tau<1e-10) frame->tau=1e-10;
@@ -1111,7 +1113,7 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
             case 'B':  Q.rot.addY(-qp[i]);  break;
             case 'c':  Q.rot.addZ(qp[i]);  break;
             case 'C':  Q.rot.addZ(-qp[i]);  break;
-            case 'w':{
+            case 'w': {
               CHECK_EQ(code.N-i, 4, "");
               Q.rot.set(qp+i);
               {
@@ -1179,15 +1181,15 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
   }
   //    link->link = A * Q * B; //total rel transformation
 
-  for(Joint* j:mimicers){
-    if(type!=JT_tau){
+  for(Joint* j:mimicers) {
+    if(type!=JT_tau) {
       j->frame->Q = Q;
-      if(j->scale==-1.){
+      if(j->scale==-1.) {
         j->frame->Q.pos = -j->frame->Q.pos;
         j->frame->Q.rot.invert();
       }
       j->frame->_state_setXBadinBranch();
-    }else{
+    } else {
       j->frame->tau = frame->tau;
     }
   }
@@ -1302,8 +1304,8 @@ arr rai::Joint::calcDofsFromConfig() const {
       break;
     case JT_generic: {
       q.resize(code.N);
-      for(uint i=0;i<code.N;i++){
-        switch(code[i]){
+      for(uint i=0; i<code.N; i++) {
+        switch(code[i]) {
           case 't':  q.elem(i) = 1e1 * frame->tau;  break;
           case 'x':  q.elem(i) = Q.pos.x;  break;
           case 'X':  q.elem(i) = -Q.pos.x;  break;
@@ -1317,7 +1319,7 @@ arr rai::Joint::calcDofsFromConfig() const {
           case 'B':  q.elem(i) = -Q.rot.getPitch_Y();  break;
           case 'c':  q.elem(i) = Q.rot.getYaw_Z();  break;
           case 'C':  q.elem(i) = -Q.rot.getYaw_Z();  break;
-          case 'w':{
+          case 'w': {
             CHECK_EQ(code.N-i, 4, "");
             q.elem(i+0)=Q.rot.w;
             q.elem(i+1)=Q.rot.x;
@@ -1335,7 +1337,7 @@ arr rai::Joint::calcDofsFromConfig() const {
       break;
     default: NIY;
   }
-  if(scale!=1.){
+  if(scale!=1.) {
     q /= scale;
   }
   return q;
@@ -1478,7 +1480,7 @@ void rai::Joint::setType(rai::JointType _type) {
   }
 }
 
-void rai::Joint::setGeneric(const char* _code){
+void rai::Joint::setGeneric(const char* _code) {
   type = JT_generic;
   code = _code;
   dim = getDimFromType();
@@ -1543,14 +1545,13 @@ void rai::Joint::read(const Graph& ats) {
   ats.get(scale, "joint_scale");
   if(ats.get(d, "joint"))        type=(JointType)d;
   else if(ats.get(str, "joint")) {
-    if(str[0]=='_'){
+    if(str[0]=='_') {
       type=JT_generic;
-      code.set(&str(1),str.N-1);
-    }else{
+      code.set(&str(1), str.N-1);
+    } else {
       type=str;
     }
-  }
-  else if(ats.get(d, "type"))    type=(JointType)d;
+  } else if(ats.get(d, "type"))    type=(JointType)d;
   else if(ats.get(str, "type"))  { str >>type; }
   else type=JT_rigid;
 
@@ -1694,9 +1695,9 @@ void rai::Shape::read(const Graph& ats) {
 
     if(ats.get(str, "sdf"))      { sdf().read(FILE(str)); }
     else if(ats.get(fil, "sdf")) { sdf().read(fil); }
-    if(_sdf){
-      if(size.N){
-        if(size.N==1){ sdf().lo *= size.elem(); sdf().up *= size.elem(); }
+    if(_sdf) {
+      if(size.N) {
+        if(size.N==1) { sdf().lo *= size.elem(); sdf().up *= size.elem(); }
         else NIY;
       }
       if(type()==ST_none) type()=ST_sdf;
@@ -1710,10 +1711,10 @@ void rai::Shape::read(const Graph& ats) {
     if(ats.get(x, "mesh_rope"))  {
       CHECK_EQ(x.N, 4, "requires 3D extend and numSegments");
       uint n=x(-1);
-      arr y = x({0,2});
+      arr y = x({0, 2});
       arr& V = mesh().V;
       V.resize(n+1, 3).setZero();
-      for(uint i=1;i<=n;i++){
+      for(uint i=1; i<=n; i++) {
         V[i] = (double(i)/n)*y;
       }
       mesh().makeLines();
@@ -1762,10 +1763,10 @@ void rai::Shape::write(std::ostream& os) const {
   if(_type!=ST_mesh) os <<", size: " <<size;
 
   Node* n;
-  if(frame.ats && (n=(*frame.ats)["color"])){ os <<", "; n->write(os, -1, true); }
+  if(frame.ats && (n=(*frame.ats)["color"])) { os <<", "; n->write(os, -1, true); }
   else if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4) os <<", color: " <<_mesh->C;
-  if(frame.ats && (n=(*frame.ats)["mesh"])){ os <<", "; n->write(os, -1, true); }
-  if(frame.ats && (n=(*frame.ats)["meshscale"])){ os <<", "; n->write(os, -1, true); }
+  if(frame.ats && (n=(*frame.ats)["mesh"])) { os <<", "; n->write(os, -1, true); }
+  if(frame.ats && (n=(*frame.ats)["meshscale"])) { os <<", "; n->write(os, -1, true); }
   if(cont) os <<", contact: " <<(int)cont;
 }
 
@@ -1786,7 +1787,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
   //set name (for OpenGL selection)
   glPushName((frame.ID <<2) | 1);
 
-  if(gl.drawOptions.drawMode_idColor){
+  if(gl.drawOptions.drawMode_idColor) {
     glColorId(frame.ID);
     CHECK(!gl.drawOptions.drawColors, "must be disabled..");
   } else if(gl.drawOptions.drawColors) {
@@ -1814,7 +1815,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
     if(_type==rai::ST_marker) {
       if(!gl.drawOptions.drawVisualsOnly) {
 #if 0
-        if(frame.parent){ //little line to parent
+        if(frame.parent) { //little line to parent
           rai::Vector p=frame.parent->ensure_X().pos;
           p = p / frame.ensure_X();
           glBegin(GL_LINES);
@@ -1825,32 +1826,32 @@ void rai::Shape::glDraw(OpenGL& gl) {
 #endif
         double s=1.;
         if(size.N) s = size.last();
-        if(s>0.){
+        if(s>0.) {
           glDrawDiamond(s/5., s/5., s/5.);
           glDrawAxes(s, gl.drawOptions.drawColors);
-        }else if(s<0.){
+        } else if(s<0.) {
           glDrawAxis(-s);
         }
       }
-    } else if(_type==rai::ST_camera){
+    } else if(_type==rai::ST_camera) {
       if(!gl.drawOptions.drawVisualsOnly) {
         rai::Camera cam;
         cam.read(*frame.ats);
         glDrawCamera(cam); //gl.camera);
       }
-    } else if(_type==rai::ST_density){
+    } else if(_type==rai::ST_density) {
       auto gridSdf = std::dynamic_pointer_cast<SDF_GridData>(_sdf);
-      if(gridSdf){
+      if(gridSdf) {
         gridSdf->_densityDisplayData->glDraw(gl);
       }
     } else {
       if(!mesh().V.N) {
         LOG(-1) <<"trying to draw empty mesh (shape type:" <<_type <<")";
       } else {
-        if(!gl.drawOptions.drawVisualsOnly || mesh().T.d1==3){ //visual -> surface meshes only
+        if(!gl.drawOptions.drawVisualsOnly || mesh().T.d1==3) { //visual -> surface meshes only
           if(!mesh().T.N && size.N) glPointSize(size.last());
           if(!mesh().C.N) glColor(.8, .8, .8);
-          if(_type==rai::ST_mesh){
+          if(_type==rai::ST_mesh) {
 #if 1 //use list
             if(_mesh->glListId) glListId = _mesh->glListId; //this ensures that Shapes with identical (shared) meshes share also the same glListId
             glDrawAsList(mesh(), glListId, gl);
@@ -1858,7 +1859,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
 #else
             mesh().glDraw(gl);
 #endif
-          }else{
+          } else {
             mesh().glDraw(gl);
           }
           if(!mesh().T.N && size.N) glPointSize(1.);
@@ -1884,8 +1885,8 @@ void rai::Shape::glDraw(OpenGL& gl) {
 #endif
 }
 
-void rai::Shape::glDeinit(OpenGL&){
-  if(_type==rai::ST_mesh && _mesh){
+void rai::Shape::glDeinit(OpenGL&) {
+  if(_type==rai::ST_mesh && _mesh) {
     if(_mesh->glListId==-1) glListId = 0;
     if(glListId) glDeleteLists(glListId, 1);
     _mesh->glListId = -1;
@@ -1926,18 +1927,18 @@ void rai::Shape::createMeshes() {
     case rai::ST_sdf: {
       if(!sdf().lo.N) sdf().lo = -.5*size;
       if(!sdf().up.N) sdf().up = +.5*size;
-      if(!mesh().V.N){
+      if(!mesh().V.N) {
         auto gridSdf = std::dynamic_pointer_cast<SDF_GridData>(_sdf);
-        if(gridSdf && gridSdf->gridData.N){
+        if(gridSdf && gridSdf->gridData.N) {
           mesh().setImplicitSurface(gridSdf->gridData, sdf().lo, sdf().up);
-        }else{
+        } else {
           mesh().setImplicitSurface(sdf().evalGrid(30), sdf().lo, sdf().up);
         }
       }
     } break;
     case rai::ST_density: {
       auto gridSdf = std::dynamic_pointer_cast<SDF_GridData>(_sdf);
-      if(gridSdf && gridSdf->gridData.N){
+      if(gridSdf && gridSdf->gridData.N) {
         gridSdf->_densityDisplayData = make_shared<DensityDisplayData>(*gridSdf);
       }
     } break;
@@ -2007,7 +2008,7 @@ void rai::Shape::createMeshes() {
 //  }
 }
 
-shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates){
+shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates) {
   rai::Transformation pose = 0;
   if(worldCoordinates) pose = frame.ensure_X();
   //create mesh for basic shapes
@@ -2023,14 +2024,14 @@ shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates){
       return make_shared<SDF_Cylinder>(pose, size(0), size(1));
     case rai::ST_ssCylinder:
       return make_shared<SDF_Cylinder>(pose, size(0), size(1));
-      //return make_shared<DistanceFunction_SSSomething>(make_shared<DistanceFunction_Cylinder>(pose, size(0), size(1)-size(2)), size(2));
+    //return make_shared<DistanceFunction_SSSomething>(make_shared<DistanceFunction_Cylinder>(pose, size(0), size(1)-size(2)), size(2));
     case rai::ST_capsule:
       return make_shared<SDF_Capsule>(pose, size(0), size(1));
     case rai::ST_ssBox:
       return make_shared<SDF_ssBox>(pose, size);
     case rai::ST_mesh:
     case rai::ST_sdf:
-      if(_sdf){
+      if(_sdf) {
         _sdf->pose = pose;
         return _sdf;
       }
@@ -2055,7 +2056,7 @@ rai::Inertia::~Inertia() {
   frame.inertia = nullptr;
 }
 
-void rai::Inertia::add(const rai::Inertia& I, const rai::Transformation& rel){
+void rai::Inertia::add(const rai::Inertia& I, const rai::Transformation& rel) {
   double newMass = mass + I.mass;
   Vector newCom = (mass*com + I.mass*(I.com+rel.pos))/newMass;
   //com displacement of both parts
@@ -2090,24 +2091,24 @@ void rai::Inertia::defaultInertiaByShape() {
 
 void rai::Inertia::write(std::ostream& os) const {
   os <<", mass: " <<mass;
-  if(!com.isZero){
+  if(!com.isZero) {
     os <<", com: " <<com;
   }
-  if(matrix.isDiagonal()){
+  if(matrix.isDiagonal()) {
     os <<", inertia: [" <<matrix.m00 <<' ' <<matrix.m11 <<' ' <<matrix.m22 <<']';
-  }else{
+  } else {
     os <<", inertia: [" <<matrix.m00 <<' ' <<matrix.m01 <<' ' <<matrix.m02 <<' ' <<matrix.m11 <<' ' <<matrix.m12 <<' ' <<matrix.m22 <<']';
   }
 }
 
 void rai::Inertia::write(Graph& g) {
   g.add<double>("mass", mass);
-  if(!com.isZero){
+  if(!com.isZero) {
     g.add<arr>("com", com.getArr());
   }
-  if(matrix.isDiagonal()){
+  if(matrix.isDiagonal()) {
     g.add<arr>("inertia", {matrix.m00, matrix.m11, matrix.m22});
-  }else{
+  } else {
     g.add<arr>("inertia", {matrix.m00, matrix.m01, matrix.m02, matrix.m11, matrix.m12, matrix.m22});
   }
 }
@@ -2124,7 +2125,7 @@ void rai::Inertia::read(const Graph& G) {
     arr& I = G.get<arr>("inertia");
     if(I.N==3) matrix.setDiag(I);
     else if(I.N==6) matrix.setSymmetric(I);
-    else{ CHECK_EQ(I.N, 9, "") matrix.set(I.p); }
+    else { CHECK_EQ(I.N, 9, "") matrix.set(I.p); }
   }
   if(G["fixed"])       type=BT_static;
   if(G["static"])      type=BT_static;

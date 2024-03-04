@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -332,7 +332,7 @@ arr getHull(const arr& V, uintA& T) {
   exitcode = qh_new_qhull(V.d1, V.d0, V.p, false, cmd, nullptr, fnull);
   fclose(fnull);
 
-  if(!exitcode){
+  if(!exitcode) {
     qh_triangulate();
 
     facetT* facet;
@@ -363,7 +363,7 @@ arr getHull(const arr& V, uintA& T) {
       CHECK_EQ(f, T.d0, "");
     }
 
-  }else{
+  } else {
     LOG(-1) <<"qh_new_qhull error - exitcode " <<exitcode;
     Vnew.clear();
     T.clear();

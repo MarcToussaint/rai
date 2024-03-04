@@ -1,26 +1,33 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "CtrlMsgs.h"
 
 #include "../Core/thread.h"
 #include "../Kin/kin.h"
 
-struct ConstantReference{
+struct ConstantReference {
   arr q, qDot, qDDot; //default references
-  void defaultReferenceFunction(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, double time){
+  void defaultReferenceFunction(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, double time) {
     q_ref = q;
     qDot_ref = qDot;
     qDDot_ref = qDDot;
   }
 };
 
-
 struct ControlLoop {
   shared_ptr<ConstantReference> _ref;
 
   virtual void initialize(const arr& q_real, const arr& qDot_real) {}
 
-  virtual void stepReference(arr& qRef, arr& qDotRef, arr& qDDotRef, const arr& q_real, const arr& qDot_real){ NIY; }
+  virtual void stepReference(arr& qRef, arr& qDotRef, arr& qDDotRef, const arr& q_real, const arr& qDot_real) { NIY; }
 
-  virtual void step(rai::CtrlCmdMsg& ctrlCmdMsg, const arr& q_real, const arr& qDot_real, double time){
+  virtual void step(rai::CtrlCmdMsg& ctrlCmdMsg, const arr& q_real, const arr& qDot_real, double time) {
     ctrlCmdMsg.controlType=rai::ControlType::configRefs;
     if(!_ref) _ref = make_shared<ConstantReference>();
     stepReference(_ref->q, _ref->qDot, _ref->qDDot, q_real, qDot_real);
@@ -33,7 +40,6 @@ struct ControlLoop {
   }
 
 };
-
 
 struct ControlThread : Thread {
   Var<rai::Configuration> ctrl_config;
@@ -53,13 +59,12 @@ struct ControlThread : Thread {
                 const Var<rai::CtrlCmdMsg>& _ctrl_ref,
                 const Var<rai::CtrlStateMsg>& _ctrl_state,
                 const shared_ptr<ControlLoop>& _ctrlLoop)
-      : Thread("ControlThread", .01),
+    : Thread("ControlThread", .01),
       ctrl_ref(this, _ctrl_ref),
       ctrl_state(this, _ctrl_state),
       ctrlLoop(_ctrlLoop),
       requiresInitialSync(true),
-      verbose(0)
-  {
+      verbose(0) {
     ctrl_config.set() = C;
 
     double hyper = rai::getParameter<double>("hyperSpeed", -1.);
@@ -74,17 +79,16 @@ struct ControlThread : Thread {
 
     threadLoop();
   };
-  ~ControlThread(){
-      threadClose();
+  ~ControlThread() {
+    threadClose();
   }
 
   void step();
 };
 
-
 void ControlThread::step() {
   //-- initial initialization
-  if(requiresInitialSync){
+  if(requiresInitialSync) {
     if(ctrl_state.getRevision()>1) {
       {
         auto state = ctrl_state.get();
@@ -94,7 +98,7 @@ void ControlThread::step() {
       ctrl_config.set()->setJointState(q_real);
       ctrlLoop->initialize(q_real, qdot_real);
       requiresInitialSync = false;
-    } else{
+    } else {
       LOG(0) << "waiting for ctrl_state messages...";
       return;
     }
@@ -105,7 +109,7 @@ void ControlThread::step() {
   {
     auto state = ctrl_state.get();
     ctrlStateMsg = ctrl_state();
-    if(state->q.N){
+    if(state->q.N) {
       q_real = state->q;
       qdot_real = state->qDot;
       tauExternal = state->tauExternal;

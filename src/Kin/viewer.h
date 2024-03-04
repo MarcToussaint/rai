@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -36,7 +36,7 @@ struct ConfigurationViewer : ViewableConfigCopy {
   floatA getDepth();
   void savePng(const char* saveVideoPath="z.vid/");
 
-  rai::Configuration& getConfiguration(){ return C; }
+  rai::Configuration& getConfiguration() { return C; }
 
   int update(bool watch=false);
   void raiseWindow();
@@ -49,7 +49,7 @@ struct ConfigurationViewer : ViewableConfigCopy {
   void _add(GLDrawer& c);
   void _resetPressedKey();
   void clear();
-private://draw data
+ private://draw data
 
   arr framePath;
   FrameL drawSubFrames;
@@ -58,7 +58,7 @@ private://draw data
   int tprefix;
   bool writeToFiles;
   uint pngCount=0;
-public:
+ public:
   String drawText;
   bool drawFrameLines=true;
   double phaseOffset=0., phaseFactor=-1.;

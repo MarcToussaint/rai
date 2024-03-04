@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -21,7 +21,6 @@ void init_Feature(pybind11::module& m) {
       .def("setTarget", &Feature::setTarget)
 //      .def("setFrameIDs", &Feature::setFrameIDs)
 //      .def("setDiffInsteadOfVel", &Feature::setDiffInsteadOfVel)
-
 
   .def("eval", [](shared_ptr<Feature>& self, shared_ptr<rai::Configuration>& C) {
     arr val = self->eval(*C);

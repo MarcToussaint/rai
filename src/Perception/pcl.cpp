@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -43,9 +43,9 @@ void conv_PclCloud_ArrCloud(arr& pts,
   if(p) CHECK_EQ(p, pts.p+pts.N, "");
 }
 
-arr conv_PclNormals_Arr(const pcl::PointCloud<pcl::Normal>::Ptr& normals){
+arr conv_PclNormals_Arr(const pcl::PointCloud<pcl::Normal>::Ptr& normals) {
   arr N(normals->size(), 3);
-  double *p=N.p;
+  double* p=N.p;
 
   for(const pcl::Normal& no:*normals) {
     if(p) {
@@ -57,7 +57,6 @@ arr conv_PclNormals_Arr(const pcl::PointCloud<pcl::Normal>::Ptr& normals){
   CHECK_EQ(p, N.p+N.N, "");
   return N;
 }
-
 
 void conv_ArrCloud_PclCloud(PclC& cloud,
                             const arr& pts, const byteA& rgb) {
@@ -77,13 +76,13 @@ void conv_ArrCloud_PclCloud(PclC& cloud,
   }
 }
 
-Pcl::Ptr conv_ArrCloud_PclCloud(const arr& pts){
+Pcl::Ptr conv_ArrCloud_PclCloud(const arr& pts) {
   Pcl::Ptr pcl(new Pcl);
   conv_ArrCloud_PclCloud(*pcl, pts);
   return pcl;
 }
 
-PclC::Ptr conv_ArrCloud_PclCloud(const arr& pts, const byteA& rgb){
+PclC::Ptr conv_ArrCloud_PclCloud(const arr& pts, const byteA& rgb) {
   PclC::Ptr pcl(new PclC);
   conv_ArrCloud_PclCloud(*pcl, pts, rgb);
   return pcl;

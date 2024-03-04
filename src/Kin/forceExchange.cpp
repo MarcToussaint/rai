@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -46,13 +46,13 @@ void rai::ForceExchange::setZero() {
   a.C._state_q_isGood=false;
   force.resize(3).setZero();
   torque.resize(3).setZero();
-  if(type==FXT_poa || type==FXT_poaOnly){
+  if(type==FXT_poa || type==FXT_poaOnly) {
 //    poa = .5*a.getPosition() + .5*b.getPosition();
     poa = b.getPosition();
-  }else if(type==FXT_forceZ){
+  } else if(type==FXT_forceZ) {
     force.resize(1).setZero();
     torque.resize(1).setZero();
-  }else{
+  } else {
     poa = b.getPosition();
   }
   if(__coll) { delete __coll; __coll=0; }
@@ -66,28 +66,28 @@ uint rai::ForceExchange::getDimFromType() {
 }
 
 void rai::ForceExchange::setDofs(const arr& q, uint n) {
-  if(type==FXT_poa){
+  if(type==FXT_poa) {
     poa = q({n, n+2});
     force = q({n+3, n+5});
     torque.resize(3).setZero();
-  }else if(type==FXT_poaOnly){
+  } else if(type==FXT_poaOnly) {
     poa = q({n, n+2});
     force.clear();
     torque.clear();
-  }else if(type==FXT_torque){
+  } else if(type==FXT_torque) {
     poa = b.getPosition();
     force = q({n, n+2});
     torque = q({n+3, n+5});
-  }else if(type==FXT_force){
+  } else if(type==FXT_force) {
     poa = b.getPosition();
     force = q({n, n+2});
     torque.resize(3).setZero();
-  }else if(type==FXT_forceZ){
+  } else if(type==FXT_forceZ) {
     poa = b.getPosition();
     force.resize(1) = q(n);
     torque.resize(1).setZero();
-  }else NIY;
-  if(scale!=1.){
+  } else NIY;
+  if(scale!=1.) {
     force *= scale;
     torque *= scale;
   }
@@ -96,25 +96,25 @@ void rai::ForceExchange::setDofs(const arr& q, uint n) {
 
 arr rai::ForceExchange::calcDofsFromConfig() const {
   arr q;
-  if(type==FXT_poa){
+  if(type==FXT_poa) {
     q.resize(6);
     q.setVectorBlock(poa, 0);
     q.setVectorBlock(force/scale, 3);
-  }else if(type==FXT_poaOnly){
+  } else if(type==FXT_poaOnly) {
     q = poa;
-  }else if(type==FXT_torque){
+  } else if(type==FXT_torque) {
     q.resize(6);
     q.setVectorBlock(force/scale, 0);
     q.setVectorBlock(torque/scale, 3);
-  }else if(type==FXT_force){
+  } else if(type==FXT_force) {
     q = force/scale;
-  }else if(type==FXT_forceZ){
+  } else if(type==FXT_forceZ) {
     q.resize(1).first() = force.scalar();
-  }else NIY;
+  } else NIY;
   return q;
 }
 
-void rai::ForceExchange::setRandom(uint timeSlices_d1, int verbose){
+void rai::ForceExchange::setRandom(uint timeSlices_d1, int verbose) {
   setZero();
 //  q0 = calcDofsFromConfig();
   Dof::setRandom(timeSlices_d1, verbose);
@@ -123,57 +123,57 @@ void rai::ForceExchange::setRandom(uint timeSlices_d1, int verbose){
 void rai::ForceExchange::kinPOA(arr& y, arr& J) const {
   a.C.kinematicsZero(y, J, 3);
 
-  if(type==FXT_poa){
+  if(type==FXT_poa) {
     y = poa;
     if(!!J && active) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = 1.;
-  }else if(type==FXT_poaOnly){
+  } else if(type==FXT_poaOnly) {
     y = poa;
     if(!!J && active) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = 1.;
-  }else if(type==FXT_torque || type==FXT_force || type==FXT_forceZ){
+  } else if(type==FXT_torque || type==FXT_force || type==FXT_forceZ) {
     //use b as the POA!!
     b.C.kinematicsPos(y, J, &b);
-  }else NIY;
+  } else NIY;
 }
 
 void rai::ForceExchange::kinForce(arr& y, arr& J) const {
   a.C.kinematicsZero(y, J, 3);
 
-  if(type==FXT_poa){
+  if(type==FXT_poa) {
     y = force;
     if(!!J && active) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = scale;
-  }else if(type==FXT_poaOnly){
+  } else if(type==FXT_poaOnly) {
     //is zero already
-  }else if(type==FXT_torque || type==FXT_force || type==FXT_force){
+  } else if(type==FXT_torque || type==FXT_force || type==FXT_force) {
     y = force;
     if(!!J && active) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = scale;
-  }else if(type==FXT_forceZ){
+  } else if(type==FXT_forceZ) {
     arr z, Jz;
     b.C.kinematicsVec(z, Jz, &b, Vector_z);
     y = force.scalar() * z;
-    if(!!J && active){
+    if(!!J && active) {
       for(uint i=0; i<3; i++) J.elem(i, qIndex) += scale * z.elem(i);
       J += force.scalar()*Jz;
     }
-  }else NIY;
+  } else NIY;
 }
 
 void rai::ForceExchange::kinTorque(arr& y, arr& J) const {
   a.C.kinematicsZero(y, J, 3);
 
-  if(type==FXT_poa || type==FXT_force || type==FXT_poaOnly){
+  if(type==FXT_poa || type==FXT_force || type==FXT_poaOnly) {
     //zero: POA is zero-momentum point
-  }else if(type==FXT_forceZ){
+  } else if(type==FXT_forceZ) {
     arr z, Jz;
     b.C.kinematicsVec(z, Jz, &b, Vector_z);
     y = force_to_torque * force.scalar() * z;
-    if(!!J){
+    if(!!J) {
       for(uint i=0; i<3; i++) J.elem(i, qIndex) += (force_to_torque*scale) * z.elem(i);
       J += (force_to_torque*force.scalar()) * Jz;
     }
-  }else if(type==FXT_torque){
+  } else if(type==FXT_torque) {
     y = torque;
     if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = scale;
-  }else NIY;
+  } else NIY;
 }
 
 rai::PairCollision* rai::ForceExchange::coll() {
@@ -190,7 +190,7 @@ rai::PairCollision* rai::ForceExchange::coll() {
   return __coll;
 }
 
-arr gnuplot(const double x){
+arr gnuplot(const double x) {
   double r = std::sqrt(x);
   double g = x * x * x;
   double b = std::sin(x * 2 * RAI_PI);
@@ -204,7 +204,7 @@ void rai::ForceExchange::glDraw(OpenGL& gl) {
   kinPOA(_poa, NoArr);
   kinForce(_force, NoArr);
   kinTorque(_torque, NoArr);
-  if(b.joint && b.joint->type==JT_hingeX){
+  if(b.joint && b.joint->type==JT_hingeX) {
     arr x = b.ensure_X().rot.getX().getArr();
     _torque = x * scalarProduct(x, torque);
     _force = 0.;
@@ -224,7 +224,7 @@ void rai::ForceExchange::glDraw(OpenGL& gl) {
   glVertex3dv((_poa+scale*_force).p); //white: force
   glEnd();
   glLineWidth(1.f);
-  glColor(.0,.0,.0, 1.);
+  glColor(.0, .0, .0, 1.);
 
 //  glBegin(GL_LINES);
 //  glVertex3dv(&a.ensure_X().pos.x);
@@ -253,7 +253,7 @@ void rai::ForceExchange::write(std::ostream& os) const {
 //  <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
 }
 
-rai::ForceExchange* rai::getContact(rai::Frame* a, rai::Frame* b, bool raiseErrorIfNonExist){
+rai::ForceExchange* rai::getContact(rai::Frame* a, rai::Frame* b, bool raiseErrorIfNonExist) {
   for(rai::ForceExchange* c : a->forces) if(&c->a==a && &c->b==b) return c;
   if(raiseErrorIfNonExist) HALT("can't retrieve contact " <<a->name <<"--" <<b->name);
   return nullptr;

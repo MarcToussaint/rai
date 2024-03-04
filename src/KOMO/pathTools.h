@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -38,7 +38,7 @@ arr getSineProfile(const arr& q0, const arr& qT, uint T);
 //call KOMO to compute a collision free start-goal path
 std::pair<arr, arr> getStartGoalPath_obsolete(const rai::Configuration& K, const arr& target_q, const StringA& target_joints= {}, const char* endeff=nullptr, double up=.2, double down=.8);
 
-struct Avoid{
+struct Avoid {
   arr times;
   StringA frames;
   double dist;
@@ -47,11 +47,11 @@ struct Avoid{
 //C is start configuration, qTarget is goal
 //if endeffs are given, the goal is ONLY the endeff poses, not q
 arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome,
-                     const rai::Array<Avoid>& avoids={},
-                     StringA endeffectors={}, bool endeffApproach=false, bool endeffRetract=false);
+                     const rai::Array<Avoid>& avoids= {},
+                     StringA endeffectors= {}, bool endeffApproach=false, bool endeffRetract=false);
 arr getStartGoalPath_new(rai::Configuration& C, const arr& qTarget, const arr& qHome,
-                     const rai::Array<Avoid>& avoids={},
-                     StringA endeffectors={}, bool endeffApproach=false, bool endeffRetract=false);
+                         const rai::Array<Avoid>& avoids= {},
+                         StringA endeffectors= {}, bool endeffApproach=false, bool endeffRetract=false);
 
 //-- PATH MODIFICATION
 
@@ -70,14 +70,14 @@ void makeMod2Pi(const arr& q0, arr& q1);
 
 //-- POSE
 
-struct PoseTool{
+struct PoseTool {
   rai::Configuration& C;
   int verbose;
 
   PoseTool(rai::Configuration& _C, int _verbose=0) : C(_C), verbose(_verbose) {}
-  bool checkLimits(const arr& limits={}, bool solve=false, bool assert=false); //default: use limites defined in C
-  bool checkCollisions(const FrameL& collisionPairs={}, bool solve=false, bool assert=false); //default: use broadphase method in C
-  bool checkLimitsAndCollisions(const arr& limits={}, const FrameL& collisionPairs={}, bool solve=false, bool assert=false);
+  bool checkLimits(const arr& limits= {}, bool solve=false, bool assert=false); //default: use limites defined in C
+  bool checkCollisions(const FrameL& collisionPairs= {}, bool solve=false, bool assert=false); //default: use broadphase method in C
+  bool checkLimitsAndCollisions(const arr& limits= {}, const FrameL& collisionPairs= {}, bool solve=false, bool assert=false);
 };
 
 //bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPairs, const arr& limits, bool solveForFeasible, int verbose=1);

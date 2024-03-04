@@ -1,8 +1,8 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
-    This code is distributed under the MIdouble License.
+    This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
@@ -78,50 +78,50 @@ struct ArrayDouble : public Array<double> {
 
   //c.tors
   ArrayDouble() : Array<double>() {}
-  ArrayDouble(const ArrayDouble& a){ operator=(a); } //copy constructor
-  ArrayDouble(const Array<double>& a){ operator=(a); } //copy constructor
+  ArrayDouble(const ArrayDouble& a) { operator=(a); } //copy constructor
+  ArrayDouble(const Array<double>& a) { operator=(a); } //copy constructor
   ArrayDouble(ArrayDouble&& a) : Array<double>((Array<double>&&)a) { if(a.jac) jac = std::move(a.jac); }  //move constructor
-  explicit ArrayDouble(uint D0){ resize(D0); }
-  explicit ArrayDouble(uint D0, uint D1){ resize(D0, D1); }
-  explicit ArrayDouble(uint D0, uint D1, uint D2){ resize(D0, D1, D2); }
-  explicit ArrayDouble(const double* p, uint size, bool byReference){ if(byReference) referTo(p,size); else setCarray(p,size); }
-  explicit ArrayDouble(const std::vector<double>& a, bool byReference){ if(byReference) referTo(&a.front(), a.size()); else setCarray(&a.front(), a.size()); }
+  explicit ArrayDouble(uint D0) { resize(D0); }
+  explicit ArrayDouble(uint D0, uint D1) { resize(D0, D1); }
+  explicit ArrayDouble(uint D0, uint D1, uint D2) { resize(D0, D1, D2); }
+  explicit ArrayDouble(const double* p, uint size, bool byReference) { if(byReference) referTo(p, size); else setCarray(p, size); }
+  explicit ArrayDouble(const std::vector<double>& a, bool byReference) { if(byReference) referTo(&a.front(), a.size()); else setCarray(&a.front(), a.size()); }
   ArrayDouble(std::initializer_list<double> values) { operator=(values); }
-  ArrayDouble(std::initializer_list<uint> dim, std::initializer_list<double> values){ operator=(values); reshape(dim); }
+  ArrayDouble(std::initializer_list<uint> dim, std::initializer_list<double> values) { operator=(values); reshape(dim); }
 
   //assignments
   ArrayDouble& operator=(std::initializer_list<double> values);
   ArrayDouble& operator=(const double& v);
   ArrayDouble& operator=(const ArrayDouble& a);
   ArrayDouble& operator=(const Array<double>& a);
-  ArrayDouble& operator=(const std::vector<double>& values){ setCarray(&values.front(), values.size()); return *this; }
+  ArrayDouble& operator=(const std::vector<double>& values) { setCarray(&values.front(), values.size()); return *this; }
 
   //conversion
-  std::vector<double> vec() const{ return std::vector<double>(p, p+N); }
-  ArrayDouble& noconst(){ return *this; }
+  std::vector<double> vec() const { return std::vector<double>(p, p+N); }
+  ArrayDouble& noconst() { return *this; }
 
   /// @name access by reference (direct memory access)
   ArrayDouble ref() const { ArrayDouble x; x.referTo(*this); return x; }
   using Array<double>::elem; //adopt all elem(..) methods
   double& elem(int i, int j); //access that also handles sparse matrices
   using Array<double>::operator(); //adopt all double& operator()(..) methods
-  ArrayDouble operator()(std::pair<int, int> I) const{ ArrayDouble z; z.referToRange(*this, I.first, I.second); return z; }
+  ArrayDouble operator()(std::pair<int, int> I) const { ArrayDouble z; z.referToRange(*this, I.first, I.second); return z; }
   ArrayDouble operator()(int i, std::pair<int, int> J) const { ArrayDouble z; z.referToRange(*this, i, J.first, J.second); return z; }
   ArrayDouble operator()(int i, int j, std::initializer_list<int> K) const;
-  ArrayDouble operator[](int i) const{ ArrayDouble z; z.referToDim(*this, i); return z; }
+  ArrayDouble operator[](int i) const { ArrayDouble z; z.referToDim(*this, i); return z; }
 
   /// @name access by copy (overloaded because of return value)
-  ArrayDouble copy() const{ return ArrayDouble(*this); }
+  ArrayDouble copy() const { return ArrayDouble(*this); }
 
   ArrayDouble sub(int i, int I) const;
   ArrayDouble sub(int i, int I, int j, int J) const;
   ArrayDouble sub(int i, int I, int j, int J, int k, int K) const;
   ArrayDouble sub(int i, int I, Array<uint> cols) const;
   ArrayDouble sub(Array<uint> elems) const;
-  ArrayDouble row(uint row_index) const{ return sub(row_index, row_index, 0, d1 - 1); }
-  ArrayDouble rows(uint start_row, uint end_row) const{ return sub(start_row, end_row - 1, 0, d1 - 1); }
-  ArrayDouble col(uint col_index) const{  ArrayDouble x = sub(0, d0 - 1, col_index, col_index); x.reshape(d0); return x; }
-  ArrayDouble cols(uint start_col, uint end_col) const{ return sub(0, d0 - 1, start_col, end_col - 1); }
+  ArrayDouble row(uint row_index) const { return sub(row_index, row_index, 0, d1 - 1); }
+  ArrayDouble rows(uint start_row, uint end_row) const { return sub(start_row, end_row - 1, 0, d1 - 1); }
+  ArrayDouble col(uint col_index) const {  ArrayDouble x = sub(0, d0 - 1, col_index, col_index); x.reshape(d0); return x; }
+  ArrayDouble cols(uint start_col, uint end_col) const { return sub(0, d0 - 1, start_col, end_col - 1); }
 
   //overloaded to handle Jacobians
   void setMatrixBlock(const ArrayDouble& B, uint lo0, uint lo1);
@@ -159,7 +159,6 @@ typedef rai::ArrayDouble arr;
 
 namespace rai {
 
-
 //struct ArrayIterationReverse_It {
 //  double* p;
 //  double& operator*() { return *p; } //access to value by user
@@ -173,7 +172,6 @@ namespace rai {
 //  ArrayIterationReverse_It begin() { return {x.p+x.N-1}; }
 //  ArrayIterationReverse_It end() { return {x.p-1}; }
 //};
-
 
 //===========================================================================
 /// @}
@@ -268,7 +266,6 @@ BinaryFunction(pow);
 BinaryFunction(fmod);
 #undef BinaryFunction
 
-
 //===========================================================================
 /// @}
 /// @name standard types
@@ -347,7 +344,7 @@ inline arr rand(uint n) { return rand(uintA{n}); }
 /// return array with uniform random numbers in [0, 1]
 inline arr rand(uint d0, uint d1) { return rand(uintA{d0, d1}); }
 
-inline arr rand(const arr& lo, const arr& up){ return lo + (up-lo)%rand(uintA{lo.N}); }
+inline arr rand(const arr& lo, const arr& up) { return lo + (up-lo)%rand(uintA{lo.N}); }
 
 /// return tensor of c's
 inline const double& random(const arr& range) { return range.rndElem(); }
@@ -438,7 +435,7 @@ arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalyt
 arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janalytic=NoArr);
 bool checkGradient(const ScalarFunction& f, const arr& x, double tolerance, bool verbose=false);
 bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool verbose=false);
-bool checkJacobian(const VectorFunction& f, const arr& x, double tolerance, bool verbose=false, const StringA& featureNames={});
+bool checkJacobian(const VectorFunction& f, const arr& x, double tolerance, bool verbose=false, const StringA& featureNames= {});
 void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
 bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps=1e-3, bool verbose=true);
 
@@ -526,7 +523,7 @@ void op_innerProduct(arr& x, const arr& y, const arr& z);
 void op_outerProduct(arr& x, const arr& y, const arr& z);
 void op_indexWiseProduct(arr& x, const arr& y, const arr& z);
 void op_crossProduct(arr& x, const arr& y, const arr& z); //only for 3 x 3 or (3,n) x 3
-inline arr crossProduct(const arr& y, const arr& z){ arr x; op_crossProduct(x,y,z); return x; }
+inline arr crossProduct(const arr& y, const arr& z) { arr x; op_crossProduct(x, y, z); return x; }
 double scalarProduct(const arr& v, const arr& w);
 double scalarProduct(const arr& g, const arr& v, const arr& w);
 
@@ -631,14 +628,14 @@ struct RowShifted : SpecialArray {
   double elem(uint i, uint j) const; //access with natural coordinates
   double& elemNew(uint i, uint j); //access with natural coordinates
   double& entry(uint i, uint j) const; //access with memory coordinates
-  arr memRef() const{ arr x; x.referTo(Z.p, Z.N); x.reshape(Z.d0, rowSize); return x; }
+  arr memRef() const { arr x; x.referTo(Z.p, Z.N); x.reshape(Z.d0, rowSize); return x; }
   //manipulations
   void resize(uint d0, uint d1, uint _rowSize);
   void resizeCopy(uint d0, uint d1, uint n);
   void reshape(uint d0, uint d1);
   void reshift(); //shift all cols to start with non-zeros
   void computeColPatches(bool assumeMonotonic);
-  void insRow(uint i){
+  void insRow(uint i) {
     uint real_d1 = Z.d1;
     Z.d1 = rowSize;
     Z.insRows(i, 1);
@@ -667,7 +664,7 @@ struct RowShifted : SpecialArray {
 
   void checkConsistency() const;
 };
-inline std::ostream& operator<<(std::ostream& os, const RowShifted& x){ x.write(os); return os; }
+inline std::ostream& operator<<(std::ostream& os, const RowShifted& x) { x.write(os); return os; }
 
 struct SparseVector: SpecialArray {
   arr& Z;      ///< references the array itself
@@ -694,7 +691,7 @@ struct SparseMatrix : SpecialArray {
   double& elem(uint i, uint j);
   double& addEntry(int i, int j);
   arr getSparseRow(uint i) const;
-  arr memRef() const{ arr x; x.referTo(Z.p, Z.N); return x; }
+  arr memRef() const { arr x; x.referTo(Z.p, Z.N); return x; }
   //construction
   void setFromDense(const arr& X);
   void setupRowsCols();

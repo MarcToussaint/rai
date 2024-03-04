@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -34,11 +34,11 @@ struct Feature {
   Feature& setScale(const arr& _scale) { scale=_scale; return *this; }
   Feature& setTarget(const arr& _target) { target=_target; return *this; }
   Feature& setFrameIDs(const uintA& _frameIDs) { frameIDs=_frameIDs; return *this; }
-  Feature& setFrameIDs(const StringA& frames, const rai::Configuration& C) { setFrameIDs( C.getFrameIDs(frames) ); return *this; }
-  Feature& setDiffInsteadOfVel(){ diffInsteadOfVel=true; return *this; }
+  Feature& setFrameIDs(const StringA& frames, const rai::Configuration& C) { setFrameIDs(C.getFrameIDs(frames)); return *this; }
+  Feature& setDiffInsteadOfVel() { diffInsteadOfVel=true; return *this; }
   FrameL getFrames(const rai::Configuration& C, uint s=0);
 
-protected:
+ protected:
   //-- core methods to imlement the feature -- to be overloaded (you can choose to overload phi or phi2
   virtual arr phi(const FrameL& F);
   virtual void phi2(arr& y, arr& J, const FrameL& F);
@@ -51,7 +51,7 @@ protected:
   uint dim(const FrameL& F) { uint d=dim_phi2(F); return applyLinearTrans_dim(d); }
   fct vf2(const FrameL& F);
 
-  virtual const char* typeString(){ return rai::niceTypeidName(typeid(*this)); }
+  virtual const char* typeString() { return rai::niceTypeidName(typeid(*this)); }
   virtual rai::String shortTag(const rai::Configuration& C);
   virtual rai::Graph getSpec(const rai::Configuration& C) { return rai::Graph({{"description", shortTag(C)}}); }
   virtual std::shared_ptr<Feature> deepCopy();
@@ -59,7 +59,7 @@ protected:
   //automatic finite difference definition of higher order features
   arr phi_finiteDifferenceReduce(const FrameL& F);
 
-private:
+ private:
   void applyLinearTrans(arr& y);
   uint applyLinearTrans_dim(uint d);
 };
@@ -75,10 +75,10 @@ inline int initIdArg(const rai::Configuration& C, const char* frameName) {
 }
 
 template<class T>
-std::shared_ptr<Feature> make_feature(const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1){
+std::shared_ptr<Feature> make_feature(const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1) {
   std::shared_ptr<Feature> f = make_shared<T>();
 
-  if(frames.N){
+  if(frames.N) {
     CHECK(!f->frameIDs.N, "frameIDs are already set");
     if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(C.frames);
     else f->frameIDs = C.getFrameIDs(frames);

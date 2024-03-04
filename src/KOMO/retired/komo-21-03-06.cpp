@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, double time, double endTime, const char* prevFrom, const char* from, const char* to) {
   //-- creating a stable kinematic linking
   if(newMode==SY_stable || newMode==SY_stableOn) {
@@ -42,7 +50,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
       //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
       if(k_order>1) addObjective({time}, make_shared<F_LinAngVel>(), {to}, OT_eq, {1e2}, NoArr, 2, +1, +1);
 //      else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
-      else{
+      else {
         if(prevFrom) addObjective({time}, FS_poseRel, {to, prevFrom}, OT_eq, {1e2}, NoArr, 1, 0, 0);
         else addObjective({time}, FS_pose, {to}, OT_eq, {1e2}, NoArr, 1, 0, 0);
 //        addObjective({time}, FS_pose, {to}, OT_eq, {1e2}, NoArr, 1, 0, 0);
@@ -108,7 +116,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 
   }
 
-  if(newMode==SY_magicTrans){
+  if(newMode==SY_magicTrans) {
     addSwitch({time}, true, JT_transZ, SWInit_copy, from, to);
     double sqrAccCost=0.;
     if(sqrAccCost>0.) {
@@ -491,7 +499,6 @@ void KOMO_ext::setGraspStick(double time, const char* endeffRef, const char* obj
   }
 }
 
-
 /// place with a specific relative pose -> no effective DOFs!
 void KOMO_ext::setPlaceFixed(double time, const char* endeff, const char* object, const char* placeRef, const Transformation& relPose, int verbose) {
   if(verbose>0) cout <<"KOMO_setPlace t=" <<time <<" endeff=" <<endeff <<" obj=" <<object <<" place=" <<placeRef <<endl;
@@ -552,7 +559,7 @@ void KOMO_ext::setPush(double startTime, double endTime, const char* stick, cons
   setTouch(startTime, endTime, stick, object);
 #endif
 
-  setKS_slider(startTime, endTime, true, object, "slider1", table);
+         setKS_slider(startTime, endTime, true, object, "slider1", table);
 
   addObjective({startTime, endTime-.1}, FS_aboveBox, {object, table}, OT_ineq, {1e1});
 

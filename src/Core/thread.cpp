@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -41,10 +41,10 @@ RWLock::RWLock() {
 }
 
 RWLock::~RWLock() {
-    if (rwCount) {
-        cerr << "Destroying locked RWLock" <<endl;
-        exit(1);
-    }
+  if(rwCount) {
+    cerr << "Destroying locked RWLock" <<endl;
+    exit(1);
+  }
 }
 
 void RWLock::readLock() {
@@ -63,10 +63,10 @@ void RWLock::writeLock() {
 
 void RWLock::unlock() {
   rwCountMutex.lock(RAI_HERE);
-  if(rwCount>0){
+  if(rwCount>0) {
     rwCount--;
     rwLock.unlock_shared();
-  }else{
+  } else {
     rwCount=0;
     rwLock.unlock();
   }
@@ -161,7 +161,7 @@ void Signaler::statusUnlock() {
   statusMutex.unlock();
 }
 
-int Signaler::getStatus(Mutex::Token *userHasLocked) const {
+int Signaler::getStatus(Mutex::Token* userHasLocked) const {
   Mutex* m = (Mutex*)&statusMutex; //sorry: to allow for 'const' access
   if(!userHasLocked) m->lock(RAI_HERE); else CHECK_EQ(m->state, getpid(), "user must have locked before calling this!");
   int i=status;
@@ -169,15 +169,15 @@ int Signaler::getStatus(Mutex::Token *userHasLocked) const {
   return i;
 }
 
-bool Signaler::waitForSignal(Mutex::Token *userHasLocked, double timeout) {
+bool Signaler::waitForSignal(Mutex::Token* userHasLocked, double timeout) {
   bool ret = true;
-  if(userHasLocked){
+  if(userHasLocked) {
     if(timeout<0.) {
       cond.wait(*userHasLocked);
     } else {
       ret = (cond.wait_for(*userHasLocked, std::chrono::duration<double>(timeout)) == std::cv_status::no_timeout);
     }
-  }else{
+  } else {
     auto lk = statusMutex(RAI_HERE);
     if(timeout<0.) {
       cond.wait(lk);
@@ -188,10 +188,10 @@ bool Signaler::waitForSignal(Mutex::Token *userHasLocked, double timeout) {
   return ret;
 }
 
-bool Signaler::waitForEvent(std::function<bool()> f, Mutex::Token *userHasLocked) {
-  if(userHasLocked){
+bool Signaler::waitForEvent(std::function<bool()> f, Mutex::Token* userHasLocked) {
+  if(userHasLocked) {
     cond.wait(*userHasLocked, f);
-  }else{
+  } else {
     auto lk = statusMutex(RAI_HERE);
     cond.wait(lk, f);
   }
@@ -199,31 +199,31 @@ bool Signaler::waitForEvent(std::function<bool()> f, Mutex::Token *userHasLocked
 
 }
 
-bool Signaler::waitForStatusEq(int i, Mutex::Token *userHasLocked, double timeout) {
+bool Signaler::waitForStatusEq(int i, Mutex::Token* userHasLocked, double timeout) {
   bool ret = true;
-  if(userHasLocked){
+  if(userHasLocked) {
     while(status!=i) ret = waitForSignal(userHasLocked, timeout);
-  }else{
+  } else {
     auto lk = statusMutex(RAI_HERE);
     while(status!=i) ret = waitForSignal(&lk, timeout);
   }
   return ret;
 }
 
-int Signaler::waitForStatusNotEq(int i, Mutex::Token *userHasLocked, double timeout) {
-  if(userHasLocked){
+int Signaler::waitForStatusNotEq(int i, Mutex::Token* userHasLocked, double timeout) {
+  if(userHasLocked) {
     while(status==i) waitForSignal(userHasLocked, timeout);
-  }else{
+  } else {
     auto lk = statusMutex(RAI_HERE);
     while(status==i) waitForSignal(&lk, timeout);
   }
   return status;
 }
 
-int Signaler::waitForStatusGreaterThan(int i, Mutex::Token *userHasLocked, double timeout) {
-  if(userHasLocked){
+int Signaler::waitForStatusGreaterThan(int i, Mutex::Token* userHasLocked, double timeout) {
+  if(userHasLocked) {
     while(status<=i) waitForSignal(userHasLocked, timeout);
-  }else{
+  } else {
     auto lk = statusMutex(RAI_HERE);
     while(status<=i) waitForSignal(&lk, timeout);
   }
@@ -231,9 +231,9 @@ int Signaler::waitForStatusGreaterThan(int i, Mutex::Token *userHasLocked, doubl
 }
 
 int Signaler::waitForStatusSmallerThan(int i, Mutex::Token* userHasLocked, double timeout) {
-  if(userHasLocked){
+  if(userHasLocked) {
     while(status>=i) waitForSignal(userHasLocked, timeout);
-  }else{
+  } else {
     auto lk = statusMutex(RAI_HERE);
     while(status>=i) waitForSignal(&lk, timeout);
   }
@@ -296,9 +296,9 @@ void Metronome::reset(double ticIntervalSec) {
 void Metronome::waitForTic() {
   ticTime += std::chrono::duration<double>(ticInterval);
   std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::duration<double>> now = std::chrono::high_resolution_clock::now();
-  if(ticTime>now){
+  if(ticTime>now) {
     std::this_thread::sleep_until(ticTime);
-  }else{
+  } else {
     ticTime = now;
   }
   tics++;
@@ -384,14 +384,14 @@ Thread::Thread(const char* _name, double beatIntervalSec)
 }
 
 Thread::~Thread() {
-    if (thread) {
-        cerr << "Call 'threadClose()' in the destructor of the DERIVED class! \
+  if(thread) {
+    cerr << "Call 'threadClose()' in the destructor of the DERIVED class! \
            That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
            in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
            pure virtual while you're trying to call ~Thread.";
-        exit(1);
-    }
+    exit(1);
   }
+}
 
 void Thread::threadOpen(bool wait, int priority) {
   {

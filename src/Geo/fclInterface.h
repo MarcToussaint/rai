@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -15,7 +15,7 @@ namespace rai {
 struct FclInterface {
   struct FclInterface_self* self=0;
   enum QueryMode { _broadPhaseOnly, _binaryCollisionSingle, _binaryCollisionAll, _distanceCutoff, _fine } mode;
-  
+
   double cutoff=-1.;
   uintAA excludes;
   uintA collisions; //return values!
@@ -26,7 +26,7 @@ struct FclInterface {
 
   void step(const arr& X);
 
-protected:
+ protected:
   friend FclInterface_self;
   void addCollision(uint a, uint b);
 };

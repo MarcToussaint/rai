@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -20,15 +20,15 @@ void init_CtrlSet(pybind11::module& m) {
            pybind11::arg("feature"),
            pybind11::arg("type"),
            pybind11::arg("transientStep")=-1.
-           )
+          )
       .def("addControlObjective", &CtrlSet::addControlObjective)
 
   .def("canBeInitiated", [](std::shared_ptr<CtrlSet>& self, std::shared_ptr<CtrlSolver>& solver) {
-      return self->canBeInitiated(solver->komo.pathConfig);
+    return self->canBeInitiated(solver->komo.pathConfig);
   })
 
   .def("isConverged", [](std::shared_ptr<CtrlSet>& self, std::shared_ptr<CtrlSolver>& solver) {
-      return self->isConverged(solver->komo.pathConfig);
+    return self->isConverged(solver->komo.pathConfig);
   })
   ;
 
@@ -49,6 +49,5 @@ void init_CtrlSolver(pybind11::module& m) {
       .def("solve", &CtrlSolver::solve)
       ;
 }
-
 
 #endif

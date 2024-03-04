@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -49,7 +49,7 @@ struct DisplayThread : Thread {
     lgp->solutions.deAccess();
   }
 
-  void step(){
+  void step() {
     //      tic.waitForTic();
     wait(.1);
     lgp->solutions.writeAccess();
@@ -58,8 +58,8 @@ struct DisplayThread : Thread {
       lgp->solutions()(i)->displayStep++;
       if(gl.views.N>i)
         gl.views(i).text.clear() <<i <<':' <<lgp->solutions()(i)->displayStep <<": "
-                                <<lgp->solutions()(i)->node->cost <<"|  " <<lgp->solutions()(i)->node->constraints.last() <<'\n'
-                               <<lgp->solutions()(i)->decisions;
+                                 <<lgp->solutions()(i)->node->cost <<"|  " <<lgp->solutions()(i)->node->constraints.last() <<'\n'
+                                 <<lgp->solutions()(i)->decisions;
     }
     lgp->solutions.deAccess();
     if(numSolutions)
@@ -72,23 +72,23 @@ struct DisplayThread : Thread {
 void initFolStateFromKin(FOL_World& L, const Configuration& C) {
   boolA isSymbol;
   isSymbol.resize(C.frames.N) = false;
-  for(Frame* a:C.frames) if(a->ats){
-    if((*a->ats)["logical"]) { //-- explicit setting of logic
-      const Graph& G = (*a->ats)["logical"]->graph();
-      for(Node* n:G) L.addFact({n->key, a->name});
-      //      L.addFact({"initial", a->name}); //*** THE INITIAL FACT WAS INTRODUCED TO SIMPLIFY SKELETONS - OBSOLETE ***
-      isSymbol(a->ID)=true;
-    }else if(a->joint && a->joint->type==JT_rigid){ //-- implicit object
-      L.addFact({"object", a->name});
-      isSymbol(a->ID)=true;
-      if(a->shape && a->shape->type()==ST_ssBox){ //-- implicit box
-        L.addFact({"is_box", a->name});
+  for(Frame* a:C.frames) if(a->ats) {
+      if((*a->ats)["logical"]) { //-- explicit setting of logic
+        const Graph& G = (*a->ats)["logical"]->graph();
+        for(Node* n:G) L.addFact({n->key, a->name});
+        //      L.addFact({"initial", a->name}); //*** THE INITIAL FACT WAS INTRODUCED TO SIMPLIFY SKELETONS - OBSOLETE ***
+        isSymbol(a->ID)=true;
+      } else if(a->joint && a->joint->type==JT_rigid) { //-- implicit object
+        L.addFact({"object", a->name});
+        isSymbol(a->ID)=true;
+        if(a->shape && a->shape->type()==ST_ssBox) { //-- implicit box
+          L.addFact({"is_box", a->name});
+        }
       }
     }
-  }
   for(Frame* a:C.frames) if(isSymbol(a->ID)) {
       Frame* p = a->getUpwardLink();
-      if(p && p!=a && isSymbol(p->ID)){
+      if(p && p!=a && isSymbol(p->ID)) {
         L.addFact({"partOf", p->name, a->name});
       }
 //      FrameL F;
@@ -98,10 +98,10 @@ void initFolStateFromKin(FOL_World& L, const Configuration& C) {
 //        }
     }
   for(Frame* a:C.frames) if(isSymbol(a->ID)) {
-    Frame* p = a->getUpwardLink();
-    if(!p) continue;
-    p = p->parent;
-    if(p && isSymbol(p->ID)){
+      Frame* p = a->getUpwardLink();
+      if(!p) continue;
+      p = p->parent;
+      if(p && isSymbol(p->ID)) {
 //      FrameL F;
 //      while(p) {
 //        F.append(p);
@@ -109,9 +109,9 @@ void initFolStateFromKin(FOL_World& L, const Configuration& C) {
 //        p=p->parent;
 //      }
 //      for(Frame* b:F) if(b!=a && b->shape && b->ats && (*b->ats)["logical"]) {
-      L.addFact({"on", p->name, a->name});
+        L.addFact({"on", p->name, a->name});
+      }
     }
-  }
 }
 #endif
 
@@ -125,7 +125,7 @@ LGP_Tree::LGP_Tree()
 
   cameraFocus = getParameter<arr>("LGP/cameraFocus", {});
 
-  if(verbose>1){
+  if(verbose>1) {
     dataPath <<"z." <<rai::date(true) <<"/";
     dataPath = getParameter<String>("LGP_dataPath", dataPath);
     rai::system(STRING("mkdir -p " <<dataPath));
@@ -381,7 +381,7 @@ LGP_Node* LGP_Tree::walkToNode(const String& seq) {
     if(!node->isExpanded) node->expand();
     LGP_Node* next = node->getChildByAction(actionLiteral);
     if(!next) THROW("action '" <<*actionLiteral <<"' is not a child of '" <<*node <<"'")
-    node = next;
+      node = next;
   }
 
   focusNode = node;
@@ -442,9 +442,9 @@ bool LGP_Tree::execChoice(String& cmd) {
   if(cmd=="q") return false;
   else if(cmd=="u") { if(focusNode->parent) focusNode = focusNode->parent; }
   else if(cmd=="e") focusNode->expand();
-  else if(cmd=="p"){ focusNode->optBound(BD_pose, collisions, verbose-2); focusNode->displayBound(*singleView, BD_pose); }
-  else if(cmd=="s"){ focusNode->optBound(BD_seq, collisions, verbose-2); focusNode->displayBound(*singleView, BD_seq); }
-  else if(cmd=="x"){ focusNode->optBound(BD_path, collisions, verbose-2); focusNode->displayBound(*singleView, BD_path); }
+  else if(cmd=="p") { focusNode->optBound(BD_pose, collisions, verbose-2); focusNode->displayBound(*singleView, BD_pose); }
+  else if(cmd=="s") { focusNode->optBound(BD_seq, collisions, verbose-2); focusNode->displayBound(*singleView, BD_seq); }
+  else if(cmd=="x") { focusNode->optBound(BD_path, collisions, verbose-2); focusNode->displayBound(*singleView, BD_path); }
   else {
     int choice=-1;
     cmd >>choice;
@@ -542,8 +542,6 @@ void LGP_Tree::clearFromInfeasibles(LGP_NodeL& fringe) {
   for(uint i=fringe.N; i--;)
     if(fringe.elem(i)->isInfeasible) fringe.remove(i);
 }
-
-
 
 String LGP_Tree::report(bool detailed) {
   LGP_Node* bpose = getBest(terminals, 1);

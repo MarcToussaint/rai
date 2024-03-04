@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "../Kin/kin.h"
@@ -8,7 +16,7 @@
 
 struct ConfigurationProblem;
 
-struct QueryResult{
+struct QueryResult {
   //goal features
   arr goal_y, goal_J;
 

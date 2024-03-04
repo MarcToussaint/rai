@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -81,7 +81,7 @@ struct F_ScalarProduct : Feature {
 //===========================================================================
 
 struct F_Quaternion : Feature {
-  F_Quaternion(){ flipTargetSignOnNegScalarProduct = true; }
+  F_Quaternion() { flipTargetSignOnNegScalarProduct = true; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 4; }
 };
@@ -92,7 +92,7 @@ struct F_QuaternionDiff : Feature {
 };
 
 struct F_QuaternionRel: Feature {
-  F_QuaternionRel(){ flipTargetSignOnNegScalarProduct = true; }
+  F_QuaternionRel() { flipTargetSignOnNegScalarProduct = true; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 4; }
 };
@@ -119,7 +119,7 @@ struct F_PoseRel : Feature {
 struct F_LinVel : Feature {
   bool impulseInsteadOfAcceleration=false;
   F_LinVel() { order=1; }
-  Feature& setImpulseInsteadOfAcceleration(){ impulseInsteadOfAcceleration=true; return *this; }
+  Feature& setImpulseInsteadOfAcceleration() { impulseInsteadOfAcceleration=true; return *this; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 3; }
 };
@@ -127,7 +127,7 @@ struct F_LinVel : Feature {
 struct F_AngVel : Feature {
   bool impulseInsteadOfAcceleration=false;
   F_AngVel() { order=1; }
-  Feature& setImpulseInsteadOfAcceleration(){ impulseInsteadOfAcceleration=true; return *this; }
+  Feature& setImpulseInsteadOfAcceleration() { impulseInsteadOfAcceleration=true; return *this; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& G) { return 3; }
 };
@@ -135,16 +135,15 @@ struct F_AngVel : Feature {
 struct F_LinAngVel : Feature {
   bool impulseInsteadOfAcceleration=false;
   F_LinAngVel() { order=1; }
-  Feature& setImpulseInsteadOfAcceleration(){ impulseInsteadOfAcceleration=true; return *this; }
+  Feature& setImpulseInsteadOfAcceleration() { impulseInsteadOfAcceleration=true; return *this; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2(const FrameL& F){ return 6; }
+  virtual uint dim_phi2(const FrameL& F) { return 6; }
 };
 
 //===========================================================================
 
 struct F_NoJumpFromParent_OBSOLETE : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2(const FrameL& F){ return 7; }
+  virtual uint dim_phi2(const FrameL& F) { return 7; }
 };
-
 

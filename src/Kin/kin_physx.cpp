@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -93,7 +93,7 @@ PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, con
   PxSDFDesc sdfDesc;
 
   float sdfSpacing=-.01;
-  if (sdfSpacing > 0.f){
+  if(sdfSpacing > 0.f) {
     sdfDesc.spacing = sdfSpacing;
     sdfDesc.subgridSize = 6; //sdfSubgridSize;
     sdfDesc.bitsPerSubgridPixel = PxSdfBitsPerSubgridPixel::e16_BIT_PER_PIXEL; //bitsPerSdfSubgridPixel;
@@ -113,7 +113,7 @@ PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, con
 //===========================================================================
 
 struct PhysXInterface_self {
-  struct Engine{
+  struct Engine {
     PxFoundation* mFoundation = nullptr;
     PxPhysics* mPhysics = nullptr;
     PxCooking* mCooking = nullptr;
@@ -129,11 +129,11 @@ struct PhysXInterface_self {
     //  self->plane
     //  self->planeShape
     for(PxRigidActor* a: actors) if(a) {
-      PxArticulationLink* actor = a->is<PxArticulationLink>();
-      if(actor) continue; //don't remove articulation links
-      gScene->removeActor(*a);
-      a->release();
-    }
+        PxArticulationLink* actor = a->is<PxArticulationLink>();
+        if(actor) continue; //don't remove articulation links
+        gScene->removeActor(*a);
+        a->release();
+      }
     if(gScene) {
       gScene->release();
       gScene = nullptr;
@@ -144,7 +144,6 @@ struct PhysXInterface_self {
 //    }
     //  mFoundation->release();
   }
-
 
   PxScene* gScene = nullptr;
   rai::Array<PxRigidActor*> actors;
@@ -168,16 +167,16 @@ struct PhysXInterface_self {
   void unlockJoint(PxD6Joint* joint, rai::Joint* rai_joint);
 
   void prepareLinkShapes(ShapeL& shapes, rai::BodyType& type, rai::Frame* f);
-  void addSingleShape(PxRigidActor* actor, rai::Frame *f, rai::Shape* s);
+  void addSingleShape(PxRigidActor* actor, rai::Frame* f, rai::Shape* s);
   void addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes, rai::BodyType type, rai::Frame* f);
 };
 
-PhysXInterface_self::Engine *PhysXInterface_self::core = 0;
+PhysXInterface_self::Engine* PhysXInterface_self::core = 0;
 
 //===========================================================================
 
-void PhysXInterface_self::initPhysics(){
-  if(!core){
+void PhysXInterface_self::initPhysics() {
+  if(!core) {
     core = new Engine;
 
     core->mFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, core->gDefaultAllocatorCallback, core->gDefaultErrorCallback);
@@ -224,7 +223,7 @@ void PhysXInterface_self::initPhysics(){
   defaultMaterial = core->mPhysics->createMaterial(opt.defaultFriction, opt.defaultFriction, opt.defaultRestitution);
 }
 
-void PhysXInterface_self::addGround(){
+void PhysXInterface_self::addGround() {
   PxTransform pose = PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
 
   PxRigidStatic* plane = core->mPhysics->createRigidStatic(pose);
@@ -246,11 +245,11 @@ void PhysXInterface_self::addLink(rai::Frame* f) {
 
   if(!shapes.N) return;
 
-  if(opt.multiBody){
+  if(opt.multiBody) {
     if(f->joint && !f->joint->isPartBreak()) type=rai::BT_dynamic;
   }
 
-  if(opt.verbose>0){
+  if(opt.verbose>0) {
     rai::String str;
     str <<"adding link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes (";
     for(rai::Shape* s:shapes) str <<' ' <<s->frame.name;
@@ -261,11 +260,11 @@ void PhysXInterface_self::addLink(rai::Frame* f) {
 
   //-- create a PhysX actor
   PxRigidDynamic* actor=nullptr;
-  if(type==rai::BT_static){
+  if(type==rai::BT_static) {
     actor = (PxRigidDynamic*) core->mPhysics->createRigidStatic(conv_Transformation2PxTrans(f->ensure_X()));
-  } else if(type==rai::BT_dynamic){
+  } else if(type==rai::BT_dynamic) {
     actor = core->mPhysics->createRigidDynamic(conv_Transformation2PxTrans(f->ensure_X()));
-  } else if(type==rai::BT_kinematic){
+  } else if(type==rai::BT_kinematic) {
     actor = core->mPhysics->createRigidDynamic(conv_Transformation2PxTrans(f->ensure_X()));
     actor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
   } else NIY;
@@ -274,7 +273,7 @@ void PhysXInterface_self::addLink(rai::Frame* f) {
   addShapesAndInertia(actor, shapes, type, f);
 
   double angularDamping = opt.angularDamping;
-  if(f->ats && f->ats->find<double>("angularDamping")){
+  if(f->ats && f->ats->find<double>("angularDamping")) {
     angularDamping = f->ats->get<double>("angularDamping");
   }
   actor->setAngularDamping(angularDamping);
@@ -318,7 +317,7 @@ void PhysXInterface_self::addJoint(const rai::Joint* jj) {
       joint->setDriveForceLimit(1e1);
 //      cout <<joint->getDriveVelocity() <<endl;
 //      joint->setDriveVelocity(0.f);
-      if(jj->limits.N){
+      if(jj->limits.N) {
         joint->setRevoluteJointFlag(PxRevoluteJointFlag::eLIMIT_ENABLED, true);
         joint->setLimit({(float)jj->limits(0), (float)jj->limits(1)});
       }
@@ -449,13 +448,13 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
   //base->getPartSubFrames(F);
   base->getSubtree(F);
   FrameL links = {base};
-  for(auto* f:F){ if(f->joint && /*f->joint->active &&*/ !f->joint->isPartBreak()) links.append(f); }
+  for(auto* f:F) { if(f->joint && /*f->joint->active &&*/ !f->joint->isPartBreak()) links.append(f); }
   intA parents(links.N);
   parents = -1;
-  for(uint i=1;i<links.N;i++){
-    rai::Frame *p = links(i)->parent->getUpwardLink();
+  for(uint i=1; i<links.N; i++) {
+    rai::Frame* p = links(i)->parent->getUpwardLink();
     parents(i) = links.findValue(p);
-    if(parents(i)==-1){
+    if(parents(i)==-1) {
       //special case: the multibody contains a partbreak link - skip over it (same as assuming fixed)
       CHECK(p->joint && p->joint->isPartBreak(), "");
       p = p->parent->getUpwardLink();
@@ -466,7 +465,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
   rai::Array<PxArticulationLink*> linksPx(links.N);
   linksPx = NULL;
 
-  if(opt.verbose>0){
+  if(opt.verbose>0) {
     LOG(0) <<"adding multibody with base '" <<base->name <<"' with the following links ...";
   }
 
@@ -496,11 +495,11 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 
     addShapesAndInertia(actor, shapes, type, f);
 
-    if(opt.multiBodyDisableGravity){
+    if(opt.multiBodyDisableGravity) {
       actor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
     }
 
-    if(opt.verbose>0){
+    if(opt.verbose>0) {
       rai::String str;
       str <<"adding multibody link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes (";
       for(rai::Shape* s:shapes) str <<' ' <<s->frame.name;
@@ -510,7 +509,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
       LOG(0) <<str;
     }
 
-    if(i>0){
+    if(i>0) {
       PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
       rai::Frame* prevLink = links(parents(i));
       rai::Transformation relA = f->parent->ensure_X() / prevLink->ensure_X();
@@ -520,33 +519,33 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 
       PxArticulationAxis::Enum axis = PxArticulationAxis::eCOUNT;
       PxArticulationJointType::Enum type = PxArticulationJointType::eUNDEFINED;
-      switch(f->joint->type){
-        case rai::JT_hingeX:{
+      switch(f->joint->type) {
+        case rai::JT_hingeX: {
           type = PxArticulationJointType::eREVOLUTE;
           axis = PxArticulationAxis::eTWIST;
           break;
         }
-        case rai::JT_hingeY:{
+        case rai::JT_hingeY: {
           type = PxArticulationJointType::eREVOLUTE;
           axis = PxArticulationAxis::eSWING1;
           break;
         }
-        case rai::JT_hingeZ:{
+        case rai::JT_hingeZ: {
           type = PxArticulationJointType::eREVOLUTE;
           axis = PxArticulationAxis::eSWING2;
           break;
         }
-        case rai::JT_transX:{
+        case rai::JT_transX: {
           type = PxArticulationJointType::ePRISMATIC;
           axis = PxArticulationAxis::eX;
           break;
         }
-        case rai::JT_transY:{
+        case rai::JT_transY: {
           type = PxArticulationJointType::ePRISMATIC;
           axis = PxArticulationAxis::eY;
           break;
         }
-        case rai::JT_transZ:{
+        case rai::JT_transZ: {
           type = PxArticulationJointType::ePRISMATIC;
           axis = PxArticulationAxis::eZ;
           break;
@@ -567,7 +566,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 //        joint->setLimitParams(axis, {(float)f->joint->limits(0), (float)f->joint->limits(1)});
 //      }
 
-      if(f->joint->mimic){
+      if(f->joint->mimic) {
 //        NIY;
         //        btVector3 pivot(0,1,0);
         //        btMatrix3x3 frame(1,0,0,0,1,0,0,0,1);
@@ -579,13 +578,12 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
         //        world->addMultiBodyConstraint(gearCons);
       }
 
-
-      if(true){
+      if(true) {
         PxArticulationDrive posDrive;
-        if(f->joint->active){
+        if(f->joint->active) {
           posDrive.stiffness = opt.motorKp;                      // the spring constant driving the joint to a target position
           posDrive.damping = opt.motorKd;                        // the damping coefficient driving the joint to a target velocity
-        }else{ //hack for grippers
+        } else { //hack for grippers
           posDrive.stiffness = opt.motorKp/10.;
           posDrive.damping = opt.motorKd/10.;
         }
@@ -600,7 +598,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 
   gScene->addArticulation(*articulation);
 
-  if(opt.verbose>0){
+  if(opt.verbose>0) {
     LOG(0) <<"... done with multibody with base '" <<base->name <<"'";
   }
 }
@@ -612,23 +610,23 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
     rai::Frame* link=f->getUpwardLink();
     FrameL tmp = {link};
     link->getRigidSubFrames(tmp, false);
-    for(rai::Frame* p: tmp){
+    for(rai::Frame* p: tmp) {
       if(p->shape
-         && p->getShape().type()!=rai::ST_marker
-         && p->getShape().type()!=rai::ST_camera
-         && p->getShape().alpha()==1.) shapes.append(p->shape);
+          && p->getShape().type()!=rai::ST_marker
+          && p->getShape().type()!=rai::ST_camera
+          && p->getShape().alpha()==1.) shapes.append(p->shape);
     }
   }
 
   //-- prepare inertia
   bool shapesHaveInertia=false;
-  for(rai::Shape *s:shapes) if(s->frame.inertia){ shapesHaveInertia=true; break; }
-  if(shapesHaveInertia && !f->inertia){
+  for(rai::Shape* s:shapes) if(s->frame.inertia) { shapesHaveInertia=true; break; }
+  if(shapesHaveInertia && !f->inertia) {
     LOG(-1) <<"computing compound inertia for object frame '" <<f->name <<"' -- this should have been done earlier?";
     f->computeCompoundInertia();
     f->transformToDiagInertia();
   }
-  if(f->inertia && !f->inertia->matrix.isDiagonal()){
+  if(f->inertia && !f->inertia->matrix.isDiagonal()) {
     LOG(-1) <<"DON'T DO THAT! PhysX can only properly handle (compound) inertias if transformed to diagonal tensor\n frame:" <<*f;
   }
 
@@ -638,21 +636,21 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
   if(f->inertia) type = f->inertia->type;
 }
 
-void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai::Shape* s){
+void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai::Shape* s) {
   PxGeometry* geometry;
   switch(s->type()) {
     case rai::ST_box: {
       geometry = new PxBoxGeometry(.5*s->size(0), .5*s->size(1), .5*s->size(2));
     }
-      break;
+    break;
     case rai::ST_sphere: {
       geometry = new PxSphereGeometry(s->size(-1));
     }
-      break;
-      //      case rai::ST_capsule: {
-      //        geometry = new PxCapsuleGeometry(s->size(-1), .5*s->size(-2));
-      //      }
-      //      break;
+    break;
+    //      case rai::ST_capsule: {
+    //        geometry = new PxCapsuleGeometry(s->size(-1), .5*s->size(-2));
+    //      }
+    //      break;
     case rai::ST_capsule:
     case rai::ST_cylinder:
     case rai::ST_ssCylinder:
@@ -670,18 +668,18 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       floatA Vfloat = rai::convert<float>(s->mesh().V);
       uintA& T = s->mesh().T;
       PxTriangleMesh* triangleMesh =  PxToolkit::createTriangleMesh32(*core->mPhysics, *core->mCooking,
-                                                                      (PxVec3*)Vfloat.p, Vfloat.d0,
-                                                                      T.p, T.d0);
+                                      (PxVec3*)Vfloat.p, Vfloat.d0,
+                                      T.p, T.d0);
       geometry = new PxTriangleMeshGeometry(triangleMesh);
 #else
-      rai::Mesh &M = s->mesh();
-      if(!M.cvxParts.N){
+      rai::Mesh& M = s->mesh();
+      if(!M.cvxParts.N) {
         M.getComponents();
       }
-      if(M.cvxParts.N){
+      if(M.cvxParts.N) {
         floatA Vfloat;
         LOG(0) <<"creating " <<M.cvxParts.N <<" convex parts for shape " <<s->frame.name;
-        for(uint i=0;i<M.cvxParts.N;i++){
+        for(uint i=0; i<M.cvxParts.N; i++) {
           Vfloat.clear();
           int start = M.cvxParts(i);
           int end = i+1<M.cvxParts.N ? M.cvxParts(i+1)-1 : -1;
@@ -702,7 +700,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
           }
         }
         geometry=0;
-      }else{
+      } else {
         if(opt.verbose>1) LOG(0) <<"using cvx hull of mesh as no decomposition (M.cvsParts) is available";
         floatA Vfloat = rai::convert<float>(s->mesh().V);
         PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
@@ -726,7 +724,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     //-- decide/create a specific material
     PxMaterial* mMaterial = defaultMaterial;
     if(s->frame.ats &&
-       (s->frame.ats->find<double>("friction") || s->frame.ats->find<double>("restitution"))) {
+        (s->frame.ats->find<double>("friction") || s->frame.ats->find<double>("restitution"))) {
       double fric=s->frame.ats->get<double>("friction", opt.defaultFriction);
       double rest=s->frame.ats->get<double>("restitution", opt.defaultRestitution);
       //LOG(0) <<" shape " <<s->frame.name <<" friction: " <<fric <<" restitution: " <<rest;
@@ -747,7 +745,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
   }
 }
 
-void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes, rai::BodyType type, rai::Frame* f){
+void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes, rai::BodyType type, rai::Frame* f) {
   //-- add each shape to the actor
   for(rai::Shape* s: shapes) addSingleShape(actor, f, s);
 
@@ -762,8 +760,8 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes
       PxRigidBodyExt::updateMassAndInertia(*actor, 1000.f);
       if(!f->inertia) new rai::Inertia(*f);
       f->inertia->mass = actor->getMass();
-      f->inertia->matrix.setDiag(conv_PxVec3_arr( actor->getMassSpaceInertiaTensor() ));
-      f->inertia->com = conv_PxVec3_arr( actor->getCMassLocalPose().p );
+      f->inertia->matrix.setDiag(conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()));
+      f->inertia->com = conv_PxVec3_arr(actor->getCMassLocalPose().p);
       //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
     }
   }
@@ -791,27 +789,27 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose): self(n
 
   for(rai::Frame* a : C.frames) a->ensure_X();
 
-  if(self->opt.multiBody){
+  if(self->opt.multiBody) {
     FrameL parts = C.getParts();
-    for(rai::Frame *f : parts){
+    for(rai::Frame* f : parts) {
       bool asMultiBody=false;
 #if 0
       FrameL sub = f->getSubtree();
-      for(rai::Frame *a:sub) if(a->joint){ asMultiBody=true; break; }
+      for(rai::Frame* a:sub) if(a->joint) { asMultiBody=true; break; }
 #else
       if(f->ats && f->ats->findNode("multibody")) asMultiBody=true;
 #endif
-      if(asMultiBody){
+      if(asMultiBody) {
         self->addMultiBody(f);
-      }else{
+      } else {
         self->addLink(f);
       }
     }
   } else {
     FrameL links = C.getLinks();
     for(rai::Frame* a : links) self->addLink(a);
-    if(self->opt.jointedBodies){
-      for(rai::Dof *j : C.activeDofs) self->addJoint(j->joint());
+    if(self->opt.jointedBodies) {
+      for(rai::Dof* j : C.activeDofs) self->addJoint(j->joint());
     }
   }
 
@@ -856,14 +854,14 @@ void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& frameVelociti
   }
 
   //-- pull joint state directly
-  if(self->opt.jointedBodies){
+  if(self->opt.jointedBodies) {
     arr q = C.getJointState();
-    for(rai::Dof *d:C.activeDofs) if(self->joints(d->frame->ID)){
-      PxRevoluteJoint *revJoint = self->joints(d->frame->ID)->is<PxRevoluteJoint>();
-      if(revJoint){
-        q(d->qIndex) = revJoint->getAngle();
+    for(rai::Dof* d:C.activeDofs) if(self->joints(d->frame->ID)) {
+        PxRevoluteJoint* revJoint = self->joints(d->frame->ID)->is<PxRevoluteJoint>();
+        if(revJoint) {
+          q(d->qIndex) = revJoint->getAngle();
+        }
       }
-    }
     C.setJointState(q);
   }
 }
@@ -883,11 +881,11 @@ void PhysXInterface::changeObjectType(rai::Frame* f, int _type) {
   self->actorTypes(f->ID) = type;
 }
 
-void PhysXInterface::addJoint(rai::Joint* j){
+void PhysXInterface::addJoint(rai::Joint* j) {
   self->addJoint(j);
 }
 
-void PhysXInterface::removeJoint(rai::Joint* j){
+void PhysXInterface::removeJoint(rai::Joint* j) {
   rai::Frame* to = j->frame;
   rai::Frame* from = j->frame->parent->getUpwardLink();
   LOG(0) <<"REMOVING JOINT " <<from <<'-' <<to <<" of type " <<j->type;
@@ -907,50 +905,50 @@ void PhysXInterface::postAddObject(rai::Frame* f) {
   }
 }
 
-void PhysXInterface::pushMotorStates(const rai::Configuration& C, bool setInstantly, const arr& qDot){
-  if(self->opt.multiBody){
-    for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)){
-      PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
-      if(!actor) continue;
-      PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
-      if(!joint) continue;
+void PhysXInterface::pushMotorStates(const rai::Configuration& C, bool setInstantly, const arr& qDot) {
+  if(self->opt.multiBody) {
+    for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)) {
+        PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
+        if(!actor) continue;
+        PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
+        if(!joint) continue;
 
-      auto axis = self->jointAxis(f->ID);
-      CHECK_LE(axis, self->jointAxis(0)-1, "");
+        auto axis = self->jointAxis(f->ID);
+        CHECK_LE(axis, self->jointAxis(0)-1, "");
 
-      if(setInstantly) joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
-      joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
+        if(setInstantly) joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
+        joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
 
-      if(!!qDot && qDot.N){ //also setting vel reference!
-        if(setInstantly) joint->setJointVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
-        joint->setDriveVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
-      }else{
-        if(setInstantly) joint->setJointVelocity(axis, 0.);
-        joint->setDriveVelocity(axis, 0.);
+        if(!!qDot && qDot.N) { //also setting vel reference!
+          if(setInstantly) joint->setJointVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
+          joint->setDriveVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
+        } else {
+          if(setInstantly) joint->setJointVelocity(axis, 0.);
+          joint->setDriveVelocity(axis, 0.);
+        }
       }
-    }
-  }else if(self->opt.jointedBodies){
+  } else if(self->opt.jointedBodies) {
     NIY;
   }
 }
 
-void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot){
+void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot) {
   arr q = C.getJointState();
   if(!!qDot) qDot.resize(q.N).setZero();
 
-  if(self->opt.multiBody){
-    for(rai::Frame* f:C.frames) if(f->joint && f->joint->active && self->actors(f->ID)){
-      PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
-      if(!actor) continue;
-      PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
-      if(!joint) continue;
+  if(self->opt.multiBody) {
+    for(rai::Frame* f:C.frames) if(f->joint && f->joint->active && self->actors(f->ID)) {
+        PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
+        if(!actor) continue;
+        PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
+        if(!joint) continue;
 
-      auto axis = self->jointAxis(f->ID);
-      CHECK_LE(axis, self->jointAxis(0)-1, "");
-      q(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
-      if(!!qDot) qDot(f->joint->qIndex) = joint->getJointVelocity(axis) / f->joint->scale;
-    }
-  }else if(self->opt.jointedBodies){
+        auto axis = self->jointAxis(f->ID);
+        CHECK_LE(axis, self->jointAxis(0)-1, "");
+        q(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
+        if(!!qDot) qDot(f->joint->qIndex) = joint->getJointVelocity(axis) / f->joint->scale;
+      }
+  } else if(self->opt.jointedBodies) {
     NIY;
   }
   C.setJointState(q);
@@ -963,9 +961,9 @@ void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& fra
     PxRigidActor* a = self->actors(f->ID);
     if(!a) continue; //f is not an actor
 
-    if(self->actorTypes(f->ID)==rai::BT_kinematic){
+    if(self->actorTypes(f->ID)==rai::BT_kinematic) {
       ((PxRigidDynamic*)a)->setKinematicTarget(conv_Transformation2PxTrans(f->ensure_X()));
-    }else if(!onlyKinematic){
+    } else if(!onlyKinematic) {
       a->setGlobalPose(conv_Transformation2PxTrans(f->ensure_X()));
 
       if(self->actorTypes(f->ID)==rai::BT_dynamic && a->getType() == PxActorType::eRIGID_DYNAMIC) {
@@ -973,9 +971,9 @@ void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& fra
         if(!!frameVelocities && frameVelocities.N) {
           px_body->setLinearVelocity(PxVec3(frameVelocities(f->ID, 0, 0), frameVelocities(f->ID, 0, 1), frameVelocities(f->ID, 0, 2)));
           px_body->setAngularVelocity(PxVec3(frameVelocities(f->ID, 1, 0), frameVelocities(f->ID, 1, 1), frameVelocities(f->ID, 1, 2)));
-        }else{
-          px_body->setLinearVelocity(PxVec3(0.,0.,0.));
-          px_body->setAngularVelocity(PxVec3(0.,0.,0.));
+        } else {
+          px_body->setLinearVelocity(PxVec3(0., 0., 0.));
+          px_body->setAngularVelocity(PxVec3(0., 0., 0.));
         }
       }
     }
@@ -984,8 +982,8 @@ void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& fra
 
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) {
   HALT("NOT SURE IF THIS IS DESIRED");
-  for(rai::Dof* d:C.activeDofs){
-    rai::Joint *j = dynamic_cast<rai::Joint*>(d);
+  for(rai::Dof* d:C.activeDofs) {
+    rai::Joint* j = dynamic_cast<rai::Joint*>(d);
     if(!j) continue;
     if(j->type!=rai::JT_free) {
       if(j->from()->inertia && j->from()->inertia->type==rai::BT_dynamic) j->from()->inertia->type=rai::BT_kinematic;
@@ -993,11 +991,11 @@ void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) 
     }
   }
   for(rai::Frame* b: C.frames) if(self->actors(b->ID) && b->inertia) {
-    if(b->inertia->type==rai::BT_kinematic)
-      ((PxRigidDynamic*)self->actors(b->ID))->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-    if(b->inertia->type==rai::BT_dynamic)
-      ((PxRigidDynamic*)self->actors(b->ID))->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
-  }
+      if(b->inertia->type==rai::BT_kinematic)
+        ((PxRigidDynamic*)self->actors(b->ID))->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+      if(b->inertia->type==rai::BT_dynamic)
+        ((PxRigidDynamic*)self->actors(b->ID))->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+    }
 }
 
 void DrawActor(PxRigidActor* actor, rai::Frame* frame, OpenGL& gl) {
@@ -1011,12 +1009,12 @@ void DrawActor(PxRigidActor* actor, rai::Frame* frame, OpenGL& gl) {
 
     // use the color of the first shape of the body for the entire body
     rai::Shape* s = frame->shape;
-    if(!s) for(rai::Frame* ch:frame->children){
-      if(ch->shape && ch->shape->alpha()==1.){
-        s = ch->shape;
-        break;
+    if(!s) for(rai::Frame* ch:frame->children) {
+        if(ch->shape && ch->shape->alpha()==1.) {
+          s = ch->shape;
+          break;
+        }
       }
-    }
     if(s) glColor(s->mesh().C);
 
     rai::Transformation f;
@@ -1060,14 +1058,14 @@ void DrawActor(PxRigidActor* actor, rai::Frame* frame, OpenGL& gl) {
         PxTriangleMeshGeometry g;
         shape->getTriangleMeshGeometry(g);
         floatA Vfloat;
-        Vfloat.referTo((float*)g.triangleMesh->getVertices(), 3*g.triangleMesh->getNbVertices()).reshape(-1,3);
+        Vfloat.referTo((float*)g.triangleMesh->getVertices(), 3*g.triangleMesh->getNbVertices()).reshape(-1, 3);
         rai::Mesh mesh;
         mesh.V = rai::convert<double>(Vfloat);
-        if(g.triangleMesh->getTriangleMeshFlags()&PxTriangleMeshFlag::e16_BIT_INDICES){
+        if(g.triangleMesh->getTriangleMeshFlags()&PxTriangleMeshFlag::e16_BIT_INDICES) {
           rai::Array<uint16_t> T16;
           T16.referTo((uint16_t*)g.triangleMesh->getTriangles(), 3*g.triangleMesh->getNbTriangles()).reshape(-1, 3);
           mesh.T = rai::convert<uint>(T16);
-        }else{
+        } else {
           mesh.T.referTo((uint*)g.triangleMesh->getTriangles(), 3*g.triangleMesh->getNbTriangles()).reshape(-1, 3);
         }
         mesh.glDraw(gl);
@@ -1102,11 +1100,11 @@ void PhysXInterface::watch(bool pause, const char* txt) {
   //  else self->gl->update(txt);
 }
 
-void PhysXInterface::setGravity(float grav){
+void PhysXInterface::setGravity(float grav) {
   self->gScene->setGravity(PxVec3(0.f, 0.f, grav));
 }
 
-void PhysXInterface::disableGravity(rai::Frame* f, bool disable){
+void PhysXInterface::disableGravity(rai::Frame* f, bool disable) {
   self->actors(f->ID)->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, disable);
 }
 
@@ -1123,7 +1121,7 @@ void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& po
   PxRigidBodyExt::addForceAtPos(*actor, px_force, px_pos);
 }
 
-rai::PhysX_Options& PhysXInterface::opt(){
+rai::PhysX_Options& PhysXInterface::opt() {
   return self->opt;
 }
 
@@ -1138,16 +1136,16 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose) : self(
 PhysXInterface::~PhysXInterface() { NICO }
 
 void PhysXInterface::step(double tau) { NICO }
-void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& frameVelocities, bool onlyKinematic){ NICO }
+void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& frameVelocities, bool onlyKinematic) { NICO }
 void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& vels) { NICO }
-void PhysXInterface::pushMotorStates(const rai::Configuration& C, bool setInstantly, const arr& qDot){ NICO }
-void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot){ NICO }
+void PhysXInterface::pushMotorStates(const rai::Configuration& C, bool setInstantly, const arr& qDot) { NICO }
+void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot) { NICO }
 void PhysXInterface::postAddObject(rai::Frame* f) { NICO }
 
-void PhysXInterface::disableGravity(rai::Frame* f, bool disable){ NICO }
+void PhysXInterface::disableGravity(rai::Frame* f, bool disable) { NICO }
 void PhysXInterface::changeObjectType(rai::Frame* f, int _type) { NICO }
-void PhysXInterface::addJoint(rai::Joint* j){ NICO }
-void PhysXInterface::removeJoint(rai::Joint* j){ NICO }
+void PhysXInterface::addJoint(rai::Joint* j) { NICO }
+void PhysXInterface::removeJoint(rai::Joint* j) { NICO }
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) { NICO }
 void PhysXInterface::watch(bool pause, const char* txt) { NICO }
 void PhysXInterface::glDraw(OpenGL&) { NICO }
@@ -1156,7 +1154,7 @@ void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& po
 
 void glPhysXInterface(void* classP) { NICO }
 
-rai::PhysX_Options& PhysXInterface::opt(){ NICO }
+rai::PhysX_Options& PhysXInterface::opt() { NICO }
 
 #endif
 

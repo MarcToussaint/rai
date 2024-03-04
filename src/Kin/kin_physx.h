@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -11,19 +11,19 @@
 #include "kin.h"
 
 namespace rai {
-  struct PhysX_Options {
-    RAI_PARAM("physx/", int, verbose, 1)
-    RAI_PARAM("physx/", bool, yGravity, false)
-    RAI_PARAM("physx/", bool, softBody, false)
-    RAI_PARAM("physx/", bool, multiBody, true)
-    RAI_PARAM("physx/", bool, multiBodyDisableGravity, true)
-    RAI_PARAM("physx/", bool, jointedBodies, false)
-    RAI_PARAM("physx/", double, angularDamping, .1)
-    RAI_PARAM("physx/", double, defaultFriction, 1.)
-    RAI_PARAM("physx/", double, defaultRestitution, .1) //restitution=1 should be elastic...
-    RAI_PARAM("physx/", double, motorKp, 1000.)
-    RAI_PARAM("physx/", double, motorKd, 100.)
-  };
+struct PhysX_Options {
+  RAI_PARAM("physx/", int, verbose, 1)
+  RAI_PARAM("physx/", bool, yGravity, false)
+  RAI_PARAM("physx/", bool, softBody, false)
+  RAI_PARAM("physx/", bool, multiBody, true)
+  RAI_PARAM("physx/", bool, multiBodyDisableGravity, true)
+  RAI_PARAM("physx/", bool, jointedBodies, false)
+  RAI_PARAM("physx/", double, angularDamping, .1)
+  RAI_PARAM("physx/", double, defaultFriction, 1.)
+  RAI_PARAM("physx/", double, defaultRestitution, .1) //restitution=1 should be elastic...
+  RAI_PARAM("physx/", double, motorKp, 1000.)
+  RAI_PARAM("physx/", double, motorKd, 100.)
+};
 }//namespace
 
 struct PhysXInterface : GLDrawer {
@@ -50,7 +50,7 @@ struct PhysXInterface : GLDrawer {
   void watch(bool pause=false, const char* txt=nullptr);
 
   void setGravity(float grav);
-  void disableGravity(rai::Frame *f, bool disable=true);
+  void disableGravity(rai::Frame* f, bool disable=true);
   void addForce(rai::Vector& force, rai::Frame* b);
   void addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos);
 

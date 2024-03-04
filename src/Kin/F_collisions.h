@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -10,8 +10,8 @@
 
 #include "feature.h"
 
-namespace rai{
-  struct PairCollision;
+namespace rai {
+struct PairCollision;
 }
 
 //===========================================================================
@@ -35,9 +35,9 @@ struct F_PairCollision : Feature {
 
 struct F_PairFunctional : Feature, GLDrawer {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2(const FrameL& F){ return 1; }
+  virtual uint dim_phi2(const FrameL& F) { return 1; }
   virtual void glDraw(OpenGL&);
-protected:
+ protected:
   std::shared_ptr<struct SweepingSDFPenetration> P;
   arr x;
   double d1, d2;
@@ -52,6 +52,6 @@ struct F_AccumulatedCollisions : Feature {
   bool selectXor=false;
   F_AccumulatedCollisions(double _margin=.0, bool selAll=false, bool selXor=false) : margin(_margin), selectAll(selAll), selectXor(selXor) {}
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2(const FrameL& F){ return 1; }
+  virtual uint dim_phi2(const FrameL& F) { return 1; }
 };
 

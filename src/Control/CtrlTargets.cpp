@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -70,7 +70,7 @@ ActStatus CtrlTarget_MaxCarrot::step(double tau, CtrlObjective* o, const arr& y_
     o->feat->target = goal;
     isTransient=false;
   }
-  if(o->type==OT_ineq){
+  if(o->type==OT_ineq) {
     cout <<"GOAL:" <<goal <<" target:" <<o->feat->target <<endl;
   }
   if(goalDistance<maxDistance) countInGoalRange++; else countInGoalRange=0;

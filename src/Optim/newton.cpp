@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -13,7 +13,8 @@
 //#define NewtonLazyLineSearchMode
 
 template<> const char* rai::Enum<OptNewton::StopCriterion>::names []= {
- "None", "DeltaConverge", "TinyFSteps", "TinyXSteps", "CritEvals", "StepFailed", "LineSearchSteps", 0 };
+  "None", "DeltaConverge", "TinyFSteps", "TinyXSteps", "CritEvals", "StepFailed", "LineSearchSteps", 0
+};
 
 bool sanityCheck=false; //true;
 void updateBoundActive(intA& boundActive, const arr& x, const arr& bound_lo, const arr& bound_up);
@@ -52,7 +53,7 @@ void OptNewton::reinit(const arr& _x) {
 
   //startup verbose
   if(options.verbose>1) cout <<"----newton---- initial point f(x):" <<fx <<" alpha:" <<alpha <<" beta:" <<beta <<endl;
-  if(options.verbose>3){ if(x.N<5) cout <<"x:" <<x <<endl; }
+  if(options.verbose>3) { if(x.N<5) cout <<"x:" <<x <<endl; }
   if(logFile) {
     (*logFile) <<"{ newton: " <<its <<", evaluations: " <<evals <<", f_x: " <<fx <<", alpha: " <<alpha;
     if(options.verbose>3)(*logFile) <<", x: " <<x;
@@ -60,7 +61,7 @@ void OptNewton::reinit(const arr& _x) {
   }
   if(simpleLog) {
     (*simpleLog) <<its <<' ' <<evals <<' ' <<fx <<' ' <<alpha;
-    if(x.N<=5) (*simpleLog) <<x.modRaw();
+    if(x.N<=5)(*simpleLog) <<x.modRaw();
     (*simpleLog) <<endl;
   }
 }
@@ -96,24 +97,24 @@ OptNewton::StopCriterion OptNewton::step() {
 #define BOUND_EPS 1e-10
     if(bounds_lo.N && bounds_up.N) {
       for(uint i=0; i<x.N; i++) if(bounds_up(i)>bounds_lo(i)) {
-        if(x(i)>=bounds_up(i)-BOUND_EPS){ boundActive(i) = +1; nActiveBounds++; }
-        else if(x(i)<=bounds_lo(i)+BOUND_EPS){ boundActive(i) = -1; nActiveBounds++; }
-        else boundActive(i) = 0;
-      }
+          if(x(i)>=bounds_up(i)-BOUND_EPS) { boundActive(i) = +1; nActiveBounds++; }
+          else if(x(i)<=bounds_lo(i)+BOUND_EPS) { boundActive(i) = -1; nActiveBounds++; }
+          else boundActive(i) = 0;
+        }
     }
 #undef BOUND_EPS
-    if(nActiveBounds){
+    if(nActiveBounds) {
       //zero correlations to bound-active variables
       if(!isSpecial(R)) {
-        for(uint i=0;i<x.N;i++) if(boundActive.elem(i)){
-          for(uint j=0;j<x.N;j++) if(i!=j){ R(i,j)=0; R(j,i)=0; }
-        }
+        for(uint i=0; i<x.N; i++) if(boundActive.elem(i)) {
+            for(uint j=0; j<x.N; j++) if(i!=j) { R(i, j)=0; R(j, i)=0; }
+          }
       } else if(isSparse(R)) {
         rai::SparseMatrix& s = R.sparse();
         for(uint k=0; k<s.elems.d0; k++) {
           uint i = s.elems(k, 0);
           uint j = s.elems(k, 1);
-          if(i!=j && (boundActive.elem(i) || boundActive.elem(j))){
+          if(i!=j && (boundActive.elem(i) || boundActive.elem(j))) {
             s.Z.elem(k) = 0.;
           }
         }
@@ -150,7 +151,7 @@ OptNewton::StopCriterion OptNewton::step() {
     } catch(...) {
       inversionFailed=true;
     }
-    if(!inversionFailed && scalarProduct(Delta,gx)>0.){
+    if(!inversionFailed && scalarProduct(Delta, gx)>0.) {
       inversionFailed = true;
     }
     if(inversionFailed) {
@@ -193,7 +194,7 @@ OptNewton::StopCriterion OptNewton::step() {
 
   //-- line search along Delta
   uint lineSearchSteps=0;
-  for(;;lineSearchSteps++) {
+  for(;; lineSearchSteps++) {
     if(alpha>1.) alpha=1.;
     if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit;
     if(options.verbose>1) cout <<"  alpha:" <<std::setw(11) <<alpha <<std::flush;
@@ -210,7 +211,7 @@ OptNewton::StopCriterion OptNewton::step() {
     if(options.verbose>1) cout <<"  evals:" <<std::setw(4) <<evals <<"  f(y):" <<std::setw(11) <<fy <<std::flush;
     if(simpleLog) {
       (*simpleLog) <<its <<' ' <<evals <<' ' <<fy <<' ' <<alpha;
-      if(y.N<=5) (*simpleLog) <<y.modRaw();
+      if(y.N<=5)(*simpleLog) <<y.modRaw();
       (*simpleLog) <<endl;
     }
 
@@ -285,17 +286,17 @@ OptNewton::~OptNewton() {
   if(options.verbose>1) cout <<"----newton---- final f(x):" <<fx <<endl;
 }
 
-OptNewton& OptNewton::setBounds(const arr& _bounds_lo, const arr& _bounds_up){
+OptNewton& OptNewton::setBounds(const arr& _bounds_lo, const arr& _bounds_up) {
   bounds_lo = _bounds_lo;
   bounds_up = _bounds_up;
-  if(x.N){
+  if(x.N) {
     CHECK_EQ(bounds_lo.N, x.N, "");
     CHECK_EQ(bounds_up.N, x.N, "");
     bool good = boundCheck(x, bounds_lo, bounds_up);
     if(!good) HALT("seed x is not within bounds")
 //    boundClip(x, bounds_lo, bounds_up);
 //    reinit(x);
-  }
+    }
   return *this;
 }
 

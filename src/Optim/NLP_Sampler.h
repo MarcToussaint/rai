@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -45,14 +45,14 @@ struct NLP_Sampler_Options {
 
 };
 
-struct NLP_Walker{
+struct NLP_Walker {
   NLP_Sampler_Options opt;
 
   NLP& nlp;
 
   //evaluation data
   arr x;
-  struct Eval{
+  struct Eval {
     arr x;
     arr phi, J;
     arr g, Jg;
@@ -79,9 +79,9 @@ struct NLP_Walker{
   }
 
   void set_alpha_bar(double alpha_bar);
-  void initialize(const arr& _x){ x=_x; ev.phi.clear(); ev.x.clear(); }
-  void ensure_eval(){ ev.eval(x, *this); }
-  void store_eval(){ ensure_eval(); stored = ev; }
+  void initialize(const arr& _x) { x=_x; ev.phi.clear(); ev.x.clear(); }
+  void ensure_eval() { ev.eval(x, *this); }
+  void store_eval() { ensure_eval(); stored = ev; }
 
   bool step(); //old
 
@@ -94,7 +94,7 @@ struct NLP_Walker{
 
   void run(arr& data, arr& trace=NoArr);
 
-protected:
+ protected:
   void clipBeta(const arr& d, const arr& xbar, double& beta_lo, double& beta_up);
   arr get_rnd_direction();
   void get_beta_mean(double& beta_mean, double& beta_sdv, const arr& dir, const arr& xbar);
@@ -102,7 +102,7 @@ protected:
 
 //===========================================================================
 
-struct LineSampler{
+struct LineSampler {
   arr b, s;
   double num_constraints=0.;
   double beta_lo=-1e6, beta_up=1e6;
@@ -110,7 +110,7 @@ struct LineSampler{
 
   LineSampler(double maxStep=-1.) { if(maxStep>0.) init(maxStep); }
 
-  void init(double maxStep){ beta_lo=-maxStep; beta_up=maxStep; }
+  void init(double maxStep) { beta_lo=-maxStep; beta_up=maxStep; }
 
   double eval_beta(double beta);
 

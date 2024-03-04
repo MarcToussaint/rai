@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -34,7 +34,7 @@ template<> const char* rai::Enum<BoundType>::names []= {
 };
 
 rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S, const rai::Configuration& C,
-                                           const arrA& waypoints) {
+    const arrA& waypoints) {
 
   if(boundType==BD_pose)
     return S.nlp_finalSlice(C);
@@ -75,7 +75,7 @@ LGP_Node::LGP_Node(LGP_Tree& _tree, uint levels)
 
   resetData();
 
-  if(tree.filNodes) (*tree.filNodes) <<id <<' ' <<step <<' ' <<time <<' ' <<getTreePathString() <<endl;
+  if(tree.filNodes)(*tree.filNodes) <<id <<' ' <<step <<' ' <<time <<' ' <<getTreePathString() <<endl;
 }
 
 LGP_Node::LGP_Node(LGP_Node* parent, TreeSearchDomain::Handle& a)
@@ -98,7 +98,7 @@ LGP_Node::LGP_Node(LGP_Node* parent, TreeSearchDomain::Handle& a)
   cost(BD_symbolic) = parent->cost(BD_symbolic) - 0.1*ret.reward; //cost-so-far
   highestBound = parent->highestBound - 0.1*ret.reward;
 
-  if(tree.filNodes) (*tree.filNodes) <<id <<' ' <<step <<' ' <<time <<' ' <<getTreePathString() <<endl;
+  if(tree.filNodes)(*tree.filNodes) <<id <<' ' <<step <<' ' <<time <<' ' <<getTreePathString() <<endl;
 }
 
 LGP_Node::~LGP_Node() {
@@ -123,7 +123,7 @@ void LGP_Node::expand(int verbose) {
 }
 
 void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
-  if(tree.filComputes) (*tree.filComputes) <<id <<'-' <<step <<'-' <<bound <<endl;
+  if(tree.filComputes)(*tree.filComputes) <<id <<'-' <<step <<'-' <<bound <<endl;
   ensure_skeleton();
   skeleton->collisions = collisions;
   skeleton->verbose = verbose;
@@ -139,7 +139,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     problem(bound) = skeleton2Bound2(bound, *skeleton, tree.kin, waypoints);
   } catch(std::runtime_error& err) {
     cout <<"CREATING KOMO FOR SKELETON CRASHED: " <<err.what() <<endl;
-    if(tree.filComputes) (*tree.filComputes) <<"SKELETON->KOMO CRASHED:" <<*skeleton <<endl;
+    if(tree.filComputes)(*tree.filComputes) <<"SKELETON->KOMO CRASHED:" <<*skeleton <<endl;
     feasible(bound) = false;
     labelInfeasible();
     return;
@@ -159,15 +159,14 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   komo->opt.verbose = rai::MAX(verbose, 0);
 
   //-- verbosity...
-  if(tree.verbose>1){
+  if(tree.verbose>1) {
     if(komo->opt.verbose>0) {
       cout <<"########## OPTIM lev " <<bound <<endl;
     }
 
     komo->logFile = new ofstream(tree.OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
 
-
-    if(komo->logFile){
+    if(komo->logFile) {
       (*komo->logFile) <<getTreePathString() <<'\n' <<endl;
       skeleton->write(*komo->logFile, skeleton->getSwitches(komo->world));
       (*komo->logFile) <<'\n' <<komo->report(true, false);
@@ -196,7 +195,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
   } catch(std::runtime_error& err) {
     cout <<"KOMO CRASHED: " <<err.what() <<endl;
-    if(tree.filComputes) (*tree.filComputes) <<"KOMO CRASHED"<<endl;
+    if(tree.filComputes)(*tree.filComputes) <<"KOMO CRASHED"<<endl;
     problem(bound).komo.reset();
     feasible(bound) = false;
     labelInfeasible();
@@ -245,7 +244,6 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   if(!feasible(bound))
     labelInfeasible();
 }
-
 
 void LGP_Node::setInfeasible() {
   isInfeasible = true;
@@ -465,7 +463,7 @@ void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
   if(!brief) {
     n->key <<STRING("\ns:" <<step <<" t:" <<time <<" bound:" <<highestBound <<" feas:" <<!isInfeasible <<" term:" <<isTerminal <<' ' <<folState->isNodeOfGraph->key);
     for(uint l=0; l<L; l++) if(count(l))
-      n->key <<STRING('\n' <<Enum<BoundType>::name(l) <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" " <<(feasible(l)?'1':'0') <<" time:" <<computeTime(l));
+        n->key <<STRING('\n' <<Enum<BoundType>::name(l) <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" " <<(feasible(l)?'1':'0') <<" time:" <<computeTime(l));
     if(folAddToState) n->key <<STRING("\nsymAdd:" <<*folAddToState);
     if(note.N) n->key <<'\n' <<note;
   }
@@ -502,9 +500,9 @@ void LGP_Node::displayBound(ConfigurationViewer& V, BoundType bound) {
     s <<"\n sos:" <<problem(bound).komo->sos <<" eq:" <<problem(bound).komo->eq <<" ineq:" <<problem(bound).komo->ineq;
     V.setConfiguration(tree.kin, s);
     V.setPath(problem(bound).komo->getPath_X(), s, true);
-    if(bound>=BD_path){
+    if(bound>=BD_path) {
       while(V.playVideo(true, 1.*problem(bound).komo->T/problem(bound).komo->stepsPerPhase));
-    }else{
+    } else {
       while(V.playVideo(true, 1.*problem(bound).komo->T));
     }
   }

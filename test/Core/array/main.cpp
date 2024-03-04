@@ -247,7 +247,6 @@ void TEST(Autodiff){
   arr y = A*x;
   cout <<y <<endl <<A <<endl;
 
-
 #define checkOperation(op) \
   { \
   VectorFunction f = [&](const arr& x) -> arr { return op; }; \

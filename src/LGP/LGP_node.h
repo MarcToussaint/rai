@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -29,7 +29,7 @@ enum BoundType { BD_all=-1,
                  BD_max
                };
 
-rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S, const Configuration& C, const arrA& waypoints={});
+rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S, const Configuration& C, const arrA& waypoints= {});
 
 //===========================================================================
 
@@ -91,13 +91,13 @@ struct LGP_Node {
 
   void ensure_skeleton();
 
-private:
+ private:
   void setInfeasible(); ///< set this and all children infeasible
   void labelInfeasible(); ///< sets this infeasible AND propagates this label up-down to others
   LGP_Node* treePolicy_random(); ///< returns leave -- by descending children randomly
   bool recomputeAllFolStates();
 
-public:
+ public:
   void write(ostream& os=cout, bool recursive=false, bool path=true) const;
   Graph getInfo() const;
   void getGraph(Graph& G, Node* n=nullptr, bool brief=false);

@@ -1,12 +1,20 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "dof_path.h"
 
 #include "kin.h"
 
-namespace rai{
+namespace rai {
 
 //===========================================================================
 
-PathDof::PathDof(Frame& a, PathDof* copy){
+PathDof::PathDof(Frame& a, PathDof* copy) {
   frame = &a;
   dim = 1;
   limits = {0., 1.};
@@ -18,12 +26,12 @@ PathDof::PathDof(Frame& a, PathDof* copy){
   }
 }
 
-PathDof::~PathDof(){
+PathDof::~PathDof() {
   frame->C.reset_q();
   frame->pathDof=0;
 }
 
-void PathDof::setDofs(const arr& q_full, uint qIndex){
+void PathDof::setDofs(const arr& q_full, uint qIndex) {
   CHECK_LE(qIndex+dim, q_full.N, "out of range");
   q = q_full.elem(qIndex);
   CHECK_GE(q, 0., "out of range");
@@ -36,7 +44,7 @@ void PathDof::setDofs(const arr& q_full, uint qIndex){
   frame->set_X()->rot.normalize();
 }
 
-arr PathDof::calcDofsFromConfig() const{
+arr PathDof::calcDofsFromConfig() const {
   return arr{q};
 }
 
@@ -50,7 +58,7 @@ void PathDof::read(const Graph& ats) {
   ats.get(sampleUniform, "sampleUniform");
 }
 
-void PathDof::getJacobians(arr& Jpos, arr& Jang) const{
+void PathDof::getJacobians(arr& Jpos, arr& Jang) const {
   //compute 'fwd kin' again:
   double a=q*double(path.d0-1), i;
   a = modf(a, &i);
@@ -63,12 +71,12 @@ void PathDof::getJacobians(arr& Jpos, arr& Jang) const{
   if(i+1<path.d0) d = path[i+1]-path[i];
   else d = path[-1] - path[-2];
   d *= double(path.d0-1);
-  Jpos = d({0,2}).reshape(3,1);
-  Jang = (fX.rot.getJacobian() * d({3,-1})).reshape(3,1);
-  Jang /= sqrt(sumOfSqr(X({3,-1})));   //account for the non-normalization of path or quaternion interpolation
+  Jpos = d({0, 2}).reshape(3, 1);
+  Jang = (fX.rot.getJacobian() * d({3, -1})).reshape(3, 1);
+  Jang /= sqrt(sumOfSqr(X({3, -1})));  //account for the non-normalization of path or quaternion interpolation
 }
 
-String PathDof::name() const{
+String PathDof::name() const {
   return STRING("path-" <<frame->name <<'.' <<frame->ID);
 }
 

@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 /// extension: containing deprecated functionalities
 struct Configuration_ext : Configuration {
   arr qdot;
@@ -89,7 +97,6 @@ void rai::Configuration::setDofsForTree(const arr& q, rai::Frame* root) {
   setJointState(q, F);
 }
 
-
 ///// find shape with specific name
 //rai::Shape* rai::Configuration::getShapeByName(const char* name, bool warnIfNotExist) const {
 //  Frame *f = getFrameByName(name, warnIfNotExist);
@@ -113,7 +120,6 @@ rai::Joint* rai::Configuration::getJointByFrames(const Frame* from, const Frame*
   if(to->joint && to->parent==from) return to->joint;
   return nullptr;
 }
-
 
 /// find joint connecting two bodies with specific names
 rai::Joint* rai::Configuration::getJointByFrameIndices(uint ifrom, uint ito) const {
@@ -224,7 +230,6 @@ void operator=(const arr& X) {
   else if(X.d0==getJointStateDimension()) setJointState(X);
   else HALT("wrong dimension");
 }
-
 
 //===========================================================================
 
@@ -470,7 +475,6 @@ void rai::Configuration::kinematicsRelPos(arr& y, arr& J, Frame* a, const rai::V
     J = Rinv * (J1 - J2 - crossProduct(A, y1 - y2));
   }
 }
-
 
 void transferQbetweenTwoWorlds(arr& qto, const arr& qfrom, const rai::Configuration& to, const rai::Configuration& from) {
   arr q = to.getJointState();

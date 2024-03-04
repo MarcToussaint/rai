@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -77,14 +77,14 @@ enum BoundType { BD_all=-1,
                };
 
 shared_ptr<KOMO_based_bound> skeleton2Bound(shared_ptr<KOMO>& komo,
-                                  BoundType boundType,
-                                  const rai::Skeleton& S,
-                                  const rai::Configuration& startKinematics,
-                                  bool collisions,
-                                  const arrA& waypoints= {}
-                                 );
+    BoundType boundType,
+    const rai::Skeleton& S,
+    const rai::Configuration& startKinematics,
+    bool collisions,
+    const arrA& waypoints= {}
+                                           );
 
-rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S, const arrA& waypoints={});
+rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S, const arrA& waypoints= {});
 
 struct SubCG {
   rai::NodeL frames;

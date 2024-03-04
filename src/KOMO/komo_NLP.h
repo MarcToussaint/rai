@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "komo.h"
@@ -35,15 +43,15 @@ struct Conv_KOMO_FactoredNLP : NLP_Factored {
 
   virtual uint varsN() { if(subVars.N) return subVars.N; return __variableIndex.N; }
   virtual uint featsN() { if(subVars.N) return subFeats.N; return __featureIndex.N; }
-  VariableIndexEntry& vars(uint var_id){ if(subVars.N) return __variableIndex(subVars(var_id)); else return __variableIndex(var_id); }
-  FeatureIndexEntry& feats(uint feat_id){ if(subVars.N) return __featureIndex(subFeats(feat_id)); else return __featureIndex(feat_id); }
+  VariableIndexEntry& vars(uint var_id) { if(subVars.N) return __variableIndex(subVars(var_id)); else return __variableIndex(var_id); }
+  FeatureIndexEntry& feats(uint feat_id) { if(subVars.N) return __featureIndex(subFeats(feat_id)); else return __featureIndex(feat_id); }
 
   Conv_KOMO_FactoredNLP(KOMO& _komo, const rai::Array<DofL>& varDofs);
 
   virtual void subSelect(const uintA& activeVariables, const uintA& conditionalVariables);
-  virtual uint numTotalVariables(){ return __variableIndex.N; }
+  virtual uint numTotalVariables() { return __variableIndex.N; }
 
-  virtual rai::String getVariableName(uint var_id){ return vars(var_id).name; }
+  virtual rai::String getVariableName(uint var_id) { return vars(var_id).name; }
 
   ///-- signature/structure of the mathematical problem
 //    virtual arr getInitializationSample();

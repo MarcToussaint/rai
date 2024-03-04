@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -19,25 +19,25 @@ struct FuncCallData {
   uint feature=0;
 };
 
-nlopt::algorithm getSolverEnum(const char* param, bool& needsSubsolver, int verbose){
+nlopt::algorithm getSolverEnum(const char* param, bool& needsSubsolver, int verbose) {
   rai::Enum<NLopt_SolverOption> sol;
   sol = rai::getParameter<rai::String>(param);
-  if(verbose){
+  if(verbose) {
     cout <<"NLopt option: " <<param <<": " <<sol <<endl;
   }
-  switch (sol){
+  switch(sol) {
 #define CASE(x, s) case _NLopt_##x:{ needsSubsolver=s; return nlopt::x; }
-    CASE(LD_SLSQP, true);
-    CASE(LD_MMA, false);
-    CASE(LN_COBYLA, false);
-    CASE(LD_AUGLAG, true);
-    CASE(LD_AUGLAG_EQ, true);
-    CASE(LN_NELDERMEAD, false);
-    CASE(LD_LBFGS, false);
-    CASE(LD_TNEWTON, false);
-    CASE(LD_TNEWTON_RESTART, false);
-    CASE(LD_TNEWTON_PRECOND, false);
-    CASE(LD_TNEWTON_PRECOND_RESTART, false);
+      CASE(LD_SLSQP, true);
+      CASE(LD_MMA, false);
+      CASE(LN_COBYLA, false);
+      CASE(LD_AUGLAG, true);
+      CASE(LD_AUGLAG_EQ, true);
+      CASE(LN_NELDERMEAD, false);
+      CASE(LD_LBFGS, false);
+      CASE(LD_TNEWTON, false);
+      CASE(LD_TNEWTON_RESTART, false);
+      CASE(LD_TNEWTON_PRECOND, false);
+      CASE(LD_TNEWTON_PRECOND_RESTART, false);
 #undef CASE
     default: HALT("shouldn't be here");
   }
@@ -47,9 +47,9 @@ nlopt::algorithm getSolverEnum(const char* param, bool& needsSubsolver, int verb
 arr NLoptInterface::solve(const arr& x_init) {
   //-- get initialization
   arr x;
-  if(!!x_init){
+  if(!!x_init) {
     x = x_init;
-  }else{
+  } else {
     x = P->getInitializationSample();
   }
 
@@ -66,7 +66,7 @@ arr NLoptInterface::solve(const arr& x_init) {
   nlopt::opt opt(getSolverEnum("NLopt_solver", needsSubsolver, verbose), x.N);
   opt.set_xtol_abs(rai::getParameter<double>("NLopt_xtol", 1e-4));
   //  opt.set_ftol_abs(1e-3);
-  if(needsSubsolver){
+  if(needsSubsolver) {
     nlopt::opt subopt(getSolverEnum("NLopt_subSolver", needsSubsolver, verbose), x.N);
     subopt.set_xtol_abs(rai::getParameter<double>("NLopt_xtol", 1e-4));
     opt.set_local_optimizer(subopt);

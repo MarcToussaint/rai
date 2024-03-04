@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -92,14 +92,14 @@ void NLP_GraphSolver::test() {
   arr x = P->getInitializationSample();
   P->checkJacobian(x, 1e-6);
 
-  for(uint t=0;t<20;t++){
+  for(uint t=0; t<20; t++) {
     uintA A;
     A.setRandomPerm(P->numTotalVariables());
     uint i=rnd(A.N-1);
     uint j=rnd(A.N-i);
-    uintA X = A({0,i});
-    uintA Y = A({i+1,i+j});
-    P->subSelect(X,Y);
+    uintA X = A({0, i});
+    uintA Y = A({i+1, i+j});
+    P->subSelect(X, Y);
     P->report(cout, 2);
     x = P->getInitializationSample();
     if(!P->checkJacobian(x, 1e-6)) rai::wait();
@@ -128,9 +128,9 @@ std::shared_ptr<SolverReturn> NLP_GraphSolver::solveRandom() {
   A.setRandomPerm(P->numTotalVariables());
   uint i=rnd(A.N-1);
   uint j=rnd(A.N-i);
-  uintA X = A({0,i});
-  uintA Y = A({i+1,i+j});
-  P->subSelect(X,Y);
+  uintA X = A({0, i});
+  uintA Y = A({i+1, i+j});
+  P->subSelect(X, Y);
   P->report(cout, 2);
   subSolver.x = P->getInitializationSample();
   subSolver.dual.clear();
@@ -144,16 +144,16 @@ std::shared_ptr<SolverReturn> NLP_GraphSolver::solveRandom() {
   return ret;
 }
 
-std::shared_ptr<SolverReturn> NLP_GraphSolver::solveInOrder(uintA order){
-  uintA X,Y;
+std::shared_ptr<SolverReturn> NLP_GraphSolver::solveInOrder(uintA order) {
+  uintA X, Y;
   if(!order.N) order.setStraightPerm(P->numTotalVariables());
-  for(uint i=0;i<order.N;i++){
+  for(uint i=0; i<order.N; i++) {
 #if 1
-    if(i) Y = order({0,i-1});
+    if(i) Y = order({0, i-1});
     X = {order(i)};
-    P->subSelect(X,Y);
+    P->subSelect(X, Y);
 //    P->report(cout, 2);
-    if(P->featureDimensions.N){ //any features at all?
+    if(P->featureDimensions.N) { //any features at all?
 //      P->report(cout, 4, STRING("INITIALIZATION for " << X <<'|' <<Y));
       ret = subSolver
             .clear()
@@ -165,12 +165,12 @@ std::shared_ptr<SolverReturn> NLP_GraphSolver::solveInOrder(uintA order){
     }
     //--
 #endif
-    if(true){ //ret && !ret->feasible){
-      X = order({0,i});
+    if(true) { //ret && !ret->feasible){
+      X = order({0, i});
       Y.clear();
-      P->subSelect(X,Y);
+      P->subSelect(X, Y);
 //      P->report(cout, 2);
-      if(P->featureDimensions.N){ //any features at all?
+      if(P->featureDimensions.N) { //any features at all?
 //        P->randomizeSingleVariable(i);
 //        P->report(cout, 5, STRING("INITIALIZATION for " << X <<'|' <<Y));
         ret = subSolver

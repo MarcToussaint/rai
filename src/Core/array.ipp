@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -16,7 +16,6 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
-
 
 namespace rai {
 
@@ -80,7 +79,7 @@ template<class T> Array<T>::Array(Array<T>&& a)
     d(&d0),
     isReference(a.isReference),
     M(a.M),
-    special(a.special){
+    special(a.special) {
   //if(a.jac) jac = std::move(a.jac);
   CHECK_EQ(a.d, &a.d0, "");
   a.p=NULL;
@@ -288,7 +287,7 @@ template<class T> void Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   }
 
 #ifdef RAI_USE_STDVEC
-  if(Mnew!=Mold){ vec_type::resize(Mnew); }
+  if(Mnew!=Mold) { vec_type::resize(Mnew); }
 //  vec_type::reserve(Mnew);
 //  vec_type::resize(Mnew);
   p = vec_type::data();
@@ -298,23 +297,23 @@ template<class T> void Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   if(Mnew!=Mold) {  //if M changed, allocate the memory
     globalMemoryTotal -= Mold*sizeT;
     globalMemoryTotal += Mnew*sizeT;
-    if(globalMemoryTotal>globalMemoryBound){
-      if(globalMemoryStrict){
+    if(globalMemoryTotal>globalMemoryBound) {
+      if(globalMemoryStrict) {
         globalMemoryTotal -= Mnew*sizeT;
         HALT("out of memory: " <<((globalMemoryTotal+Mnew)>>20) <<"MB");
       }
       LOG(0) <<"using massive memory: " <<(globalMemoryTotal>>20) <<"MB";
     }
     if(Mnew) {
-      if(memMove==1){
-        if(p){
+      if(memMove==1) {
+        if(p) {
           p=(T*)realloc(p, Mnew*sizeT);
         } else {
           p=(T*)malloc(Mnew*sizeT);
           //memset(p, 0, Mnew*sizeT);
         }
         if(!p) { HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
-      }else{
+      } else {
         T* pold = p;
         p=new T [Mnew];
         if(!p) { HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
@@ -324,9 +323,9 @@ template<class T> void Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
       M=Mnew;
     } else {
       if(p) {
-        if(memMove==1){
+        if(memMove==1) {
           free(p);
-        }else{
+        } else {
           delete[] p;
         }
         p=0;
@@ -346,9 +345,9 @@ template<class T> void Array<T>::freeMEM() {
 #else
   if(M) {
     globalMemoryTotal -= M*sizeT;
-    if(memMove==1){
+    if(memMove==1) {
       free(p);
-    }else{
+    } else {
       delete[] p;
     }
     p=0;
@@ -609,7 +608,7 @@ template<class T> void Array<T>::insRows(int i, uint k) {
   CHECK(memMove, "only with memMove");
   CHECK_EQ(nd, 2, "only for matricies");
   if(i<0) i+=d0+1;
-  CHECK_LE(i,(int)d0, "range error (" <<i <<">=" <<d0 <<")");
+  CHECK_LE(i, (int)d0, "range error (" <<i <<">=" <<d0 <<")");
   int n=d0;
   resizeCopy(d0+k, d1);
   if(n>i) memmove(p+(i+k)*d1, p+i*d1, sizeT*d1*(n-i));
@@ -986,8 +985,8 @@ template<class T> Array<T>& Array<T>::operator=(std::initializer_list<T> values)
 
 /// set all elements to value \c v
 template<class T> Array<T>& Array<T>::operator=(const T& v) {
-  if(N){
-    T *x=p, *xstop=p+N;
+  if(N) {
+    T* x=p, *xstop=p+N;
     for(; x!=xstop; x++) *x = v;
   }
   return *this;
@@ -1023,7 +1022,7 @@ template<class T> Array<T> catCol(const Array<Array<T>*>& X) {
   uint d0=X(0)->d0, d1=0;
   for(const Array<T>* x:X) { CHECK((x->nd==2 || x->nd==1) && x->d0==d0, ""); d1+=x->nd==2?x->d1:1; }
   Array<T> z;
-  if(isSparse(*X.first())){
+  if(isSparse(*X.first())) {
     NIY;
 //      z.sparse().resize(d0, d1, 0);
 //      d1=0;
@@ -1034,15 +1033,15 @@ template<class T> Array<T> catCol(const Array<Array<T>*>& X) {
 //          z.sparse().add(x->sparse(), 0, d1);
 //          d1+=x->d1;
 //      }
-  }else{
-      z.resize(d0, d1);
-      d1=0;
-      for(const Array<T>* x:  X) { z.setMatrixBlock(*x, 0, d1); d1+=x->nd==2?x->d1:1; }
+  } else {
+    z.resize(d0, d1);
+    d1=0;
+    for(const Array<T>* x:  X) { z.setMatrixBlock(*x, 0, d1); d1+=x->nd==2?x->d1:1; }
   }
   return z;
 }
 
-template<class T> Array<T> catCol(std::initializer_list<rai::Array<T>> X){
+template<class T> Array<T> catCol(std::initializer_list<rai::Array<T>> X) {
   Array<Array<T>*> Xp;
   for(const Array<T>& x:  X) Xp.append((Array<T>*)&x);
   return catCol(Xp);
@@ -1346,17 +1345,17 @@ template<class T> Array<T>& Array<T>::setGrid(uint dim, T lo, T hi, uint steps) 
   if(dim==3) {
     resize(uintA{steps+1, steps+1, steps+1, 3});
     T dx = (hi-lo)/steps;
-    for(i=0; i<d0; i++) for(j=0; j<d1; j++){
-      T *p = &elem(uintA{i, j, 0, 0});
-      for(k=0; k<d2; k++) {
-        *(p++) = lo+dx*i;
-        *(p++) = lo+dx*j;
-        *(p++) = lo+dx*k;
+    for(i=0; i<d0; i++) for(j=0; j<d1; j++) {
+        T* p = &elem(uintA{i, j, 0, 0});
+        for(k=0; k<d2; k++) {
+          *(p++) = lo+dx*i;
+          *(p++) = lo+dx*j;
+          *(p++) = lo+dx*k;
 //        elem(uintA{i, j, k, 0}) = lo+dx*i;
 //        elem(uintA{i, j, k, 1}) = lo+dx*j;
 //        elem(uintA{i, j, k, 2}) = lo+dx*k;
+        }
       }
-    }
     reshape(d0*d1*d2, 3);
     return *this;
   }
@@ -1516,7 +1515,7 @@ template<class T> void Array<T>::shift(int offset, bool wrapAround) {
   }
 }
 
-//==================================================================================  
+//==================================================================================
 
 /** @brief prototype for operator<<, writes the array by separating elements with ELEMSEP, separating rows with LINESEP, using BRACKETS[0] and BRACKETS[1] to brace the data, optionally writs a dimensionality tag before the data (see below), and optinally in binary format */
 template<class T> void Array<T>::write(std::ostream& os, const char* ELEMSEP, const char* LINESEP, const char* BRACKETS, bool dimTag, bool binary) const {
@@ -1608,7 +1607,7 @@ template<class T> Array<T>& Array<T>::read(std::istream& is) {
     for(;;) {
       skip(is, " ,\r\t", NULL, true);
       is.get(c);
-      if(is.eof()){
+      if(is.eof()) {
         if(expectBracket) LOG(-1) <<"closing bracket is missing";
         is.clear();
         break;
@@ -1620,7 +1619,7 @@ template<class T> Array<T>& Array<T>::read(std::istream& is) {
       }
       if(c!=',') is.putback(c);
       is >>x;
-      if(!is.good()){
+      if(!is.good()) {
         if(!expectBracket) is.clear(); //ok
         else PARSERR("failed reading ending bracket ]");
         break;
@@ -1671,13 +1670,13 @@ template<class T> void Array<T>::readDim(std::istream& is) {
   uint ND, dim[10];
   is >>PARSE("<");
   is.get(c);
-  if(c==typeid(T).name()[0] && 0==typeid(T).name()[1]){ //c is a type indicator - swallow it
+  if(c==typeid(T).name()[0] && 0==typeid(T).name()[1]) { //c is a type indicator - swallow it
     is.get(c); //eat c
   }
-  if(c=='>'){
+  if(c=='>') {
     clear();
     return;
-  }else{
+  } else {
     is.putback(c);
   }
   for(ND=0;; ND++) {
@@ -1710,7 +1709,7 @@ template<class T> void Array<T>::readBase64(std::istream& is) {
 /// write a json dict
 template<class T> void Array<T>::writeJson(std::ostream& os) const {
   os <<"[ \"" <<rai::atomicTypeidName(typeid(T)) <<"\", [";
-  for(uint i=0; i<nd; i++){ os <<dim(i); if(i+1<nd) os <<", "; }
+  for(uint i=0; i<nd; i++) { os <<dim(i); if(i+1<nd) os <<", "; }
   os <<"], \"";
   writeBase64(os);
   os <<"\" ]";
@@ -1718,7 +1717,7 @@ template<class T> void Array<T>::writeJson(std::ostream& os) const {
 
 /// read a json dict
 template<class T> void Array<T>::readJson(std::istream& is, bool skipType) {
-  if(!skipType){
+  if(!skipType) {
     parse(is, "[", false);
     { char c=getNextChar(is, " \n\r\t", true); if(c!='"') is.putback(c); }
     parse(is, rai::atomicTypeidName(typeid(T)), false);
@@ -1730,10 +1729,10 @@ template<class T> void Array<T>::readJson(std::istream& is, bool skipType) {
     char c;
     uint ND, dim[10];
     is.get(c);
-    if(c==']'){
+    if(c==']') {
       clear();
       return;
-    }else{
+    } else {
       is.putback(c);
     }
     for(ND=0;; ND++) {
@@ -1792,11 +1791,10 @@ template<class T> uint Array<T>::serial_decode(char* data, uint data_size) {
 }
 
 //===============================================================================
-  
+
 #ifdef RAI_CLANG
 #  pragma clang diagnostic pop
 #endif
-
 
 template<class T> void writeConsecutiveConstant(std::ostream& os, const Array<T>& x) {
   if(!x.N) return;

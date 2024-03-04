@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -56,10 +56,10 @@ template<> const char* Enum<ShapeType>::names []= {
 
 Mesh::Mesh()
   : glX(0)
-  /*parsing_pos_start(0),
-      parsing_pos_end(std::numeric_limits<long>::max())*/{}
+    /*parsing_pos_start(0),
+        parsing_pos_end(std::numeric_limits<long>::max())*/{}
 
-Mesh::~Mesh(){
+Mesh::~Mesh() {
 }
 
 void Mesh::clear() {
@@ -100,7 +100,7 @@ void Mesh::setBox(bool edgesOnly) {
   if(!edgesOnly) {
     T.setCarray(tris, 36);
     T.reshape(12, 3);
-  }else{
+  } else {
     T.setCarray(edges, 24);
     T.reshape(12, 2);
   }
@@ -109,7 +109,7 @@ void Mesh::setBox(bool edgesOnly) {
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
-void Mesh::setBox(const arr& lo, const arr& up, bool edgesOnly){
+void Mesh::setBox(const arr& lo, const arr& up, bool edgesOnly) {
   setBox(edgesOnly);
   scale(up-lo);
   translate(.5*(lo+up));
@@ -128,30 +128,31 @@ void Mesh::setLine(double l) {
   V(1, 2) = +.5*l;
 }
 
-void Mesh::setQuad(double x_width, double y_width, const byteA& _texImg, bool flipY, bool texByReference){
+void Mesh::setQuad(double x_width, double y_width, const byteA& _texImg, bool flipY, bool texByReference) {
   clear();
   V = {
     -.5*x_width, -.5*y_width, 0,
-    +.5*x_width, -.5*y_width, 0,
-    +.5*x_width, +.5*y_width, 0,
-    -.5*x_width, +.5*y_width, 0  };
+      +.5*x_width, -.5*y_width, 0,
+      +.5*x_width, +.5*y_width, 0,
+      -.5*x_width, +.5*y_width, 0
+    };
   T = {
     0, 1, 2, 2, 3, 0
   };
-  V.reshape(4,3);
-  T.reshape(2,3);
-  if(_texImg.N){
-    if(texByReference){
+  V.reshape(4, 3);
+  T.reshape(2, 3);
+  if(_texImg.N) {
+    if(texByReference) {
       texImg.referTo(_texImg);
-    }else{
+    } else {
       texImg = _texImg;
     }
 //    C = {1.,1.,1.}; //bright color
     Tt = T;
-    if(!flipY){
-      tex = {0.,1.,  1.,1.,  1.,0.,  0.,0.};
-    }else{
-      tex = {0.,0.,  1.,0.,  1.,1.,  0.,1.};
+    if(!flipY) {
+      tex = {0., 1.,  1., 1.,  1., 0.,  0., 0.};
+    } else {
+      tex = {0., 0.,  1., 0.,  1., 1.,  0., 1.};
     }
     tex.reshape(V.d0, 2);
   }
@@ -292,12 +293,12 @@ void Mesh::setSSBox(double x_width, double y_width, double z_height, double r, u
   arr size = {x_width, y_width, z_height};
   setSphere(fineness);
   //duplicate axis points
-  for(uint j=0; j<3; j++){
+  for(uint j=0; j<3; j++) {
     for(uint i=0; i<V.d0; i++) {
-      if(!V(i, j)){
+      if(!V(i, j)) {
         V.append(V[i]);
-        V(i,j) -= 1e-6;
-        V(-1,j) += 1e-6;
+        V(i, j) -= 1e-6;
+        V(-1, j) += 1e-6;
       }
     }
   }
@@ -305,7 +306,7 @@ void Mesh::setSSBox(double x_width, double y_width, double z_height, double r, u
   scale(r);
 
   //push apart
-  for(uint j=0;j<3;j++){
+  for(uint j=0; j<3; j++) {
     double del = .5*size(j)-r;
     for(uint i=0; i<V.d0; i++) {
       double& v = V(i, j);
@@ -393,7 +394,7 @@ void Mesh::scale(double sx, double sy, double sz) {
   for(i=0; i<V.d0; i++) {  V(i, 0)*=sx;  V(i, 1)*=sy;  V(i, 2)*=sz;  }
 }
 
-void Mesh::scale(const arr& s){
+void Mesh::scale(const arr& s) {
   scale(s.elem(0), s.elem(1), s.elem(2));
 }
 
@@ -439,26 +440,26 @@ void Mesh::box() {
 
 void Mesh::addMesh(const Mesh& mesh2, const Transformation& X) {
   uint n=V.d0, tn=tex.d0, t=T.d0, tt=Tt.d0;
-  if(V.N==C.N){
+  if(V.N==C.N) {
     if(mesh2.V.N==mesh2.C.N) C.append(mesh2.C);
     else if(mesh2.C.N==3) C.append(replicate(mesh2.C, mesh2.V.d0));
-    else if(mesh2.C.N==4) C.append(replicate(mesh2.C({0,2}), mesh2.V.d0));
-    else if(!mesh2.C.N) C.append(replicate(arr{.8,.8,.8}, mesh2.V.d0));
-  }else{
+    else if(mesh2.C.N==4) C.append(replicate(mesh2.C({0, 2}), mesh2.V.d0));
+    else if(!mesh2.C.N) C.append(replicate(arr{.8, .8, .8}, mesh2.V.d0));
+  } else {
     if(C.nd==2) C.clear();
   }
   V.append(mesh2.V);
   T.append(mesh2.T);
   for(; t<T.d0; t++) {  T(t, 0)+=n;  T(t, 1)+=n;  T(t, 2)+=n;  }
 
-  if(mesh2.Tt.N){
+  if(mesh2.Tt.N) {
     tex.append(mesh2.tex);
     Tt.append(mesh2.Tt);
     for(; tt<Tt.d0; tt++) {  Tt(tt, 0)+=tn;  Tt(tt, 1)+=tn;  Tt(tt, 2)+=tn;  }
-  }else if(Tt.N){
+  } else if(Tt.N) {
     Tt.append(consts<uint>(0, mesh2.T.d0, 3));
   }
-  if(mesh2.texImg.N){
+  if(mesh2.texImg.N) {
 //    CHECK(!texImg.N, "can't append texture images");
     texImg = mesh2.texImg;
   }
@@ -467,7 +468,7 @@ void Mesh::addMesh(const Mesh& mesh2, const Transformation& X) {
   }
 }
 
-void Mesh::addConvex(const arr& points, const arr& color){
+void Mesh::addConvex(const arr& points, const arr& color) {
   Mesh sub;
   sub.V = getHull(points, sub.T);
   if(!!color) sub.C = color;
@@ -526,20 +527,20 @@ void Mesh::makeLines() {
   }
 }
 
-Mesh Mesh::decompose(){
+Mesh Mesh::decompose() {
   Mesh M;
 #ifdef RAI_VHACD
   VHACD::IVHACD::Parameters p;
-  VHACD::IVHACD *iface = VHACD::CreateVHACD();
+  VHACD::IVHACD* iface = VHACD::CreateVHACD();
   iface->Compute(V.p, V.d0, T.p, T.d0, p);
 
   Mesh c;
   VHACD::IVHACD::ConvexHull ch;
-  for(uint i=0; i<iface->GetNConvexHulls(); i++){
-    iface->GetConvexHull(i,ch);
+  for(uint i=0; i<iface->GetNConvexHulls(); i++) {
+    iface->GetConvexHull(i, ch);
     c.clear();
-    c.V.referTo(ch.m_points, 3*ch.m_nPoints).reshape(-1,3);
-    c.T.referTo(ch.m_triangles, 3*ch.m_nTriangles).reshape(-1,3);
+    c.V.referTo(ch.m_points, 3*ch.m_nPoints).reshape(-1, 3);
+    c.T.referTo(ch.m_triangles, 3*ch.m_nTriangles).reshape(-1, 3);
     c.C = id2color(i);
     M.cvxParts.append(M.V.d0);
     M.addMesh(c);
@@ -551,7 +552,7 @@ Mesh Mesh::decompose(){
   return M;
 }
 
-uint Mesh::getComponents(){
+uint Mesh::getComponents() {
   //usually we'd analyze connected components... here assume sorted vertices and triangles!
   return 0;
 //  uint part=0;
@@ -627,7 +628,7 @@ void Mesh::computeNormals() {
   for(uint i=0; i<Vn.d0; i++) { d.set(&Vn(i, 0)); Vn[i]/=d.length(); }
 }
 
-void Mesh::computeFaceColors(){
+void Mesh::computeFaceColors() {
   CHECK_EQ(C.nd, 2, "");
   CHECK_EQ(C.d0, V.d0, "");
   CHECK_EQ(C.d1, 3, "");
@@ -850,7 +851,7 @@ void Mesh::fuseNearVertices(double tol) {
   texImg.clear();
 }
 
-void Mesh::deleteVertices(uintA& delLabels){
+void Mesh::deleteVertices(uintA& delLabels) {
   CHECK_EQ(delLabels.N, V.d0, "");
   uintA p;
   p.setStraightPerm(V.d0);
@@ -862,9 +863,9 @@ void Mesh::deleteVertices(uintA& delLabels){
   V.resizeCopy(N, 3);
 
   //remove tris..
-  for(uint i=T.d0;i--;){
+  for(uint i=T.d0; i--;) {
     bool del=false;
-    for(uint j=0;j<T.d1;j++) if(T(i,j)>=V.d0){ del=true; break; }
+    for(uint j=0; j<T.d1; j++) if(T(i, j)>=V.d0) { del=true; break; }
     if(del) T.delRows(i);
   }
 }
@@ -1147,8 +1148,8 @@ void Mesh::skin(uint start) {
   cout <<T <<endl;
 }
 
-void Mesh::deleteGlTexture(){
-  if(texture!=-1){
+void Mesh::deleteGlTexture() {
+  if(texture!=-1) {
     GLuint texName = texture;
     glDeleteTextures(1, &texName);
   }
@@ -1229,7 +1230,7 @@ uintA Mesh::getVertexDegrees() const {
   return deg;
 }
 
-ANN& Mesh::ensure_ann(){
+ANN& Mesh::ensure_ann() {
   if(!ann) ann = make_shared<ANN>();
   if(ann->X.d0 != V.d0) ann->setX(V);
   return *ann;
@@ -1386,12 +1387,12 @@ void Mesh::writePLY(const char* fn, bool bin) {
   struct Vertex { float x, y, z;  byte r, g, b;  };
 
   PlyProperty vert_props[]  = { /* list of property information for a PlyVertex */
-                                {"x", Float32, Float32, offsetof(Vertex, x), 0, 0, 0, 0},
-                                {"y", Float32, Float32, offsetof(Vertex, y), 0, 0, 0, 0},
-                                {"z", Float32, Float32, offsetof(Vertex, z), 0, 0, 0, 0},
-                                {"red", Uint8, Uint8, offsetof(Vertex, r), 0, 0, 0, 0},
-                                {"green", Uint8, Uint8, offsetof(Vertex, g), 0, 0, 0, 0},
-                                {"blue", Uint8, Uint8, offsetof(Vertex, b), 0, 0, 0, 0}
+    {"x", Float32, Float32, offsetof(Vertex, x), 0, 0, 0, 0},
+    {"y", Float32, Float32, offsetof(Vertex, y), 0, 0, 0, 0},
+    {"z", Float32, Float32, offsetof(Vertex, z), 0, 0, 0, 0},
+    {"red", Uint8, Uint8, offsetof(Vertex, r), 0, 0, 0, 0},
+    {"green", Uint8, Uint8, offsetof(Vertex, g), 0, 0, 0, 0},
+    {"blue", Uint8, Uint8, offsetof(Vertex, b), 0, 0, 0, 0}
 //    {"nx", Float64, Float64, offsetof( Vertex,nx ), 0, 0, 0, 0},
 //    {"ny", Float64, Float64, offsetof( Vertex,ny ), 0, 0, 0, 0},
 //    {"nz", Float64, Float64, offsetof( Vertex,nz ), 0, 0, 0, 0}
@@ -1400,7 +1401,7 @@ void Mesh::writePLY(const char* fn, bool bin) {
   PlyProperty face_props[1]; /* list of property information for a PlyFace */
   if(V.d0<65535) {
     face_props[0] = {"vertex_indices", Int16, Int32, offsetof(Face, verts), 1, Uint8, Uint8, offsetof(Face, nverts)};
-  }else{
+  } else {
     face_props[0] = {"vertex_indices", Int32, Int32, offsetof(Face, verts), 1, Uint8, Uint8, offsetof(Face, nverts)};
   }
 
@@ -1411,11 +1412,11 @@ void Mesh::writePLY(const char* fn, bool bin) {
   ply = write_ply(fp, 2, elem_names, bin? PLY_BINARY_LE : PLY_ASCII);
 
   /* describe what properties go into the PlyVertex elements */
-  describe_element_ply(ply, "vertex", V.d0 );
+  describe_element_ply(ply, "vertex", V.d0);
   describe_property_ply(ply, &vert_props[0]);
   describe_property_ply(ply, &vert_props[1]);
   describe_property_ply(ply, &vert_props[2]);
-  if(C.N==V.N){
+  if(C.N==V.N) {
     describe_property_ply(ply, &vert_props[3]);
     describe_property_ply(ply, &vert_props[4]);
     describe_property_ply(ply, &vert_props[5]);
@@ -1430,14 +1431,14 @@ void Mesh::writePLY(const char* fn, bool bin) {
   //-- put vertices
   put_element_setup_ply(ply, "vertex");
   Vertex vertex;
-  for(uint i = 0; i < V.d0 ; i++){
-    vertex.x = V(i,0);
-    vertex.y = V(i,1);
-    vertex.z = V(i,2);
-    if(C.N==V.N){
-      vertex.r = 255.*C(i,0);
-      vertex.g = 255.*C(i,1);
-      vertex.b = 255.*C(i,2);
+  for(uint i = 0; i < V.d0 ; i++) {
+    vertex.x = V(i, 0);
+    vertex.y = V(i, 1);
+    vertex.z = V(i, 2);
+    if(C.N==V.N) {
+      vertex.r = 255.*C(i, 0);
+      vertex.g = 255.*C(i, 1);
+      vertex.b = 255.*C(i, 2);
     }
     put_element_ply(ply, (void*) &vertex);
   }
@@ -1549,7 +1550,7 @@ void Mesh::readPLY(const char* fn) {
       }
     } else {
       /* all non-PlyVertex and non-PlyFace elements are grabbed here */
-      PlyOtherElems *other = get_other_element_ply(ply);
+      PlyOtherElems* other = get_other_element_ply(ply);
       free_other_elements_ply(other);
     }
   }
@@ -1567,7 +1568,7 @@ void Mesh::writePLY(const char* fn, bool bin) {
 void Mesh::readPLY(const char* fn) { NICO }
 #endif
 
-void Mesh::writeJson(std::ostream& os){
+void Mesh::writeJson(std::ostream& os) {
   os <<"{\nV: ";
   convert<float>(V).writeJson(os);
   os <<",\nT: ";
@@ -1575,7 +1576,7 @@ void Mesh::writeJson(std::ostream& os){
   os <<"\n}" <<endl;
 }
 
-void Mesh::readJson(std::istream& is){
+void Mesh::readJson(std::istream& is) {
   parse(is, "{", false);
   parse(is, "V:", false);
   floatA tmp;
@@ -1598,7 +1599,7 @@ void Mesh::writeArr(std::ostream& os) {
   G.write(os, ",\n", "{\n\n}", -1, false, true);
 }
 
-void Mesh::writeH5(const char* filename){
+void Mesh::writeH5(const char* filename) {
   H5_Writer H(filename);
   H.addGroup("mesh");
   H.add("mesh/vertices", convert<float>(V));
@@ -1609,7 +1610,7 @@ void Mesh::writeH5(const char* filename){
   if(texImg.N) H.add("mesh/texImg", texImg);
 }
 
-void Mesh::readH5(const char* filename){
+void Mesh::readH5(const char* filename) {
   H5_Reader H(filename);
   V = H.read<double>("mesh/vertices");
   T = H.read<uint>("mesh/faces");
@@ -1622,10 +1623,10 @@ void Mesh::readH5(const char* filename){
 void Mesh::readArr(std::istream& is) {
   clear();
   Graph G(is);
-  rai::Node *n;
-  n=G["V"]; if(n){ if(n->is<arr>()) V = n->as<arr>(); else V = convert<double>( n->as<floatA>() ); }
-  n=G["T"]; if(n){ if(n->is<uintA>()) T = n->as<uintA>(); else{ if(n->is<Array<int16_t>>()) T = convert<uint>( n->as<Array<int16_t>>() ); else T = convert<uint>( n->as<uint16A>() ); } }
-  n=G["C"]; if(n){ if(n->is<arr>()) C = n->as<arr>(); else{ if(n->is<byteA>()) C = convert<double>( n->as<byteA>() )/255.; else C = convert<double>( n->as<floatA>() ); } }
+  rai::Node* n;
+  n=G["V"]; if(n) { if(n->is<arr>()) V = n->as<arr>(); else V = convert<double>(n->as<floatA>()); }
+  n=G["T"]; if(n) { if(n->is<uintA>()) T = n->as<uintA>(); else { if(n->is<Array<int16_t>>()) T = convert<uint>(n->as<Array<int16_t>>()); else T = convert<uint>(n->as<uint16A>()); } }
+  n=G["C"]; if(n) { if(n->is<arr>()) C = n->as<arr>(); else { if(n->is<byteA>()) C = convert<double>(n->as<byteA>())/255.; else C = convert<double>(n->as<floatA>()); } }
   G.get(cvxParts, "cvxParts");
   G.get(tex, "tex");
   G.get(texImg, "texImg");
@@ -1634,16 +1635,15 @@ void Mesh::readArr(std::istream& is) {
 void Mesh::readPts(std::istream& is) {
   floatA pts;
   pts.readJson(is);
-  if(pts.d1==3){
+  if(pts.d1==3) {
     rai::copy(V, pts);
-  }else{
+  } else {
     CHECK_EQ(pts.d1, 6, "need only points (3D), or points and normals (6D)");
-    rai::copy(V, pts.sub(0,-1,0,2));
-    rai::copy(Vn, pts.sub(0,-1,3,5));
+    rai::copy(V, pts.sub(0, -1, 0, 2));
+    rai::copy(Vn, pts.sub(0, -1, 3, 5));
   }
-  C = {0.,0.,.3};
+  C = {0., 0., .3};
 }
-
 
 //===========================================================================
 // Util
@@ -1699,12 +1699,12 @@ void Mesh::glDraw(struct OpenGL& gl) {
     if(C.nd==1) {
       CHECK(C.N>=1 && C.N<=4, "need a basic color");
       GLfloat col[4];
-      if(C.N>=3){
+      if(C.N>=3) {
         col[0] = C.elem(0);
         col[1] = C.elem(1);
         col[2] = C.elem(2);
         col[3] = (C.N==4?C.elem(3):1.);
-      }else{
+      } else {
         col[0] = col[1] = col[2] = C.elem(0);
         col[3] = (C.N==2?C.elem(1):1.);
       }
@@ -1728,10 +1728,10 @@ void Mesh::glDraw(struct OpenGL& gl) {
 
     glDrawArrays(GL_POINTS, 0, V.d0);
 
-    if(Vn.N){ //draw normals
+    if(Vn.N) { //draw normals
       CHECK_EQ(Vn.N, V.N, "");
       arr p, n;
-      glColor4d(.5,.5,.5, .2);
+      glColor4d(.5, .5, .5, .2);
       glBegin(GL_LINES);
       for(uint i=0; i<V.d0; i++) {
         //if(C.N==V.N) glColor3dv(&C(i,0));
@@ -1761,8 +1761,8 @@ void Mesh::glDraw(struct OpenGL& gl) {
         if(C.d1==3) glColor(C(i, 0), C(i, 1), C(i, 2), 1.);
         if(C.d1==1) glColorId(C(i, 0));
       }
-      v=T(i, 0);  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  glVertex3dv(&V(v, 0));
-      v=T(i, 1);  if(C.nd==2 && C.d0==V.d0) glColor(C(v,0),C(v,1),C(v,2),1.f);  glVertex3dv(&V(v, 0));
+      v=T(i, 0);  if(C.nd==2 && C.d0==V.d0) glColor(C(v, 0), C(v, 1), C(v, 2), 1.f);  glVertex3dv(&V(v, 0));
+      v=T(i, 1);  if(C.nd==2 && C.d0==V.d0) glColor(C(v, 0), C(v, 1), C(v, 2), 1.f);  glVertex3dv(&V(v, 0));
     }
     glEnd();
 #else
@@ -1877,12 +1877,12 @@ void Mesh::glDraw(struct OpenGL& gl) {
     for(uint i=0; i<T.d0; i++) {
       glNormal3dv(Tn.p+3*i);
       if(C.nd==2 && C.d0==T.d0) {
-        if(C.d1==3){ double* c = C.p+3*i; glColor(c[0], c[1], c[2], 1.f, lightingEnabled); }
+        if(C.d1==3) { double* c = C.p+3*i; glColor(c[0], c[1], c[2], 1.f, lightingEnabled); }
         if(C.d1==1) glColorId(C(i, 0));
       }
       uint* t = T.p+3*i;
-      for(uint j=0;j<3;j++){
-        if(C.nd==2 && C.d0==V.d0){ double* c = C.p+3*t[j]; glColor(c[0], c[1], c[2], 1.f, lightingEnabled); }
+      for(uint j=0; j<3; j++) {
+        if(C.nd==2 && C.d0==V.d0) { double* c = C.p+3*t[j]; glColor(c[0], c[1], c[2], 1.f, lightingEnabled); }
         if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));
         glVertex3dv(V.p+3*t[j]);
       }
@@ -1909,7 +1909,7 @@ void Mesh::glDraw(struct OpenGL& gl) {
 
   if(glDrawOptions(gl).drawWires) { //on top of mesh
 #if 1
-    glColor(0,0,0,1, 2);
+    glColor(0, 0, 0, 1, 2);
     uint t;
     for(t=0; t<T.d0; t++) {
       glBegin(GL_LINE_LOOP);
@@ -1941,7 +1941,6 @@ void Mesh::glDraw(struct OpenGL&) { NICO }
 void glDrawMesh(void*) { NICO }
 void glTransform(const Transformation&) { NICO }
 #endif
-
 
 //===========================================================================
 //
@@ -2044,7 +2043,7 @@ double GJK_sqrDistance(const Mesh& mesh1, const Mesh& mesh2,
 
     } else {
       if(d2>EPSILON) THROW("GJK converges to simplex!")
-    }
+      }
 
 //    cout <<"point types= " <<pt1 <<' ' <<pt2 <<endl;
 //    CHECK(!(pt1==3 && pt2==3),"");
@@ -2108,13 +2107,13 @@ void Mesh::setImplicitSurface(const ScalarFunction& f, double xLo, double xHi, d
   }
 }
 
-void Mesh::setImplicitSurface(const floatA& gridValues, const arr& lo, const arr& hi){
+void Mesh::setImplicitSurface(const floatA& gridValues, const arr& lo, const arr& hi) {
   arr D;
-  copy(D,gridValues);
+  copy(D, gridValues);
   setImplicitSurface(D, lo, hi);
 }
 
-void Mesh::setImplicitSurface(const arr& gridValues, const arr& lo, const arr& hi){
+void Mesh::setImplicitSurface(const arr& gridValues, const arr& lo, const arr& hi) {
   CHECK_EQ(gridValues.nd, 3, "");
 
   MarchingCubes mc(gridValues.d0, gridValues.d1, gridValues.d2);
@@ -2123,7 +2122,7 @@ void Mesh::setImplicitSurface(const arr& gridValues, const arr& lo, const arr& h
   for(k=0; k<gridValues.d2; k++) {
     for(j=0; j<gridValues.d1; j++) {
       for(i=0; i<gridValues.d0; i++) {
-        mc.set_data(gridValues(i,j,k), i, j, k) ;
+        mc.set_data(gridValues(i, j, k), i, j, k) ;
       }
     }
   }
@@ -2152,11 +2151,11 @@ void Mesh::setImplicitSurface(const ScalarFunction& f, double lo, double hi, uin
 void Mesh::setImplicitSurface(const floatA& gridValues, const arr& lo, const arr& hi) { NICO }
 #endif
 
-void Mesh::setImplicitSurfaceBySphereProjection(const ScalarFunction& f, double rad, uint fineness){
+void Mesh::setImplicitSurfaceBySphereProjection(const ScalarFunction& f, double rad, uint fineness) {
   setSphere(fineness);
   scale(rad);
 
-  ScalarFunction distSqr = [&f](arr& g, arr& H, const arr& x){
+  ScalarFunction distSqr = [&f](arr& g, arr& H, const arr& x) {
     double d = f(g, H, x);
     H *= 2.*d;
     H += 2.*(g^g);
@@ -2164,12 +2163,12 @@ void Mesh::setImplicitSurfaceBySphereProjection(const ScalarFunction& f, double 
     return d*d;
   };
 
-  for(uint i=0;i<V.d0;i++){
+  for(uint i=0; i<V.d0; i++) {
     arr x = V[i];
     OptNewton newton(x, distSqr, OptOptions()
                      .set_verbose(0)
                      .set_maxStep(.5*rad)
-                     .set_damping(1e-10) );
+                     .set_damping(1e-10));
     newton.run();
   }
 }
@@ -2321,19 +2320,19 @@ void inertiaCylinder(double* I, double& mass, double density, double height, dou
   I[8]=mass/2.*r2;
 }
 
-void inertiaMesh(double *I, double& mass, double density, const rai::Mesh& m){
+void inertiaMesh(double* I, double& mass, double density, const rai::Mesh& m) {
   double area = m.getArea();
   if(density) mass = density*m.getVolume();
   //assume mass distributed on surface
   arr vertexMass = zeros(m.V.d0);
-  for(uint i=0;i<m.T.d0;i++){
+  for(uint i=0; i<m.T.d0; i++) {
     double mi = mass * m.getArea(i)/area;
-    for(uint v=0;v<3;v++) vertexMass(m.T(i,v)) += mi/3.; //area per vertex
+    for(uint v=0; v<3; v++) vertexMass(m.T(i, v)) += mi/3.; //area per vertex
   }
   //cout <<::sum(vertexMass) <<' ' <<mass <<endl;
-  for(uint i=0;i<m.V.d0;i++){
+  for(uint i=0; i<m.V.d0; i++) {
     double mi = vertexMass(i);
-    double x=m.V(i,0), y=m.V(i,1), z=m.V(i,2);
+    double x=m.V(i, 0), y=m.V(i, 1), z=m.V(i, 2);
     I[0] += mi*(y*y+z*z);
     I[4] += mi*(x*x+z*z);
     I[8] += mi*(x*x+y*y);

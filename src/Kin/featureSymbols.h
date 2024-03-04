@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -81,8 +81,8 @@ struct Feature;
 
 shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 
-inline shared_ptr<Feature> make_feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1){
+inline shared_ptr<Feature> make_feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1) {
   return symbols2feature(feat, frames, C, scale, target, order);
 }
 
-double shapeSize(const rai::Frame *f, uint i=2);
+double shapeSize(const rai::Frame* f, uint i=2);

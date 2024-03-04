@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "SecMPC.h"
 
 #include "../Optim/NLP_Solver.h"
@@ -11,11 +19,11 @@
 SecMPC::SecMPC(KOMO& komo, int subSeqStart, int subSeqStop, double timeCost, double ctrlCost,
                bool _setNextWaypointTangent, const StringA& explicitCollisions)
   : waypointMPC(komo),
-    timingMPC(waypointMPC.path({subSeqStart,subSeqStop}), timeCost, ctrlCost),
-    shortMPC(komo.world, 5, .1),
-    subSeqStart(subSeqStart), subSeqStop(subSeqStop), setNextWaypointTangent(_setNextWaypointTangent){
+    timingMPC(waypointMPC.path({subSeqStart, subSeqStop}), timeCost, ctrlCost),
+shortMPC(komo.world, 5, .1),
+subSeqStart(subSeqStart), subSeqStop(subSeqStop), setNextWaypointTangent(_setNextWaypointTangent) {
 
-  for(uint i=0;i<explicitCollisions.d0;i++){
+  for(uint i=0; i<explicitCollisions.d0; i++) {
     CHECK_EQ(explicitCollisions.d1, 2, "");
     shortMPC.komo.addObjective({}, FS_distance, explicitCollisions[i], OT_ineqP, {1e1}, {-.001});
   }
@@ -25,15 +33,15 @@ SecMPC::SecMPC(KOMO& komo, int subSeqStart, int subSeqStop, double timeCost, dou
 //    shortMPC.komo.addObjective({}, FS_distance, {"obst", s}, OT_ineqP, {5.}, {-.1});
 //  }
 
-  if(waypointMPC.qHome.N){
-    for(uint t=0;t<shortMPC.komo.T;t++){
+  if(waypointMPC.qHome.N) {
+    for(uint t=0; t<shortMPC.komo.T; t++) {
       shortMPC.komo.addObjective({0.}, FS_qItself, {}, OT_sos, {1.}, waypointMPC.qHome, 0, t+1, t+1);
     }
   }
 
   if(setNextWaypointTangent) timingMPC.set_updatedWaypoints(timingMPC.waypoints, true);
 
-  if(opt.verbose>0){
+  if(opt.verbose>0) {
     LOG(0) <<"new SecMPC with following waypoint komo:";
     cout <<waypointMPC.komo.report(true, false) <<endl;
   }
@@ -41,7 +49,7 @@ SecMPC::SecMPC(KOMO& komo, int subSeqStart, int subSeqStop, double timeCost, dou
 
 //===========================================================================
 
-void SecMPC::updateWaypoints(const rai::Configuration& C){
+void SecMPC::updateWaypoints(const rai::Configuration& C) {
   waypointMPC.reinit(C); //adopt all frames in C as prefix (also positions of objects)
   waypointMPC.solve(opt.verbose-2);
 
@@ -54,29 +62,29 @@ void SecMPC::updateWaypoints(const rai::Configuration& C){
 
 //===========================================================================
 
-void SecMPC::updateTiming(const rai::Configuration& C, const ObjectiveL& phi, const arr& q_real){
+void SecMPC::updateTiming(const rai::Configuration& C, const ObjectiveL& phi, const arr& q_real) {
   //-- adopt the new path
   timingMPC.set_updatedWaypoints(waypointMPC.path({subSeqStart, subSeqStop}), setNextWaypointTangent);
 
   //-- progress time (potentially phase)
-  if(!timingMPC.done() && ctrlTimeDelta>0.){
+  if(!timingMPC.done() && ctrlTimeDelta>0.) {
     phaseSwitch = timingMPC.set_progressedTime(ctrlTimeDelta, opt.tauCutoff);
-  }else{
+  } else {
     phaseSwitch = false;
   }
 
   arr tauExpected = timingMPC.tau;
 
   //-- phase backtracking
-  if(timingMPC.done()){
-    if(phi.maxError(C, timingMPC.phase+subSeqStart) > opt.precision){
+  if(timingMPC.done()) {
+    if(phi.maxError(C, timingMPC.phase+subSeqStart) > opt.precision) {
       phi.maxError(C, timingMPC.phase+subSeqStart, 1); //verbose
       timingMPC.update_backtrack();
       phaseSwitch = true;
     }
   }
-  if(!timingMPC.done()){
-    while(timingMPC.phase>0 && phi.maxError(C, 0.5+timingMPC.phase+subSeqStart) > opt.precision){ //OR while?
+  if(!timingMPC.done()) {
+    while(timingMPC.phase>0 && phi.maxError(C, 0.5+timingMPC.phase+subSeqStart) > opt.precision) { //OR while?
       phi.maxError(C, 0.5+timingMPC.phase+subSeqStart, 1); //verbose
       timingMPC.update_backtrack();
       phaseSwitch = true;
@@ -85,24 +93,24 @@ void SecMPC::updateTiming(const rai::Configuration& C, const ObjectiveL& phi, co
 
   msg <<" \tTIMING";
   //-- re-optimize the timing
-  if(!timingMPC.done()){
-    if(timingMPC.tau(timingMPC.phase) > opt.tauCutoff){
+  if(!timingMPC.done()) {
+    if(timingMPC.tau(timingMPC.phase) > opt.tauCutoff) {
       shared_ptr<SolverReturn> ret;
       double ctrlErr = length(q_real-q_ref_atLastUpdate);
       double thresh = .02;
       //cout <<"err: " <<err <<"  \t" <<flush;
-      if(ctrlErr>thresh){
+      if(ctrlErr>thresh) {
         //LOG(0) <<"ERROR MODE: " <<ctrlErr <<endl;
         q_refAdapted = q_ref_atLastUpdate + ((ctrlErr-thresh)/ctrlErr) * (q_real-q_ref_atLastUpdate);
         ret = timingMPC.solve(q_refAdapted, qDot_ref_atLastUpdate, opt.verbose-3);
-      }else{
+      } else {
         q_refAdapted.clear();
         q_refAdapted = q_ref_atLastUpdate;
         ret = timingMPC.solve(q_ref_atLastUpdate, qDot_ref_atLastUpdate, opt.verbose-3);
       }
       msg <<" #" <<ret->evals;
       //      msg <<" T:" <<ret->time <<" f:" <<ret->f;
-    }else{
+    } else {
       msg <<" skip";
     }
   }
@@ -120,7 +128,7 @@ void SecMPC::updateTiming(const rai::Configuration& C, const ObjectiveL& phi, co
 
 //===========================================================================
 
-void SecMPC::updateShortPath(const rai::Configuration& C){
+void SecMPC::updateShortPath(const rai::Configuration& C) {
   shortMPC.reinit(C); //adopt all frames in C as prefix (also positions of objects)
   shortMPC.reinit(q_refAdapted, qDot_ref_atLastUpdate);
   rai::CubicSpline S;
@@ -130,14 +138,14 @@ void SecMPC::updateShortPath(const rai::Configuration& C){
 #else
 //  timingMPC.getCubicSpline(S, q_ref_atLastUpdate, qDot_ref_atLastUpdate);
   auto sp = getSpline(ctrlTime_atLastUpdate, true);
-  if(!sp.pts.N){ shortMPC.feasible=false; return; }
+  if(!sp.pts.N) { shortMPC.feasible=false; return; }
   S.set(sp.pts, sp.vels, sp.times);
 #endif
   arr times = shortMPC.komo.getPath_times();
   arr pts = S.eval(times);
   CHECK_EQ(times.N, shortMPC.komo.T, "");
   CHECK_EQ(pts.d0, shortMPC.komo.T, "");
-  for(int t=0;t<(int)pts.d0;t++){
+  for(int t=0; t<(int)pts.d0; t++) {
     shortMPC.komo.setConfiguration_qOrg(t, q_refAdapted); //pts[t]);
     std::shared_ptr<GroundedObjective> ob = shortMPC.komo.objs.elem(t - (int)pts.d0);
     ob->feat->setTarget(pts[t]);
@@ -171,9 +179,9 @@ void SecMPC::updateShortPath(const rai::Configuration& C){
 
 //===========================================================================
 
-void SecMPC::cycle(const rai::Configuration& C, const arr& q_ref, const arr& qDot_ref, const arr& q_real, const arr& qDot_real, double ctrlTime){
+void SecMPC::cycle(const rai::Configuration& C, const arr& q_ref, const arr& qDot_ref, const arr& q_real, const arr& qDot_real, double ctrlTime) {
   //-- store ctrl state at start of this cycle
-  if(ctrlTime_atLastUpdate>0.){
+  if(ctrlTime_atLastUpdate>0.) {
     ctrlTimeDelta = ctrlTime - ctrlTime_atLastUpdate;
   }
   ctrlTime_atLastUpdate = ctrlTime;
@@ -189,7 +197,7 @@ void SecMPC::cycle(const rai::Configuration& C, const arr& q_ref, const arr& qDo
   updateShortPath(C);
 }
 
-rai::CubicSplineCtor SecMPC::getSpline(double realtime, bool prependRef){
+rai::CubicSplineCtor SecMPC::getSpline(double realtime, bool prependRef) {
   if(!waypointMPC.feasible) return {};
 //  if(timingMPC.done() || !waypointMPC.feasible) return {};
   arr pts = timingMPC.getWaypoints();
@@ -198,11 +206,11 @@ rai::CubicSplineCtor SecMPC::getSpline(double realtime, bool prependRef){
   CHECK_EQ(vels.d0, times.N, "");
   times -= realtime - ctrlTime_atLastUpdate; //ctrlTimeLast=when the timing was optimized; realtime=time now; -> shift spline to stich it at realtime
 //  if(times.first()<tauCutoff) return {};
-  if(q_refAdapted.N){ //this will overrideHard the spline, as first time is negative;
+  if(q_refAdapted.N) { //this will overrideHard the spline, as first time is negative;
     pts.prepend(q_refAdapted);
     vels.prepend(qDot_ref_atLastUpdate);
     times.prepend(0. - (realtime - ctrlTime_atLastUpdate));
-  }else if(prependRef){
+  } else if(prependRef) {
     pts.prepend(q_ref_atLastUpdate);
     vels.prepend(qDot_ref_atLastUpdate);
     times.prepend(0. - (realtime - ctrlTime_atLastUpdate));
@@ -210,7 +218,7 @@ rai::CubicSplineCtor SecMPC::getSpline(double realtime, bool prependRef){
   return {pts, vels, times};
 }
 
-rai::CubicSplineCtor SecMPC::getShortPath_debug(double realtime){
+rai::CubicSplineCtor SecMPC::getShortPath_debug(double realtime) {
   if(timingMPC.done() || !waypointMPC.feasible) return {};
 
   rai::CubicSpline S;
@@ -237,8 +245,8 @@ rai::CubicSplineCtor SecMPC::getShortPath_debug(double realtime){
   return {pts, vels, times};
 }
 
-rai::CubicSplineCtor SecMPC::getShortPath(double realtime){
-  if(/*timingMPC.done() || */!waypointMPC.feasible || !shortMPC.feasible){ return {}; }
+rai::CubicSplineCtor SecMPC::getShortPath(double realtime) {
+  if(/*timingMPC.done() || */!waypointMPC.feasible || !shortMPC.feasible) { return {}; }
   arr times = shortMPC.times; //komo.getPath_times();
   arr pts = shortMPC.path;
   arr vels = shortMPC.vels;
@@ -253,14 +261,13 @@ rai::CubicSplineCtor SecMPC::getShortPath(double realtime){
   return {pts, vels, times};
 }
 
-
 void SecMPC::report(const rai::Configuration& C) {
 #if 0
   const ObjectiveL& phi = waypointMPC.komo.objectives;
   msg <<" \tFEA " <<phi.maxError(C, 0.5+timingMPC.phase)
-     <<' ' <<phi.maxError(C, 1.+timingMPC.phase)
-    <<' ' <<phi.maxError(C, 1.5+timingMPC.phase)
-   <<' ' <<phi.maxError(C, 2.+timingMPC.phase);
+      <<' ' <<phi.maxError(C, 1.+timingMPC.phase)
+      <<' ' <<phi.maxError(C, 1.5+timingMPC.phase)
+      <<' ' <<phi.maxError(C, 2.+timingMPC.phase);
 #endif
   cout <<msg <<endl;
 }

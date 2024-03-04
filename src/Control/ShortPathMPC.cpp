@@ -1,10 +1,17 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "ShortPathMPC.h"
 #include "../Control/timingOpt.h"
 #include "../Optim/NLP_Solver.h"
 
 ShortPathMPC::ShortPathMPC(rai::Configuration& C, uint steps, double _defaultTau)
-  : defaultTau(_defaultTau)
-{
+  : defaultTau(_defaultTau) {
   qHome = C.getJointState();
 
   komo.setConfig(C, false);
@@ -20,7 +27,7 @@ ShortPathMPC::ShortPathMPC(rai::Configuration& C, uint steps, double _defaultTau
 //  cout <<komo.report(true, false) <<endl;
 }
 
-void ShortPathMPC::reinit_taus(double timeToConstraint){
+void ShortPathMPC::reinit_taus(double timeToConstraint) {
 #if 0
   komo.tau = timeToConstraint / komo.T + .01;
   komo.pathConfig.setTaus(komo.tau);
@@ -42,14 +49,14 @@ void ShortPathMPC::reinit_taus(double timeToConstraint){
   komo.objs.popLast();
   shared_ptr<Objective> ob2 = komo.objectives.popLast();
   shared_ptr<Objective> ob1 = komo.objectives.popLast();
-  komo._addObjective(ob1, intA{{1,1},{sliceOfConstraint}});
-  komo._addObjective(ob2, intA{{1,2},{sliceOfConstraint, sliceOfConstraint+1}});
+  komo._addObjective(ob1, intA{{1, 1}, {sliceOfConstraint}});
+  komo._addObjective(ob2, intA{{1, 2}, {sliceOfConstraint, sliceOfConstraint+1}});
 #endif
 
 //  cout <<komo.report(true, false) <<endl;  rai::wait();
 }
 
-void ShortPathMPC::reinit(const arr& x, const arr& v){
+void ShortPathMPC::reinit(const arr& x, const arr& v) {
   x0=x; v0=v;
   //set the prefix to init:
   komo.setConfiguration_qOrg(-1, x);
@@ -60,19 +67,19 @@ void ShortPathMPC::reinit(const arr& x, const arr& v){
 //  komo.timeSlices(-1,0)->setJointState({100.}); //this should be the tau joint!
 }
 
-void ShortPathMPC::reinit(const rai::Configuration& C){
+void ShortPathMPC::reinit(const rai::Configuration& C) {
   //shifts only prefix, not the whole trajectory! (would not make sense for x(H) \gets x(T) )
 //  komo.updateAndShiftPrefix(C);
   komo.updateRootObjects(C);
 }
 
-void ShortPathMPC::solve(bool alsoVels, int verbose){
+void ShortPathMPC::solve(bool alsoVels, int verbose) {
   iters++;
 
   //re-run KOMO
   rai::OptOptions opt;
   opt.set_stopTolerance(1e-3)
-     .set_verbose(0);
+  .set_verbose(0);
   komo.opt.verbose=0;
   komo.timeTotal=0.;
   komo.pathConfig.setJointStateCount=0;
@@ -83,7 +90,7 @@ void ShortPathMPC::solve(bool alsoVels, int verbose){
   //is feasible?
   feasible=komo.sos<50. && komo.ineq<.1 && komo.eq<.1;
 
-  if(verbose>0){
+  if(verbose>0) {
     msg.clear() <<"SHORT it " <<iters <<" feasible: " <<(feasible?" good":" FAIL") <<" -- queries: " <<komo.pathConfig.setJointStateCount <<" time:" <<komo.timeTotal <<"\t sos:" <<komo.sos <<"\t ineq:" <<komo.ineq <<"\t eq:" <<komo.eq <<endl;
     komo.view(false, msg);
   }
@@ -94,30 +101,30 @@ void ShortPathMPC::solve(bool alsoVels, int verbose){
   vels.clear();
 
   //store as output result
-  if(feasible){
-    if(alsoVels){
+  if(feasible) {
+    if(alsoVels) {
 //      arr tangents = getVelocities_centralDifference(path, tau(0));
       TimingProblem timingProblem(path, {}, x0, v0, 1., 1., true, true, {}, tau);
       NLP_Solver solver;
       solver
-          .setProblem(timingProblem.ptr())
-          .setSolver(NLPS_newton);
+      .setProblem(timingProblem.ptr())
+      .setSolver(NLPS_newton);
       solver.opt
-          .set_stopTolerance(1e-4)
-          .set_maxStep(1e0)
-          .set_damping(1e-2);
+      .set_stopTolerance(1e-4)
+      .set_maxStep(1e0)
+      .set_damping(1e-2);
       auto ret = solver.solve();
       timingProblem.getVels(vels);
       LOG(1) <<"timing f: " <<ret->f <<' ' <<ret->evals <<'\n' <<vels;
       vels.prepend(v0);
-    }else{
+    } else {
       vels.clear();
     }
 
     path.prepend(x0);
     times.prepend(0.);
 
-  }else{
+  } else {
     cout <<komo.report();
     path.clear();
     times.clear();
@@ -126,7 +133,7 @@ void ShortPathMPC::solve(bool alsoVels, int verbose){
   }
 }
 
-arr ShortPathMPC::getPath(){
+arr ShortPathMPC::getPath() {
   if(!feasible) return arr{};
-  return path({0,sliceOfConstraint});
+  return path({0, sliceOfConstraint});
 }

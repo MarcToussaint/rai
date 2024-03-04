@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "WaypointMPC.h"
@@ -7,16 +15,16 @@
 //===========================================================================
 
 namespace rai {
-  struct SecMPC_Options {
-    RAI_PARAM("SecMPC/", int, verbose, 1)
-    RAI_PARAM("SecMPC/", double, precision, .1)
-    RAI_PARAM("SecMPC/", double, tauCutoff, .0)
-  };
+struct SecMPC_Options {
+  RAI_PARAM("SecMPC/", int, verbose, 1)
+  RAI_PARAM("SecMPC/", double, precision, .1)
+  RAI_PARAM("SecMPC/", double, tauCutoff, .0)
+};
 }//namespace
 
 //===========================================================================
 
-struct SecMPC{
+struct SecMPC {
   WaypointMPC waypointMPC;
   TimingMPC timingMPC;
   ShortPathMPC shortMPC;
@@ -34,7 +42,7 @@ struct SecMPC{
 
   rai::SecMPC_Options opt;
 
-  SecMPC(KOMO& komo, int subSeqStart=0, int subSeqStop=-1, double timeCost=1e0, double ctrlCost=1e0, bool _setNextWaypointTangent=true, const StringA& explicitCollisions={});
+  SecMPC(KOMO& komo, int subSeqStart=0, int subSeqStop=-1, double timeCost=1e0, double ctrlCost=1e0, bool _setNextWaypointTangent=true, const StringA& explicitCollisions= {});
 
   void updateWaypoints(const rai::Configuration& C);
   void updateTiming(const rai::Configuration& C, const ObjectiveL& phi, const arr& q_real);
@@ -45,9 +53,4 @@ struct SecMPC{
   rai::CubicSplineCtor getShortPath_debug(double realtime);
   void report(const rai::Configuration& C);
 };
-
-
-
-
-
 

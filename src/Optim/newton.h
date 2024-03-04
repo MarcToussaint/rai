@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -28,7 +28,7 @@ struct OptNewton {
   StopCriterion step();
   StopCriterion run(uint maxIt = 1000);
 
-public:
+ public:
   double fx;
   arr gx, Hx;
   double alpha, beta;

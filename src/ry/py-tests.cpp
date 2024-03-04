@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -25,19 +25,19 @@ void init_tests(pybind11::module& m) {
   pybind11::module_ mt = m.def_submodule("test", "rai test methods");
 
 #define addTest(name) mt.def(#name, & test##name, "rai test " #name);
-    addTest(Easy)
-    addTest(Align)
-    addTest(Thin)
-    addTest(PR2)
-    addTest(Threading)
+  addTest(Easy)
+  addTest(Align)
+  addTest(Thin)
+  addTest(PR2)
+  addTest(Threading)
 
-    addTest(RndScene)
-    addTest(Friction)
-    addTest(StackOfBlocks)
-    addTest(Compound)
-    addTest(Pushes)
-    addTest(OpenClose)
-    addTest(Grasp)
+  addTest(RndScene)
+  addTest(Friction)
+  addTest(StackOfBlocks)
+  addTest(Compound)
+  addTest(Pushes)
+  addTest(OpenClose)
+  addTest(Grasp)
 #undef addTest
 
 }

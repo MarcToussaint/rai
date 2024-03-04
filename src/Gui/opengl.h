@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -106,7 +106,6 @@ void glDrawAsList(GLDrawer& drawer, int& listId, OpenGL& gl);
 
 void read_png(byteA& img, const char* file_name, bool swap_rows);
 void write_png(const byteA& img, const char* file_name, bool swap_rows=true);
-
 
 //===========================================================================
 //
@@ -251,7 +250,7 @@ struct OpenGL {
   rai::Vector downVec, downPos, downFoc;
   int downModifiers;
   rai::Quaternion downRot;
-protected:
+ protected:
   void Key(unsigned char key, int mods, bool _keyIsDown);
   void MouseButton(int button, int buttonIsUp, int x, int y, int mods);
   void MouseMotion(double x, double y);

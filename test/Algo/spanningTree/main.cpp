@@ -3,7 +3,6 @@
 #include <Algo/ann.h>
 #include <math.h>
 
-
 void testMinimalSpanningTree(){
 
   uint k=20;

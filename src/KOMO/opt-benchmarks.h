@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "komo.h"
@@ -13,16 +21,16 @@ struct OptBench_InvKin_Simple {
 
 struct OptBench_InvKin_Endeff {
   OptBench_InvKin_Endeff(const char* modelFile, bool unconstrained);
-  shared_ptr<NLP> get(){  return nlp;  }
+  shared_ptr<NLP> get() {  return nlp;  }
 
-private:
+ private:
   unique_ptr<KOMO> komo;
   shared_ptr<NLP> nlp;
 };
 
 struct OptBench_Skeleton {
   void create(const char* modelFile, const rai::Skeleton& S, rai::ArgWord sequenceOrPath);
-  shared_ptr<NLP> get(){  CHECK(nlp, "need to create first"); return nlp;  }
+  shared_ptr<NLP> get() {  CHECK(nlp, "need to create first"); return nlp;  }
 
 //private:
   unique_ptr<KOMO> komo;

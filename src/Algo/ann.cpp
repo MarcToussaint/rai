@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -52,11 +52,11 @@ void ANN::setX(const arr& _XX) {
 }
 
 void ANN::append(const arr& x) {
-  if(!X.N){
+  if(!X.N) {
     self->clear();
     X = x;
-    X.reshape(1,x.N);
-  }else{
+    X.reshape(1, x.N);
+  } else {
     double* p=X.p;
     X.append(x);
     if(X.N==x.d0) X.reshape(1, x.d0);
@@ -96,7 +96,7 @@ void ANN::getkNN(arr& sqrDists, uintA& idx, const arr& x, uint k, double eps, bo
   arr Xi;
   for(uint i=restStartsAt; i<X.d0; i++) {
     for(uint j=0; j<=idx.N && j<k; j++) {
-      Xi.referToDim(X,i);
+      Xi.referToDim(X, i);
       double d = sqrDistance(Xi, x);
       if(j==idx.N || d < sqrDists(j)) {
         idx.insert(j, i);

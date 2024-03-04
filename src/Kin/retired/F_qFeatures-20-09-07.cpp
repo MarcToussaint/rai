@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 void F_qItself::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   Feature::phi(y, J, Ctuple);
   return;

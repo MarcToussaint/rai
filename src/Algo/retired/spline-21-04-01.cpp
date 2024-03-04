@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -145,11 +145,11 @@ void Spline::set(uint _degree, const arr& x, const arr& t, const arr& startVel, 
     points.prepend(x[0]);
     points.append(x[x.d0-1]);
   }
-  if(!!startVel){
+  if(!!startVel) {
     CHECK_EQ(degree, 2, "");
     points[1] += startVel*.25*(t(1)-t(0));
   }
-  if(!!endVel){
+  if(!!endVel) {
     CHECK_EQ(degree, 2, "");
     points[-2] -= endVel*.25*(t(-1)-t(-2));
   }

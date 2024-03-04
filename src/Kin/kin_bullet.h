@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -13,18 +13,18 @@
 class btRigidBody;
 
 namespace rai {
-  struct Bullet_Options {
-    RAI_PARAM("bullet/", int, verbose, 1)
-    RAI_PARAM("bullet/", bool, yGravity, false)
-    RAI_PARAM("bullet/", bool, softBody, false)
-    RAI_PARAM("bullet/", bool, multiBody, true)
-    RAI_PARAM("bullet/", double, defaultFriction, 1.)
-    RAI_PARAM("bullet/", double, defaultRestitution, .1)
-    RAI_PARAM("bullet/", double, contactStiffness, 5000.)
-    RAI_PARAM("bullet/", double, contactDamping, 50.)
-    RAI_PARAM("bullet/", double, motorKp, .1)
-    RAI_PARAM("bullet/", double, motorKd, 1.)
-  };
+struct Bullet_Options {
+  RAI_PARAM("bullet/", int, verbose, 1)
+  RAI_PARAM("bullet/", bool, yGravity, false)
+  RAI_PARAM("bullet/", bool, softBody, false)
+  RAI_PARAM("bullet/", bool, multiBody, true)
+  RAI_PARAM("bullet/", double, defaultFriction, 1.)
+  RAI_PARAM("bullet/", double, defaultRestitution, .1)
+  RAI_PARAM("bullet/", double, contactStiffness, 5000.)
+  RAI_PARAM("bullet/", double, contactDamping, 50.)
+  RAI_PARAM("bullet/", double, motorKp, .1)
+  RAI_PARAM("bullet/", double, motorKd, 1.)
+};
 }//namespace
 
 struct BulletInterface {
@@ -39,10 +39,10 @@ struct BulletInterface {
   void pushFullState(const rai::Configuration& C, const arr& frameVelocities=NoArr);
   void pullDynamicStates(rai::Configuration& C, arr& frameVelocities=NoArr);
 
-  void changeObjectType(rai::Frame* f, int _type, const arr& withVelocity={});
+  void changeObjectType(rai::Frame* f, int _type, const arr& withVelocity= {});
 
   void motorizeMultiBody(rai::Frame* base);
-  void setMotorQ(const arr& q_ref, const arr& qDot_ref={});
+  void setMotorQ(const arr& q_ref, const arr& qDot_ref= {});
 
   void saveBulletFile(const char* filename);
   class btDiscreteDynamicsWorld* getDynamicsWorld();
@@ -50,8 +50,7 @@ struct BulletInterface {
   rai::Bullet_Options& opt();
 };
 
-
-struct BulletBridge{
+struct BulletBridge {
   class btDiscreteDynamicsWorld* dynamicsWorld;
   rai::Array<class btCollisionObject*> actors;
 

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -18,7 +18,7 @@
 void init_PhysX(pybind11::module& m) {
   pybind11::class_<PhysXInterface, std::shared_ptr<PhysXInterface>>(m, "PhysXInterface")
 
-  .def("step", &PhysXInterface::step)
+      .def("step", &PhysXInterface::step)
 
   .def("step", [](PhysXInterface& self, shared_ptr<rai::Configuration>& C) {
     self.pushKinematicStates(*C);

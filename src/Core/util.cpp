@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -222,7 +222,7 @@ bool skipUntil(std::istream& is, const char* tag) {
 bool parse(std::istream& is, const char* str, bool silent) {
   if(!is.good()) { if(!silent) RAI_MSG("bad stream tag when scanning for '" <<str <<"'"); return false; }  //is.clear(); }
   uint i, n=strlen(str);
-  char *buf = new char[n+1];
+  char* buf = new char[n+1];
   buf[n]=0;
   rai::skip(is, " \n\r\t");
   is.read(buf, n);
@@ -403,14 +403,14 @@ double cpuTime() {
 std::string date(const std::chrono::system_clock::time_point& t, bool forFileName) {
   auto in_time_t = std::chrono::system_clock::to_time_t(t);
 
-  auto msec = std::chrono::duration_cast<std::chrono::microseconds>( t.time_since_epoch() );
+  auto msec = std::chrono::duration_cast<std::chrono::microseconds>(t.time_since_epoch());
   msec = msec % 1000000;
 
   std::stringstream ss;
-  if(!forFileName){
+  if(!forFileName) {
     ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X:");
     ss <<std::setfill('0') <<std::setw(3) <<msec.count();
-  }else{
+  } else {
     ss << std::put_time(std::localtime(&in_time_t), "%y-%m-%d--%H-%M-%S");
   }
   return ss.str();
@@ -509,7 +509,7 @@ long mem() {
   static rusage r; getrusage(RUSAGE_SELF, &r);
   return r.ru_idrss;
 #else
-NICO
+  NICO
 #endif
 }
 
@@ -555,9 +555,9 @@ rai::String getParamsDump();
 /// memorize the command line arguments and open a log file
 void initCmdLine(int _argc, char* _argv[], bool quiet) {
   argc=_argc; argv=_argv;
-  for(int i=0; i<argc; i++) if(!strcmp(argv[i],"-quiet")) quiet=true;
-  
-  if(!quiet){
+  for(int i=0; i<argc; i++) if(!strcmp(argv[i], "-quiet")) quiet=true;
+
+  if(!quiet) {
     rai::String msg;
     msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
     msg <<"'";
@@ -595,7 +595,7 @@ String raiPath(const char* rel) {
   return path;
 }
 
-void setRaiPath(const char* path){
+void setRaiPath(const char* path) {
   processInfo()->raiPath = path;
 }
 
@@ -638,11 +638,11 @@ rai::LogObject::LogObject(const char* key, int defaultLogCoutLevel, int defaultL
 rai::LogObject::~LogObject() {
   if(!strcmp(key, "global")) {
     (*fil) <<"** execution stop: " <<rai::date()
-        <<"\n** real time: " <<rai::realTime()
-        <<"sec\n** CPU time: " <<rai::cpuTime() <<endl;
+           <<"\n** real time: " <<rai::realTime()
+           <<"sec\n** CPU time: " <<rai::cpuTime() <<endl;
     (*fil) <<"\n** set+queried params:\n" <<getParamsDump();
   }
-  if(fil){
+  if(fil) {
     (*fil).close();
     delete fil;
   }
@@ -662,10 +662,10 @@ rai::LogToken::~LogToken() {
   if(log.logCoutLevel>=log_level) {
     rai::errStringStream().clear();
     rai::errStringStream() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<(*msg);
-    if(msg){ delete msg; msg=0; }
+    if(msg) { delete msg; msg=0; }
     bool useCout=true;
     if(log.callback) useCout = log.callback(rai::errString(), log_level);
-    if(log_level>=0){
+    if(log_level>=0) {
       if(useCout) cout <<"-- " <<rai::errString() <<endl;
       return;
     } else {
@@ -707,7 +707,7 @@ rai::LogToken::~LogToken() {
 //      if(log_level<=-3) raise(SIGABRT);
     }
   }
-  if(msg){ delete msg; msg=0; }
+  if(msg) { delete msg; msg=0; }
 //  rai::logServer().mutex.unlock();
 }
 
@@ -856,7 +856,7 @@ rai::String rai::String::getSubString(int start, int end) const {
  * @param n number of chars to return
  */
 rai::String rai::String::getLastN(uint n) const {
-  CHECK_LE(n,N, "");
+  CHECK_LE(n, N, "");
   if(n==N) return *this;
   return getSubString(-int(n), -1);
 }
@@ -917,17 +917,17 @@ bool rai::String::operator<=(const String& s) const { return p && s.p && strcmp(
 
 int rai::String::find(char c, bool reverse) const {
   if(!p) return -1;
-  if(reverse){
-    for(uint i=N;i--;) if(p[i]==c) return i;
-  }else{
-    for(uint i=0;i<N;i++) if(p[i]==c) return i;
+  if(reverse) {
+    for(uint i=N; i--;) if(p[i]==c) return i;
+  } else {
+    for(uint i=0; i<N; i++) if(p[i]==c) return i;
   }
   return -1;
 }
 
 bool rai::String::contains(char c) const {
   if(!p) return false;
-  for(uint i=0;i<N;i++) if(p[i]==c) return true;
+  for(uint i=0; i<N; i++) if(p[i]==c) return true;
   return false;
 }
 
@@ -1176,8 +1176,8 @@ void  rai::Rnd::seed250(int32_t seed) {
   for(i=0; i<4711; ++i) rnd250();
 }
 
-namespace rai{
-  uint rndInt(uint up){ return rnd.num(up); }
+namespace rai {
+uint rndInt(uint up) { return rnd.num(up); }
 }
 //===========================================================================
 //
@@ -1264,7 +1264,7 @@ Mutex::Mutex() {
 }
 
 Mutex::~Mutex() {
-  if (state) {
+  if(state) {
     cerr << "Mutex destroyed without unlocking first" <<endl;
     exit(1);
   }
@@ -1397,7 +1397,7 @@ double gaussIntExpectation(double x) {
 //===========================================================================
 // MISC
 
-namespace rai{
+namespace rai {
 /**
  * @brief Return the current working dir as std::string.
  */
@@ -1414,7 +1414,7 @@ std::string getcwd_string() {
 const char* niceTypeidName(const std::type_info& type) {
   static char buf[256];
   strcpy(buf, type.name());
-  for(char *c=buf;*c;c++) if(*c>='0' && *c<='9') *c='_';
+  for(char* c=buf; *c; c++) if(*c>='0' && *c<='9') *c='_';
   int cut=0;
   while(buf[cut]=='_') cut++;
   return buf+cut;
@@ -1467,7 +1467,6 @@ template bool rai::checkParameter<int>(const char*);
 template bool rai::checkParameter<double>(const char*);
 template bool rai::checkParameter<bool>(const char*);
 template bool rai::checkParameter<rai::String>(const char*);
-
 
 //===========================================================================
 

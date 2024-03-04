@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "TreeSearchNode.h"
 #include "../Core/util.h"
 #include "../Core/graph.h"
@@ -9,7 +17,7 @@ rai::TreeSearchNode::TreeSearchNode(TreeSearchNode* parent)
   if(parent) parent->children.append(this);
 }
 
-std::shared_ptr<rai::TreeSearchNode> rai::TreeSearchNode::transitionRandomly(){ return transition(rnd(getNumDecisions())); }
+std::shared_ptr<rai::TreeSearchNode> rai::TreeSearchNode::transitionRandomly() { return transition(rnd(getNumDecisions())); }
 
 /*void rai::printTree(const rai::Array<rai::TreeSearchNode*>& T){
   rai::Graph G;
@@ -42,10 +50,10 @@ std::shared_ptr<rai::TreeSearchNode> rai::TreeSearchNode::transitionRandomly(){ 
   printTree(TT);
 }*/
 
-void rai::printTree(const rai::Array<std::shared_ptr<TreeSearchNode> >& T){
+void rai::printTree(const rai::Array<std::shared_ptr<TreeSearchNode>>& T) {
   rai::Graph G;
-  for(uint i=0;i<T.N;i++){
-    TreeSearchNode *n = T(i).get();
+  for(uint i=0; i<T.N; i++) {
+    TreeSearchNode* n = T(i).get();
     n->ID = i;
     rai::NodeL par;
     if(n->parent && n->parent->ID<G.N) par.append(G.elem(n->parent->ID));

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -53,7 +53,7 @@ struct KinematicSwitch {
   void setTimeOfApplication(const arr& times, bool before, int stepsPerPhase, uint T);
   Frame* apply(FrameL& frames) const;
   rai::String shortTag(const Configuration* G) const;
-  void write(std::ostream& os, const FrameL& frames={}) const;
+  void write(std::ostream& os, const FrameL& frames= {}) const;
 };
 
 } // namespace rai

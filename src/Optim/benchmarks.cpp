@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -44,7 +44,6 @@ template<> const char* rai::Enum<BenchmarkSymbol>::names []= {
   0
 };
 
-
 //===========================================================================
 
 double _RosenbrockFunction(arr& g, arr& H, const arr& x) {
@@ -79,7 +78,7 @@ double _RosenbrockFunction(arr& g, arr& H, const arr& x) {
 
 struct NLP_Rosenbrock : ScalarUnconstrainedProgram {
   NLP_Rosenbrock(uint dim) { dimension=dim; }
-  virtual double f(arr &g, arr &H, const arr &x){ return _RosenbrockFunction(g, H, x); }
+  virtual double f(arr& g, arr& H, const arr& x) { return _RosenbrockFunction(g, H, x); }
 };
 
 //===========================================================================
@@ -99,9 +98,9 @@ double _RastriginFunction(arr& g, arr& H, const arr& x) {
 }
 
 struct NLP_Rastrigin : ScalarUnconstrainedProgram {
-  NLP_Rastrigin(uint dim){ dimension=dim; }
-  virtual uint getDimension(){ return dimension; }
-  virtual double f(arr &g, arr &H, const arr &x){ return _RastriginFunction(g, H, x); }
+  NLP_Rastrigin(uint dim) { dimension=dim; }
+  virtual uint getDimension() { return dimension; }
+  virtual double f(arr& g, arr& H, const arr& x) { return _RastriginFunction(g, H, x); }
 };
 
 //===========================================================================
@@ -154,7 +153,7 @@ struct _ChoiceFunction : ScalarFunction {
     }
     arr C = eye(x.N);
     double cond = rai::getParameter<double>("condition");
-    if(cond>1.){
+    if(cond>1.) {
       if(condition.N!=x.N) {
         condition.resize(x.N);
         double curv = rai::getParameter<double>("curvature");
@@ -166,8 +165,8 @@ struct _ChoiceFunction : ScalarFunction {
       }
 
       C = diag(condition);
-      C(0,1) = C(0,0);
-      C(1,0) = -C(1,1);
+      C(0, 1) = C(0, 0);
+      C(1, 0) = -C(1, 1);
     }
     arr y = C * x;
     double f;
@@ -206,7 +205,7 @@ NLP_Squared::NLP_Squared(uint _n, double condition, bool random) : n(_n) {
   //let C be a ortho-normal matrix (=random rotation matrix)
   C.resize(n, n);
 
-  if(random){
+  if(random) {
     rndUniform(C, -1., 1., false);
     //orthogonalize
     for(uint i=0; i<n; i++) {
@@ -216,11 +215,11 @@ NLP_Squared::NLP_Squared(uint _n, double condition, bool random) : n(_n) {
     //we condition each column of M with powers of the condition
     for(uint i=0; i<n; i++) C[i] *= pow(condition, double(i) / (2.*double(n - 1)));
 
-  }else{
+  } else {
     arr cond(n);
     if(n>1) {
       for(uint i=0; i<n; i++) cond(i) = pow(condition, 0.5*i/(n-1));
-    }else{
+    } else {
       cond = 1.;
     }
 
@@ -240,9 +239,9 @@ ChoiceConstraintFunction::ChoiceConstraintFunction() {
 
   bounds_lo.resize(n) = -2.;
   bounds_up.resize(n) = +2.;
-  if(which==boundConstrained){
-      bounds_lo(0) = +0.5;
-  //    bounds_lo(1) = +0.51;
+  if(which==boundConstrained) {
+    bounds_lo(0) = +0.5;
+    //    bounds_lo(1) = +0.51;
   }
 
   ObjectiveTypeA& tt = featureTypes;
@@ -313,7 +312,7 @@ void ChoiceConstraintFunction::evaluate(arr& phi, arr& J, const arr& x) {
     } break;
     case boundConstrainedIneq: {
       phi.append(0.5 - x(0));
-      if(!!J) { J.append( -eyeVec(x.N, 0) ); }
+      if(!!J) { J.append(-eyeVec(x.N, 0)); }
     } break;
   }
 
@@ -324,10 +323,8 @@ void ChoiceConstraintFunction::getFHessian(arr& H, const arr& x) {
   ChoiceFunction()(NoArr, H, x);
 }
 
-
-
-std::shared_ptr<NLP> getBenchmarkFromCfg(){
-  rai::Enum<BenchmarkSymbol> bs (rai::getParameter<rai::String>("benchmark"));
+std::shared_ptr<NLP> getBenchmarkFromCfg() {
+  rai::Enum<BenchmarkSymbol> bs(rai::getParameter<rai::String>("benchmark"));
   uint dim = rai::getParameter<uint>("benchmark/dim", 2);
   double forsyth = rai::getParameter<double>("benchmark/forsyth", -1.);
   double condition = rai::getParameter<double>("benchmark/condition", 10.);
@@ -339,20 +336,20 @@ std::shared_ptr<NLP> getBenchmarkFromCfg(){
 
     if(bs==BS_Rosenbrock) nlp = make_shared<NLP_Rosenbrock>(dim);
     else if(bs==BS_Rastrigin) nlp = make_shared<NLP_Rastrigin>(dim);
-    else if(forsyth>0.){
+    else if(forsyth>0.) {
       shared_ptr<NLP> org;
       if(bs==BS_Square) org = make_shared<NLP_Squared>(dim, condition, false);
       else if(bs==BS_RandomSquared) org = make_shared<NLP_Squared>(dim, condition, true);
       else if(bs==BS_RastriginSOS) org = make_shared<NLP_RastriginSOS>();
-      if(org){
+      if(org) {
         auto lag = make_shared<LagrangianProblem>(org); //convert to scalar
         nlp = make_shared<ScalarUnconstrainedProgram>(lag, dim);
       }
     }
 
-    if(nlp){
+    if(nlp) {
       arr bounds = rai::getParameter<arr>("benchmark/bounds", {});
-      if(bounds.N){
+      if(bounds.N) {
         nlp->bounds_lo = rai::consts<double>(bounds(0), dim);
         nlp->bounds_up = rai::consts<double>(bounds(1), dim);
       }
@@ -375,7 +372,7 @@ std::shared_ptr<NLP> getBenchmarkFromCfg(){
   else HALT("can't interpret benchmark symbol: " <<bs);
 
   arr bounds = rai::getParameter<arr>("benchmark/bounds", {});
-  if(bounds.N){
+  if(bounds.N) {
     nlp->bounds_lo = rai::consts<double>(bounds(0), dim);
     nlp->bounds_up = rai::consts<double>(bounds(1), dim);
   }

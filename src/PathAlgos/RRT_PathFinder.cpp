@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "RRT_PathFinder.h"
 
 #include "../Gui/opengl.h"
@@ -8,11 +16,11 @@
 #  include <GL/gl.h>
 #endif
 
-double corput(uint n, uint base){
+double corput(uint n, uint base) {
   double q = 0.;
   double bk = 1./double(base);
 
-  while (n > 0) {
+  while(n > 0) {
     q += (n % base)*bk;
     n /= base;
     bk /= double(base);
@@ -21,29 +29,28 @@ double corput(uint n, uint base){
 }
 
 bool checkConnection(ConfigurationProblem& P,
-                     const arr &start,
-                     const arr &end,
+                     const arr& start,
+                     const arr& end,
                      const uint num,
-                     const bool binary){
-  if (binary){
-    for (uint i=1; i<num; ++i){
+                     const bool binary) {
+  if(binary) {
+    for(uint i=1; i<num; ++i) {
       double ind = corput(i, 2);
       arr p = start + ind * (end-start);
 
       // TODO: change to check feasibility properly (with path constraints)
-      if(!P.query(p)->isFeasible){
+      if(!P.query(p)->isFeasible) {
         return false;
       }
     }
-  }
-  else{
-    for (uint i=1; i<num-1; ++i){
+  } else {
+    for(uint i=1; i<num-1; ++i) {
       arr p = start + 1.0 * i / (num-1) * (end-start);
 
       // TODO: change to check feasibility properly (with path constraints)
-      if(!P.query(p)->isFeasible){
+      if(!P.query(p)->isFeasible) {
         return false;
-  }
+      }
     }
   }
   return true;
@@ -51,18 +58,18 @@ bool checkConnection(ConfigurationProblem& P,
 
 //===========================================================================
 
-RRT_SingleTree::RRT_SingleTree(const arr& q0, const shared_ptr<QueryResult>& q0_qr){
+RRT_SingleTree::RRT_SingleTree(const arr& q0, const shared_ptr<QueryResult>& q0_qr) {
 //  if(!q0_qr->isFeasible) LOG(0) <<"rooting RRT with infeasible start configuration -- that's likely to fail: query is:\n" <<*q0_qr;
   add(q0, 0, q0_qr);
 }
 
-uint RRT_SingleTree::add(const arr& q, uint parentID, const shared_ptr<QueryResult>& _qr){
+uint RRT_SingleTree::add(const arr& q, uint parentID, const shared_ptr<QueryResult>& _qr) {
   drawMutex.lock(RAI_HERE);
   ann.append(q);
   parent.append(parentID);
   queries.append(_qr);
   disp3d.append(_qr->disp3d);
-  disp3d.reshape(-1,3);
+  disp3d.reshape(-1, 3);
 
   CHECK_EQ(parent.N, ann.X.d0, "");
   CHECK_EQ(queries.N, ann.X.d0, "");
@@ -71,13 +78,13 @@ uint RRT_SingleTree::add(const arr& q, uint parentID, const shared_ptr<QueryResu
   return parent.N-1;
 }
 
-double RRT_SingleTree::getNearest(const arr& target){
+double RRT_SingleTree::getNearest(const arr& target) {
   //find NN
   nearestID = ann.getNN(target);
   return length(target - ann.X[nearestID]);
 }
 
-arr RRT_SingleTree::getProposalTowards(const arr& target, double stepsize){
+arr RRT_SingleTree::getProposalTowards(const arr& target, double stepsize) {
   //find NN
   nearestID = ann.getNN(target);
 
@@ -89,7 +96,7 @@ arr RRT_SingleTree::getProposalTowards(const arr& target, double stepsize){
   return getNode(nearestID) + delta;
 }
 
-arr RRT_SingleTree::getNewSample(const arr& target, double stepsize, double p_sideStep, bool& isSideStep, const uint recursionDepth){
+arr RRT_SingleTree::getNewSample(const arr& target, double stepsize, double p_sideStep, bool& isSideStep, const uint recursionDepth) {
   //find NN
   nearestID = ann.getNN(target);
   std::shared_ptr<QueryResult> qr = queries(nearestID);
@@ -105,21 +112,21 @@ arr RRT_SingleTree::getNewSample(const arr& target, double stepsize, double p_si
 
   //check whether this is a predicted collision
   bool predictedCollision=false;
-  if(qr->coll_y.N){
+  if(qr->coll_y.N) {
     arr y = qr->coll_y + qr->coll_J * delta;
     if(min(y)<0.) predictedCollision = true;
   }
 
-  if(predictedCollision && p_sideStep>0. && rnd.uni()<p_sideStep){
+  if(predictedCollision && p_sideStep>0. && rnd.uni()<p_sideStep) {
     isSideStep=true;
 
     //compute new target
     arr d = qr->getSideStep();
-    d *= rnd.uni(stepsize,2.) / length(d);
+    d *= rnd.uni(stepsize, 2.) / length(d);
     arr targ = getNode(nearestID) + d;
     bool tmp;
     return getNewSample(targ, stepsize, p_sideStep, tmp, recursionDepth + 1);
-  }else{
+  } else {
     return getNode(nearestID) + delta;
   }
 
@@ -127,10 +134,10 @@ arr RRT_SingleTree::getNewSample(const arr& target, double stepsize, double p_si
   return NoArr;
 }
 
-arr RRT_SingleTree::getPathFromNode(uint fromID){
+arr RRT_SingleTree::getPathFromNode(uint fromID) {
   arr path;
   uint node = fromID;
-  for(;;){
+  for(;;) {
     path.append(ann.X[node]);
     if(!node) break;
     node = getParent(node);
@@ -139,14 +146,14 @@ arr RRT_SingleTree::getPathFromNode(uint fromID){
   return path;
 }
 
-void RRT_SingleTree::glDraw(OpenGL& gl){
+void RRT_SingleTree::glDraw(OpenGL& gl) {
   glColor(.0, .0, .0);
   glLineWidth(2.f);
   glBegin(GL_LINES);
   drawMutex.lock(RAI_HERE);
-  for(uint i=1;i<getNumberNodes();i++){
-    glVertex3dv(&disp3d(parent(i),0));
-    glVertex3dv(&disp3d(i,0));
+  for(uint i=1; i<getNumberNodes(); i++) {
+    glVertex3dv(&disp3d(parent(i), 0));
+    glVertex3dv(&disp3d(i, 0));
   }
   drawMutex.unlock();
   glEnd();
@@ -155,17 +162,17 @@ void RRT_SingleTree::glDraw(OpenGL& gl){
 
 //===========================================================================
 
-bool RRT_PathFinder::growTreeTowardsRandom(RRT_SingleTree& rrt){
+bool RRT_PathFinder::growTreeTowardsRandom(RRT_SingleTree& rrt) {
   const arr start = rrt.ann.X[0];
   arr t(rrt.getNode(0).N);
-  rndUniform(t,-RAI_2PI,RAI_2PI,false);
+  rndUniform(t, -RAI_2PI, RAI_2PI, false);
   HALT("DON'T USE 2PI")
 
   arr q = rrt.getProposalTowards(t, stepsize);
 
   auto qr = P.query(q);
-  if(qr->isFeasible){
-    if (subsampleChecks>0 && !checkConnection(P, start, q, subsampleChecks, true)){
+  if(qr->isFeasible) {
+    if(subsampleChecks>0 && !checkConnection(P, start, q, subsampleChecks, true)) {
       return false;
     }
 
@@ -175,24 +182,24 @@ bool RRT_PathFinder::growTreeTowardsRandom(RRT_SingleTree& rrt){
   return false;
 }
 
-bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B){
+bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B) {
   bool isSideStep, isForwardStep;
   //decide on a target: forward or random
   arr t;
-  if(rnd.uni()<p_forwardStep){
+  if(rnd.uni()<p_forwardStep) {
     t = rrt_B.getRandomNode();
     isForwardStep = true;
-  }else{
+  } else {
 #if 1
     t.resize(rrt_A.getNode(0).N);
-    for(uint i=0;i<t.N;i++){
-      double lo=P.limits(0,i), up=P.limits(1,i);
-      CHECK_GE(up-lo, 1e-3,"limits are null interval: " <<i <<' ' <<P.C.getJointNames());
+    for(uint i=0; i<t.N; i++) {
+      double lo=P.limits(0, i), up=P.limits(1, i);
+      CHECK_GE(up-lo, 1e-3, "limits are null interval: " <<i <<' ' <<P.C.getJointNames());
       t.elem(i) = lo + rnd.uni()*(up-lo);
     }
 #else
     t.resize(rrt_A.getNode(0).N);
-    rndUniform(t,-RAI_2PI,RAI_2PI,false);
+    rndUniform(t, -RAI_2PI, RAI_2PI, false);
 #endif
     isForwardStep = false;
   }
@@ -202,30 +209,30 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
 
   //evaluate the sample
   auto qr = P.query(q);
-  if(isForwardStep){  n_forwardStep++; if(qr->isFeasible) n_forwardStepGood++; }
-  if(!isForwardStep){  n_rndStep++; if(qr->isFeasible) n_rndStepGood++; }
-  if(isSideStep){  n_sideStep++; if(qr->isFeasible) n_sideStepGood++; }
+  if(isForwardStep) {  n_forwardStep++; if(qr->isFeasible) n_forwardStepGood++; }
+  if(!isForwardStep) {  n_rndStep++; if(qr->isFeasible) n_rndStepGood++; }
+  if(isSideStep) {  n_sideStep++; if(qr->isFeasible) n_sideStepGood++; }
 
   //if infeasible, make a backward step from the sample configuration
-  if(!qr->isFeasible && p_backwardStep>0. && rnd.uni()<p_backwardStep){
+  if(!qr->isFeasible && p_backwardStep>0. && rnd.uni()<p_backwardStep) {
     t = q + qr->getBackwardStep();
     q = rrt_A.getNewSample(t, stepsize, p_sideStep, isSideStep, 0);
     qr = P.query(q);
     n_backStep++; if(qr->isFeasible) n_backStepGood++;
-    if(isSideStep){  n_sideStep++; if(qr->isFeasible) n_sideStepGood++; }
+    if(isSideStep) {  n_sideStep++; if(qr->isFeasible) n_sideStepGood++; }
   };
 
   // TODO: add checking motion
-  if(qr->isFeasible){
+  if(qr->isFeasible) {
     const arr start = rrt_A.ann.X[rrt_A.nearestID];
-    if (subsampleChecks>0 && !checkConnection(P, start, q, subsampleChecks, true)){
+    if(subsampleChecks>0 && !checkConnection(P, start, q, subsampleChecks, true)) {
       return false;
     }
 
     rrt_A.add(q, rrt_A.nearestID, qr);
     double dist = rrt_B.getNearest(q);
-    if(subsampleChecks>0){ if(dist<stepsize/subsampleChecks) return true; }
-    else{ if(dist<stepsize) return true; }
+    if(subsampleChecks>0) { if(dist<stepsize/subsampleChecks) return true; }
+    else { if(dist<stepsize) return true; }
   }
   return false;
 }
@@ -247,33 +254,33 @@ RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, con
   arr qT = _goals;
   auto q0ret = P.query(q0);
   auto qTret = P.query(qT);
-  if(!q0ret->isFeasible){ LOG(0) <<"initializing with infeasible q0:"; q0ret->writeDetails(std::cout, P); }
-  if(!qTret->isFeasible){ LOG(0) <<"initializing with infeasible qT:"; qTret->writeDetails(std::cout, P); }
+  if(!q0ret->isFeasible) { LOG(0) <<"initializing with infeasible q0:"; q0ret->writeDetails(std::cout, P); }
+  if(!qTret->isFeasible) { LOG(0) <<"initializing with infeasible qT:"; qTret->writeDetails(std::cout, P); }
   rrt0 = make_shared<RRT_SingleTree>(q0, q0ret);
   rrtT = make_shared<RRT_SingleTree>(qT, qTret);
 
-  if(verbose>2){
+  if(verbose>2) {
     DISP.copy(P.C);
     DISP.gl().add(*rrt0);
     DISP.gl().add(*rrtT);
   }
 }
 
-void RRT_PathFinder::planForward(const arr& q0, const arr& qT){
+void RRT_PathFinder::planForward(const arr& q0, const arr& qT) {
   bool success=false;
 
-  for(uint i=0;i<100000;i++){
+  for(uint i=0; i<100000; i++) {
     iters++;
     //let rrt0 grow
     bool added = growTreeTowardsRandom(*rrt0);
-    if(added){
+    if(added) {
       if(length(rrt0->getLast() - qT)<stepsize) success = true;
     }
     if(success) break;
 
     //some output
-    if (verbose > 2){
-      if(!(i%100)){
+    if(verbose > 2) {
+      if(!(i%100)) {
         DISP.setJointState(rrt0->getLast());
         DISP.view(false);
         std::cout <<"RRT samples=" <<i <<" tree size = " <<rrt0->getNumberNodes() <<std::endl;
@@ -283,22 +290,22 @@ void RRT_PathFinder::planForward(const arr& q0, const arr& qT){
 
   if(!success) return;
 
-  if (verbose > 0){
+  if(verbose > 0) {
     std::cout <<"SUCCESS!"
               <<"\n  tested samples=" <<P.evals
               <<"\n  #tree-size=" <<rrt0->getNumberNodes()
-     << std::endl;
+              << std::endl;
   }
 
   arr path = rrt0->getPathFromNode(rrt0->nearestID);
   revertPath(path);
 
   //display
-  if(verbose > 1){
+  if(verbose > 1) {
     std::cout << "path-length= " << path.d0 <<std::endl;
     DISP.proxies.clear();
 
-    for(uint t=0;t<path.d0;t++){
+    for(uint t=0; t<path.d0; t++) {
       DISP.setJointState(path[t]);
       //DISP.view();
       DISP.view(false);
@@ -309,7 +316,7 @@ void RRT_PathFinder::planForward(const arr& q0, const arr& qT){
   path >>FILE("z.path");
 }
 
-int RRT_PathFinder::stepConnect(){
+int RRT_PathFinder::stepConnect() {
   iters++;
   if(iters>(uint)maxIters) return -1;
 
@@ -317,14 +324,14 @@ int RRT_PathFinder::stepConnect(){
   if(!success) success = growTreeToTree(*rrtT, *rrt0);
 
   //animation display
-  if(verbose>2){
-    if(DISP.frames.N!=P.C.frames.N){
+  if(verbose>2) {
+    if(DISP.frames.N!=P.C.frames.N) {
       DISP.copy(P.C);
       DISP.gl().add(*rrt0);
       DISP.gl().add(*rrtT);
     }
 
-    if(!(iters%100)){
+    if(!(iters%100)) {
       DISP.setJointState(rrt0->getLast());
       DISP.view(verbose>4, STRING("planConnect evals " <<P.evals));
       std::cout <<"RRT queries=" <<P.evals <<" tree sizes = " <<rrt0->getNumberNodes()  <<' ' <<rrtT->getNumberNodes() <<std::endl;
@@ -333,8 +340,8 @@ int RRT_PathFinder::stepConnect(){
 
   //-- the rest is only on success -> extract the path, display, etc
 
-  if(success){
-    if(verbose>0){
+  if(success) {
+    if(verbose>0) {
       std::cout <<"  -- rrt success:";
       std::cout <<" queries:" <<P.evals <<" tree sizes: " <<rrt0->getNumberNodes()  <<' ' <<rrtT->getNumberNodes() <<std::endl;
 //      std::cout <<"  forwardSteps: " <<(100.*n_forwardStepGood/n_forwardStep) <<"%/" <<n_forwardStep;
@@ -351,11 +358,11 @@ int RRT_PathFinder::stepConnect(){
     path.append(pathT);
 
     //display
-    if(verbose>1){
+    if(verbose>1) {
       std::cout <<"  path-length=" <<path.d0 <<std::endl;
-      if(verbose>2){
+      if(verbose>2) {
         DISP.proxies.clear();
-        for(uint t=0;t<path.d0;t++){
+        for(uint t=0; t<path.d0; t++) {
           DISP.setJointState(path[t]);
           DISP.view(false, STRING("rrt result "<<t));
           rai::wait(.1);
@@ -371,42 +378,42 @@ int RRT_PathFinder::stepConnect(){
   return 0;
 }
 
-arr RRT_PathFinder::planConnect(){
+arr RRT_PathFinder::planConnect() {
   int r=0;
-  while(!r){ r = stepConnect(); }
+  while(!r) { r = stepConnect(); }
   if(r==-1) path.clear();
   return path;
 }
 
-void revertPath(arr& path){
+void revertPath(arr& path) {
   uint N = path.d0;
   arr x;
-  for(uint i=0;i<N/2;i++){
+  for(uint i=0; i<N/2; i++) {
     x = path[i];
     path[i] = path[N-1-i];
     path[N-1-i] = x;
   }
 }
 
-arr RRT_PathFinder::run(double timeBudget){
+arr RRT_PathFinder::run(double timeBudget) {
   planConnect();
   return path;
 }
 
 namespace rai {
 
-void PathFinder::setProblem(const Configuration& C, const arr& starts, const arr& goals){
+void PathFinder::setProblem(const Configuration& C, const arr& starts, const arr& goals) {
   problem = make_shared<ConfigurationProblem>(C, true, 1e-3, 1);
   problem->verbose=0;
   rrtSolver = make_shared<RRT_PathFinder>(*problem, starts, goals);
 }
 
-void PathFinder::setExplicitCollisionPairs(const StringA& collisionPairs){
+void PathFinder::setExplicitCollisionPairs(const StringA& collisionPairs) {
   CHECK(problem, "need to set problem first");
   problem->setExplicitCollisionPairs(collisionPairs);
 }
 
-shared_ptr<SolverReturn> PathFinder::solve(){
+shared_ptr<SolverReturn> PathFinder::solve() {
   if(!ret) ret = make_shared<SolverReturn>();
 
   ret->time -= rai::cpuTime();

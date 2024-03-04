@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -229,7 +229,6 @@ void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 //console. setLogLevel allows to adjust cout verbosity (0 by default),
 //and what is written into the log file (1 by default)
 
-
 //===========================================================================
 //
 // give names to Enum (for pipe << >> )
@@ -259,13 +258,13 @@ struct Enum {
     for(int i=0; names[i]; i++) {
       const char* n = names[i];
       if(!n) THROW("enum_T " <<typeid(enum_T).name() <<' ' <<str <<" out of range")
-      if(str==n) { x=(enum_T)(i); good=true; break; }
+        if(str==n) { x=(enum_T)(i); good=true; break; }
     }
     if(!good) {
       rai::String all;
       for(int i=0; names[i]; i++) all <<names[i] <<' ';
       HALT("Enum::read could not find the keyword '" <<str <<"'. Possible Enum keywords: " <<all);
-    }else{
+    } else {
       CHECK(str.p && !strcmp(names[x], str.p), "");
     }
   }
@@ -293,7 +292,7 @@ template<class T> std::ostream& operator<<(std::ostream& os, const Enum<T>& x) {
 // parameters
 //
 
-namespace rai{
+namespace rai {
 //----- parameter grabbing from command line, config file, or default value
 template<class T> T getParameter(const char* tag);
 template<class T> T getParameter(const char* tag, const T& Default);
@@ -304,7 +303,7 @@ template<class T> bool checkParameter(const char* tag);
 template<class T> void setParameter(const char* key, const T& x);
 
 template<class Tvar, class Tparam> struct ParameterInit {
-  ParameterInit(Tvar& x, const char* tag, const Tparam& Default) { x = (Tvar) getParameter<Tparam>( tag, Default); }
+  ParameterInit(Tvar& x, const char* tag, const Tparam& Default) { x = (Tvar) getParameter<Tparam>(tag, Default); }
 };
 
 #define RAI_PARAM(scope, type, name, Default) \
@@ -331,7 +330,6 @@ template<class T> struct ParameterInitEnum {
   rai::ParameterInitEnum<type> __init_##name = {name, scope #name, Default};
 
 }
-
 
 //===========================================================================
 //
@@ -542,7 +540,7 @@ struct Singleton {
 //
 
 struct OpenGL;
-struct OpenGLDrawOptions{
+struct OpenGLDrawOptions {
   bool drawWires=false;
   bool drawColors=true;
   bool drawMode_idColor=false;
@@ -605,7 +603,7 @@ inline bool operator==(Type& t1, Type& t2) { return t1.typeId() == t2.typeId(); 
 // initialization helpers
 //
 
-template<class T> T fromFile(const char* filename){
+template<class T> T fromFile(const char* filename) {
   rai::FileToken file(filename, true);
   T x;
   x.read(file.getIs());
@@ -613,7 +611,7 @@ template<class T> T fromFile(const char* filename){
   return x;
 }
 
-template<class T> T fromString(const char* str){
+template<class T> T fromString(const char* str) {
   std::stringstream stream(str);
   T x;
   x.read(stream);

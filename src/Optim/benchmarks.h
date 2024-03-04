@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -32,12 +32,12 @@ struct ScalarUnconstrainedProgram : NLP {
   }
   void evaluate(arr& phi, arr& J, const arr& x) {
     double y = f(J, NoArr, x);
-    if(forsythAlpha>0.){
+    if(forsythAlpha>0.) {
       CHECK_GE(y, 0., "Forsyth wrapping only makes sense for positive (sqr-like) functions");
       y = y / (forsythAlpha+y);
     }
     phi = {y};
-    if(!!J){
+    if(!!J) {
       J.reshape(1, x.N);
       if(forsythAlpha>0.) J *= y;
     }
@@ -45,7 +45,7 @@ struct ScalarUnconstrainedProgram : NLP {
   void getFHessian(arr& H, const arr& x) {
     f(NoArr, H, x);
   }
-  virtual double f(arr& g, arr& H, const arr& x){
+  virtual double f(arr& g, arr& H, const arr& x) {
     CHECK(S, "no scalar function given in the constructor");
     return (*S)(g, H, x);
   }
@@ -56,7 +56,7 @@ struct ScalarUnconstrainedProgram : NLP {
 struct NLP_TrivialSquareFunction : NLP {
   double lo, hi;
 
-  NLP_TrivialSquareFunction(uint dim=10, double lo=-1., double hi=1.){
+  NLP_TrivialSquareFunction(uint dim=10, double lo=-1., double hi=1.) {
     dimension = dim;
     featureTypes = rai::consts<ObjectiveType>(OT_sos, dimension);
     bounds_lo = rai::consts<double>(lo, dimension);
@@ -88,7 +88,7 @@ struct NLP_RandomLP : NLP {
     featureTypes.append(rai::consts(OT_ineq, randomG.d0));
   }
 
-  virtual void evaluate(arr &phi, arr &J, const arr &x) {
+  virtual void evaluate(arr& phi, arr& J, const arr& x) {
     phi = {sum(x)};
     if(!!J) J = ones(1, x.N);
 
@@ -155,7 +155,7 @@ struct NLP_RastriginSOS : NLP {
     dimension=2;
     featureTypes = rai::consts<ObjectiveType>(OT_sos, 4);
   }
-  virtual void evaluate(arr &phi, arr &J, const arr &x);
+  virtual void evaluate(arr& phi, arr& J, const arr& x);
 };
 
 //===========================================================================
@@ -167,20 +167,20 @@ struct NLP_Squared : NLP {
 
   NLP_Squared(uint n, double condition=100., bool random=true);
 
-  virtual void evaluate(arr &phi, arr &J, const arr &x){ phi=C*x; if(!!J) J=C; }
+  virtual void evaluate(arr& phi, arr& J, const arr& x) { phi=C*x; if(!!J) J=C; }
 //  virtual arr getInitializationSample(const arr &previousOptima={}){ return ones(n); }
 };
 
 //===========================================================================
 
 struct NLP_Wedge : NLP {
-  NLP_Wedge(){
+  NLP_Wedge() {
     dimension=2;
     featureTypes = { OT_f };
     featureTypes.append(rai::consts(OT_ineq, 2));
   }
 
-  virtual void evaluate(arr &phi, arr &J, const arr &x) {
+  virtual void evaluate(arr& phi, arr& J, const arr& x) {
     phi = {sum(x)};
     if(!!J) J = ones(1, x.N);
 
@@ -192,13 +192,13 @@ struct NLP_Wedge : NLP {
 //===========================================================================
 
 struct NLP_HalfCircle : NLP {
-  NLP_HalfCircle(){
+  NLP_HalfCircle() {
     dimension=2;
     featureTypes = { OT_f };
     featureTypes.append(rai::consts(OT_ineq, 2));
   }
 
-  virtual void evaluate(arr &phi, arr &J, const arr &x) {
+  virtual void evaluate(arr& phi, arr& J, const arr& x) {
     phi = {sum(x)};
     if(!!J) J = ones(1, x.N);
 
@@ -210,14 +210,14 @@ struct NLP_HalfCircle : NLP {
 //===========================================================================
 
 struct NLP_CircleLine : NLP {
-  NLP_CircleLine(){
+  NLP_CircleLine() {
     dimension=2;
     featureTypes = { OT_f };
     featureTypes.append(OT_ineq);
     featureTypes.append(OT_eq);
   }
 
-  virtual void evaluate(arr &phi, arr &J, const arr &x) {
+  virtual void evaluate(arr& phi, arr& J, const arr& x) {
     phi = {sum(x)};
     if(!!J) J = ones(1, x.N);
 

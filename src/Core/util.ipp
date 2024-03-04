@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -71,10 +71,10 @@ template<class T> bool checkParameter(const char* tag) {
   return getParameterBase(x, tag, true, (T*)NULL);
 }
 
-template<class T> void setParameter(const char* key, const T& x){
+template<class T> void setParameter(const char* key, const T& x) {
   T* y = params()->find<T>(key);
   if(y) *y = x;
-  else{
+  else {
     params()->add<T>(key, x);
   }
 }

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -11,9 +11,9 @@
 //===========================================================================
 
 void F_Position::phi2(arr& y, arr& J, const FrameL& F) {
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 1, "");
-  rai::Frame *f = F.elem(0);
+  rai::Frame* f = F.elem(0);
   f->C.kinematicsPos(y, J, f);
 }
 
@@ -30,15 +30,15 @@ arr F_PositionDiff::phi(const FrameL& F) {
 //===========================================================================
 
 void F_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::Frame *f1 = F.elem(0);
-  rai::Frame *f2 = F.elem(1);
+  rai::Frame* f1 = F.elem(0);
+  rai::Frame* f2 = F.elem(1);
   arr y1 = f1->C.kinematics_pos(f1);
   arr y2 = f2->C.kinematics_pos(f2);
   arr Rinv = ~(f2->ensure_X().rot.getArr());
   y = Rinv * (y1 - y2);
-  grabJ(y,J);
+  grabJ(y, J);
   if(!!J) {
     arr A;
     f2->C.jacobian_angular(A, f2);
@@ -48,7 +48,7 @@ void F_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
-arr F_PositionDistance::phi(const FrameL& F){
+arr F_PositionDistance::phi(const FrameL& F) {
   if(order>0) return phi_finiteDifferenceReduce(F);
   arr d = F_PositionDiff().eval(F);
   arr y = ~d*d;
@@ -60,20 +60,20 @@ arr F_PositionDistance::phi(const FrameL& F){
 
 //===========================================================================
 
-void F_Vector::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+void F_Vector::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 1, "");
-  rai::Frame *f = F.elem(0);
+  rai::Frame* f = F.elem(0);
   f->C.kinematicsVec(y, J, f, vec);
 }
 
 //===========================================================================
 
-void F_VectorDiff::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+void F_VectorDiff::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::Frame *f1 = F.elem(0);
-  rai::Frame *f2 = F.elem(1);
+  rai::Frame* f1 = F.elem(0);
+  rai::Frame* f2 = F.elem(1);
   arr y2, J2;
   f1->C.kinematicsVec(y, J, f1, vec1);
   f2->C.kinematicsVec(y2, J2, f2, vec2);
@@ -83,15 +83,15 @@ void F_VectorDiff::phi2(arr& y, arr& J, const FrameL& F){
 
 //===========================================================================
 
-void F_VectorRel::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+void F_VectorRel::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::Frame *f1 = F.elem(0);
-  rai::Frame *f2 = F.elem(1);
+  rai::Frame* f1 = F.elem(0);
+  rai::Frame* f2 = F.elem(1);
   arr y1 = f1->C.kinematics_vec(f1, vec);
   arr Rinv = ~(f2->ensure_X().rot.getArr());
   y = Rinv * y1;
-  grabJ(y,J);
+  grabJ(y, J);
   if(!!J) {
     arr A;
     f2->C.jacobian_angular(A, f2);
@@ -101,20 +101,20 @@ void F_VectorRel::phi2(arr& y, arr& J, const FrameL& F){
 
 //===========================================================================
 
-void F_Matrix::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+void F_Matrix::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 1, "");
-  rai::Frame *f = F.elem(0);
+  rai::Frame* f = F.elem(0);
   f->C.kinematicsMat(y, J, f);
 }
 
 //===========================================================================
 
-void F_MatrixDiff::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+void F_MatrixDiff::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::Frame *f1 = F.elem(0);
-  rai::Frame *f2 = F.elem(1);
+  rai::Frame* f1 = F.elem(0);
+  rai::Frame* f2 = F.elem(1);
   arr y2, J2;
   f1->C.kinematicsMat(y, J, f1);
   f2->C.kinematicsMat(y2, J2, f2);
@@ -124,22 +124,22 @@ void F_MatrixDiff::phi2(arr& y, arr& J, const FrameL& F){
 
 //===========================================================================
 
-void F_Quaternion::phi2(arr& y, arr& J, const FrameL& F){
+void F_Quaternion::phi2(arr& y, arr& J, const FrameL& F) {
   flipTargetSignOnNegScalarProduct = true;
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 1, "");
-  rai::Frame *f = F.elem(0);
+  rai::Frame* f = F.elem(0);
 
   f->C.kinematicsQuat(y, J, f);
 }
 
 //===========================================================================
 
-void F_QuaternionDiff::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+void F_QuaternionDiff::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::Frame *f1 = F.elem(0);
-  rai::Frame *f2 = F.elem(1);
+  rai::Frame* f1 = F.elem(0);
+  rai::Frame* f2 = F.elem(1);
   arr y2, J2;
   f1->C.kinematicsQuat(y, J, f1);
   f2->C.kinematicsQuat(y2, J2, f2);
@@ -154,12 +154,12 @@ void F_QuaternionDiff::phi2(arr& y, arr& J, const FrameL& F){
 
 //===========================================================================
 
-void F_QuaternionRel::phi2(arr& y, arr& J, const FrameL& F){
+void F_QuaternionRel::phi2(arr& y, arr& J, const FrameL& F) {
   flipTargetSignOnNegScalarProduct = true;
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::Frame *f1 = F.elem(0);
-  rai::Frame *f2 = F.elem(1);
+  rai::Frame* f1 = F.elem(0);
+  rai::Frame* f2 = F.elem(1);
 
   arr qa, qb, Ja, Jb;
   f1->C.kinematicsQuat(qb, Jb, f1);
@@ -177,11 +177,11 @@ void F_QuaternionRel::phi2(arr& y, arr& J, const FrameL& F){
 
 //===========================================================================
 
-void F_ScalarProduct::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+void F_ScalarProduct::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::Frame *f1 = F.elem(0);
-  rai::Frame *f2 = F.elem(1);
+  rai::Frame* f1 = F.elem(0);
+  rai::Frame* f2 = F.elem(1);
 
   CHECK(fabs(vec1.length()-1.)<1e-4, "vector references must be normalized");
   CHECK(fabs(vec2.length()-1.)<1e-4, "vector references must be normalized");
@@ -201,7 +201,7 @@ void F_Pose::phi2(arr& y, arr& J, const FrameL& F) {
   arr pos = F_Position().setOrder(order).eval(F);
   arr quat = F_Quaternion().setOrder(order).eval(F);
   y.setBlockVector(pos, quat);
-  grabJ(y,J);
+  grabJ(y, J);
 //  J.setBlockMatrix(pos.J(), quat.J());
 }
 
@@ -211,7 +211,7 @@ void F_PoseDiff::phi2(arr& y, arr& J, const FrameL& F) {
   arr pos = F_PositionDiff().setOrder(order).eval(F);
   arr quat = F_QuaternionDiff().setOrder(order).eval(F);
   y.setBlockVector(pos, quat);
-  grabJ(y,J);
+  grabJ(y, J);
 //  J.setBlockMatrix(pos.J(), quat.J());
 }
 
@@ -221,7 +221,7 @@ void F_PoseRel::phi2(arr& y, arr& J, const FrameL& F) {
   arr pos = F_PositionRel().setOrder(order).eval(F);
   arr quat = F_QuaternionRel().setOrder(order).eval(F);
   y.setBlockVector(pos, quat);
-  grabJ(y,J);
+  grabJ(y, J);
 //  J.setBlockMatrix(pos.J(), quat.J());
 }
 
@@ -255,14 +255,14 @@ void angVel_base(rai::Frame* f0, rai::Frame* f1, arr& y, arr& J) {
   checkNan(y);
 
   if(!!J && !!Ja) {
-    if(&f0->C!=&f1->C){ //different configurations -> assume consecutive
+    if(&f0->C!=&f1->C) { //different configurations -> assume consecutive
       J = catCol((J1-J0)*Ja, J0*Jb);
-    }else{//same configuration
+    } else { //same configuration
       J = (J1-J0)*Ja;
       J += J0*Jb;
     }
     checkNan(J);
-  }else J.setNoArr();
+  } else J.setNoArr();
 }
 
 //===========================================================================
@@ -281,7 +281,7 @@ void F_LinVel::phi2(arr& y, arr& J, const FrameL& F) {
     if(!!J) J = Jb-Ja;
 
 #if 1
-    rai::Frame *r = f1->getRoot();
+    rai::Frame* r = f1->getRoot();
     if(r->C.hasTauJoint(r)) {
       double tau; arr Jtau;
       r->C.kinematicsTau(tau, Jtau, r);
@@ -310,7 +310,7 @@ void F_LinVel::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
-void F_AngVel::phi2(arr& y, arr& J, const FrameL& F){
+void F_AngVel::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_GE(order, 1, "");
   if(order==1) {
     rai::Frame* f0 = F.elem(0);
@@ -319,7 +319,7 @@ void F_AngVel::phi2(arr& y, arr& J, const FrameL& F){
     angVel_base(f0, f1, y, J);
 
 #if 1
-    rai::Frame *r = f1->getRoot();
+    rai::Frame* r = f1->getRoot();
     if(r->C.hasTauJoint(r)) {
       double tau; arr Jtau;
       r->C.kinematicsTau(tau, Jtau, r);
@@ -361,7 +361,7 @@ void F_LinAngVel::phi2(arr& y, arr& J, const FrameL& F) {
   arr ya = ang.eval(F);
 
   y.setBlockVector(yl, ya);
-  grabJ(y,J);
+  grabJ(y, J);
   //J.setBlockMatrix(yl.J(), ya.J());
 }
 
@@ -372,13 +372,13 @@ void F_NoJumpFromParent_OBSOLETE::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.d1, 2, "");
 
   arr pos = F_PositionRel()
+            .setOrder(1)
+            .setDiffInsteadOfVel()
+            .eval(F);
+  arr quat = F_QuaternionRel()
              .setOrder(1)
              .setDiffInsteadOfVel()
              .eval(F);
-  arr quat = F_QuaternionRel()
-              .setOrder(1)
-              .setDiffInsteadOfVel()
-              .eval(F);
 
   y.setBlockVector(pos, quat);
   if(!!J) J = y.J_reset();

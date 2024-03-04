@@ -14,7 +14,6 @@
 #define MAIN test_simulation_main
 #include "../../Kin/simulation/main.cpp"
 
-
 //===========================================================================
 
 int main(int argc, char **argv){

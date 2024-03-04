@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -216,9 +216,9 @@ void TaskControlThread::step() {
 }
 
 shared_ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
-                                    Var<rai::Configuration>& ctrl_config,
-                                    const char* name, const shared_ptr<Feature>& map,
-                                    const shared_ptr<CtrlMovingTarget>& ref) {
+    Var<rai::Configuration>& ctrl_config,
+    const char* name, const shared_ptr<Feature>& map,
+    const shared_ptr<CtrlMovingTarget>& ref) {
   NIY
 #if 0
   shared_ptr<CtrlObjective> t = make_shared<CtrlObjective>(name, map, ref);
@@ -229,27 +229,27 @@ shared_ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
 }
 
 shared_ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
-                                    Var<rai::Configuration>& ctrl_config,
-                                    const char* name, FeatureSymbol fs, const StringA& frames,
-                                    const shared_ptr<CtrlMovingTarget>& ref) {
+    Var<rai::Configuration>& ctrl_config,
+    const char* name, FeatureSymbol fs, const StringA& frames,
+    const shared_ptr<CtrlMovingTarget>& ref) {
   return addCtrlObjective(ctrl_tasks, ctrl_config, name,
                           symbols2feature(fs, frames, ctrl_config.get()),
                           ref);
 }
 
 shared_ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
-                                    Var<rai::Configuration>& ctrl_config,
-                                    const char* name, FeatureSymbol fs, const StringA& frames,
-                                    double duration) {
+    Var<rai::Configuration>& ctrl_config,
+    const char* name, FeatureSymbol fs, const StringA& frames,
+    double duration) {
   return addCtrlObjective(ctrl_tasks, ctrl_config, name,
                           symbols2feature(fs, frames, ctrl_config.get()),
                           make_shared<CtrlTarget_Sine>(arr(), duration));
 }
 
 shared_ptr<CtrlObjective> addCompliance(Var<CtrlObjectiveL>& ctrl_tasks,
-                                 Var<rai::Configuration>& ctrl_config,
-                                 const char* name, FeatureSymbol fs, const StringA& frames,
-                                 const arr& compliance) {
+                                        Var<rai::Configuration>& ctrl_config,
+                                        const char* name, FeatureSymbol fs, const StringA& frames,
+                                        const arr& compliance) {
 #if 0
   shared_ptr<CtrlObjective> t = make_shared<CtrlObjective>(name, symbols2feature(fs, frames, ctrl_config.get()));
   t->compliance = compliance;

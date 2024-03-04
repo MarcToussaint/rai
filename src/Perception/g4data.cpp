@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -653,8 +653,8 @@ G4FeatSeqL G4Rec::featseqlist(bool with_ann, const char* obj1, const char* obj2)
     for(const rai::String& sens2: sensors2) {
       i1 = g4id.i(sens1);
       i2 = g4id.i(sens2);
-      if(i1 != i2 && !checklist(i1,i2) && (!with_ann || hasAnn(sens1, sens2))) {
-        checklist(i1,i2) = checklist(i2,i1) = true;
+      if(i1 != i2 && !checklist(i1, i2) && (!with_ann || hasAnn(sens1, sens2))) {
+        checklist(i1, i2) = checklist(i2, i1) = true;
         seq = new G4FeatSeq();
         seq->set(*this, sens1, sens2);
         seqlist.append(seq);

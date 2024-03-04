@@ -4,7 +4,6 @@
 #include <Geo/fclInterface.h>
 #include <Kin/proxy.h>
 
-
 // =============================================================================
 
 void run_rrt(rai::Configuration& C, const arr& q0, const arr& q1) {
@@ -122,7 +121,6 @@ int MAIN(int argc,char **argv){
 
 //  rnd.clockSeed();
   test_minimalistic(); return 0;
-
 
   cout <<"=== RRT test" <<endl;
   testRRT();

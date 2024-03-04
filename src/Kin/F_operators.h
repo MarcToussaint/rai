@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -19,7 +19,7 @@ struct F_Max : Feature {
   F_Max(const shared_ptr<Feature>& f, bool neg=false) : f(f), neg(neg) {}
 
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2( const FrameL& F) { return 1; }
+  virtual uint dim_phi2(const FrameL& F) { return 1; }
   virtual rai::String shortTag(const rai::Configuration& C) { return STRING("Max:"<<f->shortTag(C)); }
 };
 
@@ -31,7 +31,7 @@ struct F_Norm : Feature {
   F_Norm(const shared_ptr<Feature>& f) : f(f) {}
 
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2( const FrameL& F) { return 1; }
+  virtual uint dim_phi2(const FrameL& F) { return 1; }
   virtual rai::String shortTag(const rai::Configuration& C) { return STRING("Norm:"<<f->shortTag(C)); }
 };
 
@@ -43,6 +43,6 @@ struct F_Normalized : Feature {
   F_Normalized(const shared_ptr<Feature>& f) : f(f) {}
 
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2( const FrameL& F) { return f->dim(F); }
+  virtual uint dim_phi2(const FrameL& F) { return f->dim(F); }
   virtual rai::String shortTag(const rai::Configuration& C) { return STRING("Normalized:"<<f->shortTag(C)); }
 };

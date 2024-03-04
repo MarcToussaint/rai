@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -41,12 +41,12 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
   distance=-1.;
 
   //-- special cases: point to pcl
-  if(mesh1.V.d0==1 && mesh2.V.d0>2 && !mesh2.T.N){
+  if(mesh1.V.d0==1 && mesh2.V.d0>2 && !mesh2.T.N) {
     _mesh2.ensure_ann();
 
     arr x = mesh1.V;
     x.reshape(3);
-    if(!t1->isZero() || !t2->isZero()){
+    if(!t1->isZero() || !t2->isZero()) {
       rai::Transformation T = *t1 / *t2;
       x += T.pos.getArr();
     }
@@ -57,21 +57,21 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
     _mesh2.ann->getkNN(sqrDists, idx, x, K);
 
     p2 = zeros(3);
-    for(uint k=0;k<K;k++) p2 += _mesh2.V[idx(k)];
+    for(uint k=0; k<K; k++) p2 += _mesh2.V[idx(k)];
     p2 /= double(K);
 
-    if(_mesh2.Vn.N){
+    if(_mesh2.Vn.N) {
       normal = zeros(3);
-      for(uint k=0;k<K;k++) normal += _mesh2.Vn[idx(k)]; //points from obj2 to obj1, as desired
+      for(uint k=0; k<K; k++) normal += _mesh2.Vn[idx(k)]; //points from obj2 to obj1, as desired
       normal /= double(K);
-    }else{
+    } else {
       normal.clear();
     }
 //    normal.clear();
 
     p1 = x;
 
-    if(!t2->isZero()){ //we computed everything relative to t2
+    if(!t2->isZero()) { //we computed everything relative to t2
       t2->applyOnPoint(p1);
       t2->applyOnPoint(p2);
       normal = t2->rot.getArr() * normal;
@@ -79,7 +79,7 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
 
     arr del = p1-p2;
     distance = length(del);
-    if(normal.N && scalarProduct(del,normal)<.0){
+    if(normal.N && scalarProduct(del, normal)<.0) {
       distance *= -1.; //devision by distance below also flips normal
     }
     normal = del;
@@ -91,13 +91,13 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
   }
 
   //-- special cases: point to multiple cvx parts
-  if(mesh1.V.d0==1 && _mesh2.cvxParts.N){
+  if(mesh1.V.d0==1 && _mesh2.cvxParts.N) {
     arr x = mesh1.V;
     //directly call gjk for each part to get nearest
     Object_structure m1, m2;
     rai::Array<double*> Vhelp1 = getCarray(x);
     rai::Array<double*> Vhelp2 = getCarray(mesh2.V);
-    if(!t1->isZero() || !t2->isZero()){
+    if(!t1->isZero() || !t2->isZero()) {
       x.reshape(3);
       rai::Transformation T = *t1 / *t2;
       x += T.pos.getArr();
@@ -105,7 +105,7 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
     double dmin=-1.;
     int imin=0;
     //LOG(0) <<_mesh2.cvxParts <<_mesh2.V.d0 <<endl;
-    for(uint i=0;i<_mesh2.cvxParts.N;i++){
+    for(uint i=0; i<_mesh2.cvxParts.N; i++) {
       int start = _mesh2.cvxParts(i);
       int end = i+1<_mesh2.cvxParts.N ? _mesh2.cvxParts(i+1)-1 : _mesh2.V.d0-1;
       CHECK_LE(start+1, end, "");
@@ -114,7 +114,7 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
 
       double d = gjk_distance(&m1, 0, &m2, 0, 0, 0, 0, 0);
       //cout <<" part " <<i <<" d:" <<d <<endl;
-      if(d<dmin || dmin<0.){ imin=i; dmin=d; }
+      if(d<dmin || dmin<0.) { imin=i; dmin=d; }
     }
     //cout <<" part " <<imin <<" is min" <<endl;
     //imin is the closest part... do the below with imin..
@@ -177,9 +177,9 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
   //in current state, the rad1, rad2, have not been used at all!!
 }
 
-PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const arr& seed){
+PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const arr& seed) {
 
-  ScalarFunction f = [&func1, &func2](arr& g, arr& H, const arr& x){
+  ScalarFunction f = [&func1, &func2](arr& g, arr& H, const arr& x) {
     arr g1, g2, H1, H2;
 #if 0
     double d1 = func1(g1, H1, x);
@@ -209,7 +209,7 @@ PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const a
                    .set_verbose(0)
                    .set_stopTolerance(1e-4)
                    .set_maxStep(1.)
-                   .set_damping(1e-10) );
+                   .set_damping(1e-10));
   newton.run();
 
   arr g1, g2;
@@ -221,13 +221,13 @@ PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const a
 //  CHECK_ZERO(d1-d2, 1e-4, "point should have equal distance (pos or negative) to both surfaces!");
 //  CHECK_ZERO(sumOfSqr(g1+g2), 1e-4, "gradients should exactly oppose!");
 
-  if(d1<d2){ //deeper into d1 -- use g1 as normal!
+  if(d1<d2) { //deeper into d1 -- use g1 as normal!
     normal = g1;
     normal /= length(normal);
     p1 = x - d1*normal;
     p2 = x + d1*normal;
     distance = 2.*d1;
-  }else{
+  } else {
     normal = -g2;
     normal /= length(normal);
     p1 = x - d2*normal;
@@ -245,8 +245,8 @@ PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const a
   if(rai::sign(distance) * scalarProduct(normal, p1-p2) < 0.)
     normal *= -1.;
 
-  simplex1 = p1;  simplex1.reshape(1,3);
-  simplex2 = p2;  simplex2.reshape(1,3);
+  simplex1 = p1;  simplex1.reshape(1, 3);
+  simplex2 = p2;  simplex2.reshape(1, 3);
 }
 
 void PairCollision::write(std::ostream& os) const {
@@ -276,11 +276,11 @@ void center_mesh(const void* obj, ccd_vec3_t* center) {
 
 bool _legal(double* a) {
   return a[0]==a[0]
-      && a[1]==a[1]
-      && a[2]==a[2]
-      && -1e10<a[0] && a[0]<1e10
-      && -1e10<a[1] && a[1]<1e10
-      && -1e10<a[2] && a[2]<1e10;
+         && a[1]==a[1]
+         && a[2]==a[2]
+         && -1e10<a[0] && a[0]<1e10
+         && -1e10<a[1] && a[1]<1e10
+         && -1e10<a[2] && a[2]<1e10;
 }
 
 bool _equal(double* a, double* b) {
@@ -381,32 +381,32 @@ void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
     if(simplex1.d0>3) simplex1.resizeCopy(3, 3);
     if(simplex2.d0>3) simplex2.resizeCopy(3, 3);
 
-  }else if(method==_ccdGJKPenetration) {
-      int ret = ccdGJKPenetration(&m1, &m2, &ccd, &_depth, &_dir, &_pos);
-      if(ret<0) {
-        LOG(0) <<"WARNING: called MPR penetration for non intersecting meshes...";
-        m1._support_vertex = rnd(m1.V.d0);
-        m2._support_vertex = rnd(m2.V.d0);
-        libccd(m1, m2, _ccdGJKIntersect);
-        if(distance<0.) {
-          LOG(0) <<"WARNING: but GJK says intersection";
-          distance=0;
-        }
-        return;
+  } else if(method==_ccdGJKPenetration) {
+    int ret = ccdGJKPenetration(&m1, &m2, &ccd, &_depth, &_dir, &_pos);
+    if(ret<0) {
+      LOG(0) <<"WARNING: called MPR penetration for non intersecting meshes...";
+      m1._support_vertex = rnd(m1.V.d0);
+      m2._support_vertex = rnd(m2.V.d0);
+      libccd(m1, m2, _ccdGJKIntersect);
+      if(distance<0.) {
+        LOG(0) <<"WARNING: but GJK says intersection";
+        distance=0;
       }
+      return;
+    }
 
-      penetration=true;
+    penetration=true;
 
-      p1.setCarray(_pos.v, 3);
-      p2.setCarray(_pos.v, 3);
-      normal.setCarray(_dir.v, 3);
-      distance = -_depth;
-      p1 += (.5*distance)*normal;
-      p2 -= (.5*distance)*normal;
+    p1.setCarray(_pos.v, 3);
+    p2.setCarray(_pos.v, 3);
+    normal.setCarray(_dir.v, 3);
+    distance = -_depth;
+    p1 += (.5*distance)*normal;
+    p2 -= (.5*distance)*normal;
 
-      if(distance>-1e-10) return; //minimal penetration -> simplices below are not robust
+    if(distance>-1e-10) return; //minimal penetration -> simplices below are not robust
 
-      //grab simplex points
+    //grab simplex points
 //      simplex1 = ~p1; //m1 is a point/sphere
 //      simplex2 = ~p2; //m2 is a point/sphere
 
@@ -699,7 +699,7 @@ void PairCollision::kinVector(arr& y, arr& J,
     double fac = (distance-rad)/(distance+eps);
     if(!!J) {
       arr d_fac = ((1.-fac)/(distance+eps)) *((~normal)*J);
-      J = J*fac + y.reshape(3,1)*d_fac;
+      J = J*fac + y.reshape(3, 1)*d_fac;
       y.reshape(3);
       checkNan(J);
     }
@@ -991,7 +991,7 @@ PclCollision::PclCollision(const arr& _x, ANN& ann,
   Vector x(_x);
 
   //-- transform x only relative to pcl
-  if(!t1.isZero() || !t2.isZero()){
+  if(!t1.isZero() || !t2.isZero()) {
     rai::Transformation T = t1 / t2;
     x = T * x;
   }
@@ -1006,17 +1006,17 @@ PclCollision::PclCollision(const arr& _x, ANN& ann,
   Vector y_vec(0);
   arr J_dist, J_vec;
   x = t2.rot * x; //relative to center2, but in world axes!
-  for(uint k=0;k<K;k++){
+  for(uint k=0; k<K; k++) {
     Vector z = ann.X[idx(k)];
     z = t2.rot*z;
     Vector del = x - z;
     double d = del.length();
     normal = del.getArr();
     if(d>1e-10) normal /= d;
-    if(!J_dist.N){
+    if(!J_dist.N) {
       J_dist = ~normal * (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
       J_vec = (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
-    }else{
+    } else {
       J_dist += ~normal * (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
       J_vec += (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
     }
@@ -1028,10 +1028,10 @@ PclCollision::PclCollision(const arr& _x, ANN& ann,
   J_dist /= double(K);
   J_vec /= double(K);
 
-  if(!returnVector){
+  if(!returnVector) {
     y = arr{y_dist-_rad1-_rad2};
     if(!!J) J = J_dist;
-  }else{
+  } else {
     y = y_vec.getArr();
     if(!!J) J = J_vec;
   }

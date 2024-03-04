@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -140,7 +140,7 @@ struct Var_data : Var_base {
 
   Var_data(const char* name=0) : Var_base(name), data() {} // default constructor for value always initializes, also primitive types 'bool' or 'int'
   ~Var_data() {
-      if (rwlock.isLocked()) { cerr << "can't destroy a variable when it is currently accessed!" <<endl; exit(1); }
+    if(rwlock.isLocked()) { cerr << "can't destroy a variable when it is currently accessed!" <<endl; exit(1); }
   }
 };
 
@@ -178,7 +178,7 @@ struct Var {
 
   //only on construction you can make this Var to refer to the data of another Var -- now it is too late; you can of course call
   //the operator= for the data, using var1.set() = var2.get();
-  Var& operator=(const Var& v){ HALT("you can't copy Var!") }
+  Var& operator=(const Var& v) { HALT("you can't copy Var!") }
 
   void checkLocked() { if(!data->rwlock.isLocked()) HALT("direct variable access without locking it before"); }
   T& operator()() { CHECK(data->rwlock.isLocked(), "direct variable access without locking it before");  return data->data; }
@@ -240,13 +240,13 @@ struct Signaler {
   void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
   void statusUnlock();
 
-  int  getStatus(Mutex::Token *userHasLocked=0) const;
-  bool waitForSignal(Mutex::Token *userHasLocked=0, double timeout=-1.);
-  bool waitForEvent(std::function<bool()> f, Mutex::Token *userHasLocked=0);
-  bool waitForStatusEq(int i, Mutex::Token *userHasLocked=0, double timeout=-1.);    ///< return value is the state after the waiting
-  int waitForStatusNotEq(int i, Mutex::Token *userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
-  int waitForStatusGreaterThan(int i, Mutex::Token *userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
-  int waitForStatusSmallerThan(int i, Mutex::Token *userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
+  int  getStatus(Mutex::Token* userHasLocked=0) const;
+  bool waitForSignal(Mutex::Token* userHasLocked=0, double timeout=-1.);
+  bool waitForEvent(std::function<bool()> f, Mutex::Token* userHasLocked=0);
+  bool waitForStatusEq(int i, Mutex::Token* userHasLocked=0, double timeout=-1.);    ///< return value is the state after the waiting
+  int waitForStatusNotEq(int i, Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
+  int waitForStatusGreaterThan(int i, Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
+  int waitForStatusSmallerThan(int i, Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
 };
 
 //===========================================================================

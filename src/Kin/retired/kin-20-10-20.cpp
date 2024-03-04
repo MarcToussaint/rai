@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 rai::Frame* rai::Configuration::addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot) {
   rai::Frame* f = addFile(filename);
   if(parentOfRoot) {
@@ -58,9 +66,9 @@ void rai::Configuration::kinematicsContactForce(arr& y, arr& J, const ForceExcha
   if(!!J) {
     if(jacMode==JM_dense) {
       J.resize(3, q.N).setZero();
-    } else if(jacMode==JM_sparse){
+    } else if(jacMode==JM_sparse) {
       J.sparse().resize(3, q.N, 0);
-    } else if(jacMode==JM_noArr){
+    } else if(jacMode==JM_noArr) {
       J.setNoArr();
       return;
     }
@@ -79,7 +87,7 @@ void rai::Configuration::kinematicsLimits(arr& y, arr& J, const arr& limits) con
       if(d>0.) {  y.elem(0) += d;  if(!!J) J.elem(0, i)-=1.;  }
       d = q(i) - limits(i, 1); //up
       if(d>0.) {  y.elem(0) += d;  if(!!J) J.elem(0, i)+=1.;  }
-  }
+    }
 }
 
 FrameL Configuration::getParts() const {
@@ -91,8 +99,8 @@ FrameL Configuration::getParts() const {
 uint Configuration::kinematicsJoints(arr& y, arr& J, const FrameL& F, bool relative_q0) const {
   CHECK_EQ(F.nd, 1, "");
   uint m=0;
-  for(Frame *f: F){
-    Joint *j = f->joint;
+  for(Frame* f: F) {
+    Joint* j = f->joint;
     CHECK(j, "selected frame " <<*f <<" ('" <<f->name <<"') is not a joint");
     m += j->qDim();
   }
@@ -101,12 +109,12 @@ uint Configuration::kinematicsJoints(arr& y, arr& J, const FrameL& F, bool relat
   kinematicsZero(y, J, m);
 
   m=0;
-  for(Frame *f: F){
-    Joint *j = f->joint;
+  for(Frame* f: F) {
+    Joint* j = f->joint;
     for(uint k=0; k<j->dim; k++) {
-      if(j->active){
+      if(j->active) {
         y.elem(m) = q.elem(j->qIndex+k);
-      }else{
+      } else {
         y.elem(m) = qInactive.elem(j->qIndex+k);
       }
 //      if(flipSign) q.elem(m) *= -1.;

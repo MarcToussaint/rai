@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -16,7 +16,7 @@ arr Feature::phi_finiteDifferenceReduce(const FrameL& F) {
   timeIntegral--;
   order--;
   arr y0 = phi(F({0, -2}));
-  arr y1 = phi(F({1,-1}));
+  arr y1 = phi(F({1, -1}));
   order++;
   timeIntegral++;
 
@@ -27,14 +27,14 @@ arr Feature::phi_finiteDifferenceReduce(const FrameL& F) {
 
   if(!y.N) return y;
 
-  if(!diffInsteadOfVel){
+  if(!diffInsteadOfVel) {
     double tau; arr Jtau;
     F.elem(-1)->C.kinematicsTau(tau, Jtau, F.elem(-1));
     CHECK_GE(tau, 1e-10, "");
-    if(timeIntegral<=0){
+    if(timeIntegral<=0) {
       y /= tau;
       if(Jtau.N && y.jac) y.J() += (-1./tau)*y.noJ()*Jtau;
-    }else{ //this assumes that we talk about a SOS feature! and that the cost is multiplied by tau (the feature by sqrt(tau))
+    } else { //this assumes that we talk about a SOS feature! and that the cost is multiplied by tau (the feature by sqrt(tau))
       y /= sqrt(tau);
       if(Jtau.N && y.jac) y.J() += (-0.5/tau)*y.noJ()*Jtau;
     }
@@ -66,9 +66,9 @@ arr Feature::phi_finiteDifferenceReduce(const FrameL& F) {
 //  phi2(y, J, F);
 //}
 
-void Feature::setup(const rai::Configuration& C, const StringA& frames, const arr& _scale, const arr& _target, int _order){
+void Feature::setup(const rai::Configuration& C, const StringA& frames, const arr& _scale, const arr& _target, int _order) {
   //-- if arguments are given, modify the feature's frames, scaling and order
-  if(frames.N){
+  if(frames.N) {
     if(frames.N==1 && frames.scalar()=="ALL") frameIDs = framesToIndices(C.frames); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
     else frameIDs = C.getFrameIDs(frames);
   }
@@ -79,32 +79,32 @@ void Feature::setup(const rai::Configuration& C, const StringA& frames, const ar
 
 FrameL Feature::getFrames(const rai::Configuration& C, uint s) {
   FrameL F;
-  if(C.frames.nd==1){
+  if(C.frames.nd==1) {
     CHECK(!s, "C does not have multiple slices");
     CHECK(!order, "can't ground a order>0 feature on configuration without slices");
     F = C.getFrames(frameIDs);
     F.reshape(1, F.N);
-  }else{
+  } else {
     CHECK_EQ(C.frames.nd, 2, "");
     CHECK_GE(C.frames.d0, order+s+1, "");
     F.resize(order+1, frameIDs.N);
-    for(uint i=0;i<=order;i++){
-      for(uint j=0;j<frameIDs.N;j++){
+    for(uint i=0; i<=order; i++) {
+      for(uint j=0; j<frameIDs.N; j++) {
         uint fID = frameIDs.elem(j);
-        F(i,j) = C.frames(s+i-order, fID);
+        F(i, j) = C.frames(s+i-order, fID);
       }
     }
   }
-  if(frameIDs.nd==2){
+  if(frameIDs.nd==2) {
     F.reshape(order+1, frameIDs.d0, frameIDs.d1);
   }
   return F;
 }
 
 arr Feature::phi(const FrameL& F) {
-  arr y,J;
+  arr y, J;
   phi2(y, J, F);
-  if(!!J){
+  if(!!J) {
     CHECK_EQ(J.d0, y.N, "wrong Jacobian size");
     CHECK(!J.jac, "");
     y.J() = J;
@@ -112,28 +112,26 @@ arr Feature::phi(const FrameL& F) {
   return y;
 }
 
-void grabJ(arr& y, arr& J){
+void grabJ(arr& y, arr& J) {
   CHECK(&J != y.jac.get(), "");
-  if(!!J){
-    if(y.jac){ J=(*y.jac); y.jac.reset(); }
+  if(!!J) {
+    if(y.jac) { J=(*y.jac); y.jac.reset(); }
     else J.setNoArr();
   }
 }
 
 void Feature::phi2(arr& y, arr& J, const FrameL& F) {
   y = phi_finiteDifferenceReduce(F);
-  grabJ(y,J);
+  grabJ(y, J);
 }
-
-
 
 rai::String Feature::shortTag(const rai::Configuration& C) {
   rai::String s;
   s <<rai::niceTypeidName(typeid(*this));
   s <<'/' <<order;
-  if(frameIDs.N<=3){
+  if(frameIDs.N<=3) {
     for(uint i:frameIDs) s <<'-' <<C.frames.elem(i)->name;
-  }else{
+  } else {
     s <<"-#" <<frameIDs.N;
   }
   return s;
@@ -191,7 +189,7 @@ void Feature::applyLinearTrans(arr& y) {
     }
     if(target.N==1) { //scalar
       y -= target.scalar();
-    }else{
+    } else {
       y -= target;
     }
   }

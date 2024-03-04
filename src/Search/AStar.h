@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -33,12 +33,12 @@ struct AStar {
   void step();
   bool run(int stepsLimit=-1);
   void report();
-  bool isEmpty(){ return mode==astar && !queue.N; }
+  bool isEmpty() { return mode==astar && !queue.N; }
 
   TreeSearchNode* selectByTreePolicy();
 
-private:
-  void addToQueue(TreeSearchNode *node);
+ private:
+  void addToQueue(TreeSearchNode* node);
 };
 
 } //namespace

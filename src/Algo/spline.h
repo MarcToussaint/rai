@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -56,7 +56,6 @@ struct BSpline {
   /// for t \in [0,1] the coefficients are the weighting of the points: f(t) = coeffs(t)^T * points
   arr getCoeffs(double t, uint K, uint derivative=0) const;
 
-
   double begin() const { return knotTimes.first(); }
   double end() const { return knotTimes.last(); }
 
@@ -67,7 +66,7 @@ struct BSpline {
 
 //==============================================================================
 
-struct CubicPiece{
+struct CubicPiece {
   arr a, b, c, d;
   void set(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau);
   void eval(arr& x, arr& xDot, arr& xDDot, double t) const;
@@ -76,9 +75,9 @@ struct CubicPiece{
 };
 stdOutPipe(CubicPiece)
 
-struct CubicSplineCtor{ arr pts, vels, times; };
+struct CubicSplineCtor { arr pts, vels, times; };
 
-struct CubicSpline{
+struct CubicSpline {
   rai::Array<CubicPiece> pieces;
   arr times;
 
@@ -96,12 +95,12 @@ struct CubicSpline{
 
 //==============================================================================
 
-arr CubicSplineLeapCost(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
-arr CubicSplineMaxJer(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
-arr CubicSplineMaxAcc(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
-arr CubicSplineMaxVel(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
-arr CubicSplineAcc0(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
-arr CubicSplineAcc1(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
+arr CubicSplineLeapCost(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ= {});
+arr CubicSplineMaxJer(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ= {});
+arr CubicSplineMaxAcc(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ= {});
+arr CubicSplineMaxVel(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ= {});
+arr CubicSplineAcc0(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ= {});
+arr CubicSplineAcc1(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ= {});
 void CubicSplinePosVelAcc(arr& pos, arr& vel, arr& acc, double trel, const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ);
 
 //===========================================================================

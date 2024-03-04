@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -47,8 +47,8 @@ void POA_distance(arr& y, arr& J, rai::ForceExchange* ex, bool b_or_a) {
 void POA_rel_vel2(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool after_or_before) {
   CHECK_EQ(F.d0, 3, "");
   CHECK_EQ(F.d1, 2, "");
-  CHECK_EQ(F(1,0), &ex->a, "");
-  CHECK_EQ(F(1,1), &ex->b, "");
+  CHECK_EQ(F(1, 0), &ex->a, "");
+  CHECK_EQ(F(1, 1), &ex->b, "");
 
   // p1, p2 are the CENTERS! of the frame a and b
   // v1, v2 are the CENTER velocities of the frame a and b
@@ -86,12 +86,12 @@ void POA_rel_vel2(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool 
 arr POA_rel_vel(const FrameL& F, rai::ForceExchange* ex, bool after_or_before) {
   CHECK_EQ(F.d0, 2, "");
   CHECK_EQ(F.d1, 2, "");
-  if(after_or_before){
-    CHECK_EQ(F(0,0), &ex->a, "");
-    CHECK_EQ(F(0,1), &ex->b, "");
-  }else{
-    CHECK_EQ(F(1,0), &ex->a, "");
-    CHECK_EQ(F(1,1), &ex->b, "");
+  if(after_or_before) {
+    CHECK_EQ(F(0, 0), &ex->a, "");
+    CHECK_EQ(F(0, 1), &ex->b, "");
+  } else {
+    CHECK_EQ(F(1, 0), &ex->a, "");
+    CHECK_EQ(F(1, 1), &ex->b, "");
   }
 
   arr cp, cpJ;
@@ -103,11 +103,11 @@ arr POA_rel_vel(const FrameL& F, rai::ForceExchange* ex, bool after_or_before) {
   arr p1 = F_Position().eval({&ex->a});
   arr p2 = F_Position().eval({&ex->b});
   arr v1, v2;
-  v1 = F_Position().setOrder(1).eval({F(0,0), F(1,0)});
-  v2 = F_Position().setOrder(1).eval({F(0,1), F(1,1)});
+  v1 = F_Position().setOrder(1).eval({F(0, 0), F(1, 0)});
+  v2 = F_Position().setOrder(1).eval({F(0, 1), F(1, 1)});
   arr w1, w2;
-  w1 = F_AngVel().eval({{2,1}, {F(0,0), F(1,0)}});
-  w2 = F_AngVel().eval({{2,1}, {F(0,1), F(1,1)}});
+  w1 = F_AngVel().eval({{2, 1}, {F(0, 0), F(1, 0)}});
+  w2 = F_AngVel().eval({{2, 1}, {F(0, 1), F(1, 1)}});
 
   arr vc1 = v1 - crossProduct(w1, cp - p1);
 //  arr Jvc1 = v1.J() - skew(w1) * (cpJ - p1.J()) + skew(cp-p1) * w1.J();
@@ -122,11 +122,11 @@ arr POA_rel_vel(const FrameL& F, rai::ForceExchange* ex, bool after_or_before) {
 arr POA_vel(const FrameL& F, rai::ForceExchange* ex, bool b_or_a) {
   CHECK_GE(F.d0, 2, "");
   CHECK_GE(F.d1, 2, "");
-  CHECK_EQ(F(1,0), &ex->a, "");
-  CHECK_EQ(F(1,1), &ex->b, "");
+  CHECK_EQ(F(1, 0), &ex->a, "");
+  CHECK_EQ(F(1, 1), &ex->b, "");
 
-  FrameL ff = {F(0,0), F(1,0)};
-  if(b_or_a) ff = {F(0,1), F(1,1)};
+  FrameL ff = {F(0, 0), F(1, 0)};
+  if(b_or_a) ff = {F(0, 1), F(1, 1)};
 
   //POA
   arr poa, Jpoa;
@@ -150,29 +150,29 @@ void shapeFunction(double& x, double& dx);
 //===========================================================================
 
 void F_fex_POA::phi2(arr& y, arr& J, const FrameL& F) {
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_GE(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
   ex->kinPOA(y, J);
 }
 
 void F_fex_Force::phi2(arr& y, arr& J, const FrameL& F) {
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
-  if(!ex){ F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
+  if(!ex) { F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
   ex->kinForce(y, J);
 }
 
-void F_fex_Torque::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+void F_fex_Torque::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
   ex->kinTorque(y, J);
 }
 
-void F_fex_Wrench::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+void F_fex_Wrench::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
   arr y1, y2, J1, J2;
@@ -184,11 +184,11 @@ void F_fex_Wrench::phi2(arr& y, arr& J, const FrameL& F){
 
 //===========================================================================
 
-void F_HingeXTorque::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+void F_HingeXTorque::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::Frame *f1 = F.elem(0);
-  rai::Frame *f2 = F.elem(1);
+  rai::Frame* f1 = F.elem(0);
+  rai::Frame* f2 = F.elem(1);
   CHECK(f2->joint, "second frame needs to be a joint");
   CHECK_EQ(f2->joint->type, rai::JT_hingeX, "second frame needs to be a joint")
   rai::ForceExchange* ex = getContact(f1, f2);
@@ -276,14 +276,14 @@ void F_TotalForce::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
-void F_GravityAcceleration::phi2(arr& y, arr& J, const FrameL& F){
+void F_GravityAcceleration::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.N, 1, "");
 
-  rai::Frame *a = F.scalar();
+  rai::Frame* a = F.scalar();
   a->C.kinematicsZero(y, J, 6);
-  if(!impulseInsteadOfAcceleration){
+  if(!impulseInsteadOfAcceleration) {
     y(2) -= gravity;
-  }else{
+  } else {
     a = a->getRoot();
     if(a->C.hasTauJoint(a)) {
       double tau; arr Jtau;
@@ -305,20 +305,20 @@ void F_NewtonEuler::phi2(arr& y, arr& J, const FrameL& F) {
 
   //-- get linear and angular accelerations - ACTUALLY change-of-velocity!! (~IMPULSE)
   arr acc = F_LinAngVel()
-              .setImpulseInsteadOfAcceleration()
-              .setOrder(2)
-              .eval(F);
+            .setImpulseInsteadOfAcceleration()
+            .setOrder(2)
+            .eval(F);
 
 #if 1
   //-- collect total contact forces (actually impulse) without gravity
   arr fo = F_TotalForce(true) // ignore gravity
-             .eval({F.elem(-2)}); // ! THIS IS THE MID TIME SLICE !
+           .eval({F.elem(-2)}); // ! THIS IS THE MID TIME SLICE !
 
-  if(useGravity){
+  if(useGravity) {
     //-- collect gravity change-of-velocities -> MULTIPLIES WITH TAU! (this is where tau optimization has major effect!)
     arr grav = F_GravityAcceleration()
-                 .setImpulseInsteadOfAcceleration()
-                 .eval({F.elem(-1)}); //END TIME SLICE!
+               .setImpulseInsteadOfAcceleration()
+               .eval({F.elem(-1)}); //END TIME SLICE!
 
     //-- subtract nominal gravity change-of-velocity from object change-of-velocity
     acc -= grav;
@@ -346,7 +346,7 @@ void F_NewtonEuler::phi2(arr& y, arr& J, const FrameL& F) {
   arr one_over_mass = ones(6);
   one_over_mass /= mass_diag;
   y = acc + fo % one_over_mass;
-  grabJ(y,J);
+  grabJ(y, J);
   //if(!!J) J = acc.J() + one_over_mass % fo.J(); AUTODIFF
 #else
   y = mass_diag % acc + fo; //THIS IS ACTUALLY AN IMPULSE EQUATION: COLLECTED FORCES fo ARE INTERPRETED AS IMPULSE (and that's why gravity should not be mixed in)
@@ -362,14 +362,14 @@ void F_NewtonEuler_DampedVelocities::phi2(arr& y, arr& J, const FrameL& F) {
 
   //get linear and angular velocities
   arr vel = F_LinAngVel()
-              .setOrder(1)
-              .eval(F);
+            .setOrder(1)
+            .eval(F);
 
-  if(useGravity){
+  if(useGravity) {
     //-- collect gravity change-of-velocities -> MULTIPLIES WITH TAU! (this is where tau optimization has major effect!)
     arr grav = F_GravityAcceleration()
-                 .setImpulseInsteadOfAcceleration()
-                 .eval({F.elem(-1)}); //END TIME SLICE!
+               .setImpulseInsteadOfAcceleration()
+               .eval({F.elem(-1)}); //END TIME SLICE!
     vel -= grav;
     vel.J() -= grav.J();
   }
@@ -379,12 +379,12 @@ void F_NewtonEuler_DampedVelocities::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK(a->inertia, "F_NewtonEuler needs inertia defined for '" <<a->name <<"'");
   CHECK(a->inertia->matrix.isDiagonal(), "can only handle diagonal");
   arr mass_diag(6);
-  mass_diag({0,2}) = a->inertia->mass;
-  mass_diag({3,5}) = a->inertia->matrix.getDiag();
+  mass_diag({0, 2}) = a->inertia->mass;
+  mass_diag({3, 5}) = a->inertia->matrix.getDiag();
 
   //collect total contact forces
   arr fo = F_TotalForce(true)
-             .eval({F.elem(-2)});
+           .eval({F.elem(-2)});
 
   double friction = .1;
   a->ats->get<double>(friction, "friction");
@@ -403,7 +403,7 @@ void F_NewtonEuler_DampedVelocities::phi2(arr& y, arr& J, const FrameL& F) {
 //===========================================================================
 
 void F_Energy::phi2(arr& y, arr& J, const FrameL& F) {
-  if(order==2){
+  if(order==2) {
     diffInsteadOfVel=true;
     Feature::phi2(y, J, F);
     diffInsteadOfVel=false;
@@ -417,12 +417,12 @@ void F_Energy::phi2(arr& y, arr& J, const FrameL& F) {
 
   F.elem(-1)->C.kinematicsZero(y, J, 1);
 
-  arr grav = {0.,0.,gravity};
+  arr grav = {0., 0., gravity};
 
-  for(uint i=0;i<F.d1;i++) {
+  for(uint i=0; i<F.d1; i++) {
     double mass=1.;
     arr Imatrix = diag(.1, 3);
-    rai::Frame *a = F(1,i);
+    rai::Frame* a = F(1, i);
     if(a->inertia) {
       mass = a->inertia->mass;
       Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
@@ -431,17 +431,17 @@ void F_Energy::phi2(arr& y, arr& J, const FrameL& F) {
     }
 
     p = F_Position()
-        .eval({F(1,i)});
+        .eval({F(1, i)});
 
     v = F_Position()
         .setOrder(1)
-        .eval({F(0,i), F(1,i)});
+        .eval({F(0, i), F(1, i)});
 
 //    w = TM_AngVel()
 //        .eval({F(0,i), F(1,i)});
 
     E += .5*mass*sumOfSqr(v);
-    E += mass * scalarProduct(grav,p); //p(2)=height //(a->X*a->inertia->com).z;
+    E += mass * scalarProduct(grav, p); //p(2)=height //(a->X*a->inertia->com).z;
 //      E += .5*m*sumOfSqr(w); //(w*(I*w));
 
     if(!!J) {
@@ -462,21 +462,20 @@ FrameL getShapesAbove(rai::Frame* a) {
   return aboves;
 }
 
-
 //===========================================================================
 
 arr F_fex_ForceIsNormal::phi(const FrameL& F) {
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
-  if(!ex){ arr y; F.elem(0)->C.kinematicsZero(y, y.J(), dim_phi2(F)); return y; }
+  if(!ex) { arr y; F.elem(0)->C.kinematicsZero(y, y.J(), dim_phi2(F)); return y; }
 
   //-- from the contact we need force
   arr force = F_fex_Force()
-                .eval(F);
+              .eval(F);
 
   //-- from the geometry we need normal
 #ifdef RAI_USE_FUNCTIONAL_NORMALS
   arr normal = F_fex_POASurfaceAvgNormal()
-                 .eval(F);
+               .eval(F);
   op_normalize(normal);
 #else
   Value normal = F_PairCollision(F_PairCollision::_normal, true)
@@ -490,7 +489,7 @@ arr F_fex_ForceIsNormal::phi(const FrameL& F) {
 
 arr F_fex_ForceInFrictionCone::phi(const FrameL& F) {
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
-  if(!ex){ arr y; F.elem(0)->C.kinematicsZero(y, y.J(), dim_phi2(F)); return y; }
+  if(!ex) { arr y; F.elem(0)->C.kinematicsZero(y, y.J(), dim_phi2(F)); return y; }
 
   //-- from the contact we need force
   arr force = F_fex_Force() .eval(F);
@@ -538,16 +537,16 @@ uint F_fex_ForceIsComplementary::dim_phi2(const FrameL& F) { return 6; }
 
 void F_fex_ForceIsPositive::phi2(arr& y, arr& J, const FrameL& F) {
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
-  if(!ex){ F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
+  if(!ex) { F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
 
   //-- from the contact we need force
   arr force = F_fex_Force()
-                .eval(F);
+              .eval(F);
 
   //-- from the geometry we need normal
 #ifdef RAI_USE_FUNCTIONAL_NORMALS
   arr normal = F_fex_POASurfaceAvgNormal()
-                 .eval(F);
+               .eval(F);
   op_normalize(normal);
 #else
   Value normal = F_PairCollision(F_PairCollision::_normal, true)
@@ -556,16 +555,16 @@ void F_fex_ForceIsPositive::phi2(arr& y, arr& J, const FrameL& F) {
 
   //-- force needs to align with normal -> project force along normal
   y = - (~normal * force); //-scalarProduct(normal, force);
-  grabJ(y,J);
+  grabJ(y, J);
 //  if(!!J) J = - (~normal*force.J() + ~force*normal.J()); AUTODIFF
 }
 
-void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
-  if(!ex){ F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
-  rai::Frame *f=0;
+  if(!ex) { F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
+  rai::Frame* f=0;
   if(leftRight == rai::_left) f = F.elem(0);
   if(leftRight == rai::_right) f = F.elem(1);
 
@@ -590,12 +589,12 @@ void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F){
   J = ~g * (Jpoa - Jp);
 }
 
-void F_fex_POASurfaceNormal::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+void F_fex_POASurfaceNormal::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
-  if(!ex){ F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
-  rai::Frame *f=0;
+  if(!ex) { F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
+  rai::Frame* f=0;
   if(leftRight == rai::_left) f = F.elem(0);
   if(leftRight == rai::_right) f = F.elem(1);
 
@@ -607,7 +606,7 @@ void F_fex_POASurfaceNormal::phi2(arr& y, arr& J, const FrameL& F){
   CHECK(f->shape, "");
   shared_ptr<ScalarFunction> func = f->shape->functional();
   CHECK(func, "");
-  arr g,H;
+  arr g, H;
   (*func)(g, H, poa);
 
   //-- evaluate Jacobian of POA if f1 moves
@@ -624,9 +623,9 @@ void F_fex_POASurfaceNormal::phi2(arr& y, arr& J, const FrameL& F){
 
 void F_fex_POASurfaceNormalsOppose::phi2(arr& y, arr& J, const FrameL& F) {
   arr n1 = F_fex_POASurfaceNormal(rai::_left)
-             .eval(F);
+           .eval(F);
   arr n2 = F_fex_POASurfaceNormal(rai::_right)
-             .eval(F);
+           .eval(F);
 
   y = n1 + n2;
   if(!!J) J = n1.J() + n2.J();
@@ -634,20 +633,20 @@ void F_fex_POASurfaceNormalsOppose::phi2(arr& y, arr& J, const FrameL& F) {
 
 void F_fex_POASurfaceAvgNormal::phi2(arr& y, arr& J, const FrameL& F) {
   arr n1 = F_fex_POASurfaceNormal(rai::_left)
-             .eval(F);
+           .eval(F);
   arr n2 = F_fex_POASurfaceNormal(rai::_right)
-             .eval(F);
+           .eval(F);
 
   y = 0.5*(n2 - n1); //normals should oppose, so this should be the avg normal; normal always points 'against obj1'
-  grabJ(y,J);
+  grabJ(y, J);
 //  if(!!J) J = 0.5*(n2.J() - n1.J()); AUTODIFF
 }
 
 void F_fex_POAContactDistances::phi2(arr& y, arr& J, const FrameL& F) {
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::Frame *f1 = F.elem(0);
-  rai::Frame *f2 = F.elem(1);
+  rai::Frame* f1 = F.elem(0);
+  rai::Frame* f2 = F.elem(1);
 
   rai::ForceExchange* ex = getContact(f1, f2);
 
@@ -692,7 +691,7 @@ void F_fex_POA_isAtWitnesspoint::phi2(arr& y, arr& J, const FrameL& F) {
   ex->kinPOA(poa, Jpoa);
 
   arr wit = F_PairCollision((!use2ndObject ? F_PairCollision::_p1 : F_PairCollision::_p2), false)
-              .eval(F);
+            .eval(F);
 
   y = poa - wit;
   if(!!J) { J = Jpoa - wit.J(); }
@@ -702,14 +701,14 @@ void F_fex_NormalForceEqualsNormalPOAmotion::phi2(arr& y, arr& J, const FrameL& 
   CHECK_EQ(order, 1, "");
 
   arr poavel = F_fex_POA()
-                 .setOrder(1)
-                 .eval(F);
+               .setOrder(1)
+               .eval(F);
 
   arr force = F_fex_Force()
-                .eval(F[-1]);
+              .eval(F[-1]);
 
   arr normal = F_PairCollision(F_PairCollision::_normal, true)
-                 .eval(F[-1]);
+               .eval(F[-1]);
 
   double forceScaling = 1e1;
   force *= forceScaling;
@@ -722,13 +721,13 @@ void F_fex_NormalForceEqualsNormalPOAmotion::phi2(arr& y, arr& J, const FrameL& 
 }
 
 void F_fex_POA_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
 
   //rai::Frame *f1 = F.elem(0);
-  rai::Frame *f2 = F.elem(1);
-  if(b_or_a){ /*f1=F.elem(1);*/ f2=F.elem(0); }
+  rai::Frame* f2 = F.elem(1);
+  if(b_or_a) { /*f1=F.elem(1);*/ f2=F.elem(0); }
 
   arr y1, y2, J1, J2;
   ex->kinPOA(y1, J1);
@@ -744,7 +743,7 @@ void F_fex_POA_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
 
 arr F_fex_POAzeroRelVel::phi(const FrameL& F) {
   CHECK_EQ(order, 1, "");
-  rai::ForceExchange* ex = getContact(F(1,0), F(1,1));
+  rai::ForceExchange* ex = getContact(F(1, 0), F(1, 1));
 #if 1
   arr y = POA_rel_vel(F, ex, false);
   return y;
@@ -754,7 +753,7 @@ arr F_fex_POAzeroRelVel::phi(const FrameL& F) {
   arr y = v1 - v2;
   if(normalOnly) {
     arr normal = F_PairCollision(F_PairCollision::_normal, true)
-                   .eval(F[-1]);
+                 .eval(F[-1]);
 //    if(!!J) J = ~normal*J + ~y*normal.J();
     y = ~normal * y;
   }
@@ -766,16 +765,16 @@ arr F_fex_ElasticVel::phi(const FrameL& F) {
   CHECK_EQ(order, 2, "");
   CHECK_EQ(F.d0, 3, "");
   CHECK_EQ(F.d1, 2, "");
-  rai::Frame *f1 = F(1,0);
-  rai::Frame *f2 = F(1,1);
+  rai::Frame* f1 = F(1, 0);
+  rai::Frame* f2 = F(1, 1);
 
   rai::ForceExchange* ex = getContact(f1, f2);
-  arr v0 = POA_rel_vel(F({0,1}), ex, false);
-  arr v1 = POA_rel_vel(F({1,2}), ex, true);
+  arr v0 = POA_rel_vel(F({0, 1}), ex, false);
+  arr v1 = POA_rel_vel(F({1, 2}), ex, true);
 
   //-- from the geometry we need normal
-  arr normal = F_PairCollision (F_PairCollision::_normal, false)
-                 .eval(F[-2]);
+  arr normal = F_PairCollision(F_PairCollision::_normal, false)
+               .eval(F[-2]);
 
   arr y1, y2;
 //  f1->C.kinematicsZero(y1, J1, 3);
@@ -807,7 +806,7 @@ arr F_fex_ElasticVel::phi(const FrameL& F) {
 
 arr F_fex_NormalVelIsComplementary::phi(const FrameL& F) {
   CHECK_EQ(F.d0, 2, "");
-  rai::ForceExchange* ex = getContact(F(0,0), F(0,1));
+  rai::ForceExchange* ex = getContact(F(0, 0), F(0, 1));
 
   //-- get the pre and post V:
 //  POA_rel_vel(v0, Jv0, Ktuple, con, false);
@@ -824,18 +823,18 @@ arr F_fex_NormalVelIsComplementary::phi(const FrameL& F) {
 
 //===========================================================================
 
-arr F_PushRadiusPrior::phi(const FrameL& F){
+arr F_PushRadiusPrior::phi(const FrameL& F) {
 //  CHECK_EQ(F.N, 4, "");
 
-  rai::Frame *stick = F.elem(0);
-  rai::Frame *obj = F.elem(1);
-  rai::Frame *target = (F.d1==3?F.elem(2):0);
+  rai::Frame* stick = F.elem(0);
+  rai::Frame* obj = F.elem(1);
+  rai::Frame* target = (F.d1==3?F.elem(2):0);
 
   //poa
   arr p;
-  if(rai::getContact(stick, obj, false)){
+  if(rai::getContact(stick, obj, false)) {
     p = F_fex_POA() .eval({stick, obj});
-  }else{
+  } else {
     p = F_Position() .eval({stick});
   }
 
@@ -843,14 +842,14 @@ arr F_PushRadiusPrior::phi(const FrameL& F){
   arr c = F_Position() .eval({obj});
 
   arr dir;
-  if(F.N==3){ //target is given as 3rd frame
+  if(F.N==3) { //target is given as 3rd frame
     CHECK_EQ(order, 0, "");
     dir = -c;
     dir += F_Position() .eval({target});
-  }else{ //target is implicit in object velocity
+  } else { //target is implicit in object velocity
     CHECK_EQ(order, 1, "");
     //object velocity
-    dir = F_Position() .setOrder(1) .eval({F(0,1),F(1,1)});
+    dir = F_Position() .setOrder(1) .eval({F(0, 1), F(1, 1)});
   }
 
   op_normalize(dir, 1e-3);
@@ -859,14 +858,14 @@ arr F_PushRadiusPrior::phi(const FrameL& F){
   return y;
 }
 
-arr F_PushAligned::phi(const FrameL& F){
+arr F_PushAligned::phi(const FrameL& F) {
   CHECK_EQ(F.N, 3, "");
 
   //poa
   arr a;
-  if(rai::getContact(F.elem(0), F.elem(1), false)){
+  if(rai::getContact(F.elem(0), F.elem(1), false)) {
     a = F_fex_POA() .eval({F.elem(0), F.elem(1)});
-  }else{
+  } else {
     a = F_Position() .eval({F.elem(0)});
   }
   arr b = F_Position() .eval({F.elem(1)});
@@ -877,14 +876,14 @@ arr F_PushAligned::phi(const FrameL& F){
   return y;
 }
 
-arr F_PushSide::phi(const FrameL& F){
+arr F_PushSide::phi(const FrameL& F) {
   CHECK_EQ(F.N, 3, "");
 
   //poa
   arr a;
-  if(rai::getContact(F.elem(0), F.elem(1), false)){
+  if(rai::getContact(F.elem(0), F.elem(1), false)) {
     a = F_fex_POA() .eval({F.elem(0), F.elem(1)});
-  }else{
+  } else {
     a = F_Position() .eval({F.elem(0)});
   }
   arr b = F_Position() .eval({F.elem(1)});

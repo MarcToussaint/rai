@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -118,7 +118,6 @@ struct Imp_NoPenetrations : SimulationImp {
   virtual void modConfiguration(Simulation& S, double tau);
 };
 
-
 //===========================================================================
 
 Simulation::Simulation(Configuration& _C, Engine _engine, int _verbose)
@@ -145,7 +144,7 @@ Simulation::Simulation(Configuration& _C, Engine _engine, int _verbose)
 }
 
 Simulation::~Simulation() {
-  if(verbose>0){
+  if(verbose>0) {
     LOG(0) <<"shutting down Simulation";
   }
 }
@@ -157,7 +156,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   }
 
   arr ucontrol = u_control; //a copy to allow for perturbations
-  if(!ucontrol.N && u_mode==_position && teleopCallbacks){
+  if(!ucontrol.N && u_mode==_position && teleopCallbacks) {
     ucontrol = teleopCallbacks->q_ref;
   }
 
@@ -179,7 +178,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     q_ref = q;
     qDot_ref = ucontrol;
   } else if(u_mode==_posVel) {
-    ucontrol.reshape(2,-1);
+    ucontrol.reshape(2, -1);
     q_ref = ucontrol[0];
     qDot_ref = ucontrol[1];
   } else if(u_mode==_acceleration) {
@@ -203,13 +202,13 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   //-- call the physics engine
   if(engine==_physx) {
-    if(self->physx->opt().jointedBodies || self->physx->opt().multiBody){
+    if(self->physx->opt().jointedBodies || self->physx->opt().multiBody) {
       self->physx->pushFrameStates(C, NoArr, true); //kinematicOnly (usually none anyway)
-      if(q_ref.N){
+      if(q_ref.N) {
         C.setJointState(q_ref);
         self->physx->pushMotorStates(C); //qDot_ref, motor control
       }
-    }else{
+    } else {
       if(q_ref.N) C.setJointState(q_ref); //kinematic control
       if(qDot_ref.N) self->qDot = qDot_ref;
       self->physx->pushFrameStates(C, NoArr, true); //kinematicOnly
@@ -219,7 +218,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->physx->pullMotorStates(C, self->qDot);  //why not also pull the motor states?
   } else if(engine==_bullet) {
     self->bullet->pushKinematicStates(C);
-    if(self->bullet->opt().multiBody){
+    if(self->bullet->opt().multiBody) {
       if(ucontrol.nd!=2) LOG(1) <<"stepping motorized bullet without ctrl reference";
       else self->bullet->setMotorQ(ucontrol[0], ucontrol[1]); //C.getJointState(), self->qDot);
     }
@@ -230,11 +229,10 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->bridgeC.view(false, "bullet bridge");
 #endif
   } else if(engine==_kinematic) {
-    if(q_ref.N){
+    if(q_ref.N) {
       C.setJointState(q_ref);
     }
   } else NIY;
-
 
   //-- imps after physics
   for(shared_ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_afterPhysics) {
@@ -245,8 +243,8 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   if(verbose>0) self->updateDisplayData(time, C);
 
-  if(engine==_physx && verbose>3){
-    if(!self->glDebug){
+  if(engine==_physx && verbose>3) {
+    if(!self->glDebug) {
       self->glDebug = make_shared<OpenGL>("physx sim DEBUG", 500, 300);
       self->glDebug->camera.setDefault();
       self->glDebug->add(glStandardScene);
@@ -256,12 +254,12 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   }
 }
 
-void Simulation::setSplineRef(const arr& _x, const arr& _times, bool append){
+void Simulation::setSplineRef(const arr& _x, const arr& _times, bool append) {
   arr path = _x;
   if(_x.nd==1) path.reshape(1, _x.N);
 
   arr times = _times;
-  if(times.N==1 && path.d0>1){
+  if(times.N==1 && path.d0>1) {
     double t = times.elem();
     times.setGrid(1, t/(path.d0), t, path.d0-1);
   }
@@ -271,7 +269,7 @@ void Simulation::setSplineRef(const arr& _x, const arr& _times, bool append){
   else self->ref.overwriteSmooth(path, times, time);
 }
 
-void Simulation::resetSplineRef(){
+void Simulation::resetSplineRef() {
   self->ref.initialize(C.getJointState(), NoArr, time);
 }
 
@@ -288,7 +286,7 @@ bool getFingersForGripper(rai::Frame*& gripper, rai::Joint*& joint, rai::Frame*&
   //browse all children of the gripper and find by name
   FrameL F;
   gripper->getSubtree(F);
-  for(rai::Frame* f:F){
+  for(rai::Frame* f:F) {
     if(f->name.endsWith("finger1")) fing1=f;
     if(f->name.endsWith("finger2")) fing2=f;
     if(f->joint && f->joint->dim==1 && !f->joint->active && !f->joint->mimic) joint = f->joint;
@@ -327,7 +325,7 @@ void Simulation::moveGripper(const char* gripperFrameName, double width, double 
   if(obj) {
     if(verbose>1) LOG(1) <<"initiating opening gripper " <<gripper->name <<" and releasing obj " <<obj->name <<" width:" <<width <<" speed:" <<speed;
     detach(obj);
-  }else{
+  } else {
     if(verbose>1) LOG(1) <<"initiating opening gripper " <<gripper->name <<" (without releasing obj)" <<" width:" <<width <<" speed:" <<speed;
   }
 
@@ -341,7 +339,7 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
   if(!gripper) return;
 
-  rai::Frame *finger1 = fing1, *finger2=fing2;
+  rai::Frame* finger1 = fing1, *finger2=fing2;
   while(!finger1->shape || finger1->shape->type()!=ST_capsule) finger1=finger1->children.last();
   while(!finger2->shape || finger2->shape->type()!=ST_capsule) finger2=finger2->children.last();
 
@@ -354,7 +352,7 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   FrameL fing2close;
   for(rai::Proxy& p:C.proxies) {
     if(!p.collision) p.calc_coll();
-    if(p.d<.2){
+    if(p.d<.2) {
       if(p.a == finger1) fing1close.setAppend(p.b);
       if(p.b == finger1) fing1close.setAppend(p.a);
       if(p.a == finger2) fing2close.setAppend(p.b);
@@ -393,31 +391,31 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   imps.append(make_shared<Imp_CloseGripper>(gripper, joint, fing1, fing2, obj, speed));
 }
 
-void Simulation::closeGripperGrasp(const char* gripperFrameName, const char* objectName, double width, double speed, double force){
+void Simulation::closeGripperGrasp(const char* gripperFrameName, const char* objectName, double width, double speed, double force) {
   rai::Frame* gripper, *fing1, *fing2;
   rai::Joint* joint;
   getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
   if(!gripper) return;
 
-  rai::Frame *finger1 = fing1, *finger2=fing2;
+  rai::Frame* finger1 = fing1, *finger2=fing2;
   while(!finger1->shape || finger1->shape->type()!=ST_capsule) finger1=finger1->children.last();
   while(!finger2->shape || finger2->shape->type()!=ST_capsule) finger2=finger2->children.last();
 
-  rai::Frame *obj = 0;
+  rai::Frame* obj = 0;
   if(objectName) obj = C.getFrame(objectName);
   if(verbose>1) LOG(1) <<"initiating grasp of object " <<(obj?obj->name:"--nil--") <<" (prefixed)";
 
   imps.append(make_shared<Imp_CloseGripper>(gripper, joint, fing1, fing2, obj, speed));
 }
 
-bool Simulation::gripperIsDone(const char* gripperFrameName){
-  rai::Frame *gripper = C.getFrame(gripperFrameName);
+bool Simulation::gripperIsDone(const char* gripperFrameName) {
+  rai::Frame* gripper = C.getFrame(gripperFrameName);
   if(!gripper) {
     LOG(-1) <<"you passed me a non-existing gripper name!";
     return true;
   }
   gripper = gripper->getUpwardLink();
-  for(auto& imp: imps){
+  for(auto& imp: imps) {
     if(std::dynamic_pointer_cast<Imp_GripperMove>(imp) && std::dynamic_pointer_cast<Imp_GripperMove>(imp)->gripper==gripper) return false;
     if(std::dynamic_pointer_cast<Imp_CloseGripper>(imp) && std::dynamic_pointer_cast<Imp_CloseGripper>(imp)->gripper==gripper) return false;
   }
@@ -469,7 +467,7 @@ const arr& Simulation::get_qDot() {
   return self->qDot;
 }
 
-double Simulation::getTimeToSplineEnd(){
+double Simulation::getTimeToSplineEnd() {
   return self->ref.getEndTime()-time;
 }
 
@@ -497,28 +495,28 @@ bool Simulation::getGripperIsClose(const char* gripperFrameName) {
   if(!gripper) return -1.;
   double speed=.1;
   if(joint->frame->parent->name.contains("robotiq")) speed=-1.;
-  if(joint){
+  if(joint) {
     double q = joint->get_q();
     if((speed>0. && q<joint->limits(0)+.01)
-       || (speed<0. && q>joint->limits(1)-.01)) return true;
-  }else{
+        || (speed<0. && q>joint->limits(1)-.01)) return true;
+  } else {
     NIY;
   }
   return false;
 }
 
 bool Simulation::getGripperIsOpen(const char* gripperFrameName) {
-  rai::Frame *gripper, *fing1, *fing2;
+  rai::Frame* gripper, *fing1, *fing2;
   rai::Joint* joint;
   getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
   if(!gripper) return false;
   double speed=-1.;
   if(joint->frame->parent->name.contains("robotiq")) speed=1.;
-  if(joint){
+  if(joint) {
     double q = joint->get_q();
     if((speed>0. && q<joint->limits(0)+.001)
-       || (speed<0. && q>joint->limits(1)-.001)) return true;
-  }else{
+        || (speed<0. && q>joint->limits(1)-.001)) return true;
+  } else {
     NIY;
   }
   return false;
@@ -538,7 +536,7 @@ void Simulation::addImp(Simulation::ImpType type, const StringA& frames, const a
     FrameL F = C.getFrames(frames);
     auto block = make_shared<Imp_BlockJoints>(F, *this);
     imps.append(block);
-  } else if(type==_noPenetrations){
+  } else if(type==_noPenetrations) {
     imps.append(make_shared<Imp_NoPenetrations>());
   } else {
     NIY;
@@ -594,7 +592,7 @@ struct Simulation_DisplayThread : Thread, ViewableConfigCopy {
     //write_png(gl->captureImage, STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"));
   }
 
-  void close(){
+  void close() {
     close_gl();
   }
 
@@ -647,33 +645,33 @@ void Simulation_self::updateDisplayData(double _time, const rai::Configuration& 
 #if 0
   bool copyMeshes = false;
   if(_C.frames.N!=display->Ccopy.frames.N) copyMeshes = true;
-  else{
-    for(uint i=0;i<_C.frames.N;i++){
-      rai::Shape *s = _C.frames.elem(i)->shape;
-      rai::Shape *r = display->Ccopy.frames.elem(i)->shape;
-      if((!s) != (!r)){ copyMeshes=true; break; }
+  else {
+    for(uint i=0; i<_C.frames.N; i++) {
+      rai::Shape* s = _C.frames.elem(i)->shape;
+      rai::Shape* r = display->Ccopy.frames.elem(i)->shape;
+      if((!s) != (!r)) { copyMeshes=true; break; }
       if(!s) continue;
-      if(s->_type != r->_type){ copyMeshes=true; break; }
-      if(s->size != r->size){ copyMeshes=true; break; }
-      if(s->_mesh && r->_mesh && (s->_mesh->V.N != r->_mesh->V.N)){ copyMeshes=true; break; }
+      if(s->_type != r->_type) { copyMeshes=true; break; }
+      if(s->size != r->size) { copyMeshes=true; break; }
+      if(s->_mesh && r->_mesh && (s->_mesh->V.N != r->_mesh->V.N)) { copyMeshes=true; break; }
     }
   }
-  if(copyMeshes){
+  if(copyMeshes) {
     display->Ccopy.copy(_C, false);
     //deep copy meshes!
     for(rai::Frame* f:display->Ccopy.frames) if(f->shape) {
-      if(f->shape->_mesh){
-        f->shape->_mesh = make_shared<Mesh> (*f->shape->_mesh.get());
-        f->shape->glListId = 0;
+        if(f->shape->_mesh) {
+          f->shape->_mesh = make_shared<Mesh> (*f->shape->_mesh.get());
+          f->shape->glListId = 0;
+        }
       }
-    }
     LOG(0) <<"simulation frames changed: #frames: " <<display->Ccopy.frames.N <<" last: " <<display->Ccopy.frames(-1)->name;
   }
 #if 0
   display->Ccopy.setFrameState(_C.getFrameState());
 #else
-  for(uint i=0;i<_C.frames.N;i++){
-    rai::Frame *f = _C.frames.elem(i);
+  for(uint i=0; i<_C.frames.N; i++) {
+    rai::Frame* f = _C.frames.elem(i);
     if(f->shape) display->Ccopy.frames.elem(i)->set_X() = f->ensure_X();
   }
 #endif
@@ -720,10 +718,10 @@ Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Joint* _joint,  Frame* _fing
   else speed *= -.1;
 
 //  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
-  if(joint){
+  if(joint) {
     limits = joint->limits;
     q = joint->get_q();
-  }else{
+  } else {
     limits = fing1->ats->get<arr>("limits");
     axis = fing1->get_Q().pos;
     q = axis.sum();
@@ -731,26 +729,26 @@ Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Joint* _joint,  Frame* _fing
   }
 }
 
-void Simulation::attach(Frame* gripper, Frame* obj){
+void Simulation::attach(Frame* gripper, Frame* obj) {
   obj = obj->getUpwardLink();
   gripper = gripper->getUpwardLink();
-  Joint *j = C.attach(gripper, obj);
+  Joint* j = C.attach(gripper, obj);
 #if 0
   obj->inertia->type = BT_kinematic;
 
   // tell engine that object is now kinematic, not dynamic
   if(engine==_physx) {
     self->physx->changeObjectType(obj, BT_kinematic);
-  } else if(engine==_bullet){
+  } else if(engine==_bullet) {
     self->bullet->changeObjectType(obj, BT_kinematic);
-  } else if(engine==_kinematic){
+  } else if(engine==_kinematic) {
   } else NIY;
 #else
   if(engine==_physx) {
     self->physx->addJoint(j);
-  } else if(engine==_bullet){
+  } else if(engine==_bullet) {
     NIY;
-  } else if(engine==_kinematic){
+  } else if(engine==_kinematic) {
   } else NIY;
 #endif
 }
@@ -786,15 +784,15 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
   //-- actually close gripper until both distances are < .001
   q += speed*tau;
   //cout <<"q: " <<q <<endl;
-  if(joint){
+  if(joint) {
     S.C.setDofState({q}, {joint});
-  }else{
+  } else {
     fing1->set_Q()->pos =  q*axis;
     fing2->set_Q()->pos = -q*axis;
   }
 
   if((speed>0. && q>limits(1))
-     || (speed<0. && q < limits(0))) { //stop grasp by joint limits -> unsuccessful
+      || (speed<0. && q < limits(0))) { //stop grasp by joint limits -> unsuccessful
     if(S.verbose>1) {
       LOG(1) <<"terminating closing gripper (limit) - nothing grasped";
     }
@@ -837,10 +835,10 @@ Imp_GripperMove::Imp_GripperMove(Frame* _gripper, Joint* _joint, Frame* _fing1, 
 
   arr limits;
 //  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
-  if(joint){
+  if(joint) {
     limits = joint->limits;
     q = joint->get_q();
-  }else{
+  } else {
     limits = fing1->ats->get<arr>("limits");
     axis = fing1->get_Q().pos;
     q = axis.sum();
@@ -861,15 +859,15 @@ void Imp_GripperMove::modConfiguration(Simulation& S, double tau) {
 
   //-- actually open gripper until limit
   q += speed*tau;
-  if(joint){
+  if(joint) {
     S.C.setDofState({q}, {joint});
-  }else{
+  } else {
     fing1->set_Q()->pos =  q*axis;
     fing2->set_Q()->pos = -q*axis;
   }
 
   if((speed>0 && q>stop)
-     || (speed<0 && q<stop)){ //stop opening
+      || (speed<0 && q<stop)) { //stop opening
     if(S.verbose>1) LOG(1) <<"terminating opening gripper " <<gripper->name <<" at width " <<q;
     killMe = true;
   }
@@ -921,27 +919,27 @@ void Imp_BlockJoints::modConfiguration(Simulation& S, double tau) {
   S.C.setJointState(q);
 }
 
-void Imp_NoPenetrations::modConfiguration(Simulation& S, double tau){
+void Imp_NoPenetrations::modConfiguration(Simulation& S, double tau) {
 
   uintA dynamicFrames;
   for(rai::Frame* f: S.C.getLinks()) {
     if(f->inertia)
-        if(f->inertia->type == rai::BT_dynamic) {
-            FrameL parts = {f};
-            f->getRigidSubFrames(parts);
-            for(rai::Frame* p: parts) dynamicFrames.append(p->ID);
+      if(f->inertia->type == rai::BT_dynamic) {
+        FrameL parts = {f};
+        f->getRigidSubFrames(parts);
+        for(rai::Frame* p: parts) dynamicFrames.append(p->ID);
 //            cout << f->name.p << endl;
-        }
+      }
   }
 
-  for(uint t=0;t<100;t++){
+  for(uint t=0; t<100; t++) {
 
     arr y, J;
     S.C.kinematicsZero(y, J, 1);
 
     // Check penetrations between robot vs. static objects
     S.C.stepFcl();
-    for(rai::Proxy& p: S.C.proxies){
+    for(rai::Proxy& p: S.C.proxies) {
       if(!(dynamicFrames.contains(p.a->ID) || dynamicFrames.contains(p.b->ID))) {
         if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01) continue;
         if(!p.collision) p.calc_coll();
@@ -960,7 +958,6 @@ void Imp_NoPenetrations::modConfiguration(Simulation& S, double tau){
       }
     }
 
-
     // Resolve penetration
     arr q = S.C.getJointState();
 //    q -= 0.3*pseudoInverse(J, NoArr, 1e-2) * y;
@@ -976,23 +973,23 @@ void Imp_NoPenetrations::modConfiguration(Simulation& S, double tau){
 
 //===========================================================================
 
-uint& Simulation::pngCount(){
+uint& Simulation::pngCount() {
   return self->display->pngCount;
 }
 
-Mutex& Simulation::displayMutex(){
+Mutex& Simulation::displayMutex() {
   return self->display->mux;
 }
 
-std::shared_ptr<PhysXInterface> Simulation::hidden_physx(){
+std::shared_ptr<PhysXInterface> Simulation::hidden_physx() {
   return self->physx;
 }
 
-OpenGL& Simulation::hidden_gl(){
+OpenGL& Simulation::hidden_gl() {
   return self->display->ensure_gl();
 }
 
-void Simulation::loadTeleopCallbacks(){
+void Simulation::loadTeleopCallbacks() {
   CHECK(!teleopCallbacks, "");
   teleopCallbacks = make_shared<TeleopCallbacks>(C);
   self->display->gl->addClickCall(teleopCallbacks.get());
@@ -1000,21 +997,21 @@ void Simulation::loadTeleopCallbacks(){
   self->display->gl->addHoverCall(teleopCallbacks.get());
 }
 
-bool TeleopCallbacks::hasNewMarker(){
-  if(markerWasSet){ markerWasSet=false; return true; }
+bool TeleopCallbacks::hasNewMarker() {
+  if(markerWasSet) { markerWasSet=false; return true; }
   return false;
 }
 
-bool TeleopCallbacks::clickCallback(OpenGL& gl){
+bool TeleopCallbacks::clickCallback(OpenGL& gl) {
   LOG(0) <<"click";
-  if(gl.modifiersCtrl() && gl.mouseIsDown){
+  if(gl.modifiersCtrl() && gl.mouseIsDown) {
     LOG(0) <<"creating marker " <<nMarkers;
     arr normal;
     arr x = gl.get3dMousePos(normal);
     uint id = gl.get3dMouseObjID();
     if(id>=C.frames.N) return true;
-    rai::Frame *f = C.frames(id);
-    rai::Frame *m = marker;
+    rai::Frame* f = C.frames(id);
+    rai::Frame* m = marker;
     if(!m) m = C.addFrame(STRING("m" <<nMarkers <<"_" <<f->name));
     else if(m->parent) m->unLink();
     m->setParent(f);
@@ -1029,30 +1026,30 @@ bool TeleopCallbacks::clickCallback(OpenGL& gl){
   return true;
 }
 
-bool TeleopCallbacks::keyCallback(OpenGL& gl){
+bool TeleopCallbacks::keyCallback(OpenGL& gl) {
   if(gl.pressedkey=='q') stop=true;
   return true;
 }
 
-bool TeleopCallbacks::hoverCallback(OpenGL& gl){
+bool TeleopCallbacks::hoverCallback(OpenGL& gl) {
   grab = gl.modifiersShift();
   if(!mouseDepth) mouseDepth = gl.captureDepth(gl.mouseposy, gl.mouseposx);
-  if(mouseDepth<.01 || mouseDepth==1.){
+  if(mouseDepth<.01 || mouseDepth==1.) {
     mouseDepth=0.;
     grab=false;
   }
-  if(grab){
+  if(grab) {
     arr x = {double(gl.mouseposx), double(gl.mouseposy), mouseDepth};
     gl.camera.unproject_fromPixelsAndGLDepth(x, gl.width, gl.height);
 
-    if(oldx.N){
+    if(oldx.N) {
       arr del = x-oldx;
       q_ref(0) += del(0);
       q_ref(1) += del(1);
       q_ref(2) += del(2);
     }
     oldx=x;
-  }else{
+  } else {
     oldx.clear();
     mouseDepth=0.;
   }

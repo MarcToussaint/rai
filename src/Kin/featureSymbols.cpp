@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -82,7 +82,7 @@ auto getCtrlFramesAndScale(const rai::Configuration& C) {
   return R;
 }
 
-double shapeSize(const rai::Frame *f, uint i) {
+double shapeSize(const rai::Frame* f, uint i) {
   rai::Shape* s = f->shape;
   if(!s) {
     for(rai::Frame* b:f->children) if(b->name==f->name && b->shape) { s=b->shape; break; }
@@ -96,7 +96,7 @@ double shapeSize(const rai::Frame *f, uint i) {
   return s->size(i);
 }
 
-std::shared_ptr<Feature> Feature::deepCopy(){
+std::shared_ptr<Feature> Feature::deepCopy() {
 #define _cpy(T) { T* f = dynamic_cast<T*>(this); if(f) return make_shared<T>(*f); }
   _cpy(F_Position);
   _cpy(F_PositionDiff);
@@ -175,7 +175,6 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
   else if(feat==FS_vectorZDiff) {  f=make_shared<F_VectorDiff>(Vector_z, Vector_z); }
   else if(feat==FS_vectorZRel) {  f=make_shared<F_VectorRel>(Vector_z); }
 
-
   else if(feat==FS_pairCollision_negScalar) {  f=make_shared<F_PairCollision>(F_PairCollision::_negScalar, false); }
   else if(feat==FS_pairCollision_vector) {     f=make_shared<F_PairCollision>(F_PairCollision::_vector, false); }
   else if(feat==FS_pairCollision_normal) {     f=make_shared<F_PairCollision>(F_PairCollision::_normal, true); }
@@ -184,7 +183,7 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
 
   else if(feat==FS_gazeAt) {
     f=make_shared<F_PositionRel>();
-    f->scale = arr({2,3}, {1., 0., 0., 0., 1., 0.}); //pick the xy- coordinated
+    f->scale = arr({2, 3}, {1., 0., 0., 0., 1., 0.}); //pick the xy- coordinated
   }
 
   else if(feat==FS_angularVel) { f=make_shared<F_AngVel>(); }
@@ -192,8 +191,7 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
   else if(feat==FS_accumulatedCollisions) {
     f=make_shared<F_AccumulatedCollisions>(0., true, false);
     if(!frames.N) f->frameIDs = framesToIndices(C.frames);
-  }
-  else if(feat==FS_jointLimits) {
+  } else if(feat==FS_jointLimits) {
     f=make_shared<F_qLimits>();
     if(!frames.N) f->frameIDs = framesToIndices(C.frames);
   }
@@ -222,10 +220,9 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
 //    map->velCoeff = 1.;
 //    map->accCoeff = 0.;
 //    f = map;
-  }
-  else if(feat==FS_qQuaternionNorms) {
+  } else if(feat==FS_qQuaternionNorms) {
     f = make_shared<F_qQuaternionNorms>();
-    for(const rai::Dof *dof:C.activeDofs){
+    for(const rai::Dof* dof:C.activeDofs) {
       const rai::Joint* j = dof->joint();
       if(j && (j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_rigid)) f->frameIDs.append(j->frame->ID);
     }
@@ -234,7 +231,7 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
   else HALT("can't interpret feature symbols: " <<feat);
 
 //  if(!f->frameIDs.N) f->frameIDs = C.getFrameIDs(frames);
-  if(frames.N){
+  if(frames.N) {
     CHECK(!f->frameIDs.N, "frameIDs are already set");
     if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(C.frames);
     else f->frameIDs = C.getFrameIDs(frames);

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -24,7 +24,7 @@ void F_AboveBox::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(box->shape->type(), rai::ST_ssBox, "the 2nd shape needs to be a box");
 
   arr pos = F_PositionRel().eval({pnt, box});
-  arr proj({2,3}, {1,0,0,0,1,0});
+  arr proj({2, 3}, {1, 0, 0, 0, 1, 0});
   pos = proj * pos;
   //  pos.J() = proj * pos.J();
   double radMargin = margin + box->shape->radius();
@@ -35,7 +35,6 @@ void F_AboveBox::phi2(arr& y, arr& J, const FrameL& F) {
 }
 
 //===========================================================================
-
 
 void F_InsideBox::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.N, 2, "");
@@ -91,14 +90,14 @@ void F_GraspOppose::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 0, "");
   CHECK_EQ(F.N, 3, "");
   arr D1 = F_PairCollision(F_PairCollision::_vector, true)
-             .eval({F.elem(0), F.elem(2)});
+           .eval({F.elem(0), F.elem(2)});
   arr D2 = F_PairCollision(F_PairCollision::_vector, true)
-             .eval({F.elem(1), F.elem(2)});
+           .eval({F.elem(1), F.elem(2)});
 
   if(central<=0.) {
     y = D1 + D2;
     if(!!J) J=y.J_reset();
-  }else{
+  } else {
 
     arr n1 = D1;
     arr n2 = D2;
@@ -132,7 +131,7 @@ arr F_TorusGraspEq::phi(const FrameL& F) {
   op_crossProduct(tangent, vec_z, pos);
   arr y1 = ~tangent * vec;
 
-  arr y2 = arr{{1,3},{0.,0.,1.}} * pos;
+  arr y2 = arr{{1, 3}, {0., 0., 1.}} * pos;
 
   arr y3 = ~pos * pos;
   y3 -= r1*r1;

@@ -113,7 +113,6 @@ int main(int argc,char **argv){
       while(komo_way->view_play(true));
     }
 
-
     //-- setup pathconfig
     komo_path->initWithWaypoints(komo_way->getPath_qAll());
     komo_path->pathConfig.gl().setTitle("PATH");

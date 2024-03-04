@@ -1,6 +1,14 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "LeapMPC.h"
 
-LeapMPC::LeapMPC(rai::Configuration& C, double timingScale){
+LeapMPC::LeapMPC(rai::Configuration& C, double timingScale) {
   komo.setConfig(C, false);
 #if 0
   komo.setTiming(2., 1, .1, 2);
@@ -13,7 +21,7 @@ LeapMPC::LeapMPC(rai::Configuration& C, double timingScale){
 
   //add a time joint for just the last slice
   {
-    rai::Joint* jt = new rai::Joint(*komo.timeSlices(-1,0), rai::JT_tau);
+    rai::Joint* jt = new rai::Joint(*komo.timeSlices(-1, 0), rai::JT_tau);
     jt->H = 0.;
     //timing cost
     komo.addObjective({2}, make_shared<F_qTime>(), {"world"}, OT_f, {timingScale}, {});
@@ -21,7 +29,7 @@ LeapMPC::LeapMPC(rai::Configuration& C, double timingScale){
   }
   cout <<komo.report(true, false) <<endl;
 
-  komo.timeSlices(-1,0)->setJointState({100.}); //this should be the tau joint!
+  komo.timeSlices(-1, 0)->setJointState({100.}); //this should be the tau joint!
 #else
   komo.setTiming(1., 3, 1., 1);
 
@@ -30,11 +38,10 @@ LeapMPC::LeapMPC(rai::Configuration& C, double timingScale){
   cout <<komo.report(true, false) <<endl;
 #endif
 
-
   //MISSING: THE TASK COSTS..
 }
 
-void LeapMPC::reinit(const arr& x, const arr& v){
+void LeapMPC::reinit(const arr& x, const arr& v) {
   //set the prefix to init:
   komo.setConfiguration_qOrg(-1, x);
   komo.setConfiguration_qOrg(-2, x - komo.tau*v);
@@ -44,12 +51,12 @@ void LeapMPC::reinit(const arr& x, const arr& v){
 //  komo.timeSlices(-1,0)->setJointState({100.}); //this should be the tau joint!
 }
 
-void LeapMPC::reinit(const rai::Configuration& C){
+void LeapMPC::reinit(const rai::Configuration& C) {
   //shifts only prefix, not the whole trajectory! (would not make sense for x(H) \gets x(T) )
   komo.updateAndShiftPrefix(C);
 }
 
-void LeapMPC::solve(){
+void LeapMPC::solve() {
   //re-run KOMO
   rai::OptOptions opt;
   opt.stopTolerance = 1e-4;

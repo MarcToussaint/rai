@@ -69,7 +69,6 @@ void lgpTool(){
     return;
   }
 
-
   if(rai::checkParameter<bool>("play")){
     lgp.player();
     return;

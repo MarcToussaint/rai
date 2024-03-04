@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -27,12 +27,12 @@ template<> const char* rai::Enum<BoundType>::names []= {
 };
 
 namespace rai {
-  Array<SkeletonSymbol> modes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, };
+Array<SkeletonSymbol> modes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, };
 }
 
 shared_ptr<KOMO_based_bound> skeleton2Bound(shared_ptr<KOMO>& komo, BoundType boundType, const rai::Skeleton& S,
-                                  const rai::Configuration& startKinematics,
-                                  bool collisions, const arrA& waypoints) {
+    const rai::Configuration& startKinematics,
+    bool collisions, const arrA& waypoints) {
 
   if(boundType==BD_pose)
     return make_shared<PoseBound>(komo, S, startKinematics, collisions);
@@ -46,11 +46,10 @@ shared_ptr<KOMO_based_bound> skeleton2Bound(shared_ptr<KOMO>& komo, BoundType bo
   if(boundType==BD_seqPath)
     return make_shared<SeqPathBound>(komo, S, startKinematics, collisions, waypoints);
 
-   HALT("should not be here!");
+  HALT("should not be here!");
 
   return shared_ptr<KOMO_based_bound>();
 }
-
 
 //===========================================================================
 
@@ -111,24 +110,23 @@ PoseBound::PoseBound(shared_ptr<KOMO>& komo,
   //-- deactivate all velocity objectives except for transition
   for(shared_ptr<Objective>& o:komo->objectives) {
     if(o->feat->order>0
-       && !std::dynamic_pointer_cast<F_qItself>(o->feat)
-       && !std::dynamic_pointer_cast<F_Pose>(o->feat)
-       && !std::dynamic_pointer_cast<F_PoseRel>(o->feat)) {
-      o->times={1e6};
+        && !std::dynamic_pointer_cast<F_qItself>(o->feat)
+        && !std::dynamic_pointer_cast<F_Pose>(o->feat)
+        && !std::dynamic_pointer_cast<F_PoseRel>(o->feat)) {
+      o->times= {1e6};
     }
   }
   for(shared_ptr<GroundedObjective>& o:komo->objs) {
     if(o->feat->order>0
-       && !std::dynamic_pointer_cast<F_qItself>(o->feat)
-       && !std::dynamic_pointer_cast<F_Pose>(o->feat)
-       && !std::dynamic_pointer_cast<F_PoseRel>(o->feat)) {
+        && !std::dynamic_pointer_cast<F_qItself>(o->feat)
+        && !std::dynamic_pointer_cast<F_Pose>(o->feat)
+        && !std::dynamic_pointer_cast<F_PoseRel>(o->feat)) {
       o->feat.reset();
     }
   }
-  for(uint i=komo->objs.N;i--;) if(!komo->objs(i)->feat){
-    komo->objs.remove(i);
-  }
-
+  for(uint i=komo->objs.N; i--;) if(!komo->objs(i)->feat) {
+      komo->objs.remove(i);
+    }
 
   if(collisions) komo->add_collision(false);
 

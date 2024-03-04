@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -13,7 +13,7 @@
 
 //===========================================================================
 
-double Conv_NLP_ScalarProblem::scalar(arr& g, arr& H, const arr& x){
+double Conv_NLP_ScalarProblem::scalar(arr& g, arr& H, const arr& x) {
   arr phi, J;
   P->evaluate(phi, J, x);
 
@@ -26,7 +26,7 @@ double Conv_NLP_ScalarProblem::scalar(arr& g, arr& H, const arr& x){
     if(P->featureTypes.p[i]==OT_sos) f += rai::sqr(phi.p[i]);
     else if(P->featureTypes.p[i]==OT_f) f += phi.p[i];
     else HALT("this must be an unconstrained problem!")
-  }
+    }
 
   if(!!g) { //gradient
     arr coeff=zeros(phi.N);
@@ -66,13 +66,10 @@ double Conv_NLP_ScalarProblem::scalar(arr& g, arr& H, const arr& x){
   return f;
 }
 
-
 //===========================================================================
 //
 // checks and converters
 //
-
-
 
 //void OptOptions::write(std::ostream& os) const {
 //#define WRT(x) os <<#x <<" = " <<x <<endl;

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -164,10 +164,10 @@ struct FOL_World_State : TreeSearchNode {
   FOL_World_State(FOL_World& L, TreeSearchNode* _parent, bool _isTerminal);
 
   //compute
-  virtual void compute(){ HALT("shouldn't be here"); }
+  virtual void compute() { HALT("shouldn't be here"); }
 
   //transition
-  virtual int getNumDecisions(){ return actions.N; }
+  virtual int getNumDecisions() { return actions.N; }
   virtual std::shared_ptr<TreeSearchNode> transition(int action);
 
   //helpers
@@ -178,7 +178,7 @@ struct FOL_World_State : TreeSearchNode {
   //I/O
   virtual void write(std::ostream& os) const;
   virtual void report(std::ostream& os, int verbose) const;
-  virtual void data(Graph &g) const;
+  virtual void data(Graph& g) const;
 };
 
 } //namespace

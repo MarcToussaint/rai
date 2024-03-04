@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include <iosfwd>
@@ -46,7 +54,7 @@ using std::ifstream;
 // enums
 //
 
-namespace rai{
+namespace rai {
 enum ArgWord { _left, _right, _sequence, _path, _xAxis, _yAxis, _zAxis, _xNegAxis, _yNegAxis, _zNegAxis };
 }
 
@@ -89,12 +97,12 @@ struct Stepper {
 //
 
 namespace rai {
-    struct String;
+struct String;
 
 /// An object that represents a log file and/or cout logging, together with log levels read from a cfg file
 struct LogObject {
   std::ofstream* fil=0;
-  bool (*callback)(const char*,int) = 0;
+  bool (*callback)(const char*, int) = 0;
   const char* key;
   int logCoutLevel, logFileLevel;
   LogObject(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0);
@@ -194,8 +202,7 @@ std::istream& operator>>(std::istream& is, const PARSE&);
   inline std::istream& operator>>(std::istream& is, type& x){ NIY; return is; }\
   inline std::ostream& operator<<(std::ostream& os, const type& x){ NIY; return os; }
 
-
 ostream& stdCout();
-namespace rai{
-  const char* atomicTypeidName(const std::type_info& type);
+namespace rai {
+const char* atomicTypeidName(const std::type_info& type);
 }

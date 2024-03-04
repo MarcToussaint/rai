@@ -154,7 +154,6 @@ void waypointHunting(){
 
   //-----------------------
 
-
   rai::CubicSpline S;
   F.getCubicSpline(S, zeros(3), zeros(3));
 

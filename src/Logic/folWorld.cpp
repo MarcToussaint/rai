@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -68,7 +68,7 @@ void FOL_World::init(const Graph& _KB) {
   Quit_keyword = KB["QUIT"];            CHECK(Quit_keyword, "You need to declare the QUIT keyword");
   Wait_keyword = KB["WAIT"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
   Subgoal_keyword = KB["SubgoalDone"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
-  Quit_literal = KB.add<bool>(0, true,{Quit_keyword});
+  Quit_literal = KB.add<bool>(0, true, {Quit_keyword});
   if(Subgoal_keyword) {
     Subgoal_literal = KB.add<bool>("tmp", true, {Subgoal_keyword});
   }
@@ -562,7 +562,7 @@ String FOL_World::callPDDLsolver() {
 
 void FOL_World::report(std::ostream& os) const {
   os <<"FOL_World info:"
-    <<"\n  decisions: ";
+     <<"\n  decisions: ";
   for(Node* n:decisionRules) os <<n->key <<", ";
   os <<"\n  rules: ";
   for(Node* n:worldRules) os <<n->key <<", ";
@@ -631,16 +631,16 @@ void FOL_World::addDecisionSequence(std::istream& is) {
 }
 
 FOL_World_State::FOL_World_State(FOL_World& L, TreeSearchNode* _parent, bool _isTerminal)
-  : TreeSearchNode(_parent), L(L), state(L.createStateCopy()), T_step(L.T_step), T_real(L.T_real), R_total(L.R_total){
+  : TreeSearchNode(_parent), L(L), state(L.createStateCopy()), T_step(L.T_step), T_real(L.T_real), R_total(L.R_total) {
   isTerminal = _isTerminal;
   isFeasible = true;
   isComplete = true;
-  if(!isTerminal){
+  if(!isTerminal) {
     actions = L.get_actions();
   }
 }
 
-std::shared_ptr<TreeSearchNode> FOL_World_State::transition(int action){
+std::shared_ptr<TreeSearchNode> FOL_World_State::transition(int action) {
   CHECK_GE(action, 0, "");
   if(action<(int)children.N && children(action)) HALT("duplicate transition call");
   if(L.state!=state) L.setState(state, T_step);
@@ -658,27 +658,27 @@ std::shared_ptr<TreeSearchNode> FOL_World_State::transition(int action){
   return s;
 }
 
-NodeL FOL_World_State::getDecisionSequence(String& string){
+NodeL FOL_World_State::getDecisionSequence(String& string) {
   Array<FOL_World_State*> folStates;
   folStates.memMove=1;
-  FOL_World_State *s = this;
+  FOL_World_State* s = this;
   while(s) { folStates.prepend(s); s = dynamic_cast<FOL_World_State*>(s->parent); }
   NodeL decisions;
-  for(FOL_World_State* s:folStates) if(s->folDecision){
-    decisions.append(s->folDecision);
-    s->folDecision->key = " ";
-    string <<*s->folDecision;
-    s->folDecision->key = "decision";
-  }
+  for(FOL_World_State* s:folStates) if(s->folDecision) {
+      decisions.append(s->folDecision);
+      s->folDecision->key = " ";
+      string <<*s->folDecision;
+      s->folDecision->key = "decision";
+    }
   return decisions;
 }
 
-void FOL_World_State::getStateSequence(Array<Graph*>& states, arr& times, String& planString){
+void FOL_World_State::getStateSequence(Array<Graph*>& states, arr& times, String& planString) {
   Array<FOL_World_State*> folStates;
   folStates.memMove=states.memMove=1;
-  FOL_World_State *s = this;
+  FOL_World_State* s = this;
   while(s) { folStates.prepend(s); s = dynamic_cast<FOL_World_State*>(s->parent); }
-  for(FOL_World_State* s:folStates){
+  for(FOL_World_State* s:folStates) {
     if(s->name.N) planString <<'\n' <<s->name;
     states.append(s->state);
     times.append(s->T_real);
@@ -699,7 +699,7 @@ void FOL_World_State::write(std::ostream& os) const { os <<'#' <<ID <<'_' <<name
 
 void FOL_World_State::report(std::ostream& os, int verbose) const { os <<'#' <<ID <<'_' <<name <<' '; }
 
-void FOL_World_State::data(Graph& g) const{
+void FOL_World_State::data(Graph& g) const {
   g.add("a", name); //STRING(*folDecision));
 }
 

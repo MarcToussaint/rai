@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -57,7 +57,7 @@ struct Mesh : GLDrawer {
   void setBox(const arr& lo, const arr& up, bool edgesOnly=true);
   Mesh& setDot(); ///< an awkward mesh: just a single dot, not tris (e.g. cvx core of a sphere...)
   void setLine(double l); ///< an awkward mesh: just a single line, not tris (e.g. cvx core of a sphere...)
-  void setQuad(double x_width=1., double y_width=1., const byteA& _texImg={}, bool flipY=false, bool texByReference=false); ///< a quat, optionally with texture
+  void setQuad(double x_width=1., double y_width=1., const byteA& _texImg= {}, bool flipY=false, bool texByReference=false); ///< a quat, optionally with texture
   void setTetrahedron();
   void setOctahedron();
   void setDodecahedron();
@@ -174,6 +174,6 @@ arr MinkowskiSum(const arr& A, const arr& B);
 void inertiaSphere(double* Inertia, double& mass, double density, double radius);
 void inertiaBox(double* Inertia, double& mass, double density, double dx, double dy, double dz);
 void inertiaCylinder(double* Inertia, double& mass, double density, double height, double radius);
-void inertiaMesh(double *I, double& mass, double density, const rai::Mesh& m);
+void inertiaMesh(double* I, double& mass, double density, const rai::Mesh& m);
 
 void glDrawMeshes(void*, OpenGL&);

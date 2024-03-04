@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -349,7 +349,7 @@ void Matrix::setId() {
   m01=m02=m10=m12=m20=m21=0.;
 }
 
-void Matrix::setDiag(const arr& diag){
+void Matrix::setDiag(const arr& diag) {
   CHECK_EQ(diag.N, 3, "");
   setZero();
   m00=diag.elem(0);
@@ -357,7 +357,7 @@ void Matrix::setDiag(const arr& diag){
   m22=diag.elem(2);
 }
 
-void Matrix::setSymmetric(const arr& entries6){
+void Matrix::setSymmetric(const arr& entries6) {
   CHECK_EQ(entries6.N, 6, "");
   setZero();
   m00=entries6.elem(0);
@@ -504,14 +504,14 @@ Quaternion& Quaternion::invert() { w=-w; return *this; }
 /// flips the sign of the quaterion -- which still represents the same rotation
 void Quaternion::flipSign() { w=-w; x=-x; y=-y; z=-z; }
 
-void Quaternion::uniqueSign(){
-if(w<0.) flipSign();
-else if(w==0.){
-  if(x<0.) flipSign();
-  else if(x==0.){
-    if(y<0.) flipSign();
+void Quaternion::uniqueSign() {
+  if(w<0.) flipSign();
+  else if(w==0.) {
+    if(x<0.) flipSign();
+    else if(x==0.) {
+      if(y<0.) flipSign();
+    }
   }
-}
 }
 
 /// multiplies the rotation by a factor f (i.e., makes f-times the rotation)
@@ -554,7 +554,7 @@ void Quaternion::alignWith(const Vector& v) {
 }
 
 void Quaternion::addX(double radians) {
-  if(isZero){ setRadX(radians); return; }
+  if(isZero) { setRadX(radians); return; }
   if(!radians) { return; }
   radians/=2.;
   double cw=cos(radians);
@@ -570,7 +570,7 @@ void Quaternion::addX(double radians) {
 }
 
 void Quaternion::addY(double radians) {
-  if(isZero){ setRadY(radians); return; }
+  if(isZero) { setRadY(radians); return; }
   if(!radians) { return; }
   radians/=2.;
   double cw=cos(radians);
@@ -586,7 +586,7 @@ void Quaternion::addY(double radians) {
 }
 
 Quaternion& Quaternion::addZ(double radians) {
-  if(isZero){ setRadZ(radians); return *this; }
+  if(isZero) { setRadZ(radians); return *this; }
   if(!radians) { return *this; }
   radians/=2.;
   double cw=cos(radians);
@@ -1016,17 +1016,18 @@ arr Quaternion::getMatrixJacobian() const {
   return J;
 }
 
-arr Quaternion::getQuaternionMultiplicationMatrix() const{
+arr Quaternion::getQuaternionMultiplicationMatrix() const {
 //  a.w = b.w*c.w - b.x*c.x - b.y*c.y - b.z*c.z;
 //  a.x = b.w*c.x + b.x*c.w + b.y*c.z - b.z*c.y;
 //  a.y = b.w*c.y - b.x*c.z + b.y*c.w + b.z*c.x;
 //  a.z = b.w*c.z + b.x*c.y - b.y*c.x + b.z*c.w;
   return arr(
-  {4,4},
-  {+w, -x, -y, -z,
-   +x, +w, +z, -y,
-   +y, -z, +w, +x,
-   +z, +y, -x, +w});
+  {4, 4}, {
+    +w, -x, -y, -z,
+      +x, +w, +z, -y,
+      +y, -z, +w, +x,
+      +z, +y, -x, +w
+    });
 }
 
 void Quaternion::writeNice(std::ostream& os) const { os <<"Quaternion: " <<getDeg() <<" around " <<getVec() <<"\n"; }
@@ -1091,7 +1092,7 @@ Quaternion operator-(const Quaternion& b, const Quaternion& c) {
   return a;
 }
 
-Quaternion operator*=(Quaternion& a, double s){
+Quaternion operator*=(Quaternion& a, double s) {
   a.multiply(s);
   return a;
 }
@@ -1308,8 +1309,8 @@ void Transformation::set(const double* p) { pos.set(p); rot.set(p+3); }
 
 void Transformation::set(const arr& t) {
   if(t.N==7) set(t.p);
-  else if(t.N==3){ pos.set(t.p); rot.setZero(); }
-  else if(t.N==4){ pos.setZero(); rot.set(t.p); }
+  else if(t.N==3) { pos.set(t.p); rot.setZero(); }
+  else if(t.N==4) { pos.setZero(); rot.set(t.p); }
   else HALT("transformation can be assigned only to a 7D, 3D, or 4D array");
 }
 
@@ -1408,7 +1409,7 @@ void Transformation::setDifference(const Transformation& from, const Transformat
   rot.normalize();
 }
 
-void Transformation::setInterpolate(double t, const Transformation& a, const Transformation b){
+void Transformation::setInterpolate(double t, const Transformation& a, const Transformation b) {
   pos = (1.-t)*a.pos + t*b.pos;
   rot.setInterpolate(t, a.rot, b.rot);
 }
@@ -1540,11 +1541,11 @@ void Transformation::checkNan() const {
 
 /// operator<<
 void Transformation::write(std::ostream& os) const {
-  if(rot.isZero){
+  if(rot.isZero) {
     os <<'[' <<pos.x <<", " <<pos.y <<", " <<pos.z <<']';
-  }else{
+  } else {
     os <<'[' <<pos.x <<", " <<pos.y <<", " <<pos.z <<", "
-      <<rot.w <<", " <<rot.x <<", " <<rot.y <<", " <<rot.z <<']';
+       <<rot.w <<", " <<rot.x <<", " <<rot.y <<", " <<rot.z <<']';
   }
 }
 
@@ -1820,7 +1821,7 @@ Camera::Camera() {
   setZero();
 
   setPosition(0., 0., 10.);
-  focus(0.,0.,0.);
+  focus(0., 0., 0.);
   setHeightAngle(45.);
 }
 
@@ -1845,7 +1846,7 @@ void Camera::setFocalLength(float f) { heightAbs=0;  focalLength = f; }
 /// the frame's position
 void Camera::setPosition(float x, float y, float z) { X.pos.set(x, y, z); }
 /// rotate the frame to focus the point given by the vector
-void Camera::focus(float x, float y, float z, bool makeUpright) { foc.set(x,y,z); watchDirection(foc-X.pos); if(makeUpright) upright(); }
+void Camera::focus(float x, float y, float z, bool makeUpright) { foc.set(x, y, z); watchDirection(foc-X.pos); if(makeUpright) upright(); }
 /// rotate the frame to watch in the direction vector D
 void Camera::watchDirection(const Vector& d) {
   if(d.x==0. && d.y==0.) {
@@ -1894,11 +1895,11 @@ void Camera::setCameraProjectionMatrix(const arr& P) {
   //fixedProjectionMatrix = glP;
 }
 
-void Camera::read(Graph& ats){
+void Camera::read(Graph& ats) {
   focalLength = ats.get<double>("focalLength", -1.);
   heightAbs = ats.get<double>("orthoAbsHeight", -1.);
   arr range =  ats.get<arr>("zRange", {});
-  if(range.N){ zNear=range(0); zFar=range(1); }
+  if(range.N) { zNear=range(0); zFar=range(1); }
   whRatio = ats.get<double>("width", 400.) / ats.get<double>("height", 200.);
 }
 
@@ -2006,12 +2007,12 @@ arr Camera::getInverseProjectionMatrix() const {
     return T * Pinv;
   }
   if(heightAbs > 0.) { //ortho mode
-      arr Pinv(4, 4);
-      Pinv.setZero();
-      Pinv(0, 0) = 1./(2.*focalLength/whRatio);
-      Pinv(1, 1) = -1./(2.*focalLength);
-      Pinv(2, 2) = 1.; //flips 'positive depth' back to Right-Handed frame
-      Pinv(3, 3) = 1.; //homogeneous 3D is kept
+    arr Pinv(4, 4);
+    Pinv.setZero();
+    Pinv(0, 0) = 1./(2.*focalLength/whRatio);
+    Pinv(1, 1) = -1./(2.*focalLength);
+    Pinv(2, 2) = 1.; //flips 'positive depth' back to Right-Handed frame
+    Pinv(3, 3) = 1.; //homogeneous 3D is kept
     NIY;
   }
   NIY;
@@ -2044,7 +2045,7 @@ void Camera::project2PixelsAndTrueDepth(arr& x, double width, double height) con
 }
 
 void Camera::unproject_fromPixelsAndTrueDepth(arr& x, double width, double height) const {
-  if(heightAbs>0.){
+  if(heightAbs>0.) {
     x(0) = 2.*(x(0)/height) - 1.;
     x(1) = 2.*(x(1)/height) - 1.;
     x(0) *= .5*heightAbs;
@@ -2087,7 +2088,7 @@ void Camera::unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) con
 #endif
 }
 
-arr Camera::getFxycxy(double width, double height){ return arr{focalLength*height, focalLength*height, .5*width, .5*height}; }
+arr Camera::getFxycxy(double width, double height) { return arr{focalLength*height, focalLength*height, .5*width, .5*height}; }
 
 arr Camera::getIntrinsicMatrix(double width, double height) const {
   if(focalLength>0.) { //normal perspective mode

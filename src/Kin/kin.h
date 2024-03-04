@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -96,8 +96,8 @@ struct Configuration : GLDrawer {
   Frame* addFrame(const char* name, const char* parent=nullptr, const char* args=nullptr, bool warnDuplicateName=true);
   Frame* addFile(const char* filename, const char* namePrefix=0);
   Frame* addAssimp(const char* filename);
-  Frame* addCopy(const FrameL& F, const DofL& _dofs, const str& prefix={});
-  Frame* addConfigurationCopy(const Configuration& C, const str& prefix={}, double tau=1.);
+  Frame* addCopy(const FrameL& F, const DofL& _dofs, const str& prefix= {});
+  Frame* addConfigurationCopy(const Configuration& C, const str& prefix= {}, double tau=1.);
 
   /// @name get frames
   Frame* operator[](const char* name) const { return getFrame(name, true); }  ///< same as getFrame()
@@ -125,7 +125,7 @@ struct Configuration : GLDrawer {
   arr getDofState(const DofL& dofs) const;
   arr getJointState(const FrameL& F) const { return getDofState(getDofs(F, true, true)); }
   arr getJointState(const uintA& F) const { return getJointState(getFrames(F)); } ///< same as getJointState() with getFrames()
-  arr getJointStateSlice(uint t, bool activesOnly=true){  return getJointState(getJointsSlice(t, activesOnly));  }
+  arr getJointStateSlice(uint t, bool activesOnly=true) {  return getJointState(getJointsSlice(t, activesOnly));  }
   arr getDofHomeState(const DofL& dofs) const;
   arr getFrameState() const { return getFrameState(frames); } ///< same as getFrameState() for all \ref frames
   arr getFrameState(const FrameL& F) const;
@@ -134,12 +134,12 @@ struct Configuration : GLDrawer {
   /// @name set state
   void setJointState(const arr& _q);
   void setDofState(const arr& _q, const DofL& dofs, bool mimicsIncludedInQ=false);
-  void setJointState(const arr& _q, const FrameL& F){ setDofState(_q, getDofs(F, true, true)); }
-  void setJointState(const arr& _q, const uintA& F){ setJointState(_q, getFrames(F)); } ///< same as setJointState() with getFrames()
-  void setJointStateSlice(const arr& _q, uint t, bool activesOnly=true){  setJointState(_q, getJointsSlice(t, activesOnly));  }
-  void setFrameState(const arr& X){ setFrameState(X, frames); } ///< same as setFrameState() for all \ref frames
+  void setJointState(const arr& _q, const FrameL& F) { setDofState(_q, getDofs(F, true, true)); }
+  void setJointState(const arr& _q, const uintA& F) { setJointState(_q, getFrames(F)); } ///< same as setJointState() with getFrames()
+  void setJointStateSlice(const arr& _q, uint t, bool activesOnly=true) {  setJointState(_q, getJointsSlice(t, activesOnly));  }
+  void setFrameState(const arr& X) { setFrameState(X, frames); } ///< same as setFrameState() for all \ref frames
   void setFrameState(const arr& X, const FrameL& F);
-  void setFrameState(const arr& X, const uintA& F){ setFrameState(X, getFrames(F)); } ///< same as setFrameState() with getFrames()
+  void setFrameState(const arr& X, const uintA& F) { setFrameState(X, getFrames(F)); } ///< same as setFrameState() with getFrames()
   void setTaus(double tau);
   void setTaus(const arr& tau);
   void setRandom(uint timeSlices_d1=0, int verbose=0);
@@ -205,8 +205,8 @@ struct Configuration : GLDrawer {
   void jacobian_tau(arr& J, Frame* a) const;
   void jacobian_zero(arr& J, uint n) const;
 
-  arr kinematics_pos(Frame* a, const Vector& rel=NoVector) const { arr y,J; kinematicsPos(y, J, a, rel); if(!!J) y.J()=J; return y; }
-  arr kinematics_vec(Frame* a, const Vector& vec=NoVector) const { arr y,J; kinematicsVec(y, J, a, vec); if(!!J) y.J()=J; return y; }
+  arr kinematics_pos(Frame* a, const Vector& rel=NoVector) const { arr y, J; kinematicsPos(y, J, a, rel); if(!!J) y.J()=J; return y; }
+  arr kinematics_vec(Frame* a, const Vector& vec=NoVector) const { arr y, J; kinematicsVec(y, J, a, vec); if(!!J) y.J()=J; return y; }
 
   void kinematicsZero(arr& y, arr& J, uint n) const;
   void kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel=NoVector) const;
@@ -223,8 +223,8 @@ struct Configuration : GLDrawer {
   void setJacModeAs(const arr& J);
 
   /// @name features
-  shared_ptr<Feature> feature(FeatureSymbol fs, const StringA& frames={}, const arr& scale=NoArr, const arr& target=NoArr, int order=-1) const;
-  template<class T> arr eval(const StringA& frames= {}){ return T().eval(getFrames(frames)); }
+  shared_ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}, const arr& scale=NoArr, const arr& target=NoArr, int order=-1) const;
+  template<class T> arr eval(const StringA& frames= {}) { return T().eval(getFrames(frames)); }
   arr eval(FeatureSymbol fs, const StringA& frames= {}, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 
   /// @name high level inverse kinematics
@@ -284,7 +284,7 @@ struct Configuration : GLDrawer {
   void reportProxies(std::ostream& os=cout, double belowMargin=1., bool brief=true) const;
   void reportLimits(std::ostream& os=cout) const;
 
-private:
+ private:
   void readFromGraph(const Graph& G, bool addInsteadOfClear=false);
   friend struct KinematicSwitch;
 };

@@ -21,7 +21,6 @@ void testPickAndPlace(){
   auto table = "table";
   auto qHome = C.getJointState();
 
-
   C[box]->setRelativePosition({-.0,.3-.055,.095});
   C[box]->setRelativeQuaternion({1.,0,0,0});
 
@@ -84,7 +83,6 @@ void testPush(){
   auto obj = "box";
   auto table = "table";
   auto qHome = C.getJointState();
-
 
   C[obj]->setRelativePosition({-.0,.3-.055,.095});
   C[obj]->setRelativeQuaternion({1.,0,0,0});

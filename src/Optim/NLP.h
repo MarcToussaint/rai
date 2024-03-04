@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -35,17 +35,17 @@ arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt);
  *  Importantly: the Jacobian may be sparse! This allows to implicitly represent structured NLP (in contrast to explicit structure, see below)
  */
 struct NLP : NonCopyable {
-protected:
+ protected:
   //-- problem signature: needs to be defined in the constructor or a derived class
   uint dimension=0;
-public:
+ public:
   ObjectiveTypeA featureTypes;
   arr bounds_lo, bounds_up;
 
-public:
+ public:
   virtual ~NLP() {}
 
-  void copySignature(const NLP& P){
+  void copySignature(const NLP& P) {
     dimension = P.dimension;
     bounds_lo = P.bounds_lo;
     bounds_up = P.bounds_up;
@@ -72,13 +72,13 @@ public:
   const ObjectiveTypeA& getFeatureTypes() const { return featureTypes; }
 
   //-- utilities
-  shared_ptr<NLP> ptr(){ return shared_ptr<NLP>(this, [](NLP*){}); }
+  shared_ptr<NLP> ptr() { return shared_ptr<NLP>(this, [](NLP*) {}); }
   double eval_scalar(arr& g, arr& H, const arr& x);
-  bool checkJacobian(const arr& x, double tolerance, const StringA& featureNames={});
+  bool checkJacobian(const arr& x, double tolerance, const StringA& featureNames= {});
   bool checkHessian(const arr& x, double tolerance);
   bool checkInBound(const arr& x);
   void boundClip(arr& x);
-  arr getUniformSample(){ return bounds_lo + rand(dimension) % (bounds_up - bounds_lo); }
+  arr getUniformSample() { return bounds_lo + rand(dimension) % (bounds_up - bounds_lo); }
 };
 
 //===========================================================================
@@ -90,18 +90,18 @@ struct NLP_Factored : NLP {
   uintAA featureVariables;  //which variables the j-th feature block depends on
 
   //-- structured (local) setting variable and evaluate feature
-  virtual void setAllVariables(const arr& x){ NIY; } //set all variables at once
+  virtual void setAllVariables(const arr& x) { NIY; } //set all variables at once
   virtual void setSingleVariable(uint var_id, const arr& x) = 0; //set a single variable block
   virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) = 0; //get a single feature block
 
-  virtual arr  getSingleVariableInitSample(uint var_id){ return {}; } //get an initialization (for MC sampling/restarts) [default: initialize random within bounds]
-  virtual void randomizeSingleVariable(uint var_id){ return; }
+  virtual arr  getSingleVariableInitSample(uint var_id) { return {}; } //get an initialization (for MC sampling/restarts) [default: initialize random within bounds]
+  virtual void randomizeSingleVariable(uint var_id) { return; }
 
   //-- unstructured (batch) evaluation
   virtual void evaluate(arr& phi, arr& J, const arr& x); //default implementation: loop through setSingleVariable and evaluateSingleFeature
 
-  virtual void subSelect(const uintA& activeVariables, const uintA& conditionalVariables){ NIY }
-  virtual uint numTotalVariables(){ NIY; return 0; }
+  virtual void subSelect(const uintA& activeVariables, const uintA& conditionalVariables) { NIY }
+  virtual uint numTotalVariables() { NIY; return 0; }
 
   virtual rai::String getVariableName(uint var_id);
 };
@@ -122,10 +122,10 @@ struct NLP_Traced : NLP {
     copySignature(*P);
   }
 
-  void setTracing(bool _trace_x, bool _trace_costs, bool _trace_phi, bool _trace_J){
+  void setTracing(bool _trace_x, bool _trace_costs, bool _trace_phi, bool _trace_J) {
     trace_x=_trace_x; trace_costs=_trace_costs, trace_phi=_trace_phi, trace_J=_trace_J;
   }
-  void clear(){
+  void clear() {
     evals=0;
     xTrace.clear();
     costTrace.clear();
@@ -139,7 +139,7 @@ struct NLP_Traced : NLP {
   virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
   virtual void getFHessian(arr& H, const arr& x) { P->getFHessian(H, x); }
 
-  virtual void report(std::ostream &os, int verbose, const char* msg=0);
+  virtual void report(std::ostream& os, int verbose, const char* msg=0);
 };
 
 //===========================================================================
@@ -148,7 +148,7 @@ struct NLP_Viewer {
   shared_ptr<NLP> P;
   shared_ptr<NLP_Traced> T;
 
-  NLP_Viewer(const shared_ptr<NLP>& P, const shared_ptr<NLP_Traced>& T={}) : P(P), T(T) {}
+  NLP_Viewer(const shared_ptr<NLP>& P, const shared_ptr<NLP_Traced>& T= {}) : P(P), T(T) {}
 
   void display(double mu=1e3, double muLB=-1.);
   void plotCostTrace();

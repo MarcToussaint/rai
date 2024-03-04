@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 shared_ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
   shared_ptr<KOMO> komo = make_shared<KOMO>();
 

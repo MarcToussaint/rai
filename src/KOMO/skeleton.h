@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "skeletonSymbol.h"
@@ -53,12 +61,12 @@ struct Skeleton {
   void fillInEndPhaseOfModes();
 
   //-- addEntry
-  void addEntry(const arr& timeInterval, SkeletonSymbol symbol, StringA frames){
+  void addEntry(const arr& timeInterval, SkeletonSymbol symbol, StringA frames) {
     S.append(SkeletonEntry(timeInterval(0), timeInterval(-1), symbol, frames));
   }
-  void appendSkeleton(const Skeleton& other){
+  void appendSkeleton(const Skeleton& other) {
     double maxPhase = getMaxPhase();
-    for(SkeletonEntry s:other.S){ //copy!
+    for(SkeletonEntry s:other.S) { //copy!
       if(s.phase0>=0) s.phase0+=maxPhase;
       if(s.phase1>=0) s.phase1+=maxPhase;
       S.append(s);
@@ -81,12 +89,11 @@ struct Skeleton {
   //-- get same as above, with "Transcription"
   //keyframes
   SkeletonTranscription nlp_waypoints(const rai::Configuration& C);
-  SkeletonTranscription nlp_path(const Configuration& C, const arrA& initWaypoints={});
+  SkeletonTranscription nlp_path(const Configuration& C, const arrA& initWaypoints= {});
   SkeletonTranscription nlp_finalSlice(const rai::Configuration& C); //"pose bound"
 
   //-- get path finding problem between 2 waypoints
   static void getTwoWaypointProblem(int t2, Configuration& C, arr& q1, arr& q2, KOMO& komoWays);
-
 
   //-- I/O
   void read(istream& is);

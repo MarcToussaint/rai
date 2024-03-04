@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -584,18 +584,18 @@ void CtrlProblem_NLP::getBounds(arr& bounds_lo, arr& bounds_up) {
 
 void CtrlProblem_NLP::getFeatureTypes(ObjectiveTypeA& featureTypes) {
   for(auto& o: CP.objectives) if(o->active) {
-    uint d = o->feat->dim(o->feat->getFrames(CP.komo.world));
-    featureTypes.append(o->type, d);
-  }
+      uint d = o->feat->dim(o->feat->getFrames(CP.komo.world));
+      featureTypes.append(o->type, d);
+    }
   dimPhi = featureTypes.N;
 }
 
 void CtrlProblem_NLP::getNames(StringA& variableNames, StringA& featureNames) {
   variableNames = CP.komo.world.getJointNames();
   for(auto& o: CP.objectives) if(o->active) {
-    uint d = o->feat->dim(o->feat->getFrames(CP.komo.world));
-    featureNames.append(o->name, d);
-  }
+      uint d = o->feat->dim(o->feat->getFrames(CP.komo.world));
+      featureNames.append(o->name, d);
+    }
 }
 
 arr CtrlProblem_NLP::getInitializationSample(const arr& previousOptima) {
@@ -623,34 +623,34 @@ void CtrlProblem_NLP::evaluate(arr& phi, arr& J, const arr& x) {
   arr y, Jy;
   uint M=0;
   for(auto& ob: CP.objectives) if(ob->active) {
-    uintA kdim; NIY// = getKtupleDim(Ctuple);
-    kdim.prepend(0);
+      uintA kdim; NIY// = getKtupleDim(Ctuple);
+      kdim.prepend(0);
 
-    //query the task map and check dimensionalities of returns
-    NIY; //ob->feat->eval(y, Jy, Ctuple);
-    if(!!J) CHECK_EQ(y.N, Jy.d0, "");
-    if(!!J) CHECK_EQ(Jy.nd, 2, "");
-    if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
-    if(!y.N) continue;
-    if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
+      //query the task map and check dimensionalities of returns
+      NIY; //ob->feat->eval(y, Jy, Ctuple);
+      if(!!J) CHECK_EQ(y.N, Jy.d0, "");
+      if(!!J) CHECK_EQ(Jy.nd, 2, "");
+      if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
+      if(!y.N) continue;
+      if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
 
-    //write into phi and J
-    phi.setVectorBlock(y, M);
+      //write into phi and J
+      phi.setVectorBlock(y, M);
 
-    if(!!J) {
-      if(!isSpecial(Jy)) {
-        J.setMatrixBlock(Jy.sub(0, -1, kdim(-2), kdim(-1)-1), M, 0);
-      } else {
-        Jy.sparse().reshape(J.d0, J.d1);
-        Jy.sparse().colShift(M);
-        Jy.sparse().rowShift(-kdim(-2));
-        J += Jy;
+      if(!!J) {
+        if(!isSpecial(Jy)) {
+          J.setMatrixBlock(Jy.sub(0, -1, kdim(-2), kdim(-1)-1), M, 0);
+        } else {
+          Jy.sparse().reshape(J.d0, J.d1);
+          Jy.sparse().colShift(M);
+          Jy.sparse().rowShift(-kdim(-2));
+          J += Jy;
+        }
       }
-    }
 
-    //counter for features phi
-    M += y.N;
-  }
+      //counter for features phi
+      M += y.N;
+    }
 
   CHECK_EQ(M, dimPhi, "");
   store_phi = phi;

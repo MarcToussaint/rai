@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2024 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "PathSmoother.h"
 
 #include "../KOMO/komo.h"
@@ -53,8 +61,6 @@ arr ReceedingHorizonPathSmoother::run(int verbose) {
 
     // for velocity=0 at the end
     komo.addObjective({1}, FS_qItself, {}, OT_eq, {1e1}, NoArr, 1);
-
-
 
     NLP_Solver sol;
     sol.setProblem(komo.nlp());

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -63,7 +63,7 @@ void TM_PushConsistent::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
     J.setMatrixBlock(J2, 0, qidx-J2.d1);
   }
 #else
-  arr a = arr{1., 0, 0};
+  arr a = arr {1., 0, 0};
   y = crossProduct(yi2-yi1, a);
   if(!!J) {
     uint qidx=0;

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -11,13 +11,13 @@
 #include "../Core/util.h"
 #include "../Core/array.h"
 
-namespace rai{
+namespace rai {
 
 //===========================================================================
 
-struct TreeSearchNode{
+struct TreeSearchNode {
   uint ID=0;
-  TreeSearchNode *parent=0;
+  TreeSearchNode* parent=0;
   Array<TreeSearchNode*> children;
   rai::String name;
   //the derived constructor or compute() need to set or update these
@@ -27,7 +27,7 @@ struct TreeSearchNode{
   double f_prio=0.;
   bool needsWidening = false;
 
-  TreeSearchNode(TreeSearchNode *parent);
+  TreeSearchNode(TreeSearchNode* parent);
   virtual ~TreeSearchNode() {}
 
   //compute
@@ -38,12 +38,12 @@ struct TreeSearchNode{
   virtual std::shared_ptr<TreeSearchNode> transition(int action) = 0;
   virtual std::shared_ptr<TreeSearchNode> transitionRandomly();
 
-  virtual double treePolicyScore(int i){ HALT("needs overload"); } //e.g. return UCB score of child
+  virtual double treePolicyScore(int i) { HALT("needs overload"); } //e.g. return UCB score of child
 
   //I/O
   virtual void write(std::ostream& os) const { os <<name; }
   virtual void report(std::ostream& os, int verbose) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
-  virtual void data(Graph& g) const{}
+  virtual void data(Graph& g) const {}
 };
 inline std::ostream& operator<<(std::ostream& os, const TreeSearchNode& D) { D.write(os); return os; }
 

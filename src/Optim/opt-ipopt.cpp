@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -14,7 +14,6 @@
 
 #include <coin/IpTNLP.hpp>
 #include <coin/IpIpoptApplication.hpp>
-
 
 struct Conv_MP_Ipopt : Ipopt::TNLP {
   shared_ptr<NLP> P;
@@ -156,10 +155,10 @@ bool Conv_MP_Ipopt::get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Numbe
   CHECK_EQ(init_z, false, "");
   CHECK_EQ(init_lambda, false, "");
 
-  if(x_init.N){
+  if(x_init.N) {
     CHECK_EQ((int)x_init.N, n, "");
     for(int i=0; i<n; i++) x[i] = x_init.elem(i);
-  }else{
+  } else {
     arr x0 = P->getInitializationSample();
     CHECK_EQ((int)x0.N, n, "");
     for(int i=0; i<n; i++) x[i] = x0.elem(i);

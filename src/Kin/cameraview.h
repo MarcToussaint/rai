@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -25,7 +25,7 @@ struct CameraView : ViewableConfigCopy {
     int frame=-1;
     Sensor() {}
     rai::Transformation& pose() { return cam.X; }
-    arr getFxycxy(){ return cam.getFxycxy(width, height); }
+    arr getFxycxy() { return cam.getFxycxy(width, height); }
   };
 
   //-- description of world configuration
@@ -51,7 +51,7 @@ struct CameraView : ViewableConfigCopy {
   byteA computeSegmentationImage();
   uintA computeSegmentationID();
 
-  arr getFxycxy(){ CHECK(currentSensor, "no sensor selected yet"); return currentSensor->getFxycxy(); }
+  arr getFxycxy() { CHECK(currentSensor, "no sensor selected yet"); return currentSensor->getFxycxy(); }
 
   void glDraw(OpenGL& gl);
 
@@ -74,7 +74,7 @@ struct Sim_CameraView : Thread {
   Sim_CameraView(Var<rai::Configuration>& _kin,
                  Var<byteA> _color,
                  Var<floatA> _depth,
-                 double beatIntervalSec=-1., const char* _cameraFrameName=nullptr, bool _idColors=false, const byteA& _frameIDmap={});
+                 double beatIntervalSec=-1., const char* _cameraFrameName=nullptr, bool _idColors=false, const byteA& _frameIDmap= {});
   ~Sim_CameraView();
 
   void step();

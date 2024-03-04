@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -157,14 +157,14 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
   arr q0 = C.getJointState();
 
   //set endeff target helper frames
-  if(endeffectors.N){
+  if(endeffectors.N) {
     C.setJointState(qTarget);
-    for(rai::String endeff:endeffectors){
-      rai::Frame *f = C[STRING(endeff<<"_target")];
-      if(!f){
+    for(rai::String endeff:endeffectors) {
+      rai::Frame* f = C[STRING(endeff<<"_target")];
+      if(!f) {
         f = C.addFrame(STRING(endeff<<"_target"));
         f->setShape(rai::ST_marker, {.5})
-            .setColor({1.,1.,0,.5});
+        .setColor({1., 1., 0, .5});
       }
       f->set_X() = C[endeff]->ensure_X();
     }
@@ -179,12 +179,12 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
   komo.addControlObjective({}, 2, 1.);
 
   // constrain target - either hard endeff target (and soft q), or hard qTarget
-  if(endeffectors.N){
-    for(rai::String endeff:endeffectors){
+  if(endeffectors.N) {
+    for(rai::String endeff:endeffectors) {
       komo.addObjective({1.}, FS_poseDiff, {endeff, STRING(endeff<<"_target")}, OT_eq, {1e0}); //uses endeff target helper frames
     }
     komo.addObjective({1.}, FS_qItself, {}, OT_sos, {1e0}, qTarget);
-  }else{
+  } else {
     komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e0}, qTarget);
   }
 
@@ -192,40 +192,40 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
   komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e0}, {}, 1);
 
   // homing
-  if(qHome.N) komo.addObjective({.4,.6}, FS_qItself, {}, OT_sos, {.1}, qHome);
+  if(qHome.N) komo.addObjective({.4, .6}, FS_qItself, {}, OT_sos, {.1}, qHome);
 
   // generic collisions
   komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e1});
 
   // explicit collision avoidances
-  for(const Avoid& a:avoids){
+  for(const Avoid& a:avoids) {
     komo.addObjective(a.times, FS_distance, a.frames, OT_ineq, {1e1}, {-a.dist});
   }
 
   // retract: only longitudial velocity, only about-z rotation
-  if(endeffRetract){
-    for(rai::String endeff:endeffectors){
+  if(endeffRetract) {
+    for(rai::String endeff:endeffectors) {
       arr ori = ~C[endeff]->ensure_X().rot.getArr();
-      arr yz = ori({1,2});
-      komo.addObjective({0.,.2}, FS_position, {endeff}, OT_eq, ori[0].reshape(1,-1)*1e2, {}, 1);
-      komo.addObjective({0.,.2}, FS_angularVel, {endeff}, OT_eq, yz*1e1, {}, 1);
+      arr yz = ori({1, 2});
+      komo.addObjective({0., .2}, FS_position, {endeff}, OT_eq, ori[0].reshape(1, -1)*1e2, {}, 1);
+      komo.addObjective({0., .2}, FS_angularVel, {endeff}, OT_eq, yz*1e1, {}, 1);
     }
   }
 
   // approach: only longitudial velocity, only about-z rotation
-  if(endeffApproach){
-    for(rai::String endeff:endeffectors){
+  if(endeffApproach) {
+    for(rai::String endeff:endeffectors) {
       arr ori = ~C[STRING(endeff<<"_target")]->get_X().rot.getArr();
-      arr yz = ori({1,2});
-      komo.addObjective({.8,1.}, FS_position, {endeff}, OT_eq, ori[0].reshape(1,-1)*1e2, {}, 1);
-      komo.addObjective({.8,1.}, FS_angularVel, {endeff}, OT_eq, yz*1e1, {}, 1);
+      arr yz = ori({1, 2});
+      komo.addObjective({.8, 1.}, FS_position, {endeff}, OT_eq, ori[0].reshape(1, -1)*1e2, {}, 1);
+      komo.addObjective({.8, 1.}, FS_angularVel, {endeff}, OT_eq, yz*1e1, {}, 1);
     }
   }
 
   //-- run several times with random initialization
   bool feasible=false;
   uint trials=3;
-  for(uint trial=0;trial<trials;trial++){
+  for(uint trial=0; trial<trials; trial++) {
     //initialize with constant q0 or qTarget
     komo.reset();
     if(trial%2) komo.initWithConstant(qTarget);
@@ -238,11 +238,11 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
     feasible=komo.sos<50. && komo.ineq<.1 && komo.eq<.1;
 
     //if not feasible -> add explicit collision pairs (from proxies presently in komo.pathConfig)
-    if(!feasible){
+    if(!feasible) {
       //cout <<komo.report();
       //komo.pathConfig.reportProxies();
       StringA collisionPairs = komo.getCollisionPairs(.01);
-      if(collisionPairs.N){
+      if(collisionPairs.N) {
         komo.addObjective({}, FS_distance, collisionPairs, OT_ineq, {1e2}, {-.001});
       }
     }
@@ -265,11 +265,11 @@ arr getStartGoalPath_new(rai::Configuration& C, const arr& qTarget, const arr& q
   arr qStart = C.getJointState();
   ManipulationModelling M(C, info, endeffectors);
   M.setup_point_to_point_motion(qStart, qTarget);
-  for(auto& gripper:endeffectors){
+  for(auto& gripper:endeffectors) {
     if(endeffRetract) M.retract({.0, .2}, gripper);
     if(endeffApproach) M.approach({.8, 1.}, gripper);
   }
-  for(const Avoid& a:avoids){
+  for(const Avoid& a:avoids) {
     M.komo->addObjective(a.times, FS_distance, a.frames, OT_ineq, {1e1}, {-a.dist});
   }
   M.solve();
@@ -310,9 +310,9 @@ arr path_resample(const arr& q, double durationScale) {
   return r;
 }
 
-arr path_resampleLinear(const arr& q, uint T){
+arr path_resampleLinear(const arr& q, uint T) {
   arr r(T, q.d1);
-  for(uint t=0;t<T-1;t++){
+  for(uint t=0; t<T-1; t++) {
     double s = double(t)/(T-1)*(q.d0-1);
     uint i0 = floor(s);
     double a = s-i0;
@@ -326,23 +326,23 @@ arr path_resampleLinear(const arr& q, uint T){
 
 rai::BSpline getSpline(const arr& q, double duration, uint degree) {
   rai::BSpline S;
-  S.set(degree, q, grid(1,0.,duration, q.N-1));
+  S.set(degree, q, grid(1, 0., duration, q.N-1));
   return S;
 }
 
 #if 0 //deprecated
-bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPairs, const arr& limits, bool solveForFeasible, int verbose){
+bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPairs, const arr& limits, bool solveForFeasible, int verbose) {
   arr B;
   //-- check for limits
-  if(limits.N){
+  if(limits.N) {
     arr q = C.getJointState();
     B = ~limits;
     bool good = boundCheck(q, B[0], B[1]);
-    if(!good){
-      if(solveForFeasible){
+    if(!good) {
+      if(solveForFeasible) {
         boundClip(q, B[0], B[1]);
         C.setJointState(q);
-      }else{
+      } else {
         THROW("BOUNDS FAILED")
         return false;
       }
@@ -350,18 +350,18 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
   }
 
   //-- check for collisions!
-  if(collisionPairs.N){
+  if(collisionPairs.N) {
     CHECK_EQ(&collisionPairs.last()->C, &C, "");
     auto coll = F_PairCollision().eval(collisionPairs);
     bool doesCollide=false;
-    for(uint i=0;i<coll.N;i++){
-      if(coll.elem(i)>0.){
-        LOG(-1) <<"in collision: " <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<' ' <<coll.elem(i);
+    for(uint i=0; i<coll.N; i++) {
+      if(coll.elem(i)>0.) {
+        LOG(-1) <<"in collision: " <<collisionPairs(i, 0)->name <<'-' <<collisionPairs(i, 1)->name <<' ' <<coll.elem(i);
         doesCollide=true;
       }
     }
-    if(doesCollide){
-      if(solveForFeasible){
+    if(doesCollide) {
+      if(solveForFeasible) {
         KOMO komo;
         komo.setConfig(C);
         komo.setTiming(1., 1, 1., 1);
@@ -373,20 +373,20 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
         komo.opt.verbose=0;
         komo.optimize(0., OptOptions().set_verbose(0).set_stopTolerance(1e-3));
 
-        if(komo.ineq>1e-1){
+        if(komo.ineq>1e-1) {
           LOG(-1) <<"solveForFeasible failed!" <<komo.report();
           if(verbose>1) komo.view(verbose>2, "FAILED!");
           return false;
-        }else{
+        } else {
           LOG(0) <<"collisions resolved";
-          if(B.N){
+          if(B.N) {
             bool good = boundCheck(komo.x, B[0], B[1]);
             LOG(0) <<"bounds=good after resolution: " <<good;
             if(!good) HALT("this should not be the case! collision resolution should respect bounds!");
           }
           C.setJointState(komo.x);
         }
-      }else{
+      } else {
         THROW("COLLIDES!")
         return false;
       }
@@ -396,7 +396,7 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
 }
 #endif
 
-bool PoseTool::checkLimits(const arr& limits, bool solve, bool assert){
+bool PoseTool::checkLimits(const arr& limits, bool solve, bool assert) {
   //get bounds
   arr B;
   if(limits.N) B = limits;
@@ -410,9 +410,9 @@ bool PoseTool::checkLimits(const arr& limits, bool solve, bool assert){
   if(good) return true;
 
   //without solve
-  if(!solve){
+  if(!solve) {
     if(verbose) THROW("BOUNDS FAILED")
-    if(assert) HALT("limit check failed");
+      if(assert) HALT("limit check failed");
     return false;
   }
 
@@ -422,19 +422,19 @@ bool PoseTool::checkLimits(const arr& limits, bool solve, bool assert){
   return true;
 }
 
-bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool assert){
+bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool assert) {
   bool good=true;
-  if(collisionPairs.N){
+  if(collisionPairs.N) {
     //use explicitly given collision pairs
     CHECK_EQ(&collisionPairs.last()->C, &C, "");
     auto coll = F_PairCollision().eval(collisionPairs);
-    for(uint i=0;i<coll.N;i++){
-      if(coll.elem(i)>0.){
-        if(verbose>1) LOG(-1) <<"in collision: " <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<' ' <<coll.elem(i);
+    for(uint i=0; i<coll.N; i++) {
+      if(coll.elem(i)>0.) {
+        if(verbose>1) LOG(-1) <<"in collision: " <<collisionPairs(i, 0)->name <<'-' <<collisionPairs(i, 1)->name <<' ' <<coll.elem(i);
         good=false;
       }
     }
-  }else{
+  } else {
     //use broadphase
     C.ensure_proxies();
     double p = C.getTotalPenetration();
@@ -445,8 +445,8 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
   if(good) return true;
 
   //without solve
-  if(!solve){
-    if(verbose){
+  if(!solve) {
+    if(verbose) {
       LOG(-1) <<"collision check failed";
       if(!collisionPairs.N) C.reportProxies();
     }
@@ -461,21 +461,21 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
   komo.addControlObjective({}, 1, 1e-1);
   komo.addQuaternionNorms();
 
-  if(collisionPairs.N){
+  if(collisionPairs.N) {
     komo.addObjective({}, FS_distance, framesToNames(collisionPairs), OT_ineq, {1e2}, {-.001});
-  }else{
+  } else {
     komo.addObjective({}, FS_accumulatedCollisions, {}, OT_ineq, {1e2}, {-.001});
   }
 
   komo.opt.verbose=0;
   komo.optimize(0., rai::OptOptions().set_verbose(0).set_stopTolerance(1e-3));
 
-  if(komo.ineq>1e-1){
+  if(komo.ineq>1e-1) {
     if(verbose) LOG(-1) <<"solveForFeasible failed!" <<komo.report();
     if(verbose>1) komo.view(verbose>2, "collision resolution failed");
     if(assert) HALT("collision resolution failed");
     return false;
-  }else{
+  } else {
     if(verbose) LOG(0) <<"collisions resolved";
 //          if(B.N){
 //            bool good = boundCheck(komo.x, B[0], B[1]);
@@ -483,7 +483,7 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
 //            if(!good) HALT("this should not be the case! collision resolution should respect bounds!");
 //          }
     C.setJointState(komo.x);
-    if(verbose>1){
+    if(verbose>1) {
       C.ensure_proxies();
       double p = C.getTotalPenetration();
       if(verbose>1) C.reportProxies();
@@ -494,39 +494,39 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
   return true;
 }
 
-bool PoseTool::checkLimitsAndCollisions(const arr& limits, const FrameL& collisionPairs, bool solve, bool assert){
+bool PoseTool::checkLimitsAndCollisions(const arr& limits, const FrameL& collisionPairs, bool solve, bool assert) {
   return checkLimits(limits, solve, assert) && checkCollisions(collisionPairs, solve, assert);
 }
 
-arr getVel(const arr& x, const arr& tau){
+arr getVel(const arr& x, const arr& tau) {
   arr v;
   v.resizeAs(x).setZero();
-  for(uint t=1;t<x.d0;t++) v[t] = (x[t]-x[t-1])/tau(t);
+  for(uint t=1; t<x.d0; t++) v[t] = (x[t]-x[t-1])/tau(t);
   return v;
 }
 
-arr getAcc(const arr& x, const arr& tau){
+arr getAcc(const arr& x, const arr& tau) {
   arr a;
   a.resizeAs(x).setZero();
-  for(uint t=2;t<x.d0;t++) a[t] = ( (x[t]-x[t-1])/tau(t) - (x[t-1]-x[t-2])/tau(t-1) ) /(.5*(tau(t)+tau(t-1)));
+  for(uint t=2; t<x.d0; t++) a[t] = ((x[t]-x[t-1])/tau(t) - (x[t-1]-x[t-2])/tau(t-1)) /(.5*(tau(t)+tau(t-1)));
   return a;
 }
 
-arr getJerk(const arr& x, const arr& tau){
+arr getJerk(const arr& x, const arr& tau) {
   arr j;
   j.resizeAs(x).setZero();
-  for(uint t=3;t<x.d0;t++){
+  for(uint t=3; t<x.d0; t++) {
     j[t] = (
-             ( (x[t-0]-x[t-1])/tau(t-0) - (x[t-1]-x[t-2])/tau(t-1) ) /(.5*(tau(t-0)+tau(t-1)))
-             -( (x[t-1]-x[t-2])/tau(t-1) - (x[t-2]-x[t-3])/tau(t-2) ) /(.5*(tau(t-1)+tau(t-2)))
-             ) / tau(t-1);
+             ((x[t-0]-x[t-1])/tau(t-0) - (x[t-1]-x[t-2])/tau(t-1)) /(.5*(tau(t-0)+tau(t-1)))
+             -((x[t-1]-x[t-2])/tau(t-1) - (x[t-2]-x[t-3])/tau(t-2)) /(.5*(tau(t-1)+tau(t-2)))
+           ) / tau(t-1);
   }
   return j;
 }
 
-void makeMod2Pi(const arr& q0, arr& q1){
+void makeMod2Pi(const arr& q0, arr& q1) {
   CHECK_EQ(q0.N, q1.N, "");
-  for(uint i=0;i<q0.N;i++){
+  for(uint i=0; i<q0.N; i++) {
     double del = q0.elem(i) - q1.elem(i);
     if(del>RAI_PI) q1.elem(i) += RAI_2PI;
     if(del<-RAI_PI) q1.elem(i) -= RAI_2PI;

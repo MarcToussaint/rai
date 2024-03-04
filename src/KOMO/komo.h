@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -19,21 +19,20 @@
 //===========================================================================
 
 namespace rai {
-  struct FclInterface;
+struct FclInterface;
 }
 
 //===========================================================================
 
-
 namespace rai {
-  struct KOMO_Options {
-    RAI_PARAM("KOMO/", int, verbose, 1)
-    RAI_PARAM("KOMO/", int, animateOptimization, 0)
-    RAI_PARAM("KOMO/", bool, mimicStable, true)
-    RAI_PARAM("KOMO/", bool, unscaleEqIneqReport, false)
-    RAI_PARAM("KOMO/", double, sampleRate_stable, .0)
-    RAI_PARAM("KOMO/", bool, sparse, true)
-  };
+struct KOMO_Options {
+  RAI_PARAM("KOMO/", int, verbose, 1)
+  RAI_PARAM("KOMO/", int, animateOptimization, 0)
+  RAI_PARAM("KOMO/", bool, mimicStable, true)
+  RAI_PARAM("KOMO/", bool, unscaleEqIneqReport, false)
+  RAI_PARAM("KOMO/", double, sampleRate_stable, .0)
+  RAI_PARAM("KOMO/", bool, sparse, true)
+};
 }//namespace
 
 struct KOMO : NonCopyable {
@@ -95,9 +94,9 @@ struct KOMO : NonCopyable {
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary objectives/switches yourself */
   shared_ptr<struct Objective> addObjective(const arr& times, const shared_ptr<Feature>& f, const StringA& frames,
-                                            ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
+      ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
   shared_ptr<struct Objective> addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
-                                            ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0) {
+      ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0) {
     return addObjective(times, symbols2feature(feat, frames, world),
                         {}, type, scale, target, order, deltaFromStep, deltaToStep);
   }
@@ -134,7 +133,7 @@ struct KOMO : NonCopyable {
   rai::Frame* addSwitch(const arr& times, bool before, bool stable, rai::JointType type, rai::SwitchInitializationType init,
                         const char* ref1, const char* ref2,
                         const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
-public:
+ public:
   //add a mode switch: both, the low-level dof switches and corresponding constraints of consistency
   void addModeSwitch(const arr& times, rai::SkeletonSymbol newMode, const StringA& frames, bool firstSwitch);
   void addRigidSwitch(const arr& times, const StringA& frames, bool firstSwitch);
@@ -162,7 +161,6 @@ public:
   void straightenCtrlFrames_mod2Pi();
   void updateRootObjects(const rai::Configuration& C);
   void updateAndShiftPrefix(const rai::Configuration& C);
-
 
   //-- optimization
   void optimize(double addInitializationNoise=.01, const rai::OptOptions options=NOOPT);  ///< run the solver (same as run_prepare(); run(); )
@@ -221,7 +219,7 @@ public:
   rai::Frame* applySwitch(const rai::KinematicSwitch& sw);
   void retrospectApplySwitches();
   void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);
-  void set_x(const arr& x, const uintA& selectedConfigurationsOnly={});            ///< set the state trajectory of all configurations
+  void set_x(const arr& x, const uintA& selectedConfigurationsOnly= {});           ///< set the state trajectory of all configurations
   void checkConsistency();
 
   //===========================================================================
@@ -233,18 +231,19 @@ public:
   std::shared_ptr<NLP_Factored> nlp_FactoredTime();
   std::shared_ptr<NLP_Factored> nlp_FactoredParts();
 
-
   //===========================================================================
   //
   // deprecated
   //
 
-  void addSquaredQuaternionNorms(const arr& times=NoArr, double scale=3e0){ DEPR; addQuaternionNorms(times, scale); }
+  void addSquaredQuaternionNorms(const arr& times=NoArr, double scale=3e0) { DEPR; addQuaternionNorms(times, scale); }
 
-  bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPath=nullptr, const char* addText=nullptr){
-    DEPR; return view_play(watch, delay, saveVideoPath);  }
-  bool displayPath(const char* txt, bool watch=true, bool full=true){
-    DEPR; return view(watch, txt); }
+  bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPath=nullptr, const char* addText=nullptr) {
+    DEPR; return view_play(watch, delay, saveVideoPath);
+  }
+  bool displayPath(const char* txt, bool watch=true, bool full=true) {
+    DEPR; return view(watch, txt);
+  }
   rai::Camera& displayCamera();
 
   void add_StableRelativePose(const std::vector<int>& confs, const char* gripper, const char* object) {
@@ -277,7 +276,7 @@ public:
     DEPR;
     addObjective(arr{(double)conf1, (double)conf2}, FS_poseRel, {tableOrGripper, object}, OT_eq);
   }
-  void activateCollisions(const char* s1, const char* s2){ DEPR; HALT("see komo-21-03-06"); }
+  void activateCollisions(const char* s1, const char* s2) { DEPR; HALT("see komo-21-03-06"); }
   void deactivateCollisions(const char* s1, const char* s2);
   //arr getFrameStateX(int t){ DEPR; return getConfiguration_X(t); }
   //arr getPath_qAll(int t){ DEPR; return getConfiguration_qOrg(t); }

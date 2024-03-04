@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
+    Copyright (c) 2011-2024 Marc Toussaint
     email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
@@ -21,7 +21,7 @@ enum ForceExchangeType { FXT_none=-1, FXT_poa=0, FXT_torque=1, FXT_force, FXT_fo
 
 ///Description of a ForceExchange
 struct ForceExchange : Dof, NonCopyable, GLDrawer {
-  Frame &a, &b;
+  Frame& a, &b;
   ForceExchangeType type;
   double scale=1.;
   double force_to_torque = 0.;
@@ -41,9 +41,9 @@ struct ForceExchange : Dof, NonCopyable, GLDrawer {
   void setDofs(const arr& q, uint n);
   arr calcDofsFromConfig() const;
   void setRandom(uint timeSlices_d1, int verbose);
-  String name() const{ return STRING("fex-" <<a.name <<'-' <<b.name); }
+  String name() const { return STRING("fex-" <<a.name <<'-' <<b.name); }
 
-  virtual double sign(Frame *f) const { if(&a==f) return 1.; return -1.; }
+  virtual double sign(Frame* f) const { if(&a==f) return 1.; return -1.; }
   virtual void kinPOA(arr& y, arr& J) const;
   virtual void kinForce(arr& y, arr& J) const;
   virtual void kinTorque(arr& y, arr& J) const;
