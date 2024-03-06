@@ -241,7 +241,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   C.ensure_q();
 
-  if(verbose>0) self->updateDisplayData(time, C);
+  if(verbose>0) self->updateDisplayData(time, C); //does not update with freq >20hz - see method
 
   if(engine==_physx && verbose>3) {
     if(!self->glDebug) {
@@ -588,8 +588,9 @@ struct Simulation_DisplayThread : Thread, ViewableConfigCopy {
   }
 
   void step() {
-    gl->update(STRING("Kin/Simulation - time:" <<time));
+    gl->update(STRING("Kin/Simulation - time:" <<time)/*, true*/);
     //write_png(gl->captureImage, STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"));
+    //if(!(step_count%10)) cout <<"display thread load:" <<timer.report() <<endl;
   }
 
   void close() {
@@ -636,6 +637,7 @@ struct Simulation_DisplayThread : Thread, ViewableConfigCopy {
 void Simulation_self::updateDisplayData(double _time, const rai::Configuration& _C) {
   CHECK(display, "");
   if(!display->drawCount) return; //don't update when not even drawn once.. to save compute
+  if(_time-display->time <.05) return; //don't update with > 20Hz
   display->mux.lock(RAI_HERE);
   display->time = _time;
   display->drawCount = 0;

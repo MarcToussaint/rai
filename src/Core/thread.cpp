@@ -351,7 +351,7 @@ void CycleTimer::cycleDone() {
 
 rai::String CycleTimer::report() {
   rai::String s;
-  s.printf("busy=[%5.1f %5.1f] cycle=[%5.1f %5.1f] load=%4.1f%% steps=%i", busyDtMean, busyDtMax, cyclDtMean, cyclDtMax, 100.*busyDtMean/cyclDtMean, steps);
+  s.printf("busy=[%5.3f %5.3f] cycle=[%5.3f %5.3f] load=%4.1f%% steps=%i", busyDtMean, busyDtMax, cyclDtMean, cyclDtMax, 100.*busyDtMean/cyclDtMean, steps);
   return s;
 }
 
