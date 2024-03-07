@@ -32,11 +32,11 @@ void rai::ViewableConfigCopy::recopyMeshes(const rai::Configuration& _C) {
 
   {
     gl->dataLock.lock(RAI_HERE);
-    if(gl->hasWindow()) {
-      gl->beginNonThreadedDraw(true);
-      C.glDeinit(*gl);
-      gl->endNonThreadedDraw(true);
-    }
+//    if(gl->hasWindow()) {
+//      gl->beginNonThreadedDraw(true);
+//      C.glDeinit(*gl);
+//      gl->endNonThreadedDraw(true);
+//    }
     C.copy(_C, false);
     gl->dataLock.unlock();
     //deep copy meshes!
@@ -63,7 +63,7 @@ void rai::ViewableConfigCopy::updateConfiguration(const rai::Configuration& newC
       if(s->_type != r->_type) { copyMeshes=true; break; }
       if(s->size != r->size) { copyMeshes=true; break; }
       if(s->_mesh && r->_mesh && (s->_mesh.get() != r->_mesh.get())) { copyMeshes=true; break; }
-      if(s->_mesh && s->glListId<0) { copyMeshes=true; break; }
+      if(s->_mesh->version != r->_mesh->version) { copyMeshes=true; break; }
     }
   }
   if(copyMeshes) recopyMeshes(newC);

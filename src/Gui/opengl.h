@@ -13,6 +13,7 @@
 #include "../Geo/geo.h"
 
 #include <functional>
+#include <map>
 
 #ifdef RAI_FLTK
 #  include <FL/glut.H>
@@ -102,7 +103,8 @@ void glDrawTexQuad(const byteA& img,
 //grabImage: use OpenGL::capture instead!
 void glRasterImage(float x, float y, byteA& img, float zoom=1.);
 
-void glDrawAsList(GLDrawer& drawer, int& listId, OpenGL& gl);
+void glDrawAsList(GLDrawer& drawer, OpenGL& gl);
+void glClearList(GLDrawer& drawer, OpenGL& gl);
 
 void read_png(byteA& img, const char* file_name, bool swap_rows);
 void write_png(const byteA& img, const char* file_name, bool swap_rows=true);
@@ -138,6 +140,8 @@ struct OpenGL {
   rai::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
   rai::Array<GLScrollCall*> scrollCalls;     ///< list of click callbacks
   rai::Array<struct CstyleDrawer*> toBeDeletedOnCleanup;
+  struct ListIdVersion{ int listId=0, version=-1; };
+  std::map<GLDrawer*, ListIdVersion> listMap;
 
   rai::String title;     ///< the window title
   uint width, height;

@@ -344,9 +344,14 @@ struct GlfwSpinner : Thread {
     mutex.lock(RAI_HERE);
     glwins.removeValue(gl);
 //    if(!glwins.N) stop=true; //stop looping
+//    LOG(0) <<"# lists before delete:" <<gl->listMap.size();
     glfwMakeContextCurrent(gl->self->window);
-    for(GLDrawer* d:gl->drawers) d->glDeinit(*gl);
+    for(auto& entry:gl->listMap) if(entry.second.listId){
+      glDeleteLists(entry.second.listId, 1);
+    }
+    gl->listMap.clear();
     glfwMakeContextCurrent(nullptr);
+//    LOG(0) <<"# lists after delete:" <<gl->listMap.size();
     mutex.unlock();
 
 //    if(stop) threadStop(); //stop looping
@@ -1467,21 +1472,34 @@ void glRasterImage(float x, float y, byteA& img, float zoom) {
   };
 }
 
-void glDrawAsList(GLDrawer& drawer, int& listId, OpenGL& gl) {
-  if(!listId) {
-    listId = glGenLists(1);
-    CHECK_GE(listId, 1, "I expected id>=1");
-    listId *= -1;
+void glDrawAsList(GLDrawer& drawer, OpenGL& gl) {
+  OpenGL::ListIdVersion& entry = gl.listMap[&drawer];
+
+  if(!entry.listId) { //first time -> allocate list
+    entry.listId = glGenLists(1);
+    CHECK_GE(entry.listId, 1, "I expected id>=1");
+    entry.version = -1;
   }
-  if(listId<0) { //negative: require recreation!
-    listId *= -1;
-    glNewList(listId, GL_COMPILE_AND_EXECUTE);
+
+  if(entry.version < drawer.version) { //needs rebuilding
+    glNewList(entry.listId, GL_COMPILE_AND_EXECUTE);
     drawer.glDraw(gl);
     glEndList();
+    entry.version = drawer.version;
   } else {
-    glCallList(listId);
+    glCallList(entry.listId);
   }
 }
+
+void glClearList(GLDrawer& drawer, OpenGL& gl){
+  auto entry = gl.listMap.find(&drawer);
+
+  if(entry!=gl.listMap.end()){
+    glDeleteLists(entry->second.listId, 1);
+    gl.listMap.erase(entry);
+  }
+}
+
 
 int OpenGL::watchImage(const floatA& _img, bool wait, float _zoom) {
   static byteA img;

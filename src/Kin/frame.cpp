@@ -509,7 +509,7 @@ rai::Frame& rai::Frame::setMesh(const arr& verts, const uintA& tris, const byteA
   if(cvxParts.N) {
     mesh.cvxParts = cvxParts;
   }
-  if(shape->glListId>0) shape->glListId *= -1;
+  mesh.version++; //if(shape->glListId>0) shape->glListId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -534,7 +534,7 @@ rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors, co
     mesh.Vn = normals;
     mesh.Vn.reshape(-1, 3);
   }
-  if(shape->glListId>0) shape->glListId *= -1;
+  mesh.version++; //if(shape->glListId>0) shape->glListId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -559,7 +559,7 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
     mesh.C /= 255.;
     if(mesh.C.N <= 4) { mesh.C.reshape(-1); }
   }
-  if(shape->glListId>0) shape->glListId *= -1;
+  mesh.version++; //if(shape->glListId>0) shape->glListId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -568,7 +568,7 @@ rai::Frame& rai::Frame::setMesh2(const rai::Mesh& m) {
   C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
   getShape().mesh() = m;
-  if(getShape().glListId>0) getShape().glListId *= -1;
+  getShape().mesh().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -578,7 +578,7 @@ rai::Frame& rai::Frame::setSdf(std::shared_ptr<SDF>& sdf) {
   getShape().type() = ST_sdf;
   getShape()._sdf = sdf;
   getShape().createMeshes();
-  if(getShape().glListId>0) getShape().glListId *= -1;
+  getShape().mesh().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -592,7 +592,8 @@ rai::Frame& rai::Frame::setDensity(const floatA& data, const arr& size) {
   sdf->gridData = data;
   sdf->_densityDisplayData = make_shared<DensityDisplayData>(*sdf);
   getShape()._sdf = sdf;
-  if(getShape().glListId>0) getShape().glListId *= -1;
+  getShape().createMeshes();
+  getShape().mesh().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -608,7 +609,7 @@ rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, 
     sdf.resample(d(0), d(1), d(2));
   }
   getShape().mesh().setImplicitSurface(sdf.gridData, sdf.lo, sdf.up);
-  if(getShape().glListId>0) getShape().glListId *= -1;
+  getShape().mesh().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -616,7 +617,7 @@ rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, 
 rai::Frame& rai::Frame::setColor(const arr& color) {
   C.view_lock(RAI_HERE);
   getShape().mesh().C = color;
-  if(getShape().glListId>0) getShape().glListId *= -1;
+  getShape().mesh().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -1641,9 +1642,6 @@ rai::Shape::Shape(Frame& f, const Shape* copyShape)
 }
 
 rai::Shape::~Shape() {
-#ifdef RAI_GL
-  if(glListId>=0) glDeleteLists(glListId, 1);
-#endif
   frame.shape = nullptr;
 }
 
@@ -1851,11 +1849,9 @@ void rai::Shape::glDraw(OpenGL& gl) {
         if(!gl.drawOptions.drawVisualsOnly || mesh().T.d1==3) { //visual -> surface meshes only
           if(!mesh().T.N && size.N) glPointSize(size.last());
           if(!mesh().C.N) glColor(.8, .8, .8);
-          if(_type==rai::ST_mesh) {
+          if(_type==rai::ST_mesh || _type==rai::ST_pointCloud || _type==rai::ST_ssCvx) {
 #if 1 //use list
-            if(_mesh->glListId) glListId = _mesh->glListId; //this ensures that Shapes with identical (shared) meshes share also the same glListId
-            glDrawAsList(mesh(), glListId, gl);
-            _mesh->glListId = glListId;
+            glDrawAsList(mesh(), gl);
 #else
             mesh().glDraw(gl);
 #endif
@@ -1883,14 +1879,6 @@ void rai::Shape::glDraw(OpenGL& gl) {
 
   glPopName();
 #endif
-}
-
-void rai::Shape::glDeinit(OpenGL&) {
-  if(_type==rai::ST_mesh && _mesh) {
-    if(_mesh->glListId==-1) glListId = 0;
-    if(glListId) glDeleteLists(glListId, 1);
-    _mesh->glListId = -1;
-  }
 }
 
 void rai::Shape::createMeshes() {
@@ -2001,7 +1989,7 @@ void rai::Shape::createMeshes() {
     }
   }
 //  if(_mesh && _mesh->C.nd==2 && _mesh->C.d0==_mesh->V.d0) _mesh->computeFaceColors();
-  if(glListId>0) glListId *= -1;
+  mesh().version++; //if(glListId>0) glListId *= -1;
 //  auto func = functional(false);
 //  if(func){
 //    mesh().setImplicitSurfaceBySphereProjection(*func, 2.);

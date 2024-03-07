@@ -140,7 +140,7 @@ Simulation::Simulation(Configuration& _C, Engine _engine, int _verbose)
     //nothing
   } else NIY;
   self->ref.initialize(C.getJointState(), NoArr, time);
-  if(verbose>0) self->display = make_shared<Simulation_DisplayThread>();
+  if(verbose>0) self->display = make_shared<Simulation_DisplayThread>(C);
 }
 
 Simulation::~Simulation() {
@@ -570,25 +570,19 @@ struct Simulation_DisplayThread : Thread, ViewableConfigCopy {
   uint pngCount=0;
   uint drawCount=0;
 
-  Simulation_DisplayThread() : Thread("Sim_DisplayThread", .05) {
+  Simulation_DisplayThread(const rai::Configuration& C) : Thread("Sim_DisplayThread", .05) {
+    updateConfiguration(C);
+    ensure_gl().drawOptions.drawVisualsOnly=true;
+    ensure_gl().update(0, true); //waits for first draw
     threadLoop();
-    while(step_count<2) rai::wait(.05);
   }
 
   ~Simulation_DisplayThread() {
     threadClose(.5);
   }
 
-  void open() {
-    gl = make_shared<OpenGL>("Simulation Display");
-    gl->add(*this);
-    gl->camera.setDefault();
-    gl->drawOptions.drawVisualsOnly=true;
-    //    if(Ccopy.getFrame("camera_gl",false)) gl->camera.X = Ccopy["camera_gl"]->ensure_X();
-  }
-
   void step() {
-    gl->update(STRING("Kin/Simulation - time:" <<time)/*, true*/);
+    gl->update(STRING("Kin/Simulation - time:" <<time), true);
     //write_png(gl->captureImage, STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"));
     //if(!(step_count%10)) cout <<"display thread load:" <<timer.report() <<endl;
   }
@@ -637,7 +631,7 @@ struct Simulation_DisplayThread : Thread, ViewableConfigCopy {
 void Simulation_self::updateDisplayData(double _time, const rai::Configuration& _C) {
   CHECK(display, "");
   if(!display->drawCount) return; //don't update when not even drawn once.. to save compute
-  if(_time-display->time <.05) return; //don't update with > 20Hz
+  if(_time - display->time <.025) return; //don't update with > 50Hz
   display->mux.lock(RAI_HERE);
   display->time = _time;
   display->drawCount = 0;

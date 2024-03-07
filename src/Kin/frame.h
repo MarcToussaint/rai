@@ -321,7 +321,6 @@ struct Shape : NonCopyable, GLDrawer {
   shared_ptr<Mesh> _sscCore;
   shared_ptr<SDF> _sdf;
   char cont=0;           ///< are contacts registered (or filtered in the callback)
-  int glListId=0;
 
   double radius() { if(size.N) return size(-1); return 0.; }
   Enum<ShapeType>& type() { return _type; }
@@ -342,7 +341,6 @@ struct Shape : NonCopyable, GLDrawer {
   void write(std::ostream& os) const;
   void write(Graph& g);
   void glDraw(OpenGL&);
-  void glDeinit(OpenGL&);
 };
 
 //===========================================================================

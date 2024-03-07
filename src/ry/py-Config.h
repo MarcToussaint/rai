@@ -19,19 +19,10 @@ void init_Config(pybind11::module& m);
 #endif
 
 namespace rai {
+struct Frame;
 struct Configuration;
 struct ConfigurationViewer;
 struct CameraView;
 }
 
-namespace ry {
-
-struct RyCameraView {
-  shared_ptr<rai::CameraView> cam;
-  Var<byteA> image;
-  Var<floatA> depth;
-  Var<byteA> segmentation;
-  Var<arr> pts;
-};
-
-}
+void null_deleter(rai::Frame*);

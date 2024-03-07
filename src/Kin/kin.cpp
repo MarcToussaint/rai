@@ -3008,9 +3008,6 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
   }
 
   //shapes
-  //first clear all listIDs within meshes - shapes organize them
-  for(Frame* f: F) if(f->shape && f->shape->_mesh) f->shape->_mesh->glListId=0;
-
   if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==1) {
     //first non-transparent
     for(Frame* f: F) if(f->shape && f->shape->alpha()==1.) {
@@ -3028,13 +3025,6 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
 
   glPopMatrix();
 #endif
-}
-
-void Configuration::glDeinit(OpenGL& gl) {
-  //first clear all listIDs within meshes - shapes organize them
-  for(Frame* f: frames) if(f->shape && f->shape->_mesh) f->shape->_mesh->glListId=0;
-
-  for(Frame* f: frames) if(f->shape) f->shape->glDeinit(gl);
 }
 
 //===========================================================================

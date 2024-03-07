@@ -12,6 +12,29 @@
 
 //===========================================================================
 
+void testTiming(){
+  rai::Configuration C;
+  C.addFile("../bullet/bots.g");
+
+//  rai::Simulation S(C, S._kinematic, 1);
+  rai::Simulation S(C, S._physx, 1);
+
+  double tau=.002;
+  arr q = C.getJointState();
+
+  double time = -rai::realTime();
+  uint N=100;
+  for(uint t=0;t<N;t++){
+    q += tau*1.;
+    S.step(q, tau, S._position);
+//    rai::wait(tau);
+  }
+  time += rai::realTime();
+  cout <<time/double(N) <<"sec/step" <<endl;
+}
+
+//===========================================================================
+
 void testPushes(){
   rai::Configuration C;
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/liftRing.g"));
@@ -447,7 +470,7 @@ void testMotors(){
       CHECK_ZERO(maxDiff(qDot, _qDot), 1e-6, '\n' <<qDot <<'\n' <<_qDot);
     }
 
-    write_ppm(S.getScreenshot(), STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
+    //write_ppm(S.getScreenshot(), STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
   }
 
 //  rai::wait();
