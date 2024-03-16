@@ -163,10 +163,8 @@ void ManipulationModelling::setup_inverse_kinematics(double homing_scale, bool a
   }
 }
 
-void ManipulationModelling::setup_pick_and_place_waypoints(const char* gripper, const char* obj, double homing_scale, double velocity_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
-  // setup a 2 phase pick-and-place problem, with a pick switch at time 1, and a place switch at time 2
-  // the place mode switch at the final time two might seem obselete, but this switch also implies the geometric constraints of placeOn
-  komo = make_shared<KOMO>(*C, 2., 1, 1, accumulated_collisions);
+void ManipulationModelling::setup_sequence(uint K, double homing_scale, double velocity_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms){
+  komo = make_shared<KOMO>(*C, double(K), 1, 1, accumulated_collisions);
   komo->addControlObjective({}, 0, homing_scale);
   komo->addControlObjective({}, 1, velocity_scale);
   if(accumulated_collisions) {
@@ -178,6 +176,10 @@ void ManipulationModelling::setup_pick_and_place_waypoints(const char* gripper, 
   if(quaternion_norms) {
     komo->addQuaternionNorms();
   }
+}
+
+void ManipulationModelling::setup_pick_and_place_waypoints(const char* gripper, const char* obj, double homing_scale, double velocity_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
+  setup_sequence(2, homing_scale, velocity_scale, accumulated_collisions, joint_limits, quaternion_norms);
 
   komo->addModeSwitch({1., -1.}, rai::SY_stable, {gripper, obj}, true);
 }
@@ -228,7 +230,7 @@ void ManipulationModelling::setup_point_to_point_rrt(const arr& q0, const arr& q
 }
 
 void ManipulationModelling::add_helper_frame(rai::JointType type, const char* parent, const char* name, const char* initFrame) {
-  rai::Frame* f = komo->addStableFrame(type, parent, name, initFrame);
+  rai::Frame* f = komo->addFrameDof(name, parent, type, true, initFrame);
   f->setShape(rai::ST_marker, {.2});
   f->setColor({1., 0., 1.});
   f->joint->sampleSdv=1.;
@@ -402,9 +404,13 @@ void ManipulationModelling::straight_push(arr times, str obj, str gripper, str t
   komo->addObjective({times(1)}, FS_quaternion, {obj}, OT_eq, {1e1}, {}, 1); //qobjPose.rot.getArr4d());
 }
 
-void ManipulationModelling::no_collision(const arr& time_interval, const char* obj1, const char* obj2, double margin) {
+void ManipulationModelling::no_collision(const arr& time_interval, const StringA& pairs, double margin) {
   // inequality on distance between two objects
-  komo->addObjective(time_interval, FS_negDistance, {obj1, obj2}, OT_ineq, {1e1}, {-margin});
+  StringA _pairs = pairs.ref();
+  _pairs.reshape(-1,2);
+  for(uint i=0;i<_pairs.d0;i++){
+    komo->addObjective(time_interval, FS_negDistance, _pairs[i], OT_ineq, {1e1}, {-margin});
+  }
 }
 
 void ManipulationModelling::switch_pick() {
@@ -475,7 +481,7 @@ arr ManipulationModelling::solve(int verbose) {
   if(komo) {
     NLP_Solver sol;
     sol.setProblem(komo->nlp());
-    sol.opt.set_damping(1e-3). set_verbose(verbose-1). set_stopTolerance(1e-3). set_maxLambda(100.). set_stopEvals(200);
+    sol.opt.set_damping(1e-1). set_verbose(verbose-1). set_stopTolerance(1e-3). set_maxLambda(100.). set_stopInners(20). set_stopEvals(200);
     ret = sol.solve();
     if(ret->feasible) {
       path = komo->getPath_qOrg();
@@ -486,7 +492,9 @@ arr ManipulationModelling::solve(int verbose) {
       if(verbose>0) {
         cout <<"  -- infeasible:" <<info <<"\n     " <<*ret <<endl;
         if(verbose>1) {
-          cout <<komo->report(false, true) <<endl;
+          cout <<sol.reportLagrangeGradients(komo->featureNames) <<endl;
+          cout <<komo->report(false, true, verbose>1) <<endl;
+          cout <<"  --" <<endl;
         }
         komo->view(true, STRING("failed: " <<info <<"\n" <<*ret));
         if(verbose>2) {
@@ -497,6 +505,9 @@ arr ManipulationModelling::solve(int verbose) {
       if(verbose>0) {
         cout <<"  -- feasible:" <<info <<"\n     " <<*ret <<endl;
         if(verbose>2) {
+          cout <<sol.reportLagrangeGradients(komo->featureNames) <<endl;
+          cout <<komo->report(false, true, verbose>2) <<endl;
+          cout <<"  --" <<endl;
           komo->view(true, STRING("success: " <<info <<"\n" <<*ret));
           if(verbose>3) {
             while(komo->view_play(true, 1.));
@@ -534,4 +545,14 @@ std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_rrt(uint phase
   std::shared_ptr<ManipulationModelling> manip = make_shared<ManipulationModelling>(C, STRING("sub_rrt"<<phase<<"--"<<info), helpers);
   manip->setup_point_to_point_rrt(q0, q1, explicitCollisionPairs);
   return manip;
+}
+
+void ManipulationModelling::play(rai::Configuration& C, double duration) {
+  uintA dofIndices = C.getDofIDs();
+  for(uint t=0; t<path.d0; t++) {
+    C.setFrameState(komo->getConfiguration_X(t));
+    C.setJointState(komo->getConfiguration_dofs(t, dofIndices));
+    C.view(false, STRING("step " <<t <<"\n" <<info));
+    rai::wait(duration/path.d0);
+  }
 }

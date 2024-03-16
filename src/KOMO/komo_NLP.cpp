@@ -133,8 +133,9 @@ void Conv_KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
   if(verbose>2) komo.view(verbose>3, STRING("KOMO nlp report - " <<msg));
   if(verbose>4) komo.view_play(false);
   if(verbose>6) {
-    rai::system("mkdir -p z.vid");
-    komo.view_play(false, .1, "z.vid/");
+    while(komo.view_play(true, -1));
+//    rai::system("mkdir -p z.vid");
+//    komo.view_play(false, .1, "z.vid/");
   }
 }
 

@@ -74,7 +74,7 @@ void testPickAndPlace(uint order){
   cout <<*ret <<endl;
 
   cout <<"REPORT\n" <<komo.report(false, true, true) <<endl;
-  cout <<"GRADS\n" <<sol.reportLangrangeGradients(komo.featureNames) <<endl;
+  cout <<"GRADS\n" <<sol.reportLagrangeGradients(komo.featureNames) <<endl;
 
   //komo.optimize();
   //komo.checkGradients();

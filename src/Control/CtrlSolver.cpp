@@ -128,7 +128,7 @@ arr CtrlSolver::solve() {
   rai::OptOptions opt;
   opt.stopTolerance = 1e-4;
   opt.stopGTolerance = 1e-4;
-  opt.stopIters = 20;
+  opt.stopInners = 20;
 //  opt.nonStrictSteps=-1;
   opt.maxStep = .1; //*tau; //maxVel*tau;
   opt.damping = 1e-2;

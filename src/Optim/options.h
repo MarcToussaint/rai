@@ -20,7 +20,7 @@ struct OptOptions {
   RAI_PARAM("opt/", double, stopFTolerance, -1.)
   RAI_PARAM("opt/", double, stopGTolerance, -1.)
   RAI_PARAM("opt/", int,    stopEvals, 1000)
-  RAI_PARAM("opt/", int,    stopIters, 1000)
+  RAI_PARAM("opt/", int,    stopInners, 1000)
   RAI_PARAM("opt/", int,    stopOuters, 1000)
   RAI_PARAM("opt/", int,    stopLineSteps, 10)
   RAI_PARAM("opt/", int,    stopTinySteps, 10)

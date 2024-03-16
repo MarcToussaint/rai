@@ -118,6 +118,7 @@ void rai::ConfigurationViewer::_resetPressedKey() { ensure_gl(); gl->pressedkey=
 
 void rai::ConfigurationViewer::clear() {
   auto _dataLock = gl->dataLock(RAI_HERE);
+  gl->clearLists();
   C.clear();
   framePath.clear();
 }
@@ -234,7 +235,7 @@ int rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, b
   return update(watch);
 }
 
-bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, double delay, const char* saveVideoPath) {
+bool rai::ConfigurationViewer::playVideo(const FrameL& timeSlices, bool watch, double delay, const char* saveVideoPath) {
   if(rai::getDisableGui()) return false;
 
   const rai::String tag = drawText;
@@ -244,19 +245,22 @@ bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, doubl
     rai::system(STRING("rm -f " <<saveVideoPath <<"*.png"));
   }
 
-  CHECK_GE(C.frames.N, T*nFrames, "");
+  CHECK_GE(C.frames.N, timeSlices.N, "");
 
-  FrameL F = C.frames;
-  F.resizeCopy(T*nFrames);
-  F.reshape(T, nFrames);
+//  FrameL F = C.frames;
+//  F.resizeCopy(timeSlices*nFrames);
+//  F.reshape(timeSlices, nFrames);
 
-  Metronome tic(delay / F.d0);
+  Metronome tic(delay / timeSlices.d0);
 
-  for(uint t=0; t<F.d0; t++) {
+  int key=0;
+  for(uint t=0; t<timeSlices.d0; t++) {
+    if(t && delay>0.) tic.waitForTic(); //rai::wait(delay / F.d0);
+
     {
       auto _dataLock = gl->dataLock(RAI_HERE);
-      drawSubFrames = F[t];
-      drawText.clear() <<tag <<"\n(slice " <<t <<'/' <<F.d0;
+      drawSubFrames = timeSlices[t];
+      drawText.clear() <<tag <<"\n(slice " <<t <<'/' <<timeSlices.d0;
       if(phaseFactor>0.) drawText <<", phase " <<phaseFactor*(double(t)+phaseOffset);
       drawText <<")";
     }
@@ -264,8 +268,8 @@ bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, doubl
     if(delay<0.) {
       update(true);
     } else {
-      if(t && delay) tic.waitForTic(); //rai::wait(delay / F.d0);
-      update(false);
+      key = update(false);
+      if(key==27 || key=='q') delay = .1;
     }
 
     {
@@ -273,15 +277,12 @@ bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, doubl
       if(saveVideoPath) write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<t<<".png"));
     }
   }
-  drawText = tag;
   if(watch && rai::getInteractivity()) {
-    int key = update(true);
-    drawSubFrames.clear();
-    return !(key==27 || key=='q');
+    key = update(true);
   }
+  drawText = tag;
   drawSubFrames.clear();
-  return false;
-
+  return !(key==27 || key=='q');
 }
 
 bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* saveVideoPath) {

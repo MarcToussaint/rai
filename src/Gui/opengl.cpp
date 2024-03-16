@@ -339,22 +339,28 @@ struct GlfwSpinner : Thread {
 //    if(start) threadLoop(true); //start looping
   }
 
-  void delGL(OpenGL* gl) {
-//    bool stop=false;
-    mutex.lock(RAI_HERE);
-    glwins.removeValue(gl);
-//    if(!glwins.N) stop=true; //stop looping
-//    LOG(0) <<"# lists before delete:" <<gl->listMap.size();
+  void delLists(OpenGL* gl){
+    auto _mux = mutex(RAI_HERE);
+    //  LOG(0) <<"# lists before delete:" <<gl->listMap.size();
     glfwMakeContextCurrent(gl->self->window);
     for(auto& entry:gl->listMap) if(entry.second.listId){
       glDeleteLists(entry.second.listId, 1);
     }
     gl->listMap.clear();
     glfwMakeContextCurrent(nullptr);
-//    LOG(0) <<"# lists after delete:" <<gl->listMap.size();
-    mutex.unlock();
+    //  LOG(0) <<"# lists after delete:" <<gl->listMap.size();
+  }
 
-//    if(stop) threadStop(); //stop looping
+  void delGL(OpenGL* gl) {
+//    bool stop=false;
+    {
+      auto _mux = mutex(RAI_HERE);
+      glwins.removeValue(gl);
+      //if(!glwins.N) stop=true; //stop looping
+      //    if(stop) threadStop(); //stop looping
+    }
+
+    delLists(gl);
   }
 
   static void error_callback(int error, const char* description) {
@@ -1765,7 +1771,11 @@ void OpenGL::clearSubView(uint v) {
   if(v>=views.N) return;
   auto _dataLock = dataLock(RAI_HERE);
   views(v).drawers.clear();
+}
 
+void OpenGL::clearLists(){
+  auto fg = singletonGlSpinner();
+  fg->delLists(this);
 }
 
 /// remove a draw routine

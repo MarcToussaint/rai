@@ -123,8 +123,9 @@ int main(int argc,char **argv){
     }
   }
   else if(file.endsWith(".dae")){
+    LOG(0) <<"opening dae file";
     rai::Configuration C;
-    C.addFile(file);
+    C.addAssimp(file);
     C.view(true);
   }
   else{

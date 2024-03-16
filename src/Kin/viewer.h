@@ -29,7 +29,7 @@ struct ConfigurationViewer : ViewableConfigCopy {
   int setConfiguration(const Configuration& _C, const char* text=0, bool watch=false);
   int setPath(rai::Configuration& _C, const arr& jointPath, const char* text=0, bool watch=false, bool full=true);
   int setPath(const arr& _framePath, const char* text=0, bool watch=false, bool full=true);
-  bool playVideo(uint T, uint nFrames, bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
+  bool playVideo(const FrameL& timeSlices, bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
   bool playVideo(bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   byteA getRgb();

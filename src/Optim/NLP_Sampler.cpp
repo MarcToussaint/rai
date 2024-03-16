@@ -66,9 +66,9 @@ bool NLP_Walker::step() {
   ensure_eval();
 
   bool good = true;
-  if(!ev.Ph.N || trace(ev.Ph)>1e-6) {
+//  if(!ev.Ph.N || trace(ev.Ph)>1e-6) {
 //    good = step_hit_and_run_eq(); //(opt.maxStep);
-  }
+//  }
 
   step_noise(.2);
   step_bound_clip();
@@ -189,16 +189,18 @@ bool NLP_Walker::step_slack(double penaltyMu, double alpha, double maxStep, doub
   ensure_eval();
   Eval ev0 = ev;
 
-  if(alpha<0.) alpha = opt.slackStepAlpha;
-  if(maxStep<0.) maxStep = opt.slackMaxStep;
-
+  //compute delta
   arr Hinv = lapack_inverseSymPosDef(((2.*penaltyMu)*~ev.Js)*ev.Js+lambda*eye(x.N));
   arr delta = (-2.*penaltyMu) * Hinv * (~ev.Js) * ev.s;
-  delta *= alpha;
 
+  //adapt step size
+  if(alpha<0.) alpha = opt.slackStepAlpha;
+  if(maxStep<0.) maxStep = opt.slackMaxStep;
+  delta *= alpha;
   double l = length(delta);
   if(l>maxStep) delta *= maxStep/l;
 
+  //apply
   x += delta;
   ensure_eval();
 
@@ -242,10 +244,21 @@ bool NLP_Walker::step_bound_clip() {
 void NLP_Walker::run(arr& data, arr& trace) {
 
   //-- init
-  arr x_init = nlp.getUniformSample();
-  initialize(x_init);
+  if(data.N && opt.initNovelty>0){
+    init_novelty(data, opt.initNovelty);
+  }else{
+    arr x_init = nlp.getUniformSample();
+    initialize(x_init);
+  }
+
+  if(opt.verbose>3) {
+    ensure_eval();
+    nlp.report(cout, 2+opt.verbose, STRING("sampling INIT, err: " <<ev.err));
+    rai::wait(.1);
+  }
+
   if(!!trace) {
-    trace.append(x_init);
+    trace.append(x);
     trace.reshape(-1, nlp.getDimension());
   }
 
@@ -302,7 +315,7 @@ void NLP_Walker::run(arr& data, arr& trace) {
     }
 
     if(opt.verbose>1 || (good && opt.verbose>0)) {
-      nlp.report(cout, (good?2:1)+opt.verbose, STRING("sampling t: " <<t <<" data: " <<data.d0 <<" good: " <<good <<" interior: " <<interiorStepsToDo));
+      nlp.report(cout, (good?2:1)+opt.verbose, STRING("sampling t: " <<t <<" err: " <<ev.err <<" data: " <<data.d0 <<" good: " <<good <<" interior: " <<interiorStepsToDo));
       rai::wait(.1);
     }
 
@@ -317,6 +330,36 @@ void NLP_Walker::run(arr& data, arr& trace) {
       break;
     }
   }
+}
+
+void NLP_Walker::init_novelty(const arr& data, uint D){
+  struct Seed{ NLP_Walker::Eval ev; arr delta; double novelty=-1.; };
+  rai::Array<Seed> seeds(D);
+
+  //sample D seeds & evaluate novelty
+  for(uint k=0;k<seeds.N;k++){
+    Seed& seed = seeds(k);
+    arr x_init = nlp.getUniformSample();
+    initialize(x_init);
+    ensure_eval();
+    seed.ev = ev;
+    seed.delta = compute_slackStep();
+    seed.delta /= (length(seed.delta) + 1e-8);
+
+    for(uint i=0;i<data.d0;i++){
+      arr del = x_init-data[i];
+      double nn = scalarProduct(seed.delta, del);
+      if(nn>seed.novelty) seed.novelty = nn;
+    }
+  }
+
+  //select most novel
+  Seed* seed = &seeds(0);
+  for(uint k=1;k<seeds.N;k++){
+    if(seeds(k).novelty> seed->novelty) seed = &seeds(k);
+  }
+  ev = seed->ev;
+  x = ev.x;
 }
 
 void NLP_Walker::get_beta_mean(double& beta_mean, double& beta_sdv, const arr& dir, const arr& xbar) {
@@ -335,7 +378,7 @@ void NLP_Walker::get_beta_mean(double& beta_mean, double& beta_sdv, const arr& d
 
 arr NLP_Walker::get_rnd_direction() {
   arr dir = randn(x.N);
-  if(ev.Ph.N) dir = ev.Ph * dir;
+//  if(ev.Ph.N) dir = ev.Ph * dir;
   dir /= length(dir);
   return dir;
 }
@@ -387,18 +430,18 @@ void NLP_Walker::Eval::eval(const arr& _x, NLP_Walker& walker) {
     Jr = J.sub(sosIdx);
   }
 
-  if(h.N) { //projection of equality constraints
-    //Gauss-Newton direction
-//    double lambda = 1e-2;
+//  if(h.N) { //projection of equality constraints
+//    //Gauss-Newton direction
+////    double lambda = 1e-2;
+////    arr H = 2. * ~Jh * Jh;
+////    for(uint i=0;i<H.d0;i++) H(i,i) += lambda;
+////    arr Hinv = inverse_SymPosDef(H);
 //    arr H = 2. * ~Jh * Jh;
-//    for(uint i=0;i<H.d0;i++) H(i,i) += lambda;
-//    arr Hinv = inverse_SymPosDef(H);
-    arr H = 2. * ~Jh * Jh;
-    arr Hinv = pseudoInverse(H);
-    Ph = eye(x.N) - Hinv * H; //tangent projection
-  } else {
-    Ph.clear();
-  }
+//    arr Hinv = pseudoInverse(H);
+//    Ph = eye(x.N) - Hinv * H; //tangent projection
+//  } else {
+//    Ph.clear();
+//  }
 }
 
 void NLP_Walker::Eval::convert_eq_to_ineq(double margin) {
@@ -406,244 +449,6 @@ void NLP_Walker::Eval::convert_eq_to_ineq(double margin) {
   Jg.append(Jh);
   g.append(-h-margin);
   Jg.append(-Jh);
-}
-
-//===========================================================================
-
-arr sample_NLPwalking(NLP& nlp, uint K, int verbose, double alpha_bar) {
-  NLP_Walker walk(nlp, alpha_bar);
-
-//  walk.initialize(nlp.getInitializationSample());
-  walk.initialize(nlp.getUniformSample());
-
-  arr data;
-
-  for(; data.d0<K;) {
-//    bool good = walk.step();
-    bool good = walk.step_hit_and_run_old(walk.opt.slackMaxStep);
-    good = walk.step_slack();
-
-    if(good) {
-      data.append(walk.x);
-      data.reshape(-1, walk.x.N);
-      if(!(data.d0%10)) cout <<'.' <<std::flush;
-    }
-
-    if(verbose>1 || (good && verbose>0)) {
-      nlp.report(cout, 2+verbose, STRING("sample_direct it: " <<data.d0 <<" good: " <<good));
-    }
-  }
-  cout <<"\nsteps/sample: " <<double(walk.samples)/K <<" evals/sample: " <<double(walk.evals)/K <<endl;
-
-  data.reshape(-1, nlp.getDimension());
-  return data;
-}
-
-//===========================================================================
-
-arr sample_restarts(NLP& nlp, uint K, int verbose, double alpha_bar) {
-  NLP_Walker walk(nlp, alpha_bar);
-
-  arr data;
-
-  for(; data.d0<K;) {
-//    arr x = nlp.getInitializationSample();
-    walk.set_alpha_bar(alpha_bar);
-    walk.initialize(nlp.getUniformSample());
-
-    bool good = false;
-    for(uint t=0; t<20; t++) {
-      if(verbose>1) {
-        nlp.report(cout, 2+verbose, STRING("sample_greedy data: " <<data.d0 <<" iters: " <<t <<" good: " <<good));
-      }
-      walk.step();
-      if(!walk.sig && walk.ev.err<=.01) { good=true; break; }
-//      komo->pathConfig.setJointState(sam.x);
-//      komo->view(true, STRING(k <<' ' <<t <<' ' <<sam.err <<' ' <<good));
-    }
-
-    if(walk.sig) {
-      walk.set_alpha_bar(1.);
-      for(uint t=0; t<10; t++) {
-        walk.step_slack();
-        if(walk.ev.err<=.01) { good=true; break; }
-      }
-    }
-
-    if(good) {
-      data.append(walk.x);
-      data.reshape(-1, nlp.getDimension());
-      if(!(data.d0%10)) cout <<'.' <<std::flush;
-    }
-
-    if(verbose>1 || (good && verbose>0)) {
-      nlp.report(cout, 2+verbose, STRING("sample_restarts it: " <<data.d0 <<" good: " <<good));
-    }
-  }
-  cout <<"\nsteps/sample: " <<double(walk.samples)/K <<" evals/sample: " <<double(walk.evals)/K <<" #sam: " <<data.d0 <<endl;
-  return data;
-}
-
-//===========================================================================
-
-arr sample_denoise_direct(NLP& nlp, uint K, int verbose) {
-  AlphaSchedule A(AlphaSchedule::_cosine, 30);
-  cout <<A.alpha_bar <<endl;
-
-  NLP_Walker walk(nlp, A.alpha_bar(-1));
-
-  arr data;
-  for(; data.d0<K;) {
-    walk.initialize(nlp.getUniformSample());
-
-    for(uint t=20; t--;) {
-      walk.set_alpha_bar(A.alpha_bar(t));
-      if(verbose>2) {
-        nlp.report(cout, 1+verbose, STRING("sample_denoise_direct data: " <<data.d0 <<" iters: " <<t <<" err: " <<walk.ev.err));
-      }
-      walk.step();
-    }
-
-    bool good=false;
-    walk.set_alpha_bar(1.);
-    for(uint t=0; t<10; t++) {
-      walk.step_slack();
-      if(walk.ev.err<=.01) { good=true; break; }
-    }
-
-    if(good) {
-      data.append(walk.x);
-      data.reshape(-1, nlp.getDimension());
-      if(!(data.d0%10)) cout <<'.' <<std::flush;
-    }
-
-    if(verbose>1 || (good && verbose>0)) {
-      nlp.report(cout, 2+verbose, STRING("sample_denoise_direct it: " <<data.d0 <<" good: " <<good));
-    }
-  }
-  cout <<"\nsteps/sample: " <<double(walk.samples)/K <<" evals/sample: " <<double(walk.evals)/K <<" #sam: " <<data.d0 <<endl;
-  return data;
-}
-
-//===========================================================================
-
-arr sample_greedy(NLP& nlp, uint K, int verbose, double alpha_bar) {
-  NLP_Walker walk(nlp, alpha_bar);
-
-  arr data;
-
-  for(; data.d0<K;) {
-    walk.set_alpha_bar(alpha_bar);
-    walk.initialize(nlp.getUniformSample());
-
-    bool good = false;
-    uint t=0;
-    for(; t<20; t++) {
-      if(verbose>2) {
-        nlp.report(cout, 1+verbose, STRING("sample_greedy data: " <<data.d0 <<" iters: " <<t <<" good: " <<good));
-      }
-      if(walk.sig) walk.step_noise_covariant(walk.sig);
-      walk.step_bound_clip();
-      walk.step_slack();
-      if(!walk.sig && walk.ev.err<=.01) { good=true; break; }
-    }
-
-    if(walk.sig) {
-//      walk.set_alpha_bar(1.);
-//      for(uint t=0;t<10;t++){
-//        walk.step_bound_clip();
-//        walk.step_slack();
-//        if(walk.ev.err<=.01){ good=true; break; }
-//      }
-      good = true;
-    }
-
-    if(good) {
-      data.append(walk.x);
-      data.reshape(-1, nlp.getDimension());
-      if(!(data.d0%10)) cout <<'.' <<std::flush;
-    }
-
-    if(verbose>1 || (good && verbose>0)) {
-      nlp.report(cout, 2+verbose, STRING("sample_greedy data: " <<data.d0 <<" iters: " <<t <<" good: " <<good));
-    }
-  }
-  cout <<"\nsteps/sample: " <<double(walk.samples)/K <<" evals/sample: " <<double(walk.evals)/K <<" #sam: " <<data.d0 <<endl;
-  return data;
-}
-
-//===========================================================================
-
-arr sample_denoise(NLP& nlp, uint K, int verbose) {
-  AlphaSchedule A(AlphaSchedule::_cosine, 50, .1);
-  //  AlphaSchedule A(AlphaSchedule::_constBeta, 50, .2);
-  cout <<A.alpha_bar <<endl;
-
-  RegularizedNLP nlp_reg(nlp);
-  NLP_Walker walk(nlp_reg);
-
-  arr data;
-
-  for(; data.d0<K;) {
-    arr x = nlp.getUniformSample();
-    arr trace = x;
-    trace.append(x);
-    walk.initialize(x);
-    walk.x = nlp.getUniformSample();
-
-    for(int t=A.alpha_bar.N-1; t>0; t--) {
-      //get the alpha
-      double bar_alpha_t = A.alpha_bar(t);
-      double bar_alpha_t1 = A.alpha_bar(t-1);
-      double alpha_t = bar_alpha_t/bar_alpha_t1;
-
-      //sample an x0
-      nlp_reg.setRegularization(1/sqrt(bar_alpha_t)*x, (1-bar_alpha_t)/bar_alpha_t);
-      walk.step();
-
-      //denoise
-      x = ((sqrt(bar_alpha_t1) * (1.-alpha_t)) * walk.x
-           + (sqrt(alpha_t) * (1.-bar_alpha_t1)) * x)
-          / (1.-bar_alpha_t);
-      if(t>1) {
-        arr z = randn(x.N);
-        x += z * sqrt(((1.-bar_alpha_t1) * (1.-alpha_t)) / (1.-bar_alpha_t));
-      }
-
-      trace.append(x);
-      trace.append(walk.x);
-    }
-
-#if 0
-    trace.reshape(A.alpha_bar.N, 2*x.N);
-    FILE("z.dat") <<trace.modRaw();
-    gnuplot("plot 'z.dat' us 0:1 t 'x', 'z.dat' us 0:2 t 'x', 'z.dat' us 0:3 t 'x0', 'z.dat' us 0:4 t 'x0'");
-    rai::wait();
-#endif
-
-    bool good = true;
-//    if(walk.err>2.*walk.eps) good=false;
-
-    if(good) {
-      for(uint t=0; t<10; t++) {
-        walk.step_slack();
-        if(walk.ev.err<=.01) break;
-      }
-      if(walk.ev.err>.01) good=false;
-    }
-
-    if(good) {
-      data.append(x);
-      data.reshape(-1, nlp.getDimension());
-      if(!(data.d0%10)) cout <<'.' <<std::flush;
-    }
-
-    if(verbose>1 || (good && verbose>0)) {
-      nlp.report(cout, 2+verbose, STRING("sample_denoise it: " <<data.d0 <<" good: " <<good));
-    }
-  }
-  cout <<"\nsteps/sample: " <<double(walk.samples)/K <<" evals/sample: " <<double(walk.evals)/K <<endl;
-  return data;
 }
 
 //===========================================================================

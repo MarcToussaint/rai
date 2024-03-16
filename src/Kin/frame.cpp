@@ -697,49 +697,55 @@ void rai::Frame::makeManipJoint(rai::JointType jointType, rai::Frame* parent, bo
   }
 
   //-- automatic limits
-  if(autoLimits) {
-    if(jointType==JT_free) {
-      double maxsize = 0.;
-      rai::Shape* from = parent->shape;
-      if(from && from->type()!=rai::ST_marker) {
-        if(from->type()==rai::ST_sphere || from->type()==rai::ST_cylinder || from->type()==rai::ST_ssCylinder) {
-          maxsize += 2.*from->size(0);
-        } else {
-          maxsize += absMax(from->size);
-        }
-      } else if(from) {
-        CHECK_EQ(from->type(), ST_marker, "");
-      }
-      rai::Shape* to = this->shape;
-      if(to && to->type()!=rai::ST_marker) {
-        if(to->type()==rai::ST_sphere || to->type()==rai::ST_cylinder || to->type()==rai::ST_ssCylinder) {
-          maxsize += 2.*to->size(0);
-        } else {
-          maxsize += absMax(to->size);
-        }
-      }
-      if(maxsize>1e-4) {
-        joint->limits = {
-          -.9*maxsize, .9*maxsize,
-            -.9*maxsize, .9*maxsize,
-            -.9*maxsize, .9*maxsize,
-            //            0., 1.1, -.5,.5, -.5,.5, -.5,.5 }; //no limits on rotation
-            -1.1, 1.1, -1.1, 1.1, -1.1, 1.1, -1.1, 1.1
-          }; //no limits on rotation
-      }
-      //        f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
-    } else if(jointType==JT_transXY || jointType==JT_transXYPhi) {
-      rai::Shape* on = parent->shape;
-      CHECK_EQ(on->type(), rai::ST_ssBox, "");
-      joint->limits = { -.5*on->size(0), .5*on->size(0),
-                        -.5*on->size(1), .5*on->size(1)
-                      };
-      if(jointType==JT_transXYPhi) joint->limits.append({-RAI_2PI, RAI_2PI});
-    }
-    //sample heuristic
-    joint->q0 = joint->calcDofsFromConfig();
-  }
+  if(autoLimits) setAutoLimits();
+}
 
+void rai::Frame::setAutoLimits() {
+  CHECK(joint, "");
+  rai::JointType jointType = joint->type;
+  rai::Shape* from = parent->shape;
+  if(!from) from = parent->parent->shape;
+  rai::Shape* to = this->shape;
+
+  //-- automatic limits
+  if(jointType==JT_free) {
+    double maxsize = 0.;
+    if(from && from->type()!=rai::ST_marker) {
+      if(from->type()==rai::ST_sphere || from->type()==rai::ST_cylinder || from->type()==rai::ST_ssCylinder) {
+        maxsize += 2.*from->size(0);
+      } else {
+        maxsize += absMax(from->size);
+      }
+    } else if(from) {
+      CHECK_EQ(from->type(), ST_marker, "");
+    }
+    if(to && to->type()!=rai::ST_marker) {
+      if(to->type()==rai::ST_sphere || to->type()==rai::ST_cylinder || to->type()==rai::ST_ssCylinder) {
+        maxsize += 2.*to->size(0);
+      } else {
+        maxsize += absMax(to->size);
+      }
+    }
+    if(maxsize>1e-4) {
+      joint->limits = {
+        -.9*maxsize, .9*maxsize,
+        -.9*maxsize, .9*maxsize,
+        -.9*maxsize, .9*maxsize,
+        //            0., 1.1, -.5,.5, -.5,.5, -.5,.5 }; //no limits on rotation
+        -1.1, 1.1, -1.1, 1.1, -1.1, 1.1, -1.1, 1.1
+      }; //no limits on rotation
+    }
+    //        f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
+  } else if(jointType==JT_transXY || jointType==JT_transXYPhi) {
+    rai::Shape* on = parent->shape;
+    CHECK_EQ(on->type(), rai::ST_ssBox, "");
+    joint->limits = { -.5*on->size(0), .5*on->size(0),
+                      -.5*on->size(1), .5*on->size(1)
+                    };
+    if(jointType==JT_transXYPhi) joint->limits.append({-RAI_2PI, RAI_2PI});
+  }
+  //sample heuristic
+  joint->q0 = joint->calcDofsFromConfig();
 }
 
 arr rai::Frame::getSize() const {
@@ -832,7 +838,7 @@ rai::Frame& rai::Frame::setParent(rai::Frame* _parent, bool keepAbsolutePose_and
   if(checkForLoop) {
     rai::Frame* f=_parent;
     while(f) {
-      CHECK(f!=this, "loop at frame '" <<f->name <<"'");
+      CHECK(f!=this, "loop at frame '" <<f->name <<"' when connecting '" <<this->name <<"' to parent '" <<_parent->name <<"'");
       f=f->parent;
     }
   }

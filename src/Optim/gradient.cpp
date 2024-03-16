@@ -82,7 +82,7 @@ OptGrad::StopCriterion OptGrad::step() {
   //  STOPIF(alpha<1e-3*o.stopTolerance, stopCrit2);
   STOPIF(lineSteps>=(uint)o.stopLineSteps,, stopCritLineSteps);
   STOPIF(evals>=(uint)o.stopEvals,, stopCritEvals);
-  STOPIF(it>=(uint)o.stopIters,, stopCritEvals);
+  STOPIF(it>=(uint)o.stopInners,, stopCritEvals);
 #undef STOPIF
 
   return stopCriterion=stopNone;

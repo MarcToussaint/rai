@@ -28,7 +28,7 @@ AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ, bool relativeMe
 
   Assimp::Importer importer;
   const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-  if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+  if(!scene || !scene->mRootNode || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
     cout <<"current dir: " <<rai::getcwd_string() <<endl;
     HALT("ERROR::ASSIMP:: " <<importer.GetErrorString());
   }

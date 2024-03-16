@@ -21,6 +21,8 @@ struct NLP_Sampler_Options {
 
   RAI_PARAM("sam/", int, verbose, 1)
 
+  RAI_PARAM("sam/", int, initNovelty, 10)
+
   RAI_PARAM("sam/", int, downhillMaxSteps, 50)
 
   RAI_PARAM("sam/", double, penaltyMu, 1.)
@@ -56,7 +58,7 @@ struct NLP_Walker {
     arr x;
     arr phi, J;
     arr g, Jg;
-    arr h, Jh, Ph;
+    arr h, Jh; //, Ph;
     arr s, Js;
     arr r, Jr;
     arr gpos;
@@ -94,6 +96,15 @@ struct NLP_Walker {
 
   void run(arr& data, arr& trace=NoArr);
 
+  void init_novelty(const arr& data, uint D);
+
+  //--
+  arr compute_slackStep(){
+    ensure_eval();
+    arr Hinv = lapack_inverseSymPosDef(((2.*opt.penaltyMu)*~ev.Js)*ev.Js+opt.slackRegLambda*eye(x.N));
+    arr delta = (-2.*opt.penaltyMu) * Hinv * (~ev.Js) * ev.s;
+    return delta;
+  }
  protected:
   void clipBeta(const arr& d, const arr& xbar, double& beta_lo, double& beta_up);
   arr get_rnd_direction();
@@ -133,11 +144,3 @@ struct AlphaSchedule {
 
   AlphaSchedule(Mode mode, uint T, double beta=-1.);
 };
-
-//===========================================================================
-
-arr sample_NLPwalking(NLP& nlp, uint K=1000, int verbose=1, double alpha_bar=0.);
-arr sample_restarts(NLP& nlp, uint K=1000, int verbose=1, double alpha_bar=0.);
-arr sample_greedy(NLP& nlp, uint K=1000, int verbose=1, double alpha_bar=0.);
-arr sample_denoise(NLP& nlp, uint K=1000, int verbose=1);
-arr sample_denoise_direct(NLP& nlp, uint K=1000, int verbose=1);

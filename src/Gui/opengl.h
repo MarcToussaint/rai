@@ -204,6 +204,7 @@ struct OpenGL {
   void setSubViewTiles(uint cols, uint rows);
   void setSubViewPort(uint view, double l, double r, double b, double t);
   void clearSubView(uint view);
+  void clearLists();
 
   /// @name the core draw routines (actually only for internal use)
   void Draw(int w, int h, rai::Camera* cam=nullptr, bool callerHasAlreadyLocked=false);

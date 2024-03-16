@@ -666,7 +666,7 @@ arr solve_optim(CtrlSolver& CP) {
   rai::OptOptions opt;
   opt.stopTolerance = 1e-4;
   opt.stopGTolerance = 1e-4;
-  opt.stopIters = 10;
+  opt.stopInners = 10;
 //  opt.nonStrictSteps=-1;
   OptConstrained O(x, NoArr, nlp, opt);
   nlp->getBounds(O.newton.bounds_lo, O.newton.bounds_up);

@@ -699,7 +699,7 @@ void Configuration::setDofState(const arr& _q, const DofL& dofs, bool mimicsIncl
 
 /// set the pose of all frames as given by the (F.N,7)-matrix
 void Configuration::setFrameState(const arr& X, const FrameL& F) {
-  CHECK_EQ(X.d0, F.N, "X.d0=" <<X.d0 <<" not equal to frames.N=" <<F.N);
+  CHECK_GE(X.d0, F.N, "X.d0=" <<X.d0 <<" not equal to frames.N=" <<F.N);
   for(Frame* f:F) f->_state_setXBadinBranch();
   for(uint i=0; i<F.N; i++) {
     Frame* f = F.elem(i);

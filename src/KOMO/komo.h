@@ -136,7 +136,7 @@ struct KOMO : NonCopyable {
  public:
   //add a mode switch: both, the low-level dof switches and corresponding constraints of consistency
   void addModeSwitch(const arr& times, rai::SkeletonSymbol newMode, const StringA& frames, bool firstSwitch);
-  void addRigidSwitch(const arr& times, const StringA& frames, bool firstSwitch);
+  void addRigidSwitch(double time, const StringA& frames, bool noJumpStart=true);
 
   //advanced:
   void setPairedTimes();
@@ -175,6 +175,7 @@ struct KOMO : NonCopyable {
   arr getConfiguration_qAll(int t);  ///< get all DOFs
   arr getConfiguration_qOrg(int t);  ///< get only those DOFs that were defined in the original world (excluding extra DOFs from switches)
   arr getConfiguration_X(int t);     ///< get frame path for selected frames
+  arr getConfiguration_dofs(uint t, const uintA& dofIndices);
   void getConfiguration_full(rai::Configuration& C, int t, int verbose);
 
   arrA getPath_qAll();                            ///< get the DOFs (of potentially varying dimensionality) for each configuration
@@ -214,8 +215,11 @@ struct KOMO : NonCopyable {
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);
   void setupPathConfig();
   void checkBounds(const arr& x);
-  void addStableFrame(rai::SkeletonSymbol newMode, const char* parent, const char* name, const char* toShape);
-  rai::Frame* addStableFrame(rai::JointType jointType, const char* parent, const char* name, const char* initFrame=0, rai::Transformation rel=0);
+//  void addStableFrame(rai::SkeletonSymbol newMode, const char* parent, const char* name, const char* toShape);
+  void addJointSwitch(const arr& times, rai::JointType type, bool stable, const StringA& frames,
+                      bool firstSwitch,
+                      const rai::Transformation& A);
+  rai::Frame* addFrameDof(const char* name, const char* parent, rai::JointType jointType, bool stable, const char* initFrame=0, rai::Transformation rel=0);
   rai::Frame* applySwitch(const rai::KinematicSwitch& sw);
   void retrospectApplySwitches();
   void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);

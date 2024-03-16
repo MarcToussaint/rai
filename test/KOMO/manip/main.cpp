@@ -56,8 +56,8 @@ void testPickAndPlace(){
     if(!M2->ret->feasible) continue;
 
     auto M3 = M1.sub_motion(1);
-    M3->no_collision({}, table, box);
-    M3->no_collision({}, box, "obstacle");
+    M3->no_collision({}, {table, box,
+                          box, "obstacle"});
     //M3.bias(.5, qHome, 1e0);
     M3->solve();
     if(!M3->ret->feasible) continue;
@@ -102,11 +102,11 @@ void testPush(){
     auto M1 = manip.sub_motion(0);
     M1->retractPush({.0, .15}, gripper, .03);
     M1->approachPush({.85, 1.}, gripper, .03);
-    M1->no_collision({.15,.85}, obj, "l_finger1", .02);
-    M1->no_collision({.15,.85}, obj, "l_finger2", .02);
-    M1->no_collision({.15,.85}, obj, "l_palm", .02);
-    M1->no_collision({}, table, "l_finger1", .0);
-    M1->no_collision({}, table, "l_finger2", .0);
+    M1->no_collision({.15,.85}, {obj, "l_finger1",
+                                 obj, "l_finger2",
+                                 obj, "l_palm"}, .02);
+    M1->no_collision({}, {table, "l_finger1",
+                          table, "l_finger2"}, .0);
     M1->solve();
     if(!M1->ret->feasible) continue;
 
@@ -125,13 +125,126 @@ void testPush(){
 
 //===========================================================================
 
+void testPivot(){
+  rai::Configuration C;
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
+
+  C.addFrame("hinge", "table") ->setJoint(rai::JT_rigid) .setRelativePosition({.3, .2, .15});
+  C.addFrame("door", "hinge") ->setRelativePosition({.1, .0, .0}) .setShape(rai::ST_ssBox, {.2, .04, .2, .005}). setContact(1);
+
+  rai::Joint *j = C["l_panda_finger_joint1"]->joint;
+  j->setDofs(arr{.0});
+
+  auto gripper = "l_gripper";
+  auto palm = "l_palm";
+  auto obj = "door";
+  auto table = "table";
+  auto qHome = C.getJointState();
+
+  for(uint i=0;i<20;i++){
+    arr qStart = C.getJointState();
+
+    str info = STRING("pivot");
+    ManipulationModelling manip(C, info, {"l_gripper"});
+    manip.setup_sequence(3);
+    rai::Frame *o = C["hinge"];
+    rai::Frame *t = C[table];
+    rai::Transformation A = (o->ensure_X() / t->ensure_X());
+    manip.komo->addJointSwitch({1., -1.}, rai::JT_hingeZ, false, {table, "hinge"}, true, A);
+    manip.komo->addObjective({1., 2.}, FS_negDistance, {gripper, obj}, OT_eq, {1e1});
+    //random target position
+    manip.komo->addObjective({2.}, FS_vectorY, {obj}, OT_eq, {1e1}, arr{-1,0,0});
+    manip.bias(3., qHome);
+    manip.solve();
+    if(!manip.ret->feasible) continue;
+
+    auto M1 = manip.sub_motion(0);
+    M1->solve();
+    if(!M1->ret->feasible) continue;
+
+    auto M2 = manip.sub_motion(1);
+    M2->solve();
+    if(!M2->ret->feasible) continue;
+
+    auto M3 = manip.sub_motion(2);
+    M3->solve();
+    if(!M3->ret->feasible) continue;
+
+    M1->play(C, 1.);
+    M2->play(C, 1.);
+    M3->play(C, 1.);
+  }
+}
+
+//===========================================================================
+
+void testPivot2(){
+  rai::Configuration C;
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
+
+  C.addFrame("hinge", "table") ->setJoint(rai::JT_rigid) .setRelativePosition({.3, .2, .15});
+  C.addFrame("door", "hinge") ->setRelativePosition({.1, .0, .0}) .setShape(rai::ST_ssBox, {.2, .04, .2, .005}). setContact(1);
+
+  rai::Joint *j = C["l_panda_finger_joint1"]->joint;
+  j->setDofs(arr{.0});
+
+//  C.animate();  C.view(true);
+
+  auto gripper = "l_gripper";
+  auto palm = "l_palm";
+  auto obj = "door";
+  auto table = "table";
+  auto qHome = C.getJointState();
+
+  for(uint i=0;i<20;i++){
+    arr qStart = C.getJointState();
+
+    str info = STRING("pivot");
+    ManipulationModelling manip(C, info, {"l_gripper"});
+    manip.setup_sequence(3, 1e-2, 1e-1, false);
+
+    manip.komo->addFrameDof("hinge_joint", "table", rai::JT_hingeZ, false, "hinge");
+    manip.komo->addRigidSwitch(1., {"hinge_joint", "hinge"});
+
+    manip.komo->addFrameDof("door_place", "table", rai::JT_transXYPhi, true, "hinge");
+    manip.komo->addRigidSwitch(2., {"door_place", "hinge"});
+
+    manip.komo->addObjective({1., 2.}, FS_negDistance, {gripper, obj}, OT_eq, {1e1});
+    //random target position
+    manip.komo->addObjective({2.}, FS_vectorY, {obj}, OT_eq, {1e1}, arr{-1,0,0});
+    manip.bias(3., qHome);
+    manip.solve(10);
+    if(!manip.ret->feasible) continue;
+
+    auto M1 = manip.sub_motion(0);
+    M1->solve();
+    if(!M1->ret->feasible) continue;
+
+    auto M2 = manip.sub_motion(1);
+    M2->solve();
+    if(!M2->ret->feasible) continue;
+
+    auto M3 = manip.sub_motion(2);
+    M3->solve();
+    if(!M3->ret->feasible) continue;
+
+    M1->play(C, 1.);
+    M2->play(C, 1.);
+    M3->play(C, 1.);
+  }
+}
+
+//===========================================================================
+
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
   //  rnd.clockSeed();
 
-  testPickAndPlace();
-  testPush();
+//  testPickAndPlace();
+//  testPush();
+//  testPivot();
+  testPivot2();
 
   return 0;
 }

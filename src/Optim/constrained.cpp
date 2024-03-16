@@ -170,7 +170,7 @@ bool OptConstrained::ministep() {
     return true;
   }
 
-  //main stopping criteron
+  //main stopping criteron: convergence
   if(its>=1 && step < opt.stopTolerance) {
     if(opt.verbose>0) cout <<"==nlp== StoppingCriterion Delta<" <<opt.stopTolerance <<endl;
     if(opt.stopGTolerance<0. || g_err+h_err<opt.stopGTolerance) {
@@ -188,9 +188,10 @@ bool OptConstrained::ministep() {
     if(opt.verbose>0) cout <<"==nlp== StoppingCriterion MAX EVALS" <<endl;
     return true;
   }
-  if(opt.stopIters>0 && newton.its>=opt.stopIters) {
-    if(opt.verbose>0) cout <<"==nlp== StoppingCriterion MAX ITERS" <<endl;
-    return true;
+  if(opt.stopInners>0 && newton.its>=opt.stopInners) {
+    if(opt.verbose>0) cout <<"==nlp== inner aborted" <<endl;
+    newton.its=0;
+//    return true;
   }
   if(opt.stopOuters>0 && its>=opt.stopOuters) {
     if(opt.verbose>0) cout <<"==nlp== StoppingCriterion MAX OUTERS" <<endl;

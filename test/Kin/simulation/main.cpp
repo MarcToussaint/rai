@@ -304,14 +304,16 @@ void testPcl(){
   S.setSplineRef(q, {1., 2.});
 
   double tau=.05;
-  for(double t=0;t<=2.;t+=tau){
+  for(double t=0;t<=4.;t+=tau){
     S.getImageAndDepth(img, depth);
     depthData2pointCloud(pts, depth, S.cameraview().currentSensor->getFxycxy());
 
     {
-      auto lock = S.displayMutex()(RAI_HERE);
+//      auto lock = S.displayMutex()(RAI_HERE);
       pcl->setPointCloud(pts, {255,0,0});
     }
+
+    if(S.getTimeToSplineEnd()<=0.)  S.setSplineRef(q, {1., 2.});
 
     S.step({}, tau, S._spline);
     C.view();

@@ -33,6 +33,7 @@ struct ManipulationModelling {
   ManipulationModelling(rai::Configuration& _C, const str& _info= {}, const StringA& helpers= {});
 
   void setup_inverse_kinematics(double homing_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
+  void setup_sequence(uint K, double homing_scale=1e-2, double velocity_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
   void setup_pick_and_place_waypoints(const char* gripper, const char* obj, double homing_scale=1e-2, double velocity_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
   void setup_point_to_point_motion(const arr& q0, const arr& q1, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool quaternion_norms=false);
   void setup_point_to_point_rrt(const arr& q0, const arr& q1, const StringA& explicitCollisionPairs);
@@ -46,7 +47,7 @@ struct ManipulationModelling {
 
   void straight_push(arr times, str obj, str gripper, str table);
 
-  void no_collision(const arr& time_interval, const char* obj1, const char* obj2, double margin=.001);
+  void no_collision(const arr& time_interval, const StringA& pairs, double margin=.001);
 
   void switch_pick();
   void switch_place();
@@ -66,12 +67,6 @@ struct ManipulationModelling {
   std::shared_ptr<ManipulationModelling> sub_motion(uint phase, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool quaternion_norms=false);
   std::shared_ptr<ManipulationModelling> sub_rrt(uint phase, const StringA& explicitCollisionPairs= {});
 
-  void play(rai::Configuration& C, double duration=1.) {
-    for(uint t=0; t<path.d0; t++) {
-      C.setJointState(path[t]);
-      C.view(false, STRING("step " <<t <<"\n" <<info));
-      rai::wait(duration/path.d0);
-    }
-  }
+  void play(rai::Configuration& C, double duration=1.);
 
 };

@@ -271,7 +271,7 @@ OptNewton::StopCriterion OptNewton::step() {
   STOPIF(numTinyXSteps>4, numTinyXSteps=0, stopTinyXSteps);
 //  STOPIF(alpha*absMax(Delta)<1e-3*o.stopTolerance, stopCrit2);
   STOPIF(evals>=options.stopEvals,, stopCritEvals);
-  STOPIF(its>=options.stopIters,, stopCritEvals);
+  STOPIF(its>=options.stopInners,, stopCritEvals);
   STOPIF(lineSearchSteps>10,, stopLineSearchSteps);
 
 #undef STOPIF
