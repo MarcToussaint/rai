@@ -24,7 +24,7 @@ rai::NodeL& NoNodeL=*((rai::NodeL*)nullptr);
 //Graph& NoGraph=*((Graph*)nullptr);
 
 namespace rai {
-void readNodeParents2(Graph& G, Node* n, String& str);
+  NodeL readNodeParents2(Graph& G, String& str);
 }
 
 //===========================================================================
@@ -684,7 +684,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
 
     }
 
-    //-- post processes: split keys -> graph tags
+    //-- post processes: split keys -> graph tags (e.g. "Rule grasp: {...}"
     if(n && n->is<Graph>()) {
       for(; n->key.N;) {
         uint i=0;
@@ -730,10 +730,18 @@ void Graph::read(std::istream& is, bool parseInfo) {
         while(n->key.N && n->key(-1)==' ') n->key.resize(n->key.N-1, true);
       }
     }
+    //add them
     for(uint i=Nbefore; i<N; i++) {
-      if(parentTags(i).N) {
-        Node* n=elem(i);
-        readNodeParents2(*this, n, parentTags(i));
+      Node* n=elem(i);
+      if(parentTags(i).N){
+        NodeL par = readNodeParents2(*this, parentTags(i));
+        n->setParents(par);
+      }else if(n->is<Graph>()){
+        Node *p = n->graph().findNodeOfType(typeid(NodeL), "parent");
+        if(p){
+          n->setParents(p->as<NodeL>());
+          delNode(p);
+        }
       }
     }
   }
@@ -811,7 +819,7 @@ void readNodeParents(Graph& G, std::istream& is, NodeL& parents, ParseInfo& pinf
   parse(is, ")");
 }
 
-void readNodeParents2(Graph& G, Node* n, String& str) {
+NodeL readNodeParents2(Graph& G, String& str) {
   String par;
   NodeL parents;
   str.clearStream();
@@ -834,12 +842,12 @@ void readNodeParents2(Graph& G, Node* n, String& str) {
         e=G.elem(G.N+rel);
         parents.append(e);
       } else {
-        LOG(-1) <<"parsing node '" <<n->key <<"' -- unknown " <<j <<". parent '" <<par <<"'";
+        LOG(-1) <<"parsing parent tuple '" <<str <<"' -- unknown " <<j <<". parent '" <<par <<"'";
       }
     }
   }
 
-  n->setParents(parents);
+  return parents;
 }
 
 Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo) {

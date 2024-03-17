@@ -34,23 +34,22 @@ struct KinematicSwitch {
   Enum<JointType> jointType;
   Enum<SwitchInitializationType> init;
   int timeOfApplication;
-  int timeOfTermination;
   int fromId, toId;
   bool isStable=false;
-  rai::Transformation jA, jB;
+  rai::Transformation rel;
   KinematicSwitch();
   KinematicSwitch(SwitchType op, JointType type,
                   int aFrame, int bFrame,
                   SwitchInitializationType _init=SWInit_zero,
                   int _timeOfApplication=0,
-                  const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
+                  const rai::Transformation& _rel=NoTransformation); //, const rai::Transformation& jTo=NoTransformation);
   KinematicSwitch(SwitchType op, JointType type,
                   const char* ref1, const char* ref2,
                   const rai::Configuration& K,
                   SwitchInitializationType _init=SWInit_zero,
                   int _timeOfApplication=0,
-                  const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
-  void setTimeOfApplication(const arr& times, bool before, int stepsPerPhase, uint T);
+                  const rai::Transformation& _rel=NoTransformation); //, const rai::Transformation& jTo=NoTransformation);
+  void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
   Frame* apply(FrameL& frames) const;
   rai::String shortTag(const Configuration* G) const;
   void write(std::ostream& os, const FrameL& frames= {}) const;

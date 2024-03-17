@@ -33,7 +33,7 @@ struct H5_Reader {
 
   H5_Reader(const char* filename);
   void readAll();
-  template<class T> rai::Array<T> read(const char* name);
+  template<class T> rai::Array<T> read(const char* name, bool ifExists=false);
   bool exists(const char* name);
 };
 

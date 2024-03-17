@@ -129,10 +129,10 @@ struct KOMO : NonCopyable {
   //-- core kinematic switch symbols of skeletons
 //protected:
   //low-level add dof switches
-  rai::Frame* addSwitch(const arr& times, bool before, const shared_ptr<rai::KinematicSwitch>& sw);
-  rai::Frame* addSwitch(const arr& times, bool before, bool stable, rai::JointType type, rai::SwitchInitializationType init,
+  rai::Frame* addSwitch(double time, bool before, const shared_ptr<rai::KinematicSwitch>& sw);
+  rai::Frame* addSwitch(double time, bool before, bool stable, rai::JointType type, rai::SwitchInitializationType init,
                         const char* ref1, const char* ref2,
-                        const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
+                        const rai::Transformation& jFrom=NoTransformation);
  public:
   //add a mode switch: both, the low-level dof switches and corresponding constraints of consistency
   void addModeSwitch(const arr& times, rai::SkeletonSymbol newMode, const StringA& frames, bool firstSwitch);

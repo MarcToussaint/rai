@@ -64,7 +64,7 @@ arr ReceedingHorizonPathSmoother::run(int verbose) {
 
     NLP_Solver sol;
     sol.setProblem(komo.nlp());
-    sol.opt.set_stopIters(10);
+    sol.opt.set_stopInners(10);
     sol.solve();
 
     // get results from komo

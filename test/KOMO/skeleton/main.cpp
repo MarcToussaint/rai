@@ -101,10 +101,11 @@ void testPickAndThrow(rai::ArgWord pathOrSeq){
 
   //grasp
   rai::Skeleton S = {
-    { 1., 1., rai::SY_topBoxGrasp, {"gripper", "box2"} },
+    { 1., 1., rai::SY_touch, {"gripper", "box2"} },
+//    { 1., 1., rai::SY_topBoxGrasp, {"gripper", "box2"} },
     { 1., 2., rai::SY_stable, {"gripper", "box2"} },
     { 2., 3., rai::SY_dynamic, {"world", "box2"} },
-    { 3., 3., rai::SY_topBoxGrasp, {"gripper", "box2"} },
+    { 3., 3., rai::SY_touch, {"gripper", "box2"} },
     { 3., 4., rai::SY_stable, {"gripper", "box2"} },
 //    { 5., 5., rai::SY_topBoxPlace, {"gripper", "box2", "table"} },
 //    { 4., 4., rai::SY_downUp, {"gripper"} },
@@ -371,7 +372,7 @@ int main(int argc,char** argv){
   testPickAndPlace(rai::_path);
 //  testPickAndPlace(rai::_sequence);
   testPickAndPush(rai::_path);
-//  testPickAndPush(rai::_sequence);
+//  testPickAndPush(rai::_sequeqnce);
   testPickAndThrow(rai::_path);
 //  testPickAndThrow(rai::_sequence);
   testTouchAndRoll(rai::_path);

@@ -15,17 +15,6 @@
 #include <functional>
 #include <map>
 
-#ifdef RAI_FLTK
-#  include <FL/glut.H>
-#endif
-
-#ifdef RAI_FREEGLUT
-#  ifndef RAI_MSVC
-#    define FREEGLUT_STATIC
-#  endif
-#  include <GL/freeglut.h>
-#endif
-
 #ifdef RAI_GL
 #  include <GL/glew.h>
 #  include <GL/gl.h>
@@ -34,10 +23,6 @@
 #    undef APIENTRY
 #  endif
 #  include <GL/glut.h>
-#endif
-
-#ifdef RAI_GL2PS
-#  include<gl2ps.h>
 #endif
 
 #undef Success

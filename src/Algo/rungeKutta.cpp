@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "algos.h"
+#include "rungeKutta.h"
 
 namespace rai {
 

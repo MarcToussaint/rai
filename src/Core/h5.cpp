@@ -59,7 +59,8 @@ bool H5_Reader::exists(const char* name) {
   return file->nameExists(name);
 }
 
-template<class T> rai::Array<T> H5_Reader::read(const char* name) {
+template<class T> rai::Array<T> H5_Reader::read(const char* name, bool ifExists) {
+  if(ifExists && !exists(name)) return {};
   H5::DataSet dataset = file->openDataSet(name);
   rai::Array<T> x;
   x.resize(get_dim(dataset));
@@ -132,11 +133,11 @@ template void H5_Writer::add<uint16_t>(const char* name, const rai::Array<uint16
 template void H5_Writer::add<char>(const char* name, const rai::Array<char>& x);
 template void H5_Writer::add<unsigned char>(const char* name, const rai::Array<unsigned char>& x);
 
-template rai::Array<double> H5_Reader::read<double>(const char* name);
-template rai::Array<float> H5_Reader::read<float>(const char* name);
-template rai::Array<int> H5_Reader::read<int>(const char* name);
-template rai::Array<uint> H5_Reader::read<uint>(const char* name);
-template rai::Array<int16_t> H5_Reader::read<int16_t>(const char* name);
-template rai::Array<uint16_t> H5_Reader::read<uint16_t>(const char* name);
-template rai::Array<char> H5_Reader::read<char>(const char* name);
-template rai::Array<byte> H5_Reader::read<byte>(const char* name);
+template rai::Array<double> H5_Reader::read<double>(const char* name, bool ifExists);
+template rai::Array<float> H5_Reader::read<float>(const char* name, bool ifExists);
+template rai::Array<int> H5_Reader::read<int>(const char* name, bool ifExists);
+template rai::Array<uint> H5_Reader::read<uint>(const char* name, bool ifExists);
+template rai::Array<int16_t> H5_Reader::read<int16_t>(const char* name, bool ifExists);
+template rai::Array<uint16_t> H5_Reader::read<uint16_t>(const char* name, bool ifExists);
+template rai::Array<char> H5_Reader::read<char>(const char* name, bool ifExists);
+template rai::Array<byte> H5_Reader::read<byte>(const char* name, bool ifExists);

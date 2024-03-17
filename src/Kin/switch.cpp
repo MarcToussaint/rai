@@ -106,37 +106,31 @@ template<> const char* rai::Enum<rai::SwitchInitializationType>::names []= {
 //
 
 rai::KinematicSwitch::KinematicSwitch()
-  : symbol(SW_none), jointType(JT_none), init(SWInit_zero), timeOfApplication(-1), timeOfTermination(-1), fromId(-1), toId(-1), jA(0), jB(0)
+  : symbol(SW_none), jointType(JT_none), init(SWInit_zero), timeOfApplication(-1), fromId(-1), toId(-1), rel(0)
 {}
 
 rai::KinematicSwitch::KinematicSwitch(SwitchType _symbol, JointType _jointType,
                                       int aFrame, int bFrame,
                                       SwitchInitializationType _init,
                                       int _timeOfApplication,
-                                      const rai::Transformation& jFrom, const rai::Transformation& jTo)
+                                      const rai::Transformation& _rel)
   : symbol(_symbol),
     jointType(_jointType),
     init(_init),
     timeOfApplication(_timeOfApplication),
-    timeOfTermination(-1),
     fromId(aFrame), toId(bFrame),
-    jA(0), jB(0) {
-  if(!!jFrom) jA = jFrom;
-  if(!!jTo)   jB = jTo;
+    rel(0) {
+  if(!!_rel) rel = _rel;
 }
 
-rai::KinematicSwitch::KinematicSwitch(rai::SwitchType op, rai::JointType type, const char* ref1, const char* ref2, const rai::Configuration& K, rai::SwitchInitializationType _init, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo)
-  : KinematicSwitch(op, type, initIdArg(K, ref1), initIdArg(K, ref2), _init, _timeOfApplication, jFrom, jTo)
+rai::KinematicSwitch::KinematicSwitch(rai::SwitchType op, rai::JointType type, const char* ref1, const char* ref2, const rai::Configuration& K, rai::SwitchInitializationType _init, int _timeOfApplication, const rai::Transformation& _rel)
+  : KinematicSwitch(op, type, initIdArg(K, ref1), initIdArg(K, ref2), _init, _timeOfApplication, _rel)
 {}
 
-void rai::KinematicSwitch::setTimeOfApplication(const arr& times, bool before, int stepsPerPhase, uint T) {
+void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T) {
   if(stepsPerPhase<0) stepsPerPhase=T;
-  double startTime = times(0);
-  double endTime = (times.N==2?times(1): -1.);
-  timeOfApplication = (startTime<0.?0:conv_time2step(startTime, stepsPerPhase))+(before?0:1);
-  if(endTime!=-1.) {
-    timeOfTermination = conv_time2step(endTime, stepsPerPhase);
-  }
+  timeOfApplication = (time<0.?0:conv_time2step(time, stepsPerPhase));
+  if(!before) timeOfApplication+=1;
 }
 
 rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
@@ -159,21 +153,12 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
     if(to->parent) to->unLink();
 #endif
 
-    if(!jB.isZero()) {
-      Frame* newto = new Frame(to->C);
-      newto->name <<'<' <<to->name;
-      to->setParent(newto, false);
-      to->set_Q() = jB;
-      to=newto;
-      orgX = orgX * (-jB);
-    }
-
     //create a new joint
     to->setParent(from, false, true); //checkForLoop might throw an error
     to->setJoint(jointType);
     CHECK(jointType!=JT_none, "");
 
-    if(!jA.isZero()) to->insertPreLink(jA);
+    if(!rel.isZero()) to->insertPreLink(rel);
     //if(!jB.isZero()) { to->insertPostLink(jB); orgX = orgX * (-jB); }
 
     //initialize to zero, copy, or random

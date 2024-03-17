@@ -8,7 +8,7 @@
 
 #include "mesh.h"
 #include "qhull.h"
-#include "mesh_readAssimp.h"
+#include "assimpInterface.h"
 
 #include "../Algo/ann.h"
 #include "../Optim/newton.h"
@@ -539,8 +539,13 @@ Mesh Mesh::decompose() {
   for(uint i=0; i<iface->GetNConvexHulls(); i++) {
     iface->GetConvexHull(i, ch);
     c.clear();
+#if 1 //new version
+    c.V.referTo((double*)ch.m_points.data(), 3*ch.m_points.size()).reshape(-1, 3);
+    c.T.referTo((uint32_t*)ch.m_triangles.data(), 3*ch.m_triangles.size()).reshape(-1, 3);
+#else
     c.V.referTo(ch.m_points, 3*ch.m_nPoints).reshape(-1, 3);
     c.T.referTo(ch.m_triangles, 3*ch.m_nTriangles).reshape(-1, 3);
+#endif
     c.C = id2color(i);
     M.cvxParts.append(M.V.d0);
     M.addMesh(c);
@@ -1292,7 +1297,7 @@ void Mesh::read(std::istream& is, const char* fileExtension, const char* filenam
   else if(!strcmp(fileExtension, "nts")) { readPts(is); } //points
   else if(!strcmp(fileExtension, "pts")) { readPts(is); }
   else if(!strcmp(fileExtension, "msh")) { readJson(is); }
-  else if(!strcmp(fileExtension, ".h5")) { readH5(filename); }
+  else if(!strcmp(fileExtension, ".h5")) { readH5(filename, "mesh"); }
   else if(!strcmp(fileExtension, "off")) { readOffFile(is); }
   else if(!strcmp(fileExtension, "ply")) { readPLY(filename); }
   else if(!strcmp(fileExtension, "tri")) { readTriFile(is); }
@@ -1599,25 +1604,26 @@ void Mesh::writeArr(std::ostream& os) {
   G.write(os, ",\n", "{\n\n}", -1, false, true);
 }
 
-void Mesh::writeH5(const char* filename) {
+void Mesh::writeH5(const char* filename, const str& group) {
   H5_Writer H(filename);
-  H.addGroup("mesh");
-  H.add("mesh/vertices", convert<float>(V));
-  if(V.d0<65535) H.add("mesh/faces", convert<uint16_t>(T)); else H.add("mesh/faces", T);
-  if(C.N) H.add("mesh/colors", convert<byte>(C*255.));
-  if(cvxParts.N) H.add("mesh/parts", cvxParts);
-  if(tex.N) H.add("mesh/tex", tex);
-  if(texImg.N) H.add("mesh/texImg", texImg);
+  H.addGroup(group);
+  H.add(group + "/vertices", convert<float>(V));
+  if(V.d0<65535) H.add(group+"/faces", convert<uint16_t>(T)); else H.add(group+"/faces", T);
+  if(C.N) H.add(group+"/colors", convert<byte>(C*255.));
+  if(cvxParts.N) H.add(group+"/parts", cvxParts);
+  if(tex.N) H.add(group+"/tex", tex);
+  if(texImg.N) H.add(group+"/texImg", texImg);
 }
 
-void Mesh::readH5(const char* filename) {
+void Mesh::readH5(const char* filename, const str& group="mesh") {
   H5_Reader H(filename);
-  V = H.read<double>("mesh/vertices");
-  T = H.read<uint>("mesh/faces");
-  if(H.exists("mesh/colors")) C = convert<double>(H.read<byte>("mesh/colors"))/255.;
-  if(H.exists("mesh/parts")) cvxParts = H.read<uint>("mesh/parts");
-  if(H.exists("mesh/tex")) tex = H.read<double>("mesh/tex");
-  if(H.exists("mesh/texImg")) texImg = H.read<byte>("mesh/texImg");
+  V = H.read<double>(group+"/vertices");
+  Vn = H.read<double>(group+"/normals", true);
+  T = H.read<uint>(group+"/faces", true);
+  C = convert<double>(H.read<byte>(group+"/colors", true))/255.;
+  cvxParts = H.read<uint>(group+"/parts", true);
+  tex = H.read<double>(group+"/tex", true);
+  texImg = H.read<byte>(group+"/texImg", true);
 }
 
 void Mesh::readArr(std::istream& is) {

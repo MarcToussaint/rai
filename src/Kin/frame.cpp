@@ -382,7 +382,7 @@ void rai::Frame::read(const Graph& ats) {
 //        f->joint->read(ats);
     }
   }
-  if(ats["shape"] || ats["mesh"] || ats["sdf"]) { shape = new Shape(*this); shape->read(ats); }
+  if(ats["shape"] || ats["mesh"] || ats["mesh_decomp"] || ats["mesh_points"] || ats["sdf"]) { shape = new Shape(*this); shape->read(ats); }
   if(ats["mass"]) { inertia = new Inertia(*this); inertia->read(ats); }
 }
 
@@ -1671,21 +1671,31 @@ void rai::Shape::read(const Graph& ats) {
     rai::FileToken fil;
 
     ats.get(size, "size");
+
     if(ats.get(d, "shape"))        { type()=(ShapeType)(int)d;}
     else if(ats.get(str, "shape")) { str>> type(); }
     else if(ats.get(d, "type"))    { type()=(ShapeType)(int)d;}
     else if(ats.get(str, "type"))  { str>> type(); }
+
     if(ats.get(str, "mesh"))     { mesh().read(FILE(str), str.getLastN(3).p, str); }
     else if(ats.get(fil, "mesh"))     {
       fil.cd_file();
       mesh().read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
-//      cout <<"MESH: " <<mesh().V.dim() <<endl;
+      fil.cd_start();
     }
+
+    if(ats.get(str, "mesh_decomp")) { mesh().readH5(str, "decomp"); }
+    else if(ats.get(fil, "mesh_decomp")) { fil.cd_file(); mesh().readH5(fil.name, "decomp"); fil.cd_start(); }
+
+    if(ats.get(str, "mesh_points")) { mesh().readH5(str, "points"); }
+    else if(ats.get(fil, "mesh_points")) { fil.cd_file(); mesh().readH5(fil.name, "points"); fil.cd_start(); }
+
     if(type()==rai::ST_mesh && !mesh().T.N) type()=rai::ST_pointCloud;
+
     if(ats.get(fil, "texture"))     {
       fil.cd_file();
       read_ppm(mesh().texImg, fil.name, true);
-//      cout <<"TEXTURE: " <<mesh().texImg.dim() <<endl;
+      fil.cd_start();
     }
     if(ats.get(fil, "core"))      {
       fil.cd_file();

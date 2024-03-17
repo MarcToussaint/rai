@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "mesh_readAssimp.h"
+#include "assimpInterface.h"
 #include "../Core/util.h"
 
 #ifdef RAI_ASSIMP

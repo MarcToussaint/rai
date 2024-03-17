@@ -1,6 +1,5 @@
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
-#include <Algo/algos.h>
 #include <Gui/plot.h>
 #include <Geo/qhull.h>
 

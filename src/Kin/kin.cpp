@@ -23,9 +23,9 @@
 #include "../Core/util.h"
 #include "../Geo/fclInterface.h"
 #include "../Geo/qhull.h"
-#include "../Geo/mesh_readAssimp.h"
+#include "../Geo/assimpInterface.h"
 #include "../Gui/opengl.h"
-#include "../Algo/algos.h"
+#include "../Algo/rungeKutta.h"
 #include "../Algo/spline.h"
 #include <iomanip>
 #include <algorithm>

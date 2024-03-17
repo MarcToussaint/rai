@@ -185,7 +185,7 @@ void init_Optim(pybind11::module& m) {
       .def("getTrace_J", &NLP_Solver::getTrace_J)
 
   .def("reportLagrangeGradients", [](std::shared_ptr<NLP_Solver>& self, const StringA& featureNames) {
-    rai::Graph R = self->reportLangrangeGradients(featureNames);
+    rai::Graph R = self->reportLagrangeGradients(featureNames);
     return graph2dict(R);
   })
 

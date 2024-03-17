@@ -3,7 +3,7 @@
 #include <Kin/viewer.h>
 #include <Kin/kin_ode.h>
 #include <Algo/spline.h>
-#include <Algo/algos.h>
+#include <Algo/rungeKutta.h>
 #include <Gui/opengl.h>
 #include <Gui/plot.h>
 #include <GL/gl.h>

@@ -137,7 +137,7 @@ int main(int argc,char **argv){
   mesh.writePLY("z.ply", true);
   mesh.writeArr(FILE("z.arr"));
   mesh.writeJson(FILE("z.msh"));
-  mesh.writeH5("z.h5");
+  mesh.writeH5("z.h5", "mesh");
 
   cout <<"== bye bye ==" <<endl;
 
