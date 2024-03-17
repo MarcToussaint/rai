@@ -390,6 +390,18 @@ Frame* Configuration::addConfigurationCopy(const Configuration& C, const str& pr
   return f;
 }
 
+void Configuration::delFrame(const char* name){
+  rai::Frame* p = getFrame(name, true);
+  if(p) delete p;
+}
+
+void Configuration::delSubtree(const char* name){
+  rai::Frame* p = getFrame(name, true);
+  if(!p) return;
+  FrameL F = p->getSubtree();
+  for(rai::Frame *f:F) delete f;
+}
+
 /// get first frame with given name
 Frame* Configuration::getFrame(const char* name, bool warnIfNotExist, bool reverse) const {
   if(!reverse) {

@@ -98,6 +98,8 @@ struct Configuration : GLDrawer {
   Frame* addAssimp(const char* filename);
   Frame* addCopy(const FrameL& F, const DofL& _dofs, const str& prefix= {});
   Frame* addConfigurationCopy(const Configuration& C, const str& prefix= {}, double tau=1.);
+  void delFrame(const char* name);
+  void delSubtree(const char* name);
 
   /// @name get frames
   Frame* operator[](const char* name) const { return getFrame(name, true); }  ///< same as getFrame()

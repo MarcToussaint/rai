@@ -208,10 +208,13 @@ void ManipulationModelling::setup_point_to_point_motion(const arr& q0, const arr
     //f.setShape(ry.ST.marker, {.1});
     //f.setColor({0,1,0});
   }
-  komo = make_shared<KOMO>(*C, 1., 32, 2, false);
+  komo = make_shared<KOMO>(*C, 1., 32, 2, accumulated_collisions);
   komo->addControlObjective({}, 0, homing_scale);
   komo->addControlObjective({}, 2, acceleration_scale);
   komo->initWithWaypoints({q1}, 1, true, .5, 0);
+  if(accumulated_collisions) {
+    komo->addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e0});
+  }
   if(quaternion_norms) {
     komo->addQuaternionNorms();
   }
