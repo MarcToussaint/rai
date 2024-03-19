@@ -216,9 +216,6 @@ struct KOMO : NonCopyable {
   void setupPathConfig();
   void checkBounds(const arr& x);
 //  void addStableFrame(rai::SkeletonSymbol newMode, const char* parent, const char* name, const char* toShape);
-  void addJointSwitch(const arr& times, rai::JointType type, bool stable, const StringA& frames,
-                      bool firstSwitch,
-                      const rai::Transformation& A);
   rai::Frame* addFrameDof(const char* name, const char* parent, rai::JointType jointType, bool stable, const char* initFrame=0, rai::Transformation rel=0);
   rai::Frame* applySwitch(const rai::KinematicSwitch& sw);
   void retrospectApplySwitches();

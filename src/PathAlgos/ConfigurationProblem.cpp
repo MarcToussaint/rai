@@ -32,7 +32,7 @@ ConfigurationProblem::ConfigurationProblem(const rai::Configuration& _C, bool _c
 
   computeCollisionFeatures = false;
   if(!computeCollisionFeatures) {
-    C.fcl(verbose)->mode = rai::FclInterface::_binaryCollisionAll; //Single;
+    C.fcl(verbose-1)->mode = rai::FclInterface::_binaryCollisionAll; //Single;
   }
 }
 

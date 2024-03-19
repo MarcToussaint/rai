@@ -373,7 +373,6 @@ rai::Frame* KOMO::addSwitch(double time, bool before, bool stable,
 //}
 
 void KOMO::addRigidSwitch(double time, const StringA& frames, bool noJumpStart) {
-  addSwitch(time, true, true, JT_rigid, SWInit_zero, frames(0), frames(1));
   if(noJumpStart) {
     //NOTE: when frames(0) is picking up a kinematic chain (e.g., where frames(1) is a handB of a walker),
     //  then we actually need to impose the no-jump constrained on the root of the kinematic chain!
@@ -392,6 +391,8 @@ void KOMO::addRigidSwitch(double time, const StringA& frames, bool noJumpStart) 
     if(k_order>1) addObjective({time}, make_shared<F_LinAngVel>(), {frames(1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
   }
 
+  addSwitch(time, true, true, JT_rigid, SWInit_zero, frames(0), frames(1));
+
   //Note: Why impose no-jump at end - why not let the next mode impose continuity?
   //  -> Only the current mode knows frame(0), and we want to impose no relative motion of object (frame(0)) to parent (frame(1))
 
@@ -402,63 +403,48 @@ void KOMO::addRigidSwitch(double time, const StringA& frames, bool noJumpStart) 
 //  }
 }
 
-void KOMO::addJointSwitch(const arr& times, rai::JointType type, bool stable, const StringA& frames,
-                          bool firstSwitch,
-                          const rai::Transformation& A) {
-  rai::Frame* f = addSwitch(times(0), true, stable, type, SWInit_copy, frames(0), frames(1), A);
-  if(stable) f->setAutoLimits();
-  else{
-    rai::Frame *p=f;
-    for(;;){
-      p->setAutoLimits();
-      p->joint->H = 100.;
-      p = p->prev;
-      if(!p || !p->joint || p->joint->type!=f->joint->type) break;
-    }
-  }
-
-  //---------------- no jump constraints ---
-
-  //-- no jump at start
-  if(firstSwitch) {
-    //NOTE: when frames(0) is picking up a kinematic chain (e.g., where frames(1) is a handB of a walker),
-    //  then we actually need to impose the no-jump constrained on the root of the kinematic chain!
-    //  To prevent special case for the skeleton specifer, we use this ugly code to determine the root of
-    //  the kinematic chain for frames(1) -- when frames(1) is a normal object, this should be just frames(1) itself
-    rai::Frame* toBePicked = world[frames(1)];
-    int s = conv_time2step(times(0), stepsPerPhase);
-    toBePicked = timeSlices(s+k_order, toBePicked->ID);
-    rai::Frame* rootOfPicked = toBePicked->getUpwardLink(NoTransformation, true);
-
-    rai::Frame* prev = rootOfPicked->prev;
-    if(prev && prev->joint && prev->joint->isStable){
-      addObjective({times(0)}, FS_poseRel, {rootOfPicked->name, prev->parent->name}, OT_eq, {1e1}, NoArr, 1);
-    }else{
-      addObjective({times(0)}, FS_pose, {rootOfPicked->name}, OT_eq, {1e1}, NoArr, 1);
-    }
-    if(k_order>1) addObjective({times(0)}, make_shared<F_LinAngVel>(), {frames(1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
-  }
-
-  //Note: Why impose no-jump at end - why not let the next mode impose continuity?
-  //  -> Only the current mode knows frame(0), and we want to impose no relative motion of object (frame(1)) to parent (frame(0))
-
-  //-- no jump at end
-  if(times(1)>=0) {
-    //      if(stepsPerPhase>3){
-    //        addObjective({times(1)}, FS_poseRel, {frames(1), frames(0)}, OT_eq, {1e1}, NoArr, 1, 0, +1); //two time slices no velocity -> no acceleration!
-    //      }else{
-    addObjective({times(1)}, FS_poseRel, {frames(1), frames(0)}, OT_eq, {1e1}, NoArr, 1, 0, 0);
-    //      }
-    if(k_order>1) addObjective({times(1)}, make_shared<F_LinAngVel>(), {frames(1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
-  }
-}
-
 void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch) {
   //-- creating a stable kinematic linking
   if(newMode==SY_stable || newMode==SY_stableOn
       || newMode==SY_stableYPhi
       || newMode==SY_stableOnX || newMode==SY_stableOnY
       || newMode==SY_stableZero) {
+
+    //---------------- no jump constraints ---
+
+    //-- no jump at start
+    if(firstSwitch) {
+      //NOTE: when frames(0) is picking up a kinematic chain (e.g., where frames(1) is a handB of a walker),
+      //  then we actually need to impose the no-jump constrained on the root of the kinematic chain!
+      //  To prevent special case for the skeleton specifer, we use this ugly code to determine the root of
+      //  the kinematic chain for frames(1) -- when frames(1) is a normal object, this should be just frames(1) itself
+      rai::Frame* toBePicked = world[frames(1)];
+      int s = conv_time2step(times(0), stepsPerPhase);
+      toBePicked = timeSlices(s+k_order, toBePicked->ID);
+      rai::Frame* rootOfPicked = toBePicked->getUpwardLink(NoTransformation, true);
+
+      rai::Frame* prev = rootOfPicked->prev;
+      if(prev && prev->joint && prev->joint->isStable){
+        addObjective({times(0)}, FS_poseRel, {rootOfPicked->name, prev->parent->name}, OT_eq, {1e1}, NoArr, 1);
+      }else{
+        addObjective({times(0)}, FS_pose, {rootOfPicked->name}, OT_eq, {1e1}, NoArr, 1);
+      }
+      if(k_order>1) addObjective({times(0)}, make_shared<F_LinAngVel>(), {frames(1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
+    }
+
+    //Note: Why impose no-jump at end - why not let the next mode impose continuity?
+    //  -> Only the current mode knows frame(0), and we want to impose no relative motion of object (frame(1)) to parent (frame(0))
+
+    //-- no jump at end
+    if(times(1)>=0) {
+//      if(stepsPerPhase>3){
+//        addObjective({times(1)}, FS_poseRel, {frames(1), frames(0)}, OT_eq, {1e1}, NoArr, 1, 0, +1); //two time slices no velocity -> no acceleration!
+//      }else{
+        addObjective({times(1)}, FS_poseRel, {frames(1), frames(0)}, OT_eq, {1e1}, NoArr, 1, 0, 0);
+//      }
+      if(k_order>1) addObjective({times(1)}, make_shared<F_LinAngVel>(), {frames(1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
+    }
+
     //---------------- create the switch and limits for the effective dof ---
     if(newMode==SY_stable) {
       rai::Frame* f = addSwitch(times(0), true, true, JT_free, SWInit_copy, frames(0), frames(1));
@@ -565,41 +551,6 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       if((times(1)<0. && stepsPerPhase*times(0)<T) || stepsPerPhase*times(1)>stepsPerPhase*times(0)+1) {
         addObjective({times(0), times(1)}, make_shared<F_qZeroVel>(), {frames(1)}, OT_eq, {1e1}, NoArr, 1, +1, -1);
       }
-    }
-
-    //---------------- no jump constraints ---
-
-    //-- no jump at start
-    if(firstSwitch) {
-      //NOTE: when frames(0) is picking up a kinematic chain (e.g., where frames(1) is a handB of a walker),
-      //  then we actually need to impose the no-jump constrained on the root of the kinematic chain!
-      //  To prevent special case for the skeleton specifer, we use this ugly code to determine the root of
-      //  the kinematic chain for frames(1) -- when frames(1) is a normal object, this should be just frames(1) itself
-      rai::Frame* toBePicked = world[frames(1)];
-      int s = conv_time2step(times(0), stepsPerPhase);
-      toBePicked = timeSlices(s+k_order, toBePicked->ID);
-      rai::Frame* rootOfPicked = toBePicked->getUpwardLink(NoTransformation, true);
-
-      rai::Frame* prev = rootOfPicked->prev;
-      if(prev && prev->joint && prev->joint->isStable){
-        addObjective({times(0)}, FS_poseRel, {rootOfPicked->name, prev->parent->name}, OT_eq, {1e1}, NoArr, 1);
-      }else{
-        addObjective({times(0)}, FS_pose, {rootOfPicked->name}, OT_eq, {1e1}, NoArr, 1);
-      }
-      if(k_order>1) addObjective({times(0)}, make_shared<F_LinAngVel>(), {frames(1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
-    }
-
-    //Note: Why impose no-jump at end - why not let the next mode impose continuity?
-    //  -> Only the current mode knows frame(0), and we want to impose no relative motion of object (frame(1)) to parent (frame(0))
-
-    //-- no jump at end
-    if(times(1)>=0) {
-//      if(stepsPerPhase>3){
-//        addObjective({times(1)}, FS_poseRel, {frames(1), frames(0)}, OT_eq, {1e1}, NoArr, 1, 0, +1); //two time slices no velocity -> no acceleration!
-//      }else{
-        addObjective({times(1)}, FS_poseRel, {frames(1), frames(0)}, OT_eq, {1e1}, NoArr, 1, 0, 0);
-//      }
-      if(k_order>1) addObjective({times(1)}, make_shared<F_LinAngVel>(), {frames(1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
     }
 
   } else if(newMode==SY_dynamic) {
@@ -904,6 +855,7 @@ void KOMO::getConfiguration_full(Configuration& C, int t, int verbose) {
     f->ensure_X();
     if(f->parent && !F.contains(f->parent)) F.append(f->parent); //note: this is recursive, as appending to looing over F itself!
   }
+  //pathConfig.checkConsistency();
   C.addCopy(F, {}); //, pathConfig.getDofs(F, false));
   C.frames.reshape(-1);
   //C.checkConsistency();

@@ -970,8 +970,10 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint) {
     code=copyJoint->code;
 
     if(copyJoint->mimic) {
-      if(copyJoint->mimic->frame->ID<frame->C.frames.N) {
-        setMimic(frame->C.frames.elem(copyJoint->mimic->frame->ID)->joint);
+      int deltaID = copyJoint->mimic->frame->ID - copyJoint->frame->ID;
+      int hereID = frame->ID + deltaID;
+      if(hereID>=0 && hereID<(int)frame->C.frames.N) {
+        setMimic(frame->C.frames.elem(hereID)->joint);
       } else {
         setMimic(0);
       }
@@ -1459,7 +1461,7 @@ arr rai::Joint::get_h() const {
 }
 
 bool rai::Joint::isPartBreak() {
-  return !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_transZ));
+  return !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_transZ) || (type!=JT_rigid && isStable)); // stable joints are always part of the link (dedicated manipulation frames added to the link)
 //  return (type==JT_rigid || type==JT_free || type==JT_transY || mimic); // && !mimic;
   //    return (dim!=1 && !mimic) || type==JT_tau;
 }
