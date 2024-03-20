@@ -57,9 +57,11 @@ struct DisplayThread : Thread {
     for(uint i=0; i<numSolutions; i++) {
       lgp->solutions()(i)->displayStep++;
       if(gl.views.N>i)
-        gl.views(i).text.clear() <<i <<':' <<lgp->solutions()(i)->displayStep <<": "
-                                 <<lgp->solutions()(i)->node->cost <<"|  " <<lgp->solutions()(i)->node->constraints.last() <<'\n'
-                                 <<lgp->solutions()(i)->decisions;
+        gl.views(i).text.clear() << "idx " << i
+                                 << " | step " << lgp->solutions()(i)->displayStep
+                                 << " | cost " << lgp->solutions()(i)->node->cost.last()
+                                 << " | constraints " << lgp->solutions()(i)->node->constraints
+                                 << '\n' << lgp->solutions()(i)->decisions;
     }
     lgp->solutions.deAccess();
     if(numSolutions)
