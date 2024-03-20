@@ -63,7 +63,7 @@ void solve(){
 
   lgp.fol.writePDDLfiles("z");
 
-  lgp.run();
+  lgp.run(-1);
 
   for(auto* s:lgp.solutions.set()()){
     cout <<"SOLUTION:\n";
