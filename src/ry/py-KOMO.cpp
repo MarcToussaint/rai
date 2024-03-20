@@ -77,9 +77,9 @@ void init_KOMO(pybind11::module& m) {
 
   .def("addModeSwitch", &KOMO::addModeSwitch, "", pybind11::arg("times"), pybind11::arg("newMode"), pybind11::arg("frames"), pybind11::arg("firstSwitch")=true)
 
-  .def("addStableFrame", [](shared_ptr<KOMO>& self, rai::JointType jointType, const char* parent, const char* name, const char* initFrame) {
+  .def("addStableFrame", [](std::shared_ptr<KOMO>& self, rai::JointType jointType, const char* parent, const char* name, const char* initFrame) {
     rai::Frame* f = self->addStableFrame(jointType, parent, name, initFrame);
-    return shared_ptr<rai::Frame>(f, &null_deleter); //giving it a non-sense deleter!
+    return std::shared_ptr<rai::Frame>(f, [](auto*){}); // giving it a no-op deleter!
   }, "complicated...",
   pybind11::arg("jointType"), pybind11::arg("parent"), pybind11::arg("name"), pybind11::arg("init")=0)
 
@@ -103,7 +103,7 @@ void init_KOMO(pybind11::module& m) {
   //   pybind11::arg("addInitializationNoise")=0.01)
 
   // //-- reinitialize with configuration
-  // .def("setConfigurations", [](std::shared_ptr<KOMO>& self, shared_ptr<rai::Configuration>& C) {
+  // .def("setConfigurations", [](std::shared_ptr<KOMO>& self, std::shared_ptr<rai::Configuration>& C) {
   //  arr X = C->getFrameState();
   //  for(uint t=0; t<self->T; t++) {
   //    self->pathConfig.setFrameState(X, self->timeSlices[t]);
@@ -169,7 +169,7 @@ void init_KOMO(pybind11::module& m) {
   //===========================================================================
 
   //  pybind11::class_<ry::ConfigViewer>(m, "ConfigViewer");
-  pybind11::class_<Objective, shared_ptr<Objective>>(m, "KOMO_Objective");
+  pybind11::class_<Objective, std::shared_ptr<Objective>>(m, "KOMO_Objective");
 
 }
 
