@@ -47,7 +47,7 @@ REWARD {
 
 DecisionRule pick {
   X, Y
-  { (gripper X) (object Y) (busy X)! (held Y)! } #(INFEASIBLE pick X Y)! }
+  { (gripper X) (object Y) (busy X)! (held Y)! }
   { (above Y ANY)! (on ANY Y)! (stableOn ANY Y)! 
     (picked X Y) (held Y) (busy X) # these are only on the logical side, to enable correct preconditions
     (touch X Y) (stable X Y) # these are predicates that enter the NLP
@@ -62,9 +62,7 @@ DecisionRule place {
   { (picked X Y)! (busy X)! (busy Y)! (held Y)! # logic only
     (stable ANY Y)! (touch X Y)! # NLP predicates
     (on Z Y) (above Y Z) (stableOn Z Y) tmp(touch X Y) tmp(touch Y Z)
-    #(INFEASIBLE pick ANY Y)! block(INFEASIBLE pick ANY Y)
     }
 }
 
 #####################################################################
-
