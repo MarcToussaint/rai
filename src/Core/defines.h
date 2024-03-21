@@ -9,6 +9,7 @@
 #pragma once
 
 #include <iosfwd>
+#include <typeinfo>
 #include <string.h>
 
 //----- if no system flag, I assume Linux

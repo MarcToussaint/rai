@@ -62,19 +62,33 @@ FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _exclu
   : mode(_mode), excludes(_excludes) {
   self = new FclInterface_self;
 
+#if FCL_MINOR_VERSION >= 7
+  using fcl_CollisionGeometry = fcl::CollisionGeometryf;
+  using fcl_Capsule = fcl::Capsulef;
+  using fcl_Cylinder = fcl::Cylinderf;
+  using fcl_Sphere = fcl::Spheref;
+  // using fcl_Box = fcl::Boxf;
+#else
+  using fcl_CollisionGeometry = fcl::CollisionGeometry;
+  using fcl_Capsule = fcl::Capsule;
+  using fcl_Cylinder = fcl::Cylinder;
+  using fcl_Sphere = fcl::Sphere;
+  // using fcl_Box = fcl::Box;
+#endif
+
   self->convexGeometryData.resize(geometries.N);
   for(long int i=0; i<geometries.N; i++) {
     Shape* shape = geometries(i);
     if(shape) {
-      std::shared_ptr<fcl::CollisionGeometry> geom;
+      std::shared_ptr<fcl_CollisionGeometry> geom;
       if(shape->type()==ST_capsule) {
-        geom = make_shared<fcl::Capsule>(shape->size(-1), shape->size(-2));
+        geom = make_shared<fcl_Capsule>(shape->size(-1), shape->size(-2));
       } else if(shape->type()==ST_cylinder) {
-        geom = make_shared<fcl::Cylinder>(shape->size(-1), shape->size(-2));
+        geom = make_shared<fcl_Cylinder>(shape->size(-1), shape->size(-2));
       } else if(shape->type()==ST_sphere) {
-        geom = make_shared<fcl::Sphere>(shape->size(-1));
+        geom = make_shared<fcl_Sphere>(shape->size(-1));
 //      }else if(shape->type()==ST_box){
-//        geom = make_shared<fcl::Box>(shape->size(0), shape->size(1), shape->size(2));
+//        geom = make_shared<fcl_Box>(shape->size(0), shape->size(1), shape->size(2));
       } else {
         Mesh& mesh = shape->mesh();
 #if 0
@@ -95,17 +109,22 @@ FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _exclu
         dat->polygons.insColumns(0);
         for(uint i=0; i<dat->polygons.d0; i++) dat->polygons(i, 0) = 3;
 #if FCL_MINOR_VERSION >= 7
-        auto verts = make_shared<std::vector<fcl::Vector3<float>>>(mesh.V.d0);
-        auto faces = make_shared<std::vector<int>>(mesh.T.N);
+        auto verts = make_shared<std::vector<fcl::Vector3f>>(mesh.V.d0);
+        auto faces = make_shared<std::vector<int>>(mesh.T.N + mesh.T.d0);
         for(uint i=0; i<verts->size(); i++)(*verts)[i] = {(float)mesh.V(i, 0), (float)mesh.V(i, 1), (float)mesh.V(i, 2)};
-        for(uint i=0; i<faces->size(); i++)(*faces)[i] = mesh.T.elem(i);
-        auto model = make_shared<fcl::Convex<float>>(verts, mesh.T.d0, faces, true);
+        for(uint i=0; i<mesh.T.d0; i++){
+                (*faces)[i*4] = 3;
+                (*faces)[i*4+1] = mesh.T(i, 0);
+                (*faces)[i*4+2] = mesh.T(i, 1);
+                (*faces)[i*4+3] = mesh.T(i, 2);
+        }
+        geom = make_shared<fcl::Convexf>(verts, mesh.T.d0, faces, true);
 #else
         geom = make_shared<fcl::Convex>((fcl::Vec3f*)mesh.Tn.p, dat->plane_dis.p, mesh.T.d0, (fcl::Vec3f*)mesh.V.p, mesh.V.d0, (int*)dat->polygons.p);
 #endif
         self->convexGeometryData(i) = dat;
 #else
-        auto model = make_shared<fcl::Sphere>(mesh.getRadius());
+        auto model = make_shared<fcl_Sphere>(mesh.getRadius());
 #endif
       }
       CollObject* obj = new CollObject(geom, fcl::Transform3f());
