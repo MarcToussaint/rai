@@ -1883,12 +1883,12 @@ void Mesh::glDraw(struct OpenGL& gl) {
     for(uint i=0; i<T.d0; i++) {
       glNormal3dv(Tn.p+3*i);
       if(C.nd==2 && C.d0==T.d0) {
-        if(C.d1==3) { double* c = C.p+3*i; glColor(c[0], c[1], c[2], 1.f, lightingEnabled); }
+        if(C.d1==3) { double* c = C.p+C.d1*i; glColor(c[0], c[1], c[2], 1.f, lightingEnabled); }
         if(C.d1==1) glColorId(C(i, 0));
       }
       uint* t = T.p+3*i;
       for(uint j=0; j<3; j++) {
-        if(C.nd==2 && C.d0==V.d0) { double* c = C.p+3*t[j]; glColor(c[0], c[1], c[2], 1.f, lightingEnabled); }
+        if(C.nd==2 && C.d0==V.d0) { double* c = C.p+C.d1*t[j]; glColor(c[0], c[1], c[2], 1.f, lightingEnabled); }
         if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));
         glVertex3dv(V.p+3*t[j]);
       }

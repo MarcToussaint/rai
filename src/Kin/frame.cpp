@@ -178,7 +178,7 @@ void rai::Frame::getRigidSubFrames(FrameL& F, bool includeRigidJoints) const {
 
 void rai::Frame::getPartSubFrames(FrameL& F) const {
   for(Frame* child:children)
-    if(!child->joint || !child->joint->isPartBreak()) { F.append(child); child->getPartSubFrames(F); }
+    if(!child->joint || !child->joint->isPartBreak) { F.append(child); child->getPartSubFrames(F); }
 }
 
 void rai::Frame::getSubtree(FrameL& F) const {
@@ -208,7 +208,7 @@ rai::Frame* rai::Frame::getUpwardLink(rai::Transformation& Qtotal, bool untilPar
     if(!untilPartBreak) {
       if(f->joint) break;
     } else {
-      if(f->joint && f->joint->isPartBreak()) break;
+      if(f->joint && f->joint->isPartBreak) break;
     }
     if(!!Qtotal) Qtotal = f->Q*Qtotal;
     f = f->parent;
@@ -223,7 +223,7 @@ rai::Frame* rai::Frame::getDownwardLink(bool untilPartBreak) const {
     if(!untilPartBreak) {
       if(ch->joint) break;
     } else {
-      if(ch->joint && ch->joint->isPartBreak()) break;
+      if(ch->joint && ch->joint->isPartBreak) break;
     }
     f = ch;
   }
@@ -238,9 +238,7 @@ FrameL rai::Frame::getPathToUpwardLink(bool untilPartBreak) {
     if(!untilPartBreak) {
       if(f->joint) break;
     } else {
-      if(f->joint && f->joint->isPartBreak()) break;
-//          && (f->joint->type==JT_rigid || f->joint->type==JT_free) //!(f->joint->type>=JT_hingeX && f->joint->type<=JT_hingeZ)
-//          && !f->joint->mimic) break;
+      if(f->joint && f->joint->isPartBreak) break;
     }
     f = f->parent;
   }
@@ -737,10 +735,9 @@ void rai::Frame::setAutoLimits() {
     }
     //        f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
   } else if(jointType==JT_transXY || jointType==JT_transXYPhi) {
-    rai::Shape* on = parent->shape;
-    CHECK_EQ(on->type(), rai::ST_ssBox, "");
-    joint->limits = { -.5*on->size(0), .5*on->size(0),
-                      -.5*on->size(1), .5*on->size(1)
+    CHECK_EQ(from->type(), rai::ST_ssBox, "");
+    joint->limits = { -.5*from->size(0), .5*from->size(0),
+                      -.5*from->size(1), .5*from->size(1)
                     };
     if(jointType==JT_transXYPhi) joint->limits.append({-RAI_2PI, RAI_2PI});
   }
@@ -966,6 +963,7 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint) {
     type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H; scale=copyJoint->scale;
     active=copyJoint->active;
     isStable=copyJoint->isStable;
+    isPartBreak=copyJoint->isPartBreak;
     sampleUniform=copyJoint->sampleUniform;  sampleSdv=copyJoint->sampleSdv;
     code=copyJoint->code;
 
@@ -1460,12 +1458,6 @@ arr rai::Joint::get_h() const {
   return h;
 }
 
-bool rai::Joint::isPartBreak() {
-  return !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_transZ) || (type!=JT_rigid && isStable)); // stable joints are always part of the link (dedicated manipulation frames added to the link)
-//  return (type==JT_rigid || type==JT_free || type==JT_transY || mimic); // && !mimic;
-  //    return (dim!=1 && !mimic) || type==JT_tau;
-}
-
 double& rai::Joint::get_q() {
   if(!active) return frame->C.qInactive.elem(qIndex);
   return frame->C.q.elem(qIndex);
@@ -1486,6 +1478,7 @@ void rai::Joint::setType(rai::JointType _type) {
     dim = getDimFromType();
     frame->C.reset_q();
     q0 = calcDofsFromConfig();
+    isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_transZ));
   }
 }
 
@@ -1552,19 +1545,19 @@ void rai::Joint::read(const Graph& ats) {
   }
   ats.get(H, "ctrl_H");
   ats.get(scale, "joint_scale");
-  if(ats.get(d, "joint"))        type=(JointType)d;
-  else if(ats.get(str, "joint")) {
+
+  if(ats.get(str, "joint")) {
     if(str[0]=='_') {
       type=JT_generic;
       code.set(&str(1), str.N-1);
     } else {
       type=str;
     }
-  } else if(ats.get(d, "type"))    type=(JointType)d;
-  else if(ats.get(str, "type"))  { str >>type; }
+  }
   else type=JT_rigid;
 
   dim = getDimFromType();
+  isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_transZ));
 
   if(ats.get(d, "q")) {
     if(!dim) { //HACK convention

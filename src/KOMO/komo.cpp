@@ -1638,12 +1638,13 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
     if(initFrame) f->setPose(init->getPose());
     if(jointType!=JT_none) {
       f->setJoint(jointType);
+      f->joint->isPartBreak=false;
       if(stable){
         if(f0) f->joint->setMimic(f0->joint);
-//        else f->setAutoLimits();
+        else f->setAutoLimits();
         f->joint->isStable=true;
       }else{
-//        f->setAutoLimits();
+        f->setAutoLimits();
       }
     }
     f->setShape(ST_marker, {.3});

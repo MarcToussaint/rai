@@ -249,6 +249,7 @@ struct Joint : Dof, NonCopyable {
 
   Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
   Enum<JointType> type;   ///< joint type
+  bool isPartBreak = false;
 
   //attachments to the joint
   //struct Uncertainty* uncertainty=nullptr;
@@ -269,8 +270,6 @@ struct Joint : Dof, NonCopyable {
   arr getScrewMatrix();
   uint getDimFromType() const;
   arr get_h() const;
-
-  bool isPartBreak();
 
   //access the C's q vector
   double& get_q();

@@ -135,7 +135,9 @@ void testPush(){
     if(!move0->ret->feasible) continue;
 
     auto move1 = seq.sub_motion(1);
-    move1->komo->addObjective({}, FS_positionRel, {gripper, "_push_start"}, OT_eq, 1e1*arr{{2,3},{1,0,0,0,0,1}});
+//    move1->komo->addObjective({}, FS_positionRel, {gripper, "_push_start"}, OT_eq, 1e1*arr{{2,3},{1,0,0,0,0,1}});
+//    move1->komo->addObjective({}, FS_negDistance, {gripper, obj}, OT_eq, {1e1}, {-.02});
+    move1->komo->addObjective({}, FS_poseRel, {gripper, obj}, OT_eq, {1e1}, {}, 1); //constant relative pose! (redundant for first switch option)
     move1->solve();
     if(!move1->ret->feasible) continue;
 

@@ -246,7 +246,7 @@ void PhysXInterface_self::addLink(rai::Frame* f) {
   if(!shapes.N) return;
 
   if(opt.multiBody) {
-    if(f->joint && !f->joint->isPartBreak()) type=rai::BT_dynamic;
+    if(f->joint && !f->joint->isPartBreak) type=rai::BT_dynamic;
   }
 
   if(opt.verbose>0) {
@@ -448,7 +448,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
   //base->getPartSubFrames(F);
   base->getSubtree(F);
   FrameL links = {base};
-  for(auto* f:F) { if(f->joint && /*f->joint->active &&*/ !f->joint->isPartBreak()) links.append(f); }
+  for(auto* f:F) { if(f->joint && !f->joint->isPartBreak) links.append(f); }
   intA parents(links.N);
   parents = -1;
   for(uint i=1; i<links.N; i++) {
@@ -456,7 +456,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
     parents(i) = links.findValue(p);
     if(parents(i)==-1) {
       //special case: the multibody contains a partbreak link - skip over it (same as assuming fixed)
-      CHECK(p->joint && p->joint->isPartBreak(), "");
+      CHECK(p->joint && p->joint->isPartBreak, "");
       p = p->parent->getUpwardLink();
       parents(i) = links.findValue(p);
     }

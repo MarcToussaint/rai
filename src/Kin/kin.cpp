@@ -540,7 +540,7 @@ FrameL Configuration::getRoots() const {
 /// get all frames without parent or with a PartBreak joint
 FrameL Configuration::getParts() const {
   FrameL F;
-  for(Frame* a:frames) if(!a->parent || (a->joint && a->joint->isPartBreak())) F.append(a);
+  for(Frame* a:frames) if(!a->parent || (a->joint && a->joint->isPartBreak)) F.append(a);
   return F;
 }
 
@@ -2364,8 +2364,8 @@ void Configuration::write(std::ostream& os, bool explicitlySorted) const {
 void Configuration::write(Graph& G) const {
   for(Frame* f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
   for(Frame* f: frames) f->write(G.addSubgraph(f->name));
-  for(uint i=0; i<frames.N; i++) if(frames(i)->parent) {
-      G.elem(i)->addParent(G.elem(frames(i)->parent->ID));
+  for(uint i=0; i<frames.N; i++) if(frames.elem(i)->parent) {
+      G.elem(i)->addParent(G.elem(frames.elem(i)->parent->ID));
     }
 }
 
