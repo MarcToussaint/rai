@@ -56,11 +56,12 @@ struct ScalarUnconstrainedProgram : NLP {
 struct NLP_TrivialSquareFunction : NLP {
   double lo, hi;
 
-  NLP_TrivialSquareFunction(uint dim=10, double lo=-1., double hi=1.) {
+  NLP_TrivialSquareFunction(uint dim=10, double lo=-1., double up=1.) {
     dimension = dim;
     featureTypes = rai::consts<ObjectiveType>(OT_sos, dimension);
-    bounds_lo = rai::consts<double>(lo, dimension);
-    bounds_up = rai::consts<double>(hi, dimension);
+    bounds.resize(2, dimension);
+    bounds[0] = lo;
+    bounds[1] = up;
   }
 
   void evaluate(arr& phi, arr& J, const arr& x) {

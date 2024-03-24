@@ -377,7 +377,8 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x) {
   boolA clipped = {false, false, false};
   double fBox=0.;
   double eps=.001;
-  if(!boundCheck(x_rel, lo+eps, up-eps, 0., false)) { //check outside box
+  arr B = (lo+eps, up-eps).reshape(2,lo.N);
+  if(!boundCheck(x_rel, B, 0., false)) { //check outside box
 //    boundClip(x_rel, lo+eps, up-eps);
     //clip -- and memorize which are clipped!
     for(uint i=0; i<3; i++) {

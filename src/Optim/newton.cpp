@@ -42,7 +42,7 @@ void OptNewton::reinit(const arr& _x) {
   if(&x!=&_x) x = _x;
 
 //  boundClip(x, bounds_lo, bounds_up);
-  boundCheck(x, bounds_lo, bounds_up);
+  boundCheck(x, bounds);
   timeEval -= rai::cpuTime();
 #ifdef NewtonLazyLineSearchMode
   fx = f(NoArr, NoArr, x);  evals++;
@@ -95,10 +95,10 @@ OptNewton::StopCriterion OptNewton::step() {
     uint nActiveBounds=0;
     if(!boundActive.N) boundActive.resize(x.N).setZero();
 #define BOUND_EPS 1e-10
-    if(bounds_lo.N && bounds_up.N) {
-      for(uint i=0; i<x.N; i++) if(bounds_up(i)>bounds_lo(i)) {
-          if(x(i)>=bounds_up(i)-BOUND_EPS) { boundActive(i) = +1; nActiveBounds++; }
-          else if(x(i)<=bounds_lo(i)+BOUND_EPS) { boundActive(i) = -1; nActiveBounds++; }
+    if(bounds.N) {
+      for(uint i=0; i<x.N; i++) if(bounds(1,i)>bounds(0,i)) {
+          if(x(i)>=bounds(1,i)-BOUND_EPS) { boundActive(i) = +1; nActiveBounds++; }
+          else if(x(i)<=bounds(0,i)+BOUND_EPS) { boundActive(i) = -1; nActiveBounds++; }
           else boundActive(i) = 0;
         }
     }
@@ -200,7 +200,7 @@ OptNewton::StopCriterion OptNewton::step() {
     if(options.verbose>1) cout <<"  alpha:" <<std::setw(11) <<alpha <<std::flush;
     y = x + alpha*Delta;
     if(options.verbose>5) cout <<"  y:" <<y;
-    boundClip(y, bounds_lo, bounds_up);
+    boundClip(y, bounds);
     timeEval -= rai::cpuTime();
 #ifdef NewtonLazyLineSearchMode
     fy = f(NoArr, NoArr, y);  evals++;
@@ -286,13 +286,12 @@ OptNewton::~OptNewton() {
   if(options.verbose>1) cout <<"----newton---- final f(x):" <<fx <<endl;
 }
 
-OptNewton& OptNewton::setBounds(const arr& _bounds_lo, const arr& _bounds_up) {
-  bounds_lo = _bounds_lo;
-  bounds_up = _bounds_up;
+OptNewton& OptNewton::setBounds(const arr& _bounds) {
+  bounds = _bounds;
   if(x.N) {
-    CHECK_EQ(bounds_lo.N, x.N, "");
-    CHECK_EQ(bounds_up.N, x.N, "");
-    bool good = boundCheck(x, bounds_lo, bounds_up);
+    CHECK_EQ(bounds.nd, 2, "");
+    CHECK_EQ(bounds.d1, x.N, "");
+    bool good = boundCheck(x, bounds);
     if(!good) HALT("seed x is not within bounds")
 //    boundClip(x, bounds_lo, bounds_up);
 //    reinit(x);

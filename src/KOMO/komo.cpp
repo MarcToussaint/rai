@@ -1250,7 +1250,7 @@ void KOMO::run_prepare(double addInitializationNoise) {
   }
   {
     arr bounds = getBounds();
-    boundClip(x, bounds[0], bounds[1]);
+    boundClip(x, bounds);
   }
 }
 
@@ -1806,7 +1806,7 @@ void KOMO::checkBounds(const arr& x) {
 
   arr bounds = getBounds();
   CHECK_EQ(x.N, bounds.d1, "");
-  boundCheck(x, bounds[0], bounds[1]);
+  boundCheck(x, bounds);
 }
 
 void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {

@@ -68,9 +68,7 @@ OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<NLP>& P, ra
   : L(P, _opt, _dual), newton(_x, L, _opt, _logFile), dual(_dual), opt(_opt), logFile(_logFile) {
 
   if(opt.boundedNewton) {
-    arr lo, up;
-    P->getBounds(lo, up);
-    if(lo.N || up.N) newton.setBounds(lo, up);
+    if(P->bounds.N) newton.setBounds(P->bounds);
   }
 
   if(opt.constrainedMethod==rai::logBarrier) {

@@ -10,13 +10,13 @@
 
 bool useNewton=true;
 
-GlobalIterativeNewton::GlobalIterativeNewton(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_up, rai::OptOptions opt)
-  : x(.5*(bounds_lo+bounds_up)),
+GlobalIterativeNewton::GlobalIterativeNewton(const ScalarFunction& f, const arr& bounds, rai::OptOptions opt)
+  : x(.5*(bounds[0]+bounds[1])),
     newton(x, f, opt),
     grad(x, f, opt),
-    bounds_lo(bounds_lo), bounds_hi(bounds_up),
+    bounds(bounds),
     best(nullptr) {
-  newton.setBounds(bounds_lo, bounds_up);
+  newton.setBounds(bounds);
   newton.options.verbose = 0;
 }
 
@@ -68,7 +68,7 @@ void addRunFrom(GlobalIterativeNewton& gin, const arr& x) {
 }
 
 void GlobalIterativeNewton::step() {
-  arr x = bounds_lo + (bounds_hi-bounds_lo) % rand(bounds_lo.N);
+  arr x = bounds[0] + (bounds[1]-bounds[0]) % rand(bounds.d1);
   if(newton.options.verbose>1) cout <<"***** optGlobalIterativeNewton: new iteration from x=" <<x <<endl;
   addRunFrom(*this, x);
 }

@@ -262,7 +262,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F) {
                      .set_stopTolerance(1e-5)
                      .set_maxStep(1.)
                      .set_damping(1e-10));
-    newton.setBounds({0., 0., 0., 0.}, {-1., -1., -1., 1});
+    newton.setBounds(arr{{2,4}, {0., 0., 0., 0., -1., -1., -1., 1}});
     newton.run();
 
     d1 = P->d1;

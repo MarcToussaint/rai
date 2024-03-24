@@ -142,9 +142,7 @@ void Conv_KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
 Conv_KOMO_NLP::Conv_KOMO_NLP(KOMO& _komo) : komo(_komo) {
   dimension = komo.pathConfig.getJointStateDimension();
 
-  arr bounds = komo.getBounds();
-  bounds_lo = bounds[0];
-  bounds_up = bounds[1];
+  bounds = komo.getBounds();
 
   //-- feature types
   uint M=0;
@@ -296,9 +294,7 @@ void Conv_KOMO_FactoredNLP::subSelect(const uintA& activeVariables, const uintA&
 
   //NLP signature
   dimension = komo.pathConfig.getJointStateDimension();
-  arr bounds = komo.getBounds();
-  bounds_lo = bounds[0];
-  bounds_up = bounds[1];
+  bounds = komo.getBounds();
 
   //create NLP_Factored signature
   variableDimensions.resize(varsN());

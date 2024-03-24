@@ -11,14 +11,14 @@
 //#include "../Gui/plot.h"
 //#include "../Algo/MLcourse.h"
 
-BayesOpt::BayesOpt(const ScalarFunction& _f, const arr& bounds_lo, const arr& bounds_hi, double init_lengthScale, double prior_var, rai::OptOptions o)
+BayesOpt::BayesOpt(const ScalarFunction& _f, const arr& _bounds, double init_lengthScale, double prior_var, rai::OptOptions o)
   : f(_f),
-    bounds_lo(bounds_lo), bounds_hi(bounds_hi),
+    bounds(_bounds),
     f_now(nullptr), f_smaller(nullptr),
-    alphaMinima_now(ScalarFunction(), bounds_lo, bounds_hi),
-    alphaMinima_smaller(ScalarFunction(), bounds_lo, bounds_hi) {
+    alphaMinima_now(ScalarFunction(), _bounds),
+    alphaMinima_smaller(ScalarFunction(), _bounds) {
 
-  init_lengthScale *= sum(bounds_hi - bounds_lo)/bounds_lo.N;
+  init_lengthScale *= sum(bounds[1] - bounds[0])/bounds.d1;
 
   kernel_now = new DefaultKernelFunction();
   kernel_smaller = new DefaultKernelFunction();
@@ -43,7 +43,7 @@ BayesOpt::~BayesOpt() {
 void BayesOpt::step() {
   arr x;
   if(!data_X.N) {
-    x = bounds_lo + (bounds_hi-bounds_lo) % rand(bounds_lo.N);
+    x = bounds[0] + (bounds[1]-bounds[0]) % rand(bounds.d1);
   } else {
     x = pickNextPoint();
   }
@@ -66,8 +66,8 @@ void BayesOpt::report(bool display, const ScalarFunction& f) {
 
   arr X_grid, s_grid;
   X_grid.setGrid(data_X.d1, 0., 1., (data_X.d1==1?500:30));
-  X_grid = X_grid % (bounds_hi-bounds_lo);
-  X_grid += repmat(bounds_lo, X_grid.d0, 1);
+  X_grid = X_grid % (bounds[1]-bounds[0]);
+  X_grid += repmat(bounds[0], X_grid.d0, 1);
   arr y_grid = f_now->evaluate(X_grid, s_grid);
   s_grid = sqrt(s_grid);
 

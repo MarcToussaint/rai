@@ -59,7 +59,7 @@ arr NLP::getInitializationSample(const arr& previousOptima) {
 
 void NLP::report(std::ostream& os, int verbose, const char* msg) {
   os <<"NLP of type '" <<rai::niceTypeidName(typeid(*this)) <<"' -- no special reporting implemented";
-  os <<"-- signature:\n  dimension:" <<dimension <<"\n  featureTypes: " <<EnumArr(featureTypes) <<"\n  bounds: " <<bounds_lo <<bounds_up;
+  os <<"-- signature:\n  dimension:" <<dimension <<"\n  featureTypes: " <<EnumArr(featureTypes) <<"\n  bounds: " <<bounds;
   os <<endl;
 }
 
@@ -147,17 +147,13 @@ bool NLP::checkHessian(const arr& x, double tolerance) {
 }
 
 void NLP::boundClip(arr& x) {
-  arr bounds_lo, bounds_up;
-  getBounds(bounds_lo, bounds_up);
-  ::boundClip(x, bounds_lo, bounds_up);
+  ::boundClip(x, bounds);
 }
 
 bool NLP::checkInBound(const arr& x) {
-  arr bound_lo, bound_up;
-  getBounds(bound_lo, bound_up);
-  CHECK_EQ(x.N, bound_lo.N, "");
-  CHECK_EQ(x.N, bound_up.N, "");
-  return boundCheck(x, bound_lo, bound_up);
+  CHECK_EQ(bounds.d0, 2, "");
+  CHECK_EQ(bounds.d1, x.N, "");
+  return boundCheck(x, bounds);
 }
 
 //===========================================================================

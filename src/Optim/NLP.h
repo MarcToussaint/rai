@@ -40,15 +40,14 @@ struct NLP : NonCopyable {
   uint dimension=0;
  public:
   ObjectiveTypeA featureTypes;
-  arr bounds_lo, bounds_up;
+  arr bounds;
 
  public:
   virtual ~NLP() {}
 
   void copySignature(const NLP& P) {
     dimension = P.dimension;
-    bounds_lo = P.bounds_lo;
-    bounds_up = P.bounds_up;
+    bounds = P.bounds;
     featureTypes = P.featureTypes;
   };
 
@@ -68,7 +67,7 @@ struct NLP : NonCopyable {
 
   //-- trivial getters
   uint getDimension() const { return dimension; }
-  void getBounds(arr& lo, arr& up) const { lo=bounds_lo; up=bounds_up; }
+  void getBounds(arr& lo, arr& up) const { lo=bounds[0]; up=bounds[1]; }
   const ObjectiveTypeA& getFeatureTypes() const { return featureTypes; }
 
   //-- utilities
@@ -78,7 +77,7 @@ struct NLP : NonCopyable {
   bool checkHessian(const arr& x, double tolerance);
   bool checkInBound(const arr& x);
   void boundClip(arr& x);
-  arr getUniformSample() { return bounds_lo + rand(dimension) % (bounds_up - bounds_lo); }
+  arr getUniformSample() { return bounds[0] + rand(dimension) % (bounds[1] - bounds[0]); }
 };
 
 //===========================================================================

@@ -406,7 +406,7 @@ bool PoseTool::checkLimits(const arr& limits, bool solve, bool assert) {
   arr q = C.getJointState();
   CHECK_EQ(B.d0, 2, "");
   CHECK_EQ(B.d1, q.N, "");
-  bool good = boundCheck(q, B[0], B[1]);
+  bool good = boundCheck(q, B);
   if(good) return true;
 
   //without solve
@@ -417,7 +417,7 @@ bool PoseTool::checkLimits(const arr& limits, bool solve, bool assert) {
   }
 
   //solve
-  boundClip(q, B[0], B[1]);
+  boundClip(q, B);
   C.setJointState(q);
   return true;
 }

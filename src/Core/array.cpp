@@ -1100,23 +1100,23 @@ bool checkJacobian(const VectorFunction& f,
 #endif
 }
 
-void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
-  if(bound_lo.N && bound_up.N) {
-    for(uint i=0; i<y.N; i++) if(bound_up.elem(i)>=bound_lo.elem(i)) {
-        if(y.elem(i)>bound_up.elem(i)) y.elem(i) = bound_up.elem(i);
-        if(y.elem(i)<bound_lo.elem(i)) y.elem(i) = bound_lo.elem(i);
+void boundClip(arr& y, const arr& bounds) {
+  if(bounds.N) {
+    for(uint i=0; i<y.N; i++) if(bounds(1,i)>=bounds(0,i)) {
+        if(y.elem(i)>bounds(1,i)) y.elem(i) = bounds(1,i);
+        if(y.elem(i)<bounds(0,i)) y.elem(i) = bounds(0,i);
       }
   }
 }
 
-bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps, bool verbose) {
+bool boundCheck(const arr& x, const arr& bounds, double eps, bool verbose) {
   bool good=true;
-  if(bound_lo.N && bound_up.N) {
-    CHECK_EQ(x.N, bound_lo.N, "");
-    CHECK_EQ(x.N, bound_up.N, "");
-    for(uint i=0; i<x.N; i++) if(bound_up.p[i]>=bound_lo.p[i]) {
-        if(x.p[i] < bound_lo.p[i]-eps) { good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.p[i] <<" violates lower bound " <<bound_lo.p[i]; else break; }
-        if(x.p[i] > bound_up.p[i]+eps) { good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.p[i] <<" violates upper bound " <<bound_up.p[i]; else break; }
+  if(bounds.N) {
+    CHECK_EQ(bounds.d0, 2, "");
+    CHECK_EQ(bounds.d1, x.N, "");
+    for(uint i=0; i<x.N; i++) if(bounds(1,i)>=bounds(0,i)) {
+        if(x(0,i) < bounds(0,i)-eps) { good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.p[i] <<" violates lower bound " <<bounds(0,i); else break; }
+        if(x(0,i) > bounds(1,i)+eps) { good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.p[i] <<" violates upper bound " <<bounds(1,i); else break; }
       }
   }
   return good;
@@ -1690,7 +1690,7 @@ rai::RowShifted::RowShifted(arr& X, rai::RowShifted& aux)
 double rai::RowShifted::elem(uint i, uint j) const {
   CHECK(Z.nd==2 && i<Z.d0 && j<Z.d1,
         "2D range error (" <<Z.nd <<"=2, " <<i <<"<" <<Z.d0 <<", " <<j <<"<" <<Z.d1 <<")");
-  uint rs=rowShift.p[i];;
+  uint rs=rowShift.p[i];
   if(j<rs || j>=rs+rowSize) return 0.;
   return Z.p[i*rowSize+j-rs];
 }

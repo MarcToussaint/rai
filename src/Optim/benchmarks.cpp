@@ -237,10 +237,11 @@ ChoiceConstraintFunction::ChoiceConstraintFunction() {
 
   dimension = n;
 
-  bounds_lo.resize(n) = -2.;
-  bounds_up.resize(n) = +2.;
+  bounds.resize(2,n);
+  bounds[0] = -2.;
+  bounds[1] = +2.;
   if(which==boundConstrained) {
-    bounds_lo(0) = +0.5;
+    bounds(0,0) = +0.5;
     //    bounds_lo(1) = +0.51;
   }
 
@@ -348,11 +349,8 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
     }
 
     if(nlp) {
-      arr bounds = rai::getParameter<arr>("benchmark/bounds", {});
-      if(bounds.N) {
-        nlp->bounds_lo = rai::consts<double>(bounds(0), dim);
-        nlp->bounds_up = rai::consts<double>(bounds(1), dim);
-      }
+      nlp->bounds = rai::getParameter<arr>("benchmark/bounds", {});
+      nlp->bounds.reshape(2,-1);
       if(forsyth>0.) nlp->forsythAlpha = forsyth;
       return nlp;
     }
@@ -371,11 +369,8 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
   else if(bs==BS_CircleLine) nlp = make_shared<NLP_CircleLine>();
   else HALT("can't interpret benchmark symbol: " <<bs);
 
-  arr bounds = rai::getParameter<arr>("benchmark/bounds", {});
-  if(bounds.N) {
-    nlp->bounds_lo = rai::consts<double>(bounds(0), dim);
-    nlp->bounds_up = rai::consts<double>(bounds(1), dim);
-  }
+  nlp->bounds = rai::getParameter<arr>("benchmark/bounds", {});
+  nlp->bounds.reshape(2,-1);
 
   return nlp;
 }

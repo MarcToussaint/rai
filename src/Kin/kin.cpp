@@ -2805,12 +2805,12 @@ void Configuration::reportLimits(std::ostream& os) const {
       arr q = d->calcDofsFromConfig();
       arr l = d->limits;
       bool good=true;
-      if(d->dim>1) {
+//      if(d->dim>1) {
         l = ~l.reshape(-1, 2);
-        good = boundCheck(q, l[0], l[1]);
-      } else {
-        good = boundCheck(q, l({0, 0}), l({1, 1}));
-      }
+        good = boundCheck(q, l);
+//      } else {
+//        good = boundCheck(q, l({0, 0}), l({1, 1}));
+//      }
       if(!good) LOG(0) <<d->name() <<" violates limits";
     }
   }

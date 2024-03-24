@@ -88,8 +88,8 @@ bool NLP_Walker::step_hit_and_run() {
   arr dir = get_rnd_direction();
 
   LineSampler LS(2.*opt.slackMaxStep);
-  LS.clip_beta(nlp.bounds_lo - x, -dir); //cut with lower bound
-  LS.clip_beta(x - nlp.bounds_up, dir); //cut with upper bound
+  LS.clip_beta(nlp.bounds[0] - x, -dir); //cut with lower bound
+  LS.clip_beta(x - nlp.bounds[1], dir); //cut with upper bound
   for(uint i=0; i<10; i++) { //``line search''
     //cut with inequalities
     LS.clip_beta(ev.g + ev.Jg*(x-ev.x), ev.Jg*dir);
@@ -122,11 +122,11 @@ bool NLP_Walker::step_hit_and_run_old(double maxStep) {
   double beta_mean, beta_sdv;
   get_beta_mean(beta_mean, beta_sdv, dir, x);
 
-  boundClip(x, nlp.bounds_lo, nlp.bounds_up);
+  boundClip(x, nlp.bounds);
 
   LineSampler LS(2.*maxStep);
-  LS.clip_beta(nlp.bounds_lo - x, -dir); //cut with lower bound
-  LS.clip_beta(x - nlp.bounds_up, dir); //cut with upper bound
+  LS.clip_beta(nlp.bounds[0] - x, -dir); //cut with lower bound
+  LS.clip_beta(x - nlp.bounds[1], dir); //cut with upper bound
   LS.add_constraints(a*ev.g + ev.Jg*(x-a*ev.x), ev.Jg*dir);
   for(uint i=0; i<10; i++) { //``line search''
     double beta = NAN;
@@ -237,7 +237,7 @@ bool NLP_Walker::step_noise_covariant(double sig, double penaltyMu, double lambd
 }
 
 bool NLP_Walker::step_bound_clip() {
-  boundClip(x, nlp.bounds_lo, nlp.bounds_up);
+  boundClip(x, nlp.bounds);
   return true;
 }
 

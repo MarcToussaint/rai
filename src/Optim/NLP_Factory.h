@@ -25,7 +25,7 @@ struct NLP_Factory : NLP {
 
   void setDimension(uint _dim) { dimension = _dim; }
   void setFeatureTypes(const ObjectiveTypeA& _featureTypes) { featureTypes = _featureTypes; }
-  void setBounds(const arr& _bounds_lo, const arr& _bounds_up) { bounds_lo=_bounds_lo; bounds_up=_bounds_up; }
+  void setBounds(const arr& _bounds_lo, const arr& _bounds_up) { bounds.resize(2,_bounds_lo.N); bounds[0]=_bounds_lo; bounds[1]=_bounds_up; }
 
   void setEvalCallback1(const std::function<void(arr& y, arr& J, const arr& x, void* _userData)>& _eval, void* _userData=0) { eval = _eval;  userData = _userData; }
   void setEvalCallback2(const std::function<std::tuple<arr, arr> (const arr&)>& _eval) { eval2 = _eval; }

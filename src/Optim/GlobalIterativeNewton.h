@@ -15,13 +15,13 @@ struct GlobalIterativeNewton {
   arr x;
   OptNewton newton;
   OptGrad grad;
-  arr bounds_lo, bounds_hi;
+  arr bounds;
 
   struct LocalMinimum { arr x; double fx; uint hits; };
   rai::Array<LocalMinimum> localMinima;
   LocalMinimum* best;
 
-  GlobalIterativeNewton(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_up, rai::OptOptions o=NOOPT);
+  GlobalIterativeNewton(const ScalarFunction& f, const arr& bounds, rai::OptOptions o=NOOPT);
   ~GlobalIterativeNewton();
 
   void step();

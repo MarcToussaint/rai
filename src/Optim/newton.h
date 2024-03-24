@@ -22,7 +22,7 @@ struct OptNewton {
 
   OptNewton(arr& x, const ScalarFunction& f, rai::OptOptions options=NOOPT, ostream* _logFile=0);
   ~OptNewton();
-  OptNewton& setBounds(const arr& _bounds_lo, const arr& _bounds_up);
+  OptNewton& setBounds(const arr& _bounds);
   void reinit(const arr& _x);
 
   StopCriterion step();
@@ -34,7 +34,7 @@ struct OptNewton {
   double alpha, beta;
   int its=0, evals=0, numTinyFSteps=0, numTinyXSteps=0;
   StopCriterion stopCriterion;
-  arr bounds_lo, bounds_up;
+  arr bounds;
   bool rootFinding=false;
   ostream* logFile=nullptr, *simpleLog=nullptr;
   double timeNewton=0., timeEval=0.;

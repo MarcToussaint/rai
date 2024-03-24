@@ -57,8 +57,7 @@ struct Conv_NLP_SlackLeastSquares : NLP {
 
   Conv_NLP_SlackLeastSquares(std::shared_ptr<NLP> _P) : P(_P) {
     dimension = P->getDimension();
-    bounds_lo = P->bounds_lo;
-    bounds_up = P->bounds_up;
+    bounds = P->bounds;
 
     //pick constraints
     for(uint i=0; i<P->featureTypes.N; i++) {
@@ -93,8 +92,9 @@ struct NLP_LinTransformed : NLP {
     dimension = P->getDimension();
     featureTypes = P->featureTypes;
     arr Ainv = inverse(A);
-    bounds_lo = Ainv*(P->bounds_lo-b);
-    bounds_up = Ainv*(P->bounds_up-b);
+    bounds = P->bounds;
+    bounds[0] = Ainv*(bounds[0]-b);
+    bounds[1] = Ainv*(bounds[1]-b);
   }
 
   virtual void evaluate(arr& phi, arr& J, const arr& x) {

@@ -214,9 +214,9 @@ OptPrimalDual::OptPrimalDual(arr& x, arr& dual, const shared_ptr<NLP>& P, int ve
   newton.options.verbose = rai::MAX(opt.verbose-1, 0);
 
   newton.rootFinding = true;
-  newton.bounds_lo.resize(newton.x.N).setZero();
-  newton.bounds_up.resize(newton.x.N) = -1.;
-  for(uint i=x.N+PD.n_eq; i<newton.x.N; i++) newton.bounds_up(i) = 1e10;
+  newton.bounds.resize(2, newton.x.N).setZero();
+  newton.bounds[1] = -1.;
+  for(uint i=x.N+PD.n_eq; i<newton.x.N; i++) newton.bounds(1,i) = 1e10;
 
   if(opt.verbose>0) cout <<"***** OptPrimalDual" <<endl;
 }
