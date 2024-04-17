@@ -178,12 +178,15 @@ struct Frame : NonCopyable {
   arr getPose() { return ensure_X().getArr7d(); }
   arr getPosition() { return ensure_X().pos.getArr(); }
   arr getQuaternion() { return ensure_X().rot.getArr4d(); }
-  arr getRotationMatrix() { return ensure_X().rot.getArr(); }
+  arr getTransform() { return ensure_X().getAffineMatrix(); }
+  arr getRelativePose() const { return get_Q().getArr7d(); }
   arr getRelativePosition() const { return get_Q().pos.getArr(); }
   arr getRelativeQuaternion() const { return get_Q().rot.getArr4d(); }
+  arr getRelativeTransform() { return get_Q().getAffineMatrix(); }
   arr getSize() const ;
   arr getMeshPoints() const ;
   uintA getMeshTriangles() const ;
+  byteA getMeshColors() const ;
   arr getMeshCorePoints() const ;
   arr getJointState() const; ///< throws error if this frame is not also a joint
 
