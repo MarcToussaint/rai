@@ -1115,8 +1115,8 @@ bool boundCheck(const arr& x, const arr& bounds, double eps, bool verbose) {
     CHECK_EQ(bounds.d0, 2, "");
     CHECK_EQ(bounds.d1, x.N, "");
     for(uint i=0; i<x.N; i++) if(bounds(1,i)>=bounds(0,i)) {
-        if(x(0,i) < bounds(0,i)-eps) { good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.p[i] <<" violates lower bound " <<bounds(0,i); else break; }
-        if(x(0,i) > bounds(1,i)+eps) { good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.p[i] <<" violates upper bound " <<bounds(1,i); else break; }
+        if(x.elem(i) < bounds(0,i)-eps) { good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.p[i] <<" violates lower bound " <<bounds(0,i); else break; }
+        if(x.elem(i) > bounds(1,i)+eps) { good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.p[i] <<" violates upper bound " <<bounds(1,i); else break; }
       }
   }
   return good;

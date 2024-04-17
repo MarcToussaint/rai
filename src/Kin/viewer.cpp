@@ -38,6 +38,7 @@ void rai::ViewableConfigCopy::recopyMeshes(const rai::Configuration& _C) {
 //      gl->endNonThreadedDraw(true);
 //    }
     C.copy(_C, false);
+    for(rai::Frame *f:C.frames) if(f->parent) f->unLink(); //EXPERIMENTAL
     gl->dataLock.unlock();
     //deep copy meshes!
 //    for(rai::Frame* f:C.frames) if(f->shape) {
@@ -117,7 +118,7 @@ void rai::ConfigurationViewer::_add(GLDrawer& c) { ensure_gl(); gl->add(c); }
 void rai::ConfigurationViewer::_resetPressedKey() { ensure_gl(); gl->pressedkey=0; }
 
 void rai::ConfigurationViewer::clear() {
-  auto _dataLock = gl->dataLock(RAI_HERE);
+//  auto _dataLock = gl->dataLock(RAI_HERE);
   gl->clearLists();
   C.clear();
   framePath.clear();

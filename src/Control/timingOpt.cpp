@@ -53,12 +53,12 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents,
   dimension += v.N;
   if(wayFree.N) dimension += wayFree.N*d;
 
-  bounds_lo.resize(dimension) = 0.;
-  bounds_up.resize(dimension) = -1.; //means deactivated
+  bounds.resize(2,dimension).setZero();
+  bounds[1] = -1.; //means deactivated
   if(optTau) {
     for(uint k=0; k<tau.N; k++) {
-      bounds_lo(k) = .01;
-      bounds_up(k) = 10.;
+      bounds(0,k) = .01;
+      bounds(1,k) = 10.;
     }
   }
 

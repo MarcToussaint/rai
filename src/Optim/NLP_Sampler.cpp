@@ -81,9 +81,11 @@ bool NLP_Walker::step() {
 
 bool NLP_Walker::step_hit_and_run() {
   ensure_eval();
-  if(opt.hitRunEqMargin>0.) ev.convert_eq_to_ineq(opt.hitRunEqMargin);
   Eval ev0 = ev;
-  double g0 = rai::MAX(max(ev0.g), 0.);
+
+  if(opt.hitRunEqMargin>0.) ev.convert_eq_to_ineq(opt.hitRunEqMargin);
+  double g0 = rai::MAX(max(ev.g), 0.);
+  arr s0 = ev.s;
 
   arr dir = get_rnd_direction();
 
@@ -92,6 +94,7 @@ bool NLP_Walker::step_hit_and_run() {
   LS.clip_beta(x - nlp.bounds[1], dir); //cut with upper bound
   for(uint i=0; i<10; i++) { //``line search''
     //cut with inequalities
+    //TODO: zero a(i) when ev.g(i) <= 0
     LS.clip_beta(ev.g + ev.Jg*(x-ev.x), ev.Jg*dir);
 
     if(LS.beta_lo >= LS.beta_up) break; //failure
@@ -103,8 +106,18 @@ bool NLP_Walker::step_hit_and_run() {
     if(opt.hitRunEqMargin>0.) ev.convert_eq_to_ineq(opt.hitRunEqMargin);
 
     if((!ev.g.N || max(ev.g) <= g0) //ineq constraints are good
-        && sum(ev.s) <= sum(ev0.s) + opt.eps) { //total slack didn't increase too much
-      return true;
+        && sum(ev.s) <= sum(s0) + opt.eps) { //total slack didn't increase too much
+
+      //MH accept
+      if(ev.r.N){ // we have sos costs
+        double Enew = sumOfSqr(ev.r);
+        double Eold = sumOfSqr(ev0.r);
+        if(Enew<Eold) return true;
+        double p_ratio = ::exp(Eold - Enew);
+        if(rnd.uni() < p_ratio) return true;
+      }else{
+        return true;
+      }
     }
   }
 
@@ -159,7 +172,6 @@ bool NLP_Walker::step_hit_and_run_old(double maxStep) {
     }
 
     x += beta*dir;
-    samples++;
     ensure_eval();
 
     if(!sig) {
@@ -263,14 +275,15 @@ void NLP_Walker::run(arr& data, arr& trace) {
   }
 
   bool good=false;
-  int interiorStepsToDo = opt.interiorSteps;
+  int interiorSteps = 0;
+  CHECK_GE(opt.interiorSteps, opt.interiorStepsBurnIn, "burn in needs to be smaller than steps");
 
   for(uint t=0;; t++) {
 
     //-- hit-and-run step
-    if(good && interiorStepsToDo>0) {
+    if(good && opt.interiorSteps>interiorSteps) {
       step_hit_and_run();
-      interiorStepsToDo--;
+      interiorSteps++;
     }
 
     //-- noise step
@@ -307,20 +320,19 @@ void NLP_Walker::run(arr& data, arr& trace) {
     good = (ev.err<=.01);
 
     //-- store?
-    if((good && interiorStepsToDo<=0)
-        || (good && interiorStepsToDo<opt.interiorSteps)) {
+    if((good && interiorSteps>=opt.interiorStepsBurnIn)) {
       data.append(x);
       data.reshape(-1, x.N);
       if(!(data.d0%10)) cout <<'.' <<std::flush;
     }
 
     if(opt.verbose>1 || (good && opt.verbose>0)) {
-      nlp.report(cout, (good?2:1)+opt.verbose, STRING("sampling t: " <<t <<" err: " <<ev.err <<" data: " <<data.d0 <<" good: " <<good <<" interior: " <<interiorStepsToDo));
+      nlp.report(cout, (good?2:1)+opt.verbose, STRING("sampling t: " <<t <<" err: " <<ev.err <<" data: " <<data.d0 <<" good: " <<good <<" interior: " <<interiorSteps));
       rai::wait(.1);
     }
 
     //-- stopping
-    if((good && interiorStepsToDo<=0)
+    if((good && interiorSteps>=opt.interiorSteps)
         || (t>=(uint)opt.downhillMaxSteps)) {
       if(opt.verbose>1 && (!!trace)) {
         FILE("z.dat") <<trace.modRaw();

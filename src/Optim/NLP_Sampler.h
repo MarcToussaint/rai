@@ -35,6 +35,7 @@ struct NLP_Sampler_Options {
   RAI_PARAM("sam/", double, noiseSigma, .1)
   RAI_PARAM("sam/", bool, noiseCovariant, true)
 
+  RAI_PARAM("sam/", int, interiorStepsBurnIn, -1)
   RAI_PARAM("sam/", int, interiorSteps, -1)
   RAI_PARAM("sam/", double, hitRunEqMargin, .1)
 
@@ -72,7 +73,6 @@ struct NLP_Walker {
   double a, sig;
 
   //counters
-  uint samples=0;
   uint evals=0;
   Eval stored;
 
