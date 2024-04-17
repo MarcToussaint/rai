@@ -760,6 +760,11 @@ uintA rai::Frame::getMeshTriangles() const {
   return shape->mesh().T;
 }
 
+byteA rai::Frame::getMeshColors() const {
+  if(!shape) return {};
+  return convert<byte>(shape->mesh().C*255.);
+}
+
 arr rai::Frame::getMeshCorePoints() const {
   if(!shape) return {};
   return shape->sscCore().V;

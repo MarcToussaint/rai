@@ -77,13 +77,19 @@ void init_Frame(pybind11::module& m) {
 
   .def("getPosition", &rai::Frame::getPosition)
   .def("getQuaternion", &rai::Frame::getQuaternion)
-  .def("getRotationMatrix", &rai::Frame::getRotationMatrix)
+  .def("getTransform", &rai::Frame::getTransform)
   .def("getRelativePosition", &rai::Frame::getRelativePosition)
   .def("getRelativeQuaternion", &rai::Frame::getRelativeQuaternion)
+  .def("getRelativeTransform", &rai::Frame::getRelativeTransform)
   .def("getJointState", &rai::Frame::getJointState)
   .def("getSize", &rai::Frame::getSize)
   .def("getMeshPoints", &rai::Frame::getMeshPoints)
   .def("getMeshTriangles", &rai::Frame::getMeshTriangles)
+  .def("getMesh", [](shared_ptr<rai::Frame>& self){
+      return pybind11::make_tuple(Array2numpy<double>(self->getMeshPoints()),
+                                  Array2numpy<uint>(self->getMeshTriangles()),
+                                  Array2numpy<byte>(self->getMeshColors()) );
+  })
 
   .def("info", [](shared_ptr<rai::Frame>& self) {
     rai::Graph G;
