@@ -236,7 +236,7 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
   FrameL F = {base};
   base->getPartSubFrames(F);
   FrameL links = {base};
-  for(auto* f:F) { if(f->joint && !f->joint->isPartBreak()) links.append(f); }
+  for(auto* f:F) { if(f->joint && !f->joint->isPartBreak) links.append(f); }
 //  if(links.N==1){ addLink(base); return 0; } //actually just a single body, not multibody...
   intA parents(links.N);
   parents(0) = -1;
