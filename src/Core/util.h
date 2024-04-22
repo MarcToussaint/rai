@@ -96,7 +96,7 @@ double forsyth(double x, double a);
 double clockTime(); //(really on the clock)
 double realTime(); //(since process start)
 double cpuTime();
-std::string date(bool forFileName=false);
+String date(bool forFileName=false);
 void wait(double sec);
 bool wait(bool useX11=true);
 
@@ -115,7 +115,7 @@ void initCmdLine(int _argc, char* _argv[], bool quiet=true);
 bool checkCmdLineTag(const char* tag);
 char* getCmdLineArgument(const char* tag);
 
-std::string getcwd_string();
+String getcwd_string();
 const char* niceTypeidName(const std::type_info& type);
 
 //----- get verbose level

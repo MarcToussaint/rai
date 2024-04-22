@@ -370,7 +370,9 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
   else HALT("can't interpret benchmark symbol: " <<bs);
 
   nlp->bounds = rai::getParameter<arr>("benchmark/bounds", {});
-  nlp->bounds.reshape(2,-1);
+  if(nlp->bounds.N){
+    nlp->bounds.reshape(2, nlp->getDimension());
+  }
 
   return nlp;
 }

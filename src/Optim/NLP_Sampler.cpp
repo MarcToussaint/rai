@@ -10,13 +10,14 @@
 
 #include <Core/util.h>
 #include <math.h>
+#include <Algo/ann.h>
 
 NLP_Sampler_Options::NLP_Sampler_Options() {
-  if(lagevinTauPrime>0.) {
-    slackStepAlpha = lagevinTauPrime / penaltyMu;
-    noiseSigma = ::sqrt(2.*lagevinTauPrime / penaltyMu);
-    LOG(0) <<"lagevinTauPrime: " <<lagevinTauPrime <<" overwriting alpha=" <<slackStepAlpha <<" and sigma=" <<noiseSigma;
-  }
+//  if(langevinTauPrime>0.) {
+//    slackStepAlpha = langevinTauPrime / penaltyMu;
+//    noiseSigma = ::sqrt(2.*langevinTauPrime / penaltyMu);
+//    LOG(0) <<"lagevinTauPrime: " <<langevinTauPrime <<" overwriting alpha=" <<slackStepAlpha <<" and sigma=" <<noiseSigma;
+//  }
   //    LOG(0) <<"loaded params:\n" <<rai::params()();
 }
 
@@ -73,8 +74,8 @@ bool NLP_Walker::step() {
   step_noise(.2);
   step_bound_clip();
 
-  good = step_slack();
-  good = step_slack();
+  good = step_GaussNewton(true);
+  good = step_GaussNewton(true);
 
   return good;
 }
@@ -197,13 +198,19 @@ bool NLP_Walker::step_hit_and_run_old(double maxStep) {
   return false; //line search in 10 steps failed
 }
 
-bool NLP_Walker::step_slack(double penaltyMu, double alpha, double maxStep, double lambda) {
+bool NLP_Walker::step_GaussNewton(bool slackMode, double penaltyMu, double alpha, double maxStep, double lambda) {
   ensure_eval();
-  Eval ev0 = ev;
+  store_eval();
 
   //compute delta
-  arr Hinv = lapack_inverseSymPosDef(((2.*penaltyMu)*~ev.Js)*ev.Js+lambda*eye(x.N));
-  arr delta = (-2.*penaltyMu) * Hinv * (~ev.Js) * ev.s;
+  arr delta;
+  if(slackMode){
+    arr Hinv = lapack_inverseSymPosDef(((2.*penaltyMu)*~ev.Js)*ev.Js+lambda*eye(x.N));
+    delta = (-2.*penaltyMu) * Hinv * (~ev.Js) * ev.s;
+  }else{
+    arr Hinv = lapack_inverseSymPosDef(((2.*penaltyMu)*~ev.Jr)*ev.Jr+lambda*eye(x.N));
+    delta = (-2.*penaltyMu) * Hinv * (~ev.Jr) * ev.r;
+  }
 
   //adapt step size
   if(alpha<0.) alpha = opt.slackStepAlpha;
@@ -215,11 +222,6 @@ bool NLP_Walker::step_slack(double penaltyMu, double alpha, double maxStep, doub
   //apply
   x += delta;
   ensure_eval();
-
-  if(sum(ev.s) > sum(ev0.s)) {
-    x -= .5*delta;
-    ensure_eval();
-  }
 
   return true;
 }
@@ -253,7 +255,185 @@ bool NLP_Walker::step_bound_clip() {
   return true;
 }
 
-void NLP_Walker::run(arr& data, arr& trace) {
+void NLP_Walker::step_Langevin(bool slackMode, double tauPrime, double penaltyMu){
+  store_eval();
+  double alpha = tauPrime / penaltyMu;
+  double sigma = ::sqrt(2.*tauPrime / penaltyMu);
+//  LOG(0) <<"lagevinTauPrime: " <<langevinTauPrime <<" overwriting alpha=" <<slackStepAlpha <<" and sigma=" <<noiseSigma;
+  arr x_old = x;
+  step_GaussNewton(slackMode, penaltyMu, alpha, opt.slackMaxStep, 1e-6);
+  arr del = x-x_old;
+  step_noise(sigma);
+  if(slackMode){
+    reject_MH(0., opt.penaltyMu, del, sigma);
+  }else{
+    double mu=1e3;
+    if(ev.h.N) mu=0.; //no penalties in eq-case!
+    reject_MH(1., mu, del, sigma);
+  }
+}
+
+bool NLP_Walker::reject_MH(double gamma, double mu, const arr& asymmetric_del, double sigma){
+  ensure_eval();
+  double Enew = gamma*sumOfSqr(ev.r) + mu*sum(ev.s);
+  double Eold = gamma*sumOfSqr(ev_stored.r) + mu*sum(ev_stored.s);
+  if(asymmetric_del.N){
+    arr& x_old = ev_stored.x;
+    arr& x_new = ev.x;
+    Enew += (-.5/(sigma*sigma)) * sumOfSqr(x_old - (x_new + asymmetric_del)); //log q(old|new)
+    Eold += (-.5/(sigma*sigma)) * sumOfSqr(x_new - (x_old + asymmetric_del)); //log q(new|old)
+  }
+  if(Enew<Eold) return true;
+  double p_ratio = ::exp(Eold - Enew);
+  if(rnd.uni() < p_ratio) return true;
+  //reject! restore previous state
+  ev = ev_stored;
+  x = ev.x;
+  return false;
+}
+
+bool NLP_Walker::run_downhill(){
+  opt.slackStepAlpha = rai::getParameter("sam/slackStepAlpha", 1.);
+
+  for(int t=0;t<opt.downhillMaxSteps; t++) {
+    //-- noise step
+    if(opt.downhillNoiseMethod=="none") {
+      //none
+    }else if(opt.downhillNoiseMethod=="iso") {
+      CHECK(opt.downhillNoiseSigma>0., "you can't have noise steps without noiseSigma");
+      step_noise(opt.downhillNoiseSigma);
+      step_bound_clip();
+    }else if(opt.downhillNoiseMethod=="cov") {
+      CHECK(opt.downhillNoiseSigma>0., "you can't have noise steps without noiseSigma");
+      step_noise_covariant(opt.downhillNoiseSigma, opt.penaltyMu, opt.slackRegLambda);
+      step_bound_clip();
+    }else NIY;
+
+    //-- slack step
+    if(opt.slackStepAlpha>0.) {
+      step_GaussNewton(true, opt.penaltyMu, opt.slackStepAlpha, opt.slackMaxStep, opt.slackRegLambda);
+      step_bound_clip();
+    }
+
+    //-- accept
+    if(opt.downhillRejectMethod=="none") {
+      //none
+    } else if(opt.downhillRejectMethod=="Wolfe") {
+      CHECK_EQ(opt.downhillNoiseMethod, "none", "Wolfe doesn't work with noise");
+      if(sum(ev.s) > sum(ev_stored.s)) {
+        opt.slackStepAlpha *= .5;
+        ev = ev_stored;
+        x = ev.x;
+      }else{
+        opt.slackStepAlpha *= 1.2;
+        rai::clip(opt.slackStepAlpha, 0., 1.);
+      }
+    } else if(opt.downhillRejectMethod=="MH") {
+      CHECK(opt.downhillNoiseMethod != "none", "MH only with noise");
+      reject_MH(0., opt.penaltyMu, ev.x - ev_stored.x, opt.downhillNoiseSigma);
+    }
+
+    //-- good?
+    bool good = (ev.err<=.01);
+
+    if(opt.verbose>1 || (good && opt.verbose>0)) {
+      nlp.report(cout, (good?2:1)+opt.verbose, STRING("phase1 t: " <<t <<" err: " <<ev.err <<" good: " <<good));
+      rai::wait(.1);
+    }
+
+    //-- stopping
+    if(good) return true;
+  }
+  return false;
+}
+
+void NLP_Walker::run_phase2(arr& data, uintA& dataEvals){
+  if(opt.interiorBurnInSteps<0) opt.interiorBurnInSteps=0;
+  if(opt.interiorSampleSteps<0) opt.interiorSampleSteps=0;
+  int interiorSteps = opt.interiorBurnInSteps + opt.interiorSampleSteps;
+
+  shared_ptr<ANN> ann;
+  arr annPh;
+  if(opt.interiorMethod=="manifoldRRT"){
+    ann = make_shared<ANN>();
+  }
+
+  for(int t=0;; t++) {
+    //-- good?
+    ensure_eval();
+    bool good = (ev.err<=.01);
+
+    //-- manifoldRRT builds tree from all points (previously slack-stepped)
+    if(opt.interiorMethod=="manifoldRRT"){
+      ann->append(x);
+      arr H = 2. * ~ev.Jh * ev.Jh;
+      arr Ph = eye(x.N) - pseudoInverse(H, NoArr, 1e-6) * H; //tangent projection
+      annPh.append(Ph);
+      annPh.reshape(ann->X.d0, x.N, x.N); //tensor of eq-constraint projections
+    }
+
+    //-- store?
+    if(good && t>=opt.interiorBurnInSteps) {
+      data.append(x);
+      data.reshape(-1, x.N);
+      dataEvals.append(evals);
+      CHECK_EQ(data.d0, dataEvals.d0, "");
+      if(!(data.d0%10)) cout <<'.' <<std::flush;
+    }
+
+    //-- stopping
+    if(t>=interiorSteps) break;
+
+    if(opt.interiorMethod=="HR"){
+      //-- hit-and-run step
+      step_hit_and_run();
+
+    }else if(opt.interiorMethod=="MCMC"){
+      store_eval();
+      if(opt.interiorNoiseMethod=="iso") {
+        step_noise(opt.interiorNoiseSigma);
+      }else if(opt.interiorNoiseMethod=="cov") {
+        step_noise_covariant(opt.interiorNoiseSigma, 1e3, 1e-2);
+      }else NIY;
+      double mu=1e3;
+      if(ev.h.N) mu=0.; //no penalties in eq-case!
+      reject_MH(1., mu);
+
+    }else if(opt.interiorMethod=="Langevin"){
+      step_Langevin(false, opt.langevinTauPrime, opt.penaltyMu);
+
+    }else if(opt.interiorMethod=="manifoldRRT"){
+      arr x_target = nlp.getUniformSample();
+      uint p = ann->getNN(x_target);
+      x = ann->X[p].copy();
+      arr dir = x_target - x;
+      dir = annPh[p] * dir;
+      double stepsize = opt.interiorNoiseSigma;
+      dir *= stepsize/length(dir);
+      x += dir;
+
+    }else HALT("interior method not define: " <<opt.interiorMethod);
+
+    ensure_eval();
+    good = (ev.err<=.01);
+
+    //-- slack step
+    if(opt.slackStepAlpha>0. && !good) {
+      step_GaussNewton(true, opt.penaltyMu, 1., opt.slackMaxStep, opt.slackRegLambda);
+      step_bound_clip();
+    }
+
+    ensure_eval();
+    good = (ev.err<=.01);
+
+    if(opt.verbose>1 || (good && opt.verbose>0)) {
+      nlp.report(cout, (good?2:1)+opt.verbose, STRING("phase2 t: " <<t <<" err: " <<ev.err <<" data: " <<data.d0 <<" good: " <<good));
+      rai::wait(.1);
+    }
+  }
+}
+
+void NLP_Walker::run(arr& data, uintA& dataEvals) {
 
   //-- init
   if(data.N && opt.initNovelty>0){
@@ -269,79 +449,11 @@ void NLP_Walker::run(arr& data, arr& trace) {
     rai::wait(.1);
   }
 
-  if(!!trace) {
-    trace.append(x);
-    trace.reshape(-1, nlp.getDimension());
-  }
+  bool good = run_downhill();
 
-  bool good=false;
-  int interiorSteps = 0;
-  CHECK_GE(opt.interiorSteps, opt.interiorStepsBurnIn, "burn in needs to be smaller than steps");
+  if(!good) return;
 
-  for(uint t=0;; t++) {
-
-    //-- hit-and-run step
-    if(good && opt.interiorSteps>interiorSteps) {
-      step_hit_and_run();
-      interiorSteps++;
-    }
-
-    //-- noise step
-    bool noiseStep = (int)t<opt.noiseSteps;
-    if(noiseStep) {
-      CHECK(opt.noiseSigma>0., "you can't have noise steps without noiseSigma");
-      if(opt.noiseCovariant) {
-        step_noise_covariant(opt.noiseSigma, opt.penaltyMu, opt.slackRegLambda);
-      } else {
-        step_noise(opt.noiseSigma);
-      }
-      step_bound_clip();
-    }
-
-    //-- slack step
-    if(opt.slackStepAlpha>0.) {
-      step_slack(opt.penaltyMu, opt.slackStepAlpha, opt.slackMaxStep, opt.slackRegLambda);
-      step_bound_clip();
-    }
-
-    //-- accept
-    if(opt.acceptBetter) {
-      NIY;
-    } else if(opt.acceptMetropolis) {
-      NIY;
-    }
-
-    //-- store trace
-    if(!!trace) {
-      trace.append(x);
-    }
-
-    //-- good?
-    good = (ev.err<=.01);
-
-    //-- store?
-    if((good && interiorSteps>=opt.interiorStepsBurnIn)) {
-      data.append(x);
-      data.reshape(-1, x.N);
-      if(!(data.d0%10)) cout <<'.' <<std::flush;
-    }
-
-    if(opt.verbose>1 || (good && opt.verbose>0)) {
-      nlp.report(cout, (good?2:1)+opt.verbose, STRING("sampling t: " <<t <<" err: " <<ev.err <<" data: " <<data.d0 <<" good: " <<good <<" interior: " <<interiorSteps));
-      rai::wait(.1);
-    }
-
-    //-- stopping
-    if((good && interiorSteps>=opt.interiorSteps)
-        || (t>=(uint)opt.downhillMaxSteps)) {
-      if(opt.verbose>1 && (!!trace)) {
-        FILE("z.dat") <<trace.modRaw();
-        gnuplot("plot [-2:2][-2:2] 'z.dat' us 1:2 w lp");
-        if(opt.verbose>1) rai::wait();
-      }
-      break;
-    }
-  }
+  run_phase2(data, dataEvals);
 }
 
 void NLP_Walker::init_novelty(const arr& data, uint D){
@@ -390,7 +502,17 @@ void NLP_Walker::get_beta_mean(double& beta_mean, double& beta_sdv, const arr& d
 
 arr NLP_Walker::get_rnd_direction() {
   arr dir = randn(x.N);
-//  if(ev.Ph.N) dir = ev.Ph * dir;
+  if(ev.h.N) { //projection of equality constraints
+    //Gauss-Newton direction
+    //  double lambda = 1e-2;
+    //  arr H = 2. * ~Jh * Jh;
+    //  for(uint i=0;i<H.d0;i++) H(i,i) += lambda;
+    //  arr Hinv = inverse_SymPosDef(H);
+    arr H = 2. * ~ev.Jh * ev.Jh;
+    arr Ph = eye(x.N) - pseudoInverse(H) * H; //tangent projection
+    dir = Ph * dir;
+  }
+
   dir /= length(dir);
   return dir;
 }

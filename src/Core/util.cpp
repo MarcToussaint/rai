@@ -400,24 +400,24 @@ double cpuTime() {
   return std::clock() / (double)CLOCKS_PER_SEC;
 }
 
-std::string date(const std::chrono::system_clock::time_point& t, bool forFileName) {
+String date(const std::chrono::system_clock::time_point& t, bool forFileName) {
   auto in_time_t = std::chrono::system_clock::to_time_t(t);
 
   auto msec = std::chrono::duration_cast<std::chrono::microseconds>(t.time_since_epoch());
   msec = msec % 1000000;
 
-  std::stringstream ss;
+  String ss;
   if(!forFileName) {
-    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X:");
+    ss <<std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X:");
     ss <<std::setfill('0') <<std::setw(3) <<msec.count();
   } else {
     ss << std::put_time(std::localtime(&in_time_t), "%y-%m-%d--%H-%M-%S");
   }
-  return ss.str();
+  return ss;
 }
 
 /// the absolute double time and date as string
-std::string date(bool forFileName) {
+String date(bool forFileName) {
   return date(std::chrono::system_clock::now(), forFileName);
 }
 
@@ -1401,14 +1401,14 @@ namespace rai {
 /**
  * @brief Return the current working dir as std::string.
  */
-std::string getcwd_string() {
+String getcwd_string() {
 #ifdef RAI_MSVC
-#  define PATH_MAX 120
+#  define PATH_MAX 4096
 #endif
   char buff[PATH_MAX];
   char* succ=getcwd(buff, PATH_MAX);
   if(!succ) HALT("could not call getcwd: errno=" <<errno <<' ' <<strerror(errno));
-  return std::string(buff);
+  return String(buff);
 }
 
 const char* niceTypeidName(const std::type_info& type) {
