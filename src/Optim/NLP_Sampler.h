@@ -94,11 +94,12 @@ struct NLP_Walker {
   bool step(); //old
 
   bool step_GaussNewton(bool slackStep, double penaltyMu=1., double alpha=-1., double maxStep=-1., double lambda=1e-2);
+  void step_PlainGrad(bool slackMode, double penaltyMu=1., double alpha=-1., double maxStep=-1.);
   bool step_hit_and_run_old(double maxStep);
   bool step_hit_and_run();
   bool step_noise(double sig);
   bool step_noise_covariant(double sig, double penaltyMu=1., double lambda=1e0);
-  bool step_bound_clip();
+  void bound_clip();
   void step_Langevin(bool slackMode, double tauPrime, double penaltyMu);
 
   bool reject_MH(double gamma, double mu, const arr& asymmetric_del={}, double sigma=-1.);
@@ -117,7 +118,7 @@ struct NLP_Walker {
 
 public:
   bool run_downhill();
-  void run_phase2(arr& data, uintA& dataEvals);
+  void run_interior(arr& data, uintA& dataEvals);
 
 protected:
   void clipBeta(const arr& d, const arr& xbar, double& beta_lo, double& beta_up);

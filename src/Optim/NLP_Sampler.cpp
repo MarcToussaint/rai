@@ -72,7 +72,7 @@ bool NLP_Walker::step() {
 //  }
 
   step_noise(.2);
-  step_bound_clip();
+  bound_clip();
 
   good = step_GaussNewton(true);
   good = step_GaussNewton(true);
@@ -226,6 +226,30 @@ bool NLP_Walker::step_GaussNewton(bool slackMode, double penaltyMu, double alpha
   return true;
 }
 
+void NLP_Walker::step_PlainGrad(bool slackMode, double penaltyMu, double alpha, double maxStep) {
+  ensure_eval();
+  store_eval();
+
+  //compute delta
+  arr delta;
+  if(slackMode){
+    delta = (-2.*penaltyMu) * (~ev.Js) * ev.s;
+  }else{
+    delta = (-2.*penaltyMu) * (~ev.Jr) * ev.r;
+  }
+
+  //adapt step size
+  if(alpha<0.) alpha = opt.slackStepAlpha;
+  if(maxStep<0.) maxStep = opt.slackMaxStep;
+  delta *= alpha;
+  double l = length(delta);
+  if(l>maxStep) delta *= maxStep/l;
+
+  //apply
+  x += delta;
+  ensure_eval();
+}
+
 bool NLP_Walker::step_noise(double sig) {
   CHECK(sig>0., "");
 
@@ -250,9 +274,8 @@ bool NLP_Walker::step_noise_covariant(double sig, double penaltyMu, double lambd
   return true;
 }
 
-bool NLP_Walker::step_bound_clip() {
+void NLP_Walker::bound_clip() {
   boundClip(x, nlp.bounds);
-  return true;
 }
 
 void NLP_Walker::step_Langevin(bool slackMode, double tauPrime, double penaltyMu){
@@ -302,17 +325,21 @@ bool NLP_Walker::run_downhill(){
     }else if(opt.downhillNoiseMethod=="iso") {
       CHECK(opt.downhillNoiseSigma>0., "you can't have noise steps without noiseSigma");
       step_noise(opt.downhillNoiseSigma);
-      step_bound_clip();
+      bound_clip();
     }else if(opt.downhillNoiseMethod=="cov") {
       CHECK(opt.downhillNoiseSigma>0., "you can't have noise steps without noiseSigma");
       step_noise_covariant(opt.downhillNoiseSigma, opt.penaltyMu, opt.slackRegLambda);
-      step_bound_clip();
+      bound_clip();
     }else NIY;
 
     //-- slack step
     if(opt.slackStepAlpha>0.) {
-      step_GaussNewton(true, opt.penaltyMu, opt.slackStepAlpha, opt.slackMaxStep, opt.slackRegLambda);
-      step_bound_clip();
+      if(opt.downhillMethod=="GN") {
+        step_GaussNewton(true, opt.penaltyMu, opt.slackStepAlpha, opt.slackMaxStep, opt.slackRegLambda);
+      }else if(opt.downhillMethod=="grad") {
+        step_PlainGrad(true, opt.penaltyMu, opt.slackStepAlpha, opt.slackMaxStep);
+      }else NIY;
+      bound_clip();
     }
 
     //-- accept
@@ -347,7 +374,7 @@ bool NLP_Walker::run_downhill(){
   return false;
 }
 
-void NLP_Walker::run_phase2(arr& data, uintA& dataEvals){
+void NLP_Walker::run_interior(arr& data, uintA& dataEvals){
   if(opt.interiorBurnInSteps<0) opt.interiorBurnInSteps=0;
   if(opt.interiorSampleSteps<0) opt.interiorSampleSteps=0;
   int interiorSteps = opt.interiorBurnInSteps + opt.interiorSampleSteps;
@@ -420,7 +447,7 @@ void NLP_Walker::run_phase2(arr& data, uintA& dataEvals){
     //-- slack step
     if(opt.slackStepAlpha>0. && !good) {
       step_GaussNewton(true, opt.penaltyMu, 1., opt.slackMaxStep, opt.slackRegLambda);
-      step_bound_clip();
+      bound_clip();
     }
 
     ensure_eval();
@@ -435,7 +462,7 @@ void NLP_Walker::run_phase2(arr& data, uintA& dataEvals){
 
 void NLP_Walker::run(arr& data, uintA& dataEvals) {
 
-  //-- init
+  //-- novelty init?
   if(data.N && opt.initNovelty>0){
     init_novelty(data, opt.initNovelty);
   }else{
@@ -453,7 +480,7 @@ void NLP_Walker::run(arr& data, uintA& dataEvals) {
 
   if(!good) return;
 
-  run_phase2(data, dataEvals);
+  run_interior(data, dataEvals);
 }
 
 void NLP_Walker::init_novelty(const arr& data, uint D){
