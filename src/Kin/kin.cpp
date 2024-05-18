@@ -2001,7 +2001,7 @@ void Configuration::hessianPos(arr& H, Frame* a, Vector* rel) const {
 
 void Configuration::equationOfMotion(arr& M, arr& F, const arr& qdot, bool gravity) {
   fs().update();
-  fs().setGravity();
+  if(gravity) fs().setGravity(); else fs().setGravity(0.);
   fs().equationOfMotion(M, F, qdot);
 }
 
@@ -2009,10 +2009,10 @@ void Configuration::equationOfMotion(arr& M, arr& F, const arr& qdot, bool gravi
   joint torques \f$\tau\f$ (computed via Featherstone's Articulated Body Algorithm in O(n)) */
 void Configuration::fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity) {
   fs().update();
-  fs().setGravity();
+  if(gravity) fs().setGravity(); else fs().setGravity(0.);
   //  cout <<tree <<endl;
-  fs().fwdDynamics_MF(qdd, qd, tau);
-  //  fs().fwdDynamics_aba_1D(qdd, qd, tau); //works
+//  fs().fwdDynamics_MF(qdd, qd, tau);
+    fs().fwdDynamics_aba_1D(qdd, qd, tau); //works
   //  fwdDynamics_aba_nD(qdd, tree, qd, tau); //does not work
 }
 
@@ -2020,8 +2020,14 @@ void Configuration::fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gr
   \f$\ddot q\f$ (computed via the Recursive Newton-Euler Algorithm in O(n)) */
 void Configuration::inverseDynamics(arr& tau, const arr& qd, const arr& qdd, bool gravity) {
   fs().update();
-  fs().setGravity();
+  if(gravity) fs().setGravity(); else fs().setGravity(0.);
+#if 1
   fs().invDynamics(tau, qd, qdd);
+#else
+  arr M, F;
+  fs().equationOfMotion(M, F, qdd);
+  tau = M * qdd + F;
+#endif
 }
 
 /*void Configuration::impulsePropagation(arr& qd1, const arr& qd0){

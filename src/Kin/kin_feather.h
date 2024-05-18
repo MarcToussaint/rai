@@ -23,6 +23,7 @@ struct F_Link {
   uint dof();
 
   arr _h, _Q, _I, _f; //featherstone types
+  arr v, a, F; //compute variables
 
   F_Link() {}
   void setFeatherstones();

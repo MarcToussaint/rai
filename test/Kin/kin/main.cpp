@@ -460,31 +460,28 @@ void TEST(FollowRedundantSequence){
 
 //---------- test standard dynamic control
 void TEST(Dynamics){
-  rai::Configuration G("arm7.g");
-  G.optimizeTree();
-  G.sortFrames();
-  cout <<G <<endl;
+  rai::Configuration C("arm7.g");
+  C.optimizeTree();
+  C.sortFrames();
+  cout <<C <<endl;
 
   arr u;
   bool friction=false;
-  VectorFunction diffEqn = [&G,&u,&friction](const arr& x) -> arr{
+  VectorFunction diffEqn = [&C,&u,&friction](const arr& x) -> arr{
     checkNan(x);
-    G.setJointState(x[0]);
+    C.setJointState(x[0]);
     if(!u.N) u.resize(x.d1).setZero();
-    if(friction) u = -1e-0 * x[1];
+    if(friction) u = -1e-1 * x[1];
     checkNan(u);
-    /*if(T2::addContactsToDynamics){
-        G.contactsToForces(100.,10.);
-      }*/
     arr y;
-    G.fwdDynamics(y, x[1], u, true);
+    C.fwdDynamics(y, x[1], u, true);
     checkNan(y);
     return y;
   };
   
-  uint t,T=720,n=G.getJointStateDimension();
+  uint t,T=720,n=C.getJointStateDimension();
   arr q,qd(n),qdd(n),qdd_(n);
-  q = G.getJointState();
+  q = C.getJointState();
   qd.setZero();
   qdd.setZero();
   
@@ -492,40 +489,37 @@ void TEST(Dynamics){
 
   ofstream z("z.dyn");
   rai::String text;
-  G.view();
-//  for(rai::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
+  C.view();
 
   for(t=0;t<T;t++){
-    if(false && t>=500){ //hold steady ** TODO: INV DYN IS BROKE!! **
-      qdd_ = -1. * qd;
-      G.inverseDynamics(u, qd, qdd_);
-      //tau.resize(n); tau.setZero();
-      //G.clearForces();
-      //G.gravityToForces();
-      G.fwdDynamics(qdd, qd, u);
+    if(t>=400){
+      friction=false;
+//      qdd_ = -1. * qd;
+      double tau = .5, xi = 0.9, kp = 1/(tau*tau), kd = 2*xi/tau;
+      qdd_ = -kp * q - kd * qd;
+      C.inverseDynamics(u, qd, qdd_);
+      C.fwdDynamics(qdd, qd, u);
       CHECK(maxDiff(qdd,qdd_,0)<1e-5,"dynamics and inverse dynamics inconsistent:\n" <<qdd <<'\n' <<qdd_);
-      //cout <<q <<qd <<qdd <<endl;
-      cout <<"test dynamics: fwd-inv error =" <<maxDiff(qdd,qdd_,0) <<endl;
       q  += .5*dt*qd;
       qd +=    dt*qdd;
       q  += .5*dt*qd;
-      G.setJointState(q);
-      //cout <<q <<qd <<qdd <<endl;
-      text.clear() <<"t=" <<t <<"  torque controlled damping (acc = - vel)\n(checking consistency of forward and inverse dynamics),  energy=" <<G.getEnergy(qd);
+      C.setJointState(q);
+      text.clear() <<"t=" <<t <<"  torque controlled PD behavior\n  dynamics test: fwd-inv error =" <<maxDiff(qdd,qdd_,0) <<" energy =" <<C.getEnergy(qd) <<endl;
     }else{
       //cout <<q <<qd <<qdd <<' ' <<G.getEnergy() <<endl;
       arr x=(q, qd).reshape(2, q.N);
       rai::rk4_2ndOrder(x, x, diffEqn, dt);
       q=x[0]; qd=x[1];
-      if(t>300){
+      if(t>200){
         friction=true;
-        text.clear() <<"t=" <<t <<"  friction swing using RK4,  energy=" <<G.getEnergy(qd);
+        text.clear() <<"t=" <<t <<"  FRICTION swing using RK4,  energy=" <<C.getEnergy(qd);
       }else{
         friction=false;
-        text.clear() <<"t=" <<t <<"  free swing using RK4,  energy=" <<G.getEnergy(qd);
+        text.clear() <<"t=" <<t <<"  free swing using RK4,  energy=" <<C.getEnergy(qd);
       }
     }
-    G.view(false, text);
+    C.view(false, text);
+    rai::wait(.01);
   }
 }
 
@@ -638,7 +632,7 @@ int MAIN(int argc,char **argv){
   testQuaternionKinematics();
   testKinematicSpeed();
   testFollowRedundantSequence();
-  //testDynamics();
+  testDynamics();
   testContacts();
   testLimits();
 #ifdef RAI_ODE
