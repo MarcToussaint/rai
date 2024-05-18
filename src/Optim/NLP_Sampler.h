@@ -34,6 +34,8 @@ struct NLP_Sampler_Options {
   RAI_PARAM("sam/", double, slackMaxStep, .1)
   RAI_PARAM("sam/", double, slackRegLambda, 1e-2)
 
+  RAI_PARAM("sam/", double, ineqOverstep, -1)
+
   RAI_PARAM("sam/", rai::String, downhillNoiseMethod, "none")
   RAI_PARAM("sam/", rai::String, downhillRejectMethod, "Wolfe")
 
@@ -107,6 +109,7 @@ struct NLP_Walker {
   void run(arr& data, uintA& evals);
 
   void init_novelty(const arr& data, uint D);
+  void init_distance(const arr& data, uint D);
 
   //--
   arr compute_slackStep(){

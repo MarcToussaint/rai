@@ -87,6 +87,9 @@ YACC = bison -d
 
 LINK	= $(CXX)
 CPATHS	+= $(BASE)/src $(HOME)/.local/include
+ifdef CONDA_PREFIX
+CPATHS  += $(CONDA_PREFIX)/include
+endif
 ifdef BASE2
 CPATHS	+= $(BASE2)/src
 endif
@@ -94,6 +97,8 @@ LPATHS	+= $(BASE)/lib $(HOME)/.local/lib /usr/local/lib
 ifdef BASE2
 LPATHS	+= $(BASE2)/lib
 endif
+#CPATHS  += /usr/include
+#LPATHS  += /usr/lib/x86_64-linux-gnu
 LIBS += -lrt
 
 #google-pprof:
@@ -250,6 +255,7 @@ info: force
 	@echo "  CXXFLAGS =" "$(CXXFLAGS)"
 	@echo "  LINK =" "$(LINK)"
 	@echo "  LDFLAGS =" "$(LDFLAGS)"
+	@echo "  CPATHS =" "$(CPATHS)"
 	@echo "  CPATH =" "$(CPATH)"
 	@echo "  LPATHS =" "$(LPATHS)"
 	@echo "  LPATH =" "$(LPATH)"

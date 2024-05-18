@@ -12,7 +12,7 @@
 #include <map>
 
 #ifdef RAI_JSON
-#  include <jsoncpp/json/json.h>
+#  include <json/json.h>
 #endif
 
 #define DEBUG(x) //x

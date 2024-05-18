@@ -23,8 +23,8 @@ endif
 
 ifeq ($(JSON),1)
 DEPEND_UBUNTU += libjsoncpp-dev
-CXXFLAGS += -DRAI_JSON
-LIBS += -ljsoncpp
+CXXFLAGS += -DRAI_JSON `pkg-config --cflags jsoncpp`
+LIBS     += `pkg-config --libs jsoncpp`
 endif
 
 ifeq ($(YAML),1)
@@ -238,10 +238,11 @@ ifeq ($(QHULL),1)
 DEPEND_UBUNTU += libqhull-dev
 VAR = $(shell pkg-config qhull --silence-errors --modversion)
 ifeq ($(strip $(VAR)),)
-CXXFLAGS  += -DRAI_QHULL
+CXXFLAGS  += -DRAI_QHULL `pkg-config --cflags qhullcpp`
 else
 CXXFLAGS  += -DRAI_QHULL8
 endif
+#LIBS += `pkg-config --libs qhullcpp`
 LIBS      += -lqhull
 endif
 
@@ -379,9 +380,10 @@ endif
 
 ifeq ($(EIGEN),1)
 DEPEND_UBUNTU += libeigen3-dev
-CXXFLAGS += -DRAI_EIGEN -fopenmp
-LDFLAGS += -fopenmp
-CPATH := $(CPATH):/usr/include/eigen3:/usr/local/include/eigen3
+CXXFLAGS += -DRAI_EIGEN -fopenmp `pkg-config --cflags eigen3`
+#LIBS     += `pkg-config --libs eigen3`
+LDFLAGS  += -fopenmp
+#CPATH := $(CPATH):/usr/include/eigen3:/usr/local/include/eigen3
 endif
 
 ifeq ($(HYBRID_AUTOMATON),1)

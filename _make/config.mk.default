@@ -21,7 +21,7 @@
 
 ## we use the following numerics/optimization libs by default, but can be disabled
 #EIGEN = 0
-#CERES = 0
+CERES = 0
 NLOPT = 0
 IPOPT = 0
 

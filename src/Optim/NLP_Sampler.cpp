@@ -282,7 +282,7 @@ void NLP_Walker::step_Langevin(bool slackMode, double tauPrime, double penaltyMu
   store_eval();
   double alpha = tauPrime / penaltyMu;
   double sigma = ::sqrt(2.*tauPrime / penaltyMu);
-//  LOG(0) <<"lagevinTauPrime: " <<langevinTauPrime <<" overwriting alpha=" <<slackStepAlpha <<" and sigma=" <<noiseSigma;
+//  LOG(0) <<"lagevinTauPrime: " <<tauPrime <<" overwriting alpha=" <<alpha <<" and sigma=" <<sigma;
   arr x_old = x;
   step_GaussNewton(slackMode, penaltyMu, alpha, opt.slackMaxStep, 1e-6);
   arr del = x-x_old;
@@ -376,8 +376,8 @@ bool NLP_Walker::run_downhill(){
 
 void NLP_Walker::run_interior(arr& data, uintA& dataEvals){
   if(opt.interiorBurnInSteps<0) opt.interiorBurnInSteps=0;
-  if(opt.interiorSampleSteps<0) opt.interiorSampleSteps=0;
-  int interiorSteps = opt.interiorBurnInSteps + opt.interiorSampleSteps;
+  if(opt.interiorSampleSteps<1) opt.interiorSampleSteps=1; //at least 1 interior sample
+  int interiorSteps = opt.interiorBurnInSteps + opt.interiorSampleSteps - 1;
 
   shared_ptr<ANN> ann;
   arr annPh;
@@ -393,8 +393,9 @@ void NLP_Walker::run_interior(arr& data, uintA& dataEvals){
     //-- manifoldRRT builds tree from all points (previously slack-stepped)
     if(opt.interiorMethod=="manifoldRRT"){
       ann->append(x);
-      arr H = 2. * ~ev.Jh * ev.Jh;
-      arr Ph = eye(x.N) - pseudoInverse(H, NoArr, 1e-6) * H; //tangent projection
+      //arr H = 2. * ~ev.Jh * ev.Jh;
+      //arr Ph = eye(x.N) - pseudoInverse(H, NoArr, 1e-6) * H; //tangent projection
+      arr Ph = eye(x.N) - ~ev.Jh * pseudoInverse(ev.Jh * ~ev.Jh, NoArr, 1e-6) * ev.Jh; //tangent projection
       annPh.append(Ph);
       annPh.reshape(ann->X.d0, x.N, x.N); //tensor of eq-constraint projections
     }
@@ -465,6 +466,8 @@ void NLP_Walker::run(arr& data, uintA& dataEvals) {
   //-- novelty init?
   if(data.N && opt.initNovelty>0){
     init_novelty(data, opt.initNovelty);
+  }else if(data.N && opt.initNovelty<0){
+    init_distance(data, -opt.initNovelty);
   }else{
     arr x_init = nlp.getUniformSample();
     initialize(x_init);
@@ -484,10 +487,10 @@ void NLP_Walker::run(arr& data, uintA& dataEvals) {
 }
 
 void NLP_Walker::init_novelty(const arr& data, uint D){
-  struct Seed{ NLP_Walker::Eval ev; arr delta; double novelty=-1.; };
+  struct Seed{ NLP_Walker::Eval ev; arr delta; double align=-1.; };
   rai::Array<Seed> seeds(D);
 
-  //sample D seeds & evaluate novelty
+  //sample D seeds & evaluate align
   for(uint k=0;k<seeds.N;k++){
     Seed& seed = seeds(k);
     arr x_init = nlp.getUniformSample();
@@ -498,19 +501,49 @@ void NLP_Walker::init_novelty(const arr& data, uint D){
     seed.delta /= (length(seed.delta) + 1e-8);
 
     for(uint i=0;i<data.d0;i++){
-      arr del = x_init-data[i];
-      double nn = scalarProduct(seed.delta, del);
-      if(nn>seed.novelty) seed.novelty = nn;
+      arr del = data[i]-x_init;
+      del /= (length(del) + 1e-8);
+      double align = scalarProduct(seed.delta, del);
+      //large align is bad: you walk into data[i] direction
+      if(align>seed.align) seed.align = align;
     }
   }
 
-  //select most novel
+  //select least aligned seed
   Seed* seed = &seeds(0);
   for(uint k=1;k<seeds.N;k++){
-    if(seeds(k).novelty> seed->novelty) seed = &seeds(k);
+    if(seeds(k).align < seed->align) seed = &seeds(k);
   }
   ev = seed->ev;
   x = ev.x;
+}
+
+void NLP_Walker::init_distance(const arr& data, uint D){
+    arr x_init;
+    double d_init = -1.;
+#if 0
+  for(uint k=0;k<D;k++){
+    arr x = nlp.getUniformSample();
+    double d=1e10;
+    for(uint i=0;i<data.d0;i++){
+      double di = length(data[i]-x);
+      if(di<d) d=di;
+    }
+    if(d > d_init){ d_init=d; x_init=x; }
+  }
+#else
+    ANN ann;
+    ann.setX(data);
+    arr x, sqrDists;
+    uintA idx;
+    for(uint k=0;k<D;k++){
+      x = nlp.getUniformSample();
+      ann.getkNN(sqrDists, idx, x, 1);
+      double d = sqrDists.elem();
+      if(d > d_init){ d_init=d; x_init=x; }
+    }
+#endif
+  initialize(x_init);
 }
 
 void NLP_Walker::get_beta_mean(double& beta_mean, double& beta_sdv, const arr& dir, const arr& xbar) {
@@ -576,6 +609,9 @@ void NLP_Walker::Eval::eval(const arr& _x, NLP_Walker& walker) {
     s = g; Js = Jg;
     for(uint i=0; i<s.N; i++) if(s(i)<0.) { s(i)=0.; Js[i]=0.; } //ReLu for g
     gpos = s;
+    if(walker.opt.ineqOverstep>1.){
+      Js /= walker.opt.ineqOverstep;
+    }
 
     s.append(h); Js.append(Jh);
     for(uint i=g.N; i<s.N; i++) if(s(i)<0.) { s(i)*=-1.; Js[i]*=-1.; } //make positive

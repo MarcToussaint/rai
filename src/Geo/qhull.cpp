@@ -13,8 +13,7 @@
 #include "../Core/util.h"
 
 extern "C" {
-#ifdef RAI_QHULL8
-#  define RAI_QHULL
+#ifndef RAI_QHULL_OLD
 #  include <libqhull/qhull_a.h>
 #else
 #  include <qhull/qhull_a.h>
