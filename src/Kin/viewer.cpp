@@ -31,7 +31,7 @@ void rai::ViewableConfigCopy::recopyMeshes(const rai::Configuration& _C) {
   ensure_gl();
 
   {
-    gl->dataLock.lock(RAI_HERE);
+    ensure_gl().dataLock.lock(RAI_HERE);
 //    if(gl->hasWindow()) {
 //      gl->beginNonThreadedDraw(true);
 //      C.glDeinit(*gl);
@@ -39,7 +39,7 @@ void rai::ViewableConfigCopy::recopyMeshes(const rai::Configuration& _C) {
 //    }
     C.copy(_C, false);
     for(rai::Frame *f:C.frames) if(f->parent) f->unLink(); //EXPERIMENTAL
-    gl->dataLock.unlock();
+    ensure_gl().dataLock.unlock();
     //deep copy meshes!
 //    for(rai::Frame* f:C.frames) if(f->shape) {
 //        shared_ptr<Mesh> org = f->shape->_mesh;
