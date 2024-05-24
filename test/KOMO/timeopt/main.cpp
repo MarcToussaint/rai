@@ -72,8 +72,9 @@ struct TimeOpt : NLP {
 
     //init dim and bounds
     dimension=n;
-    bounds_lo.resize(n) = 1e-3;
-    bounds_up.resize(n) = 1.;
+    bounds.resize(2, n);
+    bounds[0] = 1e-3;
+    bounds[1] = 1.;
 
     //-- init feature types
     uint dimPhi = 1;

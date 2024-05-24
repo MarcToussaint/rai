@@ -278,12 +278,10 @@ bool rai::ConfigurationViewer::playVideo(const FrameL& timeSlices, bool watch, d
       if(saveVideoPath) write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<t<<".png"));
     }
   }
-  if(watch && rai::getInteractivity()) {
-    key = update(true);
-  }
+  key = update(true);
   drawText = tag;
   drawSubFrames.clear();
-  return !(key==27 || key=='q');
+  return !(key==27 || key=='q' || !rai::getInteractivity());
 }
 
 bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* saveVideoPath) {
@@ -316,12 +314,10 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
       if(saveVideoPath) write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<t<<".png"));
     }
   }
+  int key = update(true);
   drawText = tag;
-  if(watch && rai::getInteractivity()) {
-    int key = update(true);
-    return !(key==27 || key=='q');
-  }
-  return false;
+  drawSubFrames.clear();
+  return !(key==27 || key=='q' || !rai::getInteractivity());
 }
 
 void rai::ConfigurationViewer::savePng(const char* saveVideoPath) {

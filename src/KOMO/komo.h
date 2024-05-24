@@ -199,7 +199,7 @@ struct KOMO : NonCopyable {
   void checkGradients();          ///< checks all gradients numerically
 
   int view(bool pause=false, const char* txt=nullptr);
-  int view_play(bool pause=false, double delay=.2, const char* saveVideoPath=nullptr);
+  bool view_play(bool pause=false, double delay=.2, const char* saveVideoPath=nullptr);
   void view_close();
 
   void plotTrajectory();
