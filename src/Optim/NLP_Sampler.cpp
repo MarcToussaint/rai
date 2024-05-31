@@ -464,14 +464,14 @@ void NLP_Walker::run_interior(arr& data, uintA& dataEvals){
 void NLP_Walker::run(arr& data, uintA& dataEvals) {
 
   //-- novelty init?
-  if(data.N && opt.initNovelty>0){
-    init_novelty(data, opt.initNovelty);
-  }else if(data.N && opt.initNovelty<0){
-    init_distance(data, -opt.initNovelty);
-  }else{
+  if(data.N && opt.seedMethod=="nov"){
+    init_novelty(data, opt.seedCandidates);
+  }else if(data.N && opt.seedMethod=="dist"){
+    init_distance(data, opt.seedCandidates);
+  }else if(!data.N || opt.seedMethod=="uni"){
     arr x_init = nlp.getUniformSample();
     initialize(x_init);
-  }
+  }else NIY;
 
   if(opt.verbose>3) {
     ensure_eval();

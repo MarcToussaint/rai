@@ -21,7 +21,8 @@ struct NLP_Sampler_Options {
 
   RAI_PARAM("sam/", int, verbose, 1)
 
-  RAI_PARAM("sam/", int, initNovelty, -10)
+  RAI_PARAM("sam/", rai::String, seedMethod, "uni")
+  RAI_PARAM("sam/", uint, seedCandidates, 10)
 
   RAI_PARAM("sam/", double, penaltyMu, 1.)
 
