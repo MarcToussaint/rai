@@ -1508,7 +1508,7 @@ int KOMO::view(bool pause, const char* txt) {
   return pathConfig.view(pause, txt);
 }
 
-int KOMO::view_play(bool pause, double delay, const char* saveVideoPath) {
+bool KOMO::view_play(bool pause, double delay, const char* saveVideoPath) {
   view(false, 0);
   pathConfig.viewer()->phaseOffset = 1.-double(k_order);
   pathConfig.viewer()->phaseFactor = 1./double(stepsPerPhase);

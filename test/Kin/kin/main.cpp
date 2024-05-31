@@ -21,7 +21,6 @@ void TEST(LoadSave){
   C.sortFrames();
   FILE("z.g") <<C;
 
-  C["panda_finger_joint1"]->ensure_X();
   C.view();
 
   rai::Configuration C2("z.g");
@@ -337,31 +336,6 @@ void TEST(Limits){
 // set state test
 //
 
-void generateSequence(arr &X, uint T, uint n){
-  rnd.seed(0);
-  arr P(10,n);
-
-  //a random spline
-  //a set of random via points with zero start and end:
-  rndUniform(P,-1.,1.,false); P[0]=0.; P[P.d0-1]=0.;
-  
-  //convert into a smooth spline (1/0.03 points per via point):
-  X = rai::BSpline().set(2,P, range(0.,1.,P.d0-1)).eval(range(0.,1.,T));
-}
-
-void TEST(PlayStateSequence){
-  rai::Configuration C("arm7.g");
-  uint n=C.getJointStateDimension();
-  arr X;
-  generateSequence(X, 200, n);
-  arr v(X.d1); v=0.;
-  for(uint t=0;t<X.d0;t++){
-    C.setJointState(X[t]);
-    C.view(false, STRING("replay of a state sequence -- time " <<t));
-    rai::wait(.01);
-  }
-}
-
 void testPlaySpline(){
   rai::Configuration C(rai::raiPath("../rai-robotModels/panda/panda.g"));
   C.animateSpline(5);
@@ -408,17 +382,23 @@ void TEST(MeshShapesInOde){
 // standard IK test
 //
 
+arr generateSpline(uint T, uint n){
+  rnd.seed(0);
+  arr P(10,n);
+  rndUniform(P,-1.,1.,false); P[0]=0.; P[P.d0-1]=0.;
+  return rai::BSpline().set(2,P, range(0.,1.,P.d0-1)).eval(range(0.,1.,T));
+}
+
 void TEST(FollowRedundantSequence){  
   rai::Configuration G("arm7.g");
 
   uint t,T,n=G.getJointStateDimension();
-  arr x(n),y,J,invJ;
+  arr x(n),y,J;
   x=.8;     //initialize with intermediate joint positions (non-singular positions)
   rai::Vector rel = G.getFrame("endeff")->get_Q().pos; //this frame describes the relative position of the endeffector wrt. 7th body
 
   //-- generate a random endeffector trajectory
-  arr Z, Zt; //desired and true endeffector trajectories
-  generateSequence(Z, 200, 3); //3D random sequence with limits [-1,1]
+  arr Z = generateSpline(200, 3); //3D random sequence with limits [-1,1]
   Z *= .5;
   T=Z.d0;
   G.setJointState(x);
@@ -479,11 +459,10 @@ void TEST(Dynamics){
     return y;
   };
   
-  uint t,T=720,n=C.getJointStateDimension();
-  arr q,qd(n),qdd(n),qdd_(n);
-  q = C.getJointState();
-  qd.setZero();
-  qdd.setZero();
+  arr q = C.getJointState();
+  arr qd = zeros(q.N);
+  arr qdd = zeros(q.N);
+  arr qdd_des;
   
   double dt=.01;
 
@@ -491,20 +470,20 @@ void TEST(Dynamics){
   rai::String text;
   C.view();
 
-  for(t=0;t<T;t++){
+  for(uint t=0;t<750;t++){
     if(t>=400){
       friction=false;
 //      qdd_ = -1. * qd;
       double tau = .5, xi = 0.9, kp = 1/(tau*tau), kd = 2*xi/tau;
-      qdd_ = -kp * q - kd * qd;
-      C.inverseDynamics(u, qd, qdd_);
+      qdd_des = -kp * q - kd * qd;
+      C.inverseDynamics(u, qd, qdd_des);
       C.fwdDynamics(qdd, qd, u);
-      CHECK(maxDiff(qdd,qdd_,0)<1e-5,"dynamics and inverse dynamics inconsistent:\n" <<qdd <<'\n' <<qdd_);
+      CHECK(maxDiff(qdd,qdd_des,0)<1e-5,"dynamics and inverse dynamics inconsistent:\n" <<qdd <<'\n' <<qdd_des);
       q  += .5*dt*qd;
       qd +=    dt*qdd;
       q  += .5*dt*qd;
       C.setJointState(q);
-      text.clear() <<"t=" <<t <<"  torque controlled PD behavior\n  dynamics test: fwd-inv error =" <<maxDiff(qdd,qdd_,0) <<" energy =" <<C.getEnergy(qd) <<endl;
+      text.clear() <<"t=" <<t <<"  torque controlled PD behavior\n  dynamics test: fwd-inv error =" <<maxDiff(qdd,qdd_des,0) <<" energy =" <<C.getEnergy(qd) <<endl;
     }else{
       //cout <<q <<qd <<qdd <<' ' <<G.getEnergy() <<endl;
       arr x=(q, qd).reshape(2, q.N);
@@ -625,7 +604,6 @@ int MAIN(int argc,char **argv){
   testLoadSave();
   testCopy();
   testGraph();
-  testPlayStateSequence();
   testPlaySpline();
   testViewer();
   testKinematics();

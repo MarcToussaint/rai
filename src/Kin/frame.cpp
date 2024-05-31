@@ -542,12 +542,14 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
   rai::Mesh& mesh = getShape().mesh();
   if(radius<=0.) {
     getShape().type() = ST_mesh;
-    mesh.V.clear().operator=(points).reshape(-1, 3);
+    mesh.clear();
+    mesh.V = points; mesh.V.reshape(-1, 3);
     mesh.makeConvexHull();
     getShape().size.clear();
   } else {
     getShape().type() = ST_ssCvx;
-    getShape().sscCore().V.clear().operator=(points).reshape(-1, 3);
+    getShape().sscCore().clear();
+    getShape().sscCore().V=points; getShape().sscCore().V.reshape(-1, 3);
     getShape().sscCore().makeConvexHull();
     mesh.setSSCvx(getShape().sscCore().V, radius);
     getShape().size = arr{radius};

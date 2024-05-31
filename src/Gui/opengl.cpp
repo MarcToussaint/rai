@@ -52,6 +52,9 @@ OpenGLDrawOptions& GLDrawer::glDrawOptions(OpenGL& gl) { return gl.drawOptions; 
 
 //===========================================================================
 
+struct SingleGLAccess {
+};
+
 Singleton<SingleGLAccess> singleGLAccess;
 
 //===========================================================================
@@ -287,6 +290,8 @@ void OpenGL::openWindow() {
 
     fg->addGL(this);
   } else {
+    auto fg = singletonGlSpinner();
+    auto lock = fg->mutex(RAI_HERE);
     if(!offscreen && !glfwGetWindowAttrib(self->window, GLFW_VISIBLE)) {
       glfwShowWindow(self->window);
     }
@@ -308,6 +313,8 @@ void OpenGL::closeWindow() {
 
 void OpenGL::raiseWindow() {
   if(self->window) {
+    auto fg = singletonGlSpinner();
+    auto lock = fg->mutex(RAI_HERE);
     glfwFocusWindow(self->window);
   }
 }
@@ -349,7 +356,11 @@ void OpenGL::postRedrawEvent(bool fromWithinCallback) {
 void OpenGL::resize(int w, int h) {
   openWindow();
   Reshape(w, h);
-  glfwSetWindowSize(self->window, width, height);
+  {
+    auto fg = singletonGlSpinner();
+    auto lock = fg->mutex(RAI_HERE);
+    glfwSetWindowSize(self->window, width, height);
+  }
 }
 
 #endif
@@ -370,18 +381,9 @@ struct sOpenGL : NonCopyable {
 
 //===========================================================================
 //
-// force instantiations
-//
-
-template rai::Array<glUI::Button>::Array();
-template rai::Array<glUI::Button>::~Array();
-
-//===========================================================================
-//
 // static objects
 //
 
-OpenGL* staticgl [10]; //ten pointers to be potentially used as display windows
 uint OpenGL::selectionBuffer[1000];
 
 //===========================================================================
@@ -647,25 +649,26 @@ void glDrawFloor(float x, float r, float g, float b) {
   x/=2.;
 
 #if 1
-  glColor(r+.1, g+.1, b+.1);
+  glColor(r+.15f, g+.15f, b+.15f);
+  float eps=.002;
   for(int i=-5; i<=5; i++) {
     glBegin(GL_LINES);
-    glVertex3f(i*x/5., -x, 0.002);
-    glVertex3f(i*x/5., x, 0.002);
+    glVertex3f(i*x/5., -x, eps);
+    glVertex3f(i*x/5., x, eps);
     glEnd();
     glBegin(GL_LINES);
-    glVertex3f(-x, i*x/5., 0.002);
-    glVertex3f(x, i*x/5., 0.002);
+    glVertex3f(-x, i*x/5., eps);
+    glVertex3f(x, i*x/5., eps);
     glEnd();
   }
 
 //  glColor(.25, .25, .25);
 //  glBegin(GL_LINE_STRIP);
-//  glVertex3f(-x, -x, 0.002);
-//  glVertex3f(-x, x, 0.002);
-//  glVertex3f(x, x, 0.002);
-//  glVertex3f(x, -x, 0.002);
-//  glVertex3f(-x, -x, 0.002);
+//  glVertex3f(-x, -x, eps);
+//  glVertex3f(-x, x, eps);
+//  glVertex3f(x, x, eps);
+//  glVertex3f(x, -x, eps);
+//  glVertex3f(-x, -x, eps);
 //  glEnd();
 #endif
 
@@ -1366,31 +1369,6 @@ int OpenGL::displayRedBlue(const arr& x, bool wait, float _zoom) {
   return watchImage(img, wait, _zoom);
 }
 
-void glDrawUI(void* p, OpenGL& gl) {
-  glPushName(0x10);
-  ((glUI*)p)->glDraw(gl);
-  glPopName();
-}
-
-bool glUI::hoverCallback(OpenGL& gl) {
-  //bool b=
-  checkMouse(gl.mouseposx, gl.mouseposy);
-  //if(b) postRedrawEvent(false);
-  return true;
-}
-
-bool glUI::clickCallback(OpenGL& gl) {
-  bool b=checkMouse(gl.mouseposx, gl.mouseposy);
-  if(b) gl.postRedrawEvent(true);
-  int t=top;
-  if(t!=-1) {
-    cout <<"CLICK! on button #" <<t <<endl;
-    gl.watching.setStatus(0);
-    return false;
-  }
-  return true;
-}
-
 #else /// RAI_GL
 void glColor(int col) { NICO }
 void glColor(float, float, float, float) { NICO }
@@ -1418,17 +1396,8 @@ void glDrawTexQuad(uint texture,
 int OpenGL::watchImage(const floatA& _img, bool wait, float _zoom) { NICO }
 int OpenGL::watchImage(const byteA& _img, bool wait, float _zoom) { NICO }
 void glDrawUI(void* p) { NICO }
-bool glUI::hoverCallback(OpenGL& gl) { NICO }
-bool glUI::clickCallback(OpenGL& gl) { NICO }
 #endif
 
-//===========================================================================
-//
-// standalone draw routines for large data structures
-//
-
-#ifdef RAI_GL
-#endif
 
 //===========================================================================
 //
@@ -1437,50 +1406,18 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 
 OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen, bool _fullscreen, bool _hideCameraControls, bool _noCursor)
   : title(_title), width(w), height(h), offscreen(_offscreen),
-    reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0),
     fullscreen(_fullscreen), hideCameraControls(_hideCameraControls), noCursor(_noCursor) {
   //RAI_MSG("creating OpenGL=" <<this);
   self = make_unique<sOpenGL>(this); //this might call some callbacks (Reshape/Draw) already!
-  init();
-}
-
-OpenGL::OpenGL(void* container)
-  : width(0), height(0), reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0) {
-  self = make_unique<sOpenGL>(this); //this might call some callbacks (Reshape/Draw) already!
-  init();
+  clearColor= {1., 1., 1.};
+  if(width%4) width = 4*(width/4);
+  if(height%2) height = 2*(height/2);
+  camera.setWHRatio((double)width/height);
 }
 
 OpenGL::~OpenGL() {
   clear();
   closeWindow();
-}
-
-OpenGL* OpenGL::newClone() const {
-  OpenGL* gl=new OpenGL;
-  //*(gl->s) = *s; //don't clone internal stuff!
-  gl->drawers = drawers;
-  gl->camera = camera;
-  return gl;
-}
-
-void OpenGL::init() {
-  drawFocus=false;
-  clearColor= {1., 1., 1.};
-  pressedkey=0;
-  mouseposx=mouseposy=0;
-  mouse_button=0;
-  mouseIsDown=false;
-  mouseView=-1;
-
-  if(width%4) width = 4*(width/4);
-  if(height%2) height = 2*(height/2);
-  camera.setWHRatio((double)width/height);
-
-  reportEvents=false;
-  reportSelects=false;
-  exitkeys="";
-
-  backgroundZoom=1;
 }
 
 struct CstyleDrawer : GLDrawer {
@@ -1496,27 +1433,12 @@ struct LambdaDrawer : GLDrawer {
   void glDraw(OpenGL& gl) { call(gl); }
 };
 
-struct CstyleInitCall : OpenGL::GLInitCall {
-  void* classP;
-  void (*call)(void*);
-  CstyleInitCall(void (*call)(void*), void* classP): classP(classP), call(call) {}
-  bool glInit(OpenGL&) { call(classP); return true; }
-};
-
 /// add a draw routine
 void OpenGL::add(void (*call)(void*, OpenGL&), void* classP) {
   CHECK(call!=0, "OpenGL: nullptr pointer to drawing routine");
   auto _dataLock = dataLock(RAI_HERE);
   toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
   drawers.append(toBeDeletedOnCleanup.last());
-}
-
-/// add a draw routine
-void OpenGL::addInit(void (*call)(void*), void* classP) {
-  CHECK(call!=0, "OpenGL: nullptr pointer to drawing routine");
-  auto _dataLock = dataLock(RAI_HERE);
-  initCalls.append(new CstyleInitCall(call, classP));
-
 }
 
 void OpenGL::add(std::function<void (OpenGL&)> call) {
@@ -1587,7 +1509,6 @@ void OpenGL::clear() {
   for(CstyleDrawer* d:toBeDeletedOnCleanup) delete d;
   toBeDeletedOnCleanup.clear();
   drawers.clear();
-  initCalls.clear();
   hoverCalls.clear();
   clickCalls.clear();
   keyCalls.clear();
@@ -2471,80 +2392,6 @@ void OpenGL::renderInBack(int w, int h, bool fromWithinCallback) {
 #endif
 
   endNonThreadedDraw(fromWithinCallback);
-}
-
-//===========================================================================
-//
-// GUI implementation
-//
-
-void glUI::addButton(uint x, uint y, const char* name, const char* img1, const char* img2) {
-  Button& b = buttons.append();
-  byteA img;
-  b.hover=false;
-  b.x=x; b.y=y; b.name=name;
-  //read_png(img, tex1);
-  if(img1) {
-    read_ppm(img, img1, true);
-  } else {
-    img.resize(18, strlen(name)*9+10, 3);
-    img=255;
-  }
-  b.w=img.d1; b.h=img.d0;
-  b.img1=img;    add_alpha_channel(b.img1, 100);
-  if(img2) {
-    read_ppm(img, img1, true);
-    CHECK(img.d1==b.w && img.d0==b.h, "mismatched size");
-  }
-  b.img2=img;    add_alpha_channel(b.img2, 200);
-}
-
-void glUI::glDraw(OpenGL& gl) {
-#ifdef RAI_GL
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-  GLint viewPort[4];
-  glGetIntegerv(GL_VIEWPORT, viewPort);
-  glOrtho(0., viewPort[2], viewPort[3], .0, -1., 1.);
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  Button* b;
-  float x, y, h;
-  for(uint i=0; i<buttons.N; i++) {
-    b = &buttons(i);
-    x=b->x-b->w/2.;
-    y=b->y-b->h/2.;
-    //w=b->w;
-    h=b->h;
-    glColor(0, 0, 0, 1);
-    glDrawText(b->name, x+5, y+h-5, 0.);
-    if((int)i==top) glRasterImage((int)x, (int)y, b->img2);
-    else      glRasterImage((int)x, (int)y, b->img1);
-  }
-#else
-  NICO
-#endif
-}
-
-bool glUI::checkMouse(int _x, int _y) {
-  float x, y, w, h;
-  Button* b;
-  int otop=top;
-  top=-1;
-  for(uint i=0; i<buttons.N; i++) {
-    b = &buttons(i);
-    x=b->x-b->w/2.;
-    y=b->y-b->h/2.;
-    w=b->w;
-    h=b->h;
-    if(_x>=x && _x <=x+w && _y>=y && _y<=y+h) top = i;
-  }
-  if(otop==top) return false;
-  //postRedrawEvent(false);
-  return true;
 }
 
 void read_png(byteA& img, const char* file_name, bool swap_rows) {

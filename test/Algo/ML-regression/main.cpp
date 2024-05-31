@@ -179,9 +179,10 @@ void testKernelReg(const char *datafile=nullptr) {
       checkHessian(f.getF(1.), x, 1e-4);
     }
 
-    arr bounds_lo = rai::consts<double>(-2., X.d1);
-    arr bounds_hi = rai::consts<double>(+2., X.d1);
-    GlobalIterativeNewton opt(f.getF(-1.), bounds_lo, bounds_hi, rai::OptOptions().set_verbose(1) .set_stopTolerance(1e-3));
+    arr bounds(2, X.d1);
+    bounds[0]=-2.;
+    bounds[1]=+2.;
+    GlobalIterativeNewton opt(f.getF(-1.), bounds, rai::OptOptions().set_verbose(1) .set_stopTolerance(1e-3));
     opt.run(10);
     opt.report();
     cout <<"optimum at x=" <<opt.x <<' ' <<f.getF(-1.)(NoArr, NoArr, opt.x) <<endl;

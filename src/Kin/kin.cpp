@@ -2052,13 +2052,13 @@ OpenGL& Configuration::gl() {
 
 void Configuration::view_lock(const char* _lockInfo) {
   if(self->viewer) {
-    viewer()->ensure_gl().dataLock.lock(_lockInfo);
+    gl().dataLock.lock(_lockInfo);
   }
 }
 
 void Configuration::view_unlock() {
   if(self->viewer) {
-    viewer()->ensure_gl().dataLock.unlock();
+    gl().dataLock.unlock();
   }
 }
 

@@ -107,7 +107,6 @@ struct OpenGL {
   unique_ptr<struct sOpenGL> self;
 
   /// @name little structs to store objects and callbacks
-  struct GLInitCall { virtual bool glInit(OpenGL&) = 0; };
   struct GLHoverCall { virtual bool hoverCallback(OpenGL&) = 0; };
   struct GLClickCall { virtual bool clickCallback(OpenGL&) = 0; };
   struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
@@ -119,7 +118,6 @@ struct OpenGL {
   /// @name data fields
   rai::Array<GLView> views;            ///< list of subviews
   rai::Array<GLDrawer*> drawers;       ///< list of draw routines
-  rai::Array<GLInitCall*> initCalls;   ///< list of initialization routines
   rai::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
   rai::Array<GLClickCall*> clickCalls; ///< list of click callbacks
   rai::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
@@ -134,51 +132,45 @@ struct OpenGL {
   rai::Camera camera;     ///< the camera used for projection
   rai::String text;        ///< the text to be drawn as title within the opengl frame
   floatA clearColor;  ///< colors of the beackground (called in glClearColor(...))
-  bool reportEvents, reportSelects;    ///< flags for verbosity
-  int pressedkey;         ///< stores the key pressed
-  bool keyIsDown;
-  const char* exitkeys;   ///< additional keys to exit watch mode
-  int modifiers;          ///< stores modifier keys
-  int mouse_button;       ///< stores which button was pressed
-  double mouseposx, mouseposy;  ///< current x- and y-position of mouse
-  int mouseView;
-  bool mouseIsDown;
+  bool reportEvents=false, reportSelects=false;    ///< flags for verbosity
+  int pressedkey=0;         ///< stores the key pressed
+  bool keyIsDown=false;
+  int modifiers=0;          ///< stores modifier keys
+  int mouse_button=0;       ///< stores which button was pressed
+  double mouseposx=0, mouseposy=0;  ///< current x- and y-position of mouse
+  int mouseView=-1;
+  bool mouseIsDown=false;
   rai::Array<GLSelect> selection; ///< list of all selected objects
-  GLSelect* topSelection;        ///< top selected object
-  bool drawFocus;
+  GLSelect* topSelection=0;        ///< top selected object
+  bool drawFocus=false;
   byteA background, captureImage;
   floatA captureDepth;
-  double backgroundZoom;
+  double backgroundZoom=1.;
   arr P; //camera projection matrix
   Mutex dataLock; //'data' means anything: member fields (camera, variables), drawers, data the drawers access
 //  uint fbo, render_buf;
-  uint fboId;
-  uint rboColor;
-  uint rboDepth;
+  uint fboId=0;
+  uint rboColor=0;
+  uint rboDepth=0;
   Signaler isUpdating;
   Signaler watching;
   OpenGLDrawOptions drawOptions;
 
-  bool fullscreen; ///<window starts in fullscreenmode on the primary screen
-  bool hideCameraControls; ///<camera can be tilted, rotated, zoomed in/out if controls are enabled
-  bool noCursor;
+  bool fullscreen=false; ///<window starts in fullscreenmode on the primary screen
+  bool hideCameraControls=false; ///<camera can be tilted, rotated, zoomed in/out if controls are enabled
+  bool noCursor=false;
 
   /// @name constructors & destructors
   OpenGL(const char* title="rai::OpenGL", int w=400, int h=400, bool _offscreen=false, bool _fullscreen=false, bool _hideCameraControls=false, bool _noCursor=false);
   //OpenGL(void *parent, const char* title="rai::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
-  OpenGL(void* container); //special constructor: used when the underlying system-dependent class exists already
 
-  OpenGL* newClone() const;
   ~OpenGL();
 
   /// @name adding drawing routines and callbacks
   void clear();
   void add(void (*call)(void*, OpenGL&), void* classP=nullptr);
-  void addInit(void (*call)(void*), void* classP=nullptr);
   void add(std::function<void(OpenGL&)> drawer);
   void add(GLDrawer& c) { auto _dataLock = dataLock(RAI_HERE); drawers.append(&c); }
-  template<class T> void add(Var<T>& c) { add(c.set()); }
-  void addDrawer(GLDrawer* c) { auto _dataLock = dataLock(RAI_HERE); drawers.append(c); }
   void remove(GLDrawer& c) { auto _dataLock = dataLock(RAI_HERE); drawers.removeValue(&c); }
   //template<class T> void add(const T& x) { add(x.staticDraw, &x); } ///< add a class or struct with a staticDraw routine
   void addHoverCall(GLHoverCall* c) { hoverCalls.append(c); }
@@ -206,8 +198,6 @@ struct OpenGL {
 
   /// @name info & I/O
   void reportSelection();
-  void saveEPS(const char* filename);
-  void about(std::ostream& os=std::cout);
   bool modifiersNone();
   bool modifiersShift();
   bool modifiersCtrl();
@@ -234,11 +224,9 @@ struct OpenGL {
   GLEvent lastEvent;
   static uint selectionBuffer[1000];
 
-  void init(); //initializes camera etc
-
   //general callbacks (used by all implementations)
   rai::Vector downVec, downPos, downFoc;
-  int downModifiers;
+  int downModifiers=0;
   rai::Quaternion downRot;
  protected:
   void Key(unsigned char key, int mods, bool _keyIsDown);
@@ -252,35 +240,5 @@ struct OpenGL {
   friend struct GlfwSpinner;
   friend bool glClickUI(void* p, OpenGL* gl);
 };
-
-//===========================================================================
-
-struct SingleGLAccess {
-};
-
-extern Singleton<SingleGLAccess> singleGLAccess;
-
-//===========================================================================
-
-//
-// simplest UI
-//
-
-struct glUI:OpenGL::GLHoverCall, OpenGL::GLClickCall {
-  int top;
-  struct Button { byteA img1, img2; bool hover; uint x, y, w, h; const char* name; };
-  rai::Array<Button> buttons;
-
-  glUI() { top=-1; }
-
-  void addButton(uint x, uint y, const char* name, const char* img1=0, const char* img2=0);
-  void glDraw(OpenGL& gl);
-  bool checkMouse(int _x, int _y);
-
-  bool hoverCallback(OpenGL&);
-  bool clickCallback(OpenGL&);
-};
-
-void glDrawUI(void* p, OpenGL&);
 
 extern OpenGL& NoOpenGL;

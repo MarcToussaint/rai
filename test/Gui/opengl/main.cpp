@@ -59,20 +59,15 @@ void TEST(MultipleViews) {
 void TEST(Grab) {
   OpenGL gl("title",300,300);
   gl.add(draw1,0);
+  gl.watch();
+
   cout <<"normal view - written to z.ppm " <<endl;
-  gl.update("title", true);
   write_ppm(gl.captureImage,"z.1.ppm");
   arr depth = rai::convert<double>(gl.captureDepth);
-  depth *= 255.;
+  double ma = max(depth), mi=min(depth);
+  depth = 255.*(depth-mi)/(ma-mi);
   write_ppm(rai::convert<byte>(depth),"z.2.ppm");
-
-  gl.watch();
-
-  gl.camera.setPosition(0,0,10);
-  gl.camera.setZRange(9,10);
-  gl.camera.setHeightAbs(2);
-  cout <<"orthogonal top view" <<endl;
-  gl.watch();
+  LOG(0) <<"max depth: " <<ma <<" min: " <<mi;
 
   //grap the depth image from current view:
   gl.update(nullptr, true);
@@ -392,7 +387,7 @@ void TEST(Image) {
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc,argv);
 
-  testTeapot(); return 0;
+  testTeapot();
   testOfflineRendering();
   testGrab();
   testMultipleViews();

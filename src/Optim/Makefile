@@ -5,7 +5,7 @@ OUTPUT = lib$(NAME).so
 OPTIM = debug
 #fast_debug
 
-DEPEND = Core
+DEPEND = Core Algo
 
 CERES = 1
 NLOPT = 1

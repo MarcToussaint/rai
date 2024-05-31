@@ -612,10 +612,8 @@ void Mesh::setSSCvx(const arr& core, double r, uint fineness) {
 void Mesh::computeNormals() {
   CHECK(T.N, "can't compute normals for a point cloud");
   Vector a, b, c;
-  Tn.resize(T.d0, 3);
-  Tn.setZero();
-  Vn.resize(V.d0, 3);
-  Vn.setZero();
+  Tn.resize(T.d0, 3).setZero();
+//  Vn.resize(V.d0, 3).setZero();
   //triangle normals and contributions
   for(uint i=0; i<T.d0; i++) {
     uint* t=T.p+3*i;
@@ -625,12 +623,12 @@ void Mesh::computeNormals() {
 
     b-=a; c-=a; a=b^c; if(!a.isZero) a.normalize();
     Tn(i, 0)=a.x;  Tn(i, 1)=a.y;  Tn(i, 2)=a.z;
-    Vn(t[0], 0)+=a.x;  Vn(t[0], 1)+=a.y;  Vn(t[0], 2)+=a.z;
-    Vn(t[1], 0)+=a.x;  Vn(t[1], 1)+=a.y;  Vn(t[1], 2)+=a.z;
-    Vn(t[2], 0)+=a.x;  Vn(t[2], 1)+=a.y;  Vn(t[2], 2)+=a.z;
+//    Vn(t[0], 0)+=a.x;  Vn(t[0], 1)+=a.y;  Vn(t[0], 2)+=a.z;
+//    Vn(t[1], 0)+=a.x;  Vn(t[1], 1)+=a.y;  Vn(t[1], 2)+=a.z;
+//    Vn(t[2], 0)+=a.x;  Vn(t[2], 1)+=a.y;  Vn(t[2], 2)+=a.z;
   }
-  Vector d;
-  for(uint i=0; i<Vn.d0; i++) { d.set(&Vn(i, 0)); Vn[i]/=d.length(); }
+//  Vector d;
+//  for(uint i=0; i<Vn.d0; i++) { d.set(&Vn(i, 0)); Vn[i]/=d.length(); }
 }
 
 void Mesh::computeFaceColors() {
@@ -1035,7 +1033,7 @@ void Mesh::clean() {
   Tt.clear();
   tex.clear();
   texImg.clear();
-  computeNormals();
+//  computeNormals();
 }
 
 void getEdgeNeighborsList(const Mesh& m, uintA& EV, uintA& Et, intA& ET) {
@@ -1796,7 +1794,7 @@ void Mesh::glDraw(struct OpenGL& gl) {
   }
 
   //-- draw a mesh
-  if(T.N && (V.d0!=Vn.d0 || T.d0!=Tn.d0)) computeNormals();
+  if(T.d0 && (T.d0!=Tn.d0)) computeNormals();
 
   //-- if not yet done, GenTexture
   if(texImg.N && glDrawOptions(gl).drawColors) {

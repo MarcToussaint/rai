@@ -2,7 +2,7 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-DEPEND = Core Optim
+DEPEND = Core
 
 ANN = 1
 LAPACK = 1
