@@ -81,8 +81,7 @@ bool NLP_Walker::step() {
 }
 
 bool NLP_Walker::step_hit_and_run() {
-  ensure_eval();
-  Eval ev0 = ev;
+  store_eval();
 
   if(opt.hitRunEqMargin>0.) ev.convert_eq_to_ineq(opt.hitRunEqMargin);
   double g0 = rai::MAX(max(ev.g), 0.);
@@ -111,18 +110,23 @@ bool NLP_Walker::step_hit_and_run() {
 
       //MH accept
       if(ev.r.N){ // we have sos costs
-        double Enew = sumOfSqr(ev.r);
-        double Eold = sumOfSqr(ev0.r);
+        double gamma=1., mu=1e3;
+        double Enew = gamma*sumOfSqr(ev.r) + mu*sum(ev.s);
+        double Eold = gamma*sumOfSqr(ev_stored.r) + mu*sum(ev_stored.s);
         if(Enew<Eold) return true;
         double p_ratio = ::exp(Eold - Enew);
         if(rnd.uni() < p_ratio) return true;
+        //reject! restore previous state
+        ev = ev_stored;
+        x = ev.x;
+        return false;
       }else{
         return true;
       }
     }
   }
 
-  ev = ev0;
+  ev = ev_stored;
   x = ev.x;
   return false; //line search in 10 steps failed
 }
@@ -363,7 +367,7 @@ bool NLP_Walker::run_downhill(){
     //-- good?
     bool good = (ev.err<=.01);
 
-    if(opt.verbose>1 || (good && opt.verbose>0)) {
+    if(opt.verbose>2 || (good && opt.verbose>1)) {
       nlp.report(cout, (good?2:1)+opt.verbose, STRING("phase1 t: " <<t <<" err: " <<ev.err <<" good: " <<good));
       rai::wait(.1);
     }
