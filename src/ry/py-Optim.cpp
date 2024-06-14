@@ -15,6 +15,35 @@
 #include <pybind11/functional.h>
 #include <pybind11/iostream.h>
 
+struct PyNLP : NLP{
+  pybind11::object py_nlp; //the python object implementing the NLP
+  pybind11::object py_evaluate; //the python method
+
+  PyNLP(pybind11::object py_nlp) : py_nlp(py_nlp){
+    dimension = py_nlp.attr("getDimension")().cast<int>();
+    featureTypes = rai::convert<ObjectiveType>( list2arr<int>(py_nlp.attr("getFeatureTypes")()) );
+    bounds = numpy2arr<double>(py_nlp.attr("getBounds")());
+  }
+
+  virtual void evaluate(arr& phi, arr& J, const arr& x){
+    pybind11::object _phiJ = py_nlp.attr("evaluate")(arr2numpy(x));
+    auto phiJ = _phiJ.cast< std::tuple< pybind11::array_t<double>, pybind11::array_t<double> > >();
+    LOG(0) <<"before";
+    phi = numpy2arr(std::get<0>(phiJ));
+    J = numpy2arr(std::get<1>(phiJ));
+    LOG(0) <<"size:" <<phi.dim();
+  }
+
+//  virtual void getFHessian(arr& H, const arr& x) {
+//    NIY;
+//  }
+
+  virtual void report(ostream& os, int verbose, const char* msg="binding in py-Optim.cpp:39"){
+    NLP::report(os, verbose, msg);
+  }
+
+};
+
 void init_Optim(pybind11::module& m) {
 
   //===========================================================================
@@ -67,6 +96,10 @@ void init_Optim(pybind11::module& m) {
   },
   "displays semantic information on the last query"
       )
+
+  .def("checkJacobian", &NLP::checkJacobian, "", pybind11::arg("x"), pybind11::arg("tolerance"), pybind11::arg("featureNames")=StringA{})
+  .def("checkHessian", &NLP::checkHessian, "", pybind11::arg("x"), pybind11::arg("tolerance"))
+
 
   ;
 
@@ -180,14 +213,23 @@ void init_Optim(pybind11::module& m) {
       .def("setTracing", &NLP_Solver::setTracing)
       .def("solve", &NLP_Solver::solve, "", pybind11::arg("resampleInitialization")=-1)
 
-      .def("getTrace_x", &NLP_Solver::getTrace_x)
-      .def("getTrace_costs", &NLP_Solver::getTrace_costs)
+      .def("getProblem", &NLP_Solver::getProblem)
+      .def("getTrace_x", &NLP_Solver::getTrace_x, "returns steps-times-n array with queries points in each row")
+      .def("getTrace_costs", &NLP_Solver::getTrace_costs, "returns steps-times-3 array with rows (f+sos-costs, ineq, eq)")
       .def("getTrace_phi", &NLP_Solver::getTrace_phi)
       .def("getTrace_J", &NLP_Solver::getTrace_J)
 
   .def("reportLagrangeGradients", [](std::shared_ptr<NLP_Solver>& self, const StringA& featureNames) {
     rai::Graph R = self->reportLagrangeGradients(featureNames);
     return graph2dict(R);
+  },"return dictionary of Lagrange gradients per objective",
+    pybind11::arg("list of names for each objective")=StringA{}
+  )
+
+  .def("setPyProblem", [](std::shared_ptr<NLP_Solver>& self, pybind11::object py_nlp){
+    std::shared_ptr<NLP> nlp = std::dynamic_pointer_cast<NLP>( std::make_shared<PyNLP>(py_nlp) );
+    self->setProblem(nlp);
+    nlp->report(cout, 10);
   })
 
   .def("getOptions", [](std::shared_ptr<NLP_Solver>& self) { return self->opt; })

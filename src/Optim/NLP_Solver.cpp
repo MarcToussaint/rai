@@ -106,9 +106,9 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization) {
   //checkJacobianCP(*P, x, 1e-4);
 
   time += rai::cpuTime();
-  ret->x=x;
-  ret->dual=dual;
-  ret->evals=P->evals;
+  ret->x = x;
+  ret->dual = dual;
+  ret->evals = P->evals;
   ret->time = time;
   ret->done = true;
   return ret;
