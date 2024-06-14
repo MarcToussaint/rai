@@ -25,9 +25,6 @@ struct Conv_ScalarProblem_NLP : NLP {
   uint xDim;
   arr bounds_lo, bounds_up;
   Conv_ScalarProblem_NLP(const ScalarFunction& f, uint xDim): f(f), xDim(xDim) {}
-  uint getDimension() { return xDim; }
-  void getBounds(arr& _bounds_lo, arr& _bounds_up) { _bounds_lo=bounds_lo; _bounds_up=bounds_up; }
-  void getFeatureTypes(ObjectiveTypeA& ot) { ot = {OT_f}; }
   void evaluate(arr& phi, arr& J, const arr& x) {
     double y = f(J, NoArr, x);
     phi = {y};
@@ -56,7 +53,7 @@ struct Conv_NLP_SlackLeastSquares : NLP {
   uintA pick;
 
   Conv_NLP_SlackLeastSquares(std::shared_ptr<NLP> _P) : P(_P) {
-    dimension = P->getDimension();
+    dimension = P->dimension;
     bounds = P->bounds;
 
     //pick constraints
@@ -89,7 +86,7 @@ struct NLP_LinTransformed : NLP {
   arr A, b;
 
   NLP_LinTransformed(std::shared_ptr<NLP> _P, const arr& _A, const arr& _b) : P(_P), A(_A), b(_b) {
-    dimension = P->getDimension();
+    dimension = P->dimension;
     featureTypes = P->featureTypes;
     arr Ainv = inverse(A);
     bounds = P->bounds;

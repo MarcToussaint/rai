@@ -99,7 +99,6 @@ double _RastriginFunction(arr& g, arr& H, const arr& x) {
 
 struct NLP_Rastrigin : ScalarUnconstrainedProgram {
   NLP_Rastrigin(uint dim) { dimension=dim; }
-  virtual uint getDimension() { return dimension; }
   virtual double f(arr& g, arr& H, const arr& x) { return _RastriginFunction(g, H, x); }
 };
 
@@ -371,7 +370,7 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
 
   nlp->bounds = rai::getParameter<arr>("benchmark/bounds", {});
   if(nlp->bounds.N){
-    nlp->bounds.reshape(2, nlp->getDimension());
+    nlp->bounds.reshape(2, nlp->dimension);
   }
 
   return nlp;

@@ -360,18 +360,6 @@ void TEST(Select) {
 
 /************ test clicking on and identifying objects in the scene ************/
 
-void TEST(UI){
-  OpenGL gl;
-  glUI ui;
-  gl.reportEvents=true;
-  gl.add(draw1,0);
-  gl.add(glDrawUI,&ui);
-  gl.addHoverCall(&ui);
-  gl.addClickCall(&ui);
-  ui.addButton(100,100,"OK, this is it!");
-  gl.watch();
-}
-
 void TEST(Image) {
   OpenGL gl;
   byteA img;
@@ -391,7 +379,6 @@ int MAIN(int argc,char **argv){
   testOfflineRendering();
   testGrab();
   testMultipleViews();
-  testUI();
   testSelect();
   testObj();
   testMesh();

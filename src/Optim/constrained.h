@@ -59,7 +59,7 @@ struct PhaseOneProblem : NLP {
   uint dim_ineq, dim_eq;
 
   PhaseOneProblem(const shared_ptr<NLP>& _P):P(_P) {
-    dimension = P->getDimension();
+    dimension = P->dimension;
     featureTypes = P->featureTypes;
     featureTypes.append(OT_ineq);
   }

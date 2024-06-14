@@ -19,7 +19,7 @@ void TEST(Mini) {
   MyDrawer d;
 //  gl.reportEvents=true;
 //  gl.reportSelects=true;
-  gl.addDrawer(&d);
+  gl.add(d);
   gl.watch();
 }
 

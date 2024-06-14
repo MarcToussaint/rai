@@ -368,7 +368,7 @@ bool NLP_Walker::run_downhill(){
     bool good = (ev.err<=.01);
 
     if(opt.verbose>2 || (good && opt.verbose>1)) {
-      nlp.report(cout, (good?2:1)+opt.verbose, STRING("phase1 t: " <<t <<" err: " <<ev.err <<" good: " <<good));
+      nlp.report(cout, (good?1:0)+opt.verbose, STRING("phase1 t: " <<t <<" err: " <<ev.err <<" good: " <<good));
       rai::wait(.1);
     }
 
@@ -458,8 +458,8 @@ void NLP_Walker::run_interior(arr& data, uintA& dataEvals){
     ensure_eval();
     good = (ev.err<=.01);
 
-    if(opt.verbose>1 || (good && opt.verbose>0)) {
-      nlp.report(cout, (good?2:1)+opt.verbose, STRING("phase2 t: " <<t <<" err: " <<ev.err <<" data: " <<data.d0 <<" good: " <<good));
+    if(opt.verbose>2 || (good && opt.verbose>1)) {
+      nlp.report(cout, (good?1:0)+opt.verbose, STRING("phase2 t: " <<t <<" err: " <<ev.err <<" data: " <<data.d0 <<" good: " <<good));
       rai::wait(.1);
     }
   }

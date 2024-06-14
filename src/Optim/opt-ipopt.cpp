@@ -111,7 +111,7 @@ arr IpoptInterface::solve(const arr& x_init) {
 }
 
 bool Conv_MP_Ipopt::get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g, Ipopt::Index& nnz_h_lag, Ipopt::TNLP::IndexStyleEnum& index_style) {
-  n = P->getDimension();
+  n = P->dimension;
 
   m=0;
   for(auto t:P->featureTypes) {
@@ -129,7 +129,7 @@ bool Conv_MP_Ipopt::get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index&
 }
 
 bool Conv_MP_Ipopt::get_bounds_info(Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u, Ipopt::Index m, Ipopt::Number* g_l, Ipopt::Number* g_u) {
-  arr bounds_lo, bounds_up;
+  arr bounds_lo=bounds[0], bounds_up=bounds[1];
   P->getBounds(bounds_lo, bounds_up);
   for(int i=0; i<n; i++) {
     double l = bounds_lo.elem(i), u = bounds_up.elem(i);

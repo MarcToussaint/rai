@@ -30,8 +30,6 @@ struct Conv_KOMOProblem_NLP : NLP {
 
   Conv_KOMOProblem_NLP(KOMO_Problem& P);
 
-  virtual uint getDimension() { return varDimIntegral.elem(-1); }
-  virtual void getFeatureTypes(ObjectiveTypeA& ft) { ft = featureTypes; }
   virtual void evaluate(arr& phi, arr& J, const arr& z);
 };
 

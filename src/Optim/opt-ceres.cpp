@@ -109,9 +109,8 @@ bool Conv_Feature_CostFunction::Evaluate(const double* const* parameters, double
 
 Conv_NLP_CeresProblem::Conv_NLP_CeresProblem(const shared_ptr<NLP_Factored>& _P) : P(_P) {
   uintA variableDimIntegral, featureDimIntegral;
-  arr bounds_lo, bounds_up;
-  P->getBounds(bounds_lo, bounds_up);
-  uint n = P->getDimension();
+  arr bounds_lo=bounds[0], bounds_up=bounds[1];
+  uint n = P->dimension;
   for(uint i=0; i<bounds_lo.N; i++) {
     if(bounds_lo.elem(i)>=bounds_up.elem(i)) { bounds_lo.elem(i) = -10.;  bounds_up.elem(i) = 10.; }
   }

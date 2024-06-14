@@ -45,16 +45,8 @@ arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
 //===========================================================================
 
 arr NLP::getInitializationSample(const arr& previousOptima) {
-  arr blo, bup;
-  uint n = getDimension();
-  getBounds(blo, bup);
-  if(!blo.N) {
-    return 2.*rand(n)-1.;
-  }
-
-  CHECK_EQ(n, blo.N, "");
-  CHECK_EQ(n, bup.N, "");
-  return blo + rand(n) % (bup - blo);
+  if(!bounds.N) return 2.*rand(dimension)-1.;
+  return getUniformSample();
 }
 
 void NLP::report(std::ostream& os, int verbose, const char* msg) {
@@ -144,16 +136,6 @@ bool NLP::checkHessian(const arr& x, double tolerance) {
     return phi(i);
   };
   return ::checkHessian(F, x, tolerance);
-}
-
-void NLP::boundClip(arr& x) {
-  ::boundClip(x, bounds);
-}
-
-bool NLP::checkInBound(const arr& x) {
-  CHECK_EQ(bounds.d0, 2, "");
-  CHECK_EQ(bounds.d1, x.N, "");
-  return boundCheck(x, bounds);
 }
 
 //===========================================================================
@@ -374,12 +356,11 @@ void NLP_Traced::report(std::ostream& os, int verbose, const char* msg) {
 //===========================================================================
 
 void NLP_Viewer::display(double mu, double muLB) {
-  uint d = P->getDimension();
+  uint d = P->dimension;
   CHECK_EQ(d, 2, "can only display 2D problems for now");
 
   //-- get bounds
-  arr lo, up;
-  P->getBounds(lo, up);
+  arr lo=P->bounds[0], up=P->bounds[1];
   if(!lo.N) lo = -ones(2);
   if(!up.N) up = ones(2);
 

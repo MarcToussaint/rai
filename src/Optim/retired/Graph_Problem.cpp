@@ -97,13 +97,6 @@ void Conv_Graph_NLP::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr
 #else
 
 //sparse
-uint Conv_Graph_NLP::getDimension() {
-  return varDimIntegral.elem(-1);
-}
-
-void Conv_Graph_NLP::getFeatureTypes(ObjectiveTypeA& ft) {
-  if(!!ft) ft = featureTypes;
-}
 
 void Conv_Graph_NLP::evaluate(arr& phi, arr& J, const arr& x) {
   G.phi(phi, J_G, H_G, x);

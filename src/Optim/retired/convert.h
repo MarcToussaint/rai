@@ -25,8 +25,6 @@ struct Conv_linearlyReparameterize_NLP : NLP {
   Conv_linearlyReparameterize_NLP(NLP& P, const arr& B):P(P), B(B) {}
   ~Conv_linearlyReparameterize_NLP() {}
 
-  virtual uint getDimension() { return P.getDimension(); }
-  virtual void getFeatureTypes(ObjectiveTypeA& ft) { P.getFeatureTypes(ft); }
   virtual void evaluate(arr& phi, arr& J, const arr& z);
 };
 

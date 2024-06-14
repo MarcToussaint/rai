@@ -694,7 +694,7 @@ void FeatherstoneInterface::fwdDynamics_aba_1D(arr& qdd,
 
   //fwd: compute the velocities v[i] and external + Coriolis forces fA[i] of all bodies
   // v[i] = total velocity, but in joint coordinates
-  for(int i=0; i<N; i++) {
+  for(uint i=0; i<N; i++) {
     F_Link& b = tree(i);
     if(b.parent!=-1) {
       if(b.qIndex!=-1) {//is not a fixed joint

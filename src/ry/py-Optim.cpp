@@ -36,12 +36,13 @@ void init_Optim(pybind11::module& m) {
   "features (entries of $phi$) can be of one of (ry.OT.f, ry.OT.sos, ry.OT.ineq, ry.OT.eq), which means (cost, sum-of-square, inequality, equality). The total cost $f(x)$ is the sum of all f-terms plus sum-of-squares of sos-terms."
       )
 
-  .def("getDimension", &NLP::getDimension, "return the dimensionality of $x$")
+  .def("getDimension", [](std::shared_ptr<NLP>& self) {
+    return self->dimension;
+  },
+  "return the dimensionality of $x$")
 
   .def("getBounds", [](std::shared_ptr<NLP>& self) {
-    arr lo, up;
-    self->getBounds(lo, up);
-    return std::tuple<arr, arr>(lo, up);
+    return self->bounds;
   },
   "returns the tuple $(b_{lo},b_{up})$, where both vectors are of same dimensionality of $x$ (or size zero, if there are no bounds)")
 

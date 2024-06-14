@@ -71,7 +71,7 @@ void SplinedKOMO::evaluate(arr& phi, arr& J, const arr& x) {
   }
   //arr Jpos = T.getPosJacobian(S, timeGrid);
 
-  CHECK_EQ(x_fine.N, komo_nlp->getDimension(), "wrong dof dimensions")
+  CHECK_EQ(x_fine.N, komo_nlp->dimension, "wrong dof dimensions")
 
   arr phi1, J1;
   komo_nlp->evaluate(phi1, J1, x_fine);

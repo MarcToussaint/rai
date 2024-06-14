@@ -179,7 +179,7 @@ void rai::FactorBoundsComputer::untimedCompute() {
 
   nlp->subSelect({t}, {});
 
-  CHECK_EQ(nlp->getDimension(), komoWaypoints.x.N, "");
+  CHECK_EQ(nlp->dimension, komoWaypoints.x.N, "");
 
   //if(sket->verbose()>1) komo->view(sket->verbose()>2, STRING(name <<" - init"));
 

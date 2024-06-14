@@ -35,14 +35,11 @@ arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt);
  *  Importantly: the Jacobian may be sparse! This allows to implicitly represent structured NLP (in contrast to explicit structure, see below)
  */
 struct NLP : NonCopyable {
- protected:
   //-- problem signature: needs to be defined in the constructor or a derived class
   uint dimension=0;
- public:
   ObjectiveTypeA featureTypes;
   arr bounds;
 
- public:
   virtual ~NLP() {}
 
   void copySignature(const NLP& P) {
@@ -65,18 +62,11 @@ struct NLP : NonCopyable {
   // optional: return some info on the problem and the last evaluation, potentially with display
   virtual void report(ostream& os, int verbose, const char* msg=0);
 
-  //-- trivial getters
-  uint getDimension() const { return dimension; }
-  void getBounds(arr& lo, arr& up) const { lo=bounds[0]; up=bounds[1]; }
-  const ObjectiveTypeA& getFeatureTypes() const { return featureTypes; }
-
   //-- utilities
   shared_ptr<NLP> ptr() { return shared_ptr<NLP>(this, [](NLP*) {}); }
   double eval_scalar(arr& g, arr& H, const arr& x);
   bool checkJacobian(const arr& x, double tolerance, const StringA& featureNames= {});
   bool checkHessian(const arr& x, double tolerance);
-  bool checkInBound(const arr& x);
-  void boundClip(arr& x);
   arr getUniformSample() { return bounds[0] + rand(dimension) % (bounds[1] - bounds[0]); }
 };
 

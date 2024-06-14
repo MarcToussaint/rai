@@ -45,8 +45,6 @@ struct Conv_Graph_NLP : NLP {
 
   Conv_Graph_NLP(GraphProblem& _G, ostream* _log=0);
 
-  uint getDimension();
-  void getFeatureTypes(ObjectiveTypeA& ft);
   void evaluate(arr& phi, arr& J, const arr& x);
 
   void reportProblem(ostream& os);
