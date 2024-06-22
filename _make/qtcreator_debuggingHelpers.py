@@ -15,7 +15,7 @@ def qdump__rai__String(d, value):
     p = value["p"]
     N = int(value["N"])
     s = "'"
-    for i in xrange(0, N):
+    for i in range(0, N):
         s += "%c" % int(p.dereference())
         p += 1
     s += "' [%i]" % N
@@ -40,11 +40,10 @@ def qdump__LIST(d, value):
     d.putNumChild(1)
     if d.isExpanded():
         with Children(d):
-            for i in xrange(0, m):
+            for i in range(0, m):
                 s = "(%i)" % i
                 d.putSubItem(s, p.dereference())
                 p += 1
-                i += 1
 
 def qdump__rai__Array(d, value):
     p = value["p"]
@@ -70,7 +69,7 @@ def qdump__rai__Array(d, value):
     if d.isExpanded():
         with Children(d):
             d.putSubItem("N", value["N"])
-            for i in xrange(0, m):
+            for i in range(0, m):
                 if nd==1:
                     s = "(%i)" %(i)
                 if nd==2:
@@ -79,7 +78,6 @@ def qdump__rai__Array(d, value):
                     s = "(%i,%i,%i)"%(i/(d1*d2),(i/d2)%d1,i%d2)
                 d.putSubItem(s, p.dereference())
                 p += 1
-                i += 1
             d.putSubItem("p", value["p"])
             d.putSubItem("isReference", value["isReference"])
             d.putSubItem("M", value["M"])
@@ -97,19 +95,19 @@ def qdump__rai__Node_typed(d, value):
     string_N = int(string["N"])
     if string_N>0:
         string_p = string["p"]
-        for j in xrange(0, string_N):
+        for j in range(0, string_N):
             s += "%c" % int(string_p.dereference())
             string_p += 1
     else:
         s += "(%i)" % int(value["index"]);
     s += "("
-    for i in xrange(0, pars_N):
+    for i in range(0, pars_N):
         par = pars_p.dereference()
         string = par["key"]
         string_N = int(string["N"])
         if string_N>0:
             string_p = string["p"]
-            for j in xrange(0, string_N):
+            for j in range(0, string_N):
                 s += "%c" % int(string_p.dereference())
                 string_p += 1
         else:
@@ -144,7 +142,7 @@ def qdump__rai__Graph(d, value):
     d.putNumChild(1)
     if d.isExpanded():
         with Children(d):
-            for i in xrange(0, m):
+            for i in range(0, m):
                 s = "(%i)" %i
                 d.putSubItem(s, p.dereference())
                 p += 1
@@ -212,7 +210,7 @@ def qdump__rai__Frame(d, value):
     s = "(%i) " % ID
     string_N = int(name["N"])
     string_p = name["p"]
-    for j in xrange(0, string_N):
+    for j in range(0, string_N):
         s += "%c" % int(string_p.dereference())
         string_p += 1
     d.putValue(s)
