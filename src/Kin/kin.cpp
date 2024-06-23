@@ -2948,11 +2948,11 @@ const Proxy* Configuration::getContact(uint a, uint b) const {
 #endif
 
 void Configuration::glDraw(OpenGL& gl) {
-  glDraw_sub(gl, frames);
+  glDraw_frames(gl, frames);
 }
 
 /// GL routine to draw a Configuration
-void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTransparanet) {
+void Configuration::glDraw_frames(OpenGL& gl, const FrameL& F, int drawOpaqueOrTransparanet) {
 #ifdef RAI_GL
   Transformation f;
   double GLmatrix[16];
@@ -2969,8 +2969,11 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
 
     //proxies
     if(gl.drawOptions.drawProxies) for(const Proxy& p: proxies) {
-        if(p.collision && p.d<=0.) {
-          ((Proxy*)&p)->glDraw(gl);
+        if(p.a && p.b && p.d<=.1) {
+          CHECK_EQ(&p.a->C, this, "");
+          if(F.N==frames.N || F.contains(p.a) || F.contains(p.b)){
+            ((Proxy*)&p)->glDraw(gl);
+          }
         }
       }
 
@@ -3559,7 +3562,7 @@ void Configuration::watchFile(const char* filename) {
     int key = -1;
     viewer()->recopyMeshes(*this);
     viewer()->_resetPressedKey();
-    viewer()->drawText = "waiting for file change ('h' for help)";
+    viewer()->text = "waiting for file change ('h' for help)";
     for(;;) {
       key = view(false);
       viewer()->_resetPressedKey();
@@ -3567,7 +3570,7 @@ void Configuration::watchFile(const char* filename) {
       if(key==13 || key==27 || key=='q') break;
       if(!rai::getInteractivity()) break;
       if(key=='h') {
-        viewer()->drawText = "HELP:\n"
+        viewer()->text = "HELP:\n"
                              "RIGHT CLICK - set focus point (move view and set center of rotation)\n"
                              "LEFT CLICK - rotate (ball; or around z at view rim)\n"
                              "q - quit\n"

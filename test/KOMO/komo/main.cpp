@@ -31,9 +31,25 @@ void TEST(Easy){
 //  komo.setSpline(5);
   komo.optimize();
 //  cout <<"TIME OPTIM: total=" <<sum(komo.getPath_times()) <<komo.getPath_times() <<endl;
-  komo.plotTrajectory();
+//  komo.plotTrajectory();
 //  komo.reportProxies();
 //  komo.checkGradients();
+  komo.report(false, true, true);
+
+//  rai::ConfigurationViewer V;
+//  V.setConfiguration(komo.pathConfig, "KOMO test solution");
+//  V.sliceTexts.resize(komo.T);
+//  arr err = komo.info_objectiveErrorTraces();
+//  for(uint t=0;t<V.sliceTexts.N;t++){
+//    V.sliceTexts(t) = komo.info_sliceObjectives(t,err);
+//  }
+//  while(V.playVideo(komo.timeSlices, true, 3.));
+
+//  for(uint t=0;t<komo.T;t++){
+//    V.view_slice(t);
+//    rai::wait(.1);
+//  }
+
 
   komo.view(true, "result");
   while(komo.view_play(true));

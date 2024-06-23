@@ -140,6 +140,7 @@ struct OpenGL {
   double mouseposx=0, mouseposy=0;  ///< current x- and y-position of mouse
   int mouseView=-1;
   bool mouseIsDown=false;
+  int scrollCounter=0;
   rai::Array<GLSelect> selection; ///< list of all selected objects
   GLSelect* topSelection=0;        ///< top selected object
   bool drawFocus=false;

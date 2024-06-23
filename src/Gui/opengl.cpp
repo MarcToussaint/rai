@@ -2137,7 +2137,7 @@ void OpenGL::Scroll(int wheel, int direction) {
   for(uint i=0; cont && i<scrollCalls.N; i++) cont = cont && scrollCalls(i)->scrollCallback(*this, direction);
 
   if(cont) {
-    double dz = (direction>0.? -.1:.1);
+    double dz = (direction>0? -.1:.1);
 
     //-- SCROLL -> zoom
     if(_NONE(modifiers)) {
@@ -2146,8 +2146,13 @@ void OpenGL::Scroll(int wheel, int direction) {
 
     //-- shift -> translation
     if(_SHIFT(modifiers) && !_CTRL(modifiers)) {
+#if 0
       cam->X.pos += cam->X.rot.getZ() * (dz * (cam->X.pos-cam->foc).length());
       cam->foc += cam->X.rot.getZ() * (dz * (cam->X.pos-cam->foc).length());
+#else
+      if(direction>0) scrollCounter++;
+      else scrollCounter--;
+#endif
     }
 
     //-- ctrl -> focal length
@@ -2189,7 +2194,7 @@ void OpenGL::MouseMotion(double _x, double _y) {
   //-- LEFT -> rotation
   if(mouse_button==1 && _NONE(downModifiers) && !downVec.isZero) {
     rai::Quaternion rot;
-    if(downVec.z<.1) {
+    if(downVec.z<.01) {
       //at the margin:
       downVec.z=0; downVec.normalize();
       vec.z = 0.; vec.normalize();

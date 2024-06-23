@@ -1306,13 +1306,13 @@ Graph KOMO::report(bool specs, bool listObjectives, bool plotOverTime) {
     g.add("#pathQueries", pathConfig.setJointStateCount);
   }
 
-  arr err=zeros(T, objectives.N);
-  arr totals = zeros(OT_ineqP+1);
+  arr err = info_objectiveErrorTraces();
+  arr errTotals = sum(err, 0);
 
   {
     Graph* g_ob = &G;
 //    if(specs) g_ob = &G.addSubgraph("objectives");
-    uint M=0, cId=0;
+    uint cId=0;
     for(shared_ptr<Objective>& c:objectives) {
       Graph* g=0;
       if(listObjectives) g = &g_ob->addSubgraph(STRING('o' <<cId++));
@@ -1325,23 +1325,9 @@ Graph KOMO::report(bool specs, bool listObjectives, bool plotOverTime) {
           g->add<StringA>("frames", {STRING("#" <<frameIDs.N)});
         }
       }
-      if(featureValues.N) {
-        double e, c_err=0.;
-        for(GroundedObjective* ob:c->groundings) {
-          uint d = ob->feat->dim(ob->frames);
-          int i = ob->objId;
-          uint t = ob->timeSlices.last();
-          CHECK_GE(i, 0, "");
-          for(uint j=0; j<d; j++) {
-            if(ob->type==OT_sos) { e = sqr(featureValues(M+j)); c_err += e; err(t, i) += e; }
-            else if(ob->type==OT_ineq) { e = MAX(0., featureValues(M+j)); c_err += e; err(t, i) += e; }
-            else if(ob->type==OT_eq) { e = fabs(featureValues(M+j)); c_err += e; err(t, i) += e; }
-            else if(ob->type==OT_f) { e = featureValues(M+j); c_err += e; err(t, i) += e; }
-          }
-          M += d;
-        }
-        totals(c->type) += c_err;
-        if(g) g->add<double>("err", c_err);
+
+      if(featureValues.N){
+        if(g) g->add<double>("err", errTotals(cId-1));
       }
 
       if(g) {
@@ -1385,6 +1371,11 @@ Graph KOMO::report(bool specs, bool listObjectives, bool plotOverTime) {
 
   if(featureValues.N) {
     Graph& g = G.addSubgraph("totals");
+    arr totals = zeros(OT_ineqP+1);
+    CHECK_EQ(objectives.N, errTotals.N, "");
+    for(uint i=0;i<errTotals.N;i++){
+      totals(objectives(i)->type) += errTotals(i);
+    }
     g.add<double>("sos", totals(OT_sos));
     g.add<double>("ineq", totals(OT_ineq));
     g.add<double>("eq", totals(OT_eq));
@@ -1414,6 +1405,57 @@ Graph KOMO::report(bool specs, bool listObjectives, bool plotOverTime) {
 
   return G;
 }
+
+arr KOMO::info_objectiveErrorTraces(){
+//  CHECK(featureValues.N, "KOMO hasn't been queried yet");
+  arr err = zeros(T, objectives.N);
+  if(!featureValues.N) return err;
+  uint M=0;
+  for(shared_ptr<Objective>& c:objectives) {
+    for(GroundedObjective* ob: c->groundings) {
+      uint d = ob->feat->dim(ob->frames);
+      int i = ob->objId;
+      uint t = ob->timeSlices.last();
+      CHECK_GE(i, 0, "");
+      for(uint j=0; j<d; j++) {
+        double e=0.;
+        if(ob->type==OT_sos) e = sqr(featureValues(M+j));
+        else if(ob->type==OT_ineq) e = MAX(0., featureValues(M+j));
+        else if(ob->type==OT_eq) e = fabs(featureValues(M+j));
+        else if(ob->type==OT_f) e = featureValues(M+j);
+        else NIY;
+        err(t, i) += e;
+      }
+      M += d;
+    }
+  }
+  CHECK_EQ(M, featureValues.N, "");
+  return err;
+}
+
+StringA KOMO::info_objectiveNames(){
+  StringA objectiveNames(objectives.N);
+  for(uint i=0;i<objectives.N;i++){
+    objectiveNames(i) = objectives(i)->name;
+  }
+  return objectiveNames;
+}
+
+str KOMO::info_sliceErrors(uint t, const arr& errorTraces){
+  arr err = errorTraces[t];
+  uintA rank;
+  rank.setStraightPerm(err.N);
+  std::sort(rank.p, rank.p+rank.N, [&](const uint& a, const uint& b){ return err(a)>err(b); });
+  str txt;
+  for(uint i:rank){
+    if(err(i)<1e-4) break;
+//    if(objectives(i)->type>=OT_ineq){
+      txt <<"t=" <<t <<' ' <<err(i) <<objectives(i)->type <<' ' <<objectives(i)->name <<endl;
+//    }
+  }
+  return txt;
+}
+
 
 void KOMO::deprecated_reportProblem(std::ostream& os) {
   os <<"KOMO Problem:" <<endl;
@@ -1505,13 +1547,21 @@ void KOMO::checkGradients() {
 
 int KOMO::view(bool pause, const char* txt) {
 //  pathConfig.viewer()->recopyMeshes(pathConfig);
-  return pathConfig.view(pause, txt);
+//  return pathConfig.view(pause, txt);
+  pathConfig.viewer()->phaseOffset = 1.-double(k_order);
+  pathConfig.viewer()->phaseFactor = 1./double(stepsPerPhase);
+  if(featureValues.N){
+    pathConfig.viewer()->sliceTexts.resize(T);
+    arr err = info_objectiveErrorTraces();
+    for(uint t=0;t<T;t++){
+      pathConfig.viewer()->sliceTexts(t) = info_sliceErrors(t, err);
+    }
+  }
+  return pathConfig.viewer()->setConfiguration(pathConfig, txt, pause, timeSlices);
 }
 
 bool KOMO::view_play(bool pause, double delay, const char* saveVideoPath) {
   view(false, 0);
-  pathConfig.viewer()->phaseOffset = 1.-double(k_order);
-  pathConfig.viewer()->phaseFactor = 1./double(stepsPerPhase);
   return pathConfig.viewer()->playVideo(timeSlices, pause, delay*tau*T, saveVideoPath);
 }
 

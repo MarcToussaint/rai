@@ -26,11 +26,10 @@ struct ViewableConfigCopy : GLDrawer {
 
 struct ConfigurationViewer : ViewableConfigCopy {
 
-  int setConfiguration(const Configuration& _C, const char* text=0, bool watch=false);
-  int setPath(rai::Configuration& _C, const arr& jointPath, const char* text=0, bool watch=false, bool full=true);
-  int setPath(const arr& _framePath, const char* text=0, bool watch=false, bool full=true);
+  int setConfiguration(const Configuration& _C, const char* _text=0, bool watch=false, const FrameL& timeSlices={});
   bool playVideo(const FrameL& timeSlices, bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
-  bool playVideo(bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
+  int view_slice(uint t, bool watch=false);
+
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   byteA getRgb();
   floatA getDepth();
@@ -49,18 +48,16 @@ struct ConfigurationViewer : ViewableConfigCopy {
   void _add(GLDrawer& c);
   void _resetPressedKey();
   void clear();
- private://draw data
 
-  arr framePath;
-  FrameL drawSubFrames;
-  int drawTimeSlice;
-  bool drawFullPath;
-  int tprefix;
-  bool writeToFiles;
+private://draw data
+  FrameL slices;
+  int drawSlice;
+  bool abortPlay;
   uint pngCount=0;
- public:
-  String drawText;
   bool drawFrameLines=true;
+public:
+  String text;
+  StringA sliceTexts;
   double phaseOffset=0., phaseFactor=-1.;
 };
 

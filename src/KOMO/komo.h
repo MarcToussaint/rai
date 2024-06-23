@@ -192,6 +192,11 @@ struct KOMO : NonCopyable {
   void deprecated_reportProblem(ostream& os=std::cout);
   rai::Graph deprecated_getReport(bool plotOverTime=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot objective costs; output detailed cost features per time slice)
   rai::Graph deprecated_getProblemGraph(bool includeValues, bool includeSolution=true);
+
+  arr info_objectiveErrorTraces();
+  StringA info_objectiveNames();
+  str info_sliceErrors(uint t, const arr& errorTraces);
+
   double getConstraintViolations();
   double getCosts();
   StringA getCollisionPairs(double belowMargin=.01); ///< report the proxies (collisions) for each time slice
