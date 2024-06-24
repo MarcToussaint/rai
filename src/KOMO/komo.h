@@ -189,13 +189,11 @@ struct KOMO : NonCopyable {
   arr getActiveConstraintJacobian();
 
   rai::Graph report(bool specs=false, bool listObjectives=true, bool plotOverTime=false);
-  void deprecated_reportProblem(ostream& os=std::cout);
-  rai::Graph deprecated_getReport(bool plotOverTime=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot objective costs; output detailed cost features per time slice)
-  rai::Graph deprecated_getProblemGraph(bool includeValues, bool includeSolution=true);
 
   arr info_objectiveErrorTraces();
   StringA info_objectiveNames();
   str info_sliceErrors(uint t, const arr& errorTraces);
+  str info_sliceCollisions(uint t, double belowMargin=.01);
 
   double getConstraintViolations();
   double getCosts();
@@ -241,6 +239,10 @@ struct KOMO : NonCopyable {
   //
   // deprecated
   //
+
+  void deprecated_reportProblem(ostream& os=std::cout);
+  rai::Graph deprecated_getReport(bool plotOverTime=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot objective costs; output detailed cost features per time slice)
+  rai::Graph deprecated_getProblemGraph(bool includeValues, bool includeSolution=true);
 
   void addSquaredQuaternionNorms(const arr& times=NoArr, double scale=3e0) { DEPR; addQuaternionNorms(times, scale); }
 

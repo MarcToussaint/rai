@@ -1456,6 +1456,26 @@ str KOMO::info_sliceErrors(uint t, const arr& errorTraces){
   return txt;
 }
 
+str KOMO::info_sliceCollisions(uint t, double belowMargin){
+  //similar to Configuration::getTotalPenetration
+  uint nFrames = world.frames.N;
+  CHECK_EQ(nFrames, timeSlices.d1, "");
+  str collisions;
+
+  for(const Proxy& p:pathConfig.proxies) {
+    if(p.d<belowMargin) {
+      uint ta=p.a->ID / nFrames;
+      uint tb=p.b->ID / nFrames;
+      CHECK_EQ(ta, tb, "collisions across time slices??");
+      if(ta==t+k_order || tb==t+k_order){
+        collisions <<p.a->name <<'-' <<p.b->name <<": " <<p.d <<' ' <<ta <<' ' <<tb <<'\n';
+      }
+    }
+  }
+
+  return collisions;
+}
+
 
 void KOMO::deprecated_reportProblem(std::ostream& os) {
   os <<"KOMO Problem:" <<endl;
@@ -1555,6 +1575,7 @@ int KOMO::view(bool pause, const char* txt) {
     arr err = info_objectiveErrorTraces();
     for(uint t=0;t<T;t++){
       pathConfig.viewer()->sliceTexts(t) = info_sliceErrors(t, err);
+      pathConfig.viewer()->sliceTexts(t) <<info_sliceCollisions(t);
     }
   }
   return pathConfig.viewer()->setConfiguration(pathConfig, txt, pause, timeSlices);
