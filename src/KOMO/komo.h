@@ -203,6 +203,7 @@ struct KOMO : NonCopyable {
 
   int view(bool pause=false, const char* txt=nullptr);
   bool view_play(bool pause=false, double delay=.2, const char* saveVideoPath=nullptr);
+  int view_slice(uint t, bool pause=false);
   void view_close();
 
   void plotTrajectory();

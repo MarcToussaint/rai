@@ -1450,7 +1450,7 @@ str KOMO::info_sliceErrors(uint t, const arr& errorTraces){
   for(uint i:rank){
     if(err(i)<1e-4) break;
 //    if(objectives(i)->type>=OT_ineq){
-      txt <<"t=" <<t <<' ' <<err(i) <<objectives(i)->type <<' ' <<objectives(i)->name <<endl;
+      txt <<"t:" <<t <<" #" <<i <<objectives(i)->name <<' ' <<rai::Enum<ObjectiveType>(objectives(i)->type) <<' ' <<err(i) <<endl;
 //    }
   }
   return txt;
@@ -1578,12 +1578,18 @@ int KOMO::view(bool pause, const char* txt) {
       pathConfig.viewer()->sliceTexts(t) <<info_sliceCollisions(t);
     }
   }
+  pathConfig.viewer()->ensure_gl().setTitle("KOMO Viewer");
   return pathConfig.viewer()->setConfiguration(pathConfig, txt, pause, timeSlices);
 }
 
 bool KOMO::view_play(bool pause, double delay, const char* saveVideoPath) {
   view(false, 0);
   return pathConfig.viewer()->playVideo(timeSlices, pause, delay*tau*T, saveVideoPath);
+}
+
+int KOMO::view_slice(uint t, bool pause){
+  if(!pathConfig.viewer()->gl) view(false, 0);
+  return pathConfig.viewer()->view_slice(t, pause);
 }
 
 void KOMO::view_close() { pathConfig.view_close(); }
