@@ -80,6 +80,7 @@ struct sOpenGL : NonCopyable {
 struct GlfwSpinner : Thread {
   rai::Array<OpenGL*> glwins;
   Mutex mutex;
+  int newWinX=-50, newWinY=50;
 
   GlfwSpinner() : Thread("GlfwSpinnerSpinner", .01) {
     if(rai::getDisableGui()) { HALT("you must not be here with -disableGui"); }
@@ -262,6 +263,12 @@ void OpenGL::openWindow() {
       self->window = glfwCreateWindow(mode->width, mode->height, title.p, monitor, nullptr);
     } else {
       self->window = glfwCreateWindow(width, height, title.p, nullptr, nullptr);
+      if(fg->newWinX<0){
+        fg->newWinX += glfwGetVideoMode( glfwGetPrimaryMonitor() )->width - width;
+      }
+      glfwSetWindowPos(self->window, fg->newWinX, fg->newWinY);
+      fg->newWinY += height+50;
+      if(fg->newWinY>1000){ fg->newWinY = 0; fg->newWinX -= width+20; }
     }
     if(!offscreen) {
       glfwMakeContextCurrent(self->window);
@@ -306,6 +313,7 @@ void OpenGL::closeWindow() {
     watching.setStatus(0);
     fg->delGL(this);
     fg->mutex.lock(RAI_HERE);
+    glfwGetWindowPos(self->window, &fg->newWinX, &fg->newWinY);
     glfwDestroyWindow(self->window);
     fg->mutex.unlock();
   }

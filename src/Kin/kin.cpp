@@ -1029,8 +1029,8 @@ bool Configuration::check_topSort() const {
 void Configuration::clear() {
 //  glClose();
 //  swiftDelete();
-  if(self->viewer) self->viewer->clear();
-  self->fcl.reset();
+  if(self && self->viewer) self->viewer.reset();
+  if(self && self->fcl) self->fcl.reset();
 
   reset_q();
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }

@@ -279,7 +279,7 @@ void RRT_PathFinder::planForward(const arr& q0, const arr& qT) {
     if(success) break;
 
     //some output
-    if(verbose > 2) {
+    if(verbose>2) {
       if(!(i%100)) {
         DISP.setJointState(rrt0->getLast());
         DISP.view(false);
@@ -290,7 +290,7 @@ void RRT_PathFinder::planForward(const arr& q0, const arr& qT) {
 
   if(!success) return;
 
-  if(verbose > 0) {
+  if(verbose>0) {
     std::cout <<"SUCCESS!"
               <<"\n  tested samples=" <<P.evals
               <<"\n  #tree-size=" <<rrt0->getNumberNodes()
@@ -301,7 +301,7 @@ void RRT_PathFinder::planForward(const arr& q0, const arr& qT) {
   revertPath(path);
 
   //display
-  if(verbose > 1) {
+  if(verbose>1) {
     std::cout << "path-length= " << path.d0 <<std::endl;
     DISP.proxies.clear();
 
@@ -367,7 +367,7 @@ int RRT_PathFinder::stepConnect() {
           DISP.view(false, STRING("rrt result "<<t));
           rai::wait(.1);
         }
-        DISP.view(true);
+        DISP.view(verbose>3);
         DISP.clear();
       }
     }

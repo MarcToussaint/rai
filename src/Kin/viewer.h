@@ -47,7 +47,6 @@ struct ConfigurationViewer : ViewableConfigCopy {
   int _watch(const char* text=nullptr);
   void _add(GLDrawer& c);
   void _resetPressedKey();
-  void clear();
 
 private://draw data
   FrameL slices;
