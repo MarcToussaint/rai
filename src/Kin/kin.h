@@ -176,9 +176,10 @@ struct Configuration : GLDrawer {
   void flipFrames(Frame* a, Frame* b);
   void pruneRigidJoints();        ///< delete rigid joints -> they become just links
   void pruneInactiveJoints();        ///< delete rigid joints -> they become just links
+  void reconnectShapesToParents();
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
-  void pruneUselessFrames(bool pruneNamed=false, bool pruneNonContactNonMarker=false);  ///< delete frames that have no name, joint, and shape
-  void optimizeTree(bool _pruneRigidJoints=false, bool pruneNamed=false, bool pruneNonContactNonMarker=false);        ///< call the three above methods in this order
+  void pruneUselessFrames(bool pruneNamed=false, bool pruneNonContactNonMarker=false, bool pruneNonVisible=false);  ///< delete frames that have no name, joint, and shape
+  void optimizeTree(bool _pruneRigidJoints=false, bool pruneNamed=false, bool pruneNonContactNonMarker=false, bool pruneNonVisible=false);        ///< call the three above methods in this order
   void sortFrames();
   void makeObjectsFree(const StringA& objects, double H_cost=0.);
   void addTauJoint();

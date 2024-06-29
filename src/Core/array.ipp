@@ -416,19 +416,20 @@ template<class T> Array<T>& Array<T>::append(const T& x, uint multiple) {
 }
 
 /// append another array to the array (by copying it) -- the array might become 1D!
-template<class T> Array<T>& Array<T>::append(const Array<T>& x) {
+template<class T> Array<T>& Array<T>::append(const Array<T>& x, bool asRow) {
   uint oldN=N, xN=x.N, i;
   if(!xN) return *this;
-  if(!nd)
-    resizeAs(x);
-  else if(nd==2 && x.nd==1 && d1==x.d0)
+  if(nd==2 && x.nd==1 && d1==x.d0)
     resizeCopy(d0+1, d1);
   else if(nd==2 && x.nd==2 && d1==x.d1)
     resizeCopy(d0+x.d0, d1);
-  else if(!N)
+  else if(!N){
     resizeAs(x);
-  else
+    if(asRow && x.nd!=2) reshape(1, x.N);
+  }else{
     resizeCopy(N+xN);
+    if(asRow) reshape(N/x.N, x.N);
+  }
   if(memMove==1) memmove(p+oldN, x.p, sizeT*xN);
   else for(i=0; i<xN; i++) p[oldN+i]=x.p[i];
   return *this;

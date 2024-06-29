@@ -77,7 +77,12 @@ OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<NLP>& P, ra
 
   newton.options.verbose = rai::MAX(opt.verbose-1, 0);
 
-  if(opt.verbose>0) cout <<"====nlp==== method:" <<MethodName[opt.constrainedMethod] <<" bounded: " <<(opt.boundedNewton?"yes":"no") <<endl;
+  if(opt.verbose>0){
+    cout <<"====nlp===="
+        <<" problem-dim: " <<P->dimension <<'/' <<P->featureTypes.N
+       <<" method:" <<MethodName[opt.constrainedMethod]
+      <<" bounded: " <<(opt.boundedNewton?"yes":"no") <<endl;
+  }
 
   if(logFile) {
     (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.mu <<", L_x: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;

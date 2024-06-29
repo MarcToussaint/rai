@@ -191,14 +191,23 @@ rai::Frame* rai::Frame::getRoot() {
   return f;
 }
 
-FrameL rai::Frame::getPathToRoot() {
-  FrameL pathToRoot;
-  rai::Frame* f = this;
-  while(f) {
-    pathToRoot.prepend(f);
-    f = f->parent;
+rai::Frame* rai::Frame::getCommonRoot(Frame* g){
+  FrameL A = getPathToRoot();
+  FrameL B = g->getPathToRoot();
+  rai::Frame *common=0;
+  for(uint i=0;i<A.N && i<B.N;i++){
+    rai::Frame *a = A(i);
+    rai::Frame *b = B(i);
+    if(a==b){ common=a; }
+    else break;
   }
-  return pathToRoot;
+  return common;
+}
+
+FrameL rai::Frame::getPathToRoot(Frame* stop) {
+  FrameL F;
+  for(rai::Frame* f=this; f && f!=stop; f=f->parent) F.prepend(f);
+  return F;
 }
 
 rai::Frame* rai::Frame::getUpwardLink(rai::Transformation& Qtotal, bool untilPartBreak) const {

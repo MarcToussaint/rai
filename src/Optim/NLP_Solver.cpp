@@ -50,7 +50,7 @@ NLP_Solver& NLP_Solver::setProblem(const shared_ptr<NLP>& _P) {
   return *this;
 }
 
-std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization) {
+std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int verbose) {
   ret = make_shared<SolverReturn>();
   double time = -rai::cpuTime();
 
@@ -60,6 +60,9 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization) {
   } else {
     CHECK(x.N, "x is of zero dimensionality - needs initialization");
   }
+
+  if(verbose>=0) opt.verbose=verbose;
+
   if(solverID==NLPS_newton) {
     Conv_NLP_ScalarProblem P1(P);
     OptNewton newton(x, P1, opt);

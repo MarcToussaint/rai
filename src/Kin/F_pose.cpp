@@ -12,7 +12,7 @@
 
 void F_Position::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0) {  Feature::phi2(y, J, F);  return;  }
-  CHECK_EQ(F.N, 1, "");
+  CHECK_EQ(F.N, 1, "Position feature only takes one frame argument");
   rai::Frame* f = F.elem(0);
   f->C.kinematicsPos(y, J, f);
 }

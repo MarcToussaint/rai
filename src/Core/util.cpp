@@ -796,6 +796,7 @@ void rai::String::resize(uint n, bool copy) {
     if(copy) memmove(p, pold, N<n?N:n);
     if(Mold) delete[] pold;
   }
+  if(!copy) memset(p, ' ', n);
   N=n;
   p[N]=0;
   resetIstream();

@@ -1104,6 +1104,21 @@ void Configuration::pruneInactiveJoints() {
   }
 }
 
+void Configuration::reconnectShapesToParents() {
+  reset_q();
+  for(Frame* f:frames) if(f->parent && !f->joint && f->shape) {
+    if(!f->parent->shape && f->get_Q().isZero()){
+      new Shape(*f->parent, f->shape);
+      if(f->ats){
+        FileToken *fil=f->ats->find<FileToken>("mesh");
+        if(fil) f->parent->ats->add("mesh", *fil);
+      }
+      delete f->shape;
+      f->shape=0;
+    }
+  }
+}
+
 void Configuration::reconnectLinksToClosestJoints() {
   reset_q();
   for(Frame* f:frames) if(f->parent) {
@@ -1123,22 +1138,26 @@ void Configuration::reconnectLinksToClosestJoints() {
     }
 }
 
-void Configuration::pruneUselessFrames(bool pruneNamed, bool pruneNonContactNonMarker) {
+void Configuration::pruneUselessFrames(bool pruneNamed, bool pruneNonContactNonMarker, bool pruneNonVisible) {
   for(uint i=frames.N; i--;) {
     Frame* f=frames.elem(i);
     if((pruneNamed || !f->name) && !f->children.N && !f->joint && !f->inertia) {
-      if(!f->shape)
+      if(!f->shape){
         delete f; //that's all there is to do
-      else if(pruneNonContactNonMarker && !f->shape->cont && f->shape->type()!=ST_marker)
+      }else if(pruneNonContactNonMarker && !f->shape->cont && f->shape->type()!=ST_marker){
         delete f;
+      }else if(pruneNonVisible && f->shape->alpha()<1.){
+        delete f;
+      }
     }
   }
 }
 
-void Configuration::optimizeTree(bool _pruneRigidJoints, bool pruneNamed, bool pruneNonContactNonMarker) {
+void Configuration::optimizeTree(bool _pruneRigidJoints, bool pruneNamed, bool pruneNonContactNonMarker, bool pruneNonVisible) {
   if(_pruneRigidJoints) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
   reconnectLinksToClosestJoints();
-  pruneUselessFrames(pruneNamed, pruneNonContactNonMarker);
+  reconnectShapesToParents();
+  pruneUselessFrames(pruneNamed, pruneNonContactNonMarker, pruneNonVisible);
   ensure_indexedJoints();
   checkConsistency();
 }
@@ -1228,7 +1247,7 @@ bool Configuration::checkConsistency() const {
     a->Q.checkNan();
     a->X.checkNan();
     CHECK_ZERO(a->Q.rot.normalization()-1., 1e-6, "");
-    CHECK_ZERO(a->X.rot.normalization()-1., 1e-6, "");
+    if(a->_state_X_isGood) CHECK_ZERO(a->X.rot.normalization()-1., 1e-6, "");
 
     // frame has no parent -> Q needs to be zero, X is good
     if(!a->parent) {

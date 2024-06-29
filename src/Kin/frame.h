@@ -131,7 +131,8 @@ struct Frame : NonCopyable {
   void getSubtree(FrameL& F) const;
   FrameL getSubtree() const { FrameL F; getSubtree(F); return F; }
   Frame* getRoot();
-  FrameL getPathToRoot();
+  Frame* getCommonRoot(Frame* g);
+  FrameL getPathToRoot(Frame* stop=0);
   Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   Frame* getDownwardLink(bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   FrameL getPathToUpwardLink(bool untilPartBreak=false); ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)

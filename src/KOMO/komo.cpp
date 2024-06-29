@@ -1876,6 +1876,10 @@ void KOMO::setupPathConfig() {
 
   x = pathConfig.getJointState();
   pathConfig.checkConsistency();
+
+  if(!x.N){
+    LOG(0) <<"you created a KOMO problem with zero dofs -- that's likely a bug";
+  }
 }
 
 void KOMO::checkBounds(const arr& x) {
