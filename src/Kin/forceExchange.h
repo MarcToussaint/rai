@@ -43,6 +43,8 @@ struct ForceExchange : Dof, NonCopyable, GLDrawer {
   void setRandom(uint timeSlices_d1, int verbose);
   String name() const { return STRING("fex-" <<a.name <<'-' <<b.name); }
 
+  void copy(ForceExchange& fex){ poa=fex.poa; force=fex.force; torque=fex.torque; }
+
   virtual double sign(Frame* f) const { if(&a==f) return 1.; return -1.; }
   virtual void kinPOA(arr& y, arr& J) const;
   virtual void kinForce(arr& y, arr& J) const;

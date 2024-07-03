@@ -1967,7 +1967,7 @@ arr Camera::getProjectionMatrix() const {
   return arr();
 }
 
-arr Camera::getGLProjectionMatrix() const {
+arr Camera::getGLProjectionMatrix(bool includeCameraPose) const {
   arr Tinv = X.getInverseAffineMatrix();
 
   if(focalLength > 0.) { //focal lengh mode
@@ -1979,6 +1979,7 @@ arr Camera::getGLProjectionMatrix() const {
     P(2, 2) = -(zFar + zNear)/(zNear-zFar);
     P(2, 3) = 1.;
     P(3, 2) = 2. * zFar * zNear / (zNear-zFar);
+    if(!includeCameraPose) return P;
     return ~Tinv * P; //(P is already transposed!)
   }
 #ifdef RAI_GL

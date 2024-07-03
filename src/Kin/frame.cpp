@@ -561,6 +561,9 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
     getShape().sscCore().V=points; getShape().sscCore().V.reshape(-1, 3);
     if(getShape().sscCore().V.d0>=4){
       getShape().sscCore().makeConvexHull();
+      if(!getShape().sscCore().V.N){ //cvx hull of core failed
+        getShape().sscCore().V=points; getShape().sscCore().V.reshape(-1, 3);
+      }
     }
     mesh.setSSCvx(getShape().sscCore().V, radius);
     getShape().size = arr{radius};

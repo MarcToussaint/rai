@@ -11,6 +11,7 @@
 #include "../Core/thread.h"
 #include "../Gui/opengl.h"
 #include <iomanip>
+#include <Kin/forceExchange.h>
 
 rai::ViewableConfigCopy::~ViewableConfigCopy() { close_gl(); }
 
@@ -76,8 +77,17 @@ void rai::ViewableConfigCopy::updateConfiguration(const rai::Configuration& newC
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
     for(uint i=0; i<C.frames.N; i++) {
-      rai::Frame* f = newC.frames.elem(i);
-      if(f->shape) C.frames.elem(i)->set_X() = f->ensure_X();
+      rai::Frame* fnew = newC.frames.elem(i);
+      rai::Frame* fold = C.frames.elem(i);
+      //shape pose
+      if(fnew->shape) fold->set_X() = fnew->ensure_X();
+      //forces
+      if(fnew->forces.N){
+        CHECK_EQ(fnew->forces.N, fold->forces.N, "");
+        for(uint j=0;j<fnew->forces.N;j++){
+          fold->forces.elem(j)->copy(*fnew->forces.elem(j));
+        }
+      }
     }
   }
 

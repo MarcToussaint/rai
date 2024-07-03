@@ -306,7 +306,7 @@ struct Camera {
 
   //-- projection matrix stuff
   void glSetProjectionMatrix() const;
-  arr getGLProjectionMatrix() const;
+  arr getGLProjectionMatrix(bool includeCameraPose=true) const;
   arr getProjectionMatrix() const;
   arr getInverseProjectionMatrix() const;
   double glConvertToTrueDepth(double d) const;
