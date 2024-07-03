@@ -217,8 +217,8 @@ struct OpenGL {
   void raiseWindow();
   bool hasWindow();
   void setTitle(const char* _title=0);
-  void beginNonThreadedDraw(bool fromWithinCallback=false);
-  void endNonThreadedDraw(bool fromWithinCallback=false);
+  void beginContext(bool fromWithinCallback=false);
+  void endContext(bool fromWithinCallback=false);
   void postRedrawEvent(bool fromWithinCallback);
 
  public:

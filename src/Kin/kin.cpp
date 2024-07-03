@@ -3457,9 +3457,9 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
     if(gl.pressedkey==' ') { //grab a body
       gl.drawOptions.drawColors=false;
       gl.drawOptions.drawMode_idColor=true;
-      gl.beginNonThreadedDraw(true);
+      gl.beginContext(true);
       gl.Draw(gl.width, gl.height, 0, true);
-      gl.endNonThreadedDraw(true);
+      gl.endContext(true);
       gl.drawOptions.drawMode_idColor=false;
       gl.drawOptions.drawColors=true;
       write_ppm(gl.captureImage, "z.ppm");

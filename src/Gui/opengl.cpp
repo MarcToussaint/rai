@@ -20,6 +20,8 @@
 #  undef Success
 #endif
 
+#define RAI_OPENGL_3
+
 #include "opengl.h"
 #include "../Geo/geo.h"
 
@@ -87,8 +89,16 @@ struct GlfwSpinner : Thread {
 
     glfwSetErrorCallback(error_callback);
     if(!glfwInit()) exit(EXIT_FAILURE);
+#ifndef RAI_OPENGL_3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+#else
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make macOS happy; should not be needed
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif
 
     int argc=1;
     char* argv[1]= {(char*)"x"};
@@ -338,7 +348,7 @@ void OpenGL::setTitle(const char* _title) {
   }
 }
 
-void OpenGL::beginNonThreadedDraw(bool fromWithinCallback) {
+void OpenGL::beginContext(bool fromWithinCallback) {
   if(rai::getDisableGui()) return;
   openWindow();
   auto fg = singletonGlSpinner();
@@ -346,10 +356,10 @@ void OpenGL::beginNonThreadedDraw(bool fromWithinCallback) {
   glfwMakeContextCurrent(self->window);
 }
 
-void OpenGL::endNonThreadedDraw(bool fromWithinCallback) {
+void OpenGL::endContext(bool fromWithinCallback) {
   if(rai::getDisableGui()) return;
   auto fg = singletonGlSpinner();
-  glfwSwapBuffers(self->window);
+  //glfwSwapBuffers(self->window);
   glfwMakeContextCurrent(nullptr);
   if(!fromWithinCallback) fg->mutex.unlock();
 }
@@ -1825,9 +1835,10 @@ int OpenGL::update(const char* txt, bool nonThreaded) {
   if(txt) text.clear() <<txt;
 #ifdef RAI_GL
   if(nonThreaded || offscreen) {
-    beginNonThreadedDraw();
+    beginContext();
     Draw(width, height);
-    endNonThreadedDraw();
+    glfwSwapBuffers(self->window);
+    endContext();
   } else {
     postRedrawEvent(false);
   }
@@ -1980,9 +1991,9 @@ arr OpenGL::get3dMousePos(arr& normal) {
 uint OpenGL::get3dMouseObjID() {
   drawOptions.drawMode_idColor = true;
   drawOptions.drawColors = false;
-  beginNonThreadedDraw(true);
+  beginContext(true);
   Draw(width, height, nullptr, true);
-  endNonThreadedDraw(true);
+  endContext(true);
   drawOptions.drawMode_idColor = false;
   drawOptions.drawColors = true;
   uint id = color2id(&captureImage(mouseposy, mouseposx, 0));
@@ -2074,9 +2085,9 @@ void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
     if(!buttonIsUp) {
       drawOptions.drawMode_idColor = true;
       drawOptions.drawColors = false;
-      beginNonThreadedDraw(true);
+      beginContext(true);
       Draw(w, h, nullptr, true);
-      endNonThreadedDraw(true);
+      endContext(true);
       double d = 0.;
       if(mouseposy>=0. && mouseposy<=height-1 && mouseposx>=0. && mouseposx<=width-1)
         d = captureDepth(mouseposy, mouseposx);
@@ -2319,7 +2330,7 @@ struct XBackgroundContext {
 Singleton<XBackgroundContext> xBackgroundContext;
 
 void OpenGL::renderInBack(int w, int h, bool fromWithinCallback) {
-  beginNonThreadedDraw(fromWithinCallback);
+  beginContext(fromWithinCallback);
 
 #ifdef RAI_GL
   if(w<0) w=width;
@@ -2404,7 +2415,7 @@ void OpenGL::renderInBack(int w, int h, bool fromWithinCallback) {
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 #endif
 
-  endNonThreadedDraw(fromWithinCallback);
+  endContext(fromWithinCallback);
 }
 
 void read_png(byteA& img, const char* file_name, bool swap_rows) {
