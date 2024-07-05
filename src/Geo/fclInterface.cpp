@@ -202,7 +202,8 @@ bool FclInterface_self::BroadphaseCallback(CollObject* o1, CollObject* o2, void*
 }//namespace
 
 #else //RAI_FCL
-rai::FclInterface::FclInterface(const rai::Array<shared_ptr<Mesh>>& _geometries, double _cutoff) { NICO }
+typedef int QueryMode;
+rai::FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes, QueryMode _mode){ NICO }
 rai::FclInterface::~FclInterface() { NICO }
 void rai::FclInterface::step(const arr& X) { NICO }
 #endif

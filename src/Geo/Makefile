@@ -17,8 +17,6 @@ CCD = 1
 Lewiner = 1
 CXXFLAGS += -DRAI_VHACD
 
-FCL_LOCAL = 1
-
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
 OBJS = $(SRCS:%.cpp=%.o)
 
