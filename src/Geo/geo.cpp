@@ -1909,6 +1909,25 @@ void Camera::report(std::ostream& os) {
   os <<"intrinsic matrix=\n" <<getIntrinsicMatrix(640, 480) <<endl;
 }
 
+arr Camera::getT_IC(){
+  arr P(4, 4);
+  P.setZero();
+  if(focalLength>0.) { //normal perspective mode
+    P(0, 0) = 2.*focalLength/whRatio;
+    P(1, 1) = -2.*focalLength;
+    P(2, 2) = -(zFar + zNear)/(zNear-zFar);
+    P(3, 2) = 1.;
+    P(2, 3) = 2. * zFar * zNear / (zNear-zFar);
+  }else if(heightAbs > 0.) { //ortho mode
+    NIY;
+  }
+  return P;
+}
+
+arr Camera::getT_CW(){
+  return X.getInverseAffineMatrix();
+}
+
 /** sets OpenGL's GL_PROJECTION matrix accordingly -- should be
     called in an opengl draw routine */
 void Camera::glSetProjectionMatrix() const {
