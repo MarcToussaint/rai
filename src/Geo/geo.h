@@ -305,8 +305,8 @@ struct Camera {
   void upright(const Vector& up=Vector(0, 0, 1));
 
   //-- projection matrix stuff
-  arr getT_IC();
-  arr getT_CW();
+  arr getT_IC() const;
+  arr getT_CW() const;
   void glSetProjectionMatrix() const;
   arr getGLProjectionMatrix(bool includeCameraPose=true) const;
   arr getProjectionMatrix() const;

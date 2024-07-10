@@ -1909,7 +1909,7 @@ void Camera::report(std::ostream& os) {
   os <<"intrinsic matrix=\n" <<getIntrinsicMatrix(640, 480) <<endl;
 }
 
-arr Camera::getT_IC(){
+arr Camera::getT_IC() const{
   arr P(4, 4);
   P.setZero();
   if(focalLength>0.) { //normal perspective mode
@@ -1924,7 +1924,7 @@ arr Camera::getT_IC(){
   return P;
 }
 
-arr Camera::getT_CW(){
+arr Camera::getT_CW() const{
   return X.getInverseAffineMatrix();
 }
 
