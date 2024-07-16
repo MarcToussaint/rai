@@ -2039,7 +2039,7 @@ void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
 }
 
 void OpenGL::Scroll(int wheel, int direction) {
-  CALLBACK_DEBUG(this, "Mouse Wheel Callback: " <<wheel <<' ' <<direction);
+  CALLBACK_DEBUG(this, "Mouse Wheel Callback: " <<wheel <<' ' <<direction <<' ' <<modifiers);
 
   rai::Camera* cam=&camera;
   for(mouseView=views.N; mouseView--;) {
@@ -2074,10 +2074,10 @@ void OpenGL::Scroll(int wheel, int direction) {
     }
 
     //-- ctrl -> focal length
-    if(!_SHIFT(modifiers) && _CTRL(modifiers)) {
-      if(direction<0.) cam->focalLength *= 1.1;
-      else cam->focalLength /= 1.1;
-    }
+//    if(!_SHIFT(modifiers) && _CTRL(modifiers)) {
+//      if(direction<0.) cam->focalLength *= 1.1;
+//      else cam->focalLength /= 1.1;
+//    }
   }
 
   postRedrawEvent(true);

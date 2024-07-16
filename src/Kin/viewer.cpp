@@ -18,6 +18,7 @@ rai::ConfigurationViewer::~ConfigurationViewer() { close_gl(); }
 OpenGL& rai::ConfigurationViewer::ensure_gl() {
   if(!gl) {
     gl = make_shared<OpenGL>("ConfigurationViewer");
+//    gl->reportEvents=true;
     gl->camera.setDefault();
     gl->add(*this);
   }
@@ -28,61 +29,68 @@ void rai::ConfigurationViewer::close_gl() {
   if(gl) gl.reset();
 }
 
-void rai::ConfigurationViewer::recopyMeshes(const rai::Configuration& C) {
+void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
   ensure_gl().dataLock.lock(RAI_HERE);
-  CHECK(!objs.N, "");
-  addLight({5.,5.,5.}, {0.,0.,1.});
-  addLight({-5.,0.,5.}, {0.,0.,1.});
+  if(!lights.N){
+    addLight({5.,5.,5.}, {0.,0.,1.});
+    addLight({-5.,0.,5.}, {0.,0.,1.});
+  }
+  if(objs.N){
+    objs.clear();
+  }
+
   { // floor
     rai::Mesh m;
     m.setQuad();
-    m.scale(5., 5., 0.);
+    m.scale(10., 10., 0.);
     m.C = {.4, .45, .5};
     add().mesh(m, 0);
   }
 
-  frame2objID.resize(C.frames.N) = -1;
-  for(rai::Frame* f:C.frames) if(f->shape) {
+  frame2objID.resize(frames.N) = -1;
+  for(rai::Frame* f:frames) if(f->shape) {
     shared_ptr<Mesh> mesh = f->shape->_mesh;
     if(mesh && mesh->V.N){
       frame2objID(f->ID) = objs.N;
       add().mesh(*mesh, f->ensure_X());
     }
   }
-  for(rai::Frame* f:C.frames) if(f->shape && f->shape->type()==ST_marker) {
+  for(rai::Frame* f:frames) if(f->shape && f->shape->type()==ST_marker) {
     frame2objID(f->ID) = objs.N;
     addAxes(f->shape->size(-1), f->ensure_X());
   }
   ensure_gl().dataLock.unlock();
 }
 
-void rai::ConfigurationViewer::updateConfiguration(const rai::Configuration& C) {
+rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const rai::Configuration& C, const FrameL& timeSlices) {
+//  drawShadows = false;
   bool copyMeshes = false;
   if(!objs.N) copyMeshes = true;
 
-//  if(newC.frames.N!=C.frames.N){
-//    copyMeshes = true;
-//  }else {
-//    for(uint i=0; i<C.frames.N; i++) {
-//      rai::Shape* s = newC.frames.elem(i)->shape;
-//      rai::Shape* r = C.frames.elem(i)->shape;
-//      if((!s) != (!r)) { copyMeshes=true; break; }
-//      if(!s) continue;
-//      if(s->_type != r->_type) { copyMeshes=true; break; }
-//      if(s->size != r->size) { copyMeshes=true; break; }
-//      if(s->_mesh && r->_mesh && (s->_mesh.get() != r->_mesh.get())) { copyMeshes=true; break; }
-//      if(s->_mesh->version != r->_mesh->version) { copyMeshes=true; break; }
-//    }
-//  }
-  if(copyMeshes) recopyMeshes(C);
+  FrameL frames;
+  if(timeSlices.nd==2) frames=timeSlices[0];
+  else if(timeSlices.nd==1) frames=timeSlices;
+  else frames = C.frames;
+  frames.reshape(-1);
 
-  ensure_gl();
+  if(frame2objID.N!=C.frames.N){
+    copyMeshes = true;
+  } else {
+    for(rai::Frame *f : C.frames) {
+      int o = frame2objID(f->ID);
+      if(f->shape && f->shape->_mesh && f->shape->_mesh->V.N && o==-1){ copyMeshes=true; break; }
+      if(o==-1) continue;
+      rai::Shape* s = f->shape;
+      if(!s || !s->_mesh){ copyMeshes=true; break; }
+      if(s->_mesh->V.N && objs(o)->version != s->_mesh->version) { copyMeshes=true; break; }
+    }
+  }
+  if(copyMeshes) recopyMeshes(frames);
 
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
-    for(uint i=0; i<C.frames.N; i++) {
-      rai::Frame* f = C.frames.elem(i);
-      RenderObject* obj = objs.elem(frame2objID(f->ID)).get();
+    for(rai::Frame* f : frames) {
+      RenderObject* obj = objs(frame2objID(f->ID)).get();
       //shape pose
       if(f->shape) obj->X = f->ensure_X();
       //forces
@@ -96,11 +104,31 @@ void rai::ConfigurationViewer::updateConfiguration(const rai::Configuration& C) 
     }
   }
 
+  if(timeSlices.nd==2){
+    auto _dataLock = gl->dataLock(RAI_HERE);
+    drawSlice=-1;
+    slices.resize(timeSlices.d0, objs.N, 7);
+    slices.setZero();
+    for(uint i=0;i<timeSlices.d0;i++) for(uint j=0;j<timeSlices.d1;j++){
+      int o = frame2objID(timeSlices(0,j)->ID);
+      if(o!=-1){
+        slices(i, o, {}) = timeSlices(i,j)->ensure_X().getArr7d();
+      }
+    }
+  }else{
+    slices.clear();
+  }
+
   if(C.proxies.N) {
     auto _dataLock = gl->dataLock(RAI_HERE);
-    NIY;
+//    NIY;
 //    C.copyProxies(newC.proxies);
   }
+
+  rai::Frame* camF = C.getFrame("camera_gl", false);
+  if(camF) setCamera(camF);
+
+  return *this;
 }
 
 void rai::ConfigurationViewer::setCamera(rai::Frame* camF) {
@@ -152,31 +180,13 @@ void rai::ConfigurationViewer::raiseWindow() {
   gl->raiseWindow();
 }
 
-int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& C, const char* _text, bool watch, const FrameL& timeSlices) {
-  updateConfiguration(C);
-
-  {
-    auto _dataLock = gl->dataLock(RAI_HERE);
-    for(rai::Frame* f:C.frames) CHECK(f->_state_X_isGood, "");
-    drawSlice=-1;
-    if(timeSlices.N){
-      slices.resizeAs(timeSlices);
-      NIY;
-//      for(uint i=0;i<slices.N;i++) slices.elem(i) = C.frames.elem(timeSlices.elem(i)->ID);
-    }else{
-      slices.clear();
-    }
-    if(_text) text = _text;
-  }
-
-  rai::Frame* camF = C.getFrame("camera_gl", false);
-  if(camF) setCamera(camF);
-
+int rai::ConfigurationViewer::view(const char* _text, bool watch) {
+  if(_text) text = _text;
 
   return update(watch);
 }
 
-bool rai::ConfigurationViewer::playVideo(const FrameL& timeSlices, bool watch, double delay, const char* saveVideoPath) {
+bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* saveVideoPath) {
   if(rai::getDisableGui()) return false;
 
   if(saveVideoPath) {
@@ -184,19 +194,16 @@ bool rai::ConfigurationViewer::playVideo(const FrameL& timeSlices, bool watch, d
     rai::system(STRING("rm -f " <<saveVideoPath <<"*.png"));
   }
 
-  NIY; //CHECK_GE(C.frames.N, timeSlices.N, "");
+  CHECK(slices.nd==3, "");
 
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
-    slices.resizeAs(timeSlices);
-//    for(uint i=0;i<slices.N;i++) slices.elem(i) = C.frames.elem(timeSlices.elem(i)->ID);
-    NIY;
     drawSlice = 0;
     abortPlay=false;
     gl->scrollCounter = 0;
   }
 
-  Metronome tic(delay / timeSlices.d0);
+  Metronome tic(delay / slices.d0);
 
   int key=0;
   for(uint t=0; t<slices.d0; t++) {
@@ -213,7 +220,6 @@ bool rai::ConfigurationViewer::playVideo(const FrameL& timeSlices, bool watch, d
   }
   key = update(watch);
 //  drawText = tag;
-//  slices.clear();
   return !(key==27 || key=='q' || !rai::getInteractivity());
 }
 
@@ -254,45 +260,34 @@ floatA rai::ConfigurationViewer::getDepth() {
 }
 
 void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
-  RenderScene::glDraw(gl);
-  return;
+  if(!slices.N){
+    RenderScene::glDraw(gl);
+  }else{
+    if(gl.scrollCounter && drawSlice==-1 && slices.N) drawSlice=0;
 
-#ifdef RAI_GL
-  glStandardScene(NULL, gl);
+    if(drawSlice>=0) {
+      if(gl.scrollCounter){ drawSlice-=gl.scrollCounter; gl.scrollCounter=0; abortPlay=true; }
+      if(drawSlice<0) drawSlice=0;
+      if(drawSlice>=(int)slices.d0) drawSlice=slices.d0-1;
 
-  glPushMatrix();
+      gl.text.clear() <<text <<"\n(slice " <<drawSlice <<'/' <<slices.d0;
+      if(phaseFactor>0.) gl.text <<", phase " <<phaseFactor*(double(drawSlice)+phaseOffset);
+      gl.text <<")";
+      if(drawSlice<(int)sliceTexts.N) gl.text <<"\n" <<sliceTexts(drawSlice);
+      //C.glDraw_frames(gl, slices[drawSlice], 0);
 
-  rai::Transformation T;
-
-  //draw frame paths
-  if(drawFrameLines) {
-    glColor(0., 0., 0., .2);
-    glLoadIdentity();
-  }
-
-  if(slices.N && drawSlice>=0) {
-    if(gl.scrollCounter){ drawSlice+=gl.scrollCounter; gl.scrollCounter=0; abortPlay=true; }
-    if(drawSlice<0) drawSlice=0;
-    if(drawSlice>=(int)slices.d0) drawSlice=slices.d0-1;
-
-    gl.text.clear() <<text <<"\n(slice " <<drawSlice <<'/' <<slices.d0;
-    if(phaseFactor>0.) gl.text <<", phase " <<phaseFactor*(double(drawSlice)+phaseOffset);
-    gl.text <<")";
-    if(drawSlice<(int)sliceTexts.N) gl.text <<"\n" <<sliceTexts(drawSlice);
-
-    NIY; //C.glDraw_frames(gl, slices[drawSlice], 0);
-  } else {
-    if(gl.scrollCounter && slices.N){
-      drawSlice=0;
+      CHECK_EQ(slices.d1, objs.N, "");
+      for(uint i=0;i<objs.N;i++) objs(i)->X.set(slices(drawSlice, i, {}));
+      RenderScene::glDraw(gl);
     }else{
       gl.text.clear() <<text;
-      NIY; //C.glDraw_frames(gl, C.frames, 0);
+      for(uint t=0;t<slices.d0;t++){
+        CHECK_EQ(slices.d1, objs.N, "");
+        for(uint i=0;i<objs.N;i++) objs(i)->X.set(slices(t, i, {}));
+        RenderScene::glDraw(gl);
+        //C.glDraw_frames(gl, C.frames, 0);
+      }
     }
   }
-
-  glPopMatrix();
-#else
-  NICO
-#endif
 }
 

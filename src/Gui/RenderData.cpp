@@ -1,4 +1,4 @@
-#include "RenderScene.h"
+#include "RenderData.h"
 
 #include <sstream>
 #include <glm/glm.hpp>
@@ -16,7 +16,7 @@ RenderObject& RenderScene::add(){
 void RenderScene::addLight(const arr& pos, const arr& focus){
   std::shared_ptr<rai::Camera> light = make_shared<rai::Camera>();
   light->focus(0., 0., 0.);
-  light->setHeightAbs(2.);
+  light->setHeightAbs(5.);
 //  light->setHeightAngle(45.);
   light->setZRange(1., 10.);
   light->X.pos.set(pos); //setPosition(4., -2., 4.);
@@ -67,7 +67,7 @@ void RenderScene::glInitialize(OpenGL &gl){
   glDepthFunc(GL_LESS);
   glEnable(GL_CULL_FACE);
 
-  id.prog_ID = LoadShaders( "shader.vs", "shader.fs" );
+  id.prog_ID = LoadShaders( rai::raiPath("src/Gui/shader.vs"), rai::raiPath("src/Gui/shader.fs") );
   id.prog_Projection_W = glGetUniformLocation(id.prog_ID, "Projection_W");
   id.prog_ViewT_CW = glGetUniformLocation(id.prog_ID, "ViewT_CW");
   id.prog_ModelT_WM = glGetUniformLocation(id.prog_ID, "ModelT_WM");
@@ -76,12 +76,12 @@ void RenderScene::glInitialize(OpenGL &gl){
   id.prog_numLights = glGetUniformLocation(id.prog_ID, "numLights");
   id.prog_lightDirection_C = glGetUniformLocation(id.prog_ID, "lightDirection_C");
 
-  id.progMarker = LoadShaders( "shaderMarker.vs", "shaderMarker.fs" );
+  id.progMarker = LoadShaders( rai::raiPath("src/Gui/shaderMarker.vs"), rai::raiPath("src/Gui/shaderMarker.fs") );
   id.progMarker_Projection_W = glGetUniformLocation(id.progMarker, "Projection_W");
   id.progMarker_ModelT_WM = glGetUniformLocation(id.progMarker, "ModelT_WM");
 
   if(drawShadows){
-    id.progShadow_ID = LoadShaders( "shadowShader.vs", "shadowShader.fs" );
+    id.progShadow_ID = LoadShaders( rai::raiPath("src/Gui/shaderShadow.vs"), rai::raiPath("src/Gui/shaderShadow.fs") );
     id.progShadow_ShadowProjection_W = glGetUniformLocation(id.progShadow_ID, "ShadowProjection_W");
     id.progShadow_ModelT_WM = glGetUniformLocation(id.progShadow_ID, "ModelT_WM");
 
@@ -111,9 +111,9 @@ void RenderScene::glInitialize(OpenGL &gl){
   }
   id.initialized=true;
 
-  for(auto& obj:objs){
-    obj->glInitialize();
-  }
+//  for(auto& obj:objs){
+//    obj->glInitialize();
+//  }
 }
 
 void RenderScene::renderObjects(GLuint idT_WM, const uintA& sorting, RenderType type){
@@ -128,6 +128,8 @@ void RenderScene::renderObjects(GLuint idT_WM, const uintA& sorting, RenderType 
 
     std::shared_ptr<RenderObject>& obj = objs.elem(j);
     if(obj->type!=type) continue;
+
+    CHECK(obj->initialized, "");
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
@@ -151,12 +153,15 @@ void RenderScene::glDraw(OpenGL& gl){
   ContextIDs& id = contextIDs[&gl];
   CHECK(id.initialized, "");
 
+  for(auto& obj:objs){
+    if(!obj->initialized) obj->glInitialize();
+  }
+
   camera = gl.camera;
 
   //sort objects
   for(std::shared_ptr<RenderObject>& obj:objs){
     obj->cameraDist = (obj->X.pos - camera.X.pos).length();
-    if(obj->colors.N && obj->colors(0,3) <1.) obj->type = _transparent;
   }
   uintA sorting;
   sorting.setStraightPerm(objs.N);
@@ -205,7 +210,7 @@ void RenderScene::glDraw(OpenGL& gl){
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   }
 
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   arr ViewT_CW = gl.camera.getT_CW();
   arr Projection_W = gl.camera.getT_IC() * ViewT_CW;
@@ -251,38 +256,45 @@ void RenderScene::glDraw(OpenGL& gl){
 
 void RenderScene::glDeinitialize(OpenGL& gl){
   ContextIDs& id = contextIDs[&gl];
-  CHECK(id.initialized, "");
-
-  glDeleteProgram(id.prog_ID);
-  glDeleteProgram(id.progShadow_ID);
-  glDeleteFramebuffers(1, &id.shadowFramebuffer);
-  glDeleteTextures(1, &id.shadowTexture);
+  if(id.initialized){
+    glDeleteProgram(id.prog_ID);
+    glDeleteProgram(id.progShadow_ID);
+    glDeleteFramebuffers(1, &id.shadowFramebuffer);
+    glDeleteTextures(1, &id.shadowTexture);
+  }
 
   objs.clear();
 }
 
 RenderObject::~RenderObject(){
-  glDeleteBuffers(1, &vertexbuffer);
-  glDeleteBuffers(1, &colorbuffer);
-  glDeleteBuffers(1, &normalbuffer);
-  glDeleteVertexArrays(1, &vbo);
+  if(initialized){
+    glDeleteBuffers(1, &vertexbuffer);
+    glDeleteBuffers(1, &colorbuffer);
+    glDeleteBuffers(1, &normalbuffer);
+    glDeleteVertexArrays(1, &vbo);
+  }
+  initialized=false;
 }
 
 void RenderObject::mesh(rai::Mesh& mesh, const rai::Transformation& _X, double avgNormalsThreshold, RenderType _type){
   X = _X;
   type = _type;
+  if(type==_solid && (mesh.C.N==4 || mesh.C.N==2) && mesh.C(-1)<1.) type = _transparent;
+  version=mesh.version;
+
   mesh.computeNormals();
   vertices.resize(mesh.T.d0*3, 3);
   colors.resize(vertices.d0, 4);
   normals.resizeAs(vertices);
-  double *c, *v, *n;
-  if(mesh.C.nd==1) c = mesh.C.p;
+  arr c;
+  if(!mesh.C.N) c = arr{.8,.8,.8};
+  if(mesh.C.nd==1) c = mesh.C;
   for(uint i=0;i<mesh.T.d0;i++){
     for(uint j=0;j<3;j++){
-      if(mesh.C.nd==2) c = &mesh.C(mesh.T(i,j), 0);
+      if(mesh.C.nd==2) c.referToDim(mesh.C, mesh.T(i,j));
       for(uint k=0;k<3;k++) vertices(3*i+j,k) = mesh.V(mesh.T(i,j), k);
-      for(uint k=0;k<3;k++) colors(3*i+j,k) = c[k]; //m.C(m.T(i,j), k);
-      if((mesh.C.nd==1 && mesh.C.N==4) || (mesh.C.nd==2 && mesh.C.d1==4)) colors(3*i+j, 3)=c[3]; else colors(3*i+j, 3)=1.;
+      for(uint k=0;k<3;k++) colors(3*i+j,k) = c(k); //m.C(m.T(i,j), k);
+      if((mesh.C.nd==1 && mesh.C.N==4) || (mesh.C.nd==2 && mesh.C.d1==4)) colors(3*i+j, 3)=c(3); else colors(3*i+j, 3)=1.;
       for(uint k=0;k<3;k++) normals(3*i+j, k) = mesh.Tn(i,k);
     }
   }
@@ -369,6 +381,8 @@ void RenderObject::glInitialize(){
   glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
   glBindVertexArray(0);
+
+  initialized=true;
 }
 
 //===========================================================================

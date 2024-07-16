@@ -1,6 +1,8 @@
-#include <Geo/geo.h>
-#include <Geo/mesh.h>
-#include <Gui/opengl.h>
+#include "opengl.h"
+#include <GL/gl.h>
+
+//#include <Geo/geo.h>
+#include "../Geo/mesh.h"
 
 enum RenderType { _solid, _transparent, _marker, _text };
 
@@ -11,6 +13,8 @@ struct RenderObject{
   double cameraDist=-1.;
   RenderType type=_solid;
   GLenum mode=GL_TRIANGLES;
+  int version=-1;
+  bool initialized=false;
 
   ~RenderObject();
   void mesh(rai::Mesh &mesh, const rai::Transformation& _X, double avgNormalsThreshold=.9, RenderType _type=_solid);

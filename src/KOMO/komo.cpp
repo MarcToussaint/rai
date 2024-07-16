@@ -1423,6 +1423,7 @@ arr KOMO::info_objectiveErrorTraces(){
         else if(ob->type==OT_ineq) e = MAX(0., featureValues(M+j));
         else if(ob->type==OT_eq) e = fabs(featureValues(M+j));
         else if(ob->type==OT_f) e = featureValues(M+j);
+        else if(ob->type==OT_ineqB) e = MAX(0., featureValues(M+j));
         else NIY;
         err(t, i) += e;
       }
@@ -1566,6 +1567,7 @@ void KOMO::checkGradients() {
 }
 
 int KOMO::view(bool pause, const char* txt) {
+  pathConfig.viewer()->updateConfiguration(pathConfig, timeSlices);
 //  pathConfig.viewer()->recopyMeshes(pathConfig);
 //  return pathConfig.view(pause, txt);
   pathConfig.viewer()->phaseOffset = 1.-double(k_order);
@@ -1579,12 +1581,12 @@ int KOMO::view(bool pause, const char* txt) {
     }
   }
   pathConfig.viewer()->ensure_gl().setTitle("KOMO Viewer");
-  return pathConfig.viewer()->setConfiguration(pathConfig, txt, pause, timeSlices);
+  return pathConfig.viewer()->view(txt, pause);
 }
 
 bool KOMO::view_play(bool pause, double delay, const char* saveVideoPath) {
   view(false, 0);
-  return pathConfig.viewer()->playVideo(timeSlices, pause, delay*tau*T, saveVideoPath);
+  return pathConfig.viewer()->playVideo(pause, delay*tau*T, saveVideoPath);
 }
 
 int KOMO::view_slice(uint t, bool pause){

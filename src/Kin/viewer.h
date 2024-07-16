@@ -11,15 +11,9 @@
 #include "kin.h"
 #include "proxy.h"
 
-#include <Gui/RenderScene.h>
+#include "../Gui/RenderData.h"
 
 namespace rai {
-
-struct ViewableConfigCopy : GLDrawer {
-  Configuration C;
-
-  ~ViewableConfigCopy();
-};
 
 struct ConfigurationViewer : RenderScene {
   shared_ptr<struct OpenGL> gl;
@@ -29,12 +23,13 @@ struct ConfigurationViewer : RenderScene {
 
   OpenGL& ensure_gl();
   void close_gl();
-  void recopyMeshes(const Configuration& C);
-  void updateConfiguration(const rai::Configuration& C);
 
-  int setConfiguration(const Configuration& _C, const char* _text=0, bool watch=false, const FrameL& timeSlices={});
-  bool playVideo(const FrameL& timeSlices, bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
+  void recopyMeshes(const FrameL& frames);
+  ConfigurationViewer& updateConfiguration(const rai::Configuration& C, const FrameL& timeSlices={});
+
+  int view(const char* _text=0, bool watch=false);
   int view_slice(uint t, bool watch=false);
+  bool playVideo(bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
 
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   byteA getRgb();
@@ -53,7 +48,7 @@ struct ConfigurationViewer : RenderScene {
   void _resetPressedKey();
 
 private://draw data
-  FrameL slices;
+  arr slices;
   int drawSlice;
   bool abortPlay;
   uint pngCount=0;

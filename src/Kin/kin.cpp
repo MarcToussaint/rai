@@ -2143,7 +2143,7 @@ bool Configuration::hasView() {
 int Configuration::view(bool pause, const char* txt) {
 //  gl()->resetPressedKey();
   for(Frame* f:frames) f->ensure_X();
-  int key = viewer()->setConfiguration(*this, txt, pause);
+  int key = viewer()->updateConfiguration(*this).view(txt, pause);
 //  if(pause) {
 //    if(!txt) txt="Config::watch";
 //    key = watch(true, txt);
@@ -3578,7 +3578,7 @@ void Configuration::watchFile(const char* filename) {
     //-- WATCHING
     LOG(0) <<"watching...";
     int key = -1;
-    viewer()->recopyMeshes(*this);
+    viewer()->recopyMeshes(frames);
     viewer()->_resetPressedKey();
     viewer()->text = "waiting for file change ('h' for help)";
     for(;;) {
