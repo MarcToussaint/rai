@@ -1448,9 +1448,9 @@ void OpenGL::add(std::function<void (OpenGL&)> call) {
 }
 
 void OpenGL::add(GLDrawer& c) {
-  beginContext();
-  c.glInitialize(*this);
-  endContext();
+//  beginContext();
+//  c.glInitialize(*this);
+//  endContext();
   {
     auto _dataLock = dataLock(RAI_HERE);
     drawers.append(&c);
@@ -1639,6 +1639,7 @@ void OpenGL::Render(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked)
   if(mode==GL_SELECT) glInitNames();
   for(uint i=0; i<drawers.N; i++) {
     if(mode==GL_SELECT) glLoadName(i);
+    if(drawers(i)->version<0){ drawers(i)->glInitialize(*this); drawers(i)->version=0; }
 //    drawers(i)->glDrawerMutex.lock(RAI_HERE);
     drawers(i)->glDraw(*this);
 //    drawers(i)->glDrawerMutex.unlock();

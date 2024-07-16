@@ -544,7 +544,7 @@ void Simulation::addImp(Simulation::ImpType type, const StringA& frames, const a
 }
 
 void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
-  cameraview().updateConfiguration(C);
+  NIY; //cameraview().updateConfiguration(C);
   cameraview().renderMode = CameraView::visuals;
   cameraview().computeImageAndDepth(image, depth);
 
@@ -558,7 +558,7 @@ void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
 
 //===========================================================================
 
-struct Simulation_DisplayThread : Thread, ViewableConfigCopy {
+struct Simulation_DisplayThread : Thread, ConfigurationViewer {
   //data
   Mutex mux;
   double time;
@@ -597,7 +597,7 @@ struct Simulation_DisplayThread : Thread, ViewableConfigCopy {
 #ifdef RAI_GL
     mux.lock(RAI_HERE);
     glStandardScene(nullptr, gl);
-    ViewableConfigCopy::C.glDraw(gl);
+    ConfigurationViewer::glDraw(gl);
 
     if(image.N && depth.N) {
       resizeAs(depthImage, depth);

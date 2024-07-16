@@ -14,7 +14,7 @@
 
 namespace rai {
 
-struct CameraView : ViewableConfigCopy {
+struct CameraView : ConfigurationViewer {
 
   /*! describes a sensor from which we can take 'images' within the simulation (e.g.: kinect, suctionRingView, etc) */
   struct Sensor {

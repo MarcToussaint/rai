@@ -11,20 +11,26 @@
 #include "kin.h"
 #include "proxy.h"
 
+#include <Gui/RenderScene.h>
+
 namespace rai {
 
 struct ViewableConfigCopy : GLDrawer {
   Configuration C;
-  shared_ptr<struct OpenGL> gl;
 
   ~ViewableConfigCopy();
-  OpenGL& ensure_gl();
-  void close_gl();
-  void recopyMeshes(const Configuration& _C);
-  void updateConfiguration(const rai::Configuration& newC);
 };
 
-struct ConfigurationViewer : ViewableConfigCopy {
+struct ConfigurationViewer : RenderScene {
+  shared_ptr<struct OpenGL> gl;
+  intA frame2objID;
+
+  ~ConfigurationViewer();
+
+  OpenGL& ensure_gl();
+  void close_gl();
+  void recopyMeshes(const Configuration& C);
+  void updateConfiguration(const rai::Configuration& C);
 
   int setConfiguration(const Configuration& _C, const char* _text=0, bool watch=false, const FrameL& timeSlices={});
   bool playVideo(const FrameL& timeSlices, bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
@@ -34,8 +40,6 @@ struct ConfigurationViewer : ViewableConfigCopy {
   byteA getRgb();
   floatA getDepth();
   void savePng(const char* saveVideoPath="z.vid/");
-
-  rai::Configuration& getConfiguration() { return C; }
 
   int update(bool watch=false);
   void raiseWindow();

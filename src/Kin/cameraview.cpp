@@ -23,7 +23,7 @@ rai::CameraView::CameraView(const rai::Configuration& _C, bool _offscreen) {
 rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile) {
   Sensor& sen = sensors.append();
   sen.name = name;
-  sen.frame = C.getFrame(frameAttached)->ID;
+  NIY; //sen.frame = C.getFrame(frameAttached)->ID;
   rai::Camera& cam = sen.cam;
   sen.width=width;
   sen.height=height;
@@ -35,7 +35,7 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
 
   cam.setWHRatio((double)width/height);
 
-  if(sen.frame>=0) cam.X = C.frames.elem(sen.frame)->ensure_X();
+  NIY; //if(sen.frame>=0) cam.X = C.frames.elem(sen.frame)->ensure_X();
 
   //also select sensor
   gl->resize(sen.width, sen.height);
@@ -45,7 +45,7 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
 }
 
 rai::CameraView::Sensor& rai::CameraView::addSensor(const char* frameAttached) {
-  rai::Frame* frame = C.getFrame(frameAttached);
+  rai::Frame* frame = 0; NIY; //C.getFrame(frameAttached);
 
   CHECK(frame, "frame '" <<frameAttached <<"' is not defined");
 
@@ -161,7 +161,7 @@ uintA rai::CameraView::computeSegmentationID() {
 
 void rai::CameraView::updateCamera() {
   for(Sensor& sen:sensors) {
-    if(sen.frame>=0) sen.cam.X = C.frames.elem(sen.frame)->ensure_X();
+    NIY; //if(sen.frame>=0) sen.cam.X = C.frames.elem(sen.frame)->ensure_X();
   }
 
   if(currentSensor) {
@@ -182,7 +182,7 @@ void rai::CameraView::glDraw(OpenGL& gl) {
       gl.drawOptions.drawVisualsOnly=false;
     }
 
-    C.glDraw(gl);
+    NIY; //C.glDraw(gl);
 
     if(renderMode!=visuals) {
       for(Sensor& sen:sensors) {
@@ -199,7 +199,7 @@ void rai::CameraView::glDraw(OpenGL& gl) {
     gl.drawOptions.drawMode_idColor = true;
     gl.drawOptions.drawColors=false;
     gl.drawOptions.drawVisualsOnly=true;
-    C.glDraw(gl);
+    NIY; //C.glDraw(gl);
     gl.drawOptions.drawMode_idColor = false;
     gl.drawOptions.drawColors=true;
   }
@@ -225,7 +225,7 @@ rai::Sim_CameraView::Sim_CameraView(Var<rai::Configuration>& _kin,
     if(_frameIDmap.N)
       V.frameIDmap = _frameIDmap;
     else {
-      V.C.clear();;
+      NIY; //V.C.clear();;
       V.updateConfiguration(model.get());
     }
   } else {
