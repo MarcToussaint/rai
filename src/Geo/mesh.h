@@ -61,9 +61,11 @@ struct Mesh : GLDrawer {
   void setTetrahedron();
   void setOctahedron();
   void setDodecahedron();
+  void setIcosahedron();
   void setSphere(uint fineness=2);
   void setHalfSphere(uint fineness=2);
   void setCylinder(double r, double l, uint fineness=2);
+  void setCone(double r, double h, uint fineness=2);
   void setCapsule(double r, double l, uint fineness=2);
   void setSSBox(double x_width, double y_width, double z_height, double r, uint fineness=2);
   void setSSCvx(const arr& core, double r, uint fineness=2);

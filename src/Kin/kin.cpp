@@ -3379,10 +3379,9 @@ struct EditConfigurationClickCall:OpenGL::GLClickCall {
   Configuration* ors;
   EditConfigurationClickCall(Configuration& _ors) { ors=&_ors; }
   bool clickCallback(OpenGL& gl) {
-    OpenGL::GLSelect* top=gl.topSelection;
-    if(!top) return false;
-    uint i=top->name;
-    cout <<"CLICK call: id = 0x" <<std::hex <<gl.topSelection->name <<" : ";
+    uint i=gl.selectID;
+    if(!i) return false;
+//    cout <<"CLICK call: id = 0x" <<std::hex <<gl.topSelection->name <<" : ";
     gl.text.clear();
     if((i&3)==1) {
       Frame* s=ors->frames.elem(i>>2);
@@ -3413,11 +3412,11 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
       Joint* j=nullptr;
       Frame* s=nullptr;
       timerStart(true);
-      gl.Select(true);
-      OpenGL::GLSelect* top=gl.topSelection;
-      if(!top) return false;
-      uint i=top->name;
-      cout <<timerRead() <<"HOVER call: id = 0x" <<std::hex <<gl.topSelection->name <<endl;
+      NIY; //gl.Select(true);
+//      OpenGL::GLSelect* top=gl.topSelection;
+      uint i=gl.selectID;
+      if(!i) return false;
+//      cout <<timerRead() <<"HOVER call: id = 0x" <<std::hex <<gl.topSelection->name <<endl;
       if((i&3)==1) s=ors->frames.elem(i>>2);
       if((i&3)==2) j=ors->frames.elem(i>>2)->joint;
       gl.text.clear();
@@ -3458,7 +3457,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
       gl.drawOptions.drawColors=false;
       gl.drawOptions.drawMode_idColor=true;
       gl.beginContext(true);
-      gl.Draw(gl.width, gl.height, 0, true);
+      gl.Render(gl.width, gl.height, 0, true);
       gl.endContext(true);
       gl.drawOptions.drawMode_idColor=false;
       gl.drawOptions.drawColors=true;
@@ -3512,7 +3511,6 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
         case '2':  gl.drawOptions.drawJoints^=1;  break;
         case '3':  gl.drawOptions.drawProxies^=1;  break;
         case '4':  gl.drawOptions.drawVisualsOnly^=1;  break;
-        case '5':  gl.reportSelects^=1;  break;
         case '6':  gl.reportEvents^=1;  break;
         case '7':  gl.drawOptions.drawMode_idColor^=1; gl.drawOptions.drawColors^=1;  break;
 //        case 'o':  gl.camera.X.pos += gl.camera.X.rot*Vector(0, 0, .1);  break;

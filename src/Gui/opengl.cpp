@@ -57,7 +57,7 @@ OpenGLDrawOptions& GLDrawer::glDrawOptions(OpenGL& gl) { return gl.drawOptions; 
 struct SingleGLAccess {
 };
 
-Singleton<SingleGLAccess> singleGLAccess;
+//Singleton<SingleGLAccess> singleGLAccess;
 
 //===========================================================================
 
@@ -68,23 +68,12 @@ Singleton<SingleGLAccess> singleGLAccess;
 // OpenGL hidden self
 //
 
-struct sOpenGL : NonCopyable {
-  sOpenGL(OpenGL* gl) {}
-
-  int needsRedraw=0;
-
-  //-- private OpenGL data
-
-  //-- engine specific data
-  GLFWwindow* window=0;
-};
-
-struct GlfwSpinner : Thread {
+struct GlfwSingleton : Thread {
   rai::Array<OpenGL*> glwins;
   Mutex mutex;
   int newWinX=-50, newWinY=50;
 
-  GlfwSpinner() : Thread("GlfwSpinnerSpinner", .01) {
+  GlfwSingleton() : Thread("GlfwSpinnerSpinner", .01) {
     if(rai::getDisableGui()) { HALT("you must not be here with -disableGui"); }
 
     glfwSetErrorCallback(error_callback);
@@ -106,7 +95,7 @@ struct GlfwSpinner : Thread {
 
     threadLoop(true);
   }
-  ~GlfwSpinner() {
+  ~GlfwSingleton() {
     threadClose();
     glfwTerminate();
   }
@@ -118,15 +107,15 @@ struct GlfwSpinner : Thread {
 //    cout <<"HERE" <<count++;
     mutex.lock(RAI_HERE);
     glfwPollEvents();
-    for(OpenGL* gl: glwins) if(gl->self && !gl->offscreen && gl->self->window && gl->self->needsRedraw) {
+    for(OpenGL* gl: glwins) if(!gl->offscreen && gl->window && gl->needsRedraw) {
         gl->isUpdating.setStatus(1);
 
-        glfwMakeContextCurrent(gl->self->window);
-        gl->Draw(gl->width, gl->height);
-        glfwSwapBuffers(gl->self->window);
+        glfwMakeContextCurrent(gl->window);
+        gl->Render(gl->width, gl->height);
+        glfwSwapBuffers(gl->window);
         glfwMakeContextCurrent(nullptr);
 
-        gl->self->needsRedraw--;
+        gl->needsRedraw--;
         gl->isUpdating.setStatus(0);
       }
     mutex.unlock();
@@ -138,12 +127,12 @@ struct GlfwSpinner : Thread {
 //    bool start=false;
     mutex.lock(RAI_HERE);
     glwins.append(gl);
-#if 0
-    gl->self->needsRedraw = 10;
+#if 1
+    gl->needsRedraw = 1;
 #else
-    glfwMakeContextCurrent(gl->self->window);
+    glfwMakeContextCurrent(gl->window);
     gl->Draw(gl->width, gl->height);
-    glfwSwapBuffers(gl->self->window);
+    glfwSwapBuffers(gl->window);
     glfwMakeContextCurrent(nullptr);
 #endif
 //    if(glwins.N==1) start=true; //start looping
@@ -155,7 +144,7 @@ struct GlfwSpinner : Thread {
   void delLists(OpenGL* gl){
     auto _mux = mutex(RAI_HERE);
     //  LOG(0) <<"# lists before delete:" <<gl->listMap.size();
-    glfwMakeContextCurrent(gl->self->window);
+    glfwMakeContextCurrent(gl->window);
     for(auto& entry:gl->listMap) if(entry.second.listId){
       glDeleteLists(entry.second.listId, 1);
     }
@@ -241,17 +230,17 @@ struct GlfwSpinner : Thread {
   }
 };
 
-static GlfwSpinner* singletonGlSpinner() {
-  static GlfwSpinner instance;
+static GlfwSingleton* glfwSingleton() {
+  static GlfwSingleton instance;
   return &instance;
 }
 
 void OpenGL::openWindow() {
   if(rai::getDisableGui()) return;
 
-  if(!self->window) {
-    auto fg = singletonGlSpinner();
-    fg->mutex.lock(RAI_HERE);
+  if(!window) {
+    auto _glfw = glfwSingleton();
+    _glfw->mutex.lock(RAI_HERE);
 
     if(offscreen) {
 //      glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
@@ -270,114 +259,114 @@ void OpenGL::openWindow() {
       GLFWmonitor* monitor = glfwGetPrimaryMonitor();
       const GLFWvidmode* mode = glfwGetVideoMode(monitor);
       //glfwSetWindowMonitor( _wnd, _monitor, 0, 0, mode->width, mode->height, 0 );
-      self->window = glfwCreateWindow(mode->width, mode->height, title.p, monitor, nullptr);
+      window = glfwCreateWindow(mode->width, mode->height, title.p, monitor, nullptr);
     } else {
-      self->window = glfwCreateWindow(width, height, title.p, nullptr, nullptr);
-      if(fg->newWinX<0){
-        fg->newWinX += glfwGetVideoMode( glfwGetPrimaryMonitor() )->width - width;
+      window = glfwCreateWindow(width, height, title.p, nullptr, nullptr);
+      if(_glfw->newWinX<0){
+        _glfw->newWinX += glfwGetVideoMode( glfwGetPrimaryMonitor() )->width - width;
       }
-      glfwSetWindowPos(self->window, fg->newWinX, fg->newWinY);
-      fg->newWinY += height+50;
-      if(fg->newWinY>1000){ fg->newWinY = 0; fg->newWinX -= width+20; }
+      glfwSetWindowPos(window, _glfw->newWinX, _glfw->newWinY);
+      _glfw->newWinY += height+50;
+      if(_glfw->newWinY>1000){ _glfw->newWinY = 0; _glfw->newWinX -= width+20; }
     }
     if(!offscreen) {
-      glfwMakeContextCurrent(self->window);
-      glfwSetWindowUserPointer(self->window, this);
-      glfwSetMouseButtonCallback(self->window, GlfwSpinner::_MouseButton);
-      glfwSetCursorPosCallback(self->window, GlfwSpinner::_MouseMotion);
-      glfwSetKeyCallback(self->window, GlfwSpinner::_Key);
-      glfwSetScrollCallback(self->window, GlfwSpinner::_Scroll);
-      glfwSetWindowSizeCallback(self->window, GlfwSpinner::_Resize);
-      glfwSetWindowCloseCallback(self->window, GlfwSpinner::_Close);
-      glfwSetWindowRefreshCallback(self->window, GlfwSpinner::_Refresh);
+      glfwMakeContextCurrent(window);
+      glfwSetWindowUserPointer(window, this);
+      glfwSetMouseButtonCallback(window, GlfwSingleton::_MouseButton);
+      glfwSetCursorPosCallback(window, GlfwSingleton::_MouseMotion);
+      glfwSetKeyCallback(window, GlfwSingleton::_Key);
+      glfwSetScrollCallback(window, GlfwSingleton::_Scroll);
+      glfwSetWindowSizeCallback(window, GlfwSingleton::_Resize);
+      glfwSetWindowCloseCallback(window, GlfwSingleton::_Close);
+      glfwSetWindowRefreshCallback(window, GlfwSingleton::_Refresh);
 
       if(noCursor) {
-        glfwSetInputMode(self->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 //        if (glfwRawMouseMotionSupported()) glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
       }
-      //glfwSetWindowAttrib(self->window, GLFW_FOCUS_ON_SHOW, GL_FALSE);
+      //glfwSetWindowAttrib(window, GLFW_FOCUS_ON_SHOW, GL_FALSE);
 
       glfwSwapInterval(1);
       glfwMakeContextCurrent(nullptr);
     }
-    glfwGetCursorPos(self->window, &mouseposx, &mouseposy);
+    glfwGetCursorPos(window, &mouseposx, &mouseposy);
     mouseposy = height-mouseposy;
 
-    fg->mutex.unlock();
+    _glfw->mutex.unlock();
 
-    fg->addGL(this);
+    _glfw->addGL(this);
   } else {
-    auto fg = singletonGlSpinner();
-    auto lock = fg->mutex(RAI_HERE);
-    if(!offscreen && !glfwGetWindowAttrib(self->window, GLFW_VISIBLE)) {
-      glfwShowWindow(self->window);
+    auto _glfw = glfwSingleton();
+    auto lock = _glfw->mutex(RAI_HERE);
+    if(!offscreen && !glfwGetWindowAttrib(window, GLFW_VISIBLE)) {
+      glfwShowWindow(window);
     }
   }
 }
 
 void OpenGL::closeWindow() {
-  self->needsRedraw=0;
-  if(self->window) {
-    auto fg = singletonGlSpinner();
+  needsRedraw=0;
+  if(window) {
+    auto _glfw = glfwSingleton();
     isUpdating.setStatus(0);
     watching.setStatus(0);
-    fg->delGL(this);
-    fg->mutex.lock(RAI_HERE);
-    glfwGetWindowPos(self->window, &fg->newWinX, &fg->newWinY);
-    glfwDestroyWindow(self->window);
-    fg->mutex.unlock();
+    _glfw->delGL(this);
+    _glfw->mutex.lock(RAI_HERE);
+    glfwGetWindowPos(window, &_glfw->newWinX, &_glfw->newWinY);
+    glfwDestroyWindow(window);
+    _glfw->mutex.unlock();
   }
 }
 
 void OpenGL::raiseWindow() {
-  if(self->window) {
-    auto fg = singletonGlSpinner();
-    auto lock = fg->mutex(RAI_HERE);
-    glfwFocusWindow(self->window);
+  if(window) {
+    auto _glfw = glfwSingleton();
+    auto lock = _glfw->mutex(RAI_HERE);
+    glfwFocusWindow(window);
   }
 }
 
 bool OpenGL::hasWindow() {
-  return self->window;
+  return window;
 }
 
 void OpenGL::setTitle(const char* _title) {
   if(_title) title = _title;
-  if(self->window) {
-    glfwSetWindowTitle(self->window, title.p);
+  if(window) {
+    glfwSetWindowTitle(window, title.p);
   }
 }
 
 void OpenGL::beginContext(bool fromWithinCallback) {
   if(rai::getDisableGui()) return;
   openWindow();
-  auto fg = singletonGlSpinner();
-  if(!fromWithinCallback) fg->mutex.lock(RAI_HERE);
-  glfwMakeContextCurrent(self->window);
+  auto _glfw = glfwSingleton();
+  if(!fromWithinCallback) _glfw->mutex.lock(RAI_HERE);
+  glfwMakeContextCurrent(window);
 }
 
 void OpenGL::endContext(bool fromWithinCallback) {
   if(rai::getDisableGui()) return;
-  auto fg = singletonGlSpinner();
-  //glfwSwapBuffers(self->window);
+  auto _glfw = glfwSingleton();
+  //glfwSwapBuffers(window);
   glfwMakeContextCurrent(nullptr);
-  if(!fromWithinCallback) fg->mutex.unlock();
+  if(!fromWithinCallback) _glfw->mutex.unlock();
 }
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
-  auto fg = singletonGlSpinner();
-  if(!fromWithinCallback) fg->mutex.lock(RAI_HERE);
-  if(!self->needsRedraw) self->needsRedraw=1;
-  if(!fromWithinCallback) fg->mutex.unlock();
+  auto _glfw = glfwSingleton();
+  if(!fromWithinCallback) _glfw->mutex.lock(RAI_HERE);
+  if(!needsRedraw) needsRedraw=1;
+  if(!fromWithinCallback) _glfw->mutex.unlock();
 }
 
 void OpenGL::resize(int w, int h) {
   openWindow();
   Reshape(w, h);
   {
-    auto fg = singletonGlSpinner();
-    auto lock = fg->mutex(RAI_HERE);
-    glfwSetWindowSize(self->window, width, height);
+    auto _glfw = glfwSingleton();
+    auto lock = _glfw->mutex(RAI_HERE);
+    glfwSetWindowSize(window, width, height);
   }
 }
 
@@ -396,13 +385,6 @@ struct sOpenGL : NonCopyable {
 };
 
 #endif
-
-//===========================================================================
-//
-// static objects
-//
-
-uint OpenGL::selectionBuffer[1000];
 
 //===========================================================================
 //
@@ -1339,7 +1321,7 @@ int OpenGL::watchImage(const floatA& _img, bool wait, float _zoom) {
 }
 
 int OpenGL::watchImage(const byteA& _img, bool wait, float _zoom) {
-  if(!self->window) resize(_img.d1*_zoom, _img.d0*_zoom);
+  if(!window) resize(_img.d1*_zoom, _img.d0*_zoom);
   background=_img;
   backgroundZoom=_zoom;
   //resize(img->d1*zoom,img->d0*zoom);
@@ -1426,7 +1408,6 @@ OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen, bool _fullscre
   : title(_title), width(w), height(h), offscreen(_offscreen),
     fullscreen(_fullscreen), hideCameraControls(_hideCameraControls), noCursor(_noCursor) {
   //RAI_MSG("creating OpenGL=" <<this);
-  self = make_unique<sOpenGL>(this); //this might call some callbacks (Reshape/Draw) already!
   clearColor= {1., 1., 1.};
   if(width%4) width = 4*(width/4);
   if(height%2) height = 2*(height/2);
@@ -1456,15 +1437,34 @@ void OpenGL::add(void (*call)(void*, OpenGL&), void* classP) {
   CHECK(call!=0, "OpenGL: nullptr pointer to drawing routine");
   auto _dataLock = dataLock(RAI_HERE);
   toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
-  drawers.append(toBeDeletedOnCleanup.last());
+  add(*toBeDeletedOnCleanup.last());
 }
 
 void OpenGL::add(std::function<void (OpenGL&)> call) {
   CHECK(call, "OpenGL: nullptr std::function to drawing routine");
   auto _dataLock = dataLock(RAI_HERE);
 //  toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
-  drawers.append(new LambdaDrawer(call));
+  add(*(new LambdaDrawer(call)));
+}
 
+void OpenGL::add(GLDrawer& c) {
+  beginContext();
+  c.glInitialize(*this);
+  endContext();
+  {
+    auto _dataLock = dataLock(RAI_HERE);
+    drawers.append(&c);
+  }
+}
+
+void OpenGL::remove(GLDrawer& c) {
+  {
+    auto _dataLock = dataLock(RAI_HERE);
+    drawers.removeValue(&c);
+  }
+  beginContext();
+  c.glDeinitialize(*this);
+  endContext();
 }
 
 /// add a draw routine to a view
@@ -1506,8 +1506,8 @@ void OpenGL::clearSubView(uint v) {
 }
 
 void OpenGL::clearLists(){
-  auto fg = singletonGlSpinner();
-  fg->delLists(this);
+  auto _glfw = glfwSingleton();
+  _glfw->delLists(this);
 }
 
 /// remove a draw routine
@@ -1521,6 +1521,9 @@ void OpenGL::clearLists(){
 
 /// clear the list of all draw and callback routines
 void OpenGL::clear() {
+  for (auto& drawer: drawers) {
+    drawer->glDeinitialize(*this);
+  }
   auto _dataLock = dataLock(RAI_HERE);
   background.clear();
   views.clear();
@@ -1534,12 +1537,11 @@ void OpenGL::clear() {
   text.clear();
 }
 
-void OpenGL::Draw(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
+void OpenGL::Render(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
   if(rai::getDisableGui()) HALT("you should not be here!");
 
 #ifdef RAI_GL
   if(!callerHasAlreadyLocked) {
-    singleGLAccess.getMutex().lock(RAI_HERE);
     dataLock.lock(RAI_HERE); //now accessing user data
   }
 
@@ -1708,100 +1710,8 @@ void OpenGL::Draw(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
   if(!callerHasAlreadyLocked) {
     //now de-accessing user data
     dataLock.unlock();
-    singleGLAccess.getMutex().unlock();
   }
 #endif
-}
-
-void OpenGL::Select(bool callerHasAlreadyLocked) {
-  if(reportEvents) { LOG(0) <<RAI_HERE <<" Select entry"; }
-
-  if(!callerHasAlreadyLocked) {
-    singleGLAccess.getMutex().lock(RAI_HERE);
-    dataLock.lock(RAI_HERE);
-  }
-
-#ifdef RAI_GL
-  uint i, j, k;
-
-  glSelectBuffer(1000, selectionBuffer);
-  glRenderMode(GL_SELECT);
-
-#if 1
-  GLint w=width, h=height;
-
-  //projection
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  if(mouseView==-1) {
-    GLint viewport[4] = {0, 0, w, h};
-    gluPickMatrix((GLdouble)mouseposx, (GLdouble)mouseposy, 2., 2., viewport);
-    camera.glSetProjectionMatrix();
-  } else {
-    GLView* vi=&views(mouseView);
-    GLint viewport[4] = { (GLint)(vi->le*w), (GLint)(vi->bo*h), (GLint)((vi->ri-vi->le)*w), (GLint)((vi->to-vi->bo)*h)};
-    gluPickMatrix((GLdouble)mouseposx, (GLdouble)mouseposy, 2., 2., viewport);
-    vi->camera.glSetProjectionMatrix();
-  }
-
-  //draw objects
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-  glInitNames();
-  if(mouseView==-1) {
-    for(i=0; i<drawers.N; i++) {
-      glLoadName(i);
-//      drawers(i)->glDrawerMutex.lock(RAI_HERE);
-      drawers(i)->glDraw(*this);
-//      drawers(i)->glDrawerMutex.unlock();
-      GLint s;
-      glGetIntegerv(GL_NAME_STACK_DEPTH, &s);
-      if(s!=0) RAI_MSG("OpenGL name stack has not depth 1 (pushs>pops) in SELECT mode:" <<s);
-    }
-  } else {
-    GLView* vi=&views(mouseView);
-    for(i=0; i<vi->drawers.N; i++) { glLoadName(i); vi->drawers(i)->glDraw(*this); }
-  }
-
-#else
-  Draw(width, height, nullptr, true);
-#endif
-  glLoadIdentity();
-
-  GLint n;
-  n=glRenderMode(GL_RENDER);
-  selection.resize(n);
-
-  GLuint* obj, maxD=(GLuint)(-1);
-  topSelection=nullptr;
-  for(j=0, i=0; i<(uint)n; i++) {
-    obj=selectionBuffer+j;
-    j+=3+obj[0];
-
-    //get name as superposition of all names
-    selection(i).name = 0;
-    for(k=0; k<obj[0]; k++) selection(i).name |= obj[3+k];
-
-    //get dim and dmax
-    selection(i).dmin=(double)obj[1]/maxD;  //camera.glConvertToTrueDepth(selection(i).dmin);
-    selection(i).dmax=(double)obj[2]/maxD;  //camera.glConvertToTrueDepth(selection(i).dmax);
-
-    //get top-most selection
-    if(!topSelection || selection(i).dmin < topSelection->dmin) topSelection = &selection(i);
-  }
-
-  if(topSelection) {
-    topSelection->x=0; topSelection->y=0; topSelection->z=topSelection->dmin;
-    unproject(topSelection->x, topSelection->y, topSelection->z);
-  }
-
-  if(reportSelects) reportSelection();
-#endif
-  if(!callerHasAlreadyLocked) {
-
-    singleGLAccess.getMutex().unlock();
-  }
-  if(reportEvents) { LOG(0) <<RAI_HERE <<" Select done"; }
 }
 
 /** @brief watch in interactive mode and wait for an exiting event
@@ -1836,8 +1746,8 @@ int OpenGL::update(const char* txt, bool nonThreaded) {
 #ifdef RAI_GL
   if(nonThreaded || offscreen) {
     beginContext();
-    Draw(width, height);
-    glfwSwapBuffers(self->window);
+    Render(width, height);
+    glfwSwapBuffers(window);
     endContext();
   } else {
     postRedrawEvent(false);
@@ -1929,19 +1839,6 @@ void OpenGL::project(double& x, double& y, double& z, bool resetCamera, int subV
 #endif
 }
 
-/// print some info on the selection buffer
-void OpenGL::reportSelection() {
-  uint i;
-  std::cout <<"selection report: mouse=" <<mouseposx <<" " <<mouseposy <<" -> #selections=" <<selection.N <<std::endl;
-  for(i=0; i<selection.N; i++) {
-    if(topSelection == &selection(i)) std::cout <<"  TOP: "; else std::cout <<"       ";
-    std::cout
-        <<"name = 0x" <<std::hex <<selection(i).name <<std::dec
-        <<" min-depth:" <<selection(i).dmin <<" max-depth:" <<selection(i).dmax
-        <<" 3D: (" <<selection(i).x <<',' <<selection(i).y <<',' <<selection(i).z <<')'
-        <<endl;
-  }
-}
 
 //===========================================================================
 //
@@ -1992,13 +1889,13 @@ uint OpenGL::get3dMouseObjID() {
   drawOptions.drawMode_idColor = true;
   drawOptions.drawColors = false;
   beginContext(true);
-  Draw(width, height, nullptr, true);
+  Render(width, height, nullptr, true);
   endContext(true);
   drawOptions.drawMode_idColor = false;
   drawOptions.drawColors = true;
-  uint id = color2id(&captureImage(mouseposy, mouseposx, 0));
-  LOG(1) <<"SELECTION: ID: " <<id;
-  return id;
+  selectID = color2id(&captureImage(mouseposy, mouseposx, 0));
+  LOG(1) <<"SELECTION: ID: " <<selectID;
+  return selectID;
 }
 
 void OpenGL::Reshape(int _width, int _height) {
@@ -2086,7 +1983,7 @@ void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
       drawOptions.drawMode_idColor = true;
       drawOptions.drawColors = false;
       beginContext(true);
-      Draw(w, h, nullptr, true);
+      Render(w, h, nullptr, true);
       endContext(true);
       double d = 0.;
       if(mouseposy>=0. && mouseposy<=height-1 && mouseposx>=0. && mouseposx<=width-1)
@@ -2098,7 +1995,8 @@ void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
       } else {
         camera.unproject_fromPixelsAndGLDepth(x, width, height);
       }
-      LOG(1) <<"SELECTION: ID: " <<color2id(&captureImage(mouseposy, mouseposx, 0))
+      selectID = color2id(&captureImage(mouseposy, mouseposx, 0));
+      LOG(1) <<"SELECTION: ID: " <<selectID
              <<" world coords: " <<x;
     }
   } else {
@@ -2410,7 +2308,7 @@ void OpenGL::renderInBack(int w, int h, bool fromWithinCallback) {
   }
 
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
-  Draw(w, h, nullptr, true);
+  Render(w, h, nullptr, true);
   glFlush();
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 #endif

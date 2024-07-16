@@ -228,15 +228,50 @@ void Mesh::setDodecahedron() {
   T.reshape(36, 3);
 }
 
+void Mesh::setIcosahedron() {
+  clear();
+  double t = .5*(1.+sqrt(5.));
+  V = arr{
+      t, 1, 0,
+      -t, 1, 0,
+      t, -1, 0,
+      -t, -1, 0,
+      1, 0, t,
+      1, 0, -t,
+  -1, 0, t,
+        -1, 0, -t,
+        0, t, 1,
+        0, -t, 1,
+        0, t, -1,
+        0, -t, -1 };
+  T = uintA{
+      0, 8, 4,  2, 9, 11,
+      0, 5, 10,  3, 11, 9,
+      2, 4, 9,  4, 2, 0,
+      2, 11, 5,  5, 0, 2,
+      1, 6, 8,  6, 1, 3,
+      1, 10, 7,  7, 3, 1,
+      3, 9, 6,  8, 6, 4,
+      3, 7, 11,  9, 4, 6,
+      0, 10, 8,  10, 5, 7,
+      1, 8, 10,  11, 7, 5 };
+  V.reshape(12,3);
+  T.reshape(-1,3);
+  for(uint i=0; i<V.d0; i++) V[i] /= length(V[i]);
+//  V *= 1./(1.+t*t);
+}
+
 void Mesh::setSphere(uint fineness) {
-  setOctahedron();
+//  setOctahedron();
 //  setDodecahedron();
 //  setTetrahedron();
+  setIcosahedron();
   for(uint k=0; k<fineness; k++) {
     subDivide();
     for(uint i=0; i<V.d0; i++) V[i] /= length(V[i]);
   }
-  makeConvexHull();
+  fuseNearVertices(1e-6);
+//  makeConvexHull();
 }
 
 void Mesh::setHalfSphere(uint fineness) {
@@ -285,6 +320,30 @@ void Mesh::setCylinder(double r, double l, uint fineness) {
     T(4*i+3, 0)=j+div;
     T(4*i+3, 1)=i+div;
     T(4*i+3, 2)=2*div+1;
+  }
+}
+
+void Mesh::setCone(double r, double h, uint fineness) {
+  clear();
+  uint div = 4 * (1 <<fineness);
+  V.resize(div+2, 3).setZero();
+  T.resize(2*div, 3);
+  for(uint i=0; i<div; i++) {  //vertices
+    double phi=RAI_2PI*i/div;
+    V(i, 0)=r*::cos(phi);
+    V(i, 1)=r*::sin(phi);
+  }
+  V(-2,2) = h;//upper center
+  V(-1,2) = 0.;//lower center
+  for(uint i=0; i<div; i++) {  //triangles
+    uint j=(i+1)%div;
+    T(2*i, 0)=i;
+    T(2*i, 1)=V.d0-1;
+    T(2*i, 2)=j;
+
+    T(2*i+1, 0)=i;
+    T(2*i+1, 1)=j;
+    T(2*i+1, 2)=V.d0-2;
   }
 }
 
@@ -368,6 +427,7 @@ void Mesh::subDivide() {
     newT(l, 0)=k+2; newT(l, 1)=k+1; newT(l, 2)=c;   l++;
     k+=3;
   }
+  CHECK_EQ(l, newT.d0, "");
   T = newT;
 //  fuseNearVertices();
 }
@@ -387,7 +447,7 @@ void Mesh::subDivide(uint i) {
   T(t, 0)=v+2; T(t, 1)=v+1; T(t, 2)=c;   t++;
 }
 
-void Mesh::scale(double s) {  V *= s; }
+void Mesh::scale(double s) { V *= s; }
 
 void Mesh::scale(double sx, double sy, double sz) {
   uint i;
@@ -440,8 +500,8 @@ void Mesh::box() {
 
 void Mesh::addMesh(const Mesh& mesh2, const Transformation& X) {
   uint n=V.d0, tn=tex.d0, t=T.d0, tt=Tt.d0;
-  if(V.N==C.N) {
-    if(mesh2.V.N==mesh2.C.N) C.append(mesh2.C);
+  if(V.d0==C.d0) {
+    if(mesh2.V.d0==mesh2.C.d0) C.append(mesh2.C);
     else if(mesh2.C.N==3) C.append(replicate(mesh2.C, mesh2.V.d0));
     else if(mesh2.C.N==4) C.append(replicate(mesh2.C({0, 2}), mesh2.V.d0));
     else if(!mesh2.C.N) C.append(replicate(arr{.8, .8, .8}, mesh2.V.d0));

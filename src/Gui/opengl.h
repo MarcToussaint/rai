@@ -27,6 +27,8 @@
 
 #undef Success
 
+typedef struct GLFWwindow GLFWwindow;
+
 namespace rai {
 struct Vector;
 struct Quaternion;
@@ -104,15 +106,12 @@ void write_png(const byteA& img, const char* file_name, bool swap_rows=true);
     Minimal use: call \ref add to add routines or objects to be drawn
     and \ref update or \ref watch to start the display. */
 struct OpenGL {
-  unique_ptr<struct sOpenGL> self;
-
   /// @name little structs to store objects and callbacks
   struct GLHoverCall { virtual bool hoverCallback(OpenGL&) = 0; };
   struct GLClickCall { virtual bool clickCallback(OpenGL&) = 0; };
   struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
   struct GLScrollCall { virtual bool scrollCallback(OpenGL&, int) = 0; };
   struct GLEvent    { int button, key, x, y; float dx, dy; void set(int b, int k, int _x, int _y, float _dx, float _dy) { button=b; key=k; x=_x; y=_y; dx=_dx; dy=_dy; } };
-  struct GLSelect   { int name; double dmin, dmax, x, y, z; };
   struct GLView     { double le, ri, bo, to;  rai::Array<GLDrawer*> drawers;  rai::Camera camera;  byteA* img;  rai::String text;  GLView() { img=nullptr; le=bo=0.; ri=to=1.; } };
 
   /// @name data fields
@@ -132,7 +131,7 @@ struct OpenGL {
   rai::Camera camera;     ///< the camera used for projection
   rai::String text;        ///< the text to be drawn as title within the opengl frame
   floatA clearColor;  ///< colors of the beackground (called in glClearColor(...))
-  bool reportEvents=false, reportSelects=false;    ///< flags for verbosity
+  bool reportEvents=false;    ///< flags for verbosity
   int pressedkey=0;         ///< stores the key pressed
   bool keyIsDown=false;
   int modifiers=0;          ///< stores modifier keys
@@ -141,8 +140,6 @@ struct OpenGL {
   int mouseView=-1;
   bool mouseIsDown=false;
   int scrollCounter=0;
-  rai::Array<GLSelect> selection; ///< list of all selected objects
-  GLSelect* topSelection=0;        ///< top selected object
   bool drawFocus=false;
   byteA background, captureImage;
   floatA captureDepth;
@@ -156,6 +153,7 @@ struct OpenGL {
   Signaler isUpdating;
   Signaler watching;
   OpenGLDrawOptions drawOptions;
+  uint selectID;
 
   bool fullscreen=false; ///<window starts in fullscreenmode on the primary screen
   bool hideCameraControls=false; ///<camera can be tilted, rotated, zoomed in/out if controls are enabled
@@ -171,8 +169,8 @@ struct OpenGL {
   void clear();
   void add(void (*call)(void*, OpenGL&), void* classP=nullptr);
   void add(std::function<void(OpenGL&)> drawer);
-  void add(GLDrawer& c) { auto _dataLock = dataLock(RAI_HERE); drawers.append(&c); }
-  void remove(GLDrawer& c) { auto _dataLock = dataLock(RAI_HERE); drawers.removeValue(&c); }
+  void add(GLDrawer& c);
+  void remove(GLDrawer& c);
   //template<class T> void add(const T& x) { add(x.staticDraw, &x); } ///< add a class or struct with a staticDraw routine
   void addHoverCall(GLHoverCall* c) { hoverCalls.append(c); }
   void addClickCall(GLClickCall* c) { clickCalls.append(c); }
@@ -185,8 +183,7 @@ struct OpenGL {
   void clearLists();
 
   /// @name the core draw routines (actually only for internal use)
-  void Draw(int w, int h, rai::Camera* cam=nullptr, bool callerHasAlreadyLocked=false);
-  void Select(bool callerHasAlreadyLocked=false);
+  void Render(int w, int h, rai::Camera* cam=nullptr, bool callerHasAlreadyLocked=false);
   void renderInBack(int w=-1, int h=-1, bool fromWithinCallback=false);
 
   /// @name showing, updating, and watching
@@ -198,7 +195,6 @@ struct OpenGL {
   void project(double& x, double& y, double& z, bool resetCamera=false, int subView=-1);
 
   /// @name info & I/O
-  void reportSelection();
   bool modifiersNone();
   bool modifiersShift();
   bool modifiersCtrl();
@@ -212,6 +208,9 @@ struct OpenGL {
   int displayRedBlue(const arr& x, bool wait, float backgroundZoom=1.);
 
  public: //driver dependent methods
+  GLFWwindow *window=0;
+  int needsRedraw=0;
+
   void openWindow();
   void closeWindow();
   void raiseWindow();
@@ -223,7 +222,6 @@ struct OpenGL {
 
  public:
   GLEvent lastEvent;
-  static uint selectionBuffer[1000];
 
   //general callbacks (used by all implementations)
   rai::Vector downVec, downPos, downFoc;
@@ -238,7 +236,7 @@ struct OpenGL {
   void WindowStatus(int status);
 
   friend struct sOpenGL;
-  friend struct GlfwSpinner;
+  friend struct GlfwSingleton;
   friend bool glClickUI(void* p, OpenGL* gl);
 };
 
