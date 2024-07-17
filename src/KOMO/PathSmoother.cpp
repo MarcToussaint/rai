@@ -76,7 +76,7 @@ arr ReceedingHorizonPathSmoother::run(int verbose) {
       std::cout << komo.report() << std::endl;
       if(!V) V = make_unique<rai::ConfigurationViewer>();
       V->updateConfiguration(komo.pathConfig, komo.timeSlices);
-      V->view("smoothing...", true);
+      V->view(true, "smoothing...");
 //      rai::wait();
     }
 

@@ -1581,7 +1581,7 @@ int KOMO::view(bool pause, const char* txt) {
     }
   }
   pathConfig.viewer()->ensure_gl().setTitle("KOMO Viewer");
-  return pathConfig.viewer()->view(txt, pause);
+  return pathConfig.viewer()->view(pause, txt);
 }
 
 bool KOMO::view_play(bool pause, double delay, const char* saveVideoPath) {

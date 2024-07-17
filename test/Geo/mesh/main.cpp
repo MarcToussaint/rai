@@ -85,26 +85,6 @@ void TEST(AddMesh) {
 
 //===========================================================================
 
-void TEST(Meshes3) {
-  if(!rai::FileToken("../../../../rai-robotModels/pr2/head_v0/head_pan.stl", false).exists()) return;
-  rai::Mesh mesh;
-  OpenGL gl;
-  gl.add(drawScene,0);
-  gl.add(mesh);
-  //MeshSetSphere(mesh,0);
-  mesh.readTriFile(FILE("z.e4.tri"));
-  gl.reportSelects=true;
-  gl.watch();
-  if(gl.topSelection){
-    cout <<gl.topSelection->name <<endl;
-    uint i=gl.topSelection->name >> 4;
-    mesh.skin(i);
-  }
-  gl.watch();
-}
-
-//===========================================================================
-
 void TEST(Volume){
   rai::Mesh m;
   for(uint k=1;k<8;k++){
@@ -240,7 +220,6 @@ int MAIN(int argc, char** argv){
   testPrimitives();
   testFuseVertices();
   testAddMesh();
-  testMeshes3();
   testVolume();
   testDistanceFunctions();
 //  testDistanceFunctions2();

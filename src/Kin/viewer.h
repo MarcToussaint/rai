@@ -25,9 +25,10 @@ struct ConfigurationViewer : RenderScene {
   void close_gl();
 
   void recopyMeshes(const FrameL& frames);
-  ConfigurationViewer& updateConfiguration(const rai::Configuration& C, const FrameL& timeSlices={});
+  ConfigurationViewer& updateConfiguration(const rai::Configuration& C, const FrameL& timeSlices={}, bool forceCopyMeshes=false);
+  void setMotion(const uintA& frameIDs, const arr& _motion);
 
-  int view(const char* _text=0, bool watch=false);
+  int view(bool watch=false, const char* _text=0);
   int view_slice(uint t, bool watch=false);
   bool playVideo(bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
 
@@ -48,7 +49,7 @@ struct ConfigurationViewer : RenderScene {
   void _resetPressedKey();
 
 private://draw data
-  arr slices;
+  arr motion;
   int drawSlice;
   bool abortPlay;
   uint pngCount=0;

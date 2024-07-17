@@ -29,6 +29,7 @@ struct RenderScene : GLDrawer{
   rai::Array<std::shared_ptr<rai::Camera>> lights;
   bool drawShadows=true;
   bool drawTransparents=true;
+  uint renderCount=0;
 
   struct ContextIDs{
     bool initialized=false;
@@ -42,7 +43,7 @@ struct RenderScene : GLDrawer{
 
 
   RenderObject& add();
-  void addLight(const arr& pos, const arr& focus);
+  void addLight(const arr& pos, const arr& focus, double heightAbs=5.);
 
   void addAxes(double scale, const rai::Transformation& _X);
 

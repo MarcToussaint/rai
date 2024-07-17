@@ -41,7 +41,6 @@ void TEST(MultipleViews) {
   read_ppm(img,"box.ppm",false);
   OpenGL gl;
   gl.reportEvents=true;
-  gl.reportSelects=true;
   gl.text <<"multiple views";
   gl.add(draw1,0);
   gl.addSubView(0,draw1,0);
@@ -353,7 +352,6 @@ void TEST(Select) {
   gl.add(draw3,0);
   gl.text <<"hover over objects and read cout...";
   //gl.selectOnHover=true;
-  gl.reportSelects=true;
   gl.reportEvents=false;
   gl.watch();
 }

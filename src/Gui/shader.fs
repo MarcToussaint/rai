@@ -2,7 +2,7 @@
 
 const float AmbientPower = .5f;
 const float LightPower = .2f;
-const vec3 LightColor = vec3(1, .95, .9);
+const vec3 LightColor = vec3(1, 1., 1.);
 const float SpecularPower = .25f;
 const vec3 SpecularColor = vec3(1, 1, 1);
 

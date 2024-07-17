@@ -2143,7 +2143,7 @@ bool Configuration::hasView() {
 int Configuration::view(bool pause, const char* txt) {
 //  gl()->resetPressedKey();
   for(Frame* f:frames) f->ensure_X();
-  int key = viewer()->updateConfiguration(*this).view(txt, pause);
+  int key = viewer()->updateConfiguration(*this).view(pause, txt);
 //  if(pause) {
 //    if(!txt) txt="Config::watch";
 //    key = watch(true, txt);
@@ -3532,12 +3532,14 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
 void Configuration::watchFile(const char* filename) {
   checkConsistency();
 
+  ConfigurationViewer V;
+
   //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
   //  gl.addHoverCall(new EditConfigurationHoverCall(K));
-  gl().addKeyCall(new EditConfigurationKeyCall(*this, exit));
-  gl().addClickCall(new EditConfigurationClickCall(*this));
-  gl().setTitle(STRING("ConfigView <" <<filename <<">"));
+  V.ensure_gl().addKeyCall(new EditConfigurationKeyCall(*this, exit));
+  V.ensure_gl().addClickCall(new EditConfigurationClickCall(*this));
+  V.ensure_gl().setTitle(STRING("ConfigView <" <<filename <<">"));
   //  gl()->ensure_gl().reportEvents=true;
   Inotify ino(filename);
   for(; !exit;) {
@@ -3561,7 +3563,7 @@ void Configuration::watchFile(const char* filename) {
           Configuration C_tmp;
           C_tmp.readFromGraph(G);
           {
-            gl().dataLock(RAI_HERE);
+            V.ensure_gl().dataLock(RAI_HERE);
             copy(C_tmp, false);
           }
           report();
@@ -3577,18 +3579,17 @@ void Configuration::watchFile(const char* filename) {
 
     //-- WATCHING
     LOG(0) <<"watching...";
-    int key = -1;
-    viewer()->recopyMeshes(frames);
-    viewer()->_resetPressedKey();
-    viewer()->text = "waiting for file change ('h' for help)";
+    V.text = "waiting for file change ('h' for help)";
+    V.updateConfiguration(*this, {}, true);
+    V._resetPressedKey();
+    int key = V.view(false);
     for(;;) {
-      key = view(false);
-      viewer()->_resetPressedKey();
-      //if(key) cout <<"*** KEY:" <<key <<endl;
+      key = V.gl->pressedkey;
+//      V._resetPressedKey();
       if(key==13 || key==27 || key=='q') break;
       if(!rai::getInteractivity()) break;
       if(key=='h') {
-        viewer()->text = "HELP:\n"
+        V.text = "HELP:\n"
                              "RIGHT CLICK - set focus point (move view and set center of rotation)\n"
                              "LEFT CLICK - rotate (ball; or around z at view rim)\n"
                              "q - quit\n"

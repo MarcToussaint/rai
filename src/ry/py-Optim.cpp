@@ -211,7 +211,7 @@ void init_Optim(pybind11::module& m) {
       .def("setSolver", &NLP_Solver::setSolver)
 
       .def("setTracing", &NLP_Solver::setTracing)
-      .def("solve", &NLP_Solver::solve, "", pybind11::arg("resampleInitialization")=-1)
+      .def("solve", &NLP_Solver::solve, "", pybind11::arg("resampleInitialization")=-1, pybind11::arg("verbose")=-1)
 
       .def("getProblem", &NLP_Solver::getProblem)
       .def("getTrace_x", &NLP_Solver::getTrace_x, "returns steps-times-n array with queries points in each row")

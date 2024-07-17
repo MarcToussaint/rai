@@ -276,7 +276,7 @@ To get really precise distances and penetrations use the FS.distance feature wit
        pybind11::arg("message")=nullptr)
 
   .def("view_recopyMeshes", [](shared_ptr<rai::Configuration>& self) {
-    self->viewer()->recopyMeshes(*self);
+    self->viewer()->recopyMeshes(self->frames);
   })
 
   .def("view_getRgb", [](std::shared_ptr<rai::Configuration>& self) {

@@ -13,10 +13,9 @@ RenderObject& RenderScene::add(){
   return *obj;
 }
 
-void RenderScene::addLight(const arr& pos, const arr& focus){
+void RenderScene::addLight(const arr& pos, const arr& focus, double heightAbs){
   std::shared_ptr<rai::Camera> light = make_shared<rai::Camera>();
-  light->focus(0., 0., 0.);
-  light->setHeightAbs(5.);
+  light->setHeightAbs(heightAbs);
 //  light->setHeightAngle(45.);
   light->setZRange(1., 10.);
   light->X.pos.set(pos); //setPosition(4., -2., 4.);
@@ -153,7 +152,7 @@ void RenderScene::glDraw(OpenGL& gl){
   ContextIDs& id = contextIDs[&gl];
   CHECK(id.initialized, "");
 
-  for(auto& obj:objs){
+  for(std::shared_ptr<RenderObject>& obj:objs){
     if(!obj->initialized) obj->glInitialize();
   }
 
@@ -167,7 +166,7 @@ void RenderScene::glDraw(OpenGL& gl){
   sorting.setStraightPerm(objs.N);
   std::sort(sorting.p, sorting.p+sorting.N, [&](uint i,uint j){ return objs.elem(i)->cameraDist < objs.elem(j)->cameraDist; });
 
-  if(drawShadows){
+  if(drawShadows) for(uint k=0;k<(renderCount?1:2);k++){ //why do I have to render twice on first pass??
     // Render to shadowFramebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, id.shadowFramebuffer);
     glViewport(0, 0, bufW, bufH);
@@ -182,7 +181,7 @@ void RenderScene::glDraw(OpenGL& gl){
 
     //set shadow projection matrix
     arr flip = eye(4);
-    flip(1,1) = flip(2,2) = -1.;
+//    flip(1,1) = flip(2,2) = -1.;
     arr P_IC = lights(0)->getT_IC();
     arr T_CW = lights(0)->getT_CW();
     arr Pshadow_IW = flip * P_IC * flip * T_CW;
@@ -198,6 +197,7 @@ void RenderScene::glDraw(OpenGL& gl){
     tmp = tmp * Pshadow_IW;
     glUniformMatrix4fv(id.prog_ShadowProjection_W, 1, GL_TRUE, rai::convert<float>(tmp).p);
   }
+  //LOG(1) <<"rendering! " <<renderCount;
 
   // Render to the screen
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -242,16 +242,18 @@ void RenderScene::glDraw(OpenGL& gl){
 //    renderObjects(id.prog_ModelT_WM, sorting, _marker);
   }
 
-  {
+  for(uint k=0;k<(renderCount?1:2);k++){
     glUseProgram(id.progMarker);
     glUniformMatrix4fv(id.progMarker_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
     renderObjects(id.progMarker_ModelT_WM, sorting, _marker);
   }
 
-  {
+  for(uint k=0;k<(renderCount?1:2);k++){
     glUseProgram(id.prog_ID);
     renderObjects(id.prog_ModelT_WM, sorting, _transparent);
   }
+
+  renderCount++;
 }
 
 void RenderScene::glDeinitialize(OpenGL& gl){
@@ -289,6 +291,7 @@ void RenderObject::mesh(rai::Mesh& mesh, const rai::Transformation& _X, double a
   arr c;
   if(!mesh.C.N) c = arr{.8,.8,.8};
   if(mesh.C.nd==1) c = mesh.C;
+  if(c.N==1){ double g=c.elem(); c = arr{g,g,g}; }
   for(uint i=0;i<mesh.T.d0;i++){
     for(uint j=0;j<3;j++){
       if(mesh.C.nd==2) c.referToDim(mesh.C, mesh.T(i,j));

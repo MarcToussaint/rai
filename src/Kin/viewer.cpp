@@ -32,17 +32,19 @@ void rai::ConfigurationViewer::close_gl() {
 void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
   ensure_gl().dataLock.lock(RAI_HERE);
   if(!lights.N){
-    addLight({5.,5.,5.}, {0.,0.,1.});
-    addLight({-5.,0.,5.}, {0.,0.,1.});
+    addLight({-3.,2.,3.}, {0.,-0.,1.}, 5.);
+    addLight({3.,0.,4.}, {0.,0.,1.});
   }
   if(objs.N){
     objs.clear();
+    renderCount=0;
   }
 
   { // floor
     rai::Mesh m;
     m.setQuad();
     m.scale(10., 10., 0.);
+//    m.C = {1., 1., 1.};
     m.C = {.4, .45, .5};
     add().mesh(m, 0);
   }
@@ -62,8 +64,7 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
   ensure_gl().dataLock.unlock();
 }
 
-rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const rai::Configuration& C, const FrameL& timeSlices) {
-//  drawShadows = false;
+rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const rai::Configuration& C, const FrameL& timeSlices, bool forceCopyMeshes) {
   bool copyMeshes = false;
   if(!objs.N) copyMeshes = true;
 
@@ -85,7 +86,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
       if(s->_mesh->V.N && objs(o)->version != s->_mesh->version) { copyMeshes=true; break; }
     }
   }
-  if(copyMeshes) recopyMeshes(frames);
+  if(copyMeshes || forceCopyMeshes) recopyMeshes(frames);
 
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
@@ -107,16 +108,15 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   if(timeSlices.nd==2){
     auto _dataLock = gl->dataLock(RAI_HERE);
     drawSlice=-1;
-    slices.resize(timeSlices.d0, objs.N, 7);
-    slices.setZero();
-    for(uint i=0;i<timeSlices.d0;i++) for(uint j=0;j<timeSlices.d1;j++){
-      int o = frame2objID(timeSlices(0,j)->ID);
+    motion.resize(timeSlices.d0, objs.N, 7).setZero();
+    for(uint t=0;t<timeSlices.d0;t++) for(uint i=0;i<timeSlices.d1;i++){
+      int o = frame2objID(timeSlices(0,i)->ID);
       if(o!=-1){
-        slices(i, o, {}) = timeSlices(i,j)->ensure_X().getArr7d();
+        motion(t, o, {}) = timeSlices(t,i)->ensure_X().getArr7d();
       }
     }
   }else{
-    slices.clear();
+    motion.clear();
   }
 
   if(C.proxies.N) {
@@ -129,6 +129,23 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   if(camF) setCamera(camF);
 
   return *this;
+}
+
+void rai::ConfigurationViewer::setMotion(const uintA& frameIDs, const arr& _motion){
+  CHECK_EQ(_motion.d1, frameIDs.N, "");
+  CHECK_EQ(_motion.d2, 7, "");
+  auto _dataLock = gl->dataLock(RAI_HERE);
+  drawSlice=-1;
+  //initialize with constant motion with current pose
+  motion.resize(_motion.d0, objs.N, 7).setZero();
+  for(uint t=0;t<motion.d0;t++) for(uint o=0;o<motion.d1;o++){
+    motion(t,o,{}) = objs(o)->X.getArr7d();
+  }
+  //overwrite for indicated frames
+  for(uint t=0;t<motion.d0;t++) for(uint i=0;i<frameIDs.N;i++){
+    int o = frame2objID(frameIDs(i));
+    motion(t,o,{}) = _motion(t,i,{});
+  }
 }
 
 void rai::ConfigurationViewer::setCamera(rai::Frame* camF) {
@@ -180,7 +197,7 @@ void rai::ConfigurationViewer::raiseWindow() {
   gl->raiseWindow();
 }
 
-int rai::ConfigurationViewer::view(const char* _text, bool watch) {
+int rai::ConfigurationViewer::view(bool watch, const char* _text) {
   if(_text) text = _text;
 
   return update(watch);
@@ -194,7 +211,7 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
     rai::system(STRING("rm -f " <<saveVideoPath <<"*.png"));
   }
 
-  CHECK(slices.nd==3, "");
+  CHECK(motion.nd==3, "");
 
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
@@ -203,10 +220,10 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
     gl->scrollCounter = 0;
   }
 
-  Metronome tic(delay / slices.d0);
+  Metronome tic(delay / motion.d0);
 
   int key=0;
-  for(uint t=0; t<slices.d0; t++) {
+  for(uint t=0; t<motion.d0; t++) {
     if(t && delay>0.) tic.waitForTic(); //rai::wait(delay / F.d0);
 
     if(abortPlay){ watch=true; break; }
@@ -260,30 +277,30 @@ floatA rai::ConfigurationViewer::getDepth() {
 }
 
 void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
-  if(!slices.N){
+  if(!motion.N){
     RenderScene::glDraw(gl);
   }else{
-    if(gl.scrollCounter && drawSlice==-1 && slices.N) drawSlice=0;
+    if(gl.scrollCounter && drawSlice==-1 && motion.N) drawSlice=0;
 
     if(drawSlice>=0) {
       if(gl.scrollCounter){ drawSlice-=gl.scrollCounter; gl.scrollCounter=0; abortPlay=true; }
       if(drawSlice<0) drawSlice=0;
-      if(drawSlice>=(int)slices.d0) drawSlice=slices.d0-1;
+      if(drawSlice>=(int)motion.d0) drawSlice=motion.d0-1;
 
-      gl.text.clear() <<text <<"\n(slice " <<drawSlice <<'/' <<slices.d0;
+      gl.text.clear() <<text <<"\n(slice " <<drawSlice <<'/' <<motion.d0;
       if(phaseFactor>0.) gl.text <<", phase " <<phaseFactor*(double(drawSlice)+phaseOffset);
       gl.text <<")";
       if(drawSlice<(int)sliceTexts.N) gl.text <<"\n" <<sliceTexts(drawSlice);
       //C.glDraw_frames(gl, slices[drawSlice], 0);
 
-      CHECK_EQ(slices.d1, objs.N, "");
-      for(uint i=0;i<objs.N;i++) objs(i)->X.set(slices(drawSlice, i, {}));
+      CHECK_EQ(motion.d1, objs.N, "");
+      for(uint i=0;i<objs.N;i++) objs(i)->X.set(motion(drawSlice, i, {}));
       RenderScene::glDraw(gl);
     }else{
       gl.text.clear() <<text;
-      for(uint t=0;t<slices.d0;t++){
-        CHECK_EQ(slices.d1, objs.N, "");
-        for(uint i=0;i<objs.N;i++) objs(i)->X.set(slices(t, i, {}));
+      for(uint t=0;t<motion.d0;t++){
+        CHECK_EQ(motion.d1, objs.N, "");
+        for(uint i=0;i<objs.N;i++) objs(i)->X.set(motion(t, i, {}));
         RenderScene::glDraw(gl);
         //C.glDraw_frames(gl, C.frames, 0);
       }

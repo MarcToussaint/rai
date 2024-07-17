@@ -498,8 +498,8 @@ void LGP_Node::displayBound(ConfigurationViewer& V, BoundType bound) {
     String s;
     s <<"BOUND " <<_bound <<" at step " <<step <<"\n" <<*skeleton;
     s <<"\n sos:" <<problem(bound).komo->sos <<" eq:" <<problem(bound).komo->eq <<" ineq:" <<problem(bound).komo->ineq;
-    V.setConfiguration(tree.kin, s);
-    V.setPath(problem(bound).komo->getPath_X(), s, true);
+    V.updateConfiguration(tree.kin, problem(bound).komo->timeSlices).view(false, s);
+//    V.setMotion(range(), problem(bound).komo->getPath_X(), s, true);
     if(bound>=BD_path) {
       while(V.playVideo(true, 1.*problem(bound).komo->T/problem(bound).komo->stepsPerPhase));
     } else {
