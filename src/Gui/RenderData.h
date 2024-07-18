@@ -4,7 +4,7 @@
 //#include <Geo/geo.h>
 #include "../Geo/mesh.h"
 
-enum RenderType { _solid, _transparent, _marker, _text };
+enum RenderType { _solid, _shadow, _transparent, _marker, _text, _any };
 
 struct RenderObject{
   rai::Transformation X=0;
@@ -14,21 +14,30 @@ struct RenderObject{
   RenderType type=_solid;
   GLenum mode=GL_TRIANGLES;
   int version=-1;
+  int selection=-1;
   bool initialized=false;
 
   ~RenderObject();
   void mesh(rai::Mesh &mesh, const rai::Transformation& _X, double avgNormalsThreshold=.9, RenderType _type=_solid);
   void lines(const arr& lines, const arr& color, const rai::Transformation& _X, RenderType _type=_marker);
 //private:
+  void glRender();
   void glInitialize();
+};
+
+struct DistMarkers {
+  int markerObj=-1;
+  arr pos;
+  intA slices;
 };
 
 struct RenderScene : GLDrawer{
   rai::Camera camera;
   rai::Array<std::shared_ptr<RenderObject>> objs;
   rai::Array<std::shared_ptr<rai::Camera>> lights;
-  bool drawShadows=true;
-  bool drawTransparents=true;
+  DistMarkers distMarkers;
+  RenderType dontRender=_text;
+  int slice=-1;
   uint renderCount=0;
 
   struct ContextIDs{
@@ -46,6 +55,8 @@ struct RenderScene : GLDrawer{
   void addLight(const arr& pos, const arr& focus, double heightAbs=5.);
 
   void addAxes(double scale, const rai::Transformation& _X);
+  void addDistMarker(const arr& a, const arr& b, int s);
+  void clearObjs();
 
   void glInitialize(OpenGL &gl);
   void glDraw(OpenGL &gl);

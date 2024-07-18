@@ -1,10 +1,11 @@
 #version 330 core
 
 const float AmbientPower = .5f;
-const float LightPower = .2f;
+const float LightPower = .4f;
 const vec3 LightColor = vec3(1, 1., 1.);
-const float SpecularPower = .25f;
+const float SpecularPower = .05f;
 const vec3 SpecularColor = vec3(1, 1, 1);
+const float SpecularNarrow = 20.f;
 
 in vec4 objColor;
 in vec3 objNormal_C;
@@ -39,12 +40,12 @@ void main() {
     float cosAlpha = clamp(dot(E, reflectedLightDirection_C), 0.f, 1.f);
 
     float bias = 0.005;
-    float visibility = texture(shadowMap, vec3(shadowCoord.xy, (shadowCoord.z-bias)/shadowCoord.w));
-    if(i>0) visibility=1.f;
+    float visibility = 1.;
+    if(i==0) visibility = texture(shadowMap, vec3(shadowCoord.xy, (shadowCoord.z-bias)/shadowCoord.w));
 
     rgb = rgb +
-            visibility * objRgb * LightColor * LightPower * cosTheta +
-            visibility * SpecularColor * SpecularPower * pow(cosAlpha, 10);
+          visibility * objRgb * LightColor * LightPower * cosTheta +
+          visibility * SpecularColor * SpecularPower * pow(cosAlpha, SpecularNarrow);
   }
 
   color.rgb = rgb;

@@ -1030,7 +1030,7 @@ bool Configuration::check_topSort() const {
 void Configuration::clear() {
 //  glClose();
 //  swiftDelete();
-  if(self && self->viewer) self->viewer.reset();
+//  if(self && self->viewer) self->viewer.reset();
   if(self && self->fcl) self->fcl.reset();
 
   reset_q();
@@ -3472,40 +3472,6 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
       }
       cout <<"SELECTION id: " <<id <<" world coords:" <<x <<endl;
       if(id<C.frames.N) cout <<*C.frames.elem(id) <<endl;
-    } else if(gl.pressedkey=='i') {
-      LOG(0) <<"INFO:";
-      C.report(cout);
-      cout <<"joints: " <<C.getJointNames() <<endl;
-      C.gl().camera.report(cout);
-    } else if(gl.pressedkey=='c') { //compute collisions
-      C.ensure_proxies();
-      double p = C.getTotalPenetration();
-      double eps=.1;
-      C.reportProxies(cout, eps, true);
-      cout <<"TOTAL PENETRATION: " <<p <<endl;
-#if 0
-      FrameL collisionPairs = C.getCollisionAllPairs();
-//      cout <<" CollisionPairs:" <<endl;
-//      for(uint i=0;i<collisionPairs.d0;i++) cout <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<endl;
-      auto coll = F_PairCollision().eval(collisionPairs);
-      bool doesCollide=false;
-      for(uint i=0; i<coll.y.N; i++) {
-        if(coll.y.elem(i)>-eps) {
-          LOG(-1) <<"in collision: " <<collisionPairs(i, 0)->name <<'-' <<collisionPairs(i, 1)->name <<' ' <<coll.y.elem(i);
-          doesCollide=true;
-        }
-      }
-#endif
-    } else if(gl.pressedkey=='r') { //random sample
-      LOG(0) <<"setting random config";
-      for(rai::Dof* d:C.activeDofs) d->sampleUniform=1.;
-      C.setRandom();
-    } else if(gl.pressedkey=='x') { //export
-      LOG(0) <<"exporting";
-      FILE("z.g") <<C;
-      C.writeURDF(FILE("z.urdf"));
-      C.writeMesh("z.ply");
-      C.writeCollada("z.dae");
     } else switch(gl.pressedkey) {
         case '1':  gl.drawOptions.drawShapes^=1;  break;
         case '2':  gl.drawOptions.drawJoints^=1;  break;
@@ -3532,14 +3498,14 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
 void Configuration::watchFile(const char* filename) {
   checkConsistency();
 
-  ConfigurationViewer V;
+  std::shared_ptr<ConfigurationViewer> V = viewer();
 
   //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
   //  gl.addHoverCall(new EditConfigurationHoverCall(K));
-  V.ensure_gl().addKeyCall(new EditConfigurationKeyCall(*this, exit));
-  V.ensure_gl().addClickCall(new EditConfigurationClickCall(*this));
-  V.ensure_gl().setTitle(STRING("ConfigView <" <<filename <<">"));
+  V->ensure_gl().addKeyCall(new EditConfigurationKeyCall(*this, exit));
+  V->ensure_gl().addClickCall(new EditConfigurationClickCall(*this));
+  V->ensure_gl().setTitle(STRING("ConfigView <" <<filename <<">"));
   //  gl()->ensure_gl().reportEvents=true;
   Inotify ino(filename);
   for(; !exit;) {
@@ -3563,7 +3529,7 @@ void Configuration::watchFile(const char* filename) {
           Configuration C_tmp;
           C_tmp.readFromGraph(G);
           {
-            V.ensure_gl().dataLock(RAI_HERE);
+            V->ensure_gl().dataLock(RAI_HERE);
             copy(C_tmp, false);
           }
           report();
@@ -3579,17 +3545,17 @@ void Configuration::watchFile(const char* filename) {
 
     //-- WATCHING
     LOG(0) <<"watching...";
-    V.text = "waiting for file change ('h' for help)";
-    V.updateConfiguration(*this, {}, true);
-    V._resetPressedKey();
-    int key = V.view(false);
+    V->text = "waiting for file change ('h' for help)";
+    V->updateConfiguration(*this, {}, true);
+    V->_resetPressedKey();
+    int key = V->view(false);
     for(;;) {
-      key = V.gl->pressedkey;
-//      V._resetPressedKey();
+      key = V->gl->pressedkey;
+//      V->_resetPressedKey();
       if(key==13 || key==27 || key=='q') break;
       if(!rai::getInteractivity()) break;
       if(key=='h') {
-        V.text = "HELP:\n"
+        V->text = "HELP:\n"
                              "RIGHT CLICK - set focus point (move view and set center of rotation)\n"
                              "LEFT CLICK - rotate (ball; or around z at view rim)\n"
                              "q - quit\n"
@@ -3603,6 +3569,7 @@ void Configuration::watchFile(const char* filename) {
                              "x - export to multiple files (.g .urdf. ply. dae)\n"
                              "1..7 - view options\n"
                              "h - help";
+        cout <<V->text <<endl;
       } else if(key=='s') { //simulate
         rai::Simulation S(*this, S._physx, 2);
         S.loadTeleopCallbacks();
@@ -3617,7 +3584,44 @@ void Configuration::watchFile(const char* filename) {
           //C.reportProxies();
           //C.view();
         }
+      } else if(key=='i') {
+        LOG(0) <<"INFO:";
+        report(cout);
+        cout <<"joints: " <<getJointNames() <<endl;
+        gl().camera.report(cout);
+      } else if(key=='c') { //compute collisions
+        ensure_proxies();
+        double p = getTotalPenetration();
+        double eps=.1;
+        reportProxies(cout, eps, true);
+        cout <<"TOTAL PENETRATION: " <<p <<endl;
+        V->updateConfiguration(*this).view(false);
+#if 0
+        FrameL collisionPairs = C.getCollisionAllPairs();
+        //      cout <<" CollisionPairs:" <<endl;
+        //      for(uint i=0;i<collisionPairs.d0;i++) cout <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<endl;
+        auto coll = F_PairCollision().eval(collisionPairs);
+        bool doesCollide=false;
+        for(uint i=0; i<coll.y.N; i++) {
+          if(coll.y.elem(i)>-eps) {
+            LOG(-1) <<"in collision: " <<collisionPairs(i, 0)->name <<'-' <<collisionPairs(i, 1)->name <<' ' <<coll.y.elem(i);
+            doesCollide=true;
+          }
+        }
+#endif
+      } else if(key=='r') { //random sample
+        LOG(0) <<"setting random config";
+        for(rai::Dof* d:activeDofs) d->sampleUniform=1.;
+        setRandom();
+        V->updateConfiguration(*this).view(false);
+      } else if(key=='x') { //export
+        LOG(0) <<"exporting";
+        FILE("z.g") <<*this;
+        writeURDF(FILE("z.urdf"));
+        writeMesh("z.ply");
+        writeCollada("z.dae");
       }
+      V->_resetPressedKey();
 
       if(ino.poll(false, true)) break;
       wait(.2);

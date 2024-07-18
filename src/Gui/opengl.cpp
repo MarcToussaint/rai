@@ -339,7 +339,7 @@ void OpenGL::setTitle(const char* _title) {
 
 void OpenGL::beginContext(bool fromWithinCallback) {
   if(rai::getDisableGui()) return;
-  openWindow();
+  if(!fromWithinCallback) openWindow();
   auto _glfw = glfwSingleton();
   if(!fromWithinCallback) _glfw->mutex.lock(RAI_HERE);
   glfwMakeContextCurrent(window);

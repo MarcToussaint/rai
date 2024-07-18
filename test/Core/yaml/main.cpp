@@ -17,7 +17,7 @@ void testRead(){
 namespace rai{
 
 void graph2yamlNode(Node* n, YAML::Node& root){
-  auto y = root[n->key.p];
+  auto y = root[std::string(n->key.p)];
   if(n->is<Graph>()){
     Graph& g = n->graph();
     g.checkUniqueKeys(true);
@@ -45,7 +45,7 @@ void graph2yamlNode(Node* n, YAML::Node& root){
   }
 }
 
-}
+} //namespace
 
 //===========================================================================
 

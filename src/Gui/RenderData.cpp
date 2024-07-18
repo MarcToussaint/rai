@@ -28,18 +28,18 @@ void RenderScene::addAxes(double scale, const rai::Transformation& _X){
   rai::Mesh M;
   rai::Transformation X;
   rai::Mesh tip;
-  tip.setCone(.04, .1);
+  tip.setCone(.08, .16);
   tip.scale(scale);
 
-  X.setZero().addRelativeTranslation(0., 0., .9*scale);
+  X.setZero().addRelativeTranslation(0., 0., .84*scale);
   tip.C = replicate({0., 0., 1.}, tip.V.d0);
   M.addMesh(tip, X);
 
-  X.setZero().addRelativeTranslation(.9*scale, 0., 0.).addRelativeRotationDeg(90, 0., 1., 0);
+  X.setZero().addRelativeTranslation(.84*scale, 0., 0.).addRelativeRotationDeg(90, 0., 1., 0);
   tip.C = replicate({1., 0., 0.}, tip.V.d0);
   M.addMesh(tip, X);
 
-  X.setZero().addRelativeTranslation(0., .9*scale, 0.).addRelativeRotationDeg(90, -1., 0., 0);
+  X.setZero().addRelativeTranslation(0., .84*scale, 0.).addRelativeRotationDeg(90, -1., 0., 0);
   tip.C = replicate({0., 1., 0.}, tip.V.d0);
   M.addMesh(tip, X);
 
@@ -79,7 +79,7 @@ void RenderScene::glInitialize(OpenGL &gl){
   id.progMarker_Projection_W = glGetUniformLocation(id.progMarker, "Projection_W");
   id.progMarker_ModelT_WM = glGetUniformLocation(id.progMarker, "ModelT_WM");
 
-  if(drawShadows){
+  { //if(stopRender>_shadows){
     id.progShadow_ID = LoadShaders( rai::raiPath("src/Gui/shaderShadow.vs"), rai::raiPath("src/Gui/shaderShadow.fs") );
     id.progShadow_ShadowProjection_W = glGetUniformLocation(id.progShadow_ID, "ShadowProjection_W");
     id.progShadow_ModelT_WM = glGetUniformLocation(id.progShadow_ID, "ModelT_WM");
@@ -115,6 +115,21 @@ void RenderScene::glInitialize(OpenGL &gl){
 //  }
 }
 
+void RenderObject::glRender(){
+  CHECK(initialized, "");
+
+  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
+  glEnableVertexAttribArray(2);
+
+  glBindVertexArray(vbo);
+  glDrawArrays(mode, 0, vertices.d0);
+
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+  glDisableVertexAttribArray(2);
+}
+
 void RenderScene::renderObjects(GLuint idT_WM, const uintA& sorting, RenderType type){
   arr T_WM = eye(4);
 
@@ -128,23 +143,40 @@ void RenderScene::renderObjects(GLuint idT_WM, const uintA& sorting, RenderType 
     std::shared_ptr<RenderObject>& obj = objs.elem(j);
     if(obj->type!=type) continue;
 
-    CHECK(obj->initialized, "");
-
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-
     if(idT_WM){
       T_WM = obj->X.getAffineMatrix();
       glUniformMatrix4fv(idT_WM, 1, GL_TRUE, rai::convert<float>(T_WM).p);
     }
 
-    glBindVertexArray(obj->vbo);
-    glDrawArrays(obj->mode, 0, obj->vertices.d0);
+    obj->glRender();
+  }
 
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
+  if(type==_marker){
+    distMarkers.pos.reshape(-1,2,3);
+    CHECK_EQ(distMarkers.pos.d0, distMarkers.slices.N, "");
+    for(uint i=0;i<distMarkers.pos.d0;i++){
+      int s = distMarkers.slices(i);
+      if(slice>=0 && s>=0 && s!=slice) continue;
+      arr a=distMarkers.pos(i,0,{});
+      arr b=distMarkers.pos(i,1,{});
+      arr d = b-a;
+      double l = length(d);
+      if(l<1e-10) continue;
+      d /= length(d);
+      rai::Transformation X=0;
+      X.pos.set(b);
+      X.rot.setDiff(Vector_z, d);
+      if(idT_WM){
+        T_WM = X.getAffineMatrix();
+        glUniformMatrix4fv(idT_WM, 1, GL_TRUE, rai::convert<float>(T_WM).p);
+      }
+      objs(distMarkers.markerObj)->glRender();
+      X.pos.set(a);
+      X.rot.addX(RAI_PI);
+      T_WM = X.getAffineMatrix();
+      glUniformMatrix4fv(idT_WM, 1, GL_TRUE, rai::convert<float>(T_WM).p);
+      objs(distMarkers.markerObj)->glRender();
+    }
   }
 }
 
@@ -166,7 +198,7 @@ void RenderScene::glDraw(OpenGL& gl){
   sorting.setStraightPerm(objs.N);
   std::sort(sorting.p, sorting.p+sorting.N, [&](uint i,uint j){ return objs.elem(i)->cameraDist < objs.elem(j)->cameraDist; });
 
-  if(drawShadows) for(uint k=0;k<(renderCount?1:2);k++){ //why do I have to render twice on first pass??
+  if(dontRender>_shadow) for(uint k=0;k<(renderCount?1:2);k++){ //why do I have to render twice on first pass??
     // Render to shadowFramebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, id.shadowFramebuffer);
     glViewport(0, 0, bufW, bufH);
@@ -205,7 +237,7 @@ void RenderScene::glDraw(OpenGL& gl){
 
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
-  if(drawTransparents){
+  if(dontRender>_transparent){
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   }
@@ -232,7 +264,7 @@ void RenderScene::glDraw(OpenGL& gl){
     lightDirs.reshape(lights.N, 3);
     glUniform3fv(id.prog_lightDirection_C, lights.N, rai::convert<float>(-lightDirs).p);
 
-    if(drawShadows){
+    if(dontRender>_shadow) {
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, id.shadowTexture);
       glUniform1i(id.prog_shadowMap, 1);
@@ -242,13 +274,13 @@ void RenderScene::glDraw(OpenGL& gl){
 //    renderObjects(id.prog_ModelT_WM, sorting, _marker);
   }
 
-  for(uint k=0;k<(renderCount?1:2);k++){
+  if(dontRender>_transparent) for(uint k=0;k<(renderCount?1:2);k++){
     glUseProgram(id.progMarker);
     glUniformMatrix4fv(id.progMarker_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
     renderObjects(id.progMarker_ModelT_WM, sorting, _marker);
   }
 
-  for(uint k=0;k<(renderCount?1:2);k++){
+  if(dontRender>_marker) for(uint k=0;k<(renderCount?1:2);k++){
     glUseProgram(id.prog_ID);
     renderObjects(id.prog_ModelT_WM, sorting, _transparent);
   }
@@ -396,6 +428,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
   GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
   GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
 
+#if 1
   // Read the Vertex Shader code from the file
   std::string VertexShaderCode;
   std::ifstream VertexShaderStream(vertex_file_path, std::ios::in);
@@ -419,13 +452,20 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
     FragmentShaderCode = sstr.str();
     FragmentShaderStream.close();
   }
-
+  char const * VertexSourcePointer = VertexShaderCode.c_str();
+  char const * FragmentSourcePointer = FragmentShaderCode.c_str();
+#else
+  str vertexShaderCode(FILE(vertex_file_path).getIs());
+  str fragmentShaderCode(FILE(fragment_file_path).getIs());
+  char const * VertexSourcePointer = vertexShaderCode.p; //VertexShaderCode.c_str();
+  char const * FragmentSourcePointer = fragmentShaderCode.p; //FragmentShaderCode.c_str();
+  //cout <<vertexShaderCode <<fragmentShaderCode <<endl;
+#endif
   GLint Result = GL_FALSE;
   int InfoLogLength;
 
   // Compile Vertex Shader
 //  printf("Compiling shader : %s\n", vertex_file_path);
-  char const * VertexSourcePointer = VertexShaderCode.c_str();
   glShaderSource(VertexShaderID, 1, &VertexSourcePointer , NULL);
   glCompileShader(VertexShaderID);
 
@@ -440,7 +480,6 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 
   // Compile Fragment Shader
 //  printf("Compiling shader : %s\n", fragment_file_path);
-  char const * FragmentSourcePointer = FragmentShaderCode.c_str();
   glShaderSource(FragmentShaderID, 1, &FragmentSourcePointer , NULL);
   glCompileShader(FragmentShaderID);
 
@@ -452,8 +491,6 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
     glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
     printf("%s\n", &FragmentShaderErrorMessage[0]);
   }
-
-
 
   // Link the program
 //  printf("Linking program\n");
@@ -480,4 +517,24 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
   return ProgramID;
 }
 
+void RenderScene::addDistMarker(const arr& a, const arr& b, int s){
+  if(distMarkers.markerObj==-1){
+    distMarkers.markerObj=objs.N;
+    rai::Mesh m;
+    m.setCone(.01, .01);
+    m.translate(0.,0.,-.01);
+    m.C={1.,0.,1.};
+    add().mesh(m, 0, .9, _marker);
+  }
+  distMarkers.pos.append(a);
+  distMarkers.pos.append(b);
+  distMarkers.slices.append(s);
+}
 
+void RenderScene::clearObjs(){
+  objs.clear();
+  distMarkers.markerObj=-1;
+  distMarkers.pos.clear();
+  distMarkers.slices.clear();
+  renderCount=0;
+}

@@ -12,6 +12,7 @@
 #include "../Gui/opengl.h"
 #include <iomanip>
 #include <Kin/forceExchange.h>
+#include <Kin/proxy.h>
 
 rai::ConfigurationViewer::~ConfigurationViewer() { close_gl(); }
 
@@ -35,10 +36,7 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
     addLight({-3.,2.,3.}, {0.,-0.,1.}, 5.);
     addLight({3.,0.,4.}, {0.,0.,1.});
   }
-  if(objs.N){
-    objs.clear();
-    renderCount=0;
-  }
+  if(objs.N) clearObjs();
 
   { // floor
     rai::Mesh m;
@@ -121,8 +119,15 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
 
   if(C.proxies.N) {
     auto _dataLock = gl->dataLock(RAI_HERE);
-//    NIY;
-//    C.copyProxies(newC.proxies);
+    distMarkers.pos.clear();
+    distMarkers.slices.clear();
+    for(const rai::Proxy& p: C.proxies){
+      if(p.d<.05){
+        int s=-1;
+        if(timeSlices.N) s = p.a->ID/timeSlices.d1;
+        addDistMarker(p.posA.getArr(), p.posB.getArr(), s);
+      }
+    }
   }
 
   rai::Frame* camF = C.getFrame("camera_gl", false);
@@ -277,30 +282,32 @@ floatA rai::ConfigurationViewer::getDepth() {
 }
 
 void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
+  if(gl.drawOptions.drawVisualsOnly) dontRender=_transparent; else dontRender=_any;
   if(!motion.N){
+    RenderScene::slice=-1;
     RenderScene::glDraw(gl);
   }else{
-    if(gl.scrollCounter && drawSlice==-1 && motion.N) drawSlice=0;
+    if(gl.scrollCounter){ drawSlice-=gl.scrollCounter; gl.scrollCounter=0; abortPlay=true; }
+    if(drawSlice<-1) drawSlice=-1;
+    if(drawSlice>=(int)motion.d0) drawSlice=motion.d0-1;
 
     if(drawSlice>=0) {
-      if(gl.scrollCounter){ drawSlice-=gl.scrollCounter; gl.scrollCounter=0; abortPlay=true; }
-      if(drawSlice<0) drawSlice=0;
-      if(drawSlice>=(int)motion.d0) drawSlice=motion.d0-1;
-
       gl.text.clear() <<text <<"\n(slice " <<drawSlice <<'/' <<motion.d0;
       if(phaseFactor>0.) gl.text <<", phase " <<phaseFactor*(double(drawSlice)+phaseOffset);
       gl.text <<")";
       if(drawSlice<(int)sliceTexts.N) gl.text <<"\n" <<sliceTexts(drawSlice);
       //C.glDraw_frames(gl, slices[drawSlice], 0);
 
-      CHECK_EQ(motion.d1, objs.N, "");
-      for(uint i=0;i<objs.N;i++) objs(i)->X.set(motion(drawSlice, i, {}));
+      CHECK_LE(motion.d1, objs.N, "");
+      for(uint i=0;i<motion.d1;i++) objs(i)->X.set(motion(drawSlice, i, {}));
+      RenderScene::slice=drawSlice;
       RenderScene::glDraw(gl);
     }else{
       gl.text.clear() <<text;
+      RenderScene::slice=-1;
       for(uint t=0;t<motion.d0;t++){
-        CHECK_EQ(motion.d1, objs.N, "");
-        for(uint i=0;i<objs.N;i++) objs(i)->X.set(motion(t, i, {}));
+        CHECK_LE(motion.d1, objs.N, "");
+        for(uint i=0;i<motion.d1;i++) objs(i)->X.set(motion(t, i, {}));
         RenderScene::glDraw(gl);
         //C.glDraw_frames(gl, C.frames, 0);
       }
