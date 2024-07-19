@@ -346,23 +346,3 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F) {
   }
 }
 
-void F_PairFunctional::glDraw(OpenGL&) {
-#ifdef RAI_GL
-  glColor(0., 1., 0., 1.);
-  glDrawDiamond(x(0), x(1), x(2), .05, .05, .05);
-  if(P) {
-    glColor(0., 1., 1., 1.);
-    glDrawDiamond(P->z1(0), P->z1(1), P->z1(2), .05, .05, .05);
-    glColor(0., 0., 1., 1.);
-    glDrawDiamond(P->z2(0), P->z2(1), P->z2(2), .05, .05, .05);
-  }
-
-  glColor(1., 0., 0., 1.);
-  glLineWidth(2.f);
-  glDrawProxy(x-d1*g1, x, .02);
-  glDrawProxy(x, x-d2*g2, .02);
-  glLineWidth(1.f);
-  glLoadIdentity();
-#endif
-}
-

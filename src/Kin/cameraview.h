@@ -21,7 +21,6 @@ struct CameraView : ConfigurationViewer {
     rai::String name;
     rai::Camera cam;     ///< this includes the transformation X
     uint width=640, height=480;
-    byteA backgroundImage;
     int frame=-1;
     Sensor() {}
     rai::Transformation& pose() { return cam.X; }
@@ -53,7 +52,7 @@ struct CameraView : ConfigurationViewer {
 
   arr getFxycxy() { CHECK(currentSensor, "no sensor selected yet"); return currentSensor->getFxycxy(); }
 
-  void glDraw(OpenGL& gl);
+  void glDraw(OpenGL& gl) { NIY; }
 
  private:
   void updateCamera();

@@ -998,92 +998,12 @@ void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) 
     }
 }
 
-void DrawActor(PxRigidActor* actor, rai::Frame* frame, OpenGL& gl) {
-  PxU32 nShapes = actor->getNbShapes();
-  PxShape** shapes=new PxShape*[nShapes];
-  //cout <<"#shapes=" <<nShapes;
-
-  actor->getShapes(shapes, nShapes);
-  while(nShapes--) {
-    PxShape* shape = shapes[nShapes];
-
-    // use the color of the first shape of the body for the entire body
-    rai::Shape* s = frame->shape;
-    if(!s) for(rai::Frame* ch:frame->children) {
-        if(ch->shape && ch->shape->alpha()==1.) {
-          s = ch->shape;
-          break;
-        }
-      }
-    if(s) glColor(s->mesh().C);
-
-    rai::Transformation f;
-    double mat[16];
-    PxTrans2raiTrans(f, PxShapeExt::getGlobalPose(*shape, *actor));
-    glLoadMatrixd(f.getAffineMatrixGL(mat));
-    //cout <<"drawing shape " <<body->name <<endl;
-    switch(shape->getGeometryType()) {
-      case PxGeometryType::eBOX: {
-        PxBoxGeometry g;
-        shape->getBoxGeometry(g);
-        //glutSolidCube(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
-        glDrawBox(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
-      } break;
-      case PxGeometryType::eSPHERE: {
-        PxSphereGeometry g;
-        shape->getSphereGeometry(g);
-        glutSolidSphere(g.radius, 10, 10);
-      } break;
-      case PxGeometryType::eCAPSULE: {
-        PxCapsuleGeometry g;
-        shape->getCapsuleGeometry(g);
-        glDrawCappedCylinder(g.radius, g.halfHeight*2);
-      } break;
-      case PxGeometryType::eCONVEXMESH: {
-#if 1
-        PxConvexMeshGeometry g;
-        shape->getConvexMeshGeometry(g);
-        floatA Vfloat;
-        Vfloat.referTo((float*)g.convexMesh->getVertices(), 3*g.convexMesh->getNbVertices()); //reference!
-        rai::Mesh mesh;
-        copy(mesh.V, Vfloat);
-        mesh.V.reshape(g.convexMesh->getNbVertices(), 3);
-        mesh.makeConvexHull();
-        mesh.glDraw(gl);
-#else
-        self->mesh.glDraw();
-#endif
-      } break;
-      case PxGeometryType::eTRIANGLEMESH: {
-        PxTriangleMeshGeometry g;
-        shape->getTriangleMeshGeometry(g);
-        floatA Vfloat;
-        Vfloat.referTo((float*)g.triangleMesh->getVertices(), 3*g.triangleMesh->getNbVertices()).reshape(-1, 3);
-        rai::Mesh mesh;
-        mesh.V = rai::convert<double>(Vfloat);
-        if(g.triangleMesh->getTriangleMeshFlags()&PxTriangleMeshFlag::e16_BIT_INDICES) {
-          rai::Array<uint16_t> T16;
-          T16.referTo((uint16_t*)g.triangleMesh->getTriangles(), 3*g.triangleMesh->getNbTriangles()).reshape(-1, 3);
-          mesh.T = rai::convert<uint>(T16);
-        } else {
-          mesh.T.referTo((uint*)g.triangleMesh->getTriangles(), 3*g.triangleMesh->getNbTriangles()).reshape(-1, 3);
-        }
-        mesh.glDraw(gl);
-      } break;
-
-      default:
-        RAI_MSG("can't draw this type");
-    }
-  }
-  delete [] shapes;
-}
-
 void PhysXInterface::glDraw(OpenGL& gl) {
-  gl.text.clear() <<self->stepCount;
+  NIY; //gl.text.clear() <<self->stepCount;
   for(PxRigidActor* a: self->actors) {
     if(a) {
       rai::Frame* f = (rai::Frame*)a->userData;
-      DrawActor(a, f, gl);
+      NIY; //DrawActor(a, f, gl);
     }
   }
 }

@@ -1920,9 +1920,9 @@ arr Camera::getT_IC() const{
     P(2, 3) = 2. * zFar * zNear / (zNear-zFar);
   }else if(heightAbs > 0.) { //ortho mode
     P(0, 0) = 2./heightAbs/whRatio;
-    P(1, 1) = 2./heightAbs;
+    P(1, 1) = -2./heightAbs;
     P(2, 2) = -2./(zNear-zFar);
-    P(2, 3) = -1.;
+    P(2, 3) = 1.;
     P(3, 3) = 1.;
   }
   return P;

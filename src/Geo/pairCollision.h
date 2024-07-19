@@ -49,7 +49,7 @@ struct PairCollision : GLDrawer, NonCopyable {
 
   void write(std::ostream& os) const;
 
-  void glDraw(struct OpenGL&);
+  void glDraw(struct OpenGL&) { NIY; }
 
   double getDistance() { return distance-rad1-rad2; }
 

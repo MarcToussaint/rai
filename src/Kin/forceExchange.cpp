@@ -198,50 +198,6 @@ arr gnuplot(const double x) {
   return arr{r, g, b};
 }
 
-void rai::ForceExchange::glDraw(OpenGL& gl) {
-  double scale = 2.;
-  arr _poa, _torque, _force;
-  kinPOA(_poa, NoArr);
-  kinForce(_force, NoArr);
-  kinTorque(_torque, NoArr);
-  if(b.joint && b.joint->type==JT_hingeX) {
-    arr x = b.ensure_X().rot.getX().getArr();
-    _torque = x * scalarProduct(x, torque);
-    _force = 0.;
-  }
-
-#ifdef RAI_GL
-  glLoadIdentity();
-  glColor(1., 0., 1., 1.);
-  glDrawDiamond(_poa(0), _poa(1), _poa(2), .02, .02, .02); //POA dimons
-  glLineWidth(3.f);
-  glBegin(GL_LINES);
-  glColor(1., 0., 1., 1.);
-  glVertex3dv(_poa.p);
-  glVertex3dv((_poa+scale*_torque).p); //pink: torque
-  glColor(1., 1., 1., 1.);
-  glVertex3dv(_poa.p);
-  glVertex3dv((_poa+scale*_force).p); //white: force
-  glEnd();
-  glLineWidth(1.f);
-  glColor(.0, .0, .0, 1.);
-
-//  glBegin(GL_LINES);
-//  glVertex3dv(&a.ensure_X().pos.x);
-//  glVertex3dv(_poa.p);
-//  glColor(.8, .5, .8, 1.);
-//  glVertex3dv(_poa.p);
-//  glVertex3dv(&b.ensure_X().pos.x);
-//  glEnd();
-
-  glLoadIdentity();
-
-//    f.pos=.5*(posA+posB);
-//    f.getAffineMatrixGL(GLmatrix);
-//    glLoadMatrixd(GLmatrix);
-//    glDrawText(STRING(a <<'-' <<b <<':' <<d), 0.,0.,0.);
-#endif
-}
 
 void rai::ForceExchange::write(std::ostream& os) const {
   os <<a.name <<'-' <<b.name;

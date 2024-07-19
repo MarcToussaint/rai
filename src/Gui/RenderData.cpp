@@ -172,7 +172,7 @@ void RenderScene::glInitialize(OpenGL &gl){
   }
 
   {
-    id.progText = LoadShaders( "shaderText.vs", "shaderText.fs" );
+    id.progText = LoadShaders( rai::raiPath("src/Gui/shaderText.vs"), rai::raiPath("src/Gui/shaderText.fs") );
     id.progText_color = glGetUniformLocation( id.progText, "textColor" );
   }
   id.initialized=true;
@@ -282,7 +282,7 @@ void RenderScene::glDraw(OpenGL& gl){
 
     //set shadow projection matrix
     arr flip = eye(4);
-//    flip(1,1) = flip(2,2) = -1.;
+    flip(1,1) = flip(2,2) = -1.;
     arr P_IC = lights(0)->getT_IC();
     arr T_CW = lights(0)->getT_CW();
     arr Pshadow_IW = flip * P_IC * flip * T_CW;
@@ -617,7 +617,14 @@ void RenderScene::addText(const char* text, float x, float y, float size){
   txt->y = y;
   txt->scale = size;
   txt->text = text;
-//  txt->create(text, x, y, size);
+}
+
+void RenderScene::setText(const char* text){
+  if(!texts.N) addText(text, 10., 20., 1.);
+  else{
+    std::shared_ptr<RenderText>& txt = texts(0);
+    txt->text = text;
+  }
 }
 
 void RenderScene::clearObjs(){
@@ -645,6 +652,11 @@ void RenderText::glRender(GLuint progText_color, const RenderFont& font, float h
   // iterate through all characters
   for(uint i=0;i<text.N;i++){
     char c = text(i);
+    if(c=='\n'){
+      _x = x;
+      _y -= font.characters('A').size_y + 8;
+      continue;
+    }
     RenderFont::Character ch = font.characters(c);
 
     float xpos = _x + ch.offset_x * scale;

@@ -56,7 +56,7 @@ void TEST(Viewer){
   rai::Frame *f = C.addFrame("changer");
 //  f->setShape(rai::ST_mesh, {});
   f->setConvexMesh({}, {255,0,0}, .05);
-  C.view();
+  C.view(false);
 
 //  rai::Configuration C2;
 //  C2.addConfigurationCopy(C);
@@ -75,7 +75,7 @@ void TEST(Viewer){
     C.view(false, STRING(k));
 //    C2.view(false, STRING(k));
   }
-  C.view(true);
+  C.view(false);
 }
 
 //===========================================================================

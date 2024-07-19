@@ -344,7 +344,7 @@ struct Shape : NonCopyable, GLDrawer {
   void read(const Graph& ats);
   void write(std::ostream& os) const;
   void write(Graph& g);
-  void glDraw(OpenGL&);
+  void glDraw(OpenGL&) { NIY; }
 };
 
 //===========================================================================

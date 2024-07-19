@@ -40,58 +40,56 @@ struct Transformation;
 // utility functions
 //
 
-void glStandardLight(void*, OpenGL& gl);
-void glStandardScene(void*, OpenGL&);
-void glStandardOriginAxes(void*, OpenGL&);
-
-void glColor(float r, float g, float b, float a=1.f, unsigned char lightingEnabled=2);
-void glColor(int col);
-void glColor(const arr& col);
-void glColorId(uint id);
 void id2color(::byte rgb[3], uint id);
 arr id2color(uint id);
 uint color2id(::byte rgb[3]);
-void glDrawText(const char* txt, float x=0., float y=0., float z=0., bool largeFont=false);
-//void glShadowTransform();
-void glTransform(const rai::Transformation& t);
-void glTransform(const double pos[3], const double R[12]);
-void glRotate(const rai::Quaternion& rot);
-void glDrawRect(float x1, float y1, float z1, float x2, float y2, float z2,
-                float x3, float y3, float z3, float x4, float y4, float z4,
-                float r, float g, float b);
-void glDrawRect(float x1, float y1, float z1, float x2, float y2, float z2,
-                float x3, float y3, float z3, float x4, float y4, float z4);
-void glDrawRect(float x, float y, float z, float rad);
-void glDrawPolygon(const arr& P);
-void glDrawFloor(float x, float r, float g, float b);
-void glDrawBox(float x, float y, float z, bool linesOnly=false);
-void glDrawDiamond(float dx, float dy, float dz);
-void glDrawDiamond(float x, float y, float z, float dx, float dy, float dz);
-void glDrawSphere(float radius);
-void glDrawDisk(float radius);
-void glDrawProxy(const arr& p1, const arr& p2, double diskSize=.02, int colorCode=0, const arr& norm=NoArr, double _rad1=0., double _rad2=0.);
-void glDrawCylinder(float radius, float length, bool closed=true);
-void glDrawCappedCylinder(float radius, float length);
-void glDrawAxis(double scale=-1.);
-void glDrawAxes(double scale, bool colored=true);
-void glDrawCamera(const rai::Camera& cam);
-void glDrawGridBox(float x);
-void glDrawGridBox(float x1, float y1, float z1, float x2, float y2, float z2);
-void glDrawKhepera();
-void glMakeSquare(int num);
-void glMakeStdSimplex(int num);
-void glMakeTorus(int num);
-void glDrawRobotArm(float a, float b, float c, float d, float e, float f);
-uint glImageTexture(const byteA& img);
-void glDrawTexQuad(const byteA& img,
-                   float x1, float y1, float z1, float x2, float y2, float z2,
-                   float x3, float y3, float z3, float x4, float y4, float z4,
-                   float mulX=1., float mulY=1.);
-//grabImage: use OpenGL::capture instead!
-void glRasterImage(float x, float y, byteA& img, float zoom=1.);
 
-void glDrawAsList(GLDrawer& drawer, OpenGL& gl);
-void glClearList(GLDrawer& drawer, OpenGL& gl);
+//void glStandardLight(void*, OpenGL& gl);
+//void glStandardScene(void*, OpenGL&);
+//void glStandardOriginAxes(void*, OpenGL&);
+
+//void glColor(float r, float g, float b, float a=1.f, unsigned char lightingEnabled=2);
+//void glColor(int col);
+//void glColor(const arr& col);
+//void glColorId(uint id);
+//void glDrawText(const char* txt, float x=0., float y=0., float z=0., bool largeFont=false);
+////void glShadowTransform();
+//void glTransform(const rai::Transformation& t);
+//void glTransform(const double pos[3], const double R[12]);
+//void glRotate(const rai::Quaternion& rot);
+//void glDrawRect(float x1, float y1, float z1, float x2, float y2, float z2,
+//                float x3, float y3, float z3, float x4, float y4, float z4,
+//                float r, float g, float b);
+//void glDrawRect(float x1, float y1, float z1, float x2, float y2, float z2,
+//                float x3, float y3, float z3, float x4, float y4, float z4);
+//void glDrawRect(float x, float y, float z, float rad);
+//void glDrawPolygon(const arr& P);
+//void glDrawFloor(float x, float r, float g, float b);
+//void glDrawBox(float x, float y, float z, bool linesOnly=false);
+//void glDrawDiamond(float dx, float dy, float dz);
+//void glDrawDiamond(float x, float y, float z, float dx, float dy, float dz);
+//void glDrawSphere(float radius);
+//void glDrawDisk(float radius);
+//void glDrawProxy(const arr& p1, const arr& p2, double diskSize=.02, int colorCode=0, const arr& norm=NoArr, double _rad1=0., double _rad2=0.);
+//void glDrawCylinder(float radius, float length, bool closed=true);
+//void glDrawCappedCylinder(float radius, float length);
+//void glDrawAxis(double scale=-1.);
+//void glDrawAxes(double scale, bool colored=true);
+//void glDrawCamera(const rai::Camera& cam);
+//void glDrawGridBox(float x);
+//void glDrawGridBox(float x1, float y1, float z1, float x2, float y2, float z2);
+//void glDrawKhepera();
+//void glMakeSquare(int num);
+//void glMakeStdSimplex(int num);
+//void glMakeTorus(int num);
+//void glDrawRobotArm(float a, float b, float c, float d, float e, float f);
+//uint glImageTexture(const byteA& img);
+//void glDrawTexQuad(const byteA& img,
+//                   float x1, float y1, float z1, float x2, float y2, float z2,
+//                   float x3, float y3, float z3, float x4, float y4, float z4,
+//                   float mulX=1., float mulY=1.);
+////grabImage: use OpenGL::capture instead!
+//void glRasterImage(float x, float y, byteA& img, float zoom=1.);
 
 void read_png(byteA& img, const char* file_name, bool swap_rows);
 void write_png(const byteA& img, const char* file_name, bool swap_rows=true);
@@ -112,7 +110,7 @@ struct OpenGL {
   struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
   struct GLScrollCall { virtual bool scrollCallback(OpenGL&, int) = 0; };
   struct GLEvent    { int button, key, x, y; float dx, dy; void set(int b, int k, int _x, int _y, float _dx, float _dy) { button=b; key=k; x=_x; y=_y; dx=_dx; dy=_dy; } };
-  struct GLView     { double le, ri, bo, to;  rai::Array<GLDrawer*> drawers;  rai::Camera camera;  byteA* img;  rai::String text;  GLView() { img=nullptr; le=bo=0.; ri=to=1.; } };
+  struct GLView     { double le, ri, bo, to;  rai::Array<GLDrawer*> drawers;  rai::Camera camera;  GLView() { le=bo=0.; ri=to=1.; } };
 
   /// @name data fields
   rai::Array<GLView> views;            ///< list of subviews
@@ -122,14 +120,11 @@ struct OpenGL {
   rai::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
   rai::Array<GLScrollCall*> scrollCalls;     ///< list of click callbacks
   rai::Array<struct CstyleDrawer*> toBeDeletedOnCleanup;
-  struct ListIdVersion{ int listId=0, version=-1; };
-  std::map<GLDrawer*, ListIdVersion> listMap;
 
   rai::String title;     ///< the window title
   uint width, height;
   bool offscreen;
   rai::Camera camera;     ///< the camera used for projection
-  rai::String text;        ///< the text to be drawn as title within the opengl frame
   floatA clearColor;  ///< colors of the beackground (called in glClearColor(...))
   bool reportEvents=false;    ///< flags for verbosity
   int pressedkey=0;         ///< stores the key pressed
@@ -140,11 +135,8 @@ struct OpenGL {
   int mouseView=-1;
   bool mouseIsDown=false;
   int scrollCounter=0;
-  bool drawFocus=false;
-  byteA background, captureImage;
+  byteA captureImage;
   floatA captureDepth;
-  double backgroundZoom=1.;
-  arr P; //camera projection matrix
   Mutex dataLock; //'data' means anything: member fields (camera, variables), drawers, data the drawers access
 //  uint fbo, render_buf;
   uint fboId=0;
@@ -180,19 +172,17 @@ struct OpenGL {
   void setSubViewTiles(uint cols, uint rows);
   void setSubViewPort(uint view, double l, double r, double b, double t);
   void clearSubView(uint view);
-  void clearLists();
 
   /// @name the core draw routines (actually only for internal use)
   void Render(int w, int h, rai::Camera* cam=nullptr, bool callerHasAlreadyLocked=false);
   void renderInBack(int w=-1, int h=-1, bool fromWithinCallback=false);
 
   /// @name showing, updating, and watching
-  int update(const char* text=nullptr, bool nonThreaded=false);
-  int watch(const char* text=nullptr);
+  int update(bool wait=false, bool nonThreaded=false);
   int timedupdate(double sec);
   void resize(int w, int h);
-  void unproject(double& x, double& y, double& z, bool resetCamera=false, int subView=-1);
-  void project(double& x, double& y, double& z, bool resetCamera=false, int subView=-1);
+//  void unproject(double& x, double& y, double& z, bool resetCamera=false, int subView=-1);
+//  void project(double& x, double& y, double& z, bool resetCamera=false, int subView=-1);
 
   /// @name info & I/O
   bool modifiersNone();
@@ -209,7 +199,7 @@ struct OpenGL {
 
  public: //driver dependent methods
   GLFWwindow *window=0;
-  int needsRedraw=0;
+  bool needsRedraw=false;
 
   void openWindow();
   void closeWindow();
@@ -221,8 +211,6 @@ struct OpenGL {
   void postRedrawEvent(bool fromWithinCallback);
 
  public:
-  GLEvent lastEvent;
-
   //general callbacks (used by all implementations)
   rai::Vector downVec, downPos, downFoc;
   int downModifiers=0;
@@ -237,7 +225,4 @@ struct OpenGL {
 
   friend struct sOpenGL;
   friend struct GlfwSingleton;
-  friend bool glClickUI(void* p, OpenGL* gl);
 };
-
-extern OpenGL& NoOpenGL;

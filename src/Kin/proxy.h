@@ -36,7 +36,7 @@ struct Proxy : GLDrawer {
   void copy(const Configuration& C, const Proxy& p);
   void ensure_coll() { if(!collision) calc_coll(); }
   void calc_coll();
-  virtual void glDraw(OpenGL&);
+  virtual void glDraw(OpenGL&) { NIY; }
   void write(ostream& os, bool brief=true) const;
 };
 stdOutPipe(Proxy)

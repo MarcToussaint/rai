@@ -247,7 +247,6 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     if(!self->glDebug) {
       self->glDebug = make_shared<OpenGL>("physx sim DEBUG", 500, 300);
       self->glDebug->camera.setDefault();
-      self->glDebug->add(glStandardScene);
       self->glDebug->add(*self->physx);
     }
     self->glDebug->update();
@@ -596,7 +595,7 @@ struct Simulation_DisplayThread : Thread, ConfigurationViewer {
     drawCount++;
 #ifdef RAI_GL
     mux.lock(RAI_HERE);
-    glStandardScene(nullptr, gl);
+    NIY; //glStandardScene(nullptr, gl);
     ConfigurationViewer::glDraw(gl);
 
     if(image.N && depth.N) {
@@ -615,8 +614,8 @@ struct Simulation_DisplayThread : Thread, ConfigurationViewer {
       glLoadIdentity();
       glOrtho(0, 1., 1., 0., -1., 1.); //only affects the offset - the rest is done with raster zooms
       glDisable(GL_DEPTH_TEST);
-      glRasterImage(.0, top, image, scale);
-      glRasterImage(.7, top, depthImage, scale);
+      NIY; //glRasterImage(.0, top, image, scale);
+      NIY; //glRasterImage(.7, top, depthImage, scale);
     }
 
     screenshot.resize(gl.height, gl.width, 3);

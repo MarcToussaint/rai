@@ -546,51 +546,6 @@ void PairCollision::GJK_sqrDistance() {
 #endif
 }
 
-void PairCollision::glDraw(OpenGL&) {
-#ifdef RAI_GL
-  arr P1=p1, P2=p2;
-  if(rad1>0.) P1 -= rad1*normal;
-  if(rad2>0.) P2 += rad2*normal;
-
-  glColor(0., 1., 0., 1.);
-  glDrawDiamond(P1(0), P1(1), P1(2), .005, .005, .005);
-  if(simplex1.N) {
-    for(uint i=0; i<simplex1.d0; i++) simplex1[i] -= rad1*normal;
-    glDrawPolygon(simplex1);
-    for(uint i=0; i<simplex1.d0; i++) simplex1[i] += rad1*normal;
-  }
-
-  glColor(0., 0., 1., 1.);
-  glDrawDiamond(P2(0), P2(1), P2(2), .005, .005, .005);
-  if(simplex2.N) {
-    for(uint i=0; i<simplex2.d0; i++) simplex2[i] += rad2*normal;
-    glDrawPolygon(simplex2);
-    for(uint i=0; i<simplex2.d0; i++) simplex2[i] -= rad2*normal;
-  }
-
-  glColor(1., 0., 0., 1.);
-  glLineWidth(2.f);
-  glDrawProxy(P1, P2, .02);
-  glLineWidth(1.f);
-  glLoadIdentity();
-
-  if(poly.N) {
-    glColor(0., 1., 1., 1.);
-    glLineWidth(1.f);
-    glDrawPolygon(poly);
-    uint n=poly.d0;
-    for(uint i=0; i<n; i++) {
-      rai::Transformation T;
-      T.pos = .5 *(poly[(i+1)%n] + poly[i]);
-      T.rot.setDiff(Vector_x, polyNorm[i]);
-//      cout <<polyNorm[i] <<' ' <<T.rot <<' ' <<T.rot.getDeg() <<endl;
-      glTransform(T);
-      glDrawAxis(.02);
-    }
-  }
-#endif
-}
-
 void PairCollision::kinDistance(arr& y, arr& J,
                                 const arr& Jp1, const arr& Jp2) {
   y = arr{distance-rad1-rad2};

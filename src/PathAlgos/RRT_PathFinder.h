@@ -45,7 +45,7 @@ struct RRT_SingleTree : GLDrawer {
   arr getRandomNode() { return ann.X[rnd(ann.X.d0)].copy(); }
   arr getPathFromNode(uint fromID);
 
-  void glDraw(OpenGL& gl);
+  void glDraw(OpenGL& gl) { NIY; }
 
   arr getSideStep(std::shared_ptr<QueryResult> qr);
 };

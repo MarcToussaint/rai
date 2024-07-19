@@ -77,6 +77,7 @@ struct RenderScene : GLDrawer{
   void addAxes(double scale, const rai::Transformation& _X);
   void addDistMarker(const arr& a, const arr& b, int s);
   void addText(const char* text, float x, float y, float size);
+  void setText(const char* text);
   void clearObjs();
 
   void glInitialize(OpenGL &gl);

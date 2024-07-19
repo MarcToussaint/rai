@@ -163,7 +163,7 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
       m0.makeConvexHull();
       m0.C = {.5, .3, .3, 1.};
       m1.C = {.3, .3, .8, .2};
-      gl.add(glStandardLight);
+//      gl.add(glStandardLight);
       gl.add(m0);
       gl.add(m1);
     }
@@ -270,7 +270,7 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
   if(verbose>0) {
     LOG(0) <<" f: " <<opt.L.get_costs() <<" g: " <<opt.L.get_sumOfGviolations();
 
-    P.gl.watch();
+    P.gl.update(true);
   }
 
   if(verbose>1) {

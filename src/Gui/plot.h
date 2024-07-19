@@ -69,7 +69,7 @@ struct PlotModule : GLDrawer {
   void Gaussians(const GaussianL& G);
   void Image(const byteA& x);
 
-  void glDraw(OpenGL& gl);
+  void glDraw(OpenGL& gl) { NIY; }
 };
 
 }

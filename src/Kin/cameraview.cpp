@@ -165,43 +165,7 @@ void rai::CameraView::updateCamera() {
   }
 
   if(currentSensor) {
-    gl->background = currentSensor->backgroundImage;
-    gl->backgroundZoom = (double)currentSensor->height/gl->background.d0;
     gl->camera = currentSensor->cam;
-  }
-}
-
-void rai::CameraView::glDraw(OpenGL& gl) {
-  if(renderMode==all || renderMode==visuals) {
-    glStandardScene(nullptr, gl);
-    gl.drawOptions.drawMode_idColor = false;
-    gl.drawOptions.drawColors = true;
-    if(renderMode==visuals) {
-      gl.drawOptions.drawVisualsOnly=true;
-    } else {
-      gl.drawOptions.drawVisualsOnly=false;
-    }
-
-    NIY; //C.glDraw(gl);
-
-    if(renderMode!=visuals) {
-      for(Sensor& sen:sensors) {
-        glTransform(sen.cam.X);
-        glDrawCamera(sen.cam);
-        glDrawText(STRING("SENSOR " <<sen.name), 0., 0., 0.);
-      }
-    }
-  }
-
-  if(renderMode==seg) {
-    gl.clearColor=1.;
-    gl.background.clear();
-    gl.drawOptions.drawMode_idColor = true;
-    gl.drawOptions.drawColors=false;
-    gl.drawOptions.drawVisualsOnly=true;
-    NIY; //C.glDraw(gl);
-    gl.drawOptions.drawMode_idColor = false;
-    gl.drawOptions.drawColors=true;
   }
 }
 

@@ -146,20 +146,6 @@ arr RRT_SingleTree::getPathFromNode(uint fromID) {
   return path;
 }
 
-void RRT_SingleTree::glDraw(OpenGL& gl) {
-  glColor(.0, .0, .0);
-  glLineWidth(2.f);
-  glBegin(GL_LINES);
-  drawMutex.lock(RAI_HERE);
-  for(uint i=1; i<getNumberNodes(); i++) {
-    glVertex3dv(&disp3d(parent(i), 0));
-    glVertex3dv(&disp3d(i, 0));
-  }
-  drawMutex.unlock();
-  glEnd();
-  glLineWidth(1.f);
-}
-
 //===========================================================================
 
 bool RRT_PathFinder::growTreeTowardsRandom(RRT_SingleTree& rrt) {

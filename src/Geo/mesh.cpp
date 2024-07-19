@@ -37,8 +37,8 @@
 #  include "Lewiner/MarchingCubes.h"
 #endif
 
-extern void glColorId(uint id);
-extern void glColor(float r, float g, float b, float alpha, GLboolean lightingEnabled);
+void glColorId(uint id) { NIY; }
+void glColor(float r, float g, float b, float alpha, GLboolean lightingEnabled) { NIY; }
 extern arr id2color(uint id);
 
 namespace rai {

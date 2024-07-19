@@ -54,47 +54,6 @@ void rai::Proxy::calc_coll() {
 
 typedef rai::Array<rai::Proxy*> ProxyL;
 
-void rai::Proxy::glDraw(OpenGL& gl) {
-#ifdef RAI_GL
-  if(collision) {
-    glLoadIdentity();
-    collision->glDraw(gl);
-  } else {
-    glLoadIdentity();
-    if(!colorCode) {
-      if(d>0.) glColor(.2, .8, .2);
-      else glColor(1, 0, 0);
-    } else glColor(colorCode);
-    glBegin(GL_LINES);
-    glVertex3dv(posA.p());
-    glVertex3dv(posB.p());
-    glEnd();
-    glDisable(GL_CULL_FACE);
-    rai::Transformation f;
-    f.pos=posA;
-    f.rot.setDiff(rai::Vector(0, 0, 1), posA-posB);
-    double GLmatrix[16];
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glDrawDisk(.02);
-
-    f.pos=posB;
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glDrawDisk(.02);
-
-#if 0 //write text
-    f.pos=.5*(posA+posB);
-    f.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-    glDrawText(STRING(a->name <<'-' <<b->name <<':' <<d), 0., 0., 0.);
-#endif
-
-    glEnable(GL_CULL_FACE);
-  }
-#endif
-}
-
 void rai::Proxy::write(std::ostream& os, bool brief) const {
   os <<" ("
      <<a->name <<")-("

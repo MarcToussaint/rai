@@ -14,6 +14,10 @@
 #include <Kin/forceExchange.h>
 #include <Kin/proxy.h>
 
+double shadowHeight = 3.; //5.;
+//arr floorColor = ones(3);
+arr floorColor = arr{.4, .45, .5};
+
 rai::ConfigurationViewer::~ConfigurationViewer() { close_gl(); }
 
 OpenGL& rai::ConfigurationViewer::ensure_gl() {
@@ -33,7 +37,7 @@ void rai::ConfigurationViewer::close_gl() {
 void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
   ensure_gl().dataLock.lock(RAI_HERE);
   if(!lights.N){
-    addLight({-3.,2.,3.}, {0.,-0.,1.}, 5.);
+    addLight({-3.,2.,3.}, {0.,-0.,1.}, shadowHeight);
     addLight({3.,0.,4.}, {0.,0.,1.});
   }
   if(objs.N) clearObjs();
@@ -42,7 +46,7 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
     rai::Mesh m;
     m.setQuad();
     m.scale(10., 10., 0.);
-    m.C = {.98, .94, .9};
+    m.C = floorColor;
     add().mesh(m, 0);
   }
 
@@ -174,9 +178,7 @@ void rai::ConfigurationViewer::setCamera(rai::Frame* camF) {
   gl->resize(gl->width, gl->height);
 }
 
-int rai::ConfigurationViewer::_update(const char* text, bool nonThreaded) { ensure_gl(); return gl->update(text, nonThreaded); }
-
-int rai::ConfigurationViewer::_watch(const char* text) { ensure_gl(); return gl->watch(text); }
+int rai::ConfigurationViewer::_update(bool wait, const char* _text, bool nonThreaded) { if(_text) text =_text; ensure_gl(); return gl->update(wait, nonThreaded); }
 
 void rai::ConfigurationViewer::_add(GLDrawer& c) { ensure_gl(); gl->add(c); }
 
@@ -184,16 +186,8 @@ void rai::ConfigurationViewer::_resetPressedKey() { ensure_gl(); gl->pressedkey=
 
 int rai::ConfigurationViewer::update(bool watch) {
   ensure_gl();
-
-  int ret=0;
-  if(watch) {
-    gl->raiseWindow();
-    ret = gl->watch();
-  } else {
-    ret = gl->update(nullptr, false);
-  }
-
-  return ret;
+  if(watch) gl->raiseWindow();
+  return gl->update(watch, false);
 }
 
 void rai::ConfigurationViewer::raiseWindow() {
@@ -203,6 +197,7 @@ void rai::ConfigurationViewer::raiseWindow() {
 
 int rai::ConfigurationViewer::view(bool watch, const char* _text) {
   if(_text) text = _text;
+  if(watch) text <<"\n[PRESS KEY]";
 
   return update(watch);
 }
@@ -283,6 +278,7 @@ floatA rai::ConfigurationViewer::getDepth() {
 void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
   if(gl.drawOptions.drawVisualsOnly) dontRender=_transparent; else dontRender=_all;
   if(!motion.N){
+    RenderScene::setText(text);
     RenderScene::slice=-1;
     RenderScene::glDraw(gl);
   }else{
@@ -291,18 +287,20 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
     if(drawSlice>=(int)motion.d0) drawSlice=motion.d0-1;
 
     if(drawSlice>=0) {
-      gl.text.clear() <<text <<"\n(slice " <<drawSlice <<'/' <<motion.d0;
-      if(phaseFactor>0.) gl.text <<", phase " <<phaseFactor*(double(drawSlice)+phaseOffset);
-      gl.text <<")";
-      if(drawSlice<(int)sliceTexts.N) gl.text <<"\n" <<sliceTexts(drawSlice);
+      str s;
+      s <<text <<"\n(slice " <<drawSlice <<'/' <<motion.d0;
+      if(phaseFactor>0.) s <<", phase " <<phaseFactor*(double(drawSlice)+phaseOffset);
+      s <<")";
+      if(drawSlice<(int)sliceTexts.N) s <<"\n" <<sliceTexts(drawSlice);
       //C.glDraw_frames(gl, slices[drawSlice], 0);
+      RenderScene::setText(s);
 
       CHECK_LE(motion.d1, objs.N, "");
       for(uint i=0;i<motion.d1;i++) objs(i)->X.set(motion(drawSlice, i, {}));
       RenderScene::slice=drawSlice;
       RenderScene::glDraw(gl);
     }else{
-      gl.text.clear() <<text;
+      RenderScene::setText(text);
       RenderScene::slice=-1;
       for(uint t=0;t<motion.d0;t++){
         CHECK_LE(motion.d1, objs.N, "");

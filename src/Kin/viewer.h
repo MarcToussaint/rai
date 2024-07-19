@@ -43,8 +43,7 @@ struct ConfigurationViewer : RenderScene {
   void setCamera(rai::Frame* cam);
 
   //mimic a OpenGL, directly calling the same methods in its gl
-  int _update(const char* text=nullptr, bool nonThreaded=false);
-  int _watch(const char* text=nullptr);
+  int _update(bool wait=false, const char* _text=nullptr, bool nonThreaded=false);
   void _add(GLDrawer& c);
   void _resetPressedKey();
 

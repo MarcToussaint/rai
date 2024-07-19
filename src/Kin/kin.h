@@ -272,8 +272,8 @@ struct Configuration : GLDrawer {
   void writeMeshes(const char* pathPrefix="meshes/") const;
   void writeMesh(const char* filename="z.ply") const;
   void read(std::istream& is);
-  void glDraw(struct OpenGL&);
-  void glDraw_frames(struct OpenGL& viewer, const FrameL& F, int drawOpaqueOrTransparanet=0);
+  void glDraw(struct OpenGL&) { NIY; }
+  void glDraw_frames(struct OpenGL& viewer, const FrameL& F, int drawOpaqueOrTransparanet=0) { NIY; }
   Graph getGraph() const;
   void displayDot();
 

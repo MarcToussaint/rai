@@ -91,7 +91,7 @@ void KinViewer::step() {
     for(uint i=0; i<X.N; i++) meshesCopy(i).glX = X(i);
   }
 
-  gl->update(nullptr, true); //nullptr, false, false, true);
+  gl->update(false, nullptr, true); //nullptr, false, false, true);
 }
 
 //===========================================================================

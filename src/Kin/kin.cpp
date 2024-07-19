@@ -2967,106 +2967,6 @@ const Proxy* Configuration::getContact(uint a, uint b) const {
 
 #endif
 
-void Configuration::glDraw(OpenGL& gl) {
-  glDraw_frames(gl, frames);
-}
-
-/// GL routine to draw a Configuration
-void Configuration::glDraw_frames(OpenGL& gl, const FrameL& F, int drawOpaqueOrTransparanet) {
-#ifdef RAI_GL
-  Transformation f;
-  double GLmatrix[16];
-
-  glPushMatrix();
-
-//  glColor(.5, .5, .5);
-
-  if(drawOpaqueOrTransparanet!=2) {
-    if(gl.drawOptions.drawVisualsOnly) {
-      gl.drawOptions.drawProxies=gl.drawOptions.drawJoints=false;
-      drawOpaqueOrTransparanet=1;
-    }
-
-    //proxies
-    if(gl.drawOptions.drawProxies) for(const Proxy& p: proxies) {
-        if(p.a && p.b && p.d<=.1) {
-          CHECK_EQ(&p.a->C, this, "");
-          if(F.N==frames.N || F.contains(p.a) || F.contains(p.b)){
-            ((Proxy*)&p)->glDraw(gl);
-          }
-        }
-      }
-
-    for(Frame* fr: F) for(ForceExchange* f:fr->forces) {
-        if(f->sign(fr)>0.) f->glDraw(gl);
-      }
-
-    //joints
-    Joint* e;
-    if(gl.drawOptions.drawJoints) for(Frame* fr: F) if((e=fr->joint)) {
-          //set name (for OpenGL selection)
-          glPushName((fr->ID <<2) | 2);
-
-          //    double s=e->A.pos.length()+e->B.pos.length(); //some scale
-          double s=.1;
-
-          //    //from body to joint
-          //    f=e->from->X;
-          //    f.getAffineMatrixGL(GLmatrix);
-          //    glLoadMatrixd(GLmatrix);
-          //    glColor(1, 1, 0);
-          //    //glDrawSphere(.1*s);
-          //    glBegin(GL_LINES);
-          //    glVertex3f(0, 0, 0);
-          //    glVertex3f(e->A.pos.x, e->A.pos.y, e->A.pos.z);
-          //    glEnd();
-
-          //joint frame A
-          //    f.appendTransformation(e->A);
-          f.getAffineMatrixGL(GLmatrix);
-          glLoadMatrixd(GLmatrix);
-          glDrawAxes(s);
-          glColor(1, 0, 0);
-          glRotatef(90, 0, 1, 0);  glDrawCylinder(.05*s, .3*s);  glRotatef(-90, 0, 1, 0);
-
-          //joint frame B
-          f.appendTransformation(fr->get_Q());
-          f.getAffineMatrixGL(GLmatrix);
-          glLoadMatrixd(GLmatrix);
-          glDrawAxes(s);
-
-          //    //from joint to body
-          //    glColor(1, 0, 1);
-          //    glBegin(GL_LINES);
-          //    glVertex3f(0, 0, 0);
-          //    glVertex3f(e->B.pos.x, e->B.pos.y, e->B.pos.z);
-          //    glEnd();
-          //    glTranslatef(e->B.pos.x, e->B.pos.y, e->B.pos.z);
-          //    //glDrawSphere(.1*s);
-
-          glPopName();
-        }
-  }
-
-  //shapes
-  if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==1) {
-    //first non-transparent
-    for(Frame* f: F) if(f->shape && f->shape->alpha()==1.) {
-        if(F.nd==2 && f->ID>F.d1 && f->shape->_mesh==F.elem(f->ID-F.d1)->shape->_mesh && f->X==F.elem(f->ID-F.d1)->X) { //has the same shape and pose as previous time slice frame
-          continue;
-        }
-        f->shape->glDraw(gl);
-      }
-  }
-  if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==2) {
-    for(Frame* f: F) if(f->shape && f->shape->alpha()<1.) {
-        f->shape->glDraw(gl);
-      }
-  }
-
-  glPopMatrix();
-#endif
-}
 
 //===========================================================================
 
@@ -3375,34 +3275,6 @@ Frame* movingBody=nullptr;
 Vector selpos;
 double seld, selx, sely, selz;
 
-struct EditConfigurationClickCall:OpenGL::GLClickCall {
-  Configuration* ors;
-  EditConfigurationClickCall(Configuration& _ors) { ors=&_ors; }
-  bool clickCallback(OpenGL& gl) {
-    uint i=gl.selectID;
-    if(!i) return false;
-//    cout <<"CLICK call: id = 0x" <<std::hex <<gl.topSelection->name <<" : ";
-    gl.text.clear();
-    if((i&3)==1) {
-      Frame* s=ors->frames.elem(i>>2);
-      gl.text <<"shape selection: shape=" <<s->name <<" X=" <<s->ensure_X() <<endl;
-      //      listWrite(s->ats, gl.text, "\n");
-      cout <<gl.text;
-    }
-    if((i&3)==2) {
-      Joint* j = ors->frames.elem(i>>2)->joint;
-      gl.text
-          <<"edge selection: " <<j->from()->name <<' ' <<j->frame->name
-          //         <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B
-          <<endl;
-      //      listWrite(j->ats, gl.text, "\n");
-      cout <<gl.text;
-    }
-    cout <<endl;
-    return true;
-  }
-};
-
 struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
   Configuration* ors;
   EditConfigurationHoverCall(Configuration& _ors);// { ors=&_ors; }
@@ -3419,15 +3291,18 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
 //      cout <<timerRead() <<"HOVER call: id = 0x" <<std::hex <<gl.topSelection->name <<endl;
       if((i&3)==1) s=ors->frames.elem(i>>2);
       if((i&3)==2) j=ors->frames.elem(i>>2)->joint;
-      gl.text.clear();
+//      gl.text.clear();
       if(s) {
-        gl.text <<"shape selection: body=" <<s->name <<" X=" <<s->ensure_X();
+        NIY; //gl.text <<"shape selection: body=" <<s->name <<" X=" <<s->ensure_X();
       }
       if(j) {
+        NIY;
+        /*
         gl.text
             <<"edge selection: " <<j->from()->name <<' ' <<j->frame->name
             //           <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B
             <<endl;
+            */
         //        listWrite(j->ats, gl.text, "\n");
       }
     } else {
@@ -3435,7 +3310,7 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
       //double x=0, y=0, z=seld;
       //double x=(double)gl.mouseposx/gl.width(), y=(double)gl.mouseposy/gl.height(), z=seld;
       double x=gl.mouseposx, y=gl.mouseposy, z=seld;
-      gl.unproject(x, y, z, true);
+      NIY; //      gl.unproject(x, y, z, true);
       cout <<"x=" <<x <<" y=" <<y <<" z=" <<z <<" d=" <<seld <<endl;
       movingBody->setPosition(selpos.getArr() + arr{x-selx, y-sely, z-selz});
     }
@@ -3504,8 +3379,9 @@ void Configuration::watchFile(const char* filename) {
   bool exit=false;
   //  gl.addHoverCall(new EditConfigurationHoverCall(K));
   V->ensure_gl().addKeyCall(new EditConfigurationKeyCall(*this, exit));
-  V->ensure_gl().addClickCall(new EditConfigurationClickCall(*this));
+//  V->ensure_gl().addClickCall(new EditConfigurationClickCall(*this));
   V->ensure_gl().setTitle(STRING("ConfigView <" <<filename <<">"));
+//  V->text = "waiting for file change ('h' for help)";
   //  gl()->ensure_gl().reportEvents=true;
   Inotify ino(filename);
   for(; !exit;) {
@@ -3569,6 +3445,7 @@ void Configuration::watchFile(const char* filename) {
                              "x - export to multiple files (.g .urdf. ply. dae)\n"
                              "1..7 - view options\n"
                              "h - help";
+        V->updateConfiguration(*this).view(false);
         cout <<V->text <<endl;
       } else if(key=='s') { //simulate
         rai::Simulation S(*this, S._physx, 2);
@@ -3593,8 +3470,9 @@ void Configuration::watchFile(const char* filename) {
         ensure_proxies();
         double p = getTotalPenetration();
         double eps=.1;
-        reportProxies(cout, eps, true);
-        cout <<"TOTAL PENETRATION: " <<p <<endl;
+        V->text.clear();
+        reportProxies(V->text, eps, true);
+        V->text <<"TOTAL PENETRATION: " <<p <<endl;
         V->updateConfiguration(*this).view(false);
 #if 0
         FrameL collisionPairs = C.getCollisionAllPairs();
@@ -3620,11 +3498,15 @@ void Configuration::watchFile(const char* filename) {
         writeURDF(FILE("z.urdf"));
         writeMesh("z.ply");
         writeCollada("z.dae");
+      }else{
+        if(key){
+          V->text = "waiting for file change ('h' for help)";
+        }
       }
       V->_resetPressedKey();
 
       if(ino.poll(false, true)) break;
-      wait(.2);
+      wait(.1);
     }
     if(exit) break;
 

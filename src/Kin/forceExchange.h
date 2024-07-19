@@ -52,7 +52,7 @@ struct ForceExchange : Dof, NonCopyable, GLDrawer {
 
   PairCollision* coll();
 
-  void glDraw(OpenGL&);
+  void glDraw(OpenGL&) { NIY; }
   virtual void write(ostream& os) const;
 };
 stdOutPipe(ForceExchange)
