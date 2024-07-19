@@ -305,6 +305,11 @@ MinGWLibs += -lcblas -lclapack -lcblaswr -latlas -lI77 -lF77 -lcygwin
 #MSVCLibs += libcblas.a libclapack.a libcblaswr.a libatlas.a libF77.a libc.lib libcygwin.a
 endif
 
+ifeq ($(FREETYPE),1)
+  CXXFLAGS += -DRAI_FREETYPE `pkg-config --cflags freetype2`
+  LIBS     += `pkg-config --libs freetype2`
+endif
+
 ifeq ($(OPENCV),1)
 DEPEND_UBUNTU += libopencv-dev
   ifeq ($(OLDUBUNTU),1)

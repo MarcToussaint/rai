@@ -42,8 +42,7 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
     rai::Mesh m;
     m.setQuad();
     m.scale(10., 10., 0.);
-//    m.C = {1., 1., 1.};
-    m.C = {.4, .45, .5};
+    m.C = {.98, .94, .9};
     add().mesh(m, 0);
   }
 
@@ -282,7 +281,7 @@ floatA rai::ConfigurationViewer::getDepth() {
 }
 
 void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
-  if(gl.drawOptions.drawVisualsOnly) dontRender=_transparent; else dontRender=_any;
+  if(gl.drawOptions.drawVisualsOnly) dontRender=_transparent; else dontRender=_all;
   if(!motion.N){
     RenderScene::slice=-1;
     RenderScene::glDraw(gl);

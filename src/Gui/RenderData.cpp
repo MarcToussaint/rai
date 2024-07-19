@@ -4,6 +4,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 uint bufW=2000, bufH=2000;
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
 
@@ -53,6 +56,65 @@ void RenderScene::addAxes(double scale, const rai::Transformation& _X){
                0.,0.,1., 0.,0.,1.},
               _X
               );
+}
+
+void RenderFont::glInitialize(){
+  characters.resize(128);
+
+  FT_Library ft;
+  int r = FT_Init_FreeType(&ft);
+  if(r) HALT("ERROR::FREETYPE: Could not init FreeType Library: " <<r);
+
+  StringA fonts = { "tlwg/Sawasdee.ttf", "freefont/FreeSerif.ttf", "ubuntu/Ubuntu-L.ttf", "dejavu/DejaVuSans.ttf", "teluguvijayam/mallanna.ttf"};
+  FT_Face face;
+  r = FT_New_Face(ft, "/usr/share/fonts/truetype/" + fonts(2), 0, &face);
+  if(r) HALT("ERROR::FREETYPE: Failed to load font: " <<r);
+
+  FT_Set_Pixel_Sizes(face, 0, 16);
+
+  // disable byte-alignment restriction
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+  // load first 128 characters of ASCII set
+  for (unsigned char c = 0; c < 128; c++)
+  {
+    // Load character glyph
+    if (FT_Load_Char(face, c, FT_LOAD_RENDER))
+    {
+      std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+      continue;
+    }
+    // generate texture
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(
+          GL_TEXTURE_2D,
+          0,
+          GL_RED,
+          face->glyph->bitmap.width,
+          face->glyph->bitmap.rows,
+          0,
+          GL_RED,
+          GL_UNSIGNED_BYTE,
+          face->glyph->bitmap.buffer
+          );
+    // set texture options
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // now store character for later use
+    characters(c) = { texture,
+                      (int)face->glyph->bitmap.width, (int)face->glyph->bitmap.rows,
+                      face->glyph->bitmap_left, face->glyph->bitmap_top,
+                      face->glyph->advance.x };
+  }
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  // destroy FreeType once we're finished
+  FT_Done_Face(face);
+  FT_Done_FreeType(ft);
 }
 
 void RenderScene::glInitialize(OpenGL &gl){
@@ -108,11 +170,15 @@ void RenderScene::glInitialize(OpenGL &gl){
     // Always check that our framebuffer is ok
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) HALT("failed");
   }
+
+  {
+    id.progText = LoadShaders( "shaderText.vs", "shaderText.fs" );
+    id.progText_color = glGetUniformLocation( id.progText, "textColor" );
+  }
   id.initialized=true;
 
-//  for(auto& obj:objs){
-//    obj->glInitialize();
-//  }
+  //-- font
+  id.font.glInitialize();
 }
 
 void RenderObject::glRender(){
@@ -122,7 +188,7 @@ void RenderObject::glRender(){
   glEnableVertexAttribArray(1);
   glEnableVertexAttribArray(2);
 
-  glBindVertexArray(vbo);
+  glBindVertexArray(vao);
   glDrawArrays(mode, 0, vertices.d0);
 
   glDisableVertexAttribArray(0);
@@ -186,6 +252,9 @@ void RenderScene::glDraw(OpenGL& gl){
 
   for(std::shared_ptr<RenderObject>& obj:objs){
     if(!obj->initialized) obj->glInitialize();
+  }
+  for(std::shared_ptr<RenderText>& txt:texts){
+    if(!txt->initialized) txt->glInitialize();
   }
 
   camera = gl.camera;
@@ -285,6 +354,15 @@ void RenderScene::glDraw(OpenGL& gl){
     renderObjects(id.prog_ModelT_WM, sorting, _transparent);
   }
 
+  if(dontRender>_text) for(uint k=0;k<(renderCount?1:2);k++){
+
+    glUseProgram(id.progText);
+    glm::mat4 projection = glm::ortho(0.0f, float(gl.width), 0.0f, float(gl.height));
+    glUniformMatrix4fv(glGetUniformLocation(id.progText, "projection"), 1, GL_FALSE, &projection[0][0]);
+
+    for(auto &txt:texts) txt->glRender(id.progText_color, id.font, gl.height);
+  }
+
   renderCount++;
 }
 
@@ -302,10 +380,10 @@ void RenderScene::glDeinitialize(OpenGL& gl){
 
 RenderObject::~RenderObject(){
   if(initialized){
-    glDeleteBuffers(1, &vertexbuffer);
-    glDeleteBuffers(1, &colorbuffer);
-    glDeleteBuffers(1, &normalbuffer);
-    glDeleteVertexArrays(1, &vbo);
+    glDeleteBuffers(1, &vertexBuffer);
+    glDeleteBuffers(1, &colorBuffer);
+    glDeleteBuffers(1, &normalBuffer);
+    glDeleteVertexArrays(1, &vao);
   }
   initialized=false;
 }
@@ -391,28 +469,28 @@ void RenderObject::lines(const arr& lines, const arr& color, const rai::Transfor
 }
 
 void RenderObject::glInitialize(){
-  glGenVertexArrays(1, &vbo);
-  glBindVertexArray(vbo);
+  glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
 
-  glGenBuffers(1, &vertexbuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+  glGenBuffers(1, &vertexBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
   glBufferData(GL_ARRAY_BUFFER, vertices.N*vertices.sizeT, vertices.p, GL_STATIC_DRAW);
 
-  glGenBuffers(1, &colorbuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+  glGenBuffers(1, &colorBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
   glBufferData(GL_ARRAY_BUFFER, colors.N*colors.sizeT, colors.p, GL_STATIC_DRAW);
 
-  glGenBuffers(1, &normalbuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+  glGenBuffers(1, &normalBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
   glBufferData(GL_ARRAY_BUFFER, normals.N*normals.sizeT, normals.p, GL_STATIC_DRAW);
 
-  glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-  glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
   glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-  glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
   glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
   glBindVertexArray(0);
@@ -531,10 +609,86 @@ void RenderScene::addDistMarker(const arr& a, const arr& b, int s){
   distMarkers.slices.append(s);
 }
 
+void RenderScene::addText(const char* text, float x, float y, float size){
+  std::shared_ptr<RenderText> txt = make_shared<RenderText>();
+  texts.append(txt);
+//  read_png(txt->texImg, pngTexture, false);
+  txt->x = x;
+  txt->y = y;
+  txt->scale = size;
+  txt->text = text;
+//  txt->create(text, x, y, size);
+}
+
 void RenderScene::clearObjs(){
   objs.clear();
+  texts.clear();
   distMarkers.markerObj=-1;
   distMarkers.pos.clear();
   distMarkers.slices.clear();
   renderCount=0;
+}
+
+void RenderText::glRender(GLuint progText_color, const RenderFont& font, float height){
+  CHECK(initialized, "");
+  glUniform3f(progText_color, 0., 0., 0.); //color.x, color.y, color.z);
+  glActiveTexture(GL_TEXTURE0);
+
+  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
+  glEnableVertexAttribArray(2);
+
+  glBindVertexArray(vao);
+
+  float _x = x, _y = height-y;
+
+  // iterate through all characters
+  for(uint i=0;i<text.N;i++){
+    char c = text(i);
+    RenderFont::Character ch = font.characters(c);
+
+    float xpos = _x + ch.offset_x * scale;
+    float ypos = _y - (ch.size_y - ch.offset_y) * scale;
+
+    float w = ch.size_x * scale;
+    float h = ch.size_y * scale;
+    // update VBO for each character
+    float vertices[6][4] = {
+      { xpos,     ypos + h,   0.0f, 0.0f },
+      { xpos,     ypos,       0.0f, 1.0f },
+      { xpos + w, ypos,       1.0f, 1.0f },
+
+      { xpos,     ypos + h,   0.0f, 0.0f },
+      { xpos + w, ypos,       1.0f, 1.0f },
+      { xpos + w, ypos + h,   1.0f, 0.0f }
+    };
+    // render glyph texture over quad
+    glBindTexture(GL_TEXTURE_2D, ch.texture);
+    // update content of VBO memory
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); // be sure to use glBufferSubData and not glBufferData
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    // render quad
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+    _x += (ch.advance_x >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64 (divide amount of 1/64th pixels by 64 to get amount of pixels))
+  }
+
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+  glDisableVertexAttribArray(2);
+}
+
+void RenderText::glInitialize(){
+  glGenVertexArrays(1, &vao);
+  glGenBuffers(1, &vertexBuffer);
+  glBindVertexArray(vao);
+  glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
+  initialized = true;
 }

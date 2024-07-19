@@ -4,12 +4,12 @@
 //#include <Geo/geo.h>
 #include "../Geo/mesh.h"
 
-enum RenderType { _solid, _shadow, _transparent, _marker, _text, _any };
+enum RenderType { _solid, _shadow, _transparent, _marker, _text, _all };
 
 struct RenderObject{
   rai::Transformation X=0;
   floatA vertices, colors, normals;
-  GLuint vbo, vertexbuffer, colorbuffer, normalbuffer;
+  GLuint vao, vertexBuffer, colorBuffer, normalBuffer;
   double cameraDist=-1.;
   RenderType type=_solid;
   GLenum mode=GL_TRIANGLES;
@@ -25,6 +25,23 @@ struct RenderObject{
   void glInitialize();
 };
 
+struct RenderFont {
+  struct Character {  GLuint texture;  int size_x, size_y, offset_x, offset_y, advance_x;  };
+  rai::Array<Character> characters;
+
+  void glInitialize();
+};
+
+struct RenderText{
+  GLuint vao, vertexBuffer;
+  str text;
+  float x, y, scale;
+  bool initialized=false;
+
+  void glRender(GLuint progText_color, const RenderFont& font, float height);
+  void glInitialize();
+};
+
 struct DistMarkers {
   int markerObj=-1;
   arr pos;
@@ -35,8 +52,10 @@ struct RenderScene : GLDrawer{
   rai::Camera camera;
   rai::Array<std::shared_ptr<RenderObject>> objs;
   rai::Array<std::shared_ptr<rai::Camera>> lights;
+  rai::Array<std::shared_ptr<RenderText>> texts;
   DistMarkers distMarkers;
-  RenderType dontRender=_text;
+
+  RenderType dontRender=_all;
   int slice=-1;
   uint renderCount=0;
 
@@ -46,16 +65,18 @@ struct RenderScene : GLDrawer{
     GLuint progShadow_ID, progShadow_ShadowProjection_W, progShadow_ModelT_WM;
     GLuint shadowFramebuffer, shadowTexture;
     GLuint progMarker, progMarker_Projection_W, progMarker_ModelT_WM;
+    GLuint progText, progText_color;
+    RenderFont font;
   };
 
   std::map<OpenGL*, ContextIDs> contextIDs;
-
 
   RenderObject& add();
   void addLight(const arr& pos, const arr& focus, double heightAbs=5.);
 
   void addAxes(double scale, const rai::Transformation& _X);
   void addDistMarker(const arr& a, const arr& b, int s);
+  void addText(const char* text, float x, float y, float size);
   void clearObjs();
 
   void glInitialize(OpenGL &gl);
