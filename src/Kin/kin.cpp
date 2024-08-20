@@ -349,7 +349,7 @@ Frame* Configuration::addCopy(const FrameL& F, const DofL& _dofs, const str& pre
     //auto-create prev link if names match
     if(f_new->ID>=F.N) {
       rai::Frame* p = frames(f_new->ID-F.N);
-      if(p->name==f_new->name) f_new->prev = p;
+      if(p->name==f_new->name){ f_new->prev = p;  f_new->time = p->time + f_new->tau; }
     }
   }
 

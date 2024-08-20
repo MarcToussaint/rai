@@ -11,7 +11,8 @@
 #include "LGP_node.h"
 #include "../Core/thread.h"
 
-struct KinPathViewer;
+struct ConfigurationViewer;
+struct ConfigurationViewerThread;
 
 namespace rai {
 
@@ -19,22 +20,19 @@ struct LGP_Tree;
 struct DisplayThread;
 typedef Array<Transformation> TransformationA;
 
-struct LGP_Tree_SolutionData : GLDrawer {
+struct LGP_Tree_SolutionData {
   LGP_Tree& tree;
   LGP_Node* node; ///< contains costs, constraints, and solutions for each level
   String decisions;
 
-  Array<shared_ptr<Mesh>> geoms; ///< for display
-  Array<TransformationA> paths; ///< for display
-  uint displayStep=0;
+  std::shared_ptr<ConfigurationViewer> viewer;
 
   LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node* _node);
 
   void write(ostream& os) const;
-  void glDraw(struct OpenGL& gl);
 };
 
-struct LGP_Tree : GLDrawer {
+struct LGP_Tree {
   LGP_Node* root=0, *focusNode=0;
   FOL_World fol;
   Configuration kin;
@@ -59,7 +57,7 @@ struct LGP_Tree : GLDrawer {
   double COUNT_time=0.;
   String OptLGPDataPath;
 
-  Array<std::shared_ptr<KinPathViewer>> views; //displays for the 3 different levels
+  Array<std::shared_ptr<ConfigurationViewerThread>> views; //displays for the 3 different levels
 
   //-- these are lists or queues; I don't maintain them sorted because their evaluation (e.g. f(n)=g(n)+h(n)) changes continuously
   // while new bounds are computed. Therefore, whenever I pop from these lists, I find the minimum w.r.t. a heuristic. The
@@ -111,7 +109,6 @@ struct LGP_Tree : GLDrawer {
   void updateDisplay();
   void renderToVideo(int specificBound=-1, const char* filePrefix="vid/");
   void writeNodeList(ostream& os=cout);
-  void glDraw(struct OpenGL& gl);
 
   //-- kind of a gui:
   void printChoices();

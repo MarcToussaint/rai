@@ -110,7 +110,7 @@ struct OpenGL {
   struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
   struct GLScrollCall { virtual bool scrollCallback(OpenGL&, int) = 0; };
   struct GLEvent    { int button, key, x, y; float dx, dy; void set(int b, int k, int _x, int _y, float _dx, float _dy) { button=b; key=k; x=_x; y=_y; dx=_dx; dy=_dy; } };
-  struct GLView     { double le, ri, bo, to;  rai::Array<GLDrawer*> drawers;  rai::Camera camera;  GLView() { le=bo=0.; ri=to=1.; } };
+  struct GLView     { double le, ri, bo, to;  rai::Array<GLDrawer*> drawers;  rai::Camera camera;  GLView() { le=bo=0.; ri=to=1.; }  str text; };
 
   /// @name data fields
   rai::Array<GLView> views;            ///< list of subviews
@@ -133,6 +133,7 @@ struct OpenGL {
   int mouse_button=0;       ///< stores which button was pressed
   double mouseposx=0, mouseposy=0;  ///< current x- and y-position of mouse
   int mouseView=-1;
+  GLView *activeView=0;
   bool mouseIsDown=false;
   int scrollCounter=0;
   byteA captureImage;
@@ -216,7 +217,7 @@ struct OpenGL {
   int downModifiers=0;
   rai::Quaternion downRot;
  protected:
-  void Key(unsigned char key, int mods, bool _keyIsDown);
+  void Key(int key, int mods, bool _keyIsDown);
   void MouseButton(int button, int buttonIsUp, int x, int y, int mods);
   void MouseMotion(double x, double y);
   void Reshape(int w, int h);

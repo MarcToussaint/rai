@@ -128,12 +128,19 @@ void Feature::phi2(arr& y, arr& J, const FrameL& F) {
 rai::String Feature::shortTag(const rai::Configuration& C) {
   rai::String s;
   s <<rai::niceTypeidName(typeid(*this));
-  s <<'/' <<order;
+
+  if(order==1) s <<"/vel";
+  else if(order==2) s <<"/acc";
+  else if(order>2) s <<'/' <<order;
+
+  s <<'[';
   if(frameIDs.N<=3) {
-    for(uint i:frameIDs) s <<'-' <<C.frames.elem(i)->name;
+    int comma=0;
+    for(uint i:frameIDs){ if(comma++) s <<',';  s <<C.frames.elem(i)->name; }
   } else {
-    s <<"-#" <<frameIDs.N;
+    s <<'#' <<frameIDs.N;
   }
+  s <<']';
   return s;
 }
 

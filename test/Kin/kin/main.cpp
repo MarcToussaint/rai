@@ -393,35 +393,39 @@ arr generateSpline(uint T, uint n){
 }
 
 void TEST(FollowRedundantSequence){  
-  rai::Configuration G("arm7.g");
+  rai::Configuration C("arm7.g");
 
-  uint t,T,n=G.getJointStateDimension();
+  uint t,T,n=C.getJointStateDimension();
   arr x(n),y,J;
   x=.8;     //initialize with intermediate joint positions (non-singular positions)
-  rai::Vector rel = G.getFrame("endeff")->get_Q().pos; //this frame describes the relative position of the endeffector wrt. 7th body
+  rai::Vector rel = C.getFrame("endeff")->get_Q().pos; //this frame describes the relative position of the endeffector wrt. 7th body
 
   //-- generate a random endeffector trajectory
   arr Z = generateSpline(200, 3); //3D random sequence with limits [-1,1]
   Z *= .5;
   T=Z.d0;
-  G.setJointState(x);
-  rai::Frame *endeff = G.getFrame("arm7");
-  G.kinematicsPos(y, NoArr, endeff, rel);
+  C.setJointState(x);
+  rai::Frame *endeff = C.getFrame("arm7");
+  C.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t] += y; //adjust coordinates to be inside the arm range
-  plot()->Line(Z);
-  G.viewer()->_add(plot()());
-  G.view(false);
+
+  arr lines(2*(Z.d0-1), 3);
+  for(uint i=0;i<Z.d0-1;i++){ lines[2*i]=Z[i]; lines[2*i+1]=Z[i+1];  }
+  C.addFrame("plotPath")
+      ->setMesh(lines, {})
+      .setShape(rai::ST_lines, {1.,1.,0.});
+  C.view(false);
   //-- follow the trajectory kinematically
   for(t=0;t<T;t++){
     //Z[t] is the desired endeffector trajectory
     //x is the full joint state, z the endeffector position, J the Jacobian
-    G.kinematicsPos(y, J, endeff, rel);  //get the new endeffector position
+    C.kinematicsPos(y, J, endeff, rel);  //get the new endeffector position
 //    invJ = ~J*inverse_SymPosDef(J*~J);
 //    x += invJ * (Z[t]-y);                  //simulate a time step (only kinematically)
     x += ~J * lapack_Ainv_b_sym(J*~J, Z[t]-y);
-    G.setJointState(x);
+    C.setJointState(x);
 //    cout <<J * invJ <<endl <<x <<endl <<"tracking error = " <<maxDiff(Z[t],y) <<endl;
-    G.view(false, STRING("follow redundant trajectory -- time " <<t));
+    C.view(false, STRING("follow redundant trajectory -- time " <<t));
     //G.gl()->timedupdate(.01);
     rai::wait(.01);
   }
@@ -607,7 +611,7 @@ int MAIN(int argc,char **argv){
   testLoadSave();
   testCopy();
   testGraph();
-  testPlaySpline();
+  testPlaySpline(); return 0;
   testViewer();
   testKinematics();
   testQuaternionKinematics();

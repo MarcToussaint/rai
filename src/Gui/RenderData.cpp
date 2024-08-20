@@ -257,7 +257,11 @@ void RenderScene::glDraw(OpenGL& gl){
     if(!txt->initialized) txt->glInitialize();
   }
 
-  camera = gl.camera;
+  if(!gl.activeView){
+    camera = gl.camera;
+  }else{
+    camera = gl.activeView->camera;
+  }
 
   //sort objects
   for(std::shared_ptr<RenderObject>& obj:objs){
@@ -302,7 +306,11 @@ void RenderScene::glDraw(OpenGL& gl){
 
   // Render to the screen
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0, 0, gl.width, gl.height);
+  if(!gl.activeView){
+    glViewport(0, 0, gl.width, gl.height);
+  }else{
+    glViewport(gl.activeView->le*gl.width, gl.activeView->bo*gl.height, (gl.activeView->ri-gl.activeView->le)*gl.width+1, (gl.activeView->to-gl.activeView->bo)*gl.height+1);
+  }
 
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
@@ -313,8 +321,8 @@ void RenderScene::glDraw(OpenGL& gl){
 
 //  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  arr ViewT_CW = gl.camera.getT_CW();
-  arr Projection_W = gl.camera.getT_IC() * ViewT_CW;
+  arr ViewT_CW = camera.getT_CW();
+  arr Projection_W = camera.getT_IC() * ViewT_CW;
   {
     glUseProgram(id.prog_ID);
 
@@ -459,8 +467,10 @@ void RenderObject::lines(const arr& lines, const arr& color, const rai::Transfor
   vertices = rai::convert<float>(lines).reshape(-1, 3);
   if(color.N>3){
     colors = rai::convert<float>(color).reshape(-1, 3);
-  }else{
+  }else if(colors.N==3){
     colors = rai::convert<float>(replicate(color, vertices.d0));
+  }else{
+    colors.resize(vertices.d0, 3).setZero();
   }
   if(colors.d1==3){ colors.insColumns(3); for(uint i=0;i<colors.d0;i++) colors(i,3)=1.; }
   normals.clear();

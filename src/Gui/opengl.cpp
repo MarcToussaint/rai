@@ -153,13 +153,13 @@ struct GlfwSingleton : Thread {
       if(key==257) key=13;
       if(key==GLFW_KEY_LEFT_CONTROL) { mods |= GLFW_MOD_CONTROL; key='%'; }
       if(key==GLFW_KEY_LEFT_SHIFT) { mods |= GLFW_MOD_SHIFT; key='%'; }
-      if(key>0xff) key='%';
+//      if(key>0xff) key='%';
       if(key>='A' && key<='Z') key += 'a' - 'A';
       gl->Key(key, mods, true);
     } else if(action==GLFW_RELEASE) {
       if(key==GLFW_KEY_LEFT_CONTROL) { mods &= ~GLFW_MOD_CONTROL; key='%'; }
       if(key==GLFW_KEY_LEFT_SHIFT) { mods &= ~GLFW_MOD_SHIFT; key='%'; }
-      if(key>0xff) key='%';
+//      if(key>0xff) key='%';
       gl->Key(key, mods, false);
     }
   }
@@ -615,26 +615,30 @@ void OpenGL::Render(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked)
   //draw central view
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
-  for(uint i=0; i<drawers.N; i++) {
-    if(drawers(i)->version<0){ drawers(i)->glInitialize(*this); drawers(i)->version=0; }
-    drawers(i)->glDraw(*this);
-    glLoadIdentity();
+  activeView=0;
+  for(GLDrawer *d:drawers) {
+    if(d->version<0){ d->glInitialize(*this); d->version=0; }
+    d->glDraw(*this);
   }
 
   //draw subviews
   for(uint v=0; v<views.N; v++) {
-    GLView* vi=&views(v);
-    glViewport(vi->le*w, vi->bo*h, (vi->ri-vi->le)*w+1, (vi->to-vi->bo)*h+1);
+    activeView=&views(v);
+    glViewport(activeView->le*w, activeView->bo*h, (activeView->ri-activeView->le)*w+1, (activeView->to-activeView->bo)*h+1);
     //glMatrixMode(GL_MODELVIEW);
     //glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    vi->camera.glSetProjectionMatrix();
+    activeView->camera.glSetProjectionMatrix();
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    for(uint i=0; i<vi->drawers.N; i++) vi->drawers(i)->glDraw(*this);
+    for(GLDrawer* d:activeView->drawers){
+      if(d->version<0){ d->glInitialize(*this); d->version=0; }
+      d->glDraw(*this);
+    }
   }
+  activeView=0;
 
   //cout <<"UNLOCK draw" <<endl;
 
@@ -840,7 +844,7 @@ void OpenGL::Reshape(int _width, int _height) {
   }
 }
 
-void OpenGL::Key(unsigned char key, int mods, bool _keyIsDown) {
+void OpenGL::Key(int key, int mods, bool _keyIsDown) {
 //  auto _dataLock = dataLock(RAI_HERE);
   CALLBACK_DEBUG(this, "Keyboard Callback: " <<key <<"('" <<(char)key <<"') mods:" <<mods <<" down:" <<_keyIsDown);
   if(_keyIsDown) pressedkey = key;
@@ -850,8 +854,11 @@ void OpenGL::Key(unsigned char key, int mods, bool _keyIsDown) {
   bool cont=true;
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
 
+  if(key==263 && keyIsDown){ scrollCounter++; pressedkey=0; postRedrawEvent(true); }
+  if(key==262 && keyIsDown){ scrollCounter--; pressedkey=0; postRedrawEvent(true); }
+
 //  if(key==13 || key==27 || key=='q' || rai::contains(exitkeys, key)) watching.setStatus(0);
-  if(_keyIsDown && !mods && key!='%') watching.setStatus(0);
+  if(keyIsDown && !modifiers && pressedkey && pressedkey!='%') watching.setStatus(0);
 }
 
 void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {

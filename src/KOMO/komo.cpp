@@ -1247,10 +1247,13 @@ void KOMO::run_prepare(double addInitializationNoise) {
   //add noise
   if(addInitializationNoise>0.) {
     rndGauss(x, addInitializationNoise, true);
-  }
-  {
-    arr bounds = getBounds();
-    boundClip(x, bounds);
+
+    {
+      arr bounds = getBounds();
+      boundClip(x, bounds);
+    }
+
+    pathConfig.setJointState(x);
   }
 }
 
@@ -1314,6 +1317,7 @@ Graph KOMO::report(bool specs, bool listObjectives, bool plotOverTime) {
 //    if(specs) g_ob = &G.addSubgraph("objectives");
     uint cId=0;
     for(shared_ptr<Objective>& c:objectives) {
+      if(c->groundings.N && !c->groundings.elem(-1)->active) continue;
       Graph* g=0;
       if(listObjectives) g = &g_ob->addSubgraph(STRING('o' <<cId++));
       if(g) {
@@ -1348,7 +1352,7 @@ Graph KOMO::report(bool specs, bool listObjectives, bool plotOverTime) {
   }
 
   bool sortByError=true;
-  if(listObjectives && sortByError){
+  if(featureValues.N && listObjectives && sortByError){
     std::sort(G.p, G.p+G.N, [](Node* a, Node *b){
       double* A = a->as<Graph>().find<double>("err");
       double* B = b->as<Graph>().find<double>("err");
@@ -1475,6 +1479,14 @@ str KOMO::info_sliceCollisions(uint t, double belowMargin){
   }
 
   return collisions;
+}
+
+arr KOMO::info_errorTotals(const arr& errorTraces){
+  arr totals = zeros(OT_ineqP+1);
+  arr errTotals = sum(errorTraces, 0);
+  CHECK_EQ(objectives.N, errTotals.N, "");
+  for(uint i=0;i<errTotals.N;i++) totals(objectives(i)->type) += errTotals(i);
+  return totals;
 }
 
 
@@ -1726,8 +1738,7 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
         f->setAutoLimits();
       }
     }
-    f->setShape(ST_marker, {.3});
-    f->setColor({1., 0., 1., .5});
+//    f->setShape(ST_marker, {.3});  f->setColor({1., 0., 1., .5});
     if(!f0) f0=f;
     F.append(f);
   }
@@ -1842,14 +1853,8 @@ void KOMO::setupPathConfig() {
   }
 
   for(uint s=0; s<k_order+T; s++) {
-//    for(KinematicSwitch* sw:switches) { //apply potential switches
-//      if(sw.timeOfApplication+(int)k_order==(int)s)  sw.apply(C.frames);
-//    }
-
-//    uint nBefore = pathConfig.frames.N;
     pathConfig.addCopy(C.frames, C.otherDofs);
-//    timeSlices[s] = pathConfig.frames({nBefore, -1});
-
+    if(s==0){ for(rai::Frame* f:pathConfig.frames) f->time = -tau*k_order; } //set times of prefix negative
   }
   timeSlices = pathConfig.frames;
 

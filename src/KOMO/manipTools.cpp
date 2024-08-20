@@ -9,6 +9,7 @@
 #include "manipTools.h"
 
 #include "../Optim/NLP_Solver.h"
+#include "../Optim/NLP_Sampler.h"
 
 void addBoxPickObjectives(KOMO& komo, double time, rai::ArgWord dir, const char* boxName, const arr& boxSize, const char* gripperName, const char* palmName, const char* tableName, bool pre) {
   arr xLine, yzPlane;
@@ -499,7 +500,7 @@ arr ManipulationModelling::solve(int verbose) {
           cout <<komo->report(false, true, verbose>1) <<endl;
           cout <<"  --" <<endl;
         }
-        komo->view(true, STRING("failed: " <<info <<"\n" <<*ret));
+        komo->view(true, STRING("infeasible: " <<info <<"\n" <<*ret));
         if(verbose>2) {
           while(komo->view_play(true, 1.));
         }
@@ -511,7 +512,7 @@ arr ManipulationModelling::solve(int verbose) {
           cout <<sol.reportLagrangeGradients(komo->featureNames) <<endl;
           cout <<komo->report(false, true, verbose>2) <<endl;
           cout <<"  --" <<endl;
-          komo->view(true, STRING("success: " <<info <<"\n" <<*ret));
+          komo->view(true, STRING("feasible: " <<info <<"\n" <<*ret));
           if(verbose>3) {
             while(komo->view_play(true, 1.));
           }
@@ -529,6 +530,87 @@ arr ManipulationModelling::solve(int verbose) {
   }
   return path;
 }
+
+arr ManipulationModelling::sample(int verbose) {
+  CHECK(komo, "");
+
+  auto nlp = komo->nlp();
+  NLP_Walker sol(*nlp);
+  arr data;
+  uintA dataEvals;
+  double time = -rai::cpuTime();
+
+  sol.opt.seedMethod="gauss";
+  sol.opt.verbose=verbose;
+  sol.opt.downhillMaxSteps=50;
+  sol.opt.slackMaxStep=.5;
+
+  sol.run(data, dataEvals);
+  time += rai::cpuTime();
+
+  ret = make_shared<SolverReturn>();
+  if(data.N){
+    ret->x = data.reshape(-1);
+    ret->evals = dataEvals.elem();
+    ret->feasible = true;
+  }else{
+    ret->evals = komo->evalCount;
+    ret->feasible = false;
+  }
+  ret->time = time;
+  ret->done = true;
+  {
+    arr totals = komo->info_errorTotals(komo->info_objectiveErrorTraces());
+    ret->sos = totals(OT_sos);
+    ret->ineq = totals(OT_ineq);
+    ret->eq = totals(OT_eq);
+    ret->f = totals(OT_f);
+  }
+
+  if(ret->feasible) {
+    path = komo->getPath_qOrg();
+  } else {
+    path.clear();
+  }
+  if(!ret->feasible) {
+    if(verbose>0) {
+      cout <<"  -- infeasible:" <<info <<"\n     " <<*ret <<endl;
+      if(verbose>1) {
+        cout <<komo->report(false, true, verbose>1) <<endl;
+        cout <<"  --" <<endl;
+      }
+      komo->view(true, STRING("infeasible: " <<info <<"\n" <<*ret));
+      if(verbose>2) {
+        while(komo->view_play(true, 1.));
+      }
+    }
+  } else {
+    if(verbose>0) {
+      cout <<"  -- feasible:" <<info <<"\n     " <<*ret <<endl;
+      if(verbose>2) {
+        cout <<komo->report(false, true, verbose>2) <<endl;
+        cout <<"  --" <<endl;
+        komo->view(true, STRING("feasible: " <<info <<"\n" <<*ret));
+        if(verbose>3) {
+          while(komo->view_play(true, 1.));
+        }
+      }
+    }
+  }
+
+  return path;
+}
+
+void ManipulationModelling::debug(){
+  cout <<"  -- DEBUG: " <<info <<endl;
+  cout <<"  == solver return: " <<*ret <<endl;
+  cout <<"  == all KOMO objectives with increasing errors:\n" <<komo->report(false, true, true) <<endl;
+//  cout <<"  == objectives sorted by error and Lagrange gradient:\n" <<sol.reportLagrangeGradients(komo->featureNames) <<endl;
+  cout <<"  == view objective errors over slices in gnuplot" <<endl;
+  cout <<"  == scroll through solution in display window using SHIFT-scroll" <<endl;
+  komo->view(true, STRING("debug: " <<info <<"\n" <<*ret));
+}
+
 
 std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_motion(uint phase, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool quaternion_norms) {
   rai::Configuration C;

@@ -9,7 +9,7 @@
 #include "LGP_tree.h"
 #include "initFol.h"
 
-#include "../Kin/kinViewer.h"
+//#include "../Kin/kinViewer.h"
 #include "../Kin/viewer.h"
 #include "../KOMO/komo.h"
 #include "../Gui/opengl.h"
@@ -44,7 +44,7 @@ struct DisplayThread : Thread {
   void resetSteppings() {
     lgp->solutions.writeAccess();
     for(uint i=0; i<lgp->solutions().N; i++) {
-      lgp->solutions()(i)->displayStep=0;
+      lgp->solutions()(i)->viewer->drawSlice=0;
     }
     lgp->solutions.deAccess();
   }
@@ -55,11 +55,11 @@ struct DisplayThread : Thread {
     lgp->solutions.writeAccess();
     uint numSolutions = lgp->solutions().N;
     for(uint i=0; i<numSolutions; i++) {
-      lgp->solutions()(i)->displayStep++;
-      if(gl.views.N>i)
-        gl.views(i).text.clear() <<i <<':' <<lgp->solutions()(i)->displayStep <<": "
-                                 <<lgp->solutions()(i)->node->cost <<"|  " <<lgp->solutions()(i)->node->constraints.last() <<'\n'
-                                 <<lgp->solutions()(i)->decisions;
+      lgp->solutions()(i)->viewer->drawSlice++;
+      if(gl.views.N>i){}
+//        gl.views(i).text.clear() <<i <<':' <<lgp->solutions()(i)->displayStep <<": "
+//                                 <<lgp->solutions()(i)->node->cost <<"|  " <<lgp->solutions()(i)->node->constraints.last() <<'\n'
+//                                 <<lgp->solutions()(i)->decisions;
     }
     lgp->solutions.deAccess();
     if(numSolutions)
@@ -171,9 +171,9 @@ LGP_Tree::~LGP_Tree() {
 void LGP_Tree::initDisplay() {
   if(verbose>2 && !views.N) {
     views.resize(4);
-    views(1) = make_shared<KinPathViewer>(Var<ConfigurationL>(), 1.2, -1);
-    views(2) = make_shared<KinPathViewer>(Var<ConfigurationL>(), 1.2, -1);
-    views(3) = make_shared<KinPathViewer>(Var<ConfigurationL>(), .05, -2);
+//    views(1) = make_shared<ConfigurationViewerThread>(Var<Configuration>(), 1.2);
+//    views(2) = make_shared<ConfigurationViewerThread>(Var<Configuration>(), 1.2);
+//    views(3) = make_shared<ConfigurationViewerThread>(Var<Configuration>(), .05);
 //    for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
   }
   if(!dth) dth = make_shared<DisplayThread>(this);
@@ -222,8 +222,8 @@ void LGP_Tree::updateDisplay() {
     for(uint i=1; i<views.N; i++) {
       if(focusNode->problem(i).komo && focusNode->problem(i).komo->timeSlices.N) {
         NIY//views(i)->setConfigurations(focusNode->komoProblem(i)->configurations);
-        views(i)->text.clear() <<focusNode->cost <<"|  " <<focusNode->constraints.last() <<'\n' <<decisions;
-      } else views(i)->clear();
+        NIY //views(i)->text.clear() <<focusNode->cost <<"|  " <<focusNode->constraints.last() <<'\n' <<decisions;
+      } else views(i).reset();
     }
   }
 
@@ -231,14 +231,14 @@ void LGP_Tree::updateDisplay() {
   solutions.writeAccess();
   for(uint i=0; i<solutions().N && i<6; i++) {
     if(dth->gl.views.N<=i || !dth->gl.views(i).drawers.N) {
-      dth->gl.addSubView(i, glStandardScene, nullptr);
-      dth->gl.addSubView(i, *solutions()(i));
+//      dth->gl.addSubView(i, glStandardScene, nullptr);
+      dth->gl.addSubView(i, *solutions()(i)->viewer);
       dth->gl.views(i).camera.setDefault();
       if(cameraFocus.N) dth->gl.views(i).camera.focus(cameraFocus(0), cameraFocus(1), cameraFocus(2), true);
       //      dth->gl.views(i).camera.focus(.9, 0., 1.3);
     }
-    dth->gl.views(i).drawers.last() = solutions()(i);
-    dth->gl.views(i).text.clear() <<solutions()(i)->node->cost <<'\n' <<solutions()(i)->decisions;
+    dth->gl.views(i).drawers.last() = solutions()(i)->viewer.get();
+//    dth->gl.views(i).text.clear() <<solutions()(i)->node->cost <<'\n' <<solutions()(i)->decisions;
   }
   dth->gl.setSubViewTiles(3, 2);
   solutions.deAccess();
@@ -429,9 +429,6 @@ void LGP_Tree::writeNodeList(std::ostream& os) {
        <<" cost= " <<n->cost <<" constr= " <<n->constraints <<" fea= " <<convert<int>(n->feasible) <<" time= " <<n->computeTime <<" \"" <<n->getTreePathString() <<"\"" <<endl;
     //    }
   }
-}
-
-void LGP_Tree::glDraw(OpenGL& gl) {
 }
 
 bool LGP_Tree::execChoice(String& cmd) {
@@ -680,6 +677,7 @@ LGP_Tree_SolutionData::LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node* _node) :
 
   decisions = node->getTreePathString('\n');
 
+#if 0
   //--init geoms
   const Configuration& K = tree.kin;
   uintA frameIDs;
@@ -703,6 +701,11 @@ LGP_Tree_SolutionData::LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node* _node) :
         }
     }
   }
+#else
+  std::shared_ptr<KOMO> komo = node->problem(_tree.displayBound).komo;
+  viewer = make_shared<ConfigurationViewer>();
+  viewer->updateConfiguration(komo->pathConfig, komo->timeSlices);
+#endif
 }
 
 void LGP_Tree_SolutionData::write(std::ostream& os) const {
@@ -710,24 +713,6 @@ void LGP_Tree_SolutionData::write(std::ostream& os) const {
      <<"\t depth=" <<node->step
      <<"\t costs=" <<node->cost
      <<endl;
-}
-
-void LGP_Tree_SolutionData::glDraw(OpenGL& gl) {
-#ifdef RAI_GL
-  BoundType displayBound=tree.displayBound;
-
-  if(!paths(displayBound).N) return;
-
-  for(uint i=0; i<geoms.N; i++) {
-    if(displayStep >= paths(displayBound).d0) displayStep = 0;
-    Transformation& X = paths(displayBound)(displayStep, i);
-    double GLmatrix[16];
-    X.getAffineMatrixGL(GLmatrix);
-    glLoadMatrixd(GLmatrix);
-
-    geoms(i)->glDraw(gl);
-  }
-#endif
 }
 
 } //namespace

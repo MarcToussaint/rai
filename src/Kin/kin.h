@@ -58,7 +58,7 @@ namespace rai {
 //===========================================================================
 
 /// data structure to store a kinematic/physical situation (lists of frames (with joints, shapes, inertias), forces & proxies)
-struct Configuration : GLDrawer {
+struct Configuration {
   unique_ptr<struct sConfiguration> self;
 
   //-- fundamental structure
@@ -272,8 +272,6 @@ struct Configuration : GLDrawer {
   void writeMeshes(const char* pathPrefix="meshes/") const;
   void writeMesh(const char* filename="z.ply") const;
   void read(std::istream& is);
-  void glDraw(struct OpenGL&) { NIY; }
-  void glDraw_frames(struct OpenGL& viewer, const FrameL& F, int drawOpaqueOrTransparanet=0) { NIY; }
   Graph getGraph() const;
   void displayDot();
 

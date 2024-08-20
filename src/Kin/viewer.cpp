@@ -22,7 +22,7 @@ rai::ConfigurationViewer::~ConfigurationViewer() { close_gl(); }
 
 OpenGL& rai::ConfigurationViewer::ensure_gl() {
   if(!gl) {
-    gl = make_shared<OpenGL>("ConfigurationViewer");
+    gl = make_shared<OpenGL>("ConfigurationViewer", 600, 500);
 //    gl->reportEvents=true;
     gl->camera.setDefault();
     gl->add(*this);
@@ -55,7 +55,15 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
     shared_ptr<Mesh> mesh = f->shape->_mesh;
     if(mesh && mesh->V.N){
       frame2objID(f->ID) = objs.N;
-      add().mesh(*mesh, f->ensure_X());
+      if(f->shape->type()==ST_pointCloud){
+        NIY //PCL;
+      }else if(f->shape->type()==ST_lines){
+        add().lines(mesh->V, mesh->C, f->ensure_X(), _marker);
+      }else if(mesh->T.d1==3){
+        add().mesh(*mesh, f->ensure_X());
+      }else{
+        NIY
+      }
     }
   }
   for(rai::Frame* f:frames) if(f->shape && f->shape->type()==ST_marker) {
@@ -291,7 +299,9 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
       s <<text <<"\n(slice " <<drawSlice <<'/' <<motion.d0;
       if(phaseFactor>0.) s <<", phase " <<phaseFactor*(double(drawSlice)+phaseOffset);
       s <<")";
-      if(drawSlice<(int)sliceTexts.N) s <<"\n" <<sliceTexts(drawSlice);
+      if(drawSlice<(int)sliceTexts.N){
+        cout <<"- ConfigurationViewer -\n" <<s <<"\n" <<sliceTexts(drawSlice) <<endl;
+      }
       //C.glDraw_frames(gl, slices[drawSlice], 0);
       RenderScene::setText(s);
 
@@ -310,5 +320,35 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
       }
     }
   }
+}
+
+//===========================================================================
+
+rai::ConfigurationViewerThread::ConfigurationViewerThread(const Var<rai::Configuration>& _config, double beatIntervalSec)
+  : Thread("ConfigurationViewerThread", beatIntervalSec),
+    config(this, _config, (beatIntervalSec<0.)) {
+  if(beatIntervalSec>=0.) threadLoop(); else threadStep();
+}
+
+rai::ConfigurationViewerThread::~ConfigurationViewerThread() {
+  threadClose();
+}
+
+void rai::ConfigurationViewerThread::open() {
+  viewer = make_shared<ConfigurationViewer>();
+  {
+    auto C = config.get();
+    for(Frame* f:C->frames) f->ensure_X();
+    viewer->updateConfiguration(C).view(false);
+  }
+}
+
+void rai::ConfigurationViewerThread::close() {
+  viewer.reset();
+}
+
+void rai::ConfigurationViewerThread::step() {
+  auto C = config.get();
+  viewer->updateConfiguration(C);
 }
 

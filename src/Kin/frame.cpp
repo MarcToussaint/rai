@@ -94,6 +94,7 @@ void rai::Frame::calc_X_from_parent() {
   CHECK(parent->_state_X_isGood, "");
 
   tau = parent->tau;
+  if(prev) time = prev->time + tau;
   Transformation& from = parent->X;
   X = from;
   X.appendTransformation(Q);
@@ -1842,6 +1843,7 @@ void rai::Shape::createMeshes() {
       break;
     case rai::ST_mesh:
     case rai::ST_pointCloud:
+    case rai::ST_lines:
 //      if(!mesh().V.N) LOG(-1) <<"mesh needs to be loaded";
       break;
     case rai::ST_sdf: {

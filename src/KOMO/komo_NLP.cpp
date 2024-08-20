@@ -34,6 +34,30 @@ void reportAfterPhiComputation(KOMO& komo) {
 
 //===========================================================================
 
+Conv_KOMO_NLP::Conv_KOMO_NLP(KOMO& _komo) : komo(_komo) {
+  dimension = komo.pathConfig.getJointStateDimension();
+
+  bounds = komo.getBounds();
+
+  //-- feature types
+  uint M=0;
+  for(shared_ptr<GroundedObjective>& ob : komo.objs) M += ob->feat->dim(ob->frames);
+
+  featureTypes.resize(M);
+  komo.featureNames.clear();
+  M=0;
+  for(shared_ptr<GroundedObjective>& ob : komo.objs) {
+    uint m = ob->feat->dim(ob->frames);
+    for(uint i=0; i<m; i++) featureTypes(M+i) = ob->type;
+    for(uint j=0; j<m; j++) komo.featureNames.append(ob->feat->shortTag(komo.pathConfig));
+    M += m;
+  }
+  if(quadraticPotentialLinear.N) {
+    featureTypes.append(OT_f);
+  }
+  komo.featureTypes = featureTypes;
+}
+
 void Conv_KOMO_NLP::evaluate(arr& phi, arr& J, const arr& x) {
   komo.evalCount++;
 
@@ -71,25 +95,15 @@ void Conv_KOMO_NLP::evaluate(arr& phi, arr& J, const arr& x) {
       CHECK_EQ(y.J().d0, y.N, "");
       CHECK_EQ(y.J().d1, komo.pathConfig.getJointStateDimension(), "");
     }
-//      uint d = ob->feat->dim(ob->frames);
-//      if(d!=y.N){
-//        d  = ob->feat->dim(ob->frames);
-//        ob->feat->eval(y, y.J(), ob->frames);
-//      }
-//      CHECK_EQ(d, y.N, "");
     if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
 
     //write into phi and J
     arr yJ = y.J_reset();
     phi.setVectorBlock(y, M);
 
-    double scale=1.;
-    if(komo.opt.unscaleEqIneqReport && ob->feat->scale.N) scale = absMax(ob->feat->scale);
-    CHECK_GE(scale, 1e-4, "");
-
-    if(ob->type==OT_sos) komo.sos+=sumOfSqr(y); // / max(ob->feat->scale);
-    else if(ob->type==OT_ineq) komo.ineq += sumOfPos(y) / scale;
-    else if(ob->type==OT_eq) komo.eq += sumOfAbs(y) / scale;
+    if(ob->type==OT_sos) komo.sos += sumOfSqr(y); // / max(ob->feat->scale);
+    else if(ob->type==OT_ineq) komo.ineq += sumOfPos(y);
+    else if(ob->type==OT_eq) komo.eq += sumOfAbs(y);
 
     if(!!J) {
       if(komo.opt.sparse) {
@@ -131,36 +145,12 @@ void Conv_KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
 //  komo.reportProblem(os);
   if(verbose>4 && komo.featureValues.N) os <<komo.report(false, true, verbose>6);
   if(verbose>2) komo.view(verbose>3, STRING("KOMO nlp report - " <<msg));
-  if(verbose>4) komo.view_play(false);
-  if(verbose>6) {
-    while(komo.view_play(true, -1));
-//    rai::system("mkdir -p z.vid");
-//    komo.view_play(false, .1, "z.vid/");
-  }
-}
-
-Conv_KOMO_NLP::Conv_KOMO_NLP(KOMO& _komo) : komo(_komo) {
-  dimension = komo.pathConfig.getJointStateDimension();
-
-  bounds = komo.getBounds();
-
-  //-- feature types
-  uint M=0;
-  for(shared_ptr<GroundedObjective>& ob : komo.objs) M += ob->feat->dim(ob->frames);
-
-  featureTypes.resize(M);
-  komo.featureNames.clear();
-  M=0;
-  for(shared_ptr<GroundedObjective>& ob : komo.objs) {
-    uint m = ob->feat->dim(ob->frames);
-    for(uint i=0; i<m; i++) featureTypes(M+i) = ob->type;
-    for(uint j=0; j<m; j++) komo.featureNames.append(ob->feat->shortTag(komo.pathConfig));
-    M += m;
-  }
-  if(quadraticPotentialLinear.N) {
-    featureTypes.append(OT_f);
-  }
-  komo.featureTypes = featureTypes;
+//  if(verbose>4) komo.view_play(false);
+//  if(verbose>6) {
+//    while(komo.view_play(true, -1));
+////    rai::system("mkdir -p z.vid");
+////    komo.view_play(false, .1, "z.vid/");
+//  }
 }
 
 arr Conv_KOMO_NLP::getInitializationSample(const arr& previousOptima) {

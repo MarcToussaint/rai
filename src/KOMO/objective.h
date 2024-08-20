@@ -36,6 +36,7 @@ struct GroundedObjective {
   FrameL frames;
   intA timeSlices;
   int objId=-1;
+  bool active = true;
 
   GroundedObjective(const shared_ptr<Feature>& _feat, const ObjectiveType& _type, const intA& _timeSlices) : feat(_feat), type(_type), timeSlices(_timeSlices) {}
   ~GroundedObjective() {}
@@ -45,6 +46,7 @@ struct GroundedObjective {
 
 //===========================================================================
 
+//TODO remove methods - not used anymore, I think
 struct ObjectiveL : rai::Array<shared_ptr<Objective>> {
 
   shared_ptr<struct Objective> add(const arr& times, const shared_ptr<Feature>& f, ObjectiveType type, const char* name=0);

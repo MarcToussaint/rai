@@ -38,18 +38,18 @@ struct NLP_Sampler_Options {
   RAI_PARAM("sam/", double, ineqOverstep, -1)
 
   RAI_PARAM("sam/", rai::String, downhillNoiseMethod, "none")
-  RAI_PARAM("sam/", rai::String, downhillRejectMethod, "Wolfe")
+  RAI_PARAM("sam/", rai::String, downhillRejectMethod, "none")
 
   RAI_PARAM("sam/", double, downhillNoiseSigma, .1)
 
   RAI_PARAM("sam/", rai::String, interiorMethod, "HR")
 
-  RAI_PARAM("sam/", int, interiorBurnInSteps, -1)
-  RAI_PARAM("sam/", int, interiorSampleSteps, -1)
-  RAI_PARAM("sam/", rai::String, interiorNoiseMethod, "cov")
+  RAI_PARAM("sam/", int, interiorBurnInSteps, 0)
+  RAI_PARAM("sam/", int, interiorSampleSteps, 1)
+  RAI_PARAM("sam/", rai::String, interiorNoiseMethod, "iso")
   RAI_PARAM("sam/", double, hitRunEqMargin, .1)
 
-  RAI_PARAM("sam/", double, interiorNoiseSigma, .1)
+  RAI_PARAM("sam/", double, interiorNoiseSigma, .5)
 
   RAI_PARAM("sam/", double, langevinTauPrime, -1.)
 

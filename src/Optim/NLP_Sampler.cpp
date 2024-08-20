@@ -472,6 +472,9 @@ void NLP_Walker::run(arr& data, uintA& dataEvals) {
     init_novelty(data, opt.seedCandidates);
   }else if(data.N && opt.seedMethod=="dist"){
     init_distance(data, opt.seedCandidates);
+  }else if(opt.seedMethod=="gauss"){
+    arr x_init = nlp.getInitializationSample();
+    initialize(x_init);
   }else if(!data.N || opt.seedMethod=="uni"){
     arr x_init = nlp.getUniformSample();
     initialize(x_init);

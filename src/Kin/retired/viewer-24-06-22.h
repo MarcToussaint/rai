@@ -11,31 +11,32 @@
 #include "kin.h"
 #include "proxy.h"
 
-#include "../Gui/RenderData.h"
-
 namespace rai {
 
-struct ConfigurationViewer : RenderScene {
+struct ViewableConfigCopy : GLDrawer {
+  Configuration C;
   shared_ptr<struct OpenGL> gl;
-  intA frame2objID;
 
-  ~ConfigurationViewer();
-
+  ~ViewableConfigCopy();
   OpenGL& ensure_gl();
   void close_gl();
+  void recopyMeshes(const Configuration& _C);
+  void updateConfiguration(const rai::Configuration& newC);
+};
 
-  void recopyMeshes(const FrameL& frames);
-  ConfigurationViewer& updateConfiguration(const rai::Configuration& C, const FrameL& timeSlices={}, bool forceCopyMeshes=false);
-  void setMotion(const uintA& frameIDs, const arr& _motion);
+struct ConfigurationViewer : ViewableConfigCopy {
 
-  int view(bool watch=false, const char* _text=0);
-  int view_slice(uint t, bool watch=false);
+  int setConfiguration(const Configuration& _C, const char* text=0, bool watch=false);
+  int setPath(rai::Configuration& _C, const arr& jointPath, const char* text=0, bool watch=false, bool full=true);
+  int setPath(const arr& _framePath, const char* text=0, bool watch=false, bool full=true);
+  bool playVideo(const FrameL& timeSlices, bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
   bool playVideo(bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
-
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   byteA getRgb();
   floatA getDepth();
   void savePng(const char* saveVideoPath="z.vid/");
+
+  rai::Configuration& getConfiguration() { return C; }
 
   int update(bool watch=false);
   void raiseWindow();
@@ -43,30 +44,24 @@ struct ConfigurationViewer : RenderScene {
   void setCamera(rai::Frame* cam);
 
   //mimic a OpenGL, directly calling the same methods in its gl
-  int _update(bool wait=false, const char* _text=nullptr, bool nonThreaded=false);
+  int _update(const char* text=nullptr, bool nonThreaded=false);
+  int _watch(const char* text=nullptr);
   void _add(GLDrawer& c);
   void _resetPressedKey();
+  void clear();
+ private://draw data
 
-private://draw data
-  arr motion;
-  bool abortPlay;
+  arr framePath;
+  FrameL drawSubFrames;
+  int drawTimeSlice;
+  bool drawFullPath;
+  int tprefix;
+  bool writeToFiles;
   uint pngCount=0;
+ public:
+  String drawText;
   bool drawFrameLines=true;
-public:
-  int drawSlice;
-  String text;
-  StringA sliceTexts;
   double phaseOffset=0., phaseFactor=-1.;
-};
-
-struct ConfigurationViewerThread : Thread {
-  Var<rai::Configuration> config;
-  shared_ptr<ConfigurationViewer> viewer;
-  ConfigurationViewerThread(const Var<rai::Configuration>& _config, double beatIntervalSec=-1.);
-  ~ConfigurationViewerThread();
-  void open();
-  void step();
-  void close();
 };
 
 }

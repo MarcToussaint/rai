@@ -29,7 +29,6 @@ struct KOMO_Options {
   RAI_PARAM("KOMO/", int, verbose, 1)
   RAI_PARAM("KOMO/", int, animateOptimization, 0)
   RAI_PARAM("KOMO/", bool, mimicStable, true)
-  RAI_PARAM("KOMO/", bool, unscaleEqIneqReport, false)
   RAI_PARAM("KOMO/", double, sampleRate_stable, .0)
   RAI_PARAM("KOMO/", bool, sparse, true)
 };
@@ -194,6 +193,7 @@ struct KOMO : NonCopyable {
   StringA info_objectiveNames();
   str info_sliceErrors(uint t, const arr& errorTraces);
   str info_sliceCollisions(uint t, double belowMargin=.01);
+  arr info_errorTotals(const arr& errorTraces);
 
   double getConstraintViolations();
   double getCosts();
@@ -233,6 +233,7 @@ struct KOMO : NonCopyable {
   //
 
   std::shared_ptr<NLP> nlp();
+//  std::shared_ptr<NLP> sub_nlp(groundedobjectives, dofs);
   std::shared_ptr<NLP_Factored> nlp_FactoredTime();
   std::shared_ptr<NLP_Factored> nlp_FactoredParts();
 
