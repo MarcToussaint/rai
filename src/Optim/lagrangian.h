@@ -34,7 +34,7 @@ struct LagrangianProblem : ScalarFunction, NLP {
 
   ostream* logFile=nullptr;  ///< file for logging
 
-  LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOptions& opt=NOOPT, arr& lambdaInit=NoArr);
+  LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOptions& opt=DEFAULT_OPTIONS, arr& lambdaInit=NoArr);
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);       //evaluate all features and (optionally) their Jacobians for state x
   virtual void getFHessian(arr& H, const arr& x);              //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)

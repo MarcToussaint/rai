@@ -47,5 +47,5 @@ OptOptions& globalOptOptions();
 
 } //namespace
 
-#define NOOPT (rai::globalOptOptions())
+#define DEFAULT_OPTIONS (rai::globalOptOptions())
 

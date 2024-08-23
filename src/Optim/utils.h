@@ -83,22 +83,13 @@ struct Conv_NLP_SlackLeastSquares : NLP {
 
 struct NLP_LinTransformed : NLP {
   std::shared_ptr<NLP> P;
-  arr A, b;
+  arr A, b, Ainv;
 
-  NLP_LinTransformed(std::shared_ptr<NLP> _P, const arr& _A, const arr& _b) : P(_P), A(_A), b(_b) {
-    dimension = P->dimension;
-    featureTypes = P->featureTypes;
-    arr Ainv = inverse(A);
-    bounds = P->bounds;
-    bounds[0] = Ainv*(bounds[0]-b);
-    bounds[1] = Ainv*(bounds[1]-b);
-  }
+  NLP_LinTransformed(std::shared_ptr<NLP> _P, const arr& _A, const arr& _b);
 
-  virtual void evaluate(arr& phi, arr& J, const arr& x) {
-    arr y = A*x+b;
-    P->evaluate(phi, J, y);
-    J = J*A;
-  }
+  virtual arr getInitializationSample(const arr& previousOptima={});
+  virtual void evaluate(arr& phi, arr& J, const arr& x);
+  virtual void report(ostream& os, int verbose, const char* msg=0){ P->report(os, verbose, msg); }
 };
 
 //===========================================================================

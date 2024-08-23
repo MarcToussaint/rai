@@ -9,16 +9,45 @@
 #pragma once
 
 #include "komo.h"
+#include "../Optim/utils.h"
 
 namespace rai {
 
 //default - transcription as sparse, but non-factored NLP
-struct Conv_KOMO_NLP : NLP {
+struct KOMO_NLP : NLP {
   KOMO& komo;
 
   arr quadraticPotentialLinear, quadraticPotentialHessian;
 
-  Conv_KOMO_NLP(KOMO& _komo);
+  KOMO_NLP(KOMO& _komo);
+
+  virtual arr getInitializationSample(const arr& previousOptima= {});
+  virtual void evaluate(arr& phi, arr& J, const arr& x);
+  virtual void getFHessian(arr& H, const arr& x);
+
+  virtual void report(ostream& os, int verbose, const char* msg=0);
+};
+
+struct KOMO_Spline_NLP : NLP {
+  std::shared_ptr<KOMO_NLP> fine_nlp;
+  std::shared_ptr<NLP_LinTransformed> nlp;
+  arr spline_B, spline_b;
+
+  KOMO_Spline_NLP(KOMO& _komo, uint splineT, uint degree);
+
+  virtual arr getInitializationSample(const arr& previousOptima={});
+  virtual void evaluate(arr& phi, arr& J, const arr& x){ nlp->evaluate(phi, J, x); }
+  virtual void report(ostream& os, int verbose, const char* msg=0){ fine_nlp->report(os, verbose, msg); }
+};
+
+struct KOMO_SubNLP : NLP {
+  KOMO& komo;
+  rai::Array<GroundedObjective*> objs;
+  DofL dofs;
+  StringA featureNames;
+  uint evalCount=0;
+
+  KOMO_SubNLP(KOMO& _komo, const rai::Array<GroundedObjective*>& _objs, const DofL& _dofs);
 
   virtual arr getInitializationSample(const arr& previousOptima= {});
   virtual void evaluate(arr& phi, arr& J, const arr& x);

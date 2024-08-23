@@ -11,6 +11,7 @@
 #include "../Kin/frame.h"
 #include "../Kin/proxy.h"
 #include "../Kin/forceExchange.h"
+#include "../Algo/spline.h"
 
 namespace rai {
 
@@ -34,7 +35,7 @@ void reportAfterPhiComputation(KOMO& komo) {
 
 //===========================================================================
 
-Conv_KOMO_NLP::Conv_KOMO_NLP(KOMO& _komo) : komo(_komo) {
+KOMO_NLP::KOMO_NLP(KOMO& _komo) : komo(_komo) {
   dimension = komo.pathConfig.getJointStateDimension();
 
   bounds = komo.getBounds();
@@ -58,7 +59,7 @@ Conv_KOMO_NLP::Conv_KOMO_NLP(KOMO& _komo) : komo(_komo) {
   komo.featureTypes = featureTypes;
 }
 
-void Conv_KOMO_NLP::evaluate(arr& phi, arr& J, const arr& x) {
+void KOMO_NLP::evaluate(arr& phi, arr& J, const arr& x) {
   komo.evalCount++;
 
   //-- set the trajectory
@@ -77,8 +78,6 @@ void Conv_KOMO_NLP::evaluate(arr& phi, arr& J, const arr& x) {
       J.resize(phi.N, x.N).setZero();
     }
   }
-
-  komo.sos=komo.ineq=komo.eq=0.;
 
   komo.timeFeatures -= cpuTime();
 
@@ -100,10 +99,6 @@ void Conv_KOMO_NLP::evaluate(arr& phi, arr& J, const arr& x) {
     //write into phi and J
     arr yJ = y.J_reset();
     phi.setVectorBlock(y, M);
-
-    if(ob->type==OT_sos) komo.sos += sumOfSqr(y); // / max(ob->feat->scale);
-    else if(ob->type==OT_ineq) komo.ineq += sumOfPos(y);
-    else if(ob->type==OT_eq) komo.eq += sumOfAbs(y);
 
     if(!!J) {
       if(komo.opt.sparse) {
@@ -133,7 +128,7 @@ void Conv_KOMO_NLP::evaluate(arr& phi, arr& J, const arr& x) {
   }
 }
 
-void Conv_KOMO_NLP::getFHessian(arr& H, const arr& x) {
+void KOMO_NLP::getFHessian(arr& H, const arr& x) {
   if(quadraticPotentialLinear.N) {
     H = quadraticPotentialHessian;
   } else {
@@ -141,7 +136,7 @@ void Conv_KOMO_NLP::getFHessian(arr& H, const arr& x) {
   }
 }
 
-void Conv_KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
+void KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
 //  komo.reportProblem(os);
   if(verbose>4 && komo.featureValues.N) os <<komo.report(false, true, verbose>6);
   if(verbose>2) komo.view(verbose>3, STRING("KOMO nlp report - " <<msg));
@@ -153,9 +148,97 @@ void Conv_KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
 //  }
 }
 
-arr Conv_KOMO_NLP::getInitializationSample(const arr& previousOptima) {
+arr KOMO_NLP::getInitializationSample(const arr& previousOptima) {
   komo.run_prepare(.01);
   return komo.x;
+}
+
+//===========================================================================
+
+KOMO_SubNLP::KOMO_SubNLP(KOMO& _komo, const rai::Array<GroundedObjective*>& _objs, const DofL& _dofs) : komo(_komo), objs(_objs), dofs(_dofs) {
+  komo.pathConfig.selectJoints(dofs);
+
+  dimension = komo.pathConfig.getJointStateDimension();
+  bounds = komo.getBounds();
+
+  //-- feature types
+  uint M=0;
+  for(GroundedObjective* ob : objs) M += ob->feat->dim(ob->frames);
+
+  featureTypes.resize(M);
+  featureNames.resize(M);
+  M=0;
+  for(GroundedObjective* ob : objs) {
+    uint m = ob->feat->dim(ob->frames);
+    for(uint i=0; i<m; i++) featureTypes(M+i) = ob->type;
+    for(uint i=0; i<m; i++) featureNames(M+i) = ob->feat->shortTag(komo.pathConfig);
+    M += m;
+  }
+}
+
+arr KOMO_SubNLP::getInitializationSample(const arr& previousOptima) {
+  komo.run_prepare(.01);
+  return komo.pathConfig.getJointState();
+}
+
+void KOMO_SubNLP::evaluate(arr& phi, arr& J, const arr& x) {
+  evalCount++;
+
+  //-- set the trajectory
+  komo.timeKinematics -= rai::cpuTime();
+
+  komo.pathConfig.setJointState(x);
+  komo.pathConfig.jacMode = Configuration::JM_sparse;
+
+  komo.timeKinematics += rai::cpuTime();
+
+  //-- compute features
+  komo.timeFeatures -= cpuTime();
+
+  phi.resize(featureTypes.N);
+  if(!!J) J.sparse().resize(phi.N, x.N, 0);
+
+  uint M=0;
+  for(GroundedObjective* ob : objs) {
+    arr y = ob->feat->eval(ob->frames);
+    if(!y.N) continue;
+    checkNan(y);
+    if(!!J) {
+      CHECK(y.jac, "Jacobian needed but missing");
+      CHECK_EQ(y.J().nd, 2, "");
+      CHECK_EQ(y.J().d0, y.N, "");
+      CHECK_EQ(y.J().d1, dimension, "");
+    }
+    if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
+
+    //write into phi and J
+    arr yJ = y.J_reset();
+    phi.setVectorBlock(y, M);
+
+    if(!!J) {
+      yJ.sparse().reshape(J.d0, J.d1);
+      yJ.sparse().colShift(M);
+      J += yJ;
+    }
+
+    M += y.N;
+  }
+  CHECK_EQ(M, phi.N, "");
+
+  komo.timeFeatures += cpuTime();
+
+//  komo.featureValues = phi;
+//  if(!!J) komo.featureJacobians.resize(1).scalar() = J;
+//  reportAfterPhiComputation(komo);
+}
+
+void KOMO_SubNLP::getFHessian(arr& H, const arr& x) {
+  H.clear();
+}
+
+void KOMO_SubNLP::report(std::ostream& os, int verbose, const char* msg) {
+  if(verbose>4 && komo.featureValues.N) os <<komo.report(false, true, verbose>6);
+  if(verbose>2) komo.view(verbose>3, STRING("KOMO nlp report - " <<msg));
 }
 
 //===========================================================================
@@ -445,6 +528,52 @@ void Conv_KOMO_FactoredNLP::reportDetails(std::ostream& os, int verbose, const c
 //      os <<"J:" <<J <<endl;
   }
 
+}
+
+KOMO_Spline_NLP::KOMO_Spline_NLP(KOMO& _komo, uint splineT, uint degree){
+  BSpline S;
+  arr x = _komo.world.getJointState();
+  arr t = ::range(0., 1., splineT);
+  arr z = replicate(x, t.N);
+  S.set(degree, z, t);
+  CHECK_EQ(_komo.timeSlices.d0, _komo.k_order+_komo.T, "");
+  arr B = S.getGridBasis(_komo.T);
+  B.delRows(0, 1);
+
+  { //prefix
+    arr A = zeros(B.d1, 1);
+    A(0,0) = A(1,0) = 1;
+    x.reshape(1,-1);
+    spline_b = B * A * x;
+    spline_b.reshape(_komo.pathConfig.getJointStateDimension());
+  }
+
+  {
+    arr A = zeros(B.d1, splineT+1);
+    for(uint i=0;i<A.d1;i++) A(2+i,i)=1.;
+    B = B * A;
+
+    spline_B = zeros(B.d0*x.N, B.d1*x.N);
+    for(uint i=0; i<B.d0; i++) for(uint j=0; j<B.d1; j++)
+      spline_B.setMatrixBlock(B(i, j)*eye(x.N, x.N), i*x.N, j*x.N);
+
+//    cout <<"sparsity: " <<spline_B.sparsity() <<endl;
+    spline_B.sparse(); //makes it sparse
+  }
+
+  fine_nlp = make_shared<KOMO_NLP>(_komo);
+  nlp = make_shared<NLP_LinTransformed>(fine_nlp, spline_B, spline_b);
+
+  copySignature(*nlp);
+  arr limits = _komo.world.getJointLimits();
+  bounds[0] = replicate(limits[0], splineT+1). reshape(-1);
+  bounds[1] = replicate(limits[1], splineT+1). reshape(-1);
+}
+
+arr KOMO_Spline_NLP::getInitializationSample(const arr& previousOptima){
+  arr x0 = fine_nlp->komo.world.getJointState();
+  return replicate(x0, spline_B.d1/x0.N). reshape(-1);
+//  return nlp->getInitializationSample(previousOptima);
 }
 
 }//namespace

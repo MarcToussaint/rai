@@ -300,7 +300,7 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
       if(phaseFactor>0.) s <<", phase " <<phaseFactor*(double(drawSlice)+phaseOffset);
       s <<")";
       if(drawSlice<(int)sliceTexts.N){
-        cout <<"- ConfigurationViewer -\n" <<s <<"\n" <<sliceTexts(drawSlice) <<endl;
+//        cout <<"- ConfigurationViewer -\n" <<s <<"\n" <<sliceTexts(drawSlice) <<endl;
       }
       //C.glDraw_frames(gl, slices[drawSlice], 0);
       RenderScene::setText(s);

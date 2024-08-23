@@ -73,7 +73,7 @@ void ShortPathMPC::reinit(const rai::Configuration& C) {
   komo.updateRootObjects(C);
 }
 
-void ShortPathMPC::solve(bool alsoVels, int verbose) {
+std::shared_ptr<SolverReturn> ShortPathMPC::solve(bool alsoVels, int verbose) {
   iters++;
 
   //re-run KOMO
@@ -84,14 +84,14 @@ void ShortPathMPC::solve(bool alsoVels, int verbose) {
   komo.timeTotal=0.;
   komo.pathConfig.setJointStateCount=0;
 //  komo.initWithConstant(qHome);
-  komo.optimize(0., opt);
+  auto ret = komo.optimize(0., -1, opt);
   //komo.checkGradients();
 
   //is feasible?
-  feasible=komo.sos<50. && komo.ineq<.1 && komo.eq<.1;
+  feasible=ret->sos<50. && ret->ineq<.1 && ret->eq<.1;
 
   if(verbose>0) {
-    msg.clear() <<"SHORT it " <<iters <<" feasible: " <<(feasible?" good":" FAIL") <<" -- queries: " <<komo.pathConfig.setJointStateCount <<" time:" <<komo.timeTotal <<"\t sos:" <<komo.sos <<"\t ineq:" <<komo.ineq <<"\t eq:" <<komo.eq <<endl;
+    msg.clear() <<"SHORT it " <<iters <<" feasible: " <<(feasible?" good":" FAIL") <<" -- queries: " <<komo.pathConfig.setJointStateCount <<" time:" <<komo.timeTotal <<"\t sos:" <<ret->sos <<"\t ineq:" <<ret->ineq <<"\t eq:" <<ret->eq <<endl;
     komo.view(false, msg);
   }
 
@@ -131,6 +131,8 @@ void ShortPathMPC::solve(bool alsoVels, int verbose) {
 //    komo.reset();
 //    komo.initWithConstant(qHome);
   }
+
+  return ret;
 }
 
 arr ShortPathMPC::getPath() {

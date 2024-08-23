@@ -67,6 +67,30 @@ double Conv_NLP_ScalarProblem::scalar(arr& g, arr& H, const arr& x) {
 }
 
 //===========================================================================
+
+NLP_LinTransformed::NLP_LinTransformed(std::shared_ptr<NLP> _P, const arr& _A, const arr& _b) : P(_P), A(_A), b(_b) {
+  CHECK_EQ(A.d0, P->dimension, "");
+  CHECK_EQ(b.N, P->dimension, "");
+  dimension = A.d1;
+  featureTypes = P->featureTypes;
+//  Ainv = inverse(A);
+  bounds = zeros(2, dimension);
+//  bounds[0] = Ainv*(P->bounds[0]-b);
+//  bounds[1] = Ainv*(P->bounds[1]-b);
+}
+
+arr NLP_LinTransformed::getInitializationSample(const arr& previousOptima){
+  arr x = P->getInitializationSample(previousOptima);
+  return Ainv * x;
+}
+
+void NLP_LinTransformed::evaluate(arr& phi, arr& J, const arr& x) {
+  arr y = A*x+b;
+  P->evaluate(phi, J, y);
+  J = J*A;
+}
+
+//===========================================================================
 //
 // checks and converters
 //

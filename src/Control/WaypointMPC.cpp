@@ -26,7 +26,7 @@ void WaypointMPC::reinit(const rai::Configuration& C) {
 //  komo.setConfiguration_qOrg(-1, C.getJointState());
 }
 
-void WaypointMPC::solve(int verbose) {
+std::shared_ptr<SolverReturn> WaypointMPC::solve(int verbose) {
   steps++;
 
   //re-run KOMO
@@ -43,17 +43,17 @@ void WaypointMPC::solve(int verbose) {
 //  cout <<komo.report(true, false) <<endl;
 //  komo.initWithConstant(qHome);
 //  komo.opt.animateOptimization=2;
-  komo.optimize(.0, opt);
+  auto ret = komo.optimize(.0, -1, opt);
 //  komo.checkGradients();
 //  cout <<komo.report() <<endl;
 
   //is feasible?
-  feasible=komo.sos<50. && komo.ineq<.1 && komo.eq<.1;
+  feasible=ret->sos<50. && ret->ineq<.1 && ret->eq<.1;
 
   path = komo.getPath_qOrg();
   tau = komo.getPath_tau();
 
-  msg.clear() <<"WAY it " <<steps <<" feasible: " <<(feasible?" good":" FAIL") <<" -- queries: " <<komo.pathConfig.setJointStateCount <<" time:" <<komo.timeTotal <<"\t sos:" <<komo.sos <<"\t ineq:" <<komo.ineq <<"\t eq:" <<komo.eq <<endl;
+  msg.clear() <<"WAY it " <<steps <<" feasible: " <<(feasible?" good":" FAIL") <<" -- queries: " <<komo.pathConfig.setJointStateCount <<" time:" <<komo.timeTotal <<"\t sos:" <<ret->sos <<"\t ineq:" <<ret->ineq <<"\t eq:" <<ret->eq <<endl;
   if(!feasible) msg <<komo.report();
 
   if(verbose>0) {
@@ -64,4 +64,6 @@ void WaypointMPC::solve(int verbose) {
     komo.reset();
     komo.initWithConstant(qHome);
   }
+
+  return ret;
 }

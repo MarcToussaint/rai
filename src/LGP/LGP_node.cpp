@@ -156,6 +156,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 #endif
 
   shared_ptr<KOMO>& komo = problem(bound).komo;
+  shared_ptr<SolverReturn>& ret = problem(bound).ret;
   komo->opt.verbose = rai::MAX(verbose, 0);
 
   //-- verbosity...
@@ -164,14 +165,12 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
       cout <<"########## OPTIM lev " <<bound <<endl;
     }
 
-    komo->logFile = new ofstream(tree.OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
+    ofstream logFile(tree.OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
 
-    if(komo->logFile) {
-      (*komo->logFile) <<getTreePathString() <<'\n' <<endl;
-      skeleton->write(*komo->logFile, skeleton->getSwitches(komo->world));
-      (*komo->logFile) <<'\n' <<komo->report(true, false);
-//      (*komo->logFile) <<'\n' <<komo->getProblemGraph(false);
-    }
+    logFile <<getTreePathString() <<'\n' <<endl;
+    skeleton->write(logFile, skeleton->getSwitches(komo->world));
+    logFile <<'\n' <<komo->report(true, false);
+    //logFile <<'\n' <<komo->getProblemGraph(false);
 
     if(komo->opt.verbose>1) {
       skeleton->write(cout, skeleton->getSwitches(komo->world));
@@ -186,7 +185,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
   //-- optimize
   try {
-    komo->optimize(0.);
+    ret = komo->optimize(0.);
 
 //    NLP_Solver sol;
 //    sol.setProblem(*problem(bound).nlp);
@@ -212,8 +211,8 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 //  cout <<komo->getCollisionPairs() <<endl;
   //if(bound==BD_seqPath || bound==BD_path) cout <<result <<endl;
 
-  double cost_here = komo->sos;
-  double constraints_here = komo->ineq + komo->eq;
+  double cost_here = ret->sos;
+  double constraints_here = ret->ineq + ret->eq;
   bool feas = (constraints_here<2.);
 
   if(komo->opt.verbose>0) {
@@ -222,7 +221,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
   //-- post process costs for level==1
   if(bound==BD_pose) {
-    cost_here -= 0.1*ret.reward; //account for the symbolic costs
+    cost_here -= 0.1*this->ret.reward; //account for the symbolic costs
     if(parent) cost_here += parent->cost(bound); //this is sequentially additive cost
   } else {
     cost_here += cost(BD_symbolic); //account for the symbolic costs
@@ -497,7 +496,7 @@ void LGP_Node::displayBound(ConfigurationViewer& V, BoundType bound) {
     Enum<BoundType> _bound(bound);
     String s;
     s <<"BOUND " <<_bound <<" at step " <<step <<"\n" <<*skeleton;
-    s <<"\n sos:" <<problem(bound).komo->sos <<" eq:" <<problem(bound).komo->eq <<" ineq:" <<problem(bound).komo->ineq;
+    s <<"\n sos:" <<problem(bound).ret->sos <<" eq:" <<problem(bound).ret->eq <<" ineq:" <<problem(bound).ret->ineq;
     V.updateConfiguration(tree.kin, problem(bound).komo->timeSlices).view(false, s);
 //    V.setMotion(range(), problem(bound).komo->getPath_X(), s, true);
     if(bound>=BD_path) {

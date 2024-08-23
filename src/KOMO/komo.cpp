@@ -13,23 +13,24 @@
 #include "../Geo/fclInterface.h"
 
 #include "../Kin/frame.h"
-#include "../Kin/switch.h"
+//#include "../Kin/switch.h"
 #include "../Kin/proxy.h"
 #include "../Kin/forceExchange.h"
 //#include "../Kin/kin_swift.h"
-#include "../Kin/kin_physx.h"
+//#include "../Kin/kin_physx.h"
 #include "../Kin/F_qFeatures.h"
 #include "../Kin/F_pose.h"
 #include "../Kin/F_collisions.h"
-#include "../Kin/F_geometrics.h"
-#include "../Kin/F_operators.h"
+//#include "../Kin/F_geometrics.h"
+//#include "../Kin/F_operators.h"
 #include "../Kin/F_forces.h"
 #include "../Kin/viewer.h"
 
-#include "../Optim/primalDual.h"
-#include "../Optim/opt-nlopt.h"
-#include "../Optim/opt-ipopt.h"
-#include "../Optim/opt-ceres.h"
+//#include "../Optim/constrained.h"
+//#include "../Optim/primalDual.h"
+//#include "../Optim/opt-nlopt.h"
+//#include "../Optim/opt-ipopt.h"
+//#include "../Optim/opt-ceres.h"
 #include "../Optim/NLP_Solver.h"
 
 #include "../Core/util.ipp"
@@ -89,12 +90,11 @@ KOMO::KOMO() {
 
 KOMO::KOMO(const Configuration& C, double _phases, uint _stepsPerPhase, uint _k_order, bool _enableCollisions)
   : KOMO() {
-  setConfig(C, _enableCollisions);
   setTiming(_phases, _stepsPerPhase, 1., _k_order);
+  setConfig(C, _enableCollisions);
 }
 
 KOMO::~KOMO() {
-  if(logFile) delete logFile;
   objs.clear();
   objectives.clear();
   switches.clear();
@@ -108,13 +108,18 @@ void KOMO::setConfig(const Configuration& C, bool _computeCollisions) {
     world.fcl();
   }
   world.ensure_q();
+
+  if(stepsPerPhase) setupPathConfig();
 }
 
 void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhase, uint _k_order) {
+  CHECK(_stepsPerPhase, "needs to be nonzero!");
   stepsPerPhase = _stepsPerPhase;
   T = ceil(stepsPerPhase*_phases);
   tau = durationPerPhase/double(stepsPerPhase);
   k_order = _k_order;
+
+  if(world.frames.N) setupPathConfig();
 }
 
 void KOMO::clone(const KOMO& komo, bool deepCopyFeatures) {
@@ -235,7 +240,8 @@ shared_ptr<Objective> KOMO::addObjective(const arr& times,
     ObjectiveType type, const arr& scale, const arr& target, int order,
     int deltaFromStep, int deltaToStep) {
   //-- we need the path configuration to ground the objectives
-  if(!timeSlices.N) setupPathConfig();
+  CHECK(timeSlices.N, "path config is not setup");
+//  if(!timeSlices.N) setupPathConfig();
 
   //-- if arguments are given, modify the feature's frames, scaling and order
   f->setup(world, frames, scale, target, order);
@@ -922,24 +928,6 @@ arr KOMO::getPath_energies() {
   return X;
 }
 
-arr KOMO::getActiveConstraintJacobian() {
-  uint n=0;
-  for(uint i=0; i<dual.N; i++) if(dual.elem(i)>0.) n++;
-
-  arr J(n, x.N);
-
-  n=0;
-  for(uint i=0; i<dual.N; i++) {
-    if(dual.elem(i)>0.) {
-      J[n] = featureJacobians.scalar()[i];
-      n++;
-    }
-  }
-  CHECK_EQ(n, J.d0, "");
-
-  return J;
-}
-
 void KOMO::initWithConstant(const arr& q) {
   for(uint t=0; t<T; t++) {
     setConfiguration_qOrg(t, q);
@@ -1208,7 +1196,7 @@ void KOMO::reset() {
   timeTotal=timeCollisions=timeKinematics=timeNewton=timeFeatures=0.;
 }
 
-void KOMO::optimize(double addInitializationNoise, const OptOptions options) {
+std::shared_ptr<SolverReturn> KOMO::optimize(double addInitializationNoise, int splineKnots, const rai::OptOptions options) {
   run_prepare(addInitializationNoise);
 
   if(opt.verbose>1) cout <<"===KOMO::optimize===\n" <<report(true, false, false) <<endl; //reportProblem();
@@ -1217,28 +1205,35 @@ void KOMO::optimize(double addInitializationNoise, const OptOptions options) {
   run(options);
 #else
   NLP_Solver sol;
-  sol.setProblem(nlp());
-  sol.setInitialization(x);
+  if(splineKnots<=0){
+    sol.setProblem(nlp());
+    sol.setInitialization(x);
+  }else{
+    sol.setProblem(nlp_spline(splineKnots));
+  }
   sol.opt.set_verbose(rai::MAX(opt.verbose-2, 0));
+  sol.setOptions(options);
 
   timeTotal -= rai::cpuTime();
-  auto ret = sol.solve();
+  std::shared_ptr<SolverReturn> ret = sol.solve();
   timeTotal += rai::cpuTime();
 
   if(opt.verbose>0) {
     cout <<"=== KOMO optimization time:" <<timeTotal
          <<" (kin:" <<timeKinematics <<" coll:" <<timeCollisions <<" feat:" <<timeFeatures <<" newton: " <<timeNewton <<")"
          <<" setJointStateCount:" <<Configuration::setJointStateCount
-         <<"\n  sos:" <<sos <<" ineq:" <<ineq <<" eq:" <<eq
+         <<"\n  sos:" <<ret->sos <<" ineq:" <<ret->ineq <<" eq:" <<ret->eq
          <<"\n  solver return: " <<*ret <<endl;
   }
   if(opt.verbose>1) cout <<report(false, opt.verbose>2) <<endl;
+  return ret;
 #endif
 }
 
 void KOMO::run_prepare(double addInitializationNoise) {
   //ensure the configurations are setup
-  if(!timeSlices.nd) setupPathConfig();
+  CHECK(timeSlices.N, "path config is not setup");
+  //if(!timeSlices.nd) setupPathConfig();
 //  if(!switchesWereApplied) retrospectApplySwitches(); //should be applied immediately!
 
   //ensure the decision variable is in sync from the configurations
@@ -1255,40 +1250,6 @@ void KOMO::run_prepare(double addInitializationNoise) {
 
     pathConfig.setJointState(x);
   }
-}
-
-void KOMO::deprecated_run(OptOptions options) {
-  Configuration::setJointStateCount=0;
-  if(opt.verbose>0) {
-    cout <<"** KOMO::run "
-         <<" collisions:" <<computeCollisions
-         <<" x-dim:" <<x.N
-         <<" T:" <<T <<" k:" <<k_order <<" phases:" <<double(T)/stepsPerPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau;
-    cout <<"  #timeSlices:" <<timeSlices.d0 <<" #totalDOFs:" <<pathConfig.getJointStateDimension() <<" #frames:" <<pathConfig.frames.N;
-    cout <<endl;
-  }
-
-  options.verbose = rai::MAX(opt.verbose-2, 0);
-  timeTotal -= rai::cpuTime();
-  CHECK(T, "");
-  if(logFile)(*logFile) <<"KOMO_run_log: [" <<endl;
-
-  {
-    OptConstrained _opt(x, dual, nlp(), options, logFile);
-    _opt.run();
-    timeNewton += _opt.newton.timeNewton;
-  }
-
-  timeTotal += rai::cpuTime();
-
-  if(logFile)(*logFile) <<"\n] #end of KOMO_run_log" <<endl;
-  if(opt.verbose>0) {
-    cout <<"** optimization time:" <<timeTotal
-         <<" (kin:" <<timeKinematics <<" coll:" <<timeCollisions <<" feat:" <<timeFeatures <<" newton: " <<timeNewton <<")"
-         <<" setJointStateCount:" <<Configuration::setJointStateCount
-         <<"\n   sos:" <<sos <<" ineq:" <<ineq <<" eq:" <<eq <<endl;
-  }
-  if(opt.verbose>1) cout <<report(false, true, opt.verbose>2) <<endl;
 }
 
 Graph KOMO::report(bool specs, bool listObjectives, bool plotOverTime) {
@@ -1489,54 +1450,12 @@ arr KOMO::info_errorTotals(const arr& errorTraces){
   return totals;
 }
 
-
-void KOMO::deprecated_reportProblem(std::ostream& os) {
-  os <<"KOMO Problem:" <<endl;
-  os <<"  x-dim:" <<x.N <<"  dual-dim:" <<dual.N <<endl;
-  os <<"  T:" <<T <<" k:" <<k_order <<" phases:" <<double(T)/stepsPerPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau <<endl;
-  os <<"  #timeSlices:" <<timeSlices.d0 <<" #totalDOFs:" <<pathConfig.getJointStateDimension() <<" #frames:" <<pathConfig.frames.N;
-  os <<"  #pathQueries:" <<pathConfig.setJointStateCount;
-  os <<endl;
-
-  arr times = getPath_times();
-  if(times.N>10) times.resizeCopy(10);
-  os <<"    times:" <<times <<endl;
-
-  os <<"  computeCollisions:" <<computeCollisions <<endl;
-  for(shared_ptr<Objective>& t:objectives) {
-    os <<"    " <<*t;
-    if(t->times.N && t->times.elem(0)==-10.) {
-      os <<"  timeSlices: [" <<t->times <<"]" <<endl;
-    } else {
-      int fromStep, toStep;
-      conv_times2steps(fromStep, toStep, t->times, stepsPerPhase, T, +0, +0);
-      os <<"  timeSlices: [" <<fromStep <<".." <<toStep <<"]" <<endl;
-    }
-  }
-  for(std::shared_ptr<KinematicSwitch>& sw:switches) {
-    os <<"    ";
-    if(sw->timeOfApplication+k_order >= timeSlices.d0) {
-//      LOG(-1) <<"switch time " <<sw->timeOfApplication <<" is beyond time horizon " <<T;
-      sw->write(os, {});
-    } else {
-      sw->write(os, timeSlices[sw->timeOfApplication+k_order]);
-    }
-    os <<endl;
-  }
-
-  if(opt.verbose>6) {
-    os <<"  INITIAL STATE" <<endl;
-    for(rai::Frame* f:pathConfig.frames) {
-      if(f->joint && f->joint->dim) os <<"    " <<f->name <<" [" <<f->joint->type <<"] : " <<f->joint->calcDofsFromConfig() /*<<" - " <<pathConfig.q.elem(f->joint->qIndex)*/ <<endl;
-      for(auto* ex:f->forces) os <<"    " <<f->name <<" [force " <<ex->a.name <<'-' <<ex->b.name <<"] : " <<ex->force /*<<' ' <<ex->torque*/ <<' ' <<ex->poa <<endl;
-    }
-  }
-}
-
 void KOMO::checkGradients() {
   CHECK(T, "");
-#if 0
-  checkJacobianCP(Convert(komo_problem), x, 1e-4);
+#if 1
+  shared_ptr<NLP> CP = nlp();
+  arr x0 = pathConfig.getJointState();
+  CP->checkJacobian(x0, 1e-6, featureNames);
 #else
   double tolerance=1e-4;
 
@@ -1798,20 +1717,6 @@ rai::Frame* KOMO::applySwitch(const KinematicSwitch& sw) {
   return f;
 }
 
-void KOMO::retrospectApplySwitches() {
-  DEPR; //switches are applied immediately on addSwitch
-  for(std::shared_ptr<KinematicSwitch>& sw:switches) applySwitch(*sw);
-}
-
-void KOMO::retrospectChangeJointType(int startStep, int endStep, uint frameID, JointType newJointType) {
-  uint s = startStep+k_order;
-  //apply the same switch on all following configurations!
-  for(; s<endStep+k_order; s++) {
-    rai::Frame* f = timeSlices(s, frameID);
-    f->setJoint(newJointType);
-  }
-}
-
 void KOMO::selectJointsBySubtrees(const StringA& roots, const arr& times, bool notThose) {
   uintA rootIds = world.getFrameIDs(roots);
 
@@ -1836,6 +1741,10 @@ void KOMO::selectJointsBySubtrees(const StringA& roots, const arr& times, bool n
 void KOMO::setupPathConfig() {
   //IMPORTANT: The configurations need to include the k prefix configurations!
   //Therefore configurations(0) is for time=-k and configurations(k+t) is for time=t
+
+  CHECK(world.frames.N, "you need to call setConfig before");
+  CHECK(stepsPerPhase, "you need to call setTiming before");
+
   CHECK(timeSlices.d0 != k_order+T, "why setup again?");
   CHECK(!pathConfig.frames.N, "why setup again?");
 
@@ -1889,14 +1798,6 @@ void KOMO::setupPathConfig() {
   }
 }
 
-void KOMO::checkBounds(const arr& x) {
-  DEPR; //should not be necessary, I think!, or move to kin!
-
-  arr bounds = getBounds();
-  CHECK_EQ(x.N, bounds.d1, "");
-  boundCheck(x, bounds);
-}
-
 void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
   CHECK_EQ(timeSlices.d0, k_order+T, "configurations are not setup yet");
 
@@ -1931,16 +1832,16 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
   }
 }
 
-void KOMO::checkConsistency() {
-  pathConfig.checkConsistency();
-  for(rai::Frame* f:timeSlices) {
-    CHECK_EQ(f, pathConfig.frames.elem(f->ID), "");
-    CHECK_EQ(&f->C, &pathConfig, "");
-  }
+std::shared_ptr<NLP> KOMO::nlp() {
+  return make_shared<KOMO_NLP>(*this);
 }
 
-std::shared_ptr<NLP> KOMO::nlp() {
-  return make_shared<Conv_KOMO_NLP>(*this); //solver==rai::KS_sparse);
+std::shared_ptr<NLP> KOMO::nlp_spline(uint splineT, uint degree) {
+  return make_shared<KOMO_Spline_NLP>(*this, splineT, degree);
+}
+
+std::shared_ptr<NLP> KOMO::nlp_sub(const rai::Array<GroundedObjective*>& objs, const DofL& dofs){
+  return make_shared<KOMO_SubNLP>(*this, objs, dofs);
 }
 
 shared_ptr<NLP_Factored> KOMO::nlp_FactoredTime() {
@@ -1958,203 +1859,6 @@ shared_ptr<NLP_Factored> KOMO::nlp_FactoredTime() {
 shared_ptr<NLP_Factored> KOMO::nlp_FactoredParts() {
   rai::Array<DofL> dofs = pathConfig.getPartsDofs();
   return make_shared<Conv_KOMO_FactoredNLP>(*this, dofs);
-}
-
-Camera& KOMO::displayCamera() { DEPR; return pathConfig.viewer()->displayCamera(); }
-
-rai::Graph KOMO::deprecated_getReport(bool plotOverTime, int reportFeatures, std::ostream& featuresOs) {
-  //-- collect all task costs and constraints
-  StringA name; name.resize(objectives.N);
-  arr err=zeros(T, objectives.N);
-  arr dualSolution; if(dual.N) dualSolution=zeros(T, objectives.N);
-  arr taskC=zeros(objectives.N);
-  arr taskG=zeros(objectives.N);
-  arr taskH=zeros(objectives.N);
-  arr taskF=zeros(objectives.N);
-  uint M=0;
-  for(shared_ptr<GroundedObjective>& ob:objs) {
-    uint d = ob->feat->dim(ob->frames);
-    int i = ob->objId;
-    CHECK_GE(i, 0, "");
-    uint time = ob->timeSlices.last();
-    //          for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), ob->type, "");
-    if(d) {
-      if(ob->type==OT_sos) {
-        for(uint j=0; j<d; j++) err(time, i) += sqr(featureValues(M+j));
-        taskC(i) += err(time, i);
-      }
-      if(ob->type==OT_ineq) {
-        for(uint j=0; j<d; j++) err(time, i) += MAX(0., featureValues(M+j));
-        taskG(i) += err(time, i);
-      }
-      if(ob->type==OT_eq) {
-        for(uint j=0; j<d; j++) err(time, i) += fabs(featureValues(M+j));
-        taskH(i) += err(time, i);
-      }
-      if(ob->type==OT_f) {
-        for(uint j=0; j<d; j++) err(time, i) += featureValues(M+j);
-        taskF(i) += err(time, i);
-      }
-      M += d;
-    }
-    //        }
-    if(reportFeatures==1) {
-      featuresOs <<std::setw(4) <<time <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d <<ob->timeSlices
-                 <<' ' <<std::setw(40) <<typeid(*ob->feat).name()
-                 <<" k=" <<ob->feat->order <<" ot=" <<ob->type <<" prec=" <<std::setw(4) <<ob->feat->scale;
-      if(ob->feat->target.N<5) featuresOs <<" y*=[" <<ob->feat->target <<']'; else featuresOs<<"y*=[..]";
-      featuresOs <<" y^2=" <<err(time, i) <<endl;
-    }
-  }
-  CHECK_EQ(M, featureValues.N, "");
-
-  //-- generate a report graph
-  rai::Graph report;
-  double totalC=0., totalG=0., totalH=0., totalF=0.;
-  for(uint i=0; i<objectives.N; i++) {
-    shared_ptr<Objective> c = objectives(i);
-    Graph& g = report.addSubgraph(STRING('o' <<i));
-    g.add<String>("name", c->feat->typeString());
-    uintA frameIDs = c->feat->frameIDs;
-    if(frameIDs.N<=3) {
-      g.add<StringA>("frames", framesToNames(world.getFrames(frameIDs)));
-    } else {
-      g.add<StringA>("frames", {STRING("#" <<frameIDs.N)});
-    }
-    g.add<double>("order", c->feat->order);
-    g.add<String>("type", Enum<ObjectiveType>(c->type).name());
-    if(taskC(i)) g.add<double>("sos", taskC(i));
-    if(taskG(i)) g.add<double>("ineq", taskG(i));
-    if(taskH(i)) g.add<double>("eq", taskH(i));
-    if(taskF(i)) g.add<double>("f", taskF(i));
-    totalC += taskC(i);
-    totalG += taskG(i);
-    totalH += taskH(i);
-    totalF += taskF(i);
-  }
-  report.add<double>("sos", totalC);
-  report.add<double>("ineq", totalG);
-  report.add<double>("eq", totalH);
-  report.add<double>("f", totalF);
-
-  if(plotOverTime) {
-    //-- write a nice gnuplot file
-    ofstream fil("z.costReport");
-    //first line: legend
-    for(auto c:objectives) fil <<c->name <<' ';
-    for(auto c:objectives) if(c->type==OT_ineq && dualSolution.N) fil <<c->name <<"_dual ";
-    fil <<endl;
-
-    //rest: just the matrix
-    if(true) { // && !dualSolution.N) {
-      err.write(fil, nullptr, nullptr, "  ");
-    } else {
-      dualSolution.reshape(T, dualSolution.N/(T));
-      catCol(err, dualSolution).write(fil, nullptr, nullptr, "  ");
-    }
-    fil.close();
-
-    ofstream fil2("z.costReport.plt");
-    fil2 <<"set key autotitle columnheader" <<endl;
-    fil2 <<"set title 'costReport ( plotting sqrt(costs) )'" <<endl;
-    fil2 <<"plot 'z.costReport' \\" <<endl;
-    for(uint i=1; i<=objectives.N; i++) fil2 <<(i>1?"  ,''":"     ") <<" u (($0+1)/" <<stepsPerPhase <<"):"<<i<<" w l lw 3 lc " <<i <<" lt " <<1-((i/10)%2) <<" \\" <<endl;
-    if(dualSolution.N) for(uint i=0; i<objectives.N; i++) fil2 <<"  ,'' u (($0+1)/" <<stepsPerPhase <<"):"<<1+objectives.N+i<<" w l \\" <<endl;
-    fil2 <<endl;
-    fil2.close();
-
-    if(plotOverTime) {
-//      cout <<"KOMO Report\n" <<report <<endl;
-      gnuplot("load 'z.costReport.plt'");
-    }
-  }
-
-  return report;
-}
-
-/// output the defined problem as a generic graph, that can also be displayed, saved and loaded
-rai::Graph KOMO::deprecated_getProblemGraph(bool includeValues, bool includeSolution) {
-  rai::Graph K;
-  //header
-#if 1
-  Graph& g = K.addSubgraph("specs");
-  g.add<uint>("x_dim", x.N);
-  g.add<uint>("T", T);
-  g.add<uint>("k_order", k_order);
-  g.add<double>("phases", double(T)/stepsPerPhase);
-  g.add<uint>("stepsPerPhase", stepsPerPhase);
-  g.add<double>("tau", tau);
-
-  g.add<uint>("#timeSlices", timeSlices.d0);
-  g.add<uint>("#totalDOFs", pathConfig.getJointStateDimension());
-  g.add<uint>("#frames", pathConfig.frames.N);
-
-  //  uintA dims(configurations.N);
-  //  for(uint i=0; i<configurations.N; i++) dims(i)=configurations(i)->q.N;
-  //  g.newNode<uintA>({"q_dims"}, dims);
-  //  arr times(configurations.N);
-  //  for(uint i=0; i<configurations.N; i++) times(i)=configurations(i)->frames.first()->time;
-  //  g.newNode<double>({"times"}, times);
-  g.add<bool>("computeCollisions", computeCollisions);
-#endif
-
-  if(includeSolution) {
-    //full configuration paths
-    g.add<arr>("X", getPath_X());
-    g.add<arrA>("x", getPath_qAll());
-    g.add<arr>("dual", dual);
-  }
-
-  //objectives
-  for(shared_ptr<GroundedObjective>& ob:objs) {
-
-    Graph& g = K.addSubgraph(ob->feat->shortTag(pathConfig));
-    g.add<double>("order", ob->feat->order);
-    g.add<String>("type", STRING(ob->type));
-    g.add<String>("feature", ob->feat->shortTag(pathConfig));
-    if(ob->timeSlices.N) g.add<intA>("vars", ob->timeSlices);
-//    g.copy(task->feat->getSpec(world), true);
-    if(includeValues) {
-      arr y;
-      arrA V, J;
-      for(uint l=0; l<ob->timeSlices.d0; l++) {
-//        ConfigurationL Ktuple = configurations.sub(convert<uint, int>(ob->timeSlices[l]+(int)k_order));
-//        ob->feat->eval(y, Jy, Ktuple);
-        y = ob->feat->eval(ob->frames);
-        if(isSpecial(y.J())) y.J() = unpack(y.J());
-
-        V.append(y);
-        J.append(y.J());
-      }
-      g.add<arrA>("y", V);
-      g.add<arrA>("J", J);
-
-      arr Vflat;
-      for(arr& v: V) Vflat.append(v);
-
-      if(ob->type==OT_sos) {
-        g.add<double>("sos_sumOfSqr", sumOfSqr(Vflat));
-      } else if(ob->type==OT_eq) {
-        g.add<double>("eq_sumOfAbs", sumOfAbs(Vflat));
-      } else if(ob->type==OT_ineq) {
-        double c=0.;
-        for(double& v:Vflat) if(v>0) c+=v;
-        g.add<double>("inEq_sumOfPos", c);
-      }
-    }
-  }
-
-  return K;
-}
-
-double KOMO::getConstraintViolations() {
-  Graph R = report();
-  return R.get<Graph>("totals").get<double>("ineq") + R.get<Graph>("totals").get<double>("eq");
-}
-
-double KOMO::getCosts() {
-  Graph R = report();
-  return R.get<Graph>("totals").get<double>("sos");
 }
 
 StringA KOMO::getCollisionPairs(double belowMargin) {

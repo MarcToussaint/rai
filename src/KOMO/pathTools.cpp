@@ -232,10 +232,10 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
     else komo.initWithConstant(q0);
 
     //optimize
-    komo.optimize(.01*trial, rai::OptOptions().set_stopTolerance(1e-3)); //trial=0 -> no noise!
+    auto ret = komo.optimize(.01*trial, -1, rai::OptOptions().set_stopTolerance(1e-3)); //trial=0 -> no noise!
 
     //is feasible?
-    feasible=komo.sos<50. && komo.ineq<.1 && komo.eq<.1;
+    feasible=ret->sos<50. && ret->ineq<.1 && ret->eq<.1;
 
     //if not feasible -> add explicit collision pairs (from proxies presently in komo.pathConfig)
     if(!feasible) {
@@ -247,7 +247,7 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
       }
     }
 
-    cout <<"  path trial " <<trial <<(feasible?" good":" FAIL") <<" -- time:" <<komo.timeTotal <<"\t sos:" <<komo.sos <<"\t ineq:" <<komo.ineq <<"\t eq:" <<komo.eq <<endl;
+    cout <<"  path trial " <<trial <<(feasible?" good":" FAIL") <<" -- time:" <<komo.timeTotal <<"\t sos:" <<ret->sos <<"\t ineq:" <<ret->ineq <<"\t eq:" <<ret->eq <<endl;
     if(feasible) break;
   }
 
@@ -468,9 +468,9 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
   }
 
   komo.opt.verbose=0;
-  komo.optimize(0., rai::OptOptions().set_verbose(0).set_stopTolerance(1e-3));
+  auto ret = komo.optimize(0., -1, rai::OptOptions().set_verbose(0).set_stopTolerance(1e-3));
 
-  if(komo.ineq>1e-1) {
+  if(ret->ineq>1e-1) {
     if(verbose) LOG(-1) <<"solveForFeasible failed!" <<komo.report();
     if(verbose>1) komo.view(verbose>2, "collision resolution failed");
     if(assert) HALT("collision resolution failed");

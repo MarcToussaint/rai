@@ -28,8 +28,7 @@ void TEST(Easy){
 
   cout <<komo.report(true) <<endl;
 
-//  komo.setSpline(5);
-  komo.optimize();
+  komo.optimize(0., 5); //2nd argument uses spline representation!!
 //  cout <<"TIME OPTIM: total=" <<sum(komo.getPath_times()) <<komo.getPath_times() <<endl;
 //  komo.plotTrajectory();
 //  komo.reportProxies();
@@ -78,6 +77,7 @@ void TEST(Align){
 //  komo.checkGradients();
 
 //  komo.plotTrajectory();
+  komo.report(false, true, true);
   komo.view(true, "result");
   while(komo.view_play(true));
 

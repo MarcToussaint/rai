@@ -15,7 +15,6 @@ CtrlSolver::CtrlSolver(const rai::Configuration& _C, double _tau, uint k_order)
   : tau(_tau) {
   komo.setConfig(_C, true);
   komo.setTiming(1., 1, _tau, k_order);
-  komo.setupPathConfig();
 }
 
 CtrlSolver::~CtrlSolver() {
@@ -134,7 +133,7 @@ arr CtrlSolver::solve() {
   opt.damping = 1e-2;
   komo.opt.verbose=0;
   komo.opt.animateOptimization=animate;
-  komo.optimize(0., opt);
+  komo.optimize(0., -1, opt);
   optReport = komo.report().get<rai::Graph>("totals");
   if(optReport.get<double>("sos")>1.1
       || optReport.get<double>("eq")>.1

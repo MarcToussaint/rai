@@ -27,5 +27,5 @@ struct WaypointMPC {
   WaypointMPC(KOMO& _komo, const arr& qHome= {});
 
   void reinit(const rai::Configuration& C);
-  void solve(int verbose);
+  std::shared_ptr<SolverReturn> solve(int verbose);
 };

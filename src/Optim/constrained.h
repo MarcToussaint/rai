@@ -29,7 +29,7 @@ struct OptConstrained {
   bool trace_lambda=true;
   arr lambdaTrace, evalsTrace;
 
-  OptConstrained(arr& x, arr& dual, const shared_ptr<NLP>& P, rai::OptOptions opt=NOOPT, ostream* _logFile=0);
+  OptConstrained(arr& x, arr& dual, const shared_ptr<NLP>& P, rai::OptOptions opt=DEFAULT_OPTIONS, ostream* _logFile=0);
 
   uint run();
   bool ministep();

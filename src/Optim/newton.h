@@ -11,7 +11,7 @@
 #include "options.h"
 #include "../Core/array.h"
 
-int optNewton(arr& x, const ScalarFunction& f, rai::OptOptions opt=NOOPT);
+int optNewton(arr& x, const ScalarFunction& f, rai::OptOptions opt=DEFAULT_OPTIONS);
 
 struct OptNewton {
   arr& x;
@@ -20,7 +20,7 @@ struct OptNewton {
 
   enum StopCriterion { stopNone=0, stopDeltaConverge, stopTinyFSteps, stopTinyXSteps, stopCritEvals, stopStepFailed, stopLineSearchSteps };
 
-  OptNewton(arr& x, const ScalarFunction& f, rai::OptOptions options=NOOPT, ostream* _logFile=0);
+  OptNewton(arr& x, const ScalarFunction& f, rai::OptOptions options=DEFAULT_OPTIONS, ostream* _logFile=0);
   ~OptNewton();
   OptNewton& setBounds(const arr& _bounds);
   void reinit(const arr& _x);

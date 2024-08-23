@@ -12,6 +12,7 @@
 #include "../Gui/opengl.h"
 #include <iomanip>
 #include "../Kin/F_qFeatures.h"
+#include "../Optim/constrained.h"
 
 rai::LGPComp_root::LGPComp_root(rai::FOL_World& _L, rai::Configuration& _C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton)
   : ComputeNode(0), L(_L), C(_C),

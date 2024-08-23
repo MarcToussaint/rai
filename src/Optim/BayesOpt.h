@@ -29,7 +29,7 @@ struct BayesOpt {
   double lengthScale;
 
   //lengthScale is always relative to hi-lo
-  BayesOpt(const ScalarFunction& f, const arr& bounds, double init_lengthScale=1., double prior_var=1., rai::OptOptions o=NOOPT);
+  BayesOpt(const ScalarFunction& f, const arr& bounds, double init_lengthScale=1., double prior_var=1., rai::OptOptions o=DEFAULT_OPTIONS);
   ~BayesOpt();
 
   void step();

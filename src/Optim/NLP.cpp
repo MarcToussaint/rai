@@ -117,7 +117,7 @@ bool NLP::checkJacobian(const arr& _x, double tolerance, const StringA& featureN
   };
   arr x(_x);
   if(x.N!=dimension) x = getInitializationSample();
-  return ::checkJacobian(F, x, tolerance, false, featureNames);
+  return ::checkJacobian(F, x, tolerance, true, featureNames);
 }
 
 bool NLP::checkHessian(const arr& x, double tolerance) {
