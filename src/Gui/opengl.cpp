@@ -232,7 +232,7 @@ void OpenGL::openWindow() {
       _glfw->newWinY += height+50;
       if(_glfw->newWinY>1000){ _glfw->newWinY = 0; _glfw->newWinX -= width+20; }
     }
-    if(!offscreen) {
+    /*if(!offscreen) */{
       glfwMakeContextCurrent(window);
       glfwSetWindowUserPointer(window, this);
       glfwSetMouseButtonCallback(window, GlfwSingleton::_MouseButton);
@@ -249,7 +249,7 @@ void OpenGL::openWindow() {
       }
       //glfwSetWindowAttrib(window, GLFW_FOCUS_ON_SHOW, GL_FALSE);
 
-      glfwSwapInterval(1);
+//      glfwSwapInterval(1);
       glfwMakeContextCurrent(nullptr);
     }
     glfwGetCursorPos(window, &mouseposx, &mouseposy);
@@ -1155,90 +1155,52 @@ struct XBackgroundContext {
 Singleton<XBackgroundContext> xBackgroundContext;
 
 void OpenGL::renderInBack(int w, int h, bool fromWithinCallback) {
+  bool org_offscreen=offscreen;
+  offscreen = true;
+
   beginContext(fromWithinCallback);
 
+  uint org_width=width, org_height=height;
+
 #ifdef RAI_GL
-  if(w<0) w=width;
-  if(h<0) h=height;
+  if(w>0) width=w;
+  if(h>0) height=h;
+
+  Reshape(width, height);
 
   CHECK_EQ(w%4, 0, "should be devidable by 4!!");
 
-  if(!rboColor || !rboDepth) { //need to initialize
+  if(!offscreenFramebuffer) { //need to initialize
     glewInit();
-    glGenRenderbuffers(1, &rboColor);  // Create a new renderbuffer unique name.
-    glBindRenderbuffer(GL_RENDERBUFFER, rboColor);  // Set it as the current.
+    //create color render buffer
+    glGenRenderbuffers(1, &offscreenColor);  // Create a new renderbuffer unique name.
+    glBindRenderbuffer(GL_RENDERBUFFER, offscreenColor);  // Set it as the current.
     glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, w, h); // Sets storage type for currently bound renderbuffer.
-    // Depth renderbuffer.
-    glGenRenderbuffers(1, &rboDepth);
-    glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    //create depth render buffer
+    glGenRenderbuffers(1, &offscreenDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, offscreenDepth);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
-    // Framebuffer.
-    // Create a framebuffer and a renderbuffer object.
-    // You need to delete them when program exits.
-    glGenFramebuffers(1, &fboId);
-    glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-    //from now on, operate on the given framebuffer
-    //GL_FRAMEBUFFER        read write
-    //GL_READ_FRAMEBUFFER   read
-    //GL_FRAMEBUFFER        write
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-    // Adds color renderbuffer to currently bound framebuffer.
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rboColor);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,  GL_RENDERBUFFER, rboDepth);
-
-    glReadBuffer(GL_COLOR_ATTACHMENT0);
-    //glReadBuffer(GL_BACK);
-
-    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if(status != GL_FRAMEBUFFER_COMPLETE) {
-      cout << "framebuffer error:" << endl;
-      switch(status) {
-        case GL_FRAMEBUFFER_UNDEFINED: {
-          cout << "GL_FRAMEBUFFER_UNDEFINED" << endl;
-          break;
-        }
-        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: {
-          cout << "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT" << endl;
-          break;
-        }
-        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: {
-          cout << "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT" << endl;
-          break;
-        }
-        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: {
-          cout << "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER" << endl;
-          break;
-        }
-        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: {
-          cout << "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER" << endl;
-          break;
-        }
-        case GL_FRAMEBUFFER_UNSUPPORTED: {
-          cout << "GL_FRAMEBUFFER_UNSUPPORTED" << endl;
-          break;
-        }
-        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: {
-          cout << "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE" << endl;
-          break;
-        }
-        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: {
-          cout << "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS" << endl;
-          break;
-        }
-        case 0: {
-          cout << "0" << endl;
-          break;
-        }
-      }
-      HALT("couldn't create framebuffer");
-    }
+    //create framebuffer and attach both renderbuffers
+    glGenFramebuffers(1, &offscreenFramebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, offscreenFramebuffer);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, offscreenColor);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,  GL_RENDERBUFFER, offscreenDepth);
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) HALT("failed");
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 
-  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
-  Render(w, h, nullptr, true);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, offscreenFramebuffer);
+  Render(width, height, nullptr, true);
   glFlush();
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 #endif
+
+  Reshape(org_width, org_height);
+  offscreen = org_offscreen;
 
   endContext(fromWithinCallback);
 }

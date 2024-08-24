@@ -140,9 +140,9 @@ struct OpenGL {
   floatA captureDepth;
   Mutex dataLock; //'data' means anything: member fields (camera, variables), drawers, data the drawers access
 //  uint fbo, render_buf;
-  uint fboId=0;
-  uint rboColor=0;
-  uint rboDepth=0;
+  uint offscreenFramebuffer=0;
+  uint offscreenColor=0;
+  uint offscreenDepth=0;
   Signaler isUpdating;
   Signaler watching;
   OpenGLDrawOptions drawOptions;

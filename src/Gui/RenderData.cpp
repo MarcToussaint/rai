@@ -169,6 +169,8 @@ void RenderScene::glInitialize(OpenGL &gl){
 
     // Always check that our framebuffer is ok
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) HALT("failed");
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 
   {
@@ -305,7 +307,11 @@ void RenderScene::glDraw(OpenGL& gl){
   //LOG(1) <<"rendering! " <<renderCount;
 
   // Render to the screen
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  if(gl.offscreen && gl.offscreenFramebuffer){
+    glBindFramebuffer(GL_FRAMEBUFFER, gl.offscreenFramebuffer);
+  }else{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  }
   if(!gl.activeView){
     glViewport(0, 0, gl.width, gl.height);
   }else{
@@ -318,8 +324,6 @@ void RenderScene::glDraw(OpenGL& gl){
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   }
-
-//  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   arr ViewT_CW = camera.getT_CW();
   arr Projection_W = camera.getT_IC() * ViewT_CW;
