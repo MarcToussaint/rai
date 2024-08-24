@@ -373,6 +373,8 @@ void TEST(Image) {
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc,argv);
 
+  testImage(); return 0;
+
   testTeapot();
   testOfflineRendering();
   testGrab();

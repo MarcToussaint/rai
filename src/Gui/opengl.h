@@ -123,6 +123,7 @@ struct OpenGL {
 
   rai::String title;     ///< the window title
   uint width, height;
+  str text;
   bool offscreen;
   rai::Camera camera;     ///< the camera used for projection
   floatA clearColor;  ///< colors of the beackground (called in glClearColor(...))

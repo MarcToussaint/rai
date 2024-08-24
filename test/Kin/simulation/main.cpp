@@ -219,7 +219,7 @@ void testRndScene(){
   arr q0 = C.getJointState();
 
   rai::Simulation S(C, S._physx, 2);
-  S.cameraview().addSensor("camera");
+  S.addSensor("camera");
 
   byteA rgb;
   floatA depth;
@@ -353,7 +353,7 @@ void testFriction(){
   arr q0 = C.getJointState();
 
   rai::Simulation S(C, S._physx, 2);
-  S.cameraview().addSensor("camera");
+  S.addSensor("camera");
 
   double tau=.01;
   Metronome tic(tau);
@@ -510,6 +510,8 @@ void testSplineMode(){
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
+
+  testRndScene(); return 0;
 
   testMotors();
   testRndScene();

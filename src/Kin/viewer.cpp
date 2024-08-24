@@ -92,6 +92,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
       if(o==-1) continue;
       rai::Shape* s = f->shape;
       if(!s || !s->_mesh){ copyMeshes=true; break; }
+      if(objs.N<=o){ copyMeshes=true; break; }
       if(s->_mesh->V.N && objs(o)->version != s->_mesh->version) { copyMeshes=true; break; }
     }
   }
@@ -195,7 +196,7 @@ void rai::ConfigurationViewer::_resetPressedKey() { ensure_gl(); gl->pressedkey=
 int rai::ConfigurationViewer::update(bool watch) {
   ensure_gl();
   if(watch) gl->raiseWindow();
-  return gl->update(watch, false);
+  return gl->update(watch, nonThreaded);
 }
 
 void rai::ConfigurationViewer::raiseWindow() {
@@ -239,7 +240,7 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
 
     {
       auto _dataLock = gl->dataLock(RAI_HERE);
-      if(saveVideoPath) write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<t<<".png"));
+      if(saveVideoPath) savePng(saveVideoPath);
     }
   }
   key = update(watch);

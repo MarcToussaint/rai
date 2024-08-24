@@ -20,10 +20,10 @@ rai::CameraView::CameraView(const rai::Configuration& _C, bool _offscreen) {
   gl->add(*this);
 }
 
-rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile) {
+rai::CameraView::Sensor& rai::CameraView::addSensor(rai::Frame* frame, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile) {
   Sensor& sen = sensors.append();
-  sen.name = name;
-  NIY; //sen.frame = C.getFrame(frameAttached)->ID;
+  sen.name = frame->name;
+  sen.frame = frame;
   rai::Camera& cam = sen.cam;
   sen.width=width;
   sen.height=height;
@@ -35,7 +35,7 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
 
   cam.setWHRatio((double)width/height);
 
-  NIY; //if(sen.frame>=0) cam.X = C.frames.elem(sen.frame)->ensure_X();
+  if(sen.frame) cam.X = sen.frame->ensure_X();
 
   //also select sensor
   gl->resize(sen.width, sen.height);
@@ -44,10 +44,8 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
   return sen;
 }
 
-rai::CameraView::Sensor& rai::CameraView::addSensor(const char* frameAttached) {
-  rai::Frame* frame = 0; NIY; //C.getFrame(frameAttached);
-
-  CHECK(frame, "frame '" <<frameAttached <<"' is not defined");
+rai::CameraView::Sensor& rai::CameraView::addSensor(rai::Frame* frame) {
+  CHECK(frame, "frame is not defined");
 
   double width=400., height=200.;
   double focalLength=-1.;
@@ -61,16 +59,16 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* frameAttached) {
   frame->ats->get<double>(width, "width");
   frame->ats->get<double>(height, "height");
 
-  return addSensor(frameAttached, frameAttached, width, height, focalLength, orthoAbsHeight, zRange);
+  return addSensor(frame, width, height, focalLength, orthoAbsHeight, zRange);
 }
 
-rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName) {
-  CHECK(sensorName, "you need to specify a sensor name, nullptr not allowed");
+rai::CameraView::Sensor& rai::CameraView::selectSensor(Frame *frame) {
+  CHECK(frame, "you need to specify a frame, nullptr not allowed");
   Sensor* sen=0;
-  for(Sensor& s:sensors) if(s.name==sensorName) { sen=&s; break; }
+  for(Sensor& s:sensors) if(s.frame==frame) { sen=&s; break; }
   if(!sen) {
 //    LOG(0) <<"can't find that sensor: " <<sensorName <<" -- trying to add it";
-    return addSensor(sensorName);
+    return addSensor(frame);
   }
 
   gl->resize(sen->width, sen->height);
@@ -161,7 +159,7 @@ uintA rai::CameraView::computeSegmentationID() {
 
 void rai::CameraView::updateCamera() {
   for(Sensor& sen:sensors) {
-    NIY; //if(sen.frame>=0) sen.cam.X = C.frames.elem(sen.frame)->ensure_X();
+    if(sen.frame) sen.cam.X = sen.frame->ensure_X();
   }
 
   if(currentSensor) {
@@ -181,8 +179,9 @@ rai::Sim_CameraView::Sim_CameraView(Var<rai::Configuration>& _kin,
     depth(this, _depth),
     V(model.get()()) {
   if(_cameraFrameName) {
-    V.addSensor(_cameraFrameName);
-    V.selectSensor(_cameraFrameName);
+    rai::Frame* f = model.get()->getFrame(_cameraFrameName);
+    V.addSensor(f);
+    V.selectSensor(f);
   }
   if(_idColors) {
     V.renderMode = V.seg;

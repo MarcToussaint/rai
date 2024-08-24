@@ -57,6 +57,7 @@ public:
   String text;
   StringA sliceTexts;
   double phaseOffset=0., phaseFactor=-1.;
+  bool nonThreaded=false;
 };
 
 struct ConfigurationViewerThread : Thread {

@@ -324,10 +324,10 @@ void OpenGL::postRedrawEvent(bool fromWithinCallback) {
 
 void OpenGL::resize(int w, int h) {
   openWindow();
-  Reshape(w, h);
   {
     auto _glfw = glfwSingleton();
     auto lock = _glfw->mutex(RAI_HERE);
+    Reshape(w, h);
     glfwSetWindowSize(window, width, height);
   }
 }
@@ -387,11 +387,11 @@ int OpenGL::watchImage(const floatA& _img, bool wait, float _zoom) {
 }
 
 int OpenGL::watchImage(const byteA& _img, bool wait, float _zoom) {
-  if(!window) resize(_img.d1*_zoom, _img.d0*_zoom);
   NIY;
 //  background=_img;
 //  backgroundZoom=_zoom;
-  //resize(img->d1*zoom,img->d0*zoom);
+//  if(!window) resize(_img.d1*_zoom, _img.d0*_zoom);
+//  resize(img->d1*zoom,img->d0*zoom);
   return update(wait);
 }
 
@@ -669,7 +669,7 @@ int OpenGL::update(bool wait, bool nonThreaded) {
   openWindow();
 #ifdef RAI_GL
   if(nonThreaded || offscreen) {
-    HALT("no");
+//    HALT("no");
     beginContext();
     Render(width, height);
     glfwSwapBuffers(window);
@@ -1168,20 +1168,20 @@ void OpenGL::renderInBack(int w, int h, bool fromWithinCallback) {
 
   Reshape(width, height);
 
-  CHECK_EQ(w%4, 0, "should be devidable by 4!!");
+  CHECK_EQ(width%4, 0, "should be devidable by 4!!");
 
   if(!offscreenFramebuffer) { //need to initialize
     glewInit();
     //create color render buffer
     glGenRenderbuffers(1, &offscreenColor);  // Create a new renderbuffer unique name.
     glBindRenderbuffer(GL_RENDERBUFFER, offscreenColor);  // Set it as the current.
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, w, h); // Sets storage type for currently bound renderbuffer.
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height); // Sets storage type for currently bound renderbuffer.
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     //create depth render buffer
     glGenRenderbuffers(1, &offscreenDepth);
     glBindRenderbuffer(GL_RENDERBUFFER, offscreenDepth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     //create framebuffer and attach both renderbuffers

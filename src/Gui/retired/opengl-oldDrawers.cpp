@@ -866,7 +866,6 @@ void glRasterImage(float x, float y, byteA& img, float zoom) {
   };
 }
 
-
 void rai::Shape::glDraw(OpenGL& gl) {
 #ifdef RAI_GL
   //set name (for OpenGL selection)

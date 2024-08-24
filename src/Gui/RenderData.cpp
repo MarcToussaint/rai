@@ -108,7 +108,7 @@ void RenderFont::glInitialize(){
     characters(c) = { texture,
                       (int)face->glyph->bitmap.width, (int)face->glyph->bitmap.rows,
                       face->glyph->bitmap_left, face->glyph->bitmap_top,
-                      face->glyph->advance.x };
+                      (int)face->glyph->advance.x };
   }
   glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -176,6 +176,7 @@ void RenderScene::glInitialize(OpenGL &gl){
   {
     id.progText = LoadShaders( rai::raiPath("src/Gui/shaderText.vs"), rai::raiPath("src/Gui/shaderText.fs") );
     id.progText_color = glGetUniformLocation( id.progText, "textColor" );
+    id.progText_useTexColor = glGetUniformLocation( id.progText, "useTexColor" );
   }
   id.initialized=true;
 
@@ -252,12 +253,9 @@ void RenderScene::glDraw(OpenGL& gl){
   ContextIDs& id = contextIDs[&gl];
   CHECK(id.initialized, "");
 
-  for(std::shared_ptr<RenderObject>& obj:objs){
-    if(!obj->initialized) obj->glInitialize();
-  }
-  for(std::shared_ptr<RenderText>& txt:texts){
-    if(!txt->initialized) txt->glInitialize();
-  }
+  for(std::shared_ptr<RenderObject>& obj:objs) if(!obj->initialized) obj->glInitialize();
+  for(std::shared_ptr<RenderText>& txt:texts) if(!txt->initialized) txt->glInitialize();
+  for(std::shared_ptr<RenderQuad>& quad:quads) if(!quad->initialized) quad->glInitialize();
 
   if(!gl.activeView){
     camera = gl.camera;
@@ -307,7 +305,7 @@ void RenderScene::glDraw(OpenGL& gl){
   //LOG(1) <<"rendering! " <<renderCount;
 
   // Render to the screen
-  if(gl.offscreen && gl.offscreenFramebuffer){
+  if(gl.offscreen){
     glBindFramebuffer(GL_FRAMEBUFFER, gl.offscreenFramebuffer);
   }else{
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -369,10 +367,14 @@ void RenderScene::glDraw(OpenGL& gl){
   if(dontRender>_text) for(uint k=0;k<(renderCount?1:2);k++){
 
     glUseProgram(id.progText);
+    glUniform1i(id.progText_useTexColor, 0);
     glm::mat4 projection = glm::ortho(0.0f, float(gl.width), 0.0f, float(gl.height));
     glUniformMatrix4fv(glGetUniformLocation(id.progText, "projection"), 1, GL_FALSE, &projection[0][0]);
 
     for(auto &txt:texts) txt->glRender(id.progText_color, id.font, gl.height);
+
+    glUniform1i(id.progText_useTexColor, 1);
+    for(auto &quad:quads) quad->glRender();
   }
 
   renderCount++;
@@ -641,6 +643,22 @@ void RenderScene::setText(const char* text){
   }
 }
 
+void RenderScene::addQuad(const byteA& img, float x, float y, float w, float h){
+  std::shared_ptr<RenderQuad> quad = make_shared<RenderQuad>();
+  quads.append(quad);
+  quad->img = img;
+
+  if(w<0.) w=h/img.d0*img.d1;
+  if(h<0.) h=w/img.d1*img.d0;
+  quad->vertices = { x,     y + h,   0.0f, 0.0f ,
+                     x,     y,       0.0f, 1.0f ,
+                     x + w, y,       1.0f, 1.0f ,
+                     x,     y + h,   0.0f, 0.0f ,
+                     x + w, y,       1.0f, 1.0f ,
+                     x + w, y + h,   1.0f, 0.0f };
+
+}
+
 void RenderScene::clearObjs(){
   objs.clear();
   texts.clear();
@@ -717,4 +735,58 @@ void RenderText::glInitialize(){
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
   initialized = true;
+}
+
+void RenderQuad::glRender(){
+  CHECK(initialized, "");
+  glActiveTexture(GL_TEXTURE0);
+
+  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
+  glEnableVertexAttribArray(2);
+
+  glBindTexture(GL_TEXTURE_2D, texture);
+  if(img.nd==2 || img.d2==1) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, img.d1, img.d0, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img.p);
+  else if(img.d2==2) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, img.d1, img.d0, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, img.p);
+  else if(img.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.d1, img.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, img.p);
+  else if(img.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.d1, img.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.p);
+
+  glBindVertexArray(vao);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+  glDisableVertexAttribArray(2);
+}
+
+void RenderQuad::glInitialize(){
+  //generate vertex array object
+  glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
+
+  glGenBuffers(1, &vertexBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, vertices.p, GL_STATIC_DRAW);
+  glEnableVertexAttribArray(0); //?
+  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  glBindVertexArray(0);
+
+  //generate texture
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  if(img.nd==2 || img.d2==1) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, img.d1, img.d0, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img.p);
+  else if(img.d2==2) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, img.d1, img.d0, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, img.p);
+  else if(img.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.d1, img.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, img.p);
+  else if(img.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.d1, img.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.p);
+  else NIY;
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  initialized=true;
 }

@@ -21,7 +21,7 @@ struct CameraView : ConfigurationViewer {
     rai::String name;
     rai::Camera cam;     ///< this includes the transformation X
     uint width=640, height=480;
-    int frame=-1;
+    rai::Frame *frame=0;
     Sensor() {}
     rai::Transformation& pose() { return cam.X; }
     arr getFxycxy() { return cam.getFxycxy(width, height); }
@@ -42,17 +42,15 @@ struct CameraView : ConfigurationViewer {
   ~CameraView() {}
 
   //-- loading the configuration: the meshes, the robot model, the tote, the sensors; all ends up in K
-  Sensor& addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange= {}, const char* backgroundImageFile=0);
-  Sensor& addSensor(const char* frameAttached); //read everything from the frame attributes
-  Sensor& selectSensor(const char* sensorName); //set the OpenGL sensor
+  Sensor& addSensor(rai::Frame* frame, uint width, uint height, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange= {}, const char* backgroundImageFile=0);
+  Sensor& addSensor(rai::Frame* frame); //read everything from the frame attributes
+  Sensor& selectSensor(rai::Frame* frame); //set the OpenGL sensor
 
   void computeImageAndDepth(byteA& image, floatA& depth);
   byteA computeSegmentationImage();
   uintA computeSegmentationID();
 
   arr getFxycxy() { CHECK(currentSensor, "no sensor selected yet"); return currentSensor->getFxycxy(); }
-
-  void glDraw(OpenGL& gl) { NIY; }
 
  private:
   void updateCamera();

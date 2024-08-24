@@ -42,6 +42,16 @@ struct RenderText{
   void glInitialize();
 };
 
+struct RenderQuad {
+  byteA img;
+  floatA vertices;
+  GLuint vao, vertexBuffer, texture;
+  bool initialized=false;
+
+  void glRender();
+  void glInitialize();
+};
+
 struct DistMarkers {
   int markerObj=-1;
   arr pos;
@@ -53,6 +63,7 @@ struct RenderScene : GLDrawer{
   rai::Array<std::shared_ptr<RenderObject>> objs;
   rai::Array<std::shared_ptr<rai::Camera>> lights;
   rai::Array<std::shared_ptr<RenderText>> texts;
+  rai::Array<std::shared_ptr<RenderQuad>> quads;
   DistMarkers distMarkers;
 
   RenderType dontRender=_all;
@@ -65,7 +76,7 @@ struct RenderScene : GLDrawer{
     GLuint progShadow_ID, progShadow_ShadowProjection_W, progShadow_ModelT_WM;
     GLuint shadowFramebuffer, shadowTexture;
     GLuint progMarker, progMarker_Projection_W, progMarker_ModelT_WM;
-    GLuint progText, progText_color;
+    GLuint progText, progText_color, progText_useTexColor;
     RenderFont font;
   };
 
@@ -78,6 +89,7 @@ struct RenderScene : GLDrawer{
   void addDistMarker(const arr& a, const arr& b, int s);
   void addText(const char* text, float x, float y, float size);
   void setText(const char* text);
+  void addQuad(const byteA& img, float x, float y, float w, float h);
   void clearObjs();
 
   void glInitialize(OpenGL &gl);

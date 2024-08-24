@@ -543,7 +543,7 @@ void Simulation::addImp(Simulation::ImpType type, const StringA& frames, const a
 }
 
 void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
-  NIY; //cameraview().updateConfiguration(C);
+  cameraview().updateConfiguration(C);
   cameraview().renderMode = CameraView::visuals;
   cameraview().computeImageAndDepth(image, depth);
 
@@ -556,6 +556,28 @@ void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
 }
 
 //===========================================================================
+
+void glRasterImage(float x, float y, byteA& img, float zoom) {
+  glRasterPos3f(x, y, 0.); //(int)(y+zoom*img.d0)); (the latter was necessary for other pixel/raster coordinates)
+  glPixelZoom(zoom, -zoom);
+  if(img.d1%4) {  //necessary: extend the image to have width mod 4
+    uint P=img.d2;
+    if(!P) P=1;
+    uint add=4-(img.d1%4);
+    img.reshape(img.d0, img.d1*P);
+    img.insColumns(-1, add*P);
+    if(P>1) img.reshape(img.d0, img.d1/P, P);
+  }
+
+  switch(img.d2) {
+    case 0:
+    case 1:  glDrawPixels(img.d1, img.d0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img.p);        break;
+    case 2:  glDrawPixels(img.d1, img.d0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, img.p);  break;
+    case 3:  glDrawPixels(img.d1, img.d0, GL_RGB, GL_UNSIGNED_BYTE, img.p);              break;
+    case 4:  glDrawPixels(img.d1, img.d0, GL_RGBA, GL_UNSIGNED_BYTE, img.p);             break;
+    default: HALT("no image format");
+  };
+}
 
 struct Simulation_DisplayThread : Thread, ConfigurationViewer {
   //data
@@ -582,7 +604,8 @@ struct Simulation_DisplayThread : Thread, ConfigurationViewer {
   }
 
   void step() {
-    gl->update(STRING("Kin/Simulation - time:" <<time), true);
+    text.clear() <<"Kin/Simulation - time:" <<time;
+    update();
     //write_png(gl->captureImage, STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"));
     //if(!(step_count%10)) cout <<"display thread load:" <<timer.report() <<endl;
   }
@@ -595,27 +618,26 @@ struct Simulation_DisplayThread : Thread, ConfigurationViewer {
     drawCount++;
 #ifdef RAI_GL
     mux.lock(RAI_HERE);
-    NIY; //glStandardScene(nullptr, gl);
     ConfigurationViewer::glDraw(gl);
 
     if(image.N && depth.N) {
-      resizeAs(depthImage, depth);
+      resizeAs(depthImage, image);
       float x;
-      for(uint i=0; i<depthImage.N; i++) {
+      for(uint i=0; i<depth.N; i++) {
         x = 100.f * depth.p[i]; //this means that the RGB values are cm distance (up to 255cm distance)
-        depthImage.p[i] = (x<0.f)?0.f:((x>255.f)?255.f:x);
+        if(x<0.f) x=0.f;  if(x>255.f) x=255.f;
+        for(uint j=0;j<3;j++)
+          depthImage.p[3*i+j] = x;
       }
-      float scale = .3*float(gl.width)/image.d1;
-      float top = 1. - scale*float(image.d0)/gl.height;
 
-      glMatrixMode(GL_PROJECTION);
-      glLoadIdentity();
-      glMatrixMode(GL_MODELVIEW);
-      glLoadIdentity();
-      glOrtho(0, 1., 1., 0., -1., 1.); //only affects the offset - the rest is done with raster zooms
-      glDisable(GL_DEPTH_TEST);
-      NIY; //glRasterImage(.0, top, image, scale);
-      NIY; //glRasterImage(.7, top, depthImage, scale);
+      if(!quads.N){
+        float w = .3*float(gl.width);
+        addQuad(image, 10, 10, w, -1);
+        addQuad(depthImage, gl.width-w-10, 10, w, -1);
+      }else{
+        quads(0)->img = image;
+        quads(1)->img = depthImage;
+      }
     }
 
     screenshot.resize(gl.height, gl.width, 3);

@@ -64,14 +64,12 @@ struct Simulation {
   void getImageAndDepth(byteA& image, floatA& depth); ///< use this during stepping
   void getSegmentation(byteA& segmentation);
   CameraView& cameraview(); ///< use this if you want to initialize the sensor, etc
-  rai::CameraView::Sensor& addSensor(const char* sensorName, const char* frameAttached=nullptr, uint width=640, uint height=360, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange= {}) {
-    if(frameAttached && frameAttached[0]) {
-      return cameraview().addSensor(sensorName, frameAttached, width, height, focalLength, orthoAbsHeight, zRange);
-    } else {
-      return cameraview().addSensor(sensorName);
-    }
+  rai::CameraView::Sensor& addSensor(const char* sensorName, uint width=640, uint height=360, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange= {}) {
+    rai::Frame *f = C.getFrame(sensorName);
+    CHECK(f, "a camera frame must exist");
+    return cameraview().addSensor(f, width, height, focalLength, orthoAbsHeight, zRange);
   }
-  rai::CameraView::Sensor&  selectSensor(const char* name) { return cameraview().selectSensor(name); }
+  rai::CameraView::Sensor&  selectSensor(const char* name) { return cameraview().selectSensor(C.getFrame(name)); }
   byteA getScreenshot();
 
   //== ground truth interface
