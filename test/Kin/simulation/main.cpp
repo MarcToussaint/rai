@@ -334,7 +334,7 @@ void testFriction(){
     obj->setShape(rai::ST_ssBox, size);
     obj->setPosition({(i-4)*.2,0.,1.});
     obj->setMass(.2);
-    obj->setAttribute("friction", .02*i);
+    obj->setAttribute("friction", .1*i);
   }
 
   for(int i=0;i<10;i++){
@@ -348,7 +348,9 @@ void testFriction(){
 
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandasTable.g"));
 
-  C["table"]->setQuaternion({1.,-.1,0.,0.}); //tilt the table!!
+  rai::Frame *table = C.getFrame("table");
+  table->setQuaternion({1.,-.1,0.,0.}); //tilt the table!!
+  table->setAttribute("friction", .2);
 
   arr q0 = C.getJointState();
 

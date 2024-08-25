@@ -56,7 +56,7 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
     if(mesh && mesh->V.N){
       frame2objID(f->ID) = objs.N;
       if(f->shape->type()==ST_pointCloud){
-        NIY //PCL;
+        add().pointCloud(mesh->V, mesh->C, f->ensure_X(), _marker);
       }else if(f->shape->type()==ST_lines){
         add().lines(mesh->V, mesh->C, f->ensure_X(), _marker);
       }else if(mesh->T.d1==3){
@@ -129,7 +129,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
     motion.clear();
   }
 
-  if(C.proxies.N) {
+  if(false && C.proxies.N) {
     auto _dataLock = gl->dataLock(RAI_HERE);
     distMarkers.pos.clear();
     distMarkers.slices.clear();

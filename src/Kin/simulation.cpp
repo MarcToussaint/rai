@@ -618,7 +618,6 @@ struct Simulation_DisplayThread : Thread, ConfigurationViewer {
     drawCount++;
 #ifdef RAI_GL
     mux.lock(RAI_HERE);
-    ConfigurationViewer::glDraw(gl);
 
     if(image.N && depth.N) {
       resizeAs(depthImage, image);
@@ -639,6 +638,8 @@ struct Simulation_DisplayThread : Thread, ConfigurationViewer {
         quads(1)->img = depthImage;
       }
     }
+
+    ConfigurationViewer::glDraw(gl);
 
     screenshot.resize(gl.height, gl.width, 3);
     glReadPixels(0, 0, gl.width, gl.height, GL_RGB, GL_UNSIGNED_BYTE, screenshot.p);

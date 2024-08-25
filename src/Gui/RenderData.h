@@ -20,6 +20,7 @@ struct RenderObject{
   ~RenderObject();
   void mesh(rai::Mesh &mesh, const rai::Transformation& _X, double avgNormalsThreshold=.9, RenderType _type=_solid);
   void lines(const arr& lines, const arr& color, const rai::Transformation& _X, RenderType _type=_marker);
+  void pointCloud(const arr& points, const arr& color, const rai::Transformation& _X, RenderType _type=_solid);
 //private:
   void glRender();
   void glInitialize();

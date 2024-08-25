@@ -184,21 +184,6 @@ void RenderScene::glInitialize(OpenGL &gl){
   id.font.glInitialize();
 }
 
-void RenderObject::glRender(){
-  CHECK(initialized, "");
-
-  glEnableVertexAttribArray(0);
-  glEnableVertexAttribArray(1);
-  glEnableVertexAttribArray(2);
-
-  glBindVertexArray(vao);
-  glDrawArrays(mode, 0, vertices.d0);
-
-  glDisableVertexAttribArray(0);
-  glDisableVertexAttribArray(1);
-  glDisableVertexAttribArray(2);
-}
-
 void RenderScene::renderObjects(GLuint idT_WM, const uintA& sorting, RenderType type){
   arr T_WM = eye(4);
 
@@ -427,7 +412,7 @@ void RenderObject::mesh(rai::Mesh& mesh, const rai::Transformation& _X, double a
   }
 
   //-- normal smoothing
-  if(avgNormalsThreshold<1.){
+  if(false && avgNormalsThreshold<1.){
     //go through all vertices and check whether to average normals for smoothing
     uintAA sameVertices(mesh.V.d0);
     for(uint i=0;i<mesh.T.d0;i++){
@@ -468,6 +453,27 @@ void RenderObject::mesh(rai::Mesh& mesh, const rai::Transformation& _X, double a
   }
 }
 
+void RenderObject::pointCloud(const arr& points, const arr& color, const rai::Transformation& _X, RenderType _type){
+  X = _X;
+  type = _type;
+  if(type==_solid && (color.N==4 || color.N==2) && color(-1)<1.) type = _transparent;
+
+  vertices = rai::convert<float>(points);
+  colors.resize(vertices.d0, 4);
+  if(color.nd==1){
+    arr c = color;
+    if(c.N==1){ double g=c.elem(); c = arr{g,g,g}; }
+    if(c.N<4) c.append(1.);
+    for(uint i=0;i<vertices.d0;i++) for(uint k=0;k<4;k++) colors(i,k) = c(k);
+  }else{
+    colors = rai::convert<float>(color);
+    if(colors.d1==3){
+      colors.insColumns(-1,1);
+      for(uint i=0;i<vertices.d0;i++) colors(i,3) = 1.;
+    }
+  }
+}
+
 void RenderObject::lines(const arr& lines, const arr& color, const rai::Transformation& _X, RenderType _type){
   X = _X;
   vertices = rai::convert<float>(lines).reshape(-1, 3);
@@ -482,6 +488,21 @@ void RenderObject::lines(const arr& lines, const arr& color, const rai::Transfor
   normals.clear();
   type = _type;
   mode = GL_LINES;
+}
+
+void RenderObject::glRender(){
+  CHECK(initialized, "");
+
+  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
+  glEnableVertexAttribArray(2);
+
+  glBindVertexArray(vao);
+  glDrawArrays(mode, 0, vertices.d0);
+
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+  glDisableVertexAttribArray(2);
 }
 
 void RenderObject::glInitialize(){
@@ -662,10 +683,12 @@ void RenderScene::addQuad(const byteA& img, float x, float y, float w, float h){
 void RenderScene::clearObjs(){
   objs.clear();
   texts.clear();
+  quads.clear();
   distMarkers.markerObj=-1;
   distMarkers.pos.clear();
   distMarkers.slices.clear();
   renderCount=0;
+  slice=-1;
 }
 
 void RenderText::glRender(GLuint progText_color, const RenderFont& font, float height){
