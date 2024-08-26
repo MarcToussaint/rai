@@ -1,8 +1,16 @@
-#include "opengl.h"
+#pragma once
+
+#include "opengl.h" //needed to include glew-etc before gl.h
+
 #include <GL/gl.h>
 
 //#include <Geo/geo.h>
+#include "../Core/util.h"
 #include "../Geo/mesh.h"
+
+#include <map>
+
+namespace rai {
 
 enum RenderType { _solid, _shadow, _transparent, _marker, _text, _all };
 
@@ -21,7 +29,8 @@ struct RenderObject{
   void mesh(rai::Mesh &mesh, const rai::Transformation& _X, double avgNormalsThreshold=.9, RenderType _type=_solid);
   void lines(const arr& lines, const arr& color, const rai::Transformation& _X, RenderType _type=_marker);
   void pointCloud(const arr& points, const arr& color, const rai::Transformation& _X, RenderType _type=_solid);
-//private:
+
+  //engine specific -> should be refactored
   void glRender();
   void glInitialize();
 };
@@ -30,15 +39,17 @@ struct RenderFont {
   struct Character {  GLuint texture;  int size_x, size_y, offset_x, offset_y, advance_x;  };
   rai::Array<Character> characters;
 
+  //engine specific -> should be refactored
   void glInitialize();
 };
 
 struct RenderText{
   GLuint vao, vertexBuffer;
-  str text;
+  rai::String text;
   float x, y, scale;
   bool initialized=false;
 
+  //engine specific -> should be refactored
   void glRender(GLuint progText_color, const RenderFont& font, float height);
   void glInitialize();
 };
@@ -49,6 +60,7 @@ struct RenderQuad {
   GLuint vao, vertexBuffer, texture;
   bool initialized=false;
 
+  //engine specific -> should be refactored
   void glRender();
   void glInitialize();
 };
@@ -59,7 +71,9 @@ struct DistMarkers {
   intA slices;
 };
 
-struct RenderScene : GLDrawer{
+struct RenderData {
+  Mutex dataLock;
+
   rai::Camera camera;
   rai::Array<std::shared_ptr<RenderObject>> objs;
   rai::Array<std::shared_ptr<rai::Camera>> lights;
@@ -81,8 +95,6 @@ struct RenderScene : GLDrawer{
     RenderFont font;
   };
 
-  std::map<OpenGL*, ContextIDs> contextIDs;
-
   RenderObject& add();
   void addLight(const arr& pos, const arr& focus, double heightAbs=5.);
 
@@ -93,10 +105,13 @@ struct RenderScene : GLDrawer{
   void addQuad(const byteA& img, float x, float y, float w, float h);
   void clearObjs();
 
-  void glInitialize(OpenGL &gl);
-  void glDraw(OpenGL &gl);
+  //engine specific -> should be refactored
+  void ensureInitialized(OpenGL &gl);
+  virtual void glDraw(OpenGL &gl);
   void glDeinitialize(OpenGL &gl);
 
 //private:
   void renderObjects(GLuint idT_WM, const uintA& sorting, RenderType type);
 };
+
+}//namespace

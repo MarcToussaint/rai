@@ -17,7 +17,7 @@ rai::CameraView::CameraView(const rai::Configuration& _C, bool _offscreen) {
   updateConfiguration(_C);
   gl = make_shared<OpenGL>("CameraView", 640, 480, _offscreen);
   gl->camera.setDefault();
-  gl->add(*this);
+  gl->add(this);
 }
 
 rai::CameraView::Sensor& rai::CameraView::addSensor(rai::Frame* frame, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile) {

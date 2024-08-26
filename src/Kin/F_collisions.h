@@ -33,10 +33,9 @@ struct F_PairCollision : Feature {
 
 //===========================================================================
 
-struct F_PairFunctional : Feature, GLDrawer {
+struct F_PairFunctional : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 1; }
-  virtual void glDraw(OpenGL&) { NIY; }
  protected:
   std::shared_ptr<struct SweepingSDFPenetration> P;
   arr x;

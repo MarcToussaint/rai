@@ -99,13 +99,12 @@ struct SDF_Torus : SDF {
   double f_raw(arr& g, arr& H, const arr& _x);
 };
 
-struct DensityDisplayData : GLDrawer {
+struct DensityDisplayData {
   rai::Mesh box;
   byteA volumeImgZ, volumeImgY, volumeImgX;
   rai::Array<rai::Mesh> volumeZ, volumeY, volumeX;
 
   DensityDisplayData(struct SDF_GridData& sdf);
-  void glDraw(struct OpenGL&);
 };
 
 struct SDF_GridData : SDF {

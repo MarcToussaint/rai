@@ -23,7 +23,7 @@ namespace rai {
 
 /// a data structure to store proximity information (when two shapes become close) --
 /// as return value from external collision libs
-struct Proxy : GLDrawer {
+struct Proxy {
   Frame* a=0;      ///< shape A
   Frame* b=0;      ///< shape B
   Vector posA=0;     ///< contact or closest point position on surface of shape A (in world coordinates)
@@ -36,7 +36,6 @@ struct Proxy : GLDrawer {
   void copy(const Configuration& C, const Proxy& p);
   void ensure_coll() { if(!collision) calc_coll(); }
   void calc_coll();
-  virtual void glDraw(OpenGL&) { NIY; }
   void write(ostream& os, bool brief=true) const;
 };
 stdOutPipe(Proxy)

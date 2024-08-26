@@ -24,7 +24,7 @@ enum ShapeType { ST_none=-1, ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylind
 
 //===========================================================================
 /// a mesh (arrays of vertices, triangles, colors & normals)
-struct Mesh : GLDrawer {
+struct Mesh {
   arr V;                ///< vertices
   arr Vn;               ///< vertex normals (optional)
   arr C;                ///< vertex colors (optional, may be just 3 numbers -> global color)
@@ -43,6 +43,7 @@ struct Mesh : GLDrawer {
 
   rai::Transformation glX; ///< transform (only used for drawing! Otherwise use applyOnPoints)  (optional)
 
+  int version = 0;
   long parsing_pos_start;
   long parsing_pos_end;
 
@@ -151,8 +152,6 @@ struct Mesh : GLDrawer {
   void readH5(const char* filename, const String& group);
   void readArr(std::istream&);
   void readPts(std::istream&);
-
-  void glDraw(struct OpenGL&);
 };
 
 stdOutPipe(Mesh)
@@ -178,4 +177,3 @@ void inertiaBox(double* Inertia, double& mass, double density, double dx, double
 void inertiaCylinder(double* Inertia, double& mass, double density, double height, double radius);
 void inertiaMesh(double* I, double& mass, double density, const rai::Mesh& m);
 
-void glDrawMeshes(void*, OpenGL&);

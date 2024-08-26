@@ -1549,3 +1549,294 @@ void RRT_SingleTree::glDraw(OpenGL& gl) {
   glEnd();
   glLineWidth(1.f);
 }
+
+/// GL routine to draw a Mesh
+void Mesh::glDraw(struct OpenGL& gl) {
+  GLboolean lightingEnabled=true;
+  glGetBooleanv(GL_LIGHTING, &lightingEnabled);
+
+  if(glDrawOptions(gl).drawColors) {
+    if(C.nd==1) {
+      CHECK(C.N>=1 && C.N<=4, "need a basic color");
+      GLfloat col[4];
+      if(C.N>=3) {
+        col[0] = C.elem(0);
+        col[1] = C.elem(1);
+        col[2] = C.elem(2);
+        col[3] = (C.N==4?C.elem(3):1.);
+      } else {
+        col[0] = col[1] = col[2] = C.elem(0);
+        col[3] = (C.N==2?C.elem(1):1.);
+      }
+      if(lightingEnabled && T.N) glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
+      else glColor4fv(col);
+    }
+  }
+
+  if(!T.N && V.N) { //-- draw point cloud
+    CHECK_EQ(V.nd, 2, "wrong dimension");
+    CHECK_EQ(V.d1, 3, "wrong dimension");
+    glDisable(GL_LIGHTING);
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    if(C.d0==V.d0) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    glVertexPointer(3, GL_DOUBLE, 0, V.p);
+    if(C.d0==V.d0) glColorPointer(C.d1, GL_DOUBLE, 0, C.p);
+
+    glDrawArrays(GL_POINTS, 0, V.d0);
+
+    if(Vn.N) { //draw normals
+      CHECK_EQ(Vn.N, V.N, "");
+      arr p, n;
+      glColor4d(.5, .5, .5, .2);
+      glBegin(GL_LINES);
+      for(uint i=0; i<V.d0; i++) {
+        //if(C.N==V.N) glColor3dv(&C(i,0));
+        p.setCarray(&V(i, 0), 3);
+        n.setCarray(&Vn(i, 0), 3);
+        glVertex3dv(p.p);
+        glVertex3dv((p+.01*n).p);
+      }
+      glEnd();
+      if(C.N==1) glColor3d(*C.p, *C.p, *C.p);
+      else if(C.N==3) glColor3dv(C.p);
+      else if(C.N==4) glColor4dv(C.p);
+    }
+
+    if(lightingEnabled) glEnable(GL_LIGHTING);
+  }
+
+  if(T.d1==2) { //-- draw lines
+    //    glLineWidth(3.f);
+    //    glShadeModel(GL_FLAT);
+    glShadeModel(GL_SMOOTH);
+#if 0
+    uint v;
+    glBegin(GL_LINES);
+    for(uint i=0; i<T.d0; i++) {
+      if(C.d0==T.d0) {
+        if(C.d1==3) glColor(C(i, 0), C(i, 1), C(i, 2), 1.);
+        if(C.d1==1) glColorId(C(i, 0));
+      }
+      v=T(i, 0);  if(C.nd==2 && C.d0==V.d0) glColor(C(v, 0), C(v, 1), C(v, 2), 1.f);  glVertex3dv(&V(v, 0));
+      v=T(i, 1);  if(C.nd==2 && C.d0==V.d0) glColor(C(v, 0), C(v, 1), C(v, 2), 1.f);  glVertex3dv(&V(v, 0));
+    }
+    glEnd();
+#else
+    glEnableClientState(GL_VERTEX_ARRAY);
+    if(glDrawOptions(gl).drawColors) {
+      if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+      if(C.N==V.N) glDisable(GL_LIGHTING); //because lighting requires ambiance colors to be set..., not just color..
+    }
+
+    glVertexPointer(3, GL_DOUBLE, 0, V.p);
+    if(glDrawOptions(gl).drawColors) {
+      if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
+    }
+
+    glDrawElements(GL_LINES, T.N, GL_UNSIGNED_INT, T.p);
+
+#if 1 //points as well
+    glPointSize(3);
+    glDrawArrays(GL_POINTS, 0, V.d0);
+    glPointSize(1);
+#endif
+
+    if(C.N==V.N) glEnable(GL_LIGHTING);
+#endif
+  }
+
+  //-- draw a mesh
+  if(T.d0 && (T.d0!=Tn.d0)) computeNormals();
+
+  //-- if not yet done, GenTexture
+  if(texImg.N && glDrawOptions(gl).drawColors) {
+    if(texture<0) {
+      GLuint texName;
+      glGenTextures(1, &texName);
+      texture = texName;
+      glBindTexture(GL_TEXTURE_2D, texture);
+
+      if(texImg.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texImg.d1, texImg.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, texImg.p);
+      else if(texImg.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texImg.d1, texImg.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, texImg.p);
+      else NIY;
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    } else {
+      glBindTexture(GL_TEXTURE_2D, texture);
+    }
+  }
+
+  //-- draw the mesh
+  if(false && (!C.N || C.nd==1 || !glDrawOptions(gl).drawColors || (C.d0==V.d0 && !lightingEnabled))  //we have colors for each vertex
+      && (!tex.N || !Tt.N)) { //we have no tex or tex coords for each vertex -> use index arrays
+
+    glShadeModel(GL_FLAT); //triangles with constant reflection
+//    glShadeModel(GL_SMOOTH); //smoothed over vertices
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    if(glDrawOptions(gl).drawColors) {
+      if(tex.N) CHECK_EQ(tex.d0, V.d0, "this needs tex coords for each vertex; if you have it face wise, render the slow way..");
+      if(tex.N) glEnable(GL_TEXTURE_2D);
+
+      if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+      if(C.N==V.N) glDisable(GL_LIGHTING); //because lighting requires ambiance colors to be set..., not just color..
+      if(tex.N) glEnableClientState(GL_TEXTURE_COORD_ARRAY); else glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    }
+
+    glVertexPointer(3, GL_DOUBLE, 0, V.p);
+    glNormalPointer(GL_DOUBLE, 0, Vn.p);
+    if(glDrawOptions(gl).drawColors) {
+      if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
+      if(tex.N) glTexCoordPointer(2, GL_DOUBLE, 0, tex.p);
+    }
+
+    glDrawElements(GL_TRIANGLES, T.N, GL_UNSIGNED_INT, T.p);
+
+    if(C.N==V.N) glEnable(GL_LIGHTING);
+
+    if(tex.N) glDisable(GL_TEXTURE_2D);
+
+//  } else if(C.d0==T.d0){ //we have colors for each tri -> render tris directly and with tri-normals
+
+//    CHECK_EQ(C.d0, T.d0, "");
+//    CHECK_EQ(Tn.d0, T.d0, "");
+//    glShadeModel(GL_FLAT);
+//    glBegin(GL_TRIANGLES);
+//    GLboolean light=true;
+//    glGetBooleanv(GL_LIGHTING, &light); //this doesn't work!!?? even when disabled, returns true; never changes 'light'
+//    for(uint t=0; t<T.d0; t++) {
+//      uint   *tri  = T.p  + 3*t; //&T(t, 0);
+//      double *col  = C.p  + 3*t; //&C(t, 0);
+//      double *norm = Tn.p + 3*t; //&Tn(t, 0);
+
+//      GLfloat ambient[4] = { (float)col[0], (float)col[1], (float)col[2], 1.f };
+//      if(!light) glColor4fv(ambient);
+//      else       glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, ambient);
+
+//      glNormal3dv(norm);
+//      glVertex3dv(V.p + 3*tri[0]); //&V(tri[0],0);
+//      glVertex3dv(V.p + 3*tri[1]);
+//      glVertex3dv(V.p + 3*tri[2]);
+//    }
+//    glEnd();
+  } else { //basic vertex-wise
+    if(tex.N) CHECK_EQ(Tt.d0, T.d0, "this needs tex coords for each tri");
+    if(tex.N && glDrawOptions(gl).drawColors) glEnable(GL_TEXTURE_2D);
+
+    glShadeModel(GL_FLAT); //triangles with constant reflection
+//    glShadeModel(GL_SMOOTH); //smoothed over vertices
+
+    glBegin(GL_TRIANGLES);
+    for(uint i=0; i<T.d0; i++) {
+      glNormal3dv(Tn.p+3*i);
+      if(C.nd==2 && C.d0==T.d0) {
+        if(C.d1==3) { double* c = C.p+C.d1*i; glColor(c[0], c[1], c[2], 1.f, lightingEnabled); }
+        if(C.d1==1) glColorId(C(i, 0));
+      }
+      uint* t = T.p+3*i;
+      for(uint j=0; j<3; j++) {
+        if(C.nd==2 && C.d0==V.d0) { double* c = C.p+C.d1*t[j]; glColor(c[0], c[1], c[2], 1.f, lightingEnabled); }
+        if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));
+        glVertex3dv(V.p+3*t[j]);
+      }
+    }
+    glEnd();
+    if(Tt.N && texImg.N && glDrawOptions(gl).drawColors) {
+      glDisable(GL_TEXTURE_2D);
+    }
+#if 0 //draw normals //simple with triangle normals
+    glColor(.5, 1., .0);
+    Vector a, b, c, x;
+    for(i=0; i<T.d0; i++) {
+      glBegin(GL_LINES);
+      a.set(&V(T(i, 0), 0)); b.set(&V(T(i, 1), 0)); c.set(&V(T(i, 2), 0));
+      x.setZero(); x+=a; x+=b; x+=c; x/=3;
+      glVertex3dv(x.v);
+      a.set(&Tn(i, 0));
+      x+=.05*a;
+      glVertex3dv(x.v);
+      glEnd();
+    }
+#endif
+  }
+
+  if(glDrawOptions(gl).drawWires) { //on top of mesh
+#if 1
+    glColor(0, 0, 0, 1, 2);
+    uint t;
+    for(t=0; t<T.d0; t++) {
+      glBegin(GL_LINE_LOOP);
+      glVertex3dv(&V(T(t, 0), 0));
+      glVertex3dv(&V(T(t, 1), 0));
+      glVertex3dv(&V(T(t, 2), 0));
+      glEnd();
+    }
+#else
+    glColor(0., 0., 0., 1.);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+
+    glVertexPointer(3, GL_DOUBLE, 0, V.p);
+    if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
+    glDrawElements(GL_LINE_STRIP, T.N, GL_UNSIGNED_INT, T.p);
+#endif
+  }
+
+//  glEndList();
+//  }
+
+}
+
+void DensityDisplayData::glDraw(OpenGL& gl) {
+  box.glDraw(gl);
+  gl.drawOptions.enableLighting=false;
+  //get view direction
+  arr view = gl.camera.X.rot.getZ().getArr();
+  glDisable(GL_CULL_FACE);
+  uint side = argmax(fabs(view));
+  switch(side) {
+    case 0: {
+      if(view(0)<0.) {
+        for(uint i=0; i<volumeX.N; i++) volumeX(i).glDraw(gl);
+      } else {
+        for(uint i=volumeX.N; i--;) volumeX(i).glDraw(gl);
+      }
+    } break;
+    case 1: {
+      if(view(1)<0.) {
+        for(uint i=0; i<volumeY.N; i++) volumeY(i).glDraw(gl);
+      } else {
+        for(uint i=volumeY.N; i--;) volumeY(i).glDraw(gl);
+      }
+    } break;
+    case 2: {
+      if(view(2)<0.) {
+        for(uint i=0; i<volumeZ.N; i++) volumeZ(i).glDraw(gl);
+      } else {
+        for(uint i=volumeZ.N; i--;) volumeZ(i).glDraw(gl);
+      }
+    } break;
+  }
+
+  glEnable(GL_CULL_FACE);
+  gl.drawOptions.enableLighting=true;
+}
+
+void PhysXInterface::glDraw(OpenGL& gl) {
+  NIY; //gl.text.clear() <<self->stepCount;
+  for(PxRigidActor* a: self->actors) {
+    if(a) {
+      rai::Frame* f = (rai::Frame*)a->userData;
+      NIY; //DrawActor(a, f, gl);
+    }
+  }
+}
+

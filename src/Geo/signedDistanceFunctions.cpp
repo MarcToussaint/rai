@@ -584,41 +584,6 @@ DensityDisplayData::DensityDisplayData(SDF_GridData& sdf) {
   }
 }
 
-void DensityDisplayData::glDraw(OpenGL& gl) {
-  box.glDraw(gl);
-  gl.drawOptions.enableLighting=false;
-  //get view direction
-  arr view = gl.camera.X.rot.getZ().getArr();
-  glDisable(GL_CULL_FACE);
-  uint side = argmax(fabs(view));
-  switch(side) {
-    case 0: {
-      if(view(0)<0.) {
-        for(uint i=0; i<volumeX.N; i++) volumeX(i).glDraw(gl);
-      } else {
-        for(uint i=volumeX.N; i--;) volumeX(i).glDraw(gl);
-      }
-    } break;
-    case 1: {
-      if(view(1)<0.) {
-        for(uint i=0; i<volumeY.N; i++) volumeY(i).glDraw(gl);
-      } else {
-        for(uint i=volumeY.N; i--;) volumeY(i).glDraw(gl);
-      }
-    } break;
-    case 2: {
-      if(view(2)<0.) {
-        for(uint i=0; i<volumeZ.N; i++) volumeZ(i).glDraw(gl);
-      } else {
-        for(uint i=volumeZ.N; i--;) volumeZ(i).glDraw(gl);
-      }
-    } break;
-  }
-
-  glEnable(GL_CULL_FACE);
-  gl.drawOptions.enableLighting=true;
-}
-
 void SDF_GridData::write(std::ostream& os) const {
 #if 1
   rai::Graph G;

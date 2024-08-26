@@ -19,7 +19,7 @@ namespace rai {
  * Also distance between point (=mesh1) and points (=mesh2)
  * Also distance between point (=mesh1) and decomposed mesh (=mesh2)
  */
-struct PairCollision : GLDrawer, NonCopyable {
+struct PairCollision : NonCopyable {
   //INPUTS
   rai::Mesh mesh1; //V and T will typically be initialized by reference
   rai::Mesh mesh2; //V and T will typically be initialized by reference
@@ -48,8 +48,6 @@ struct PairCollision : GLDrawer, NonCopyable {
   ~PairCollision() {}
 
   void write(std::ostream& os) const;
-
-  void glDraw(struct OpenGL&) { NIY; }
 
   double getDistance() { return distance-rad1-rad2; }
 

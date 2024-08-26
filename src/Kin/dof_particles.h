@@ -14,7 +14,7 @@
 
 namespace rai {
 
-struct ParticleDofs : Dof, NonCopyable, GLDrawer {
+struct ParticleDofs : Dof, NonCopyable {
   Mesh* mesh;
 
   ParticleDofs(Frame& a, ParticleDofs* copy=nullptr);
@@ -24,7 +24,6 @@ struct ParticleDofs : Dof, NonCopyable, GLDrawer {
   virtual arr calcDofsFromConfig() const;
   virtual String name() const;
 
-  void glDraw(OpenGL&) { NIY; }
   void write(ostream& os) const {
     NIY;
   }

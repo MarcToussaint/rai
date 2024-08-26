@@ -69,22 +69,6 @@ struct NonCopyable {
 
 //===========================================================================
 //
-// just a hook to make things gl drawable
-//
-
-struct OpenGL;
-struct OpenGLDrawOptions;
-struct GLDrawer {
-  int version=-1;
-  virtual void glInitialize(OpenGL&) {}
-  virtual void glDraw(OpenGL&) = 0;
-  virtual void glDeinitialize(OpenGL&) {}
-  virtual ~GLDrawer() {}
-  static OpenGLDrawOptions& glDrawOptions(OpenGL&);
-};
-
-//===========================================================================
-//
 // just a hook to make solvers step'able
 //
 

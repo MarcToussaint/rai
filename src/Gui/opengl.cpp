@@ -23,6 +23,7 @@
 #define RAI_OPENGL_3
 
 #include "opengl.h"
+#include "RenderData.h"
 #include "../Geo/geo.h"
 
 #include <math.h>
@@ -47,8 +48,6 @@
 #else
 #  define CALLBACK_DEBUG(gl, x)
 #endif
-
-OpenGLDrawOptions& GLDrawer::glDrawOptions(OpenGL& gl) { return gl.drawOptions; }
 
 //===========================================================================
 
@@ -485,69 +484,35 @@ OpenGL::~OpenGL() {
   closeWindow();
 }
 
-struct CstyleDrawer : GLDrawer {
-  void* classP;
-  void (*call)(void*, OpenGL&);
-  CstyleDrawer(void (*call)(void*, OpenGL&), void* classP) : classP(classP), call(call) {}
-  void glDraw(OpenGL& gl) { call(classP, gl); }
-};
-
-struct LambdaDrawer : GLDrawer {
-  std::function<void(OpenGL&)> call;
-  LambdaDrawer(std::function<void(OpenGL&)> call) : call(call) {}
-  void glDraw(OpenGL& gl) { call(gl); }
-};
-
-/// add a draw routine
-void OpenGL::add(void (*call)(void*, OpenGL&), void* classP) {
-  CHECK(call!=0, "OpenGL: nullptr pointer to drawing routine");
-  auto _dataLock = dataLock(RAI_HERE);
-  toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
-  add(*toBeDeletedOnCleanup.last());
-}
-
-void OpenGL::add(std::function<void (OpenGL&)> call) {
-  CHECK(call, "OpenGL: nullptr std::function to drawing routine");
-  auto _dataLock = dataLock(RAI_HERE);
-//  toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
-  add(*(new LambdaDrawer(call)));
-}
-
-void OpenGL::add(GLDrawer& c) {
+void OpenGL::add(rai::RenderData* c) {
 //  beginContext();
 //  c.glInitialize(*this);
 //  endContext();
   {
     auto _dataLock = dataLock(RAI_HERE);
-    drawers.append(&c);
+    drawers.append(c);
   }
 }
 
-void OpenGL::remove(GLDrawer& c) {
+void OpenGL::remove(rai::RenderData* s) {
   {
     auto _dataLock = dataLock(RAI_HERE);
-    drawers.removeValue(&c);
+    for(uint i=drawers.N;i--;){
+      if(drawers(i)==s){
+        drawers.remove(i);
+        beginContext();
+        s->glDeinitialize(*this);
+        endContext();
+        break;
+      }
+    }
   }
-  beginContext();
-  c.glDeinitialize(*this);
-  endContext();
 }
 
-/// add a draw routine to a view
-void OpenGL::addSubView(uint v, void (*call)(void*, OpenGL&), void* classP) {
-  CHECK(call!=0, "OpenGL: nullptr pointer to drawing routine");
+void OpenGL::addSubView(uint v, rai::RenderData* c) {
   auto _dataLock = dataLock(RAI_HERE);
   if(v>=views.N) views.resizeCopy(v+1);
-  toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
-  views(v).drawers.append(toBeDeletedOnCleanup.last());
-
-}
-
-void OpenGL::addSubView(uint v, GLDrawer& c) {
-  auto _dataLock = dataLock(RAI_HERE);
-  if(v>=views.N) views.resizeCopy(v+1);
-  views(v).drawers.append(&c);
-
+  views(v).drawers.append(c);
 }
 
 void OpenGL::setSubViewTiles(uint cols, uint rows) {
@@ -577,8 +542,6 @@ void OpenGL::clear() {
     drawer->glDeinitialize(*this);
   }
   views.clear();
-  for(CstyleDrawer* d:toBeDeletedOnCleanup) delete d;
-  toBeDeletedOnCleanup.clear();
   drawers.clear();
   hoverCalls.clear();
   clickCalls.clear();
@@ -601,23 +564,10 @@ void OpenGL::Render(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked)
 
   if(drawOptions.pclPointSize>0.) glPointSize(drawOptions.pclPointSize);
 
-  //select mode?
-  GLint mode;
-  glGetIntegerv(GL_RENDER_MODE, &mode);
-
-  //projection
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  if(mode==GL_SELECT) gluPickMatrix((GLdouble)mouseposx, (GLdouble)mouseposy, 2., 2., viewport);
-  if(!cam) camera.glSetProjectionMatrix();
-  else     cam->glSetProjectionMatrix();
-
   //draw central view
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
   activeView=0;
-  for(GLDrawer *d:drawers) {
-    if(d->version<0){ d->glInitialize(*this); d->version=0; }
+  for(rai::RenderData* d:drawers) {
+    d->ensureInitialized(*this);
     d->glDraw(*this);
   }
 
@@ -625,22 +575,12 @@ void OpenGL::Render(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked)
   for(uint v=0; v<views.N; v++) {
     activeView=&views(v);
     glViewport(activeView->le*w, activeView->bo*h, (activeView->ri-activeView->le)*w+1, (activeView->to-activeView->bo)*h+1);
-    //glMatrixMode(GL_MODELVIEW);
-    //glLoadIdentity();
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    activeView->camera.glSetProjectionMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    for(GLDrawer* d:activeView->drawers){
-      if(d->version<0){ d->glInitialize(*this); d->version=0; }
+    for(rai::RenderData* d:activeView->drawers){
+      d->ensureInitialized(*this);
       d->glDraw(*this);
     }
   }
   activeView=0;
-
-  //cout <<"UNLOCK draw" <<endl;
 
   captureImage.resize(h, w, 3);
   glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
@@ -648,16 +588,7 @@ void OpenGL::Render(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked)
   captureDepth.resize(h, w);
   glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
 
-  //check matrix stack
-  GLint s;
-  glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &s);
-  if(s!=1) {
-    RAI_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
-  }
-  //CHECK_LE(s, 1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
-
   if(!callerHasAlreadyLocked) {
-    //now de-accessing user data
     dataLock.unlock();
   }
 #endif
@@ -1320,5 +1251,5 @@ void write_png(const byteA& img, const char* file_name, bool swap_rows) {
 
 }
 RUN_ON_INIT_BEGIN(opengl)
-rai::Array<GLDrawer*>::memMove=1;
+rai::Array<rai::RenderData*>::memMove=1;
 RUN_ON_INIT_END(opengl)

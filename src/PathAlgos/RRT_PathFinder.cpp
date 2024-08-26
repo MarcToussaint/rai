@@ -247,8 +247,6 @@ RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, con
 
   if(verbose>2) {
     DISP.copy(P.C);
-    DISP.gl().add(*rrt0);
-    DISP.gl().add(*rrtT);
   }
 }
 
@@ -313,8 +311,6 @@ int RRT_PathFinder::stepConnect() {
   if(verbose>2) {
     if(DISP.frames.N!=P.C.frames.N) {
       DISP.copy(P.C);
-      DISP.gl().add(*rrt0);
-      DISP.gl().add(*rrtT);
     }
 
     if(!(iters%100)) {

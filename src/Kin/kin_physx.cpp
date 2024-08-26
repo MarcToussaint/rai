@@ -998,16 +998,6 @@ void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) 
     }
 }
 
-void PhysXInterface::glDraw(OpenGL& gl) {
-  NIY; //gl.text.clear() <<self->stepCount;
-  for(PxRigidActor* a: self->actors) {
-    if(a) {
-      rai::Frame* f = (rai::Frame*)a->userData;
-      NIY; //DrawActor(a, f, gl);
-    }
-  }
-}
-
 void PhysXInterface::watch(bool pause, const char* txt) {
   NIY;
 //  if(!s->gl) {

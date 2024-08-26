@@ -247,7 +247,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     if(!self->glDebug) {
       self->glDebug = make_shared<OpenGL>("physx sim DEBUG", 500, 300);
       self->glDebug->camera.setDefault();
-      self->glDebug->add(*self->physx);
+      NIY; //self->glDebug->add(*self->physx);
     }
     self->glDebug->update();
   }

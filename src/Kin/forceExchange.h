@@ -20,7 +20,7 @@ struct PairCollision;
 enum ForceExchangeType { FXT_none=-1, FXT_poa=0, FXT_torque=1, FXT_force, FXT_forceZ, FXT_poaOnly };
 
 ///Description of a ForceExchange
-struct ForceExchange : Dof, NonCopyable, GLDrawer {
+struct ForceExchange : Dof, NonCopyable {
   Frame& a, &b;
   ForceExchangeType type;
   double scale=1.;
@@ -52,7 +52,6 @@ struct ForceExchange : Dof, NonCopyable, GLDrawer {
 
   PairCollision* coll();
 
-  void glDraw(OpenGL&) { NIY; }
   virtual void write(ostream& os) const;
 };
 stdOutPipe(ForceExchange)

@@ -164,8 +164,8 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
       m0.C = {.5, .3, .3, 1.};
       m1.C = {.3, .3, .8, .2};
 //      gl.add(glStandardLight);
-      gl.add(m0);
-      gl.add(m1);
+      NIY; //gl.add(m0);
+      NIY; //gl.add(m1);
     }
     virtual void getFeatureTypes(ObjectiveTypeA& tt) { tt.resize(X.d0+1) = OT_ineq; tt(0) = OT_f; }
     void evaluate(arr& phi, arr& J, const arr& x) {

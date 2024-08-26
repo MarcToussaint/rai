@@ -12,10 +12,11 @@
 #include "proxy.h"
 
 #include "../Gui/RenderData.h"
+#include "../Core/thread.h"
 
 namespace rai {
 
-struct ConfigurationViewer : RenderScene {
+struct ConfigurationViewer : RenderData {
   shared_ptr<struct OpenGL> gl;
   intA frame2objID;
 
@@ -44,7 +45,6 @@ struct ConfigurationViewer : RenderScene {
 
   //mimic a OpenGL, directly calling the same methods in its gl
   int _update(bool wait=false, const char* _text=nullptr, bool nonThreaded=false);
-  void _add(GLDrawer& c);
   void _resetPressedKey();
 
 private://draw data

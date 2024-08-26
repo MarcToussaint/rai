@@ -32,7 +32,7 @@ typedef enum { opengl, xfig, gnupl } PlotMode;
 
 namespace rai {
 
-struct PlotModule : GLDrawer {
+struct PlotModule {
   std::unique_ptr<struct sPlotModule> self;
   PlotMode mode;
   OpenGL* gl;
@@ -68,8 +68,6 @@ struct PlotModule : GLDrawer {
   void Gaussians(const GaussianA& G);
   void Gaussians(const GaussianL& G);
   void Image(const byteA& x);
-
-  void glDraw(OpenGL& gl) { NIY; }
 };
 
 }

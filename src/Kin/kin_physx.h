@@ -26,7 +26,7 @@ struct PhysX_Options {
 };
 }//namespace
 
-struct PhysXInterface : GLDrawer {
+struct PhysXInterface {
   struct PhysXInterface_self* self=0;
 
   PhysXInterface(const rai::Configuration& C, int verbose=1);
@@ -46,7 +46,6 @@ struct PhysXInterface : GLDrawer {
   void postAddObject(rai::Frame* f);
   void setArticulatedBodiesKinematic(const rai::Configuration& C);
 
-  void glDraw(OpenGL&);
   void watch(bool pause=false, const char* txt=nullptr);
 
   void setGravity(float grav);

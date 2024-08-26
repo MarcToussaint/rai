@@ -317,7 +317,7 @@ stdOutPipe(Inertia)
 //===========================================================================
 
 /// a Frame with Shape is a collision or visual object
-struct Shape : NonCopyable, GLDrawer {
+struct Shape : NonCopyable {
   Frame& frame;
   Enum<ShapeType> _type;
   arr size;
@@ -344,7 +344,6 @@ struct Shape : NonCopyable, GLDrawer {
   void read(const Graph& ats);
   void write(std::ostream& os) const;
   void write(Graph& g);
-  void glDraw(OpenGL&) { NIY; }
 };
 
 //===========================================================================

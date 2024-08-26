@@ -232,7 +232,7 @@ void LGP_Tree::updateDisplay() {
   for(uint i=0; i<solutions().N && i<6; i++) {
     if(dth->gl.views.N<=i || !dth->gl.views(i).drawers.N) {
 //      dth->gl.addSubView(i, glStandardScene, nullptr);
-      dth->gl.addSubView(i, *solutions()(i)->viewer);
+      dth->gl.addSubView(i, solutions()(i)->viewer.get());
       dth->gl.views(i).camera.setDefault();
       if(cameraFocus.N) dth->gl.views(i).camera.focus(cameraFocus(0), cameraFocus(1), cameraFocus(2), true);
       //      dth->gl.views(i).camera.focus(.9, 0., 1.3);

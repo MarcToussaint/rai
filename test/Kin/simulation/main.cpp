@@ -236,7 +236,7 @@ void testRndScene(){
   C.sortFrames();
   FILE("z.g") <<C; //write configuration into a file
 
-  rai::wait();
+  C.view(true);
 }
 
 //===========================================================================

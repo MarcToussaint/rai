@@ -33,6 +33,7 @@ namespace rai {
 struct Vector;
 struct Quaternion;
 struct Transformation;
+struct RenderData;
 }
 
 //===========================================================================
@@ -110,16 +111,15 @@ struct OpenGL {
   struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
   struct GLScrollCall { virtual bool scrollCallback(OpenGL&, int) = 0; };
   struct GLEvent    { int button, key, x, y; float dx, dy; void set(int b, int k, int _x, int _y, float _dx, float _dy) { button=b; key=k; x=_x; y=_y; dx=_dx; dy=_dy; } };
-  struct GLView     { double le, ri, bo, to;  rai::Array<GLDrawer*> drawers;  rai::Camera camera;  GLView() { le=bo=0.; ri=to=1.; }  str text; };
+  struct GLView     { double le, ri, bo, to;  rai::Array<rai::RenderData*> drawers;  rai::Camera camera;  GLView() { le=bo=0.; ri=to=1.; }  str text; };
 
   /// @name data fields
   rai::Array<GLView> views;            ///< list of subviews
-  rai::Array<GLDrawer*> drawers;       ///< list of draw routines
+  rai::Array<rai::RenderData*> drawers;
   rai::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
   rai::Array<GLClickCall*> clickCalls; ///< list of click callbacks
   rai::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
   rai::Array<GLScrollCall*> scrollCalls;     ///< list of click callbacks
-  rai::Array<struct CstyleDrawer*> toBeDeletedOnCleanup;
 
   rai::String title;     ///< the window title
   uint width, height;
@@ -161,16 +161,12 @@ struct OpenGL {
 
   /// @name adding drawing routines and callbacks
   void clear();
-  void add(void (*call)(void*, OpenGL&), void* classP=nullptr);
-  void add(std::function<void(OpenGL&)> drawer);
-  void add(GLDrawer& c);
-  void remove(GLDrawer& c);
-  //template<class T> void add(const T& x) { add(x.staticDraw, &x); } ///< add a class or struct with a staticDraw routine
+  void add(rai::RenderData* c);
+  void remove(rai::RenderData* s);
   void addHoverCall(GLHoverCall* c) { hoverCalls.append(c); }
   void addClickCall(GLClickCall* c) { clickCalls.append(c); }
   void addKeyCall(GLKeyCall* c) { keyCalls.append(c); }
-  void addSubView(uint view, void (*call)(void*, OpenGL&), void* classP=0);
-  void addSubView(uint view, GLDrawer& c);
+  void addSubView(uint view, rai::RenderData* c);
   void setSubViewTiles(uint cols, uint rows);
   void setSubViewPort(uint view, double l, double r, double b, double t);
   void clearSubView(uint view);

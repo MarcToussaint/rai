@@ -14,7 +14,7 @@
 #include "../Algo/ann.h"
 
 /// just a data structure, no algorithms
-struct RRT_SingleTree : GLDrawer {
+struct RRT_SingleTree {
   ANN ann;         //ann stores all points added to the tree in ann.X
   uintA parent;    //for each point we also store the index of the parent node
   rai::Array<shared_ptr<QueryResult>> queries;
@@ -44,8 +44,6 @@ struct RRT_SingleTree : GLDrawer {
   arr getLast() { return ann.X[ann.X.d0-1].copy(); }
   arr getRandomNode() { return ann.X[rnd(ann.X.d0)].copy(); }
   arr getPathFromNode(uint fromID);
-
-  void glDraw(OpenGL& gl) { NIY; }
 
   arr getSideStep(std::shared_ptr<QueryResult> qr);
 };

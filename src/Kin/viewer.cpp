@@ -25,7 +25,7 @@ OpenGL& rai::ConfigurationViewer::ensure_gl() {
     gl = make_shared<OpenGL>("ConfigurationViewer", 600, 500);
 //    gl->reportEvents=true;
     gl->camera.setDefault();
-    gl->add(*this);
+    gl->add(this);
   }
   return *gl;
 }
@@ -35,7 +35,8 @@ void rai::ConfigurationViewer::close_gl() {
 }
 
 void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
-  ensure_gl().dataLock.lock(RAI_HERE);
+  auto lock = dataLock(RAI_HERE);
+
   if(!lights.N){
     addLight({-3.,2.,3.}, {0.,-0.,1.}, shadowHeight);
     addLight({3.,0.,4.}, {0.,0.,1.});
@@ -70,7 +71,6 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
     frame2objID(f->ID) = objs.N;
     addAxes(f->shape->size(-1), f->ensure_X());
   }
-  ensure_gl().dataLock.unlock();
 }
 
 rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const rai::Configuration& C, const FrameL& timeSlices, bool forceCopyMeshes) {
@@ -99,7 +99,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   if(copyMeshes || forceCopyMeshes) recopyMeshes(frames);
 
   {
-    auto _dataLock = gl->dataLock(RAI_HERE);
+    auto lock = dataLock(RAI_HERE);
     for(rai::Frame* f : frames) {
       RenderObject* obj = objs(frame2objID(f->ID)).get();
       //shape pose
@@ -116,7 +116,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   }
 
   if(timeSlices.nd==2){
-    auto _dataLock = gl->dataLock(RAI_HERE);
+    auto lock = dataLock(RAI_HERE);
     drawSlice=-1;
     motion.resize(timeSlices.d0, objs.N, 7).setZero();
     for(uint t=0;t<timeSlices.d0;t++) for(uint i=0;i<timeSlices.d1;i++){
@@ -130,7 +130,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   }
 
   if(false && C.proxies.N) {
-    auto _dataLock = gl->dataLock(RAI_HERE);
+    auto lock = dataLock(RAI_HERE);
     distMarkers.pos.clear();
     distMarkers.slices.clear();
     for(const rai::Proxy& p: C.proxies){
@@ -151,7 +151,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
 void rai::ConfigurationViewer::setMotion(const uintA& frameIDs, const arr& _motion){
   CHECK_EQ(_motion.d1, frameIDs.N, "");
   CHECK_EQ(_motion.d2, 7, "");
-  auto _dataLock = gl->dataLock(RAI_HERE);
+  auto lock = gl->dataLock(RAI_HERE);
   drawSlice=-1;
   //initialize with constant motion with current pose
   motion.resize(_motion.d0, objs.N, 7).setZero();
@@ -169,7 +169,7 @@ void rai::ConfigurationViewer::setCamera(rai::Frame* camF) {
   ensure_gl();
   rai::Camera& cam = gl->camera;
   {
-    auto _dataLock = gl->dataLock(RAI_HERE);
+    auto lock = gl->dataLock(RAI_HERE);
     if(camF) {
       cam.X = camF->ensure_X();
 
@@ -188,8 +188,6 @@ void rai::ConfigurationViewer::setCamera(rai::Frame* camF) {
 }
 
 int rai::ConfigurationViewer::_update(bool wait, const char* _text, bool nonThreaded) { if(_text) text =_text; ensure_gl(); return gl->update(wait, nonThreaded); }
-
-void rai::ConfigurationViewer::_add(GLDrawer& c) { ensure_gl(); gl->add(c); }
 
 void rai::ConfigurationViewer::_resetPressedKey() { ensure_gl(); gl->pressedkey=0; }
 
@@ -222,7 +220,7 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
   CHECK(motion.nd==3, "");
 
   {
-    auto _dataLock = gl->dataLock(RAI_HERE);
+    auto lock = gl->dataLock(RAI_HERE);
     drawSlice = 0;
     abortPlay=false;
     gl->scrollCounter = 0;
@@ -239,7 +237,7 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
     key = view_slice(t, delay<0.);
 
     {
-      auto _dataLock = gl->dataLock(RAI_HERE);
+      auto lock = gl->dataLock(RAI_HERE);
       if(saveVideoPath) savePng(saveVideoPath);
     }
   }
@@ -250,7 +248,7 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
 
 int rai::ConfigurationViewer::view_slice(uint t, bool watch){
   {
-    auto _dataLock = gl->dataLock(RAI_HERE);
+    auto lock = gl->dataLock(RAI_HERE);
     drawSlice = t;
   }
 
@@ -285,11 +283,11 @@ floatA rai::ConfigurationViewer::getDepth() {
 }
 
 void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
-  if(gl.drawOptions.drawVisualsOnly) dontRender=_transparent; else dontRender=_all;
+  if(gl.drawOptions.drawVisualsOnly) dontRender=_marker; else dontRender=_all;
   if(!motion.N){
-    RenderScene::setText(text);
-    RenderScene::slice=-1;
-    RenderScene::glDraw(gl);
+    RenderData::setText(text);
+    RenderData::slice=-1;
+    RenderData::glDraw(gl);
   }else{
     if(gl.scrollCounter){ drawSlice-=gl.scrollCounter; gl.scrollCounter=0; abortPlay=true; }
     if(drawSlice<-1) drawSlice=-1;
@@ -304,19 +302,19 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
 //        cout <<"- ConfigurationViewer -\n" <<s <<"\n" <<sliceTexts(drawSlice) <<endl;
       }
       //C.glDraw_frames(gl, slices[drawSlice], 0);
-      RenderScene::setText(s);
+      RenderData::setText(s);
 
       CHECK_LE(motion.d1, objs.N, "");
       for(uint i=0;i<motion.d1;i++) objs(i)->X.set(motion(drawSlice, i, {}));
-      RenderScene::slice=drawSlice;
-      RenderScene::glDraw(gl);
+      RenderData::slice=drawSlice;
+      RenderData::glDraw(gl);
     }else{
-      RenderScene::setText(text);
-      RenderScene::slice=-1;
+      RenderData::setText(text);
+      RenderData::slice=-1;
       for(uint t=0;t<motion.d0;t++){
         CHECK_LE(motion.d1, objs.N, "");
         for(uint i=0;i<motion.d1;i++) objs(i)->X.set(motion(t, i, {}));
-        RenderScene::glDraw(gl);
+        RenderData::glDraw(gl);
         //C.glDraw_frames(gl, C.frames, 0);
       }
     }

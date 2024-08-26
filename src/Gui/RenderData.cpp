@@ -7,16 +7,24 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+namespace rai {
+
+struct OpenGL2Context {
+  std::map<OpenGL*, RenderData::ContextIDs> contextIDs;
+};
+
+Singleton<OpenGL2Context> contextIDs;
+
 uint bufW=2000, bufH=2000;
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
 
-RenderObject& RenderScene::add(){
+RenderObject& RenderData::add(){
   std::shared_ptr<RenderObject> obj = make_shared<RenderObject>();
   objs.append(obj);
   return *obj;
 }
 
-void RenderScene::addLight(const arr& pos, const arr& focus, double heightAbs){
+void RenderData::addLight(const arr& pos, const arr& focus, double heightAbs){
   std::shared_ptr<rai::Camera> light = make_shared<rai::Camera>();
   light->setHeightAbs(heightAbs);
 //  light->setHeightAngle(45.);
@@ -27,7 +35,7 @@ void RenderScene::addLight(const arr& pos, const arr& focus, double heightAbs){
   lights.append(light);
 }
 
-void RenderScene::addAxes(double scale, const rai::Transformation& _X){
+void RenderData::addAxes(double scale, const rai::Transformation& _X){
   rai::Mesh M;
   rai::Transformation X;
   rai::Mesh tip;
@@ -117,9 +125,11 @@ void RenderFont::glInitialize(){
   FT_Done_FreeType(ft);
 }
 
-void RenderScene::glInitialize(OpenGL &gl){
-  ContextIDs& id = contextIDs[&gl];
-  CHECK(!id.initialized, "");
+void RenderData::ensureInitialized(OpenGL &gl){
+  auto lock = dataLock(RAI_HERE);
+
+  ContextIDs& id = contextIDs()->contextIDs[&gl];
+  if(id.initialized) return;
 
   glewExperimental = true; // Needed for core profile
   if(glewInit() != GLEW_OK) HALT("Failed to initialize GLEW\n");
@@ -178,13 +188,13 @@ void RenderScene::glInitialize(OpenGL &gl){
     id.progText_color = glGetUniformLocation( id.progText, "textColor" );
     id.progText_useTexColor = glGetUniformLocation( id.progText, "useTexColor" );
   }
-  id.initialized=true;
 
-  //-- font
   id.font.glInitialize();
+
+  id.initialized=true;
 }
 
-void RenderScene::renderObjects(GLuint idT_WM, const uintA& sorting, RenderType type){
+void RenderData::renderObjects(GLuint idT_WM, const uintA& sorting, RenderType type){
   arr T_WM = eye(4);
 
   CHECK_EQ(sorting.N, objs.N, "");
@@ -234,8 +244,10 @@ void RenderScene::renderObjects(GLuint idT_WM, const uintA& sorting, RenderType 
   }
 }
 
-void RenderScene::glDraw(OpenGL& gl){
-  ContextIDs& id = contextIDs[&gl];
+void RenderData::glDraw(OpenGL& gl){
+  auto lock = dataLock(RAI_HERE);
+
+  ContextIDs& id = contextIDs()->contextIDs[&gl];
   CHECK(id.initialized, "");
 
   for(std::shared_ptr<RenderObject>& obj:objs) if(!obj->initialized) obj->glInitialize();
@@ -339,17 +351,17 @@ void RenderScene::glDraw(OpenGL& gl){
   }
 
   if(dontRender>_transparent) for(uint k=0;k<(renderCount?1:2);k++){
+    glUseProgram(id.prog_ID);
+    renderObjects(id.prog_ModelT_WM, sorting, _transparent);
+  }
+
+  if(dontRender>_marker) for(uint k=0;k<(renderCount?1:2);k++){
     glUseProgram(id.progMarker);
     glUniformMatrix4fv(id.progMarker_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
     renderObjects(id.progMarker_ModelT_WM, sorting, _marker);
   }
 
-  if(dontRender>_marker) for(uint k=0;k<(renderCount?1:2);k++){
-    glUseProgram(id.prog_ID);
-    renderObjects(id.prog_ModelT_WM, sorting, _transparent);
-  }
-
-  if(dontRender>_text) for(uint k=0;k<(renderCount?1:2);k++){
+  /*if(dontRender>_text)*/for(uint k=0;k<(renderCount?1:2);k++){
 
     glUseProgram(id.progText);
     glUniform1i(id.progText_useTexColor, 0);
@@ -365,8 +377,10 @@ void RenderScene::glDraw(OpenGL& gl){
   renderCount++;
 }
 
-void RenderScene::glDeinitialize(OpenGL& gl){
-  ContextIDs& id = contextIDs[&gl];
+void RenderData::glDeinitialize(OpenGL& gl){
+  auto lock = dataLock(RAI_HERE);
+
+  ContextIDs& id = contextIDs()->contextIDs[&gl];
   if(id.initialized){
     glDeleteProgram(id.prog_ID);
     glDeleteProgram(id.progShadow_ID);
@@ -432,7 +446,7 @@ void RenderObject::mesh(rai::Mesh& mesh, const rai::Transformation& _X, double a
         if(scalarProduct(ns[j], ns[k])<avgNormalsThreshold){ avg=false; break; }
       }
       if(avg){
-        arr na = sum(ns, 0);
+        arr na = ::sum(ns, 0);
         na /= length(na);
         floatA naf = rai::convert<float>(na);
         for(uint j=0;j<n;j++) normals[verts(j)] = naf;
@@ -632,7 +646,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
   return ProgramID;
 }
 
-void RenderScene::addDistMarker(const arr& a, const arr& b, int s){
+void RenderData::addDistMarker(const arr& a, const arr& b, int s){
   if(distMarkers.markerObj==-1){
     distMarkers.markerObj=objs.N;
     rai::Mesh m;
@@ -646,7 +660,7 @@ void RenderScene::addDistMarker(const arr& a, const arr& b, int s){
   distMarkers.slices.append(s);
 }
 
-void RenderScene::addText(const char* text, float x, float y, float size){
+void RenderData::addText(const char* text, float x, float y, float size){
   std::shared_ptr<RenderText> txt = make_shared<RenderText>();
   texts.append(txt);
 //  read_png(txt->texImg, pngTexture, false);
@@ -656,7 +670,7 @@ void RenderScene::addText(const char* text, float x, float y, float size){
   txt->text = text;
 }
 
-void RenderScene::setText(const char* text){
+void RenderData::setText(const char* text){
   if(!texts.N) addText(text, 10., 20., 1.);
   else{
     std::shared_ptr<RenderText>& txt = texts(0);
@@ -664,7 +678,7 @@ void RenderScene::setText(const char* text){
   }
 }
 
-void RenderScene::addQuad(const byteA& img, float x, float y, float w, float h){
+void RenderData::addQuad(const byteA& img, float x, float y, float w, float h){
   std::shared_ptr<RenderQuad> quad = make_shared<RenderQuad>();
   quads.append(quad);
   quad->img = img;
@@ -680,7 +694,7 @@ void RenderScene::addQuad(const byteA& img, float x, float y, float w, float h){
 
 }
 
-void RenderScene::clearObjs(){
+void RenderData::clearObjs(){
   objs.clear();
   texts.clear();
   quads.clear();
@@ -813,3 +827,5 @@ void RenderQuad::glInitialize(){
 
   initialized=true;
 }
+
+}//namespace
