@@ -2,6 +2,7 @@
 
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
+#include <Gui/RenderData.h>
 
 //#include "swift_decomposer.inc"
 #include <Gui/color.h>
@@ -11,12 +12,6 @@ const char *USAGE=
 Usage:  meshTool file.* <tags...>\n\
 \n\
 Tags can be -hide, -box, -fuse, -clean, -center, -scale, -qhull, -flip \n";
-
-void drawScene(void*, OpenGL& gl){
-  glStandardLight(nullptr, gl);
-  glDrawAxes(1.);
-  glColor(1., .5, 0.);
-}
 
 int main(int argc,char **argv){
   rai::initCmdLine(argc, argv);
@@ -58,9 +53,8 @@ int main(int argc,char **argv){
     gl->camera.focus(0., 0., 0., true);
     gl->clearColor = {.7f, .7f, .7f};
     gl->text = "before operations";
-    gl->add(drawScene);
-    gl->add(mesh);
-    gl->watch();
+    gl->data().addStandardScene().add().mesh(mesh);
+    gl->update(true);
   }
 
   if(rai::checkCmdLineTag("scale")){
@@ -128,9 +122,8 @@ int main(int argc,char **argv){
     if(!gl) gl=new OpenGL;
     gl->clear();
     gl->text = "after operations";
-    gl->add(drawScene);
-    gl->add(mesh);
-    gl->watch();
+    gl->data().clear().addStandardScene().add().mesh(mesh);
+    gl->update(true);
   }
 
   cout <<"  saving.. to z.*" <<endl;

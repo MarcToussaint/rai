@@ -1,3 +1,4 @@
+#include "shaders.cxx"
 #include "RenderData.h"
 
 #include <sstream>
@@ -16,7 +17,8 @@ struct OpenGL2Context {
 Singleton<OpenGL2Context> contextIDs;
 
 uint bufW=2000, bufH=2000;
-GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
+//GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
+GLuint LoadShaders(const std::string& VertexShaderCode, const std::string& FragmentShaderCode);
 
 RenderObject& RenderData::add(){
   std::shared_ptr<RenderObject> obj = make_shared<RenderObject>();
@@ -138,7 +140,7 @@ void RenderData::ensureInitialized(OpenGL &gl){
   glDepthFunc(GL_LESS);
   glEnable(GL_CULL_FACE);
 
-  id.prog_ID = LoadShaders( rai::raiPath("src/Gui/shader.vs"), rai::raiPath("src/Gui/shader.fs") );
+  id.prog_ID = LoadShaders( objVS, objFS ); //rai::raiPath("src/Gui/shader.vs"), rai::raiPath("src/Gui/shader.fs") );
   id.prog_Projection_W = glGetUniformLocation(id.prog_ID, "Projection_W");
   id.prog_ViewT_CW = glGetUniformLocation(id.prog_ID, "ViewT_CW");
   id.prog_ModelT_WM = glGetUniformLocation(id.prog_ID, "ModelT_WM");
@@ -147,12 +149,12 @@ void RenderData::ensureInitialized(OpenGL &gl){
   id.prog_numLights = glGetUniformLocation(id.prog_ID, "numLights");
   id.prog_lightDirection_C = glGetUniformLocation(id.prog_ID, "lightDirection_C");
 
-  id.progMarker = LoadShaders( rai::raiPath("src/Gui/shaderMarker.vs"), rai::raiPath("src/Gui/shaderMarker.fs") );
+  id.progMarker = LoadShaders( markerVS, markerFS ); //rai::raiPath("src/Gui/shaderMarker.vs"), rai::raiPath("src/Gui/shaderMarker.fs") );
   id.progMarker_Projection_W = glGetUniformLocation(id.progMarker, "Projection_W");
   id.progMarker_ModelT_WM = glGetUniformLocation(id.progMarker, "ModelT_WM");
 
   { //if(stopRender>_shadows){
-    id.progShadow_ID = LoadShaders( rai::raiPath("src/Gui/shaderShadow.vs"), rai::raiPath("src/Gui/shaderShadow.fs") );
+    id.progShadow_ID = LoadShaders( shadowVS, shadowFS ); //rai::raiPath("src/Gui/shaderShadow.vs"), rai::raiPath("src/Gui/shaderShadow.fs") );
     id.progShadow_ShadowProjection_W = glGetUniformLocation(id.progShadow_ID, "ShadowProjection_W");
     id.progShadow_ModelT_WM = glGetUniformLocation(id.progShadow_ID, "ModelT_WM");
 
@@ -184,7 +186,7 @@ void RenderData::ensureInitialized(OpenGL &gl){
   }
 
   {
-    id.progText = LoadShaders( rai::raiPath("src/Gui/shaderText.vs"), rai::raiPath("src/Gui/shaderText.fs") );
+    id.progText = LoadShaders( textVS, textFS ); //rai::raiPath("src/Gui/shaderText.vs"), rai::raiPath("src/Gui/shaderText.fs") );
     id.progText_color = glGetUniformLocation( id.progText, "textColor" );
     id.progText_useTexColor = glGetUniformLocation( id.progText, "useTexColor" );
   }
@@ -205,7 +207,7 @@ void RenderData::renderObjects(GLuint idT_WM, const uintA& sorting, RenderType t
     if(type!=_transparent) j = sorting.elem(i); //solid: near to far
     else j = sorting.elem(objs.N-1-i);    //transparent: far to near
 
-    if(j==distMarkers.markerObj) continue;
+    if((int)j==distMarkers.markerObj) continue;
 
     std::shared_ptr<RenderObject>& obj = objs.elem(j);
     if(obj->type!=type) continue;
@@ -561,13 +563,11 @@ void RenderObject::glInitialize(){
 
 //===========================================================================
 
+GLuint LoadShaders(const std::string& VertexShaderCode, const std::string& FragmentShaderCode){
+
+#if 0
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path){
 
-  // Create the shaders
-  GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-  GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-
-#if 1
   // Read the Vertex Shader code from the file
   std::string VertexShaderCode;
   std::ifstream VertexShaderStream(vertex_file_path, std::ios::in);
@@ -591,17 +591,16 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
     FragmentShaderCode = sstr.str();
     FragmentShaderStream.close();
   }
+#endif
+
   char const * VertexSourcePointer = VertexShaderCode.c_str();
   char const * FragmentSourcePointer = FragmentShaderCode.c_str();
-#else
-  str vertexShaderCode(FILE(vertex_file_path).getIs());
-  str fragmentShaderCode(FILE(fragment_file_path).getIs());
-  char const * VertexSourcePointer = vertexShaderCode.p; //VertexShaderCode.c_str();
-  char const * FragmentSourcePointer = fragmentShaderCode.p; //FragmentShaderCode.c_str();
-  //cout <<vertexShaderCode <<fragmentShaderCode <<endl;
-#endif
   GLint Result = GL_FALSE;
   int InfoLogLength;
+
+  // Create the shaders
+  GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+  GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
 
   // Compile Vertex Shader
 //  printf("Compiling shader : %s\n", vertex_file_path);

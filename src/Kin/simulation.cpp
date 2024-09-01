@@ -140,7 +140,7 @@ Simulation::Simulation(Configuration& _C, Engine _engine, int _verbose)
     //nothing
   } else NIY;
   self->ref.initialize(C.getJointState(), NoArr, time);
-  if(verbose>0) self->display = make_shared<Simulation_DisplayThread>(C);
+  if(verbose>0) self->display = make_shared<Simulation_DisplayThread>(C, STRING(" ["<<rai::Enum<Engine>(engine)<<"]"));
 }
 
 Simulation::~Simulation() {
@@ -590,8 +590,9 @@ struct Simulation_DisplayThread : Thread, ConfigurationViewer {
   byteA screenshot;
   uint pngCount=0;
   uint drawCount=0;
+  str text;
 
-  Simulation_DisplayThread(const rai::Configuration& C) : Thread("Sim_DisplayThread", .05) {
+  Simulation_DisplayThread(const rai::Configuration& C, const char* _text) : Thread("Sim_DisplayThread", .05), text(_text) {
     updateConfiguration(C);
     ensure_gl().drawOptions.drawVisualsOnly = rai::getParameter<bool>("sim/displayVisualsOnly", true);
     ensure_gl().setTitle("Simulation");
@@ -604,7 +605,7 @@ struct Simulation_DisplayThread : Thread, ConfigurationViewer {
   }
 
   void step() {
-    text.clear() <<"Kin/Simulation - time:" <<time;
+    text.clear() <<"Kin/Simulation" <<text <<" - time:" <<time;
     update();
     //write_png(gl->captureImage, STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"));
     //if(!(step_count%10)) cout <<"display thread load:" <<timer.report() <<endl;
