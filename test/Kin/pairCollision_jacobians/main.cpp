@@ -2,6 +2,7 @@
 
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
+#include <Kin/viewer.h>
 #include <Kin/kin.h>
 #include <Kin/frame.h>
 #include <Geo/pairCollision.h>
@@ -25,9 +26,9 @@ void TEST(GJK_Jacobians) {
   C.calcDofsFromConfig();
   arr q = C.getJointState();
 
-  OpenGL gl;
-  gl.drawOptions.drawWires=true;
-  gl.add(glStandardScene);
+//  OpenGL gl;
+//  gl.drawOptions.drawWires=true;
+//  gl.data().addStandardScene();
 //  gl.add(draw);
 //  gl.add(K);
 
@@ -95,22 +96,20 @@ void TEST(GJK_Jacobians) {
     //    cout <<"distance: " <<y <<" vec=" <<y2 <<" error=" <<length(y2)-fabs(y(0)) <<endl;
     if(!succ) cout <<collInfo;
 
-    gl.add(collInfo);
-    gl.add(C);
-    gl.update(STRING(k), true);
-    if(!succ) gl.watch();
-
-    gl.remove(collInfo);
-    gl.remove(C);
+    C.viewer()->updateConfiguration(C);
+    C.viewer()->addDistMarker(collInfo.p1, collInfo.p2, 1.);
+    C.view(!succ, STRING(k));
+//    C.view(true);
 
     if(succ){
       CHECK_ZERO(length(y2)-fabs(y(0)), 1e-3, "");
     }
   }
-  gl.clear();
 }
 
 //===========================================================================
+
+#if 0
 
 void TEST(GJK_Jacobians2) {
   rai::Configuration C;
@@ -234,6 +233,7 @@ void TEST(GJK_Jacobians3) {
 }
 
 //===========================================================================
+#endif
 
 void TEST(Functional) {
   rai::Configuration C;
@@ -253,10 +253,6 @@ void TEST(Functional) {
     a->setContact(1);
   }
 
-  OpenGL gl;
-  gl.camera.setDefault();
-  gl.drawOptions.drawWires=true;
-
   arr x = C.getJointState();
   for(uint t=0;t<10;t++){
     rndGauss(x, .7);
@@ -267,14 +263,10 @@ void TEST(Functional) {
     auto y = dist.eval({C(1), C(2)});
     checkJacobian(dist.vf2({C(1), C(2)}), x, 1e-4);
 
-    gl.clear();
-    gl.add(glStandardScene);
-//    gl.add(dist);
-    gl.add(C);
-    gl.update(STRING(t), true);
-    /*if(!succ)*/ gl.watch();
-    gl.clear();
-
+    C.viewer()->clear();
+    C.viewer()->updateConfiguration(C);
+    C.viewer()->addDistMarker(dist.x-dist.d1*dist.g1, dist.x-dist.d2*dist.g2, .1);
+    C.view(true);
   }
 }
 
@@ -311,11 +303,6 @@ void testSweepingSDFs(){
   C.addFrame("c") ->setParent(F(1,0)). setShape(rai::ST_marker, {.3}). setColor({1.,1.,0.});
   C.addFrame("d") ->setParent(F(1,1)). setShape(rai::ST_marker, {.3}). setColor({1.,1.,0.});
 
-  OpenGL gl;
-  gl.camera.setDefault();
-  gl.drawOptions.drawWires=true;
-  gl.add(glStandardScene);
-
   rai::Mesh sweep1;
   rai::Mesh sweep2;
 
@@ -349,17 +336,12 @@ void testSweepingSDFs(){
     sweep2.V.append(V+(ones(V.d0)^vel));
     sweep2.makeConvexHull();
 
-    gl.add(dist);
-    gl.add(C);
-    gl.add(sweep1);
-    gl.add(sweep2);
-    gl.update(STRING(t), true);
-    /*if(!succ)*/ gl.watch();
-
-    gl.remove(sweep2);
-    gl.remove(sweep1);
-    gl.remove(C);
-    gl.remove(dist);
+    C.viewer()->clear();
+    C.viewer()->updateConfiguration(C);
+    C.viewer()->addDistMarker(dist.x-dist.d1*dist.g1, dist.x-dist.d2*dist.g2, .1);
+    C.viewer()->add().mesh(sweep1);
+    C.viewer()->add().mesh(sweep2);
+    C.view(true);
   }
 
 }
@@ -375,7 +357,7 @@ int MAIN(int argc, char** argv){
 //  testGJK_Jacobians2();
 //  testGJK_Jacobians3();
 
-//  testFunctional();
+  testFunctional();
   testSweepingSDFs();
 
   return 0;

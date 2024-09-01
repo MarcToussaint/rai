@@ -18,7 +18,9 @@ double shadowHeight = 3.; //5.;
 //arr floorColor = ones(3);
 arr floorColor = arr{.4, .45, .5};
 
-rai::ConfigurationViewer::~ConfigurationViewer() { close_gl(); }
+rai::ConfigurationViewer::~ConfigurationViewer() {
+  close_gl();
+}
 
 OpenGL& rai::ConfigurationViewer::ensure_gl() {
   if(!gl) {
@@ -41,7 +43,7 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
     addLight({-3.,2.,3.}, {0.,-0.,1.}, shadowHeight);
     addLight({3.,0.,4.}, {0.,0.,1.});
   }
-  if(objs.N) clearObjs();
+  if(objs.N) clear();
 
   { // floor
     rai::Mesh m;
@@ -187,9 +189,16 @@ void rai::ConfigurationViewer::setCamera(rai::Frame* camF) {
   gl->resize(gl->width, gl->height);
 }
 
-int rai::ConfigurationViewer::_update(bool wait, const char* _text, bool nonThreaded) { if(_text) text =_text; ensure_gl(); return gl->update(wait, nonThreaded); }
+int rai::ConfigurationViewer::_update(bool wait, const char* _text, bool nonThreaded) {
+  if(_text) text =_text;
+  ensure_gl();
+  return gl->update(wait, nonThreaded);
+}
 
-void rai::ConfigurationViewer::_resetPressedKey() { ensure_gl(); gl->pressedkey=0; }
+void rai::ConfigurationViewer::_resetPressedKey() {
+  ensure_gl();
+  gl->pressedkey=0;
+}
 
 int rai::ConfigurationViewer::update(bool watch) {
   ensure_gl();
@@ -312,8 +321,8 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
       RenderData::setText(text);
       RenderData::slice=-1;
       for(uint t=0;t<motion.d0;t++){
-        CHECK_LE(motion.d1, objs.N, "");
-        for(uint i=0;i<motion.d1;i++) objs(i)->X.set(motion(t, i, {}));
+        if(motion.d1>objs.N) LOG(-1) <<"motion.d1>objs.N" <<motion.d1 <<' ' <<objs.N; //CHECK_LE(motion.d1, objs.N, "");
+        for(uint i=0;i<motion.d1 && objs.N;i++) objs(i)->X.set(motion(t, i, {}));
         RenderData::glDraw(gl);
         //C.glDraw_frames(gl, C.frames, 0);
       }

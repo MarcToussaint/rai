@@ -222,7 +222,7 @@ public:
   //
 
   std::shared_ptr<NLP> nlp();
-  std::shared_ptr<NLP> nlp_spline(uint splineT=10, uint degree=2);
+  std::shared_ptr<NLP> nlp_spline(uint numCtrlPoints=10, uint degree=2);
   std::shared_ptr<NLP> nlp_sub(const rai::Array<GroundedObjective*>& objs, const DofL& dofs);
   std::shared_ptr<NLP_Factored> nlp_FactoredTime();
   std::shared_ptr<NLP_Factored> nlp_FactoredParts();

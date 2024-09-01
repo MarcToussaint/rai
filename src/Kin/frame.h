@@ -160,7 +160,8 @@ struct Frame : NonCopyable {
   Frame& setRelativePosition(const arr& pos);
   Frame& setRelativeQuaternion(const arr& quat);
   Frame& setMesh2(const rai::Mesh& m);
-  Frame& setMesh(const arr& verts, const uintA& tris, const byteA& colors= {}, const uintA& cvxParts= {});
+  Frame& setMesh(const arr& verts, const uintA& tris, const byteA& colors={}, const uintA& cvxParts= {});
+  Frame& setLines(const arr& verts, const byteA& colors={});
   Frame& setPointCloud(const arr& points, const byteA& colors= {}, const arr& normals= {});
   Frame& setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
   Frame& setSdf(std::shared_ptr<SDF>& sdf);

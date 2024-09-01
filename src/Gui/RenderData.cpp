@@ -200,9 +200,12 @@ void RenderData::renderObjects(GLuint idT_WM, const uintA& sorting, RenderType t
   CHECK_EQ(sorting.N, objs.N, "");
 
   for(uint i=0;i<objs.N;i++){
+
     uint j;
     if(type!=_transparent) j = sorting.elem(i); //solid: near to far
     else j = sorting.elem(objs.N-1-i);    //transparent: far to near
+
+    if(j==distMarkers.markerObj) continue;
 
     std::shared_ptr<RenderObject>& obj = objs.elem(j);
     if(obj->type!=type) continue;
@@ -261,9 +264,7 @@ void RenderData::glDraw(OpenGL& gl){
   }
 
   //sort objects
-  for(std::shared_ptr<RenderObject>& obj:objs){
-    obj->cameraDist = (obj->X.pos - camera.X.pos).length();
-  }
+  for(std::shared_ptr<RenderObject>& obj:objs) obj->cameraDist = (obj->X.pos - camera.X.pos).length();
   uintA sorting;
   sorting.setStraightPerm(objs.N);
   std::sort(sorting.p, sorting.p+sorting.N, [&](uint i,uint j){ return objs.elem(i)->cameraDist < objs.elem(j)->cameraDist; });
@@ -300,6 +301,8 @@ void RenderData::glDraw(OpenGL& gl){
     glUniformMatrix4fv(id.prog_ShadowProjection_W, 1, GL_TRUE, rai::convert<float>(tmp).p);
   }
   //LOG(1) <<"rendering! " <<renderCount;
+
+  glEnable(GL_DEPTH_TEST);
 
   // Render to the screen
   if(gl.offscreen){
@@ -350,16 +353,21 @@ void RenderData::glDraw(OpenGL& gl){
 //    renderObjects(id.prog_ModelT_WM, sorting, _marker);
   }
 
-  if(dontRender>_transparent) for(uint k=0;k<(renderCount?1:2);k++){
-    glUseProgram(id.prog_ID);
-    renderObjects(id.prog_ModelT_WM, sorting, _transparent);
-  }
+  glDisable(GL_DEPTH_TEST);
 
   if(dontRender>_marker) for(uint k=0;k<(renderCount?1:2);k++){
     glUseProgram(id.progMarker);
     glUniformMatrix4fv(id.progMarker_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
     renderObjects(id.progMarker_ModelT_WM, sorting, _marker);
   }
+
+  glEnable(GL_DEPTH_TEST);
+
+  if(dontRender>_transparent) for(uint k=0;k<(renderCount?1:2);k++){
+    glUseProgram(id.prog_ID);
+    renderObjects(id.prog_ModelT_WM, sorting, _transparent);
+  }
+
 
   /*if(dontRender>_text)*/for(uint k=0;k<(renderCount?1:2);k++){
 
@@ -386,7 +394,9 @@ void RenderData::glDeinitialize(OpenGL& gl){
     glDeleteProgram(id.progShadow_ID);
     glDeleteFramebuffers(1, &id.shadowFramebuffer);
     glDeleteTextures(1, &id.shadowTexture);
+    id.initialized=false;
   }
+  contextIDs()->contextIDs.erase(&gl);
 
   objs.clear();
 }
@@ -646,12 +656,12 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
   return ProgramID;
 }
 
-void RenderData::addDistMarker(const arr& a, const arr& b, int s){
+void RenderData::addDistMarker(const arr& a, const arr& b, int s, double size){
   if(distMarkers.markerObj==-1){
     distMarkers.markerObj=objs.N;
     rai::Mesh m;
-    m.setCone(.01, .01);
-    m.translate(0.,0.,-.01);
+    m.setCone(size, size);
+    m.translate(0.,0.,-size);
     m.C={1.,0.,1.};
     add().mesh(m, 0, .9, _marker);
   }
@@ -694,7 +704,24 @@ void RenderData::addQuad(const byteA& img, float x, float y, float w, float h){
 
 }
 
-void RenderData::clearObjs(){
+RenderData& RenderData::addStandardScene(){
+  double shadowHeight = 5.;
+  arr floorColor = arr{.4, .45, .5};
+  if(!lights.N){
+    addLight({-3.,2.,3.}, {0.,-0.,1.}, shadowHeight);
+    addLight({3.,0.,4.}, {0.,0.,1.});
+  }
+  { // floor
+    rai::Mesh m;
+    m.setQuad();
+    m.scale(10., 10., 0.);
+    m.C = floorColor;
+    add().mesh(m, 0);
+  }
+  return *this;
+}
+
+RenderData& RenderData::clear(){
   objs.clear();
   texts.clear();
   quads.clear();
@@ -703,6 +730,7 @@ void RenderData::clearObjs(){
   distMarkers.slices.clear();
   renderCount=0;
   slice=-1;
+  return *this;
 }
 
 void RenderText::glRender(GLuint progText_color, const RenderFont& font, float height){

@@ -611,7 +611,7 @@ int MAIN(int argc,char **argv){
   testLoadSave();
   testCopy();
   testGraph();
-  testPlaySpline(); return 0;
+  testPlaySpline();
   testViewer();
   testKinematics();
   testQuaternionKinematics();

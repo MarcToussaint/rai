@@ -14,7 +14,7 @@ void TEST(CameraView){
 
   rai::CameraView V(C, true);
 
-  V.addSensor("kinect", "endeffKinect", 640, 480, 580./480., -1., {.1, 50.} );
+  V.addSensor(C["endeffKinect"], 640, 480, 580./480., -1., {.1, 50.} );
 //  V.selectSensor("kinect");
 
   byteA image;

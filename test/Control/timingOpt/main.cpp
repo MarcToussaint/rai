@@ -157,12 +157,10 @@ void waypointHunting(){
   rai::CubicSpline S;
   F.getCubicSpline(S, zeros(3), zeros(3));
 
-  //analyze
-  rai::Mesh M;
-  M.V = S.eval(range(0., S.times.last(), 100));
-  M.makeLines();
+  rai::Frame *spline = C.addFrame("spline");
+  spline->setLines( S.eval(range(0., S.times.last(), 100)) );
 
-  C.gl().add(M);
+//  C.gl().add(M);
   C.view(true);
 
   double del=.001, t=0.;
@@ -201,7 +199,7 @@ void waypointHunting(){
     if(t>.1){
       F.solve(x0, v0);
       F.getCubicSpline(S, x0, v0);
-      M.V = S.eval(range(0., S.times.last(), 100));
+      spline->setLines( S.eval(range(0., S.times.last(), 100)) );
       t = .0;
     }
 

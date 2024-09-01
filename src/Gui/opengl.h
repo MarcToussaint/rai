@@ -148,6 +148,7 @@ struct OpenGL {
   Signaler watching;
   OpenGLDrawOptions drawOptions;
   uint selectID;
+  std::shared_ptr<rai::RenderData> _data;
 
   bool fullscreen=false; ///<window starts in fullscreenmode on the primary screen
   bool hideCameraControls=false; ///<camera can be tilted, rotated, zoomed in/out if controls are enabled
@@ -170,6 +171,7 @@ struct OpenGL {
   void setSubViewTiles(uint cols, uint rows);
   void setSubViewPort(uint view, double l, double r, double b, double t);
   void clearSubView(uint view);
+  rai::RenderData& data();
 
   /// @name the core draw routines (actually only for internal use)
   void Render(int w, int h, rai::Camera* cam=nullptr, bool callerHasAlreadyLocked=false);

@@ -508,7 +508,7 @@ rai::Frame& rai::Frame::setMesh(const arr& verts, const uintA& tris, const byteA
   mesh.V = verts;
   mesh.V.reshape(-1, 3);
   mesh.T = tris;
-  mesh.T.reshape(-1, 3);
+  if(mesh.T.nd==1) mesh.T.reshape(-1, 3);
   if(colors.N) {
     mesh.C = convert<double>(colors).reshape(-1, 3);
     mesh.C /= 255.;
@@ -516,6 +516,23 @@ rai::Frame& rai::Frame::setMesh(const arr& verts, const uintA& tris, const byteA
   }
   if(cvxParts.N) {
     mesh.cvxParts = cvxParts;
+  }
+  mesh.version++; //if(shape->glListId>0) shape->glListId *= -1;
+  C.view_unlock();
+  return *this;
+}
+
+rai::Frame& rai::Frame::setLines(const arr& verts, const byteA& colors){
+  C.view_lock(RAI_HERE);
+  getShape().type() = ST_lines;
+  rai::Mesh& mesh = getShape().mesh();
+  mesh.V = verts;
+  mesh.V.reshape(-1, 3);
+  mesh.makeLines();
+  if(colors.N) {
+    mesh.C = convert<double>(colors).reshape(-1, 3);
+    mesh.C /= 255.;
+    if(mesh.C.N <= 4) { mesh.C.reshape(-1); }
   }
   mesh.version++; //if(shape->glListId>0) shape->glListId *= -1;
   C.view_unlock();

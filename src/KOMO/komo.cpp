@@ -1836,8 +1836,8 @@ std::shared_ptr<NLP> KOMO::nlp() {
   return make_shared<KOMO_NLP>(*this);
 }
 
-std::shared_ptr<NLP> KOMO::nlp_spline(uint splineT, uint degree) {
-  return make_shared<KOMO_Spline_NLP>(*this, splineT, degree);
+std::shared_ptr<NLP> KOMO::nlp_spline(uint numCtrlPoints, uint degree) {
+  return make_shared<KOMO_Spline_NLP>(*this, numCtrlPoints, degree);
 }
 
 std::shared_ptr<NLP> KOMO::nlp_sub(const rai::Array<GroundedObjective*>& objs, const DofL& dofs){

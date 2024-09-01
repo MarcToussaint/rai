@@ -25,7 +25,8 @@ void createPath(){
   komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e0});
   cout <<komo.report(true, false) <<endl;
 
-  std::shared_ptr<NLP> skomo = make_shared<SplinedKOMO>(3, 8, komo);
+//  std::shared_ptr<NLP> skomo = make_shared<SplinedKOMO>(3, 8, komo);
+  std::shared_ptr<NLP> skomo = komo.nlp_spline(7, 3);
 
 //  for(uint k=0;k<10;k++){
 //    arr x = skomo->getInitializationSample();

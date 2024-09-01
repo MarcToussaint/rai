@@ -26,7 +26,7 @@ struct RenderObject{
   bool initialized=false;
 
   ~RenderObject();
-  void mesh(rai::Mesh &mesh, const rai::Transformation& _X, double avgNormalsThreshold=.9, RenderType _type=_solid);
+  void mesh(rai::Mesh &mesh, const rai::Transformation& _X=0, double avgNormalsThreshold=.9, RenderType _type=_solid);
   void lines(const arr& lines, const arr& color, const rai::Transformation& _X, RenderType _type=_marker);
   void pointCloud(const arr& points, const arr& color, const rai::Transformation& _X, RenderType _type=_solid);
 
@@ -69,6 +69,7 @@ struct DistMarkers {
   int markerObj=-1;
   arr pos;
   intA slices;
+  void clear(){ pos.clear(); slices.clear(); }
 };
 
 struct RenderData {
@@ -96,14 +97,16 @@ struct RenderData {
   };
 
   RenderObject& add();
-  void addLight(const arr& pos, const arr& focus, double heightAbs=5.);
 
+  void addLight(const arr& pos, const arr& focus, double heightAbs=5.);
   void addAxes(double scale, const rai::Transformation& _X);
-  void addDistMarker(const arr& a, const arr& b, int s);
+  void addDistMarker(const arr& a, const arr& b, int s=-1, double size=.1);
   void addText(const char* text, float x, float y, float size);
   void setText(const char* text);
   void addQuad(const byteA& img, float x, float y, float w, float h);
-  void clearObjs();
+
+  RenderData& addStandardScene();
+  RenderData& clear();
 
   //engine specific -> should be refactored
   void ensureInitialized(OpenGL &gl);

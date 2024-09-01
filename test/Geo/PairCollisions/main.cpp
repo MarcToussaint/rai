@@ -1,5 +1,6 @@
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
+#include <Gui/RenderData.h>
 #include <Geo/pairCollision.h>
 #include <Kin/kin.h>
 #include <Kin/frame.h>
@@ -11,19 +12,21 @@ extern bool orsDrawWires;
 void TEST(PairCollision){
   uint n=50;
   MeshA meshes(n);
-  OpenGL gl;
-  gl.add(glStandardScene);
+  rai::RenderData R;
+  R.addStandardScene();
   for(uint i=0;i<n;i++){
     rai::Mesh &m=meshes(i);
     m.setRandom(20);
-    m.scale(1.);
-    m.translate(rnd.uni(-5.,5.), rnd.uni(-5.,5.), rnd.uni(1.,10.));
-    m.buildGraph();
+    m.scale(.4);
+    m.translate(rnd.uni(-2.,2.), rnd.uni(-2.,2.), rnd.uni(1.,4.));
+//    m.buildGraph();
     m.C = {.8,.8,.8,.4};
 
-    gl.add(m);
+    R.add().mesh(m, 0);
   }
-//  gl.watch();
+  OpenGL gl;
+  gl.add(&R);
+//  gl.update(true);
 
   arr D(n,n);
   D.setZero();
@@ -33,9 +36,17 @@ void TEST(PairCollision){
     D(i,j)=pc.distance;
 #if 1 //turn off for timing
     cout <<pc <<endl;
-    gl.add(pc);
-    if(pc.distance<0) gl.watch(); else gl.timedupdate(.01);
-    gl.remove(pc);
+    {
+      auto lock = R.dataLock(RAI_HERE);
+      R.addDistMarker(pc.p1, pc.p2);
+    }
+    if(pc.distance<0) gl.update(true); else gl.timedupdate(.01);
+//    gl.update(true);
+    {
+      auto lock = R.dataLock(RAI_HERE);
+      R.distMarkers.pos.clear();
+      R.distMarkers.slices.clear();
+    }
 #endif
   }
   cout <<"time: " <<rai::timerRead() <<"sec" <<endl;

@@ -105,7 +105,6 @@ void init_Simulation(pybind11::module& m) {
   .def("addSensor",  &rai::Simulation::addSensor,
        "",
        pybind11::arg("sensorName"),
-       pybind11::arg("frameAttached") = std::string(),
        pybind11::arg("width") = 640,
        pybind11::arg("height") = 360,
        pybind11::arg("focalLength") = -1.,

@@ -3,16 +3,11 @@
 
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
+#include <Gui/RenderData.h>
 #include <Geo/qhull.h>
 #include <Geo/signedDistanceFunctions.h>
 
 #include <math.h>
-
-void drawScene(void*, OpenGL& gl){
-  glStandardLight(nullptr, gl);
-  glDrawAxes(1.);
-  glColor(1.,.5,0.);
-}
 
 //===========================================================================
 
@@ -20,67 +15,22 @@ void TEST(Primitives) {
   rai::Mesh mesh;
 
   OpenGL gl;
-  gl.add(drawScene,0);
-  gl.add(mesh);
-  gl.drawOptions.drawWires=true;
+  gl.data().addStandardScene();
 
   mesh.setSphere(2);
   cout <<"#V=" <<mesh.V.d0 <<endl;
-  gl.watch();
+  gl.data().add().mesh(mesh);
+  gl.update(true);
 
   mesh.setSSBox(3,3,3,1,2);
   cout <<"#V=" <<mesh.V.d0 <<endl;
-  gl.watch();
+  gl.data().clear().addStandardScene().add().mesh(mesh);
+  gl.update(true);
 
   mesh.setCapsule(1,3,2);
   cout <<"#V=" <<mesh.V.d0 <<endl;
-  gl.watch();
-}
-
-//===========================================================================
-
-void TEST(FuseVertices) {
-  if(!rai::FileToken("../../../../rai-robotModels/pr2/head_v0/head_pan.stl", false).exists()) return;
-
-  OpenGL gl;
-  rai::Mesh mesh;
-  mesh.readFile("../../../../rai-robotModels/pr2/head_v0/head_pan.stl");
-  gl.add(drawScene,0);
-  gl.add(mesh);
-  gl.watch();
-
-  mesh.writeTriFile(("z.full.tri"));
-  mesh.fuseNearVertices(1e-6);
-  mesh.writeTriFile(("z.e4.tri"));
-  gl.watch();
-
-  mesh.fuseNearVertices(1e-5);
-  mesh.writeTriFile(("z.e3.tri"));
-  gl.watch();
-
-  mesh.fuseNearVertices(1e-4);
-  mesh.writeTriFile(("z.e2.tri"));
-  gl.watch();
-}
-
-//===========================================================================
-
-void TEST(AddMesh) {
-  if(!rai::FileToken("../../../../rai-robotModels/pr2/head_v0/head_pan.stl", false).exists()) return;
-  rai::Mesh mesh1,mesh2;
-  OpenGL gl;
-  gl.add(drawScene,0);
-  gl.add(mesh1);
-  mesh1.readTriFile(FILE("z.e3.tri"));
-  mesh2.readTriFile(FILE("z.e3.tri"));
-  uint i,m=0; double my=mesh1.V(m,1);
-  for(i=0;i<mesh1.V.d0;i++) if(mesh1.V(i,1)>mesh1.V(m,1)){ m=i; my=mesh1.V(m,1); }
-  mesh2.translate(0,my,0);
-  mesh1.addMesh(mesh2);
-  //mesh1.writeTriFile(("z.e3.tri"));
-  //mesh1.writeOffFile(("z.e3.off"));
-
-  gl.watch();
+  gl.data().clear().addStandardScene().add().mesh(mesh);
+  gl.update(true);
 }
 
 //===========================================================================
@@ -105,8 +55,6 @@ void TEST(DistanceFunctions) {
   t.setRandom();
   rai::Mesh m;
   OpenGL gl;
-  gl.add(glStandardScene,nullptr);
-  gl.add(m);
 
   rai::Array<ScalarFunction*> fcts = {
     new SDF_Sphere(t, 1.),
@@ -131,35 +79,9 @@ void TEST(DistanceFunctions) {
 
     //-- display
     m.setImplicitSurface(*f,-10.,10.,100);
-    gl.watch();
+    gl.data().clear().addStandardScene().add().mesh(m);
+    gl.update(true);
   }
-}
-
-//===========================================================================
-
-void TEST(DistanceFunctions2) {
-  //-- check hessian and gradient
-  for(uint i=0;i<100;i++){
-    arr x(14);
-    rndUniform(x, -5., 5.);
-
-    bool suc=true;
-    suc &= checkGradient(DistanceFunction_SSBox, x, 1e-6);
-//    suc &= checkHessian(SDF_SSBox, x, 1e-6);
-    if(!suc){
-      arr g,H;
-      cout <<"f=" <<DistanceFunction_SSBox(g,H,x); //set breakpoint here;
-      HALT("x=" <<x);
-    }
-  }
-
-  //-- display
-  rai::Mesh m;
-  m.setImplicitSurface(DistanceFunction_SSBox,-10.,10.,100);
-  OpenGL gl;
-  gl.add(m);
-  gl.watch();
-
 }
 
 //===========================================================================
@@ -201,14 +123,13 @@ ScalarFunction cylinder = [](arr&,arr&, const arr& X){
 void TEST(SimpleImplicitSurfaces) {
   rai::Mesh m;
   OpenGL gl;
-  gl.add(glStandardScene,nullptr);
-  gl.add(m);
 
   rai::Array<ScalarFunction*> fcts = {&blobby, &sphere, &torus, &cylinder};
 
   for(ScalarFunction* f: fcts){
     m.setImplicitSurface(*f,-10.,10.,100);
-    gl.watch();
+    gl.data().clear().addStandardScene().add().mesh(m);
+    gl.update(true);
   }
 }
 
@@ -218,11 +139,8 @@ int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
   testPrimitives();
-  testFuseVertices();
-  testAddMesh();
   testVolume();
   testDistanceFunctions();
-//  testDistanceFunctions2();
   testSimpleImplicitSurfaces();
 
   return 0;

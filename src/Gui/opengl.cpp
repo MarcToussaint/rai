@@ -480,8 +480,8 @@ OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen, bool _fullscre
 }
 
 OpenGL::~OpenGL() {
-  clear();
   closeWindow();
+  clear();
 }
 
 void OpenGL::add(rai::RenderData* c) {
@@ -534,6 +534,14 @@ void OpenGL::clearSubView(uint v) {
   if(v>=views.N) return;
   auto _dataLock = dataLock(RAI_HERE);
   views(v).drawers.clear();
+}
+
+rai::RenderData& OpenGL::data(){
+  if(!_data){
+    _data = std::make_shared<rai::RenderData>();
+    add(_data.get());
+  }
+  return *_data;
 }
 
 void OpenGL::clear() {

@@ -4,6 +4,7 @@
 #include <Geo/signedDistanceFunctions.h>
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
+#include <Gui/RenderData.h>
 
 #include <Optim/newton.h>
 
@@ -15,28 +16,7 @@ void TEST(DistanceFunctions) {
   rai::Mesh m;
   m.C = {.5, .5, .5, .5};
 
-  struct DrawPair : GLDrawer {
-    arr P1, P2;
-
-    void glDraw(OpenGL& gl){
-      glColor(0., 1., 0., 1.);
-      glDrawDiamond(P1(0), P1(1), P1(2), .05, .05, .05);
-
-      glColor(0., 0., 1., 1.);
-      glDrawDiamond(P2(0), P2(1), P2(2), .05, .05, .05);
-
-      glColor(1., 0., 0., 1.);
-      glLineWidth(2.f);
-      glDrawProxy(P1, P2, .02);
-      glLineWidth(1.f);
-      glLoadIdentity();
-    }
-  } pairDrawer;
-
   OpenGL gl;
-  gl.add(glStandardScene,nullptr);
-  gl.add(pairDrawer);
-  gl.add(m);
 
   rai::Array<shared_ptr<SDF>> fcts = {
     make_shared<SDF_SuperQuadric>(t, arr{2., 2., 2.}, 1.2),
@@ -63,9 +43,12 @@ void TEST(DistanceFunctions) {
       {
         arr g;
         double d = (*f)(g, NoArr, x);
-        pairDrawer.P1 = x;
-        pairDrawer.P2 = x-d*g;
-        gl.update(0, true);
+        {
+          auto lock = gl.data().dataLock(RAI_HERE);
+          gl.data().clear().addStandardScene().add().mesh(m);
+          gl.data().addDistMarker(x, x-d*g);
+        }
+        gl.update();
       }
 
       if(!suc){
@@ -76,7 +59,6 @@ void TEST(DistanceFunctions) {
     }
 
     //-- display
-    gl.watch();
   }
 }
 
@@ -128,12 +110,11 @@ void TEST(SimpleImplicitSurfaces) {
 
   rai::Mesh m;
   OpenGL gl;
-  gl.add(glStandardScene,nullptr);
-  gl.add(m);
 
   for(shared_ptr<SDF>& f: fcts){
     m.setImplicitSurface(*f,-10.,10.,100);
-    gl.watch();
+    gl.data().clear().addStandardScene().add().mesh(m);
+    gl.update(true);
   }
 }
 
@@ -152,9 +133,6 @@ void projectToSurface(){
 
   rai::Mesh m;
   OpenGL gl;
-  gl.drawOptions.drawWires=true;
-  gl.add(glStandardScene,nullptr);
-  gl.add(m);
 
   ofstream fil("z.obj");
 
@@ -170,7 +148,8 @@ void projectToSurface(){
 
     m.setImplicitSurfaceBySphereProjection(*fct, 10., 3);
 
-    gl.watch();
+    gl.data().clear().addStandardScene().add().mesh(m);
+    gl.update(true);
   }
 }
 
@@ -210,7 +189,7 @@ int MAIN(int argc, char** argv){
   testSimpleImplicitSurfaces();
 
   projectToSurface();
-  display();
+//  display();
 
   return 0;
 }
