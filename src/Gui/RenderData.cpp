@@ -427,12 +427,13 @@ void RenderObject::mesh(rai::Mesh& mesh, const rai::Transformation& _X, double a
   if(!mesh.C.N) c = arr{.8,.8,.8};
   if(mesh.C.nd==1) c = mesh.C;
   if(c.N==1){ double g=c.elem(); c = arr{g,g,g}; }
+  if(c.N==2){ double g=c.elem(0); c.prepend(g); c.prepend(g); }
   for(uint i=0;i<mesh.T.d0;i++){
     for(uint j=0;j<3;j++){
       if(mesh.C.nd==2) c.referToDim(mesh.C, mesh.T(i,j));
       for(uint k=0;k<3;k++) vertices(3*i+j,k) = mesh.V(mesh.T(i,j), k);
       for(uint k=0;k<3;k++) colors(3*i+j,k) = c(k); //m.C(m.T(i,j), k);
-      if((mesh.C.nd==1 && mesh.C.N==4) || (mesh.C.nd==2 && mesh.C.d1==4)) colors(3*i+j, 3)=c(3); else colors(3*i+j, 3)=1.;
+      if(c.N==4) colors(3*i+j, 3)=c(3); else colors(3*i+j, 3)=1.;
       for(uint k=0;k<3;k++) normals(3*i+j, k) = mesh.Tn(i,k);
     }
   }

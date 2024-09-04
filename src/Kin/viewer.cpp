@@ -39,6 +39,7 @@ void rai::ConfigurationViewer::close_gl() {
 void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
   auto lock = dataLock(RAI_HERE);
 
+#if 0
   if(!lights.N){
     addLight({-3.,2.,3.}, {0.,-0.,1.}, shadowHeight);
     addLight({3.,0.,4.}, {0.,0.,1.});
@@ -52,7 +53,10 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
     m.C = floorColor;
     add().mesh(m, 0);
   }
-
+#else
+  clear();
+  addStandardScene();
+#endif
   frame2objID.resize(frames.N) = -1;
   for(rai::Frame* f:frames) if(f->shape) {
     shared_ptr<Mesh> mesh = f->shape->_mesh;

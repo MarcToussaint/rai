@@ -41,7 +41,7 @@ struct LGP_Tool {
   void viewConfig();
 
   //generate (and output) one more action plan (call multiple times to get top action plans)
-  void step_folPlan();
+  FOL_World_State* step_folPlan();
 
   //build (and display) the full ful decision tree up to given depth
   void buildTree(uint depth);

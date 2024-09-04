@@ -210,12 +210,13 @@ void LGP_Tool::player() {
   }
 }
 
-void LGP_Tool::step_folPlan() {
+FOL_World_State* LGP_Tool::step_folPlan() {
   lgproot->fol_astar->run();
   FOL_World_State* s = dynamic_cast<FOL_World_State*>(lgproot->fol_astar->solutions(-1));
   String str;
   s->getDecisionSequence(str);
   cout <<"FOL solution #" <<lgproot->fol_astar->solutions.N-1 <<": " <<str <<endl;
+  return s;
 }
 
 void LGP_Tool::compute(const intA& branches) {

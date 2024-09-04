@@ -39,7 +39,9 @@ void lgpTool(){
   }
 
   if(rai::checkParameter<int>("folPlan")){
-    for(int i=0;i<rai::getParameter<int>("folPlan");i++){
+    int plans = rai::getParameter<int>("folPlan");
+    LOG(0) <<"folPlan " <<plans;
+    for(int i=0;i<plans;i++){
       lgp.step_folPlan();
     }
     return;
@@ -47,22 +49,23 @@ void lgpTool(){
 
   if(rai::checkParameter<arr>("compute")){
     intA branches = rai::convert<int>(rai::getParameter<arr>("compute"));
+    LOG(0) <<"compute " <<branches <<endl;
     lgp.compute(branches);
     return;
   }
 
-  if(rai::checkParameter<bool>("skeleton")){
+  if(rai::checkParameter<bool>("solveSkeleton")){
     rai::Skeleton S;
     S.read(FILE(lgp.fileBase+".skt"));
     lgp.solve_Skeleton(S);
   }
 
-  if(rai::checkParameter<bool>("solve")){
+  if(rai::checkParameter<bool>("solveLGP")){
     lgp.solve_LGP();
     return;
   }
 
-  if(rai::checkParameter<int>("solveDecisions")){
+  if(rai::checkParameter<bool>("solveDecisions")){
     rai::String decisions;
     decisions.read(FILE(lgp.fileBase+".decisions"), "", "");
     lgp.solve_Decisions(decisions);
