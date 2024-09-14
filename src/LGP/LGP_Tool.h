@@ -1,78 +1,138 @@
-/*  ------------------------------------------------------------------
-    Copyright (c) 2011-2024 Marc Toussaint
-    email: toussaint@tu-berlin.de
+#include "Motif.h"
 
-    This code is distributed under the MIT License.
-    Please see <root-path>/LICENSE for details.
-    --------------------------------------------------------------  */
-
-#pragma once
-
-#include "LGP_computers.h"
-
-#include "../Logic/folWorld.h"
-#include "../Kin/kin.h"
+#include <LGP/LGP_SkeletonTool.h>
 
 namespace rai {
 
-struct LGP_DomainInfo {
-  RAI_PARAM("LGP/", int, verbose, 1)
-  RAI_PARAM("LGP/", double, waypointBranching, 10.)
-  RAI_PARAM("LGP/", int, waypointStopEvals, 1000)
-  RAI_PARAM("LGP/", int, rrtStopEvals, 10000)
-  RAI_PARAM("LGP/", double, pathCtrlCosts, 1.)
-  RAI_PARAM("LGP/", double, collScale, 1e1)
-  RAI_PARAM("LGP/", bool, useSequentialWaypointSolver, false)
+//===========================================================================
+
+struct Logic2KOMO_Translator {
+  virtual ~Logic2KOMO_Translator() {}
+  virtual void setup_sequence(Configuration& C, uint K) = 0;
+  virtual void add_action_constraints(double time, const StringA& action) = 0;
+  virtual PTR<KOMO> get_komo() = 0;
 };
 
-struct LGP_Tool {
-  String fileBase;
-  rai::Configuration C;
-  rai::FOL_World L;
-  std::shared_ptr<rai::LGPComp_root> lgproot;
-  FOL_World_State* focusNode=0;
+struct TAMP_Provider{
+  virtual ~TAMP_Provider() {}
+  virtual Array<StringA> getNewPlan() = 0;
+  virtual Configuration& getConfig() = 0;
+  virtual StringA explicitCollisions() = 0;
+};
 
-  LGP_Tool(const char* file);
+//===========================================================================
 
-  LGP_Tool(rai::FOL_World& L, rai::Configuration& C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton);
+struct ActionNode;
+typedef Array<ActionNode*> ActionNodeL;
+
+//===========================================================================
+
+enum JobTag { _solve_ways, _solve_motif, _new_plan };
+
+struct Job{
+  uint ID=0;
+
+  double priority=0., succProb=1.;
+
+  //job definition
+  ActionNode *a=0;
+  KOMO_Motif* motif=0;
+  JobTag tag;
+  Array<Job*> dependencies;
+
+  //results
+  uint n_fail=0, n_succ=0;
+  Array<PTR<SolverReturn>> rets;
+
+  //
+  Job(double _priority, ActionNode *_a, KOMO_Motif* _m, JobTag _tag);
+  static bool compare_priority(const Job* a, const Job* b);
+  static bool compare_succProb(const Job* a, const Job* b);
+  void write(ostream& os) const;
+  void update();
+  double getSuccProb();
+  str niceMsg();
+};
+stdOutPipe(Job)
+
+//===========================================================================
+
+struct ActionNode{
+  ActionNode* parent;
+  Array<ActionNode*> children;
+  uint step=0;
+
+  bool isTerminal=false;
+  StringA action; //(only for display/debugging) in symbolic form: the grounded action predicate
+  Array<StringA> komo_constraints; //in symbolic form: every constraint is a 'grounded literal' of the logic state. The first string: predicate symbol, other strings: frame names to ground the literal
+
+  std::shared_ptr<Job> ways_job;
+
+  ActionNode(ActionNode* _parent, StringA _action);
+  ~ActionNode();
+
+  PTR<KOMO>& get_ways(Configuration& C, Logic2KOMO_Translator& trans, const StringA& explicitCollisions);
+  Array<PTR<KOMO_Motif>>& getWayMotifs();
+
+
+  ActionNodeL getTreePath() const;
+
+  ActionNode* descentAndCreate(const Array<StringA>& plan);
+
+  //-- convenience output/debug
+  str getPlanString();
+  Array<StringA> getPlan();
+
+protected:
+  PTR<KOMO> ways;
+  Array<PTR<KOMO_Motif>> waysMotifs;
+
+  friend struct LGP_Tool;
+};
+
+//===========================================================================
+
+struct LGP_Tool{
+  //problem interface
+  Configuration& C;
+  TAMP_Provider& tamp;
+  Logic2KOMO_Translator& trans;
+  int verbose=1;
+
+  //internal data structures for action search and job management
+  ActionNode* actionTreeRoot;
+  PTR<Job> newPlanJob;
+  Array<PTR<Job>> motif_jobs;
+  std::map<std::string, Job*> motifResults;
+  Array<Job*> jobs;
+  Array<ActionNode*> open_terminal_nodes;
+  ActionNodeL solutions;
+  uint step_count=0;
+
+  LGP_Tool(const char* lgp_configfile);
+  LGP_Tool(Configuration& _C, TAMP_Provider& _tamp, Logic2KOMO_Translator& _trans);
   ~LGP_Tool();
 
-  //view and edit the configuration associated to this LGP problem
-  void viewConfig();
+  void solve_step();
 
-  //generate (and output) one more action plan (call multiple times to get top action plans)
-  FOL_World_State* step_folPlan();
+  void solve(int _verbose=-1);
+  StringAA getSolvedPlan();
+  PTR<KOMO> getSolvedKOMO();
+  int viewSolved();
 
-  //build (and display) the full ful decision tree up to given depth
-  void buildTree(uint depth);
 
-  //perform a sequence of computations through the completion tree, where the intA gives the branching coordinates
-  // e.g. [1 2 0 0 0] takes the 2nd action plan (=skeleton), computes waypoints with seed=2, then performs three RRTs or two and final KOMO path
-  void compute(const intA& branches);
+private:
 
-  //calls CompletionTree search from the given root, which can be lgproot, or a fixed skeleton
-  void solve(const std::shared_ptr<TreeSearchNode>& root);
-  void solve_Skeleton(const rai::Skeleton& skeleton) {  solve(make_shared<rai::LGPcomp_Skeleton>(lgproot.get(), skeleton));  }
-  void solve_LGP() {  solve(lgproot);  }
-  void solve_Decisions(const String& seq);
-
-  //terminal gui debugger - walk through logic tree and call optimizations
-  void player();
-
-  void report(ostream& os) const;
-
- private:
-  void walkToNode(const String& seq);
-  void displayTreeUsingDot();
-  void writeNodeList(ostream& os=cout);
-  void getSkeleton(Skeleton& skeleton, String& skeletonString);
-  void expand(FOL_World_State* node);
-  void optWaypoints(Skeleton& skeleton, const String& skeletonString);
-  void optPath(Skeleton& skeleton, const String& skeletonString);
-  void optFinalSlice(Skeleton& skeleton, const String& skeletonString);
-  void optWaypoints() { Skeleton skeleton; String skeletonString; getSkeleton(skeleton, skeletonString); optWaypoints(skeleton, skeletonString); }
-  void optFinalSlice() { Skeleton skeleton; String skeletonString; getSkeleton(skeleton, skeletonString); optFinalSlice(skeleton, skeletonString); }
-  void optPath() { Skeleton skeleton; String skeletonString; getSkeleton(skeleton, skeletonString); optPath(skeleton, skeletonString); }
+  //helpers
+  ActionNode *addNewOpenPlan();
+  int display(Job* job, PTR<KOMO>& komo, PTR<SolverReturn>& ret, const char* msg);
+  PTR<OpenGL> gl;
 };
+
+//===========================================================================
+
+MotifL analyzeMotifs(KOMO& komo, int verbose=0);
+PTR<TAMP_Provider> default_TAMP_Provider(const char* lgp_configfile);
+PTR<Logic2KOMO_Translator> default_Logic2KOMO_Translator();
 
 } //namespace

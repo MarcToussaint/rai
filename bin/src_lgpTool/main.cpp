@@ -18,7 +18,7 @@ const char *USAGE =
 void lgpTool(){
   rai::String problem = rai::getParameter<rai::String>("problem", STRING("none"));
 
-  rai::LGP_Tool lgp(problem);
+  rai::LGP_SkeletonTool lgp(problem);
 
 //  rai::LGP_Tool lgp(L, C,
 //                    lgpConfig.get<bool>("genericCollisions"),

@@ -105,6 +105,8 @@ int main(int argc,char **argv){
     if(rai::checkParameter<bool>("dot")) C.displayDot();
   }
 
+  if(rai::checkParameter<bool>("cleanOnly")) return 0;
+
   if(rai::checkParameter<bool>("sim")){
     rai::Configuration C;
     C.addFile(file);

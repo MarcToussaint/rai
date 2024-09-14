@@ -33,6 +33,7 @@ OpenGL& rai::ConfigurationViewer::ensure_gl() {
 }
 
 void rai::ConfigurationViewer::close_gl() {
+  gl->remove(this);
   if(gl) gl.reset();
 }
 
@@ -217,7 +218,7 @@ void rai::ConfigurationViewer::raiseWindow() {
 
 int rai::ConfigurationViewer::view(bool watch, const char* _text) {
   if(_text) text = _text;
-  if(watch) text <<"\n[PRESS KEY]";
+  if(watch && text(-1)!=']') text <<"\n[press key to continue]";
 
   return update(watch);
 }

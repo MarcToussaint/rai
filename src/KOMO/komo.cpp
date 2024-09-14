@@ -1211,8 +1211,8 @@ std::shared_ptr<SolverReturn> KOMO::optimize(double addInitializationNoise, int 
   }else{
     sol.setProblem(nlp_spline(splineKnots));
   }
-  sol.opt.set_verbose(rai::MAX(opt.verbose-2, 0));
   sol.setOptions(options);
+  sol.opt.set_verbose(rai::MAX(opt.verbose-2, 0));
 
   timeTotal -= rai::cpuTime();
   std::shared_ptr<SolverReturn> ret = sol.solve();
@@ -1512,6 +1512,8 @@ int KOMO::view(bool pause, const char* txt) {
     }
   }
   pathConfig.viewer()->ensure_gl().setTitle("KOMO Viewer");
+  str text = txt;
+  if(pause) text <<"\n[use SHIFT+scroll or arror keys to browse; press key to continue]";
   return pathConfig.viewer()->view(pause, txt);
 }
 

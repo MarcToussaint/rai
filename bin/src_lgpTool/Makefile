@@ -1,6 +1,6 @@
 BASE = ../..
 
-OPTIM = debug
+#OPTIM = debug
 
 DEPEND = Core Kin KOMO PathAlgos LGP Optim
 

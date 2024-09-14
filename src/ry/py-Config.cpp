@@ -39,7 +39,7 @@ void init_Config(pybind11::module& m) {
 
   pybind11::class_<rai::Configuration, shared_ptr<rai::Configuration>>(m, "Config", "Core data structure to represent a kinematic configuration (essentially a tree of frames). See https://marctoussaint.github.io/robotics-course/tutorials/1a-configurations.html")
 
-      .def(pybind11::init<>(), "initializes to an empty configuration, with no frames")
+  .def(pybind11::init<>(), "initializes to an empty configuration, with no frames")
 
   .def("clear", [](shared_ptr<rai::Configuration>& self) {
     self->clear();

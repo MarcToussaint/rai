@@ -61,7 +61,7 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     CHECK(x.N, "x is of zero dimensionality - needs initialization");
   }
 
-  if(verbose>=0) opt.verbose=verbose;
+  if(verbose>-100) opt.verbose=verbose;
 
   if(solverID==NLPS_newton) {
     Conv_NLP_ScalarProblem P1(P);
@@ -103,7 +103,7 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     ret->eq = optCon->L.get_sumOfHviolations();
     ret->sos = optCon->L.get_cost_sos();
     ret->f = optCon->L.get_cost_f();
-    ret->feasible = (ret->ineq<.5) && (ret->eq<.5);
+    ret->feasible = (ret->ineq<.1) && (ret->eq<.1);
   }
 
   //checkJacobianCP(*P, x, 1e-4);

@@ -67,7 +67,7 @@ template<class T> struct Array {
   static int  sizeT;   ///< constant for each type T: stores the sizeof(T)
   static char memMove; ///< constant for each type T: decides whether memmove can be used instead of individual copies
 
-  typedef bool(*ElemCompare)(const T& a, const T& b);
+  typedef bool(*ElemCompare)(const T& a, const T& b); //needs to be < or > (NOT <= !!!)
 
   /// @name constructors
   Array();

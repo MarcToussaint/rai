@@ -108,6 +108,12 @@ inline pybind11::list StringA2list(const StringA& x) {
   return y;
 }
 
+inline pybind11::list StringAA2list(const StringAA& x) {
+  pybind11::list y(x.N);
+  for(uint i=0; i<x.N; i++) y[i] = StringA2list(x.elem(i));
+  return y;
+}
+
 inline StringA list2StringA(const pybind11::list& X) {
   StringA Y(X.size());
   for(uint i=0; i<Y.N; i++) Y.elem(i) = X[i].cast<std::string>();
@@ -180,6 +186,21 @@ template <> struct type_caster<StringA> {
 
   static handle cast(const StringA& src, return_value_policy, handle) {
     return StringA2list(src).release();
+  }
+};
+
+//== StringAA -- list<list<std::string>>
+template <> struct type_caster<StringAA> {
+  PYBIND11_TYPE_CASTER(StringAA, _("StringAA"));
+
+  bool load(pybind11::handle src, bool) {
+    NIY;
+//    value = strvec2StringA(src.cast<std::vector<std::string>>());
+    return !PyErr_Occurred();
+  }
+
+  static handle cast(const StringAA& src, return_value_policy, handle) {
+    return StringAA2list(src).release();
   }
 };
 
