@@ -14,30 +14,31 @@
 
 namespace rai {
 
-LGP_SkeletonTool::LGP_SkeletonTool(const char* file) {
-  fileBase = file;
-  if(fileBase.endsWith(".lgp")) fileBase.resize(fileBase.N-4, true);
-
-  String lgpFile = fileBase + ".lgp";
-  String confFile = fileBase + ".g";
+LGP_SkeletonTool::LGP_SkeletonTool(rai::Configuration& C, const char* lgpFile) {
   LOG(0) <<"using lgpFile: '" <<lgpFile <<"'";
-  LOG(0) <<"using confFile: '" <<confFile <<"'";
 
-  Graph lgpConfig(lgpFile.p);
-  C.addFile(confFile);
+  Graph lgpConfig(lgpFile);
 
   params()->copy(lgpConfig, true);
   //cout <<"=== ALL PARAMS ===\n" <<params() <<endl;
 
+  /*
+  //setup Configuration
+  FileToken confFile = lgpConfig.get<FileToken>("conf");
+  LOG(0) <<"using confFile '" <<confFile.fullPath() <<"'";
+  C.addFile(confFile.fullPath());
+  */
+
   //setup FolWorld
   FileToken folFile = lgpConfig.get<FileToken>("fol");
   LOG(0) <<"using folFile '" <<folFile.fullPath() <<"'";
-  L.init(folFile.fullPath());
-  initFolStateFromKin(L, C);
-  L.addTerminalRule(lgpConfig.get<String>("terminal")); //"(on gripper ball)");
+  L = make_shared<rai::FOL_World>();
+  L->init(folFile.fullPath());
+  initFolStateFromKin(*L, C);
+  L->addTerminalRule(lgpConfig.get<String>("terminal")); //"(on gripper ball)");
 
   //setup lgproot
-  lgproot = make_shared<LGPComp_root>(L, C,
+  lgproot = make_shared<LGPComp_root>(*L, C,
                                       lgpConfig.get<bool>("genericCollisions"),
                                       lgpConfig.get<StringA>("coll", {}),
                                       lgpConfig.get<StringA>("lifts", {}),
@@ -45,7 +46,7 @@ LGP_SkeletonTool::LGP_SkeletonTool(const char* file) {
 
 }
 
-LGP_SkeletonTool::LGP_SkeletonTool(FOL_World& L, Configuration& C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton) {
+LGP_SkeletonTool::LGP_SkeletonTool(Configuration& C, FOL_World& L, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton) {
 
   lgproot = make_shared<LGPComp_root>(L, C, genericCollisions, explicitCollisions, explicitLift, explicitTerminalSkeleton);
   //info = make_shared<LGP_DomainInfo>();
@@ -62,7 +63,8 @@ void LGP_SkeletonTool::viewConfig() {
   lgproot->C.checkConsistency();
   lgproot->C.ensure_proxies(true);
   lgproot->C.reportProxies(cout, .1, true);
-  lgproot->C.watchFile(fileBase + ".g");
+  lgproot->C.view(true);
+//  lgproot->C.watchFile(fileBase + ".g"); //could also retrieve the confFile parameter
 }
 
 //-- extract skeleton

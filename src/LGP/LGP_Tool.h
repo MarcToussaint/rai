@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Motif.h"
 
 #include <LGP/LGP_SkeletonTool.h>
@@ -118,21 +120,23 @@ struct LGP_Tool{
   void solve(int _verbose=-1);
   StringAA getSolvedPlan();
   PTR<KOMO> getSolvedKOMO();
-  int viewSolved();
+  int view_solved(bool pause=true);
+  void view_close();
 
 
 private:
 
   //helpers
   ActionNode *addNewOpenPlan();
-  int display(Job* job, PTR<KOMO>& komo, PTR<SolverReturn>& ret, const char* msg);
+  int display(Job* job, PTR<KOMO>& komo, PTR<SolverReturn>& ret, bool pause=true, const char* msg=0);
   PTR<OpenGL> gl;
+  PTR<KOMO> gl_komo;
 };
 
 //===========================================================================
 
 MotifL analyzeMotifs(KOMO& komo, int verbose=0);
-PTR<TAMP_Provider> default_TAMP_Provider(const char* lgp_configfile);
+PTR<TAMP_Provider> default_TAMP_Provider(rai::Configuration &C, const char* lgp_configfile);
 PTR<Logic2KOMO_Translator> default_Logic2KOMO_Translator();
 
 } //namespace

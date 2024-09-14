@@ -179,6 +179,7 @@ LGP_Tool::LGP_Tool(Configuration& _C, TAMP_Provider& _tamp, Logic2KOMO_Translato
 }
 
 LGP_Tool::~LGP_Tool(){
+  view_close();
   delete actionTreeRoot;
 }
 
@@ -259,7 +260,8 @@ void LGP_Tool::solve_step(){
         jobs.append(a->ways_job.get());
         pathJobs.append(a->ways_job.get());
 #if 1
-        PTR<KOMO>& ways = a->get_ways(C, trans, tamp.explicitCollisions());
+//        PTR<KOMO>& ways =
+        a->get_ways(C, trans, tamp.explicitCollisions());
         Array<PTR<KOMO_Motif>>& ways_motifs= a->getWayMotifs();
         for(PTR<KOMO_Motif>& motif:ways_motifs){
           std::string hash = motif->getHash().p;
@@ -394,26 +396,33 @@ std::shared_ptr<KOMO> LGP_Tool::getSolvedKOMO(){
   return solutions(-1)->ways;
 }
 
-int LGP_Tool::viewSolved(){
+int LGP_Tool::view_solved(bool pause){
   if(!solutions.N) return 0;
   ActionNode *s = solutions(-1);
-  return display(s->ways_job.get(), s->ways, s->ways_job->rets(-1), 0);
+  return display(s->ways_job.get(), s->ways, s->ways_job->rets(-1), pause, 0);
 }
 
-int LGP_Tool::display(Job* job, std::shared_ptr<KOMO>& komo, std::shared_ptr<SolverReturn>& ret, const char* msg){
+void LGP_Tool::view_close(){
+  if(gl_komo){ gl_komo->view_close();  gl_komo.reset(); }
+  gl.reset();
+}
+
+int LGP_Tool::display(Job* job, std::shared_ptr<KOMO>& komo, std::shared_ptr<SolverReturn>& ret, bool pause, const char* msg){
   if(!gl){
     gl = make_shared<OpenGL>("ALGO", 600, 500);
     gl->camera.setDefault();
   }
-  komo->pathConfig.viewer()->gl = gl;
-  gl->add(komo->pathConfig.viewer().get());
+  if(gl_komo){ gl_komo->view_close();  gl_komo.reset(); }
+  gl_komo = komo;
+  gl_komo->pathConfig.viewer()->gl = gl;
+  gl->add(gl_komo->pathConfig.viewer().get());
 
   str text;
   if(ret->feasible) text <<"SOLVED\n";
   else text <<"FAILED\n";
   text <<job->niceMsg() <<"\nsolver: " <<*ret <<"\n[use SHIFT+scroll or arror keys to browse; press key to continue]";
-  int key = komo->view(true, text);
-  komo->view_close();
+  int key = gl_komo->view(pause, text);
+//  komo->view_close();
   return key;
 }
 
@@ -527,7 +536,7 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
 struct Default_TAMP_Provider : TAMP_Provider{
   LGP_SkeletonTool tool;
 
-  Default_TAMP_Provider(const char* file) : tool(file) {}
+  Default_TAMP_Provider(rai::Configuration& C, const char* file) : tool(C, file) {}
   virtual Array<StringA> getNewPlan(){
     FOL_World_State* s = tool.step_folPlan();
   #if 0 //state sequence
@@ -548,13 +557,13 @@ struct Default_TAMP_Provider : TAMP_Provider{
   #endif
     return plan;
   }
-  virtual Configuration& getConfig(){ return tool.C; }
+  virtual Configuration& getConfig(){ return tool.lgproot->C; }
   virtual StringA explicitCollisions(){ return tool.lgproot->explicitCollisions; }
 };
 
 //===========================================================================
 
-std::shared_ptr<TAMP_Provider> default_TAMP_Provider(const char* lgp_configfile){ return make_shared<Default_TAMP_Provider>(lgp_configfile); }
+std::shared_ptr<TAMP_Provider> default_TAMP_Provider(rai::Configuration& C, const char* lgp_configfile){ return make_shared<Default_TAMP_Provider>(C, lgp_configfile); }
 std::shared_ptr<Logic2KOMO_Translator> default_Logic2KOMO_Translator(){ return make_shared<Default_KOMO_Translator>(); }
 
 }//namespace

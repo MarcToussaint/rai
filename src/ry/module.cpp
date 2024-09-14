@@ -12,6 +12,7 @@
 #include "py-Feature.h"
 #include "py-Frame.h"
 #include "py-KOMO.h"
+#include "py-LGP.h"
 #include "py-Simulation.h"
 //#include "py-Camera.h"
 //#include "py-LGP_Tree.h"
@@ -68,6 +69,7 @@ PYBIND11_MODULE(_robotic, m) {
   init_Config(m);
 //  init_Feature(m);
   init_KOMO(m);
+  init_LGP(m);
   init_Skeleton(m);
   init_PathAlgos(m);
 //  init_LGP_Tree(m);

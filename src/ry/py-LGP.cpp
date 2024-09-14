@@ -23,12 +23,13 @@ void init_LGP(pybind11::module& m) {
       .def("solve", &rai::LGP_Tool::solve, "compute new solution", pybind11::arg("verbose")=1)
       .def("getSolvedPlan", &rai::LGP_Tool::getSolvedPlan, "return list of discrete decisions of last solution")
       .def("getSolvedKOMO", &rai::LGP_Tool::getSolvedKOMO, "return KOMO object (including its continuous solution) of last solution")
-      .def("viewSolved", &rai::LGP_Tool::viewSolved, "view last computed solution")
+      .def("view_solved", &rai::LGP_Tool::view_solved, "view last computed solution", pybind11::arg("pause"))
+      .def("view_close", &rai::LGP_Tool::view_close, "")
 
   ;
 
-  m.def("default_TAMP_Provider", &rai::default_TAMP_Provider);
-  m.def("default_Logic2KOMO_Translator", &rai::default_Logic2KOMO_Translator);
+  m.def("default_TAMP_Provider", &rai::default_TAMP_Provider, "", pybind11::arg("C"), pybind11::arg("lgp_config_file"));
+  m.def("default_Logic2KOMO_Translator", &rai::default_Logic2KOMO_Translator, "");
 
 }
 

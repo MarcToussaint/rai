@@ -26,15 +26,14 @@ struct LGP_DomainInfo {
 };
 
 struct LGP_SkeletonTool {
-  String fileBase;
-  rai::Configuration C;
-  rai::FOL_World L;
+//  rai::Configuration C;
+  std::shared_ptr<rai::FOL_World> L;
   std::shared_ptr<rai::LGPComp_root> lgproot;
   FOL_World_State* focusNode=0;
 
-  LGP_SkeletonTool(const char* file);
+  LGP_SkeletonTool(rai::Configuration& C, const char* lgpFile);
 
-  LGP_SkeletonTool(rai::FOL_World& L, rai::Configuration& C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton);
+  LGP_SkeletonTool(rai::Configuration& C, rai::FOL_World& L, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton);
   ~LGP_SkeletonTool();
 
   //view and edit the configuration associated to this LGP problem

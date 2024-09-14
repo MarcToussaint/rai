@@ -3421,7 +3421,7 @@ void Configuration::watchFile(const char* filename) {
 
     //-- WATCHING
     LOG(0) <<"watching...";
-    V->text = "waiting for file change ('h' for help)";
+    V->text = "waiting for file change ('h' for help, 'q' to close)";
     V->updateConfiguration(*this, {}, true);
     V->_resetPressedKey();
     int key = V->view(false);
