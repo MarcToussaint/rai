@@ -63,8 +63,8 @@ struct ManipulationModelling {
   void approachPush(const arr& time_interval, const char* gripper, double dist=.05, str helper= {});
 
   arr solve(int verbose=1);
-  arr sample(int verbose=1);
-  void debug();
+  arr sample(const char* sampleMethod=0, int verbose=1);
+  void debug(bool listObjectives=true, bool plotOverTime=false);
 
   std::shared_ptr<ManipulationModelling> sub_motion(uint phase, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=false, bool quaternion_norms=false);
   std::shared_ptr<ManipulationModelling> sub_rrt(uint phase, const StringA& explicitCollisionPairs= {});

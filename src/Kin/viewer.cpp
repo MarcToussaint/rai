@@ -108,9 +108,14 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   {
     auto lock = dataLock(RAI_HERE);
     for(rai::Frame* f : frames) {
-      RenderObject* obj = objs(frame2objID(f->ID)).get();
+      int objID = frame2objID(f->ID);
       //shape pose
-      if(f->shape) obj->X = f->ensure_X();
+      if(f->shape){
+        objs(objID)->X = f->ensure_X();
+        if(f->shape->type()==ST_marker) { //these are two objects!
+          objs(objID+1)->X = f->ensure_X();
+        }
+      }
       //forces
       if(f->forces.N){
         NIY;
@@ -269,7 +274,8 @@ int rai::ConfigurationViewer::view_slice(uint t, bool watch){
   return update(watch);
 }
 
-void rai::ConfigurationViewer::savePng(const char* saveVideoPath) {
+void rai::ConfigurationViewer::savePng(const char* saveVideoPath, int count) {
+  if(count>=0) pngCount=count;
   write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"), true);
 }
 

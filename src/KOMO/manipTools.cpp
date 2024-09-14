@@ -531,7 +531,7 @@ arr ManipulationModelling::solve(int verbose) {
   return path;
 }
 
-arr ManipulationModelling::sample(int verbose) {
+arr ManipulationModelling::sample(const char* sampleMethod, int verbose) {
   CHECK(komo, "");
 
   auto nlp = komo->nlp();
@@ -540,7 +540,8 @@ arr ManipulationModelling::sample(int verbose) {
   uintA dataEvals;
   double time = -rai::cpuTime();
 
-  sol.opt.seedMethod="gauss";
+//  sol.opt.seedMethod="gauss";
+  if(sampleMethod) sol.opt.seedMethod=sampleMethod;
   sol.opt.verbose=verbose;
   sol.opt.downhillMaxSteps=50;
   sol.opt.slackMaxStep=.5;
@@ -601,10 +602,10 @@ arr ManipulationModelling::sample(int verbose) {
   return path;
 }
 
-void ManipulationModelling::debug(){
+void ManipulationModelling::debug(bool listObjectives, bool plotOverTime){
   cout <<"  -- DEBUG: " <<info <<endl;
   cout <<"  == solver return: " <<*ret <<endl;
-  cout <<"  == all KOMO objectives with increasing errors:\n" <<komo->report(false, true, true) <<endl;
+  cout <<"  == all KOMO objectives with increasing errors:\n" <<komo->report(false, listObjectives, plotOverTime) <<endl;
 //  cout <<"  == objectives sorted by error and Lagrange gradient:\n" <<sol.reportLagrangeGradients(komo->featureNames) <<endl;
   cout <<"  == view objective errors over slices in gnuplot" <<endl;
   cout <<"  == scroll through solution in display window using SHIFT-scroll" <<endl;
