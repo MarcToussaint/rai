@@ -181,8 +181,10 @@ void Configuration::copy(const Configuration& C, bool referenceFclOnCopy) {
   //copy vector state
   q = C.q;
   qInactive = C.qInactive;
+  _state_indexedJoints_areGood = C._state_indexedJoints_areGood;
   _state_q_isGood = C._state_q_isGood;
-  ensure_indexedJoints();
+  _state_proxies_isGood = C._state_proxies_isGood;
+  //ensure_indexedJoints();
 }
 
 bool Configuration::operator!() const { return this==&NoConfiguration; }
@@ -500,6 +502,10 @@ DofL Configuration::getDofs(const FrameL& F, bool actives, bool inactives, bool 
   DofL dofs;
   for(Frame* f:F) {
     Dof* dof = f->joint;
+    if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
+      dofs.append(dof);
+    }
+    dof = f->pathDof;
     if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
       dofs.append(dof);
     }

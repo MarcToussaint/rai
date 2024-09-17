@@ -101,7 +101,7 @@ struct Frame : NonCopyable {
   //TODO have a single list of all attached dofs (also joint)
   Array<ForceExchange*> forces;  ///< this frame exchanges forces with other frames
   ParticleDofs* particleDofs=nullptr; ///< this frame is a set of particles that are dofs themselves
-  PathDof* pathDof=nullptr; ///< this frame is a set of particles that are dofs themselves
+  PathDof* pathDof=nullptr; ///< this frame has a pathDof
 
   Frame(Configuration& _C, const Frame* copyFrame=nullptr);
   Frame(Frame* _parent);
