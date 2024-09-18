@@ -3,6 +3,7 @@
 #include <KOMO/manipTools.h>
 #include <Gui/opengl.h>
 #include <Kin/viewer.h>
+#include <Optim/NLP_Sampler.h>
 
 namespace rai{
 
@@ -320,7 +321,24 @@ void LGP_Tool::solve_step(){
 
     //  ways->view(true, STRING("ways init" <<sub->action));
     ways->opt.verbose=0;
+#if 1
     auto ret = ways->optimize();
+#else
+    std::shared_ptr<SolverReturn> ret;
+    str opt_or_sample="gauss";
+    if(opt_or_sample=="opt"){
+      NLP_Solver sol;
+      sol.setProblem(ways->nlp());
+      ret = sol.solve(0, verbose);
+    }else{
+      NLP_Sampler sol(ways->nlp());
+      sol.opt.seedMethod=opt_or_sample;
+      sol.opt.verbose=verbose;
+      sol.opt.downhillMaxSteps=250;
+      sol.opt.slackMaxStep=.2;
+      ret = sol.sample();
+    }
+#endif
 
     job->rets.append(ret);
     if(ret->feasible){
@@ -347,14 +365,13 @@ void LGP_Tool::solve_step(){
 
   }else{
 
-
     KOMO_Motif* motif=job->motif;
     ActionNode *motif_origin=job->a;
 
     if(verbose>0) cout <<"+++ solving motif " <<job->niceMsg() <<endl;
 
     PTR<KOMO>& ways_komo = motif_origin->get_ways(C, trans, tamp.explicitCollisions());
-    auto ret = motif->solve(*ways_komo, verbose-2);
+    auto ret = motif->solve(*ways_komo, "gauss", verbose-2);
 
     job->rets.append(ret);
     if(ret->feasible){
@@ -466,7 +483,7 @@ MotifL analyzeMotifs(KOMO& komo, int verbose){
 //===========================================================================
 
 struct Default_KOMO_Translator : Logic2KOMO_Translator{
-  PTR<ManipulationModelling> seq;
+  std::shared_ptr<ManipulationModelling> seq;
 
   ~Default_KOMO_Translator() {}
 
@@ -478,7 +495,7 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
   virtual void add_action_constraints(double time, const StringA& action){
     if(!action.N) return;
 
-    if(action(0)=="pick"){
+    if(action(0)=="pick" || action(0)=="handover"){
       str& obj = action(1);
       str& gripper = action(3);
       str palm;
@@ -491,17 +508,6 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
       seq->komo->addFrameDof(snapFrame, gripper, JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
       seq->komo->addRigidSwitch(time, {snapFrame, obj});
       seq->grasp_box(time, gripper, obj, palm, "y");
-
-    }else if(action(0)=="handover"){
-      NIY;
-      //hand-over
-//    #if 0
-//      seq.komo->addModeSwitch({2., -1.}, SY_stable, {"r_gripper", obj}, true); //a temporary free stable joint gripper -> object
-//    #else
-//      seq.komo->addFrameDof("r_grasp2", "r_gripper", JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
-//      seq.komo->addRigidSwitch(2., {"r_grasp2", obj});
-//    #endif
-//      seq.grasp_box(2., "r_gripper", obj, "r_palm", "z");
 
     }else if(action(0)=="place"){
       str& obj = action(1);
@@ -520,6 +526,8 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
       }
 
       seq->place_box(time, obj, target, palm, "z");
+      //gripper center at least inside object
+      seq->komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
 
     }else{
       NIY;

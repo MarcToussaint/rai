@@ -40,8 +40,8 @@ NLP_Sampler_Options::NLP_Sampler_Options() {
     //      arr y = x + Cinv * (1.*randn(x.N));
     arr y = x + (.2*randn(x.N));
     samples++;
-    //      arr y = nlp.getInitializationSample();
-    bool inBound = boundCheck(y, nlp.bounds_lo, nlp.bounds_up, 1e-6, false);
+    //      arr y = nlp->getInitializationSample();
+    bool inBound = boundCheck(y, nlp->bounds_lo, nlp->bounds_up, 1e-6, false);
     if(inBound && max(g)<=0.){ //accept
       x = y;
       s++;
@@ -50,37 +50,7 @@ NLP_Sampler_Options::NLP_Sampler_Options() {
 }
 */
 
-void NLP_Walker::set_alpha_bar(double alpha_bar) {
-  if(alpha_bar==1.) {
-    a = 1.;
-    sig = 0.;
-  } else {
-    a = ::sqrt(alpha_bar);
-    sig = ::sqrt(1.-alpha_bar);
-  }
-  if(!opt.useCentering) {
-    a = 1.;
-  }
-}
-
-bool NLP_Walker::step() {
-  ensure_eval();
-
-  bool good = true;
-//  if(!ev.Ph.N || trace(ev.Ph)>1e-6) {
-//    good = step_hit_and_run_eq(); //(opt.maxStep);
-//  }
-
-  step_noise(.2);
-  bound_clip();
-
-  good = step_GaussNewton(true);
-  good = step_GaussNewton(true);
-
-  return good;
-}
-
-bool NLP_Walker::step_hit_and_run() {
+bool NLP_Sampler::step_hit_and_run() {
   store_eval();
 
   if(opt.hitRunEqMargin>0.) ev.convert_eq_to_ineq(opt.hitRunEqMargin);
@@ -90,8 +60,8 @@ bool NLP_Walker::step_hit_and_run() {
   arr dir = get_rnd_direction();
 
   LineSampler LS(2.*opt.slackMaxStep);
-  LS.clip_beta(nlp.bounds[0] - x, -dir); //cut with lower bound
-  LS.clip_beta(x - nlp.bounds[1], dir); //cut with upper bound
+  LS.clip_beta(nlp->bounds[0] - x, -dir); //cut with lower bound
+  LS.clip_beta(x - nlp->bounds[1], dir); //cut with upper bound
   for(uint i=0; i<10; i++) { //``line search''
     //cut with inequalities
     //TODO: zero a(i) when ev.g(i) <= 0
@@ -131,7 +101,8 @@ bool NLP_Walker::step_hit_and_run() {
   return false; //line search in 10 steps failed
 }
 
-bool NLP_Walker::step_hit_and_run_old(double maxStep) {
+/*
+bool NLP_Sampler::step_hit_and_run_old(double maxStep) {
   ensure_eval();
   Eval ev0 = ev;
 
@@ -140,11 +111,11 @@ bool NLP_Walker::step_hit_and_run_old(double maxStep) {
   double beta_mean, beta_sdv;
   get_beta_mean(beta_mean, beta_sdv, dir, x);
 
-  boundClip(x, nlp.bounds);
+  boundClip(x, nlp->bounds);
 
   LineSampler LS(2.*maxStep);
-  LS.clip_beta(nlp.bounds[0] - x, -dir); //cut with lower bound
-  LS.clip_beta(x - nlp.bounds[1], dir); //cut with upper bound
+  LS.clip_beta(nlp->bounds[0] - x, -dir); //cut with lower bound
+  LS.clip_beta(x - nlp->bounds[1], dir); //cut with upper bound
   LS.add_constraints(a*ev.g + ev.Jg*(x-a*ev.x), ev.Jg*dir);
   for(uint i=0; i<10; i++) { //``line search''
     double beta = NAN;
@@ -201,8 +172,9 @@ bool NLP_Walker::step_hit_and_run_old(double maxStep) {
   x = ev.x;
   return false; //line search in 10 steps failed
 }
+*/
 
-bool NLP_Walker::step_GaussNewton(bool slackMode, double penaltyMu, double alpha, double maxStep, double lambda) {
+bool NLP_Sampler::step_GaussNewton(bool slackMode, double penaltyMu, double alpha, double maxStep, double lambda) {
   ensure_eval();
   store_eval();
 
@@ -230,7 +202,7 @@ bool NLP_Walker::step_GaussNewton(bool slackMode, double penaltyMu, double alpha
   return true;
 }
 
-void NLP_Walker::step_PlainGrad(bool slackMode, double penaltyMu, double alpha, double maxStep) {
+void NLP_Sampler::step_PlainGrad(bool slackMode, double penaltyMu, double alpha, double maxStep) {
   ensure_eval();
   store_eval();
 
@@ -254,7 +226,7 @@ void NLP_Walker::step_PlainGrad(bool slackMode, double penaltyMu, double alpha, 
   ensure_eval();
 }
 
-bool NLP_Walker::step_noise(double sig) {
+bool NLP_Sampler::step_noise(double sig) {
   CHECK(sig>0., "");
 
   x += sig * randn(x.N);
@@ -262,7 +234,7 @@ bool NLP_Walker::step_noise(double sig) {
   return true;
 }
 
-bool NLP_Walker::step_noise_covariant(double sig, double penaltyMu, double lambda) {
+bool NLP_Sampler::step_noise_covariant(double sig, double penaltyMu, double lambda) {
   ensure_eval();
 
   CHECK(sig>0., "");
@@ -278,11 +250,11 @@ bool NLP_Walker::step_noise_covariant(double sig, double penaltyMu, double lambd
   return true;
 }
 
-void NLP_Walker::bound_clip() {
-  boundClip(x, nlp.bounds);
+void NLP_Sampler::bound_clip() {
+  boundClip(x, nlp->bounds);
 }
 
-void NLP_Walker::step_Langevin(bool slackMode, double tauPrime, double penaltyMu){
+void NLP_Sampler::step_Langevin(bool slackMode, double tauPrime, double penaltyMu){
   store_eval();
   double alpha = tauPrime / penaltyMu;
   double sigma = ::sqrt(2.*tauPrime / penaltyMu);
@@ -300,7 +272,7 @@ void NLP_Walker::step_Langevin(bool slackMode, double tauPrime, double penaltyMu
   }
 }
 
-bool NLP_Walker::reject_MH(double gamma, double mu, const arr& asymmetric_del, double sigma){
+bool NLP_Sampler::reject_MH(double gamma, double mu, const arr& asymmetric_del, double sigma){
   ensure_eval();
   double Enew = gamma*sumOfSqr(ev.r) + mu*sum(ev.s);
   double Eold = gamma*sumOfSqr(ev_stored.r) + mu*sum(ev_stored.s);
@@ -319,7 +291,7 @@ bool NLP_Walker::reject_MH(double gamma, double mu, const arr& asymmetric_del, d
   return false;
 }
 
-bool NLP_Walker::run_downhill(){
+bool NLP_Sampler::run_downhill(){
   opt.slackStepAlpha = rai::getParameter("sam/slackStepAlpha", 1.);
 
   for(int t=0;t<opt.downhillMaxSteps; t++) {
@@ -368,7 +340,7 @@ bool NLP_Walker::run_downhill(){
     bool good = (ev.err<=.01);
 
     if(opt.verbose>2 || (good && opt.verbose>1)) {
-      nlp.report(cout, (good?1:0)+opt.verbose, STRING("phase1 t: " <<t <<" err: " <<ev.err <<" good: " <<good));
+      nlp->report(cout, (good?1:0)+opt.verbose, STRING("phase1 t: " <<t <<" err: " <<ev.err <<" good: " <<good));
       rai::wait(.1);
     }
 
@@ -378,7 +350,7 @@ bool NLP_Walker::run_downhill(){
   return false;
 }
 
-void NLP_Walker::run_interior(arr& data, uintA& dataEvals){
+void NLP_Sampler::run_interior(arr& data, uintA& dataEvals){
   if(opt.interiorBurnInSteps<0) opt.interiorBurnInSteps=0;
   if(opt.interiorSampleSteps<1) opt.interiorSampleSteps=1; //at least 1 interior sample
   int interiorSteps = opt.interiorBurnInSteps + opt.interiorSampleSteps - 1;
@@ -435,7 +407,7 @@ void NLP_Walker::run_interior(arr& data, uintA& dataEvals){
       step_Langevin(false, opt.langevinTauPrime, opt.penaltyMu);
 
     }else if(opt.interiorMethod=="manifoldRRT"){
-      arr x_target = nlp.getUniformSample();
+      arr x_target = nlp->getUniformSample();
       uint p = ann->getNN(x_target);
       x = ann->X[p].copy();
       arr dir = x_target - x;
@@ -459,13 +431,13 @@ void NLP_Walker::run_interior(arr& data, uintA& dataEvals){
     good = (ev.err<=.01);
 
     if(opt.verbose>2 || (good && opt.verbose>1)) {
-      nlp.report(cout, (good?1:0)+opt.verbose, STRING("phase2 t: " <<t <<" err: " <<ev.err <<" data: " <<data.d0 <<" good: " <<good));
+      nlp->report(cout, (good?1:0)+opt.verbose, STRING("phase2 t: " <<t <<" err: " <<ev.err <<" data: " <<data.d0 <<" good: " <<good));
       rai::wait(.1);
     }
   }
 }
 
-void NLP_Walker::run(arr& data, uintA& dataEvals) {
+void NLP_Sampler::run(arr& data, uintA& dataEvals) {
 
   //-- novelty init?
   if(data.N && opt.seedMethod=="nov"){
@@ -473,16 +445,16 @@ void NLP_Walker::run(arr& data, uintA& dataEvals) {
   }else if(data.N && opt.seedMethod=="dist"){
     init_distance(data, opt.seedCandidates);
   }else if(opt.seedMethod=="gauss"){
-    arr x_init = nlp.getInitializationSample();
+    arr x_init = nlp->getInitializationSample();
     initialize(x_init);
   }else if(!data.N || opt.seedMethod=="uni"){
-    arr x_init = nlp.getUniformSample();
+    arr x_init = nlp->getUniformSample();
     initialize(x_init);
   }else NIY;
 
   if(opt.verbose>3) {
     ensure_eval();
-    nlp.report(cout, 2+opt.verbose, STRING("sampling INIT, err: " <<ev.err));
+    nlp->report(cout, 2+opt.verbose, STRING("sampling INIT, err: " <<ev.err));
     rai::wait(.1);
   }
 
@@ -493,14 +465,41 @@ void NLP_Walker::run(arr& data, uintA& dataEvals) {
   run_interior(data, dataEvals);
 }
 
-void NLP_Walker::init_novelty(const arr& data, uint D){
-  struct Seed{ NLP_Walker::Eval ev; arr delta; double align=-1.; };
+std::shared_ptr<SolverReturn> NLP_Sampler::sample(){
+  arr data;
+  uintA dataEvals;
+  std::shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
+  ret->time = -rai::cpuTime();
+
+  run(ret->x, dataEvals);
+
+  ret->time += rai::cpuTime();
+  ret->done = true;
+  if(!dataEvals.N){
+    ret->feasible=false;
+    ret->x.clear();
+  }else{
+    ret->x.reshape(-1);
+    ret->evals = dataEvals.elem();
+
+    ret->sos = sumOfSqr(ev.r);
+    ret->f = 0.;
+    ret->eq = sumOfAbs(ev.h);
+    ret->ineq = sumOfPos(ev.g);
+    ret->feasible = (ret->ineq<.1) && (ret->eq<.1);
+  }
+
+  return ret;
+}
+
+void NLP_Sampler::init_novelty(const arr& data, uint D){
+  struct Seed{ NLP_Sampler::Eval ev; arr delta; double align=-1.; };
   rai::Array<Seed> seeds(D);
 
   //sample D seeds & evaluate align
   for(uint k=0;k<seeds.N;k++){
     Seed& seed = seeds(k);
-    arr x_init = nlp.getUniformSample();
+    arr x_init = nlp->getUniformSample();
     initialize(x_init);
     ensure_eval();
     seed.ev = ev;
@@ -525,12 +524,12 @@ void NLP_Walker::init_novelty(const arr& data, uint D){
   x = ev.x;
 }
 
-void NLP_Walker::init_distance(const arr& data, uint D){
+void NLP_Sampler::init_distance(const arr& data, uint D){
     arr x_init;
     double d_init = -1.;
 #if 0
   for(uint k=0;k<D;k++){
-    arr x = nlp.getUniformSample();
+    arr x = nlp->getUniformSample();
     double d=1e10;
     for(uint i=0;i<data.d0;i++){
       double di = length(data[i]-x);
@@ -544,7 +543,7 @@ void NLP_Walker::init_distance(const arr& data, uint D){
     arr x, sqrDists;
     uintA idx;
     for(uint k=0;k<D;k++){
-      x = nlp.getUniformSample();
+      x = nlp->getUniformSample();
       ann.getkNN(sqrDists, idx, x, 1);
       double d = sqrDists.elem();
       if(d > d_init){ d_init=d; x_init=x; }
@@ -553,7 +552,7 @@ void NLP_Walker::init_distance(const arr& data, uint D){
   initialize(x_init);
 }
 
-void NLP_Walker::get_beta_mean(double& beta_mean, double& beta_sdv, const arr& dir, const arr& xbar) {
+void NLP_Sampler::get_beta_mean(double& beta_mean, double& beta_sdv, const arr& dir, const arr& xbar) {
   beta_mean = 0.;
   beta_sdv = -1.;
   if(ev.r.N) {
@@ -567,7 +566,7 @@ void NLP_Walker::get_beta_mean(double& beta_mean, double& beta_sdv, const arr& d
   }
 }
 
-arr NLP_Walker::get_rnd_direction() {
+arr NLP_Sampler::get_rnd_direction() {
   arr dir = randn(x.N);
   if(ev.h.N) { //projection of equality constraints
     //Gauss-Newton direction
@@ -584,7 +583,7 @@ arr NLP_Walker::get_rnd_direction() {
   return dir;
 }
 
-void NLP_Walker::Eval::eval(const arr& _x, NLP_Walker& walker) {
+void NLP_Sampler::Eval::eval(const arr& _x, NLP_Sampler& walker) {
   if(x.N && maxDiff(_x, x)<1e-10) {
     return; //already evaluated
   }
@@ -592,13 +591,13 @@ void NLP_Walker::Eval::eval(const arr& _x, NLP_Walker& walker) {
   walker.evals++;
 
   phi, J;
-  walker.nlp.evaluate(phi, J, _x);
+  walker.nlp->evaluate(phi, J, _x);
   if(rai::isSparse(J)) J = J.sparse().unsparse();
 
   {
     //grab ineqs
     uintA ineqIdx;
-    for(uint i=0; i<walker.nlp.featureTypes.N; i++) if(walker.nlp.featureTypes(i)==OT_ineq) ineqIdx.append(i);
+    for(uint i=0; i<walker.nlp->featureTypes.N; i++) if(walker.nlp->featureTypes(i)==OT_ineq) ineqIdx.append(i);
     g = phi.sub(ineqIdx);
     Jg = J.sub(ineqIdx);
   }
@@ -606,7 +605,7 @@ void NLP_Walker::Eval::eval(const arr& _x, NLP_Walker& walker) {
   {
     //grab eqs
     uintA eqIdx;
-    for(uint i=0; i<walker.nlp.featureTypes.N; i++) if(walker.nlp.featureTypes(i)==OT_eq) eqIdx.append(i);
+    for(uint i=0; i<walker.nlp->featureTypes.N; i++) if(walker.nlp->featureTypes(i)==OT_eq) eqIdx.append(i);
     h = phi.sub(eqIdx);
     Jh = J.sub(eqIdx);
   }
@@ -629,7 +628,7 @@ void NLP_Walker::Eval::eval(const arr& _x, NLP_Walker& walker) {
   {
     //grab sos
     uintA sosIdx;
-    for(uint i=0; i<walker.nlp.featureTypes.N; i++) if(walker.nlp.featureTypes(i)==OT_sos) sosIdx.append(i);
+    for(uint i=0; i<walker.nlp->featureTypes.N; i++) if(walker.nlp->featureTypes(i)==OT_sos) sosIdx.append(i);
     r = phi.sub(sosIdx);
     Jr = J.sub(sosIdx);
   }
@@ -648,7 +647,7 @@ void NLP_Walker::Eval::eval(const arr& _x, NLP_Walker& walker) {
 //  }
 }
 
-void NLP_Walker::Eval::convert_eq_to_ineq(double margin) {
+void NLP_Sampler::Eval::convert_eq_to_ineq(double margin) {
   g.append(h-margin);
   Jg.append(Jh);
   g.append(-h-margin);

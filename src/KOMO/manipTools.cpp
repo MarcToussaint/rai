@@ -534,8 +534,7 @@ arr ManipulationModelling::solve(int verbose) {
 arr ManipulationModelling::sample(const char* sampleMethod, int verbose) {
   CHECK(komo, "");
 
-  auto nlp = komo->nlp();
-  NLP_Walker sol(*nlp);
+  NLP_Sampler sol(komo->nlp());
   arr data;
   uintA dataEvals;
   double time = -rai::cpuTime();

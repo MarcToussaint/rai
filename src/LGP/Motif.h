@@ -25,7 +25,7 @@ struct KOMO_Motif{
 //    komo.pathConfig.setDofState(x, dofs);
 //  }
 
-  std::shared_ptr<SolverReturn> solve(KOMO& komo, int verbose);
+  std::shared_ptr<SolverReturn> solve(KOMO& komo, str opt_or_sample, int verbose);
 
 };
 

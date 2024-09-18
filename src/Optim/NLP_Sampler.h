@@ -39,7 +39,6 @@ struct NLP_Sampler_Options {
 
   RAI_PARAM("sam/", rai::String, downhillNoiseMethod, "none")
   RAI_PARAM("sam/", rai::String, downhillRejectMethod, "none")
-
   RAI_PARAM("sam/", double, downhillNoiseSigma, .1)
 
   RAI_PARAM("sam/", rai::String, interiorMethod, "HR")
@@ -57,48 +56,41 @@ struct NLP_Sampler_Options {
 
 };
 
-struct NLP_Walker {
+struct NLP_Sampler {
   NLP_Sampler_Options opt;
+  std::shared_ptr<NLP> nlp;
 
-  NLP& nlp;
+  NLP_Sampler(const shared_ptr<NLP>& _nlp) : nlp(_nlp) {}
 
+  void run(arr& data, uintA& evals);
+  std::shared_ptr<SolverReturn> sample();
+
+private:
   //evaluation data
   arr x;
   struct Eval {
     arr x;
     arr phi, J;
-    arr g, Jg;
-    arr h, Jh; //, Ph;
-    arr s, Js;
-    arr r, Jr;
+    arr g, Jg; //ineq
+    arr h, Jh; //eq
+    arr s, Js; //slack ([ineq]+ and eq)
+    arr r, Jr; //sos
     arr gpos;
     double err;
-    void eval(const arr& _x, NLP_Walker& walker);
+    void eval(const arr& _x, NLP_Sampler& walker);
     void convert_eq_to_ineq(double margin);
   } ev;
-
-  //h-threshold
-
-  double a, sig;
 
   //counters
   uint evals=0;
   Eval ev_stored;
 
-  NLP_Walker(NLP& _nlp, double alpha_bar=1.) : nlp(_nlp) {
-    set_alpha_bar(alpha_bar);
-  }
-
-  void set_alpha_bar(double alpha_bar);
   void initialize(const arr& _x) { x=_x; ev.phi.clear(); ev.x.clear(); }
   void ensure_eval() { ev.eval(x, *this); }
   void store_eval() { ensure_eval(); ev_stored = ev; }
 
-  bool step(); //old
-
   bool step_GaussNewton(bool slackStep, double penaltyMu=1., double alpha=-1., double maxStep=-1., double lambda=1e-2);
   void step_PlainGrad(bool slackMode, double penaltyMu=1., double alpha=-1., double maxStep=-1.);
-  bool step_hit_and_run_old(double maxStep);
   bool step_hit_and_run();
   bool step_noise(double sig);
   bool step_noise_covariant(double sig, double penaltyMu=1., double lambda=1e0);
@@ -106,8 +98,6 @@ struct NLP_Walker {
   void step_Langevin(bool slackMode, double tauPrime, double penaltyMu);
 
   bool reject_MH(double gamma, double mu, const arr& asymmetric_del={}, double sigma=-1.);
-
-  void run(arr& data, uintA& evals);
 
   void init_novelty(const arr& data, uint D);
   void init_distance(const arr& data, uint D);

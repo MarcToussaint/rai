@@ -2,6 +2,7 @@
 
 #include <KOMO/komo_NLP.h>
 #include <Optim/NLP_Solver.h>
+#include <Optim/NLP_Sampler.h>
 #include <Kin/frame.h>
 
 rai::String KOMO_Motif::getHash(){
@@ -39,7 +40,7 @@ DofL KOMO_Motif::getDofs(rai::Configuration& C, int verbose){
   return dofs;
 }
 
-std::shared_ptr<SolverReturn> KOMO_Motif::solve(KOMO& komo, int verbose){
+std::shared_ptr<SolverReturn> KOMO_Motif::solve(KOMO& komo, str opt_or_sample, int verbose){
 #if 0
   //-- selected frames within komo
   FrameL selected;
@@ -86,9 +87,20 @@ std::shared_ptr<SolverReturn> KOMO_Motif::solve(KOMO& komo, int verbose){
   std::shared_ptr<rai::KOMO_SubNLP> nlp = make_shared<rai::KOMO_SubNLP>(komo, objs, dofs);
 //  arr x = nlp->getInitializationSample();
 //  nlp->checkJacobian(x, 1e-6, nlp->featureNames);
-  NLP_Solver sol;
-  sol.setProblem(nlp);
-  auto ret = sol.solve(0, verbose);
+
+  std::shared_ptr<SolverReturn> ret;
+  if(opt_or_sample=="opt"){
+    NLP_Solver sol;
+    sol.setProblem(nlp);
+    ret = sol.solve(0, verbose);
+  }else{
+    NLP_Sampler sol(nlp);
+    sol.opt.seedMethod=opt_or_sample;
+    sol.opt.verbose=verbose;
+    sol.opt.downhillMaxSteps=50;
+    sol.opt.slackMaxStep=.2;
+    ret = sol.sample();
+  }
 //  cout <<*ret <<endl;
   nlp.reset();
 
