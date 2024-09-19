@@ -8,13 +8,7 @@ struct KOMO_Motif{
   FrameL F;
   int timeSlice=-1;
 
-  bool matches(GroundedObjective* ob, int _timeSlice){
-    CHECK(objs.N, "");
-    if(_timeSlice != timeSlice) return false;
-    FrameL shared = setSection(F, ob->frames);
-    if(!shared.N) return false;
-    return true;
-  }
+  bool matches(GroundedObjective* ob, int _timeSlice);
 
   rai::String getHash();
 

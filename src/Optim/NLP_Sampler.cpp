@@ -469,25 +469,27 @@ std::shared_ptr<SolverReturn> NLP_Sampler::sample(){
   arr data;
   uintA dataEvals;
   std::shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
+
   ret->time = -rai::cpuTime();
-
-  run(ret->x, dataEvals);
-
+  run(data, dataEvals);
   ret->time += rai::cpuTime();
-  ret->done = true;
-  if(!dataEvals.N){
-    ret->feasible=false;
-    ret->x.clear();
-  }else{
-    ret->x.reshape(-1);
-    ret->evals = dataEvals.elem();
 
-    ret->sos = sumOfSqr(ev.r);
-    ret->f = 0.;
-    ret->eq = sumOfAbs(ev.h);
-    ret->ineq = sumOfPos(ev.g);
-    ret->feasible = (ret->ineq<.1) && (ret->eq<.1);
-  }
+  ret->x = ev.x;
+  ret->sos = sumOfSqr(ev.r);
+  ret->f = 0.;
+  ret->eq = sumOfAbs(ev.h);
+  ret->ineq = sumOfPos(ev.g);
+  ret->done = true;
+  ret->feasible = (ret->ineq<.1) && (ret->eq<.1);
+//  if(!dataEvals.N){
+//    ret->feasible=false;
+//    ret->x.clear();
+//  }else{
+//    ret->x.reshape(-1);
+//    ret->evals = dataEvals.elem();
+
+//    ret->feasible = true; //(ret->ineq<.1) && (ret->eq<.1);
+//  }
 
   return ret;
 }

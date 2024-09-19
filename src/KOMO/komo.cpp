@@ -104,9 +104,7 @@ void KOMO::setConfig(const Configuration& C, bool _computeCollisions) {
   orgJointIndices = C.getDofIDs();
   if(&C!=&world) world.copy(C, _computeCollisions);
   computeCollisions = _computeCollisions;
-  if(computeCollisions) {
-    world.fcl();
-  }
+//  if(computeCollisions) world.fcl();
   world.ensure_q();
 
   if(stepsPerPhase) setupPathConfig();
@@ -390,9 +388,9 @@ void KOMO::addRigidSwitch(double time, const StringA& frames, bool noJumpStart) 
     rai::Frame* rootOfPicked = toBePicked->getUpwardLink(NoTransformation, true);
     rai::Frame* prev = rootOfPicked->prev;
     if(prev && prev->joint && prev->joint->isStable){
-      addObjective({time}, FS_poseRel, {rootOfPicked->name, prev->parent->name}, OT_eq, {1e1}, NoArr, 1);
+      addObjective({time}, FS_poseRel, {rootOfPicked->name, prev->parent->name}, OT_eq, {1e0}, NoArr, 1);
     }else{
-      addObjective({time}, FS_pose, {rootOfPicked->name}, OT_eq, {1e1}, NoArr, 1);
+      addObjective({time}, FS_pose, {rootOfPicked->name}, OT_eq, {1e0}, NoArr, 1);
     }
     if(k_order>1) addObjective({time}, make_shared<F_LinAngVel>(), {frames(1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
   }
@@ -1757,11 +1755,11 @@ void KOMO::setupPathConfig() {
   C.copy(world, true);
   C.setTaus(tau);
 
-  if(computeCollisions) {
-    CHECK(!fcl, "");
-    fcl = C.fcl();
-    fcl->mode = fcl->_broadPhaseOnly;
-  }
+//  if(computeCollisions) {
+//    CHECK(!fcl, "");
+//    fcl = C.fcl();
+//    fcl->mode = fcl->_broadPhaseOnly;
+//  }
 
   for(uint s=0; s<k_order+T; s++) {
     pathConfig.addCopy(C.frames, C.otherDofs);
@@ -1815,6 +1813,10 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
   timeKinematics += rai::cpuTime();
 
   if(computeCollisions) {
+    if(!fcl) {
+      fcl = world.fcl();
+      fcl->mode = fcl->_broadPhaseOnly;
+    }
     timeCollisions -= rai::cpuTime();
     pathConfig.proxies.clear();
     arr X;

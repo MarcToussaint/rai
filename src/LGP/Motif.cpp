@@ -5,6 +5,14 @@
 #include <Optim/NLP_Sampler.h>
 #include <Kin/frame.h>
 
+bool KOMO_Motif::matches(GroundedObjective* ob, int _timeSlice){
+  CHECK(objs.N, "");
+  if(_timeSlice != timeSlice) return false;
+  FrameL shared = setSection(F, ob->frames); //OPTION! Motifs are time slices? Or shared frames?
+  if(!shared.N) return false;
+  return true;
+}
+
 rai::String KOMO_Motif::getHash(){
   str hash;
   hash <<"#objs" <<objs.N;
@@ -98,6 +106,7 @@ std::shared_ptr<SolverReturn> KOMO_Motif::solve(KOMO& komo, str opt_or_sample, i
     sol.opt.seedMethod=opt_or_sample;
     sol.opt.verbose=verbose;
     sol.opt.downhillMaxSteps=50;
+    sol.opt.slackStepAlpha=.5;
     sol.opt.slackMaxStep=.2;
     ret = sol.sample();
   }

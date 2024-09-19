@@ -232,16 +232,12 @@ void LGP_Tool::solve_step(){
 
 //  wait();
 
-#if 0
-  Job *job = jobs.elem(-1);
-#else
   Job *job = newPlanJob.get();
   if(open_terminal_nodes.N){
     job = open_terminal_nodes.elem(-1)->ways_job.get();
     if(job->succProb<.5) job = newPlanJob.get();
   }
   for(Job* d: job->dependencies) if(!d->n_succ){ job=d; break; }
-#endif
 
   if(job->tag==_new_plan){
     ActionNode *new_terminal = addNewOpenPlan();
@@ -250,7 +246,8 @@ void LGP_Tool::solve_step(){
     //add the _solve_ways job for the full path (if not yet exists)
     ActionNodeL path = new_terminal->getTreePath();
     Array<Job*> pathJobs;
-    for(ActionNode *a:path) if(a->parent){
+//    for(ActionNode *a:path) if(a->parent){
+    for(ActionNode *a:path) if(a->isTerminal){ //OPTION! create sub_way_problems? or only motifs?
       if(a->ways_job){ //job exists
         pathJobs.append(a->ways_job.get());
       }else{ //job needs to be created
@@ -455,23 +452,23 @@ MotifL analyzeMotifs(KOMO& komo, int verbose){
 
         if(verbose>1) cout <<"\n** objective " <<*ob <<' ' <<timeSlice <<endl;
 
-        bool done=false;
+        bool wasAdded=false;
         for(auto& sub: subs){
           if(sub->matches(go, timeSlice)){
-            if(verbose>1) cout <<" -- matches pac " <<sub->objs.elem(-1)->name() <<' ' <<sub->timeSlice <<endl;
+            if(verbose>1) cout <<" -- matches motif " <<sub->objs.elem(-1)->name() <<' ' <<sub->timeSlice <<endl;
             sub->objs.append(go);
             sub->F.setAppend(go->frames);
-            done=true;
+            wasAdded=true;
             break;
           }
         }
-        if(!done){
-          if(verbose>1) cout <<" -- creating new pac " <<endl;
-          auto pac = make_shared<KOMO_Motif>();
-          subs.append(pac);
-          pac->timeSlice = timeSlice;
-          pac->objs.append(go);
-          pac->F = go->frames;
+        if(!wasAdded){
+          if(verbose>1) cout <<" -- creating new motif " <<endl;
+          auto motif = make_shared<KOMO_Motif>();
+          subs.append(motif);
+          motif->timeSlice = timeSlice;
+          motif->objs.append(go);
+          motif->F = go->frames;
         }
       }
     }
