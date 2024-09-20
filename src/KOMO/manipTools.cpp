@@ -138,15 +138,12 @@ void addBoxPlaceObjectives(KOMO& komo, double time,
 //}
 
 ManipulationModelling::ManipulationModelling(rai::Configuration& _C, const str& _info, const StringA& _helpers)
-  : C(&_C), info(_info), helpers(_helpers) {
-  for(auto& frame:helpers) {
-    auto name = STRING("_" <<frame <<"_end");
-    auto f = C->getFrame(name, false);
-    if(!f) C->addFrame(name);
-    name = STRING("_" <<frame <<"_start");
-    f = C->getFrame(name, false);
-    if(!f) C->addFrame(name);
-  }
+  : C(&_C), info(_info) {
+  setup_helpers(_helpers);
+}
+
+ManipulationModelling::ManipulationModelling(std::shared_ptr<KOMO>& _komo)
+  : komo(_komo) {
 }
 
 void ManipulationModelling::setup_inverse_kinematics(double homing_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
@@ -231,6 +228,18 @@ void ManipulationModelling::setup_point_to_point_rrt(const arr& q0, const arr& q
   rrt = make_shared<rai::PathFinder>();
   rrt->setProblem(*C, q0, q1);
   if(explicitCollisionPairs.N) rrt->setExplicitCollisionPairs(explicitCollisionPairs);
+}
+
+void ManipulationModelling::setup_helpers(const StringA& _helpers){
+  helpers = _helpers;
+  for(auto& frame:helpers) {
+    auto name = STRING("_" <<frame <<"_end");
+    auto f = C->getFrame(name, false);
+    if(!f) C->addFrame(name);
+    name = STRING("_" <<frame <<"_start");
+    f = C->getFrame(name, false);
+    if(!f) C->addFrame(name);
+  }
 }
 
 void ManipulationModelling::add_helper_frame(rai::JointType type, const char* parent, const char* name, const char* initFrame) {
@@ -502,7 +511,7 @@ arr ManipulationModelling::solve(int verbose) {
         }
         komo->view(true, STRING("infeasible: " <<info <<"\n" <<*ret));
         if(verbose>2) {
-          while(komo->view_play(true, 1.));
+          while(komo->view_play(true, 0, 1.));
         }
       }
     } else {
@@ -514,7 +523,7 @@ arr ManipulationModelling::solve(int verbose) {
           cout <<"  --" <<endl;
           komo->view(true, STRING("feasible: " <<info <<"\n" <<*ret));
           if(verbose>3) {
-            while(komo->view_play(true, 1.));
+            while(komo->view_play(true, 0, 1.));
           }
         }
       }
@@ -581,7 +590,7 @@ arr ManipulationModelling::sample(const char* sampleMethod, int verbose) {
       }
       komo->view(true, STRING("infeasible: " <<info <<"\n" <<*ret));
       if(verbose>2) {
-        while(komo->view_play(true, 1.));
+        while(komo->view_play(true, 0, 1.));
       }
     }
   } else {
@@ -592,7 +601,7 @@ arr ManipulationModelling::sample(const char* sampleMethod, int verbose) {
         cout <<"  --" <<endl;
         komo->view(true, STRING("feasible: " <<info <<"\n" <<*ret));
         if(verbose>3) {
-          while(komo->view_play(true, 1.));
+          while(komo->view_play(true, 0, 1.));
         }
       }
     }
@@ -612,22 +621,22 @@ void ManipulationModelling::debug(bool listObjectives, bool plotOverTime){
 }
 
 
-std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_motion(uint phase, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool quaternion_norms) {
+std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_motion(KOMO& komo, uint phase, const StringA& helpers, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool quaternion_norms) {
   rai::Configuration C;
   arr q0, q1;
-  komo->getSubProblem(phase, C, q0, q1);
+  komo.getSubProblem(phase, C, q0, q1);
 
-  std::shared_ptr<ManipulationModelling> manip = make_shared<ManipulationModelling>(C, STRING("sub_motion"<<phase<<"--"<<info), helpers);
+  std::shared_ptr<ManipulationModelling> manip = make_shared<ManipulationModelling>(C, STRING("sub_motion"<<phase), helpers);
   manip->setup_point_to_point_motion(q0, q1, homing_scale, acceleration_scale, accumulated_collisions, quaternion_norms);
   return manip;
 }
 
-std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_rrt(uint phase, const StringA& explicitCollisionPairs) {
+std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_rrt(KOMO& komo, uint phase, const StringA& explicitCollisionPairs) {
   rai::Configuration C;
   arr q0, q1;
-  komo->getSubProblem(phase, C, q0, q1);
+  komo.getSubProblem(phase, C, q0, q1);
 
-  std::shared_ptr<ManipulationModelling> manip = make_shared<ManipulationModelling>(C, STRING("sub_rrt"<<phase<<"--"<<info), helpers);
+  std::shared_ptr<ManipulationModelling> manip = make_shared<ManipulationModelling>(C, STRING("sub_rrt"<<phase));
   manip->setup_point_to_point_rrt(q0, q1, explicitCollisionPairs);
   return manip;
 }

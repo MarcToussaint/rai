@@ -31,7 +31,7 @@ struct ConfigurationViewer : RenderData {
 
   int view(bool watch=false, const char* _text=0);
   int view_slice(uint t, bool watch=false);
-  bool playVideo(bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
+  int playVideo(bool watch=true, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
 
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   byteA getRgb();

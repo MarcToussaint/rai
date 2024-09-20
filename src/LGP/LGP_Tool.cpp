@@ -358,7 +358,7 @@ void LGP_Tool::solve_step(){
 //    ways->view(false, STRING("ways solution " <<sub->action <<"\n" <<*ret));
 //    ways->view_close();
 
-    if(verbose>1) display(job, ways, ret, STRING(*job));
+    if(verbose>1) display(ways, ret, false, job->niceMsg());
 
   }else{
 
@@ -381,7 +381,7 @@ void LGP_Tool::solve_step(){
     }
 
     if(verbose>0) cout <<"++ jobs stats: " <<*job <<endl;
-    if(verbose>1) display(job, ways_komo, ret, STRING(*job));
+    if(verbose>1) display(ways_komo, ret, false, job->niceMsg());
   }
 }
 
@@ -413,7 +413,7 @@ std::shared_ptr<KOMO> LGP_Tool::getSolvedKOMO(){
 int LGP_Tool::view_solved(bool pause){
   if(!solutions.N) return 0;
   ActionNode *s = solutions(-1);
-  return display(s->ways_job.get(), s->ways, s->ways_job->rets(-1), pause, 0);
+  return display(s->ways, s->ways_job->rets(-1), pause, s->ways_job->niceMsg());
 }
 
 void LGP_Tool::view_close(){
@@ -421,7 +421,7 @@ void LGP_Tool::view_close(){
   gl.reset();
 }
 
-int LGP_Tool::display(Job* job, std::shared_ptr<KOMO>& komo, std::shared_ptr<SolverReturn>& ret, bool pause, const char* msg){
+int LGP_Tool::display(std::shared_ptr<KOMO>& komo, std::shared_ptr<SolverReturn>& ret, bool pause, const char* msg, bool play){
   if(!gl){
     gl = make_shared<OpenGL>("ALGO", 600, 500);
     gl->camera.setDefault();
@@ -434,8 +434,10 @@ int LGP_Tool::display(Job* job, std::shared_ptr<KOMO>& komo, std::shared_ptr<Sol
   str text;
   if(ret->feasible) text <<"SOLVED\n";
   else text <<"FAILED\n";
-  text <<job->niceMsg() <<"\nsolver: " <<*ret <<"\n[use SHIFT+scroll or arror keys to browse; press key to continue]";
-  int key = gl_komo->view(pause, text);
+  text <<msg <<"\nsolver: " <<*ret <<"\n[use SHIFT+scroll or arror keys to browse; press key to continue]";
+  int key = 0;
+  if(play) key = gl_komo->view_play(pause, text);
+  else key = gl_komo->view(pause, text);
 //  komo->view_close();
   return key;
 }
@@ -528,6 +530,24 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
 
     }else{
       NIY;
+    }
+  }
+
+  virtual void add_action_constraints_motion(PTR<KOMO>& komo, const StringA& action){
+    if(!action.N) return;
+
+    ManipulationModelling manip(komo);
+
+    if(action(0)=="pick" || action(0)=="handover"){
+      str& gripper = action(3);
+      manip.retract({.0, .2}, gripper);
+      manip.approach({.8, 1.}, gripper);
+    }
+    else if(action(0)=="place"){
+      str& gripper = action(2);
+
+      manip.retract({.0, .2}, gripper);
+      manip.approach({.8, 1.}, gripper);
     }
   }
 

@@ -359,7 +359,7 @@ rai::LGPcomp_OptimizePath::LGPcomp_OptimizePath(rai::LGPcomp_Skeleton* _sket)
   //random initialize
   komoPath->initRandom(0);
   if(sket->verbose()>2) komoPath->view(sket->verbose()>3, STRING(name <<" - init random from Skeleton directly"));
-  if(sket->verbose()>3) while(komoPath->view_play(true, .1));
+  if(sket->verbose()>3) while(komoPath->view_play(true, 0, .1));
 
   komoPath->run_prepare(0.);
   //  komoPath->opt.animateOptimization=2;
@@ -381,7 +381,7 @@ rai::LGPcomp_OptimizePath::LGPcomp_OptimizePath(rai::LGPcomp_Waypoints* _ways)
   komoPath->initWithWaypoints(ways->komoWaypoints->getPath_qAll(), 1, true);
   komoPath->run_prepare(0.);
   if(sket->verbose()>2) komoPath->view(sket->verbose()>3, STRING(name <<" - init with interpolated waypoints"));
-  if(sket->verbose()>3) while(komoPath->view_play(true, .1));
+  if(sket->verbose()>3) while(komoPath->view_play(true, 0, .1));
 
   komoPath->run_prepare(0.);
   //  komoPath->opt.animateOptimization=2;
@@ -413,7 +413,7 @@ rai::LGPcomp_OptimizePath::LGPcomp_OptimizePath(rai::LGPcomp_RRTpath* _par, rai:
 //  if(rrtpath.N) komoPath->initWithPath_qOrg(rrtpath);
   komoPath->run_prepare(0.);
   if(sket->verbose()>2) komoPath->view(sket->verbose()>3, STRING(name <<" - init with constant waypoints"));
-  if(sket->verbose()>3) while(komoPath->view_play(true, .1));
+  if(sket->verbose()>3) while(komoPath->view_play(true, 0, .1));
 
   for(uint t=0; t<ways->komoWaypoints->T; t++) {
     CHECK(rrts(t)->isFeasible, "rrt of t=" <<t <<" is infeasible - can't use RRT-initialized KOMO")
@@ -444,8 +444,8 @@ void rai::LGPcomp_OptimizePath::untimedCompute() {
     komoPath->pathConfig.gl().drawOptions.drawVisualsOnly=true;
     komoPath->view(sket->verbose()>5, STRING(name <<" - intermediate result c:" <<c <<"\n" <<*sol.ret));
     if(sket->verbose()>3) {
-      if(sket->verbose()>5) while(komoPath->view_play(true, .1));
-      else komoPath->view_play(false, .1);
+      if(sket->verbose()>5) while(komoPath->view_play(true, 0, .1));
+      else komoPath->view_play(false, 0, .1);
     }
   }
 
@@ -471,7 +471,7 @@ void rai::LGPcomp_OptimizePath::untimedCompute() {
       if(sket->verbose()>0) { //save video and path and everything
         auto path = STRING("z.sol_"<<ID<<"/");
 
-        komoPath->view_play(false, .1, path);
+        komoPath->view_play(false, 0, .1, path);
         ofstream fil(path + "info.txt");
         fil <<*sol.ret <<"\n\nSkeleton:{" <<sket->planString <<"\n}" <<endl;
         fil <<komoPath->report() <<endl;

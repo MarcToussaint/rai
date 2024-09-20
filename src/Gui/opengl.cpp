@@ -497,16 +497,11 @@ void OpenGL::add(rai::RenderData* c) {
 void OpenGL::remove(rai::RenderData* s) {
   {
     auto _dataLock = dataLock(RAI_HERE);
-    for(uint i=drawers.N;i--;){
-      if(drawers(i)==s){
-        drawers.remove(i);
-        beginContext();
-        s->glDeinitialize(*this);
-        endContext();
-        break;
-      }
-    }
+    drawers.removeValue(s);
   }
+  beginContext();
+  s->glDeinitialize(*this);
+  endContext();
 }
 
 void OpenGL::addSubView(uint v, rai::RenderData* c) {

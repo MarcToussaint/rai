@@ -1515,8 +1515,8 @@ int KOMO::view(bool pause, const char* txt) {
   return pathConfig.viewer()->view(pause, txt);
 }
 
-bool KOMO::view_play(bool pause, double delay, const char* saveVideoPath) {
-  view(false, 0);
+int KOMO::view_play(bool pause, const char* txt, double delay, const char* saveVideoPath) {
+  view(false, txt);
   return pathConfig.viewer()->playVideo(pause, delay*tau*T, saveVideoPath);
 }
 

@@ -3,6 +3,7 @@
 #include "Motif.h"
 
 #include <LGP/LGP_SkeletonTool.h>
+#include <KOMO/manipTools.h>
 
 namespace rai {
 
@@ -12,6 +13,7 @@ struct Logic2KOMO_Translator {
   virtual ~Logic2KOMO_Translator() {}
   virtual void setup_sequence(Configuration& C, uint K) = 0;
   virtual void add_action_constraints(double time, const StringA& action) = 0;
+  virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, const StringA& action) = 0;
   virtual PTR<KOMO> get_komo() = 0;
 };
 
@@ -124,11 +126,16 @@ struct LGP_Tool{
   void view_close();
 
 
-private:
+  std::shared_ptr<ManipulationModelling> sub_motion(uint phase){
+    StringA action = getSolvedPlan()(phase);
+    action.remove(0);
+    return ManipulationModelling::sub_motion(*getSolvedKOMO(), phase, action);
+  }
+  int display(PTR<KOMO>& komo, PTR<SolverReturn>& ret, bool pause=true, const char* msg=0, bool play=true);
 
+private:
   //helpers
   ActionNode *addNewOpenPlan();
-  int display(Job* job, PTR<KOMO>& komo, PTR<SolverReturn>& ret, bool pause=true, const char* msg=0);
   PTR<OpenGL> gl;
   PTR<KOMO> gl_komo;
 };

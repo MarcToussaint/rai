@@ -228,7 +228,7 @@ int rai::ConfigurationViewer::view(bool watch, const char* _text) {
   return update(watch);
 }
 
-bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* saveVideoPath) {
+int rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* saveVideoPath) {
   if(rai::getDisableGui()) return false;
 
   if(saveVideoPath) {
@@ -262,7 +262,7 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
   }
   key = update(watch);
 //  drawText = tag;
-  return !(key==27 || key=='q' || !rai::getInteractivity());
+  return key;
 }
 
 int rai::ConfigurationViewer::view_slice(uint t, bool watch){

@@ -485,7 +485,7 @@ void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose, const char* ms
   if(verbose>4) komo.view_play(verbose>5);
   if(verbose>6) {
     rai::system("mkdir -p z.vid");
-    komo.view_play(false, .1, "z.vid/");
+    komo.view_play(false, 0, .1, "z.vid/");
   }
 
   if(verbose>4) {
