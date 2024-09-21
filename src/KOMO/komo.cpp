@@ -1060,7 +1060,7 @@ uintA KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase,
           double phase = double(t-t0)/double(t1-t0);
           arr q = q0 + (.5*(1.-cos(RAI_PI*phase))) * (q1-q0); //p = p0 + phase * (p1-p0);
           if(qHomeInterpolate>0.) { //also interpolate to qHome
-            q += qHomeInterpolate*sin(RAI_PI*phase)*(qHome-q);
+            q += qHomeInterpolate*(.5*(1.-cos(RAI_2PI*phase)))*(qHome-q);
           }
           getDofsAndSignFromFramePairs(dofs, signs, pathConfig.getFrames(F.frames + timeSlices(k_order+t, 0)->ID));
           pathConfig.setDofState(signs%q, dofs);
@@ -1602,7 +1602,8 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
                               JointType jointType, bool stable,
                               const char* initFrame, rai::Transformation rel) {
 
-  Frame* p0 = world[parent];
+  Frame* p0 = 0;
+  if(parent) p0 = world[parent];
 
   //-- IN WORLD, NOT PATHCONFIG!
 
@@ -1619,12 +1620,25 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
   {
     Frame* f = world.addFrame(name);
     if(rel.isZero()) {
-      f->setParent(p0, false);
+      if(p0) f->setParent(p0, false);
     } else {
-      Frame* r = world.addFrame(STRING(name<<"_origin"));
-      r->setParent(p0, false);
-      r->setRelativePose(rel);
-      f->setParent(r, false);
+      if(jointType!=JT_none && jointType!=JT_rigid){
+        Frame* r = world.addFrame(STRING(name<<"_origin"));
+        if(p0){
+          r->setParent(p0, false);
+          r->setRelativePose(rel);
+        }else{
+          r->setPose(rel);
+        }
+        f->setParent(r, false);
+      }else{
+        if(p0){
+          f->setParent(p0, false);
+          f->setRelativePose(rel);
+        }else{
+          f->setPose(rel);
+        }
+      }
     }
   }
 
@@ -1634,16 +1648,32 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
   Frame* f0=0;
   for(uint s=0; s<timeSlices.d0; s++) { //apply switch on all configurations!
     Frame* f = pathConfig.addFrame(name, 0, 0, false);
-    Frame* p = timeSlices(s, p0->ID);
-    CHECK_EQ(p->name, parent, "");
+    Frame* p = 0;
+    if(p0){
+      p=timeSlices(s, p0->ID);
+      CHECK_EQ(p->name, parent, "");
+    }
     if(rel.isZero()) {
-      f->setParent(p, false);
+      if(p) f->setParent(p, false);
     } else {
-      Frame* r = pathConfig.addFrame(STRING(name<<"_origin"), 0, 0, false);
-      r->setParent(p, false);
-      r->setRelativePose(rel);
-      f->setParent(r, false);
-      R.append(r);
+      if(jointType!=JT_none && jointType!=JT_rigid){
+        Frame* r = pathConfig.addFrame(STRING(name<<"_origin"), 0, 0, false);
+        if(p){
+          r->setParent(p, false);
+          r->setRelativePose(rel);
+        }else{
+          r->setPose(rel);
+        }
+        f->setParent(r, false);
+        R.append(r);
+      }else{
+        if(p){
+          f->setParent(p, false);
+          f->setRelativePose(rel);
+        }else{
+          f->setPose(rel);
+        }
+      }
     }
     if(initFrame) f->setPose(init->getPose());
     if(jointType!=JT_none) {
@@ -1663,7 +1693,7 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
   }
 
   CHECK_EQ(F.N, timeSlices.d0, "");
-  if(rel.isZero()) {
+  if(rel.isZero() || jointType==JT_none || jointType==JT_rigid) {
     timeSlices.insColumns(-1);
     for(uint s=0; s<timeSlices.d0; s++) timeSlices(s, -1) = F(s);
   } else {

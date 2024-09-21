@@ -11,10 +11,9 @@ namespace rai {
 
 struct Logic2KOMO_Translator {
   virtual ~Logic2KOMO_Translator() {}
-  virtual void setup_sequence(Configuration& C, uint K) = 0;
-  virtual void add_action_constraints(double time, const StringA& action) = 0;
-  virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, const StringA& action) = 0;
-  virtual PTR<KOMO> get_komo() = 0;
+  virtual std::shared_ptr<KOMO> setup_sequence(Configuration& C, uint K) = 0;
+  virtual void add_action_constraints(std::shared_ptr<KOMO>& komo, double time, const StringA& action) = 0;
+  virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, double time, const StringA& prev_action, const StringA& action) = 0;
 };
 
 struct TAMP_Provider{
@@ -126,11 +125,10 @@ struct LGP_Tool{
   void view_close();
 
 
-  std::shared_ptr<ManipulationModelling> sub_motion(uint phase){
-    StringA action = getSolvedPlan()(phase);
-    action.remove(0);
-    return ManipulationModelling::sub_motion(*getSolvedKOMO(), phase, action);
-  }
+  std::shared_ptr<KOMO> sub_motion(uint phase);
+  std::shared_ptr<KOMO> get_fullMotion();
+
+
   int display(PTR<KOMO>& komo, PTR<SolverReturn>& ret, bool pause=true, const char* msg=0, bool play=true);
 
 private:

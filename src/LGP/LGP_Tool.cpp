@@ -32,15 +32,14 @@ PTR<KOMO>& ActionNode::get_ways(Configuration& C, Logic2KOMO_Translator& trans, 
     //      for(ActionNode *a: path){ planString <<"[ "; for(str& s:a->action) planString <<' ' <<s; planString <<']'; }
     //      LOG(0) <<"planString: " <<planString;q
 
-    trans.setup_sequence(C, path.N-1);
+    ways = trans.setup_sequence(C, path.N-1);
 
     double t = 0.;
     for(ActionNode *a: path){
-      trans.add_action_constraints(t, a->action);
+      trans.add_action_constraints(ways, t, a->action);
       t+=1.;
     }
 
-    ways = trans.get_komo();
 
     for(uint i=0; i<explicitCollisions.N; i+=2) {
       ways->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
@@ -421,6 +420,45 @@ void LGP_Tool::view_close(){
   gl.reset();
 }
 
+std::shared_ptr<KOMO> LGP_Tool::sub_motion(uint phase){ //should only retun a KOMO, I think
+  StringA action = getSolvedPlan()(phase);
+  action.remove(0);
+  auto manip = ManipulationModelling::sub_motion(*getSolvedKOMO(), phase);
+  return manip->komo;
+}
+
+std::shared_ptr<KOMO> LGP_Tool::get_fullMotion(){
+  StringAA path =  getSolvedPlan();
+
+  ManipulationModelling manip(C, {});
+  manip.setup_motion(path.N, -1.);
+
+  for(uint t=0;t<path.N;t++){
+    trans.add_action_constraints(manip.komo, double(t)+1., path(t));
+  }
+
+  StringA explicitCollisions = tamp.explicitCollisions();
+  for(uint i=0; i<explicitCollisions.N; i+=2) {
+    manip.komo->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
+  }
+
+  auto ways = getSolvedKOMO();
+  arr stable_q = ways->getConfiguration_qAll(-1);
+  manip.komo->setConfiguration_qAll(-2, stable_q);
+  arrA waypointsAll = ways->getPath_qAll();
+  manip.komo->initWithWaypoints(waypointsAll, 1, true, 0.1);
+
+  for(uint t=0;t<path.N;t++){
+    trans.add_action_constraints_motion(manip.komo, double(t)+1., (t>0?path(t-1):StringA()), path(t));
+  }
+
+//  for(uint k=0;k<waypointsAll.d0;k++){
+//    manip.komo->addObjective({double(k)}, FS_qItself, {}, OT_sos, {1e1}, waypointsAll(k));
+//  }
+
+  return manip.komo;
+}
+
 int LGP_Tool::display(std::shared_ptr<KOMO>& komo, std::shared_ptr<SolverReturn>& ret, bool pause, const char* msg, bool play){
   if(!gl){
     gl = make_shared<OpenGL>("ALGO", 600, 500);
@@ -482,17 +520,19 @@ MotifL analyzeMotifs(KOMO& komo, int verbose){
 //===========================================================================
 
 struct Default_KOMO_Translator : Logic2KOMO_Translator{
-  std::shared_ptr<ManipulationModelling> seq;
 
   ~Default_KOMO_Translator() {}
 
-  virtual void setup_sequence(Configuration& C, uint K){
-    seq = make_shared<ManipulationModelling>(C, str("???"), StringA{});
-    seq->setup_sequence(K);
+  virtual std::shared_ptr<KOMO> setup_sequence(Configuration& C, uint K){
+    ManipulationModelling manip(C, str("???"));
+    manip.setup_sequence(K);
+    return manip.komo;
   }
 
-  virtual void add_action_constraints(double time, const StringA& action){
+  virtual void add_action_constraints(std::shared_ptr<KOMO>& komo, double time, const StringA& action){
     if(!action.N) return;
+
+    ManipulationModelling manip(komo);
 
     if(action(0)=="pick" || action(0)=="handover"){
       str& obj = action(1);
@@ -504,9 +544,11 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
       }
 
       str snapFrame; snapFrame <<"pickPose_" <<gripper <<'_' <<obj <<'_' <<time;
-      seq->komo->addFrameDof(snapFrame, gripper, JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
-      seq->komo->addRigidSwitch(time, {snapFrame, obj});
-      seq->grasp_box(time, gripper, obj, palm, "y");
+      manip.komo->addFrameDof(snapFrame, gripper, JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
+      manip.komo->addRigidSwitch(time, {snapFrame, obj});
+      if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
+
+      manip.grasp_box(time, gripper, obj, palm, "y");
 
     }else if(action(0)=="place"){
       str& obj = action(1);
@@ -518,41 +560,39 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
         palm <<"_palm";
       }
 
-      if(time<seq->komo->T){
+      if(time<manip.komo->T/manip.komo->stepsPerPhase){
         str snapFrame; snapFrame <<"placePose_" <<target <<'_' <<obj <<'_' <<time;;
-        seq->komo->addFrameDof(snapFrame, target, JT_free, true, obj); //a permanent free stable target->place joint; and a snap place->object
-        seq->komo->addRigidSwitch(time, {snapFrame, obj});
+        manip.komo->addFrameDof(snapFrame, target, JT_free, true, obj); //a permanent free stable target->place joint; and a snap place->object
+        manip.komo->addRigidSwitch(time, {snapFrame, obj});
+        if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
       }
 
-      seq->place_box(time, obj, target, palm, "z");
+      manip.place_box(time, obj, target, palm, "z");
       //gripper center at least inside object
-      seq->komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
+      manip.komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
+
 
     }else{
       NIY;
     }
   }
 
-  virtual void add_action_constraints_motion(PTR<KOMO>& komo, const StringA& action){
+  virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, double time, const StringA& prev_action, const StringA& action){
     if(!action.N) return;
 
     ManipulationModelling manip(komo);
 
     if(action(0)=="pick" || action(0)=="handover"){
       str& gripper = action(3);
-      manip.retract({.0, .2}, gripper);
-      manip.approach({.8, 1.}, gripper);
+      manip.retract({time-1., time-.8}, gripper);
+      manip.approach({time-.2, time}, gripper);
     }
     else if(action(0)=="place"){
       str& gripper = action(2);
 
-      manip.retract({.0, .2}, gripper);
-      manip.approach({.8, 1.}, gripper);
+      manip.retract({time-1., time-.8}, gripper);
+      manip.approach({time-.2, time}, gripper);
     }
-  }
-
-  virtual PTR<KOMO> get_komo(){
-    return seq->komo;
   }
 };
 

@@ -40,7 +40,7 @@ void FOL_World::Decision::write(ostream& os) const {
 }
 
 FOL_World::FOL_World()
-  : hasWait(true), gamma(0.9), stepCost(0.1), timeCost(1.), deadEndCost(100.), maxHorizon(100),
+  : hasWait(false), gamma(1.), stepCost(1.), timeCost(1.), deadEndCost(100.), maxHorizon(100),
     state(nullptr), lastDecisionInState(nullptr), verbose(0), verbFil(0),
     lastStepReward(0.), lastStepDuration(0.), lastStepProbability(1.), lastStepObservation(0), count(0) {
   KB.isDoubleLinked=false;
@@ -60,12 +60,12 @@ void FOL_World::init(const Graph& _KB) {
   KB = _KB;
   KB.checkConsistency();
 
-  start_state = &KB.get<Graph>("START_STATE");
-  rewardFct = &KB.get<Graph>("REWARD");
+  start_state = KB.find<Graph>("START_STATE"); if(!start_state) start_state = &KB.add<Graph>("START_STATE")->value;
+  rewardFct = KB.find<Graph>("REWARD");
   worldRules = KB.getNodesWithTag("%Rule");
   decisionRules = KB.getNodesWithTag("%DecisionRule");
-  Terminate_keyword = KB["Terminate"];  CHECK(Terminate_keyword, "You need to declare the Terminate keyword");
-  Quit_keyword = KB["QUIT"];            CHECK(Quit_keyword, "You need to declare the QUIT keyword");
+  Terminate_keyword = KB["Terminate"];  if(!Terminate_keyword) Terminate_keyword = KB.add<bool>("Terminate"); CHECK(Terminate_keyword, "You need to declare the Terminate keyword");
+  Quit_keyword = KB["QUIT"];            if(!Quit_keyword) Quit_keyword = KB.add<bool>("QUIT");   CHECK(Quit_keyword, "You need to declare the QUIT keyword");
   Wait_keyword = KB["WAIT"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
   Subgoal_keyword = KB["SubgoalDone"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
   Quit_literal = KB.add<bool>(0, true, {Quit_keyword});
