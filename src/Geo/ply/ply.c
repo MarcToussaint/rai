@@ -1321,7 +1321,7 @@ char *recreate_command_line( int argc, char *argv[] )
     len += strlen( argv[i] ) + 1;
 
   /* create empty line */
-  line = ( char * ) malloc ( sizeof( char ) * len );
+  line = ( char * ) malloc ( sizeof( char ) * len + 1);
   line[0] = '\0';
 
   /* repeatedly append argv */

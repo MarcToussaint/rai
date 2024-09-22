@@ -190,7 +190,7 @@ QT := 1
 endif
 
 ifeq ($(GL),1)
-DEPEND_UBUNTU += libglew-dev freeglut3-dev
+DEPEND_UBUNTU += libglew-dev freeglut3-dev libglm-dev
 CXXFLAGS  += -DRAI_GL
 LIBS += -lGLEW -lglut -lGLU -lGL -lX11
 endif

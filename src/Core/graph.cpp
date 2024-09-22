@@ -338,7 +338,7 @@ Graph& Graph::addSubgraph(const char* key, const NodeL& parents) {
 //}
 
 void Graph::appendDict(const std::map<std::string, std::string>& dict) {
-  for(const std::pair<std::string, std::string>& p:dict) {
+  for(std::pair<std::string, std::string> p:dict) {
     Node* n = readNode(STRING(p.first<<':'<<p.second), false, false);
     if(!n) RAI_MSG("failed to read dict entry <" <<p.first <<',' <<p.second <<'>');
   }

@@ -1058,7 +1058,6 @@ void PhysXInterface::addJoint(rai::Joint* j) { NICO }
 void PhysXInterface::removeJoint(rai::Joint* j) { NICO }
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) { NICO }
 void PhysXInterface::watch(bool pause, const char* txt) { NICO }
-void PhysXInterface::glDraw(OpenGL&) { NICO }
 void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b) { NICO }
 void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos) { NICO }
 
