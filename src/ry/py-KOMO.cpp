@@ -135,9 +135,11 @@ void init_KOMO(pybind11::module& m) {
 
   //-- display
   .def("view", &KOMO::view, "", pybind11::arg("pause") = false, pybind11::arg("txt") = nullptr)
-  .def("view_play", &KOMO::view_play, "", pybind11::arg("pause") = false, pybind11::arg("delay") = 0.1, pybind11::arg("saveVideoPath") = nullptr)
+  .def("view_play", &KOMO::view_play, "", pybind11::arg("pause") = false, pybind11::arg("txt") = nullptr, pybind11::arg("delay") = 0.1, pybind11::arg("saveVideoPath") = nullptr)
   .def("view_slice", &KOMO::view_slice, "", pybind11::arg("t"), pybind11::arg("pause") = false)
   .def("view_close",  &KOMO::view_close)
+  .def("set_viewer",  &KOMO::set_viewer)
+  .def("get_viewer",  &KOMO::get_viewer)
 
   ;
 

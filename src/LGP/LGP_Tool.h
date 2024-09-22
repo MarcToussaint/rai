@@ -124,9 +124,11 @@ struct LGP_Tool{
   int view_solved(bool pause=true);
   void view_close();
 
+  arrA solvePiecewiseMotions(int _verbose=1);
+  std::shared_ptr<KOMO> solveFullMotion(int _verbose=1);
 
-  std::shared_ptr<KOMO> sub_motion(uint phase);
-  std::shared_ptr<KOMO> get_fullMotion();
+  std::shared_ptr<KOMO> get_piecewiseMotionProblem(uint phase);
+  std::shared_ptr<KOMO> get_fullMotionProblem();
 
 
   int display(PTR<KOMO>& komo, PTR<SolverReturn>& ret, bool pause=true, const char* msg=0, bool play=true);

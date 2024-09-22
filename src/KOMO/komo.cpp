@@ -1496,36 +1496,44 @@ void KOMO::checkGradients() {
 }
 
 int KOMO::view(bool pause, const char* txt) {
-  pathConfig.viewer()->updateConfiguration(pathConfig, timeSlices);
+  pathConfig.get_viewer()->updateConfiguration(pathConfig, timeSlices);
 //  pathConfig.viewer()->recopyMeshes(pathConfig);
 //  return pathConfig.view(pause, txt);
-  pathConfig.viewer()->phaseOffset = 1.-double(k_order);
-  pathConfig.viewer()->phaseFactor = 1./double(stepsPerPhase);
+  pathConfig.get_viewer()->phaseOffset = 1.-double(k_order);
+  pathConfig.get_viewer()->phaseFactor = 1./double(stepsPerPhase);
   if(featureValues.N){
-    pathConfig.viewer()->sliceTexts.resize(T);
+    pathConfig.get_viewer()->sliceTexts.resize(T);
     arr err = info_objectiveErrorTraces();
     for(uint t=0;t<T;t++){
-      pathConfig.viewer()->sliceTexts(t) = info_sliceErrors(t, err);
-      pathConfig.viewer()->sliceTexts(t) <<info_sliceCollisions(t);
+      pathConfig.get_viewer()->sliceTexts(t) = info_sliceErrors(t, err);
+      pathConfig.get_viewer()->sliceTexts(t) <<info_sliceCollisions(t);
     }
   }
-  pathConfig.viewer()->ensure_gl().setTitle("KOMO Viewer");
+  pathConfig.get_viewer()->ensure_gl().setTitle("KOMO Viewer");
   str text = txt;
   if(pause) text <<"\n[use SHIFT+scroll or arror keys to browse; press key to continue]";
-  return pathConfig.viewer()->view(pause, txt);
+  return pathConfig.get_viewer()->view(pause, txt);
 }
 
 int KOMO::view_play(bool pause, const char* txt, double delay, const char* saveVideoPath) {
   view(false, txt);
-  return pathConfig.viewer()->playVideo(pause, delay*tau*T, saveVideoPath);
+  return pathConfig.get_viewer()->playVideo(pause, delay*tau*T, saveVideoPath);
 }
 
 int KOMO::view_slice(uint t, bool pause){
-  if(!pathConfig.viewer()->gl) view(false, 0);
-  return pathConfig.viewer()->view_slice(t, pause);
+  if(!pathConfig.get_viewer()->gl) view(false, 0);
+  return pathConfig.get_viewer()->view_slice(t, pause);
 }
 
 void KOMO::view_close() { pathConfig.view_close(); }
+
+std::shared_ptr<ConfigurationViewer> KOMO::get_viewer(){
+  return pathConfig.get_viewer();
+}
+
+void KOMO::set_viewer(std::shared_ptr<rai::ConfigurationViewer>& _viewer){
+  pathConfig.set_viewer(_viewer);
+}
 
 void KOMO::plotTrajectory() {
   ofstream fil("z.trajectories");

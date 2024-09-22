@@ -34,9 +34,9 @@ void testPickAndPlace(){
     auto info = STRING("placement " <<i <<": grasp " <<graspDirection <<" place " <<placeDirection <<" place_pos " <<place_position <<" place_ori " <<place_orientation);
     cout <<"===" <<info <<endl;
 
-    ManipulationModelling seq(C, info, {gripper});
+    ManipulationModelling seq(info);
 //    M1.setup_pick_and_place_waypoints(gripper, box);
-    seq.setup_sequence(2.);
+    seq.setup_sequence(C, 2.);
     //three totally different ways to model the gripper->object switch:
 #if 0
     seq.komo->addModeSwitch({1., -1.}, rai::SY_stable, {gripper, obj}, true); //a temporary free stable joint gripper -> object
@@ -91,10 +91,10 @@ void testPush(){
   j->setDofs(arr{.0});
 
   auto gripper = "l_gripper";
-  auto palm = "l_palm";
+//  auto palm = "l_palm";
   auto obj = "box";
   auto table = "table";
-  auto qHome = C.getJointState();
+//  auto qHome = C.getJointState();
 
   C[obj]->setRelativePosition({-.0,.3-.055,.08});
   C[obj]->setRelativeQuaternion({1.,0,0,0});
@@ -103,8 +103,8 @@ void testPush(){
     arr qStart = C.getJointState();
 
     str info = STRING("push_" <<i);
-    ManipulationModelling seq(C, info, {"l_gripper"});
-    seq.setup_sequence(2, 1e-1);
+    ManipulationModelling seq(info);
+    seq.setup_sequence(C, 2, 1e-1);
 
 #if 0
     seq.komo->addModeSwitch({1., -1.}, rai::SY_stable, {gripper, obj}, true); //a temporary stable free joint gripper->obj
@@ -164,15 +164,15 @@ void testPivot(){
   j->setDofs(arr{.0});
 
   auto gripper = "l_gripper";
-  auto palm = "l_palm";
+//  auto palm = "l_palm";
   auto obj = "door";
-  auto table = "table";
+//  auto table = "table";
   auto qHome = C.getJointState();
 
   for(uint i=0;i<20;i++){
     str info = STRING("pivot");
-    ManipulationModelling seq(C, info, {"l_gripper"});
-    seq.setup_sequence(3, 1e-2, 1e-1, false);
+    ManipulationModelling seq(info);
+    seq.setup_sequence(C, 3, 1e-2, 1e-1, false);
 
     seq.komo->addFrameDof("hinge_joint", "table", rai::JT_hingeZ, false, "hinge"); //a permanent moving(!) hinge joint table->hinge_joint, and a snap hinge_joint->hinge
     seq.komo->addRigidSwitch(1., {"hinge_joint", "hinge"});

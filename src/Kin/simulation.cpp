@@ -625,7 +625,8 @@ struct Simulation_DisplayThread : Thread, ConfigurationViewer {
       float x;
       for(uint i=0; i<depth.N; i++) {
         x = 100.f * depth.p[i]; //this means that the RGB values are cm distance (up to 255cm distance)
-        if(x<0.f) x=0.f;  if(x>255.f) x=255.f;
+        if(x<0.f) x=0.f;
+        if(x>255.f) x=255.f;
         for(uint j=0;j<3;j++)
           depthImage.p[3*i+j] = x;
       }

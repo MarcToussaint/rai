@@ -2065,7 +2065,7 @@ void Configuration::inverseDynamics(arr& tau, const arr& qd, const arr& qdd, boo
 }*/
 
 /// return a OpenGL extension
-std::shared_ptr<ConfigurationViewer>& Configuration::viewer(const char* window_title, bool offscreen) {
+std::shared_ptr<ConfigurationViewer>& Configuration::get_viewer(const char* window_title, bool offscreen) {
   if(!self->viewer) {
     self->viewer = make_shared<ConfigurationViewer>();
   }
@@ -2073,7 +2073,7 @@ std::shared_ptr<ConfigurationViewer>& Configuration::viewer(const char* window_t
 }
 
 OpenGL& Configuration::gl() {
-  return viewer()->ensure_gl();
+  return get_viewer()->ensure_gl();
 }
 
 void Configuration::view_lock(const char* _lockInfo) {
@@ -2149,7 +2149,7 @@ bool Configuration::hasView() {
 int Configuration::view(bool pause, const char* txt) {
 //  gl()->resetPressedKey();
   for(Frame* f:frames) f->ensure_X();
-  int key = viewer()->updateConfiguration(*this).view(pause, txt);
+  int key = get_viewer()->updateConfiguration(*this).view(pause, txt);
 //  if(pause) {
 //    if(!txt) txt="Config::watch";
 //    key = watch(true, txt);
@@ -2161,6 +2161,10 @@ int Configuration::view(bool pause, const char* txt) {
 
 void Configuration::view_close() {
   if(self && self->viewer) self->viewer.reset();
+}
+
+void Configuration::set_viewer(std::shared_ptr<ConfigurationViewer>& _viewer){
+  self->viewer = _viewer;
 }
 
 #if 0
@@ -3245,8 +3249,8 @@ int Configuration::animate(Inotify* ino) {
   checkConsistency();
   StringA jointNames = getJointNames();
 
-  viewer()->raiseWindow();
-  viewer()->_resetPressedKey();
+  get_viewer()->raiseWindow();
+  get_viewer()->_resetPressedKey();
   for(uint i=x0.N; i--;) {
     x=x0;
     double upper_lim = lim(1, i);
@@ -3379,7 +3383,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
 void Configuration::watchFile(const char* filename) {
   checkConsistency();
 
-  std::shared_ptr<ConfigurationViewer> V = viewer();
+  std::shared_ptr<ConfigurationViewer> V = get_viewer();
 
   //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;

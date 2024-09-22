@@ -1069,7 +1069,10 @@ std::istream& rai::FileToken::getIs(bool change_dir) {
     is = std::make_unique<std::ifstream>();
     is->open(name);
     LOG(3) <<"opening input file '" <<name <<"'";
-    if(!is->good()) THROW("could not open file '" <<name <<"' for input from '" <<baseDir <<" / " <<path <<"'");
+    if(!is->good()){
+      if(change_dir) cd_start();
+      THROW("could not open file '" <<name <<"' for input from '" <<baseDir <<" / " <<path <<"'");
+    }
   }
   return *is;
 }

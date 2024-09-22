@@ -420,7 +420,35 @@ void LGP_Tool::view_close(){
   gl.reset();
 }
 
-std::shared_ptr<KOMO> LGP_Tool::sub_motion(uint phase){ //should only retun a KOMO, I think
+arrA LGP_Tool::solvePiecewiseMotions(int _verbose){
+  StringAA plan = getSolvedPlan();
+  arrA paths;
+  for(uint i=0;i<plan.N;i++){
+//    cout <<"--- plan " <<i <<' ' <<plan(i) <<endl;
+    PTR<KOMO> path = get_piecewiseMotionProblem(i);
+    NLP_Solver sol;
+    sol.setProblem(path->nlp());
+    auto ret = sol.solve(0, 0);
+//      path->view(true, "solved");
+    if(_verbose>0) display(path, ret, _verbose>1);
+    paths.append(path->getPath_qOrg());
+  }
+  return paths;
+}
+
+PTR<KOMO> LGP_Tool::solveFullMotion(int _verbose){
+  PTR<KOMO> path = get_fullMotionProblem();
+  //    path->view(true, "init");
+  NLP_Solver sol;
+  sol.setProblem(path->nlp());
+  auto ret = sol.solve(0, 0);
+  //    auto ret = path->optimize();
+  //    path->view(true, "solved");
+  if(_verbose>0) display(path, ret, _verbose>1);
+  return path;
+}
+
+std::shared_ptr<KOMO> LGP_Tool::get_piecewiseMotionProblem(uint phase){ //should only retun a KOMO, I think
   StringAA plan = getSolvedPlan();
   StringA action = plan(phase);
   StringA prev_action = (phase>0?plan(phase-1):StringA());
@@ -431,7 +459,7 @@ std::shared_ptr<KOMO> LGP_Tool::sub_motion(uint phase){ //should only retun a KO
   return komo;
 }
 
-std::shared_ptr<KOMO> LGP_Tool::get_fullMotion(){
+std::shared_ptr<KOMO> LGP_Tool::get_fullMotionProblem(){
   StringAA path =  getSolvedPlan();
 
   ManipulationModelling manip;
@@ -470,8 +498,8 @@ int LGP_Tool::display(std::shared_ptr<KOMO>& komo, std::shared_ptr<SolverReturn>
   }
   if(gl_komo){ gl_komo->view_close();  gl_komo.reset(); }
   gl_komo = komo;
-  gl_komo->pathConfig.viewer()->gl = gl;
-  gl->add(gl_komo->pathConfig.viewer().get());
+  gl_komo->pathConfig.get_viewer()->gl = gl;
+  gl->add(gl_komo->pathConfig.get_viewer().get());
 
   str text;
   if(ret->feasible) text <<"SOLVED\n";

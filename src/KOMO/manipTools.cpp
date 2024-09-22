@@ -474,7 +474,10 @@ void ManipulationModelling::approach(const arr& time_interval, const char* gripp
 }
 
 void ManipulationModelling::retractPush(const arr& time_interval, const char* gripper, double dist) {
-  auto helper = STRING("_" <<gripper <<"_start");
+  auto helper = STRING("_" <<gripper <<"_retractPush_"  <<time_interval(0));
+  int t = conv_time2step(time_interval(0), komo->stepsPerPhase);
+  rai::Transformation pose = komo->timeSlices(komo->k_order+t, komo->world[gripper]->ID)->getPose();
+  add_helper_frame(rai::JT_none, 0, helper, 0, pose);
 //  komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1,3},{1,0,0}});
 //  komo->addObjective(time_interval, FS_quaternionDiff, {gripper, helper}, OT_eq, {1e2});
   komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1, 3}, {1, 0, 0}});
@@ -486,7 +489,10 @@ void ManipulationModelling::approachPush(const arr& time_interval, const char* g
 //  if(!helper.N) helper = STRING("_push_start");
 //  komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{2,3},{1,0,0,0,0,1}});
 //  komo->addObjective({time_interval(0)}, FS_positionRel, {gripper, helper}, OT_ineq, 1e2 * arr{{1,3},{0,1,0}}, {0., -dist, 0.});
-  auto helper = STRING("_" <<gripper <<"_end");
+  auto helper = STRING("_" <<gripper <<"_approachPush_" <<time_interval(1));
+  int t = conv_time2step(time_interval(1), komo->stepsPerPhase);
+  rai::Transformation pose = komo->timeSlices(komo->k_order+t, komo->world[gripper]->ID)->getPose();
+  add_helper_frame(rai::JT_none, 0, helper, 0, pose);
   komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1, 3}, {1, 0, 0}});
   komo->addObjective({time_interval(0)}, FS_positionRel, {gripper, helper}, OT_ineq, 1e2 * arr{{1, 3}, {0, 1, 0}}, {0., -dist, 0.});
   komo->addObjective({time_interval(0)}, FS_positionRel, {gripper, helper}, OT_ineq, -1e2 * arr{{1, 3}, {0, 0, 1}}, {0., 0., dist});

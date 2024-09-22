@@ -99,7 +99,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
       if(o==-1) continue;
       rai::Shape* s = f->shape;
       if(!s || !s->_mesh){ copyMeshes=true; break; }
-      if(objs.N<=o){ copyMeshes=true; break; }
+      if((int)objs.N<=o){ copyMeshes=true; break; }
       if(s->_mesh->V.N && objs(o)->version != s->_mesh->version) { copyMeshes=true; break; }
     }
   }

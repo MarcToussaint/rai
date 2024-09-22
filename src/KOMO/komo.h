@@ -196,6 +196,9 @@ struct KOMO : NonCopyable {
   int view_play(bool pause=false, const char* txt=0, double delay=.2, const char* saveVideoPath=nullptr);
   int view_slice(uint t, bool pause=false);
   void view_close();
+  std::shared_ptr<rai::ConfigurationViewer> get_viewer();
+  void set_viewer(std::shared_ptr<rai::ConfigurationViewer>& _viewer);
+
 
   void plotTrajectory();
   void plotPhaseTrajectory();

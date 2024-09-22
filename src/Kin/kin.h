@@ -243,7 +243,7 @@ struct Configuration {
   void addProxies(const uintA& collisionPairs);
 
   /// @name extensions on demand
-  std::shared_ptr<ConfigurationViewer>& viewer(const char* window_title=nullptr, bool offscreen=false);
+  std::shared_ptr<ConfigurationViewer>& get_viewer(const char* window_title=nullptr, bool offscreen=false);
   OpenGL& gl();
   void view_lock(const char* _lockInfo);
   void view_unlock();
@@ -259,6 +259,7 @@ struct Configuration {
   void glAdd(void (*call)(void*, OpenGL&), void* classP);
   int glAnimate();
   void view_close();
+  void set_viewer(std::shared_ptr<ConfigurationViewer>& _viewer);
   void stepFcl();
   void stepPhysx(double tau);
   void stepOde(double tau);
