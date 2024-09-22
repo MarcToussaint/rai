@@ -421,17 +421,21 @@ void LGP_Tool::view_close(){
 }
 
 std::shared_ptr<KOMO> LGP_Tool::sub_motion(uint phase){ //should only retun a KOMO, I think
-  StringA action = getSolvedPlan()(phase);
-  action.remove(0);
-  auto manip = ManipulationModelling::sub_motion(*getSolvedKOMO(), phase);
-  return manip->komo;
+  StringAA plan = getSolvedPlan();
+  StringA action = plan(phase);
+  StringA prev_action = (phase>0?plan(phase-1):StringA());
+
+  ManipulationModelling manip(getSolvedKOMO());
+  auto komo = manip.sub_motion(phase)->komo;
+  trans.add_action_constraints_motion(komo, 1., prev_action, action);
+  return komo;
 }
 
 std::shared_ptr<KOMO> LGP_Tool::get_fullMotion(){
   StringAA path =  getSolvedPlan();
 
-  ManipulationModelling manip(C, {});
-  manip.setup_motion(path.N, -1.);
+  ManipulationModelling manip;
+  manip.setup_motion(C, path.N, -1.);
 
   for(uint t=0;t<path.N;t++){
     trans.add_action_constraints(manip.komo, double(t)+1., path(t));
@@ -524,8 +528,8 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
   ~Default_KOMO_Translator() {}
 
   virtual std::shared_ptr<KOMO> setup_sequence(Configuration& C, uint K){
-    ManipulationModelling manip(C, str("???"));
-    manip.setup_sequence(K);
+    ManipulationModelling manip;
+    manip.setup_sequence(C, K);
     return manip.komo;
   }
 

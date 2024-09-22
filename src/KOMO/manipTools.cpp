@@ -137,17 +137,18 @@ void addBoxPlaceObjectives(KOMO& komo, double time,
 //  komo->addObjective(times, FS_negDistance, {obj1, obj2}, OT_ineq, {1e1}, {-margin});
 //}
 
-ManipulationModelling::ManipulationModelling(rai::Configuration& _C, const str& _info)
-  : C(&_C), info(_info) {
+ManipulationModelling::ManipulationModelling(const str& _info)
+  : info(_info) {
 }
 
-ManipulationModelling::ManipulationModelling(std::shared_ptr<KOMO>& _komo)
+ManipulationModelling::ManipulationModelling(const std::shared_ptr<KOMO>& _komo)
   : komo(_komo) {
 }
 
-void ManipulationModelling::setup_inverse_kinematics(double homing_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
+void ManipulationModelling::setup_inverse_kinematics(rai::Configuration& C, double homing_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
+  CHECK(!komo, "komo already given or previously setup")
   // setup a 1 phase single step problem
-  komo = make_shared<KOMO>(*C, 1., 1, 0, accumulated_collisions);
+  komo = make_shared<KOMO>(C, 1., 1, 0, accumulated_collisions);
   komo->addControlObjective({}, 0, homing_scale);
   if(accumulated_collisions) {
     komo->addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e0});
@@ -160,8 +161,9 @@ void ManipulationModelling::setup_inverse_kinematics(double homing_scale, bool a
   }
 }
 
-void ManipulationModelling::setup_sequence(uint K, double homing_scale, double velocity_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms){
-  komo = make_shared<KOMO>(*C, double(K), 1, 1, accumulated_collisions);
+void ManipulationModelling::setup_sequence(rai::Configuration& C, uint K, double homing_scale, double velocity_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms){
+  CHECK(!komo, "komo already given or previously setup")
+  komo = make_shared<KOMO>(C, double(K), 1, 1, accumulated_collisions);
   komo->addControlObjective({}, 0, homing_scale);
   komo->addControlObjective({}, 1, velocity_scale);
   if(accumulated_collisions) {
@@ -175,8 +177,9 @@ void ManipulationModelling::setup_sequence(uint K, double homing_scale, double v
   }
 }
 
-void ManipulationModelling::setup_motion(uint K, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms){
-  komo = make_shared<KOMO>(*C, double(K), 16, 2, accumulated_collisions);
+void ManipulationModelling::setup_motion(rai::Configuration& C, uint K, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms){
+  CHECK(!komo, "komo already given or previously setup")
+  komo = make_shared<KOMO>(C, double(K), 16, 2, accumulated_collisions);
   if(homing_scale>0.) komo->addControlObjective({}, 0, homing_scale);
   komo->addControlObjective({}, 2, acceleration_scale);
   if(accumulated_collisions) {
@@ -193,15 +196,17 @@ void ManipulationModelling::setup_motion(uint K, double homing_scale, double acc
   komo->addObjective({double(K)}, FS_qItself, {}, OT_eq, {1e0}, {}, 1);
 }
 
-void ManipulationModelling::setup_pick_and_place_waypoints(const char* gripper, const char* obj, double homing_scale, double velocity_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
-  setup_sequence(2, homing_scale, velocity_scale, accumulated_collisions, joint_limits, quaternion_norms);
+void ManipulationModelling::setup_pick_and_place_waypoints(rai::Configuration& C, const char* gripper, const char* obj, double homing_scale, double velocity_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
+  CHECK(!komo, "komo already given or previously setup")
+  setup_sequence(C, 2, homing_scale, velocity_scale, accumulated_collisions, joint_limits, quaternion_norms);
 
   komo->addModeSwitch({1., -1.}, rai::SY_stable, {gripper, obj}, true);
 }
 
-void ManipulationModelling::setup_point_to_point_motion(const arr& q0, const arr& q1, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool quaternion_norms) {
+void ManipulationModelling::setup_point_to_point_motion(rai::Configuration& C, const arr& q0, const arr& q1, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool quaternion_norms) {
+  CHECK(!komo, "komo already given or previously setup")
   // setup a 1 phase fine-grained motion problem with 2nd order (acceleration) control costs
-  komo = make_shared<KOMO>(*C, 1., 32, 2, accumulated_collisions);
+  komo = make_shared<KOMO>(C, 1., 32, 2, accumulated_collisions);
   komo->addControlObjective({}, 0, homing_scale);
   komo->addControlObjective({}, 2, acceleration_scale);
   komo->initWithWaypoints({q1}, 1, true, .5, 0);
@@ -219,16 +224,18 @@ void ManipulationModelling::setup_point_to_point_motion(const arr& q0, const arr
   komo->addObjective({1.}, FS_qItself, {}, OT_eq, {1e0}, q1);
 }
 
-void ManipulationModelling::setup_point_to_point_rrt(const arr& q0, const arr& q1, const StringA& explicitCollisionPairs) {
+void ManipulationModelling::setup_point_to_point_rrt(rai::Configuration& C, const arr& q0, const arr& q1, const StringA& explicitCollisionPairs) {
   rrt = make_shared<rai::PathFinder>();
-  rrt->setProblem(*C, q0, q1);
+  rrt->setProblem(C, q0, q1);
   if(explicitCollisionPairs.N) rrt->setExplicitCollisionPairs(explicitCollisionPairs);
 }
 
-void ManipulationModelling::add_helper_frame(rai::JointType type, const char* parent, const char* name, const char* initFrame, rai::Transformation rel) {
+void ManipulationModelling::add_helper_frame(rai::JointType type, const char* parent, const char* name, const char* initFrame, rai::Transformation rel, double markerSize) {
   rai::Frame* f = komo->addFrameDof(name, parent, type, true, initFrame, rel);
-  f->setShape(rai::ST_marker, {.2});
-  f->setColor({1., 0., 1.});
+  if(markerSize>0.){
+    f->setShape(rai::ST_marker, {.2});
+    f->setColor({1., 0., 1.});
+  }
   if(f->joint){
     f->joint->sampleSdv=1.;
     f->joint->setRandom(komo->timeSlices.d1, 0);
@@ -616,23 +623,23 @@ void ManipulationModelling::debug(bool listObjectives, bool plotOverTime){
 }
 
 
-std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_motion(KOMO& komo, uint phase, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool quaternion_norms) {
+std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_motion(uint phase, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool quaternion_norms) {
   rai::Configuration C;
   arr q0, q1;
-  komo.getSubProblem(phase, C, q0, q1);
+  komo->getSubProblem(phase, C, q0, q1);
 
-  std::shared_ptr<ManipulationModelling> manip = make_shared<ManipulationModelling>(C, STRING("sub_motion"<<phase));
-  manip->setup_point_to_point_motion(q0, q1, homing_scale, acceleration_scale, accumulated_collisions, quaternion_norms);
+  std::shared_ptr<ManipulationModelling> manip = make_shared<ManipulationModelling>(STRING("sub_motion"<<phase));
+  manip->setup_point_to_point_motion(C, q0, q1, homing_scale, acceleration_scale, accumulated_collisions, quaternion_norms);
   return manip;
 }
 
-std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_rrt(KOMO& komo, uint phase, const StringA& explicitCollisionPairs) {
+std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_rrt(uint phase, const StringA& explicitCollisionPairs) {
   rai::Configuration C;
   arr q0, q1;
-  komo.getSubProblem(phase, C, q0, q1);
+  komo->getSubProblem(phase, C, q0, q1);
 
-  std::shared_ptr<ManipulationModelling> manip = make_shared<ManipulationModelling>(C, STRING("sub_rrt"<<phase));
-  manip->setup_point_to_point_rrt(q0, q1, explicitCollisionPairs);
+  std::shared_ptr<ManipulationModelling> manip = make_shared<ManipulationModelling>(STRING("sub_rrt"<<phase));
+  manip->setup_point_to_point_rrt(C, q0, q1, explicitCollisionPairs);
   return manip;
 }
 

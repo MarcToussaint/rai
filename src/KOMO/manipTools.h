@@ -22,25 +22,26 @@ void addBoxPlaceObjectives(KOMO& komo, double time,
                            const char* gripperName, const char* palmName, double margin=-.02, bool pre=false);
 
 struct ManipulationModelling {
-  rai::Configuration* C;
   str info;
-  StringA helpers;
+  //created on setup (or given):
   std::shared_ptr<KOMO> komo;
+
+  //solver buffers:
   std::shared_ptr<rai::PathFinder> rrt;
   std::shared_ptr<SolverReturn> ret;
   arr path;
 
-  ManipulationModelling(rai::Configuration& _C, const str& _info= {});
-  ManipulationModelling(std::shared_ptr<KOMO>& _komo);
+  ManipulationModelling(const str& _info={});
+  ManipulationModelling(const std::shared_ptr<KOMO>& _komo);
 
-  void setup_inverse_kinematics(double homing_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
-  void setup_sequence(uint K, double homing_scale=1e-2, double velocity_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
-  void setup_motion(uint K, double homing_scale=0., double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
-  void setup_pick_and_place_waypoints(const char* gripper, const char* obj, double homing_scale=1e-2, double velocity_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
-  void setup_point_to_point_motion(const arr& q0, const arr& q1, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool quaternion_norms=false);
-  void setup_point_to_point_rrt(const arr& q0, const arr& q1, const StringA& explicitCollisionPairs);
+  void setup_inverse_kinematics(rai::Configuration& C, double homing_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
+  void setup_sequence(rai::Configuration& C, uint K, double homing_scale=1e-2, double velocity_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
+  void setup_motion(rai::Configuration& C, uint K, double homing_scale=0., double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
+  void setup_pick_and_place_waypoints(rai::Configuration& C, const char* gripper, const char* obj, double homing_scale=1e-2, double velocity_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
+  void setup_point_to_point_motion(rai::Configuration& C, const arr& q0, const arr& q1, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool quaternion_norms=false);
+  void setup_point_to_point_rrt(rai::Configuration& C, const arr& q0, const arr& q1, const StringA& explicitCollisionPairs);
 
-  void add_helper_frame(rai::JointType type, const char* parent, const char* name, const char* initFrame=0, rai::Transformation rel=0);
+  void add_helper_frame(rai::JointType type, const char* parent, const char* name, const char* initFrame=0, rai::Transformation rel=0, double markerSize=-1.);
 
   void grasp_top_box(double time, const char* gripper, const char* obj, str grasp_direction="xz");
   void grasp_box(double time, const char* gripper, const char* obj, const char* palm, str grasp_direction="x", double margin=.02);
@@ -68,8 +69,8 @@ struct ManipulationModelling {
   arr sample(const char* sampleMethod=0, int verbose=1);
   void debug(bool listObjectives=true, bool plotOverTime=false);
 
-  static std::shared_ptr<ManipulationModelling> sub_motion(KOMO& komo, uint phase, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=false, bool quaternion_norms=false);
-  static std::shared_ptr<ManipulationModelling> sub_rrt(KOMO& komo, uint phase, const StringA& explicitCollisionPairs= {});
+  std::shared_ptr<ManipulationModelling> sub_motion(uint phase, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=false, bool quaternion_norms=false);
+  std::shared_ptr<ManipulationModelling> sub_rrt(uint phase, const StringA& explicitCollisionPairs= {});
 
   void play(rai::Configuration& C, double duration=1.);
 
