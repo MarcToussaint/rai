@@ -504,7 +504,10 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
       str <<"adding multibody link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes (";
       for(rai::Shape* s:shapes) str <<' ' <<s->frame.name;
       str <<")";
-      if(f->joint) str <<" and joint " <<f->joint->type;
+      if(f->joint){
+        str <<" and joint " <<f->joint->type;
+        if(!f->joint->active) str <<"(inactive)";
+      }
       if(f->inertia) str <<" and mass " <<f->inertia->mass;
       LOG(0) <<str;
     }
@@ -584,8 +587,8 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
           posDrive.stiffness = opt.motorKp;                      // the spring constant driving the joint to a target position
           posDrive.damping = opt.motorKd;                        // the damping coefficient driving the joint to a target velocity
         } else { //hack for grippers
-          posDrive.stiffness = opt.motorKp/10.;
-          posDrive.damping = opt.motorKd/10.;
+          posDrive.stiffness = opt.gripperKp;
+          posDrive.damping = opt.gripperKd;
         }
         posDrive.maxForce = PX_MAX_F32; //1e10f;                              // force limit for the drive
         posDrive.driveType = PxArticulationDriveType::eFORCE;  // make the drive output be a force/torque (default)
@@ -933,11 +936,13 @@ void PhysXInterface::pushMotorStates(const rai::Configuration& C, bool setInstan
 }
 
 void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot) {
+  C.ensure_q();
   arr q = C.getJointState();
+  arr qInactive = C.qInactive;
   if(!!qDot) qDot.resize(q.N).setZero();
 
   if(self->opt.multiBody) {
-    for(rai::Frame* f:C.frames) if(f->joint && f->joint->active && self->actors(f->ID)) {
+    for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)) { //f->joint->active &&
         PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
         if(!actor) continue;
         PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
@@ -945,12 +950,17 @@ void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot) {
 
         auto axis = self->jointAxis(f->ID);
         CHECK_LE(axis, self->jointAxis(0)-1, "");
-        q(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
-        if(!!qDot) qDot(f->joint->qIndex) = joint->getJointVelocity(axis) / f->joint->scale;
+        if(f->joint->active){
+          q(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
+          if(!!qDot) qDot(f->joint->qIndex) = joint->getJointVelocity(axis) / f->joint->scale;
+        }else{
+          qInactive(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
+        }
       }
   } else if(self->opt.jointedBodies) {
     NIY;
   }
+//  C.qInactive = qInactive;
   C.setJointState(q);
 }
 

@@ -75,6 +75,7 @@ void init_Frame(pybind11::module& m) {
 
   .def_readwrite("name", &rai::Frame::name)
 
+  .def("getPose", &rai::Frame::getPose)
   .def("getPosition", &rai::Frame::getPosition)
   .def("getQuaternion", &rai::Frame::getQuaternion)
   .def("getRotationMatrix", [](shared_ptr<rai::Frame>& self) { return self->ensure_X().rot.getArr(); } )

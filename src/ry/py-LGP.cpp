@@ -41,4 +41,26 @@ void init_LGP(pybind11::module& m) {
 
 }
 
+//===========================================================================
+
+/*struct TAMP_Provider{
+  virtual ~TAMP_Provider() {}
+  virtual Array<StringA> getNewPlan() = 0;
+  virtual Configuration& getConfig() = 0;
+  virtual StringA explicitCollisions() = 0;
+};*/
+
+
+struct PyLogic2KOMO_Translator : rai::Logic2KOMO_Translator {
+  pybind11::object py_obj; //the python object implementing the class
+
+  virtual std::shared_ptr<KOMO> setup_sequence(rai::Configuration& C, uint K){
+    pybind11::object _ret = py_obj.attr("setup_sequence")(C, K);
+  }
+
+  virtual void add_action_constraints(std::shared_ptr<KOMO>& komo, double time, const StringA& action) = 0;
+  virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, double time, const StringA& prev_action, const StringA& action) = 0;
+
+};
+
 #endif

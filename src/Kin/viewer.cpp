@@ -33,8 +33,10 @@ OpenGL& rai::ConfigurationViewer::ensure_gl() {
 }
 
 void rai::ConfigurationViewer::close_gl() {
-  gl->remove(this);
-  if(gl) gl.reset();
+  if(gl){
+    gl->remove(this);
+    gl.reset();
+  }
 }
 
 void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
@@ -223,7 +225,7 @@ void rai::ConfigurationViewer::raiseWindow() {
 
 int rai::ConfigurationViewer::view(bool watch, const char* _text) {
   if(_text) text = _text;
-  if(watch && text(-1)!=']') text <<"\n[press key to continue]";
+  if(watch && (!text.N || text(-1)!=']')) text <<"\n[press key to continue]";
 
   return update(watch);
 }
