@@ -11,6 +11,7 @@
 #include "types.h"
 #include "../Optim/NLP_Factory.h"
 #include "../Optim/NLP_Solver.h"
+#include "../Optim/NLP_Sampler.h"
 #include "../KOMO/opt-benchmarks.h"
 #include <pybind11/functional.h>
 #include <pybind11/iostream.h>
@@ -197,6 +198,95 @@ void init_Optim(pybind11::module& m) {
 
   ;
 
+  //===========================================================================
+
+  pybind11::class_<NLP_Sampler, std::shared_ptr<NLP_Sampler>>(m, "NLP_Sampler", "An interface to an NLP sampler")
+
+      .def(pybind11::init<const shared_ptr<NLP>&>(), "",
+           pybind11::arg("problem")
+          )
+
+      .def("sample", &NLP_Sampler::sample, "")
+      .def("setOptions", [](std::shared_ptr<NLP_Sampler>& self
+    #define MEMBER(type, name, x) ,type name
+           MEMBER(double, eps, .05)
+           MEMBER(bool, useCentering, true)
+           MEMBER(int, verbose, 1)
+           MEMBER(rai::String, seedMethod, "uni")
+           MEMBER(uint, seedCandidates, 10)
+           MEMBER(double, penaltyMu, 1.)
+           MEMBER(rai::String, downhillMethod, "GN")
+           MEMBER(int, downhillMaxSteps, 50)
+           MEMBER(double, slackStepAlpha, 1.)
+           MEMBER(double, slackMaxStep, .1)
+           MEMBER(double, slackRegLambda, 1e-2)
+           MEMBER(double, ineqOverstep, -1)
+           MEMBER(rai::String, downhillNoiseMethod, "none")
+           MEMBER(rai::String, downhillRejectMethod, "none")
+           MEMBER(double, downhillNoiseSigma, .1)
+           MEMBER(rai::String, interiorMethod, "HR")
+           MEMBER(int, interiorBurnInSteps, 0)
+           MEMBER(int, interiorSampleSteps, 1)
+           MEMBER(rai::String, interiorNoiseMethod, "iso")
+           MEMBER(double, hitRunEqMargin, .1)
+           MEMBER(double, interiorNoiseSigma, .5)
+           MEMBER(double, langevinTauPrime, -1.)
+    #undef MEMBER
+      ) {
+        self->opt
+    #define MEMBER(type, name, x) .set_##name(name)
+            MEMBER(double, eps, .05)
+            MEMBER(bool, useCentering, true)
+            MEMBER(int, verbose, 1)
+            MEMBER(rai::String, seedMethod, "uni")
+            MEMBER(uint, seedCandidates, 10)
+            MEMBER(double, penaltyMu, 1.)
+            MEMBER(rai::String, downhillMethod, "GN")
+            MEMBER(int, downhillMaxSteps, 50)
+            MEMBER(double, slackStepAlpha, 1.)
+            MEMBER(double, slackMaxStep, .1)
+            MEMBER(double, slackRegLambda, 1e-2)
+            MEMBER(double, ineqOverstep, -1)
+            MEMBER(rai::String, downhillNoiseMethod, "none")
+            MEMBER(rai::String, downhillRejectMethod, "none")
+            MEMBER(double, downhillNoiseSigma, .1)
+            MEMBER(rai::String, interiorMethod, "HR")
+            MEMBER(int, interiorBurnInSteps, 0)
+            MEMBER(int, interiorSampleSteps, 1)
+            MEMBER(rai::String, interiorNoiseMethod, "iso")
+            MEMBER(double, hitRunEqMargin, .1)
+            MEMBER(double, interiorNoiseSigma, .5)
+            MEMBER(double, langevinTauPrime, -1.)
+    #undef MEMBER
+        ;
+        return self;
+      }, "set solver options"
+    #define MEMBER(type, name, x) , pybind11::arg(#name) = x
+  MEMBER(double, eps, .05)
+  MEMBER(bool, useCentering, true)
+  MEMBER(int, verbose, 1)
+  MEMBER(rai::String, seedMethod, "uni")
+  MEMBER(uint, seedCandidates, 10)
+  MEMBER(double, penaltyMu, 1.)
+  MEMBER(rai::String, downhillMethod, "GN")
+  MEMBER(int, downhillMaxSteps, 50)
+  MEMBER(double, slackStepAlpha, 1.)
+  MEMBER(double, slackMaxStep, .1)
+  MEMBER(double, slackRegLambda, 1e-2)
+  MEMBER(double, ineqOverstep, -1)
+  MEMBER(rai::String, downhillNoiseMethod, "none")
+  MEMBER(rai::String, downhillRejectMethod, "none")
+  MEMBER(double, downhillNoiseSigma, .1)
+  MEMBER(rai::String, interiorMethod, "HR")
+  MEMBER(int, interiorBurnInSteps, 0)
+  MEMBER(int, interiorSampleSteps, 1)
+  MEMBER(rai::String, interiorNoiseMethod, "iso")
+  MEMBER(double, hitRunEqMargin, .1)
+  MEMBER(double, interiorNoiseSigma, .5)
+  MEMBER(double, langevinTauPrime, -1.)
+    #undef MEMBER
+          )
+      ;
   //===========================================================================
 
   pybind11::class_<NLP_Solver, std::shared_ptr<NLP_Solver>>(m, "NLP_Solver", "An interface to portfolio of solvers")

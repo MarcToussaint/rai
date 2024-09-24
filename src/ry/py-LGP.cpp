@@ -51,7 +51,7 @@ void init_LGP(pybind11::module& m) {
 };*/
 
 
-struct PyLogic2KOMO_Translator : rai::Logic2KOMO_Translator {
+/*struct PyLogic2KOMO_Translator : rai::Logic2KOMO_Translator {
   pybind11::object py_obj; //the python object implementing the class
 
   virtual std::shared_ptr<KOMO> setup_sequence(rai::Configuration& C, uint K){
@@ -61,6 +61,6 @@ struct PyLogic2KOMO_Translator : rai::Logic2KOMO_Translator {
   virtual void add_action_constraints(std::shared_ptr<KOMO>& komo, double time, const StringA& action) = 0;
   virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, double time, const StringA& prev_action, const StringA& action) = 0;
 
-};
+};*/
 
 #endif

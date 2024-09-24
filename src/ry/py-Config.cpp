@@ -212,6 +212,10 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("order")=-1
       )
 
+  .def("selectJointsBySubtree", [](shared_ptr<rai::Configuration>& self, const std::shared_ptr<rai::Frame>& root){ self->selectJointsBySubtrees(FrameL{root.get()}); }, "",
+       pybind11::arg("root")
+       )
+
   .def("selectJoints", [](shared_ptr<rai::Configuration>& self, const std::vector<std::string>& jointNames, bool notThose) {
     self->selectJointsByName(strvec2StringA(jointNames), notThose);
   },
