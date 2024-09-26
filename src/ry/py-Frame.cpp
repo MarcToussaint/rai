@@ -29,22 +29,17 @@
 void init_Frame(pybind11::module& m) {
   pybind11::class_<rai::Frame, shared_ptr<rai::Frame>>(m, "Frame", "A (coordinate) frame of a configuration, which can have a parent, and associated shape, joint, and/or inertia")
 
-      .def("setColor", &rai::Frame::setColor)
-
-  .def("setPose",  [](shared_ptr<rai::Frame>& self, const char* pose) {
-    self->setPose(rai::Transformation(pose));
-  })
-  .def("setPosition", &rai::Frame::setPosition)
-  .def("setQuaternion", &rai::Frame::setQuaternion)
-  .def("setRelativePose", [](shared_ptr<rai::Frame>& self, const char* pose) {
-    self->setRelativePose(rai::Transformation(pose));
-  })
-  .def("setRelativePosition", &rai::Frame::setRelativePosition)
-  .def("setRelativeQuaternion", &rai::Frame::setRelativeQuaternion)
+  .def("setColor", &rai::Frame::setColor, "")
+  .def("setPose",  [](shared_ptr<rai::Frame>& self, const char* pose) { self->setPose(rai::Transformation(pose)); }, "")
+  .def("setPosition", &rai::Frame::setPosition, "")
+  .def("setQuaternion", &rai::Frame::setQuaternion, "")
+  .def("setRelativePose", [](shared_ptr<rai::Frame>& self, const char* pose) { self->setRelativePose(rai::Transformation(pose)); }, "")
+  .def("setRelativePosition", &rai::Frame::setRelativePosition, "")
+  .def("setRelativeQuaternion", &rai::Frame::setRelativeQuaternion, "")
   .def("setJoint", &rai::Frame::setJoint, "", pybind11::arg("jointType"), pybind11::arg("limits")=arr{})
-  .def("setJointState", &rai::Frame::setJointState)
-  .def("setContact", &rai::Frame::setContact)
-  .def("setMass", &rai::Frame::setMass)
+  .def("setJointState", &rai::Frame::setJointState, "")
+  .def("setContact", &rai::Frame::setContact, "")
+  .def("setMass", &rai::Frame::setMass, "")
   .def("setShape", &rai::Frame::setShape, "", pybind11::arg("type"), pybind11::arg("size"))
   .def("setMesh", &rai::Frame::setMesh,
        "attach a mesh shape",
@@ -59,10 +54,10 @@ void init_Frame(pybind11::module& m) {
   .def("setImplicitSurface", &rai::Frame::setImplicitSurface, "", pybind11::arg("data"), pybind11::arg("size"), pybind11::arg("blur"), pybind11::arg("resample")=-1.)
 
   .def("setParent", &rai::Frame::setParent, "", pybind11::arg("parent"), pybind11::arg("keepAbsolutePose_and_adaptRelativePose") = false, pybind11::arg("checkForLoop") = false)
-  .def("unLink", &rai::Frame::unLink)
+  .def("unLink", &rai::Frame::unLink, "")
+  .def("makeRoot", &rai::Frame::makeRoot, "")
 
-
-  .def("setAttribute", &rai::Frame::setAttribute)
+  .def("setAttribute", &rai::Frame::setAttribute, "")
   .def("addAttributes",  [](shared_ptr<rai::Frame>& self, const pybind11::dict& D) {
     if(!self->ats) self->ats = make_shared<rai::Graph>();
     self->ats->copy(dict2graph(D), true);
@@ -101,7 +96,7 @@ void init_Frame(pybind11::module& m) {
     self->write(G);
     if(!G["X"]) G.add<arr>("X", self->ensure_X().getArr7d());
     return graph2dict(G);
-  })
+  }, "")
 
   .def("setMeshAsLines", [](shared_ptr<rai::Frame>& self, const std::vector<double>& lines) {
     //    CHECK(self.frame, "this is not a valid frame");
@@ -116,7 +111,7 @@ void init_Frame(pybind11::module& m) {
       T(i, 0) = 2*i;
       T(i, 1) = 2*i+1;
     }
-  })
+  }, "")
   ;
 
 }

@@ -305,7 +305,7 @@ floatA rai::ConfigurationViewer::getDepth() {
 }
 
 void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
-  if(gl.drawOptions.drawVisualsOnly) dontRender=_marker; else dontRender=_all;
+  //if(gl.drawOptions.drawVisualsOnly) renderUntil=_shadow; else renderUntil=_all;
   if(!motion.N){
     RenderData::setText(text);
     RenderData::slice=-1;

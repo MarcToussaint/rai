@@ -28,6 +28,8 @@ void null_deleter(rai::Frame*) {}
 
 void init_Config(pybind11::module& m) {
 
+  //===========================================================================
+
   m.def("depthImage2PointCloud", [](const pybind11::array_t<float>& depth, const arr& fxycxy) {
     arr pts;
     depthData2pointCloud(pts, numpy2arr<float>(depth), fxycxy);
@@ -36,6 +38,8 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("depth"),
   pybind11::arg("fxycxy")
        );
+
+  //===========================================================================
 
   pybind11::class_<rai::Configuration, shared_ptr<rai::Configuration>>(m, "Config", "Core data structure to represent a kinematic configuration (essentially a tree of frames). See https://marctoussaint.github.io/robotics-course/tutorials/1a-configurations.html")
 
@@ -106,13 +110,7 @@ void init_Config(pybind11::module& m) {
       )
 
   .def("getJointNames", &rai::Configuration::getJointNames, "get the list of joint names")
-
-  .def("getJointDimension", [](shared_ptr<rai::Configuration>& self) {
-    return self->getJointStateDimension();
-  },
-  "get the total number of degrees of freedom"
-      )
-
+  .def("getJointDimension", &rai::Configuration::getJointStateDimension, "get the total number of degrees of freedom")
   .def("getJointState", [](shared_ptr<rai::Configuration>& self) {
     return self->getJointState();
   },
@@ -281,15 +279,15 @@ To get really precise distances and penetrations use the FS.distance feature wit
 
   .def("view_recopyMeshes", [](shared_ptr<rai::Configuration>& self) {
     self->get_viewer()->recopyMeshes(self->frames);
-  })
+  }, "")
 
   .def("view_getRgb", [](std::shared_ptr<rai::Configuration>& self) {
     return Array2numpy<byte>(self->get_viewer()->getRgb());
-  })
+  }, "")
 
   .def("view_getDepth", [](std::shared_ptr<rai::Configuration>& self) {
     return Array2numpy<float>(self->get_viewer()->getDepth());
-  })
+  }, "")
 
   .def("view_savePng", [](std::shared_ptr<rai::Configuration>& self, const char* pathPrefix) {
     self->get_viewer()->savePng(pathPrefix);
@@ -297,10 +295,8 @@ To get really precise distances and penetrations use the FS.distance feature wit
   pybind11::arg("pathPrefix") = "z.vid/"
       )
 
-  .def("view_close", &rai::Configuration::view_close,
-       "close the view")
-
-  .def("set_viewer",  &rai::Configuration::set_viewer)
+  .def("view_close", &rai::Configuration::view_close, "close the view")
+  .def("set_viewer",  &rai::Configuration::set_viewer, "")
   .def("get_viewer",  &rai::Configuration::get_viewer, "", pybind11::arg("window_title")=nullptr, pybind11::arg("offscreen")=false)
 
   .def("view_raise", [](shared_ptr<rai::Configuration>& self) {

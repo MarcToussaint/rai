@@ -123,6 +123,7 @@ struct Frame : NonCopyable {
   Frame& unLink();
   Frame* insertPreLink(const rai::Transformation& A=0);
   Frame* insertPostLink(const rai::Transformation& B=0);
+  void makeRoot(bool untilPartBreak=true);
 
   //structural information/retrieval
   bool isChildOf(const Frame* par, int order=1) const;

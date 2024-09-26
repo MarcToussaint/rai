@@ -13,7 +13,6 @@
 //===========================================================================
 
 rai::CameraView::CameraView(const rai::Configuration& _C, bool _offscreen) {
-
   updateConfiguration(_C);
   gl = make_shared<OpenGL>("CameraView", 640, 480, _offscreen);
   gl->camera.setDefault();
@@ -111,7 +110,8 @@ void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
 
 void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
   updateCamera();
-  //  renderMode=all;
+  if(renderMode==visuals) renderUntil=_shadow;
+//  else if(renderMode==all) renderUntil=_all;
   // gl->update(nullptr, true);
   gl->renderInBack();
   image = gl->captureImage;

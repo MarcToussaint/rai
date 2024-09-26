@@ -856,6 +856,30 @@ rai::Frame* rai::Frame::insertPostLink(const rai::Transformation& B) {
   return f;
 }
 
+void rai::Frame::makeRoot(bool untilPartBreak) {
+  FrameL pathToOldRoot;
+
+  if(untilPartBreak) pathToOldRoot = getPathToUpwardLink(true);
+  else pathToOldRoot = getPathToRoot();
+
+  //  listWrite(pathToOldRoot);
+
+  Frame* oldRoot=pathToOldRoot.first();
+  Frame* rootParent=oldRoot->parent;
+  if(rootParent) oldRoot->unLink();
+
+  for(Frame* f : pathToOldRoot) {
+    if(f->parent) C.flipFrames(f->parent, f);
+  }
+
+  //  if(rootParent){
+  //    newRoot->linkFrom(rootParent);
+  //    newRoot->setJoint(JT_rigid);
+  //  }
+
+  //  checkConsistency();
+}
+
 rai::Frame& rai::Frame::unLink() {
   CHECK(parent, "");
   ensure_X();

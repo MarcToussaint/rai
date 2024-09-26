@@ -271,7 +271,7 @@ void RenderData::glDraw(OpenGL& gl){
   sorting.setStraightPerm(objs.N);
   std::sort(sorting.p, sorting.p+sorting.N, [&](uint i,uint j){ return objs.elem(i)->cameraDist < objs.elem(j)->cameraDist; });
 
-  if(dontRender>_shadow) for(uint k=0;k<(renderCount?1:2);k++){ //why do I have to render twice on first pass??
+  if(renderUntil>=_shadow) for(uint k=0;k<(renderCount?1:2);k++){ //why do I have to render twice on first pass??
     // Render to shadowFramebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, id.shadowFramebuffer);
     glViewport(0, 0, bufW, bufH);
@@ -320,7 +320,7 @@ void RenderData::glDraw(OpenGL& gl){
 
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
-  if(dontRender>_transparent){
+  if(renderUntil>=_transparent){
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   }
@@ -345,7 +345,7 @@ void RenderData::glDraw(OpenGL& gl){
     lightDirs.reshape(lights.N, 3);
     glUniform3fv(id.prog_lightDirection_C, lights.N, rai::convert<float>(-lightDirs).p);
 
-    if(dontRender>_shadow) {
+    if(renderUntil>=_shadow) {
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, id.shadowTexture);
       glUniform1i(id.prog_shadowMap, 1);
@@ -357,7 +357,7 @@ void RenderData::glDraw(OpenGL& gl){
 
   glDisable(GL_DEPTH_TEST);
 
-  if(dontRender>_marker) for(uint k=0;k<(renderCount?1:2);k++){
+  if(renderUntil>=_marker) for(uint k=0;k<(renderCount?1:2);k++){
     glUseProgram(id.progMarker);
     glUniformMatrix4fv(id.progMarker_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
     renderObjects(id.progMarker_ModelT_WM, sorting, _marker);
@@ -365,7 +365,7 @@ void RenderData::glDraw(OpenGL& gl){
 
   glEnable(GL_DEPTH_TEST);
 
-  if(dontRender>_transparent) for(uint k=0;k<(renderCount?1:2);k++){
+  if(renderUntil>=_transparent) for(uint k=0;k<(renderCount?1:2);k++){
     glUseProgram(id.prog_ID);
     renderObjects(id.prog_ModelT_WM, sorting, _transparent);
   }

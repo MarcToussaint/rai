@@ -172,7 +172,7 @@ struct Configuration {
   /// @name structural operations, changes of configuration
   void clear();
   void reset_q();
-  void reconfigureRoot(Frame* newRoot, bool ofLinkOnly);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
+  void reconfigureRoot(Frame* newRoot, bool untilPartBreak);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
   void flipFrames(Frame* a, Frame* b);
   void pruneRigidJoints();        ///< delete rigid joints -> they become just links
   void pruneInactiveJoints();        ///< delete rigid joints -> they become just links

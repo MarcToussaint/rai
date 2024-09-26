@@ -1058,30 +1058,11 @@ void Configuration::reset_q() {
   _state_q_isGood=false;
 }
 
+
 /** @brief re-orient all joints (edges) such that n becomes
   the root of the configuration */
-void Configuration::reconfigureRoot(Frame* newRoot, bool ofLinkOnly) {
-  FrameL pathToOldRoot;
-
-  if(ofLinkOnly) pathToOldRoot = newRoot->getPathToUpwardLink(true);
-  else pathToOldRoot = newRoot->getPathToRoot();
-
-//  listWrite(pathToOldRoot);
-
-  Frame* oldRoot=pathToOldRoot.first();
-  Frame* rootParent=oldRoot->parent;
-  if(rootParent) oldRoot->unLink();
-
-  for(Frame* f : pathToOldRoot) {
-    if(f->parent) flipFrames(f->parent, f);
-  }
-
-//  if(rootParent){
-//    newRoot->linkFrom(rootParent);
-//    newRoot->setJoint(JT_rigid);
-//  }
-
-//  checkConsistency();
+void Configuration::reconfigureRoot(Frame* newRoot, bool untilPartBreak) {
+  newRoot->makeRoot(untilPartBreak);
 }
 
 /** @brief revert the topological orientation of a joint (edge),

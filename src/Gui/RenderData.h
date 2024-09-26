@@ -82,7 +82,7 @@ struct RenderData {
   rai::Array<std::shared_ptr<RenderQuad>> quads;
   DistMarkers distMarkers;
 
-  RenderType dontRender=_all;
+  RenderType renderUntil=_all;
   int slice=-1;
   uint renderCount=0;
 

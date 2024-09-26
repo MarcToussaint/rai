@@ -441,7 +441,7 @@ void rai::LGPcomp_OptimizePath::untimedCompute() {
   sol.ret->feasible = (sol.ret->ineq + sol.ret->eq < 3.);
 
   if(!isComplete && sket->verbose()>2) {
-    komoPath->pathConfig.gl().drawOptions.drawVisualsOnly=true;
+    komoPath->pathConfig.get_viewer()->renderUntil=rai::_shadow;
     komoPath->view(sket->verbose()>5, STRING(name <<" - intermediate result c:" <<c <<"\n" <<*sol.ret));
     if(sket->verbose()>3) {
       if(sket->verbose()>5) while(komoPath->view_play(true, 0, .1));
@@ -451,7 +451,7 @@ void rai::LGPcomp_OptimizePath::untimedCompute() {
 
   if(isComplete) {
     if(sket->verbose()>0 && ways) ways->komoWaypoints->view_close();
-    if(sket->verbose()>0) komoPath->pathConfig.gl().drawOptions.drawVisualsOnly=true;
+    if(sket->verbose()>0) komoPath->pathConfig.get_viewer()->renderUntil=rai::_shadow;
 
     if(sket->verbose()>0) LOG(0) <<"path " <<*sol.ret;
     if(sket->verbose()>1) cout <<komoPath->report(false, true, sket->verbose()>2);
