@@ -105,8 +105,8 @@ void computeOptimalSSBoxes(FrameL& frames) {
 void computeMeshNormals(FrameL& frames, bool force) {
   for(Frame* f: frames) if(f->shape) {
       Shape* s = f->shape;
-      if(force || s->mesh().V.d0!=s->mesh().Vn.d0 || s->mesh().T.d0!=s->mesh().Tn.d0) s->mesh().computeNormals();
-      if(force || s->sscCore().V.d0!=s->sscCore().Vn.d0 || s->sscCore().T.d0!=s->sscCore().Tn.d0) s->sscCore().computeNormals();
+      if(force || s->mesh().V.d0!=s->mesh().Vn.d0 || s->mesh().T.d0!=s->mesh().Tn.d0) s->mesh().computeTriNormals();
+      if(force || s->sscCore().V.d0!=s->sscCore().Vn.d0 || s->sscCore().T.d0!=s->sscCore().Tn.d0) s->sscCore().computeTriNormals();
     }
 }
 
@@ -3319,26 +3319,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   EditConfigurationKeyCall(Configuration& _C, bool& _exit): C(_C), exit(_exit) {}
   bool keyCallback(OpenGL& gl) {
     if(!gl.keyIsDown) return true;
-    if(gl.pressedkey==' ') { //grab a body
-      gl.drawOptions.drawColors=false;
-      gl.drawOptions.drawMode_idColor=true;
-      gl.beginContext(true);
-      gl.Render(gl.width, gl.height, 0, true);
-      gl.endContext(true);
-      gl.drawOptions.drawMode_idColor=false;
-      gl.drawOptions.drawColors=true;
-      write_ppm(gl.captureImage, "z.ppm");
-      uint id = color2id(&gl.captureImage(gl.mouseposy, gl.mouseposx, 0));
-      float d = gl.captureDepth(gl.mouseposy, gl.mouseposx);
-      arr x = {double(gl.mouseposx), double(gl.mouseposy), d};
-      if(d<.01 || d==1.) {
-        cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<gl.camera.glConvertToTrueDepth(d) <<endl;
-      } else {
-        gl.camera.unproject_fromPixelsAndGLDepth(x, gl.width, gl.height);
-      }
-      cout <<"SELECTION id: " <<id <<" world coords:" <<x <<endl;
-      if(id<C.frames.N) cout <<*C.frames.elem(id) <<endl;
-    } else switch(gl.pressedkey) {
+    switch(gl.pressedkey) {
         case '1':  gl.drawOptions.drawShapes^=1;  break;
         case '2':  gl.drawOptions.drawJoints^=1;  break;
         case '3':  gl.drawOptions.drawProxies^=1;  break;
@@ -3478,6 +3459,30 @@ void Configuration::watchFile(const char* filename) {
           }
         }
 #endif
+      } else if(key==' ') { //grab a body
+        OpenGL& gl = V->ensure_gl();
+        V->renderUntil=_solid;
+        V->renderFlatColors=true;
+#if 0
+        gl.beginContext();
+        gl.Render(gl.width, gl.height, 0, true);
+        gl.endContext();
+#else
+        gl.update(false, true);
+#endif
+        V->renderUntil=_all;
+        V->renderFlatColors=false;
+        write_ppm(gl.captureImage, "z.ppm");
+        uint id = color2id(&gl.captureImage(gl.mouseposy, gl.mouseposx, 0));
+        float d = gl.captureDepth(gl.mouseposy, gl.mouseposx);
+        arr x = {double(gl.mouseposx), double(gl.mouseposy), d};
+        if(d<.01 || d==1.) {
+          cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<gl.camera.glConvertToTrueDepth(d) <<endl;
+        } else {
+          gl.camera.unproject_fromPixelsAndGLDepth(x, gl.width, gl.height);
+        }
+        cout <<"SELECTION id: " <<id <<" world coords:" <<x <<endl;
+        if(id<frames.N) cout <<*frames.elem(id) <<endl;
       } else if(key=='r') { //random sample
         LOG(0) <<"setting random config";
         for(rai::Dof* d:activeDofs) d->sampleUniform=1.;

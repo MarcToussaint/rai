@@ -54,8 +54,20 @@ void init_LGP(pybind11::module& m) {
 /*struct PyLogic2KOMO_Translator : rai::Logic2KOMO_Translator {
   pybind11::object py_obj; //the python object implementing the class
 
+  PyLogic2KOMO_Translator(pybind11::object py_obj) : py_obj(py_obj){
+    dimension = py_obj.attr("getDimension")().cast<int>();
+    featureTypes = rai::convert<ObjectiveType>( list2arr<int>(py_obj.attr("getFeatureTypes")()) );
+    bounds = numpy2arr<double>(py_obj.attr("getBounds")());
+  }
+
   virtual std::shared_ptr<KOMO> setup_sequence(rai::Configuration& C, uint K){
     pybind11::object _ret = py_obj.attr("setup_sequence")(C, K);
+    auto phiJ = _phiJ.cast< std::tuple< pybind11::array_t<double>, pybind11::array_t<double> > >();
+    LOG(0) <<"before";
+    phi = numpy2arr(std::get<0>(phiJ));
+    J = numpy2arr(std::get<1>(phiJ));
+    LOG(0) <<"size:" <<phi.dim();
+
   }
 
   virtual void add_action_constraints(std::shared_ptr<KOMO>& komo, double time, const StringA& action) = 0;

@@ -3,12 +3,12 @@ echo "#include <string>" >> shaders.cxx
 echo "//=============================" >> shaders.cxx
 
 echo "const std::string objVS = R\"(" >> shaders.cxx
-cat shader.vs >>shaders.cxx
+cat shaderObj.vs >>shaders.cxx
 echo ")\";" >>shaders.cxx
 echo "//=============================" >> shaders.cxx
 
 echo "const std::string objFS = R\"(" >> shaders.cxx
-cat shader.fs >>shaders.cxx
+cat shaderObj.fs >>shaders.cxx
 echo ")\";" >>shaders.cxx
 echo "//=============================" >> shaders.cxx
 

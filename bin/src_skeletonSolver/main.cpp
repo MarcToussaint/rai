@@ -86,7 +86,7 @@ int main(int argc,char **argv){
         cout <<*ret <<endl;
 
         rai::wait(.1);
-        komo_final->pathConfig.viewer()->raiseWindow();
+        komo_final->pathConfig.get_viewer()->raiseWindow();
         komo_final->view(true, STRING("solved sample " <<i <<"\n" <<*ret));
         //if(!ret->feasible) continue;
       }
@@ -107,7 +107,7 @@ int main(int argc,char **argv){
       cout <<komo_way->getPath_qAll();
 
       rai::wait(.1);
-      komo_way->pathConfig.viewer()->raiseWindow();
+      komo_way->pathConfig.get_viewer()->raiseWindow();
       komo_way->view(true, STRING("solved sample " <<i <<"\n" <<*ret));
       if(!ret->feasible) continue;
       while(komo_way->view_play(true));
@@ -156,7 +156,7 @@ int main(int argc,char **argv){
       cout <<*ret <<endl;
 
       rai::wait(.1);
-      komo_path->pathConfig.viewer()->raiseWindow();
+      komo_path->pathConfig.get_viewer()->raiseWindow();
       komo_path->view(true, STRING("solved sample " <<i <<"\n" <<*ret));
       while(komo_path->view_play(true));
     }

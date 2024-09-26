@@ -88,7 +88,7 @@ FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _exclu
         //rai::Mesh mesh;
         //mesh.V = mesh_org.V;
         //mesh.makeConvexHull();
-        mesh.computeNormals();
+        mesh.computeTriNormals();
         std::shared_ptr<ConvexGeometryData> dat = make_shared<ConvexGeometryData>();
         dat->plane_dis = mesh.computeTriDistances();
         copy<int>(dat->polygons, mesh.T);

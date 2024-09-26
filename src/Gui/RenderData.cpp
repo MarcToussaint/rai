@@ -17,7 +17,7 @@ struct OpenGL2Context {
 Singleton<OpenGL2Context> contextIDs;
 
 uint bufW=2000, bufH=2000;
-//GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
+GLuint LoadShadersFile(const char * vertex_file_path,const char * fragment_file_path);
 GLuint LoadShaders(const std::string& VertexShaderCode, const std::string& FragmentShaderCode);
 
 RenderObject& RenderData::add(){
@@ -140,14 +140,17 @@ void RenderData::ensureInitialized(OpenGL &gl){
   glDepthFunc(GL_LESS);
   glEnable(GL_CULL_FACE);
 
-  id.prog_ID = LoadShaders( objVS, objFS ); //rai::raiPath("src/Gui/shader.vs"), rai::raiPath("src/Gui/shader.fs") );
+  id.prog_ID = LoadShaders( objVS, objFS );
+//  id.prog_ID = LoadShadersFile(rai::raiPath("src/Gui/shaderObj.vs"), rai::raiPath("src/Gui/shaderObj.fs") );
   id.prog_Projection_W = glGetUniformLocation(id.prog_ID, "Projection_W");
   id.prog_ViewT_CW = glGetUniformLocation(id.prog_ID, "ViewT_CW");
   id.prog_ModelT_WM = glGetUniformLocation(id.prog_ID, "ModelT_WM");
   id.prog_ShadowProjection_W = glGetUniformLocation(id.prog_ID, "ShadowProjection_W");
+  id.prog_useShadow = glGetUniformLocation(id.prog_ID, "useShadow");
   id.prog_shadowMap = glGetUniformLocation(id.prog_ID, "shadowMap");
   id.prog_numLights = glGetUniformLocation(id.prog_ID, "numLights");
   id.prog_lightDirection_C = glGetUniformLocation(id.prog_ID, "lightDirection_C");
+  id.prog_FlatColor = glGetUniformLocation(id.prog_ID, "flatColor");
 
   id.progMarker = LoadShaders( markerVS, markerFS ); //rai::raiPath("src/Gui/shaderMarker.vs"), rai::raiPath("src/Gui/shaderMarker.fs") );
   id.progMarker_Projection_W = glGetUniformLocation(id.progMarker, "Projection_W");
@@ -196,7 +199,7 @@ void RenderData::ensureInitialized(OpenGL &gl){
   id.initialized=true;
 }
 
-void RenderData::renderObjects(GLuint idT_WM, const uintA& sorting, RenderType type){
+void RenderData::renderObjects(GLuint idT_WM, const uintA& sorting, RenderType type, GLuint idFlatColor){
   arr T_WM = eye(4);
 
   CHECK_EQ(sorting.N, objs.N, "");
@@ -215,6 +218,14 @@ void RenderData::renderObjects(GLuint idT_WM, const uintA& sorting, RenderType t
     if(idT_WM){
       T_WM = obj->X.getAffineMatrix();
       glUniformMatrix4fv(idT_WM, 1, GL_TRUE, rai::convert<float>(T_WM).p);
+    }
+
+    if(renderFlatColors && idFlatColor && obj->flatColor.N){
+      CHECK_EQ(obj->flatColor.N, 3, "");
+      byte *rgb = obj->flatColor.p;
+      glUniform4f(idFlatColor, rgb[0]/256.f, rgb[1]/256.f, rgb[2]/256.f, 1.);
+    }else{
+      glUniform4f(idFlatColor, 0.f, 0.f, 0.f, 0.f);
     }
 
     obj->glRender();
@@ -292,7 +303,7 @@ void RenderData::glDraw(OpenGL& gl){
     arr Pshadow_IW = flip * P_IC * flip * T_CW;
     glUniformMatrix4fv(id.progShadow_ShadowProjection_W, 1, GL_TRUE, rai::convert<float>(Pshadow_IW).p);
 
-    renderObjects(id.progShadow_ModelT_WM, sorting, _solid);
+    renderObjects(id.progShadow_ModelT_WM, sorting, _solid, 0);
 
     glUseProgram(id.prog_ID);
     arr tmp = arr{{4,4},{ 0.5, 0.0, 0.0, 0.5,
@@ -348,10 +359,13 @@ void RenderData::glDraw(OpenGL& gl){
     if(renderUntil>=_shadow) {
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, id.shadowTexture);
+      glUniform1i(id.prog_useShadow, 1);
       glUniform1i(id.prog_shadowMap, 1);
+    }else{
+      glUniform1i(id.prog_useShadow, 0);
     }
 
-    renderObjects(id.prog_ModelT_WM, sorting, _solid);
+    renderObjects(id.prog_ModelT_WM, sorting, _solid, id.prog_FlatColor);
 //    renderObjects(id.prog_ModelT_WM, sorting, _marker);
   }
 
@@ -360,14 +374,14 @@ void RenderData::glDraw(OpenGL& gl){
   if(renderUntil>=_marker) for(uint k=0;k<(renderCount?1:2);k++){
     glUseProgram(id.progMarker);
     glUniformMatrix4fv(id.progMarker_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
-    renderObjects(id.progMarker_ModelT_WM, sorting, _marker);
+    renderObjects(id.progMarker_ModelT_WM, sorting, _marker, 0);
   }
 
   glEnable(GL_DEPTH_TEST);
 
   if(renderUntil>=_transparent) for(uint k=0;k<(renderCount?1:2);k++){
     glUseProgram(id.prog_ID);
-    renderObjects(id.prog_ModelT_WM, sorting, _transparent);
+    renderObjects(id.prog_ModelT_WM, sorting, _transparent, 0);
   }
 
 
@@ -419,62 +433,74 @@ void RenderObject::mesh(rai::Mesh& mesh, const rai::Transformation& _X, double a
   if(type==_solid && (mesh.C.N==4 || mesh.C.N==2) && mesh.C(-1)<1.) type = _transparent;
   version=mesh.version;
 
-  mesh.computeNormals();
-  vertices.resize(mesh.T.d0*3, 3);
-  colors.resize(vertices.d0, 4);
-  normals.resizeAs(vertices);
-  arr c;
-  if(!mesh.C.N) c = arr{.8,.8,.8};
-  if(mesh.C.nd==1) c = mesh.C;
-  if(c.N==1){ double g=c.elem(); c = arr{g,g,g}; }
-  if(c.N==2){ double g=c.elem(0); c.prepend(g); c.prepend(g); }
-  for(uint i=0;i<mesh.T.d0;i++){
-    for(uint j=0;j<3;j++){
-      if(mesh.C.nd==2) c.referToDim(mesh.C, mesh.T(i,j));
-      for(uint k=0;k<3;k++) vertices(3*i+j,k) = mesh.V(mesh.T(i,j), k);
-      for(uint k=0;k<3;k++) colors(3*i+j,k) = c(k); //m.C(m.T(i,j), k);
-      if(c.N==4) colors(3*i+j, 3)=c(3); else colors(3*i+j, 3)=1.;
-      for(uint k=0;k<3;k++) normals(3*i+j, k) = mesh.Tn(i,k);
-    }
-  }
+//  if(!mesh.isArrayFormatted) mesh.makeArrayFormatted(avgNormalsThreshold);
 
-  //-- normal smoothing
-  if(false && avgNormalsThreshold<1.){
-    //go through all vertices and check whether to average normals for smoothing
-    uintAA sameVertices(mesh.V.d0);
+  if(mesh.isArrayFormatted){
+    CHECK_EQ(mesh.V.d0, mesh.T.d0*3, "");
+    CHECK_EQ(mesh.V.d0, mesh.Vn.d0, "");
+    CHECK_EQ(mesh.V.d0, mesh.C.d0, "");
+    CHECK_EQ(mesh.C.d1, 4, "");
+    vertices = rai::convert<float>(mesh.V);
+    colors = rai::convert<float>(mesh.C);
+    normals = rai::convert<float>(mesh.Vn);
+  }else{
+    mesh.computeTriNormals();
+    vertices.resize(mesh.T.d0*3, 3);
+    colors.resize(vertices.d0, 4);
+    normals.resizeAs(vertices);
+    arr c;
+    if(!mesh.C.N) c = arr{.8,.8,.8};
+    if(mesh.C.nd==1) c = mesh.C;
+    if(c.N==1){ double g=c.elem(); c = arr{g,g,g}; }
+    if(c.N==2){ double g=c.elem(0); c.prepend(g); c.prepend(g); }
     for(uint i=0;i<mesh.T.d0;i++){
-      for(uint j=0;j<3;j++) sameVertices(mesh.T(i,j)).append(3*i+j);
+      for(uint j=0;j<3;j++){
+        if(mesh.C.nd==2) c.referToDim(mesh.C, mesh.T(i,j));
+        for(uint k=0;k<3;k++) vertices(3*i+j,k) = mesh.V(mesh.T(i,j), k);
+        for(uint k=0;k<3;k++) colors(3*i+j,k) = c(k); //m.C(m.T(i,j), k);
+        if(c.N==4) colors(3*i+j, 3)=c(3); else colors(3*i+j, 3)=1.;
+        for(uint k=0;k<3;k++) normals(3*i+j, k) = mesh.Tn(i,k);
+      }
     }
 
-    for(uint i=0;i<sameVertices.N;i++){
-      uintA& verts = sameVertices(i);
-      uint n = verts.N;
-      if(n<2) continue;
-      //copy to arr
-      arr ns(n, 3);
-      for(uint j=0;j<n;j++) ns[j] = rai::convert<double>(normals[verts(j)]);
-      //check if we can average all of them (all pairwise scalar products > threshold)
-      bool avg = true;
-      for(uint j=0;j<n;j++) for(uint k=j+1;k<n;k++){
-        if(scalarProduct(ns[j], ns[k])<avgNormalsThreshold){ avg=false; break; }
+    //-- normal smoothing
+    if(false && avgNormalsThreshold<1.){
+      //go through all vertices and check whether to average normals for smoothing
+      uintAA sameVertices(mesh.V.d0);
+      for(uint i=0;i<mesh.T.d0;i++){
+        for(uint j=0;j<3;j++) sameVertices(mesh.T(i,j)).append(3*i+j);
       }
-      if(avg){
-        arr na = ::sum(ns, 0);
-        na /= length(na);
-        floatA naf = rai::convert<float>(na);
-        for(uint j=0;j<n;j++) normals[verts(j)] = naf;
-      }else{
-        //average them pair-wise
-        for(uint j=0;j<n;j++) for(uint k=0;k<n;k++){
-          arr nj=ns[j], nk=ns[k];
-          if(scalarProduct(nj, nk)>avgNormalsThreshold){
-            arr na = nj+nk;
-            na /= length(na);
-            nj = na;
-            nk = na;
-          }
+
+      for(uint i=0;i<sameVertices.N;i++){
+        uintA& verts = sameVertices(i);
+        uint n = verts.N;
+        if(n<2) continue;
+        //copy to arr
+        arr ns(n, 3);
+        for(uint j=0;j<n;j++) ns[j] = rai::convert<double>(normals[verts(j)]);
+        //check if we can average all of them (all pairwise scalar products > threshold)
+        bool avg = true;
+        for(uint j=0;j<n;j++) for(uint k=j+1;k<n;k++){
+          if(scalarProduct(ns[j], ns[k])<avgNormalsThreshold){ avg=false; break; }
         }
-        for(uint j=0;j<n;j++) normals[verts(j)] = rai::convert<float>(ns[j]);
+        if(avg){
+          arr na = ::sum(ns, 0);
+          na /= length(na);
+          floatA naf = rai::convert<float>(na);
+          for(uint j=0;j<n;j++) normals[verts(j)] = naf;
+        }else{
+          //average them pair-wise
+          for(uint j=0;j<n;j++) for(uint k=0;k<n;k++){
+            arr nj=ns[j], nk=ns[k];
+            if(scalarProduct(nj, nk)>avgNormalsThreshold){
+              arr na = nj+nk;
+              na /= length(na);
+              nj = na;
+              nk = na;
+            }
+          }
+          for(uint j=0;j<n;j++) normals[verts(j)] = rai::convert<float>(ns[j]);
+        }
       }
     }
   }
@@ -564,10 +590,7 @@ void RenderObject::glInitialize(){
 
 //===========================================================================
 
-GLuint LoadShaders(const std::string& VertexShaderCode, const std::string& FragmentShaderCode){
-
-#if 0
-GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path){
+GLuint LoadShadersFile(const char * vertex_file_path,const char * fragment_file_path){
 
   // Read the Vertex Shader code from the file
   std::string VertexShaderCode;
@@ -592,7 +615,11 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
     FragmentShaderCode = sstr.str();
     FragmentShaderStream.close();
   }
-#endif
+
+  return LoadShaders(VertexShaderCode, FragmentShaderCode);
+}
+
+GLuint LoadShaders(const std::string& VertexShaderCode, const std::string& FragmentShaderCode){
 
   char const * VertexSourcePointer = VertexShaderCode.c_str();
   char const * FragmentSourcePointer = FragmentShaderCode.c_str();

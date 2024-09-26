@@ -58,9 +58,9 @@ void TEST(Viewer){
   f->setConvexMesh({}, {255,0,0}, .05);
   C.view(false);
 
-//  rai::Configuration C2;
-//  C2.addConfigurationCopy(C);
-//  C2.view();
+  rai::Configuration C2;
+  C2.addConfigurationCopy(C);
+  C2.view();
 
   f->setPosition({.5, .5, 1.});
   arr pts = .2*randn({10,3});
@@ -73,7 +73,7 @@ void TEST(Viewer){
     rai::wait(.01);
 //    if(!(k%10))
     C.view(false, STRING(k));
-//    C2.view(false, STRING(k));
+    C2.view(false, STRING(k));
   }
   C.view(false);
 }

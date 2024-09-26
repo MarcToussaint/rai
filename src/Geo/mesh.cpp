@@ -66,6 +66,7 @@ void Mesh::clear() {
   V.clear(); Vn.clear();
   if(C.nd==2) C.clear();
   T.clear(); Tn.clear();
+  isArrayFormatted=false;
   graph.clear();
 }
 
@@ -587,6 +588,79 @@ void Mesh::makeLines() {
   }
 }
 
+void Mesh::makeArrayFormatted(double avgNormalsThreshold){
+  if(isArrayFormatted){
+    LOG(0) <<"is already array formatted";
+    return;
+  }
+  computeTriNormals();
+  arr vertices(T.d0*3, 3);
+  arr colors(vertices.d0, 4);
+  arr normals(vertices);
+  arr c;
+  if(!C.N) c = arr{.8,.8,.8};
+  if(C.nd==1) c = C;
+  if(c.N==1){ double g=c.elem(); c = arr{g,g,g}; }
+  if(c.N==2){ double g=c.elem(0); c.prepend(g); c.prepend(g); }
+  for(uint i=0;i<T.d0;i++){
+    for(uint j=0;j<3;j++){
+      if(C.nd==2) c.referToDim(C, T(i,j));
+      for(uint k=0;k<3;k++) vertices(3*i+j,k) = V(T(i,j), k);
+      for(uint k=0;k<3;k++) colors(3*i+j,k) = c(k); //m.C(m.T(i,j), k);
+      if(c.N==4) colors(3*i+j, 3)=c(3); else colors(3*i+j, 3)=1.;
+      for(uint k=0;k<3;k++) normals(3*i+j, k) = Tn(i,k);
+    }
+  }
+
+  //-- normal smoothing
+  if(avgNormalsThreshold<1.){
+    //go through all vertices and check whether to average normals for smoothing
+    uintAA sameVertices(V.d0);
+    for(uint i=0;i<T.d0;i++){
+      for(uint j=0;j<3;j++) sameVertices(T(i,j)).append(3*i+j);
+    }
+
+    for(uint i=0;i<sameVertices.N;i++){
+      uintA& verts = sameVertices(i);
+      uint n = verts.N;
+      if(n<2) continue;
+      //copy to arr
+      arr ns(n, 3);
+      for(uint j=0;j<n;j++) ns[j] = rai::convert<double>(normals[verts(j)]);
+      //check if we can average all of them (all pairwise scalar products > threshold)
+      bool avg = true;
+      for(uint j=0;j<n;j++) for(uint k=j+1;k<n;k++){
+        if(scalarProduct(ns[j], ns[k])<avgNormalsThreshold){ avg=false; break; }
+      }
+      if(avg){
+        arr na = ::sum(ns, 0);
+        na /= length(na);
+        for(uint j=0;j<n;j++) normals[verts(j)] = na;
+      }else{
+        //average them pair-wise
+        for(uint j=0;j<n;j++) for(uint k=0;k<n;k++){
+          arr nj=ns[j], nk=ns[k];
+          if(scalarProduct(nj, nk)>avgNormalsThreshold){
+            arr na = nj+nk;
+            na /= length(na);
+            nj = na;
+            nk = na;
+          }
+        }
+        for(uint j=0;j<n;j++) normals[verts(j)] = ns[j];
+      }
+    }
+  }
+
+  V = vertices;
+  C = colors;
+  Vn = normals;
+  T.setStraightPerm(V.d0);
+  T.reshape(V.d0/3, 3);
+  Tn.clear();
+  isArrayFormatted=true;
+}
+
 Mesh Mesh::decompose() {
   Mesh M;
 #ifdef RAI_VHACD
@@ -669,12 +743,11 @@ void Mesh::setSSCvx(const arr& core, double r, uint fineness) {
   normals of the vertices (N); average normals are averaged over
   all adjacent triangles that are in the triangle list or member of
   a strip */
-void Mesh::computeNormals() {
+void Mesh::computeTriNormals() {
   CHECK(T.N, "can't compute normals for a point cloud");
+  CHECK(!isArrayFormatted, "not implemented");
   Vector a, b, c;
   Tn.resize(T.d0, 3).setZero();
-//  Vn.resize(V.d0, 3).setZero();
-  //triangle normals and contributions
   for(uint i=0; i<T.d0; i++) {
     uint* t=T.p+3*i;
     a.set(V.p+3*t[0]);
@@ -683,12 +756,7 @@ void Mesh::computeNormals() {
 
     b-=a; c-=a; a=b^c; if(!a.isZero) a.normalize();
     Tn(i, 0)=a.x;  Tn(i, 1)=a.y;  Tn(i, 2)=a.z;
-//    Vn(t[0], 0)+=a.x;  Vn(t[0], 1)+=a.y;  Vn(t[0], 2)+=a.z;
-//    Vn(t[1], 0)+=a.x;  Vn(t[1], 1)+=a.y;  Vn(t[1], 2)+=a.z;
-//    Vn(t[2], 0)+=a.x;  Vn(t[2], 1)+=a.y;  Vn(t[2], 2)+=a.z;
   }
-//  Vector d;
-//  for(uint i=0; i<Vn.d0; i++) { d.set(&Vn(i, 0)); Vn[i]/=d.length(); }
 }
 
 void Mesh::computeFaceColors() {
@@ -710,7 +778,7 @@ void Mesh::computeFaceColors() {
 }
 
 arr Mesh::computeTriDistances() {
-  if(!Tn.N) computeNormals();
+  if(!Tn.N) computeTriNormals();
   arr d(T.d0);
   Vector n, a, b, c;
   for(uint i=0; i<T.d0; i++) {

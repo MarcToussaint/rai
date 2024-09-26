@@ -29,7 +29,6 @@ IPOPT = 0
 #FCL = 0
 #PHYSX = 0
 BULLET = 0
-#FCL_LOCAL = 1
 
 ## below are more libs, which we could use, but are disabled by default
 OPENCV = 0

@@ -104,7 +104,7 @@ void TEST(Mesh) {
   //mesh.gridToStrips(grid); //alternative to triangle list -- but deletion is disabled
 
   //calculate normals
-  mesh.computeNormals();
+  mesh.computeTriNormals();
 
   //test deletion of some random triangles
   for(i=0;i<mesh.T.d0;i++) if(rnd.uni()<.1){ mesh.T(i,0)=mesh.T(i,1)=mesh.T(i,2)=0; }
@@ -128,7 +128,7 @@ void TEST(Obj) {
   //mesh.readObjFile(FILE("../../../3dmodel/obj/gipshand2-273k.obj"));
   //mesh.readObjFile(FILE("../../../3dmodel/obj/base-male-nude.obj"));
   mesh.scale(.1,.1,.1);
-  mesh.computeNormals();
+  mesh.computeTriNormals();
 //  mesh2.readObjFile(FILE("magnolia.obj"));
 //  mesh2.scale(.01,.01,.01);
 //  mesh2.computeNormals();

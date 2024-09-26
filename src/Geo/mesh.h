@@ -48,6 +48,7 @@ struct Mesh {
   long parsing_pos_end;
 
   uint _support_vertex=0;
+  bool isArrayFormatted=false;
 
   Mesh();
   ~Mesh();
@@ -94,6 +95,7 @@ struct Mesh {
   void makeConvexHull();
   void makeTriangleFan();
   void makeLines();
+  void makeArrayFormatted(double avgNormalsThreshold=.9);
 
   /// @name convex decomposition
   rai::Mesh decompose();
@@ -104,7 +106,7 @@ struct Mesh {
   void supportMargin(uintA& verts, const arr& dir, double margin, int initialization=-1);
 
   /// @name internal computations & cleanup
-  void computeNormals();
+  void computeTriNormals();
   void computeFaceColors();
   arr computeTriDistances();
   void buildGraph();

@@ -23,6 +23,7 @@ struct RenderObject{
   GLenum mode=GL_TRIANGLES;
   int version=-1;
   int selection=-1;
+  byteA flatColor;
   bool initialized=false;
 
   ~RenderObject();
@@ -83,12 +84,13 @@ struct RenderData {
   DistMarkers distMarkers;
 
   RenderType renderUntil=_all;
+  bool renderFlatColors=false;
   int slice=-1;
   uint renderCount=0;
 
   struct ContextIDs{
     bool initialized=false;
-    GLuint prog_ID, prog_Projection_W, prog_ViewT_CW, prog_ModelT_WM, prog_ShadowProjection_W, prog_shadowMap, prog_numLights, prog_lightDirection_C;
+    GLuint prog_ID, prog_Projection_W, prog_ViewT_CW, prog_ModelT_WM, prog_ShadowProjection_W, prog_useShadow, prog_shadowMap, prog_numLights, prog_lightDirection_C, prog_FlatColor;
     GLuint progShadow_ID, progShadow_ShadowProjection_W, progShadow_ModelT_WM;
     GLuint shadowFramebuffer, shadowTexture;
     GLuint progMarker, progMarker_Projection_W, progMarker_ModelT_WM;
@@ -114,7 +116,7 @@ struct RenderData {
   void glDeinitialize(OpenGL &gl);
 
 //private:
-  void renderObjects(GLuint idT_WM, const uintA& sorting, RenderType type);
+  void renderObjects(GLuint idT_WM, const uintA& sorting, RenderType type, GLuint idFlatColor);
 };
 
 }//namespace

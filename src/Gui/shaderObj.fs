@@ -16,9 +16,16 @@ layout(location = 0) out vec4 color;
 
 uniform vec3 lightDirection_C[2];
 uniform int numLights;
+uniform int useShadow;
 uniform sampler2DShadow shadowMap;
+uniform vec4 flatColor;
 
 void main() {
+  if(flatColor[3]>0.){
+    color = flatColor;
+    return;
+  }
+
   //vec3 objColor = texture( myTextureSampler, UV ).rgb;
 
   vec3 objRgb = objColor.rgb;
@@ -41,7 +48,7 @@ void main() {
 
     float bias = 0.005;
     float visibility = 1.;
-    if(i==0) visibility = texture(shadowMap, vec3(shadowCoord.xy, (shadowCoord.z-bias)/shadowCoord.w));
+    if(i==0 && useShadow>0) visibility = texture(shadowMap, vec3(shadowCoord.xy, (shadowCoord.z-bias)/shadowCoord.w));
 
     rgb = rgb +
           visibility * objRgb * LightColor * LightPower * cosTheta +

@@ -383,6 +383,10 @@ void NLP_Sampler::run_interior(arr& data, uintA& dataEvals){
       dataEvals.append(evals);
       CHECK_EQ(data.d0, dataEvals.d0, "");
       if(!(data.d0%10)) cout <<'.' <<std::flush;
+      if(opt.verbose>=2) {
+        nlp->report(cout, 9, STRING("data stored phase2 t: " <<t <<" err: " <<ev.err <<" data: " <<data.d0 <<" good: " <<good));
+        rai::wait(.1);
+      }
     }
 
     //-- stopping

@@ -74,6 +74,8 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
       }else{
         NIY
       }
+      objs(-1)->flatColor.resize(3);
+      id2color(objs(-1)->flatColor.p, f->ID);
     }
   }
   for(rai::Frame* f:frames) if(f->shape && f->shape->type()==ST_marker) {

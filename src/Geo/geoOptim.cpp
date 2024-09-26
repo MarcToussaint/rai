@@ -423,7 +423,7 @@ double sphereReduceConvex(rai::Mesh& M, double radius, int verbose) {
   //-- construct H-polytope (normals and offsets)
   M.makeConvexHull();
   arr V_orig = M.V;
-  M.computeNormals();
+  M.computeTriNormals();
   uint nIneq = M.Tn.d0;
   arr G(nIneq, 3), g(nIneq);
   for(uint i=0; i<nIneq; i++) {

@@ -14,9 +14,6 @@
 
 #define ARRAY_flexiMem true
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wclass-memaccess"
-
 namespace rai {
 
 //fwd declarations
@@ -256,6 +253,9 @@ template<class T> uint Array<T>::dim(uint k) const {
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
 #endif
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#pragma GCC diagnostic ignored "-Wmismatched-dealloc"
 
 /// allocate memory (maybe using \ref flexiMem)
 template<class T> void Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
@@ -1796,6 +1796,7 @@ template<class T> uint Array<T>::serial_decode(char* data, uint data_size) {
 #ifdef RAI_CLANG
 #  pragma clang diagnostic pop
 #endif
+#pragma GCC diagnostic pop
 
 template<class T> void writeConsecutiveConstant(std::ostream& os, const Array<T>& x) {
   if(!x.N) return;
@@ -1856,5 +1857,3 @@ template<class T> bool operator<(const Array<T>& v, const Array<T>& w) {
 }
 
 } //namespace
-
-#pragma GCC diagnostic pop
