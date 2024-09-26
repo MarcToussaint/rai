@@ -99,7 +99,7 @@ void KOMO::deprecated_reportProblem(std::ostream& os) {
   }
 }
 
-Camera& KOMO::displayCamera() { DEPR; return pathConfig.viewer()->displayCamera(); }
+Camera& KOMO::displayCamera() { DEPR; return pathConfig.get_viewer()->displayCamera(); }
 
 rai::Graph KOMO::deprecated_getReport(bool plotOverTime, int reportFeatures, std::ostream& featuresOs) {
   //-- collect all task costs and constraints

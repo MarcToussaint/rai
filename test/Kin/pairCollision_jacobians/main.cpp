@@ -96,8 +96,8 @@ void TEST(GJK_Jacobians) {
     //    cout <<"distance: " <<y <<" vec=" <<y2 <<" error=" <<length(y2)-fabs(y(0)) <<endl;
     if(!succ) cout <<collInfo;
 
-    C.viewer()->updateConfiguration(C);
-    C.viewer()->addDistMarker(collInfo.p1, collInfo.p2, 1.);
+    C.get_viewer()->updateConfiguration(C);
+    C.get_viewer()->addDistMarker(collInfo.p1, collInfo.p2, 1.);
     C.view(!succ, STRING(k));
 //    C.view(true);
 
@@ -263,9 +263,9 @@ void TEST(Functional) {
     auto y = dist.eval({C(1), C(2)});
     checkJacobian(dist.vf2({C(1), C(2)}), x, 1e-4);
 
-    C.viewer()->clear();
-    C.viewer()->updateConfiguration(C);
-    C.viewer()->addDistMarker(dist.x-dist.d1*dist.g1, dist.x-dist.d2*dist.g2, .1);
+    C.get_viewer()->clear();
+    C.get_viewer()->updateConfiguration(C);
+    C.get_viewer()->addDistMarker(dist.x-dist.d1*dist.g1, dist.x-dist.d2*dist.g2, .1);
     C.view(true);
   }
 }
@@ -336,11 +336,11 @@ void testSweepingSDFs(){
     sweep2.V.append(V+(ones(V.d0)^vel));
     sweep2.makeConvexHull();
 
-    C.viewer()->clear();
-    C.viewer()->updateConfiguration(C);
-    C.viewer()->addDistMarker(dist.x-dist.d1*dist.g1, dist.x-dist.d2*dist.g2, .1);
-    C.viewer()->add().mesh(sweep1);
-    C.viewer()->add().mesh(sweep2);
+    C.get_viewer()->clear();
+    C.get_viewer()->updateConfiguration(C);
+    C.get_viewer()->addDistMarker(dist.x-dist.d1*dist.g1, dist.x-dist.d2*dist.g2, .1);
+    C.get_viewer()->add().mesh(sweep1);
+    C.get_viewer()->add().mesh(sweep2);
     C.view(true);
   }
 

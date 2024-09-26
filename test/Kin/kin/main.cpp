@@ -14,6 +14,17 @@
 // test load save
 //
 
+void TEST(Mini){
+  rai::Configuration C;
+  C.addFrame("sphere")->setShape(rai::ST_sphere, {.1}).setPosition({0.,0.,.5});
+  C.view(false);
+}
+
+//===========================================================================
+//
+// test load save
+//
+
 void TEST(LoadSave){
   rai::Configuration C;
   C.addFile("../../../../rai-robotModels/panda/panda.g");
@@ -56,7 +67,8 @@ void TEST(Viewer){
   rai::Frame *f = C.addFrame("changer");
 //  f->setShape(rai::ST_mesh, {});
   f->setConvexMesh({}, {255,0,0}, .05);
-  C.view(false);
+  C.get_viewer()->renderUntil=rai::_marker;
+  C.view(true); return;
 
   rai::Configuration C2;
   C2.addConfigurationCopy(C);
@@ -608,6 +620,7 @@ void TEST(BlenderImport){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
+  testMini();
   testLoadSave();
   testCopy();
   testGraph();

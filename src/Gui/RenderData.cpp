@@ -40,32 +40,43 @@ void RenderData::addLight(const arr& pos, const arr& focus, double heightAbs){
 void RenderData::addAxes(double scale, const rai::Transformation& _X){
   rai::Mesh M;
   rai::Transformation X;
-  rai::Mesh tip;
+  rai::Mesh tip, ax;
   tip.setCone(.08, .16);
   tip.scale(scale);
+  ax.setCylinder(.02, .9, 1);
+  ax.scale(scale);
 
   X.setZero().addRelativeTranslation(0., 0., .84*scale);
   tip.C = replicate({0., 0., 1.}, tip.V.d0);
   M.addMesh(tip, X);
+  X.setZero().addRelativeTranslation(0., 0., .45*scale);
+  ax.C = replicate({0., 0., 1.}, ax.V.d0);
+  M.addMesh(ax, X);
 
   X.setZero().addRelativeTranslation(.84*scale, 0., 0.).addRelativeRotationDeg(90, 0., 1., 0);
   tip.C = replicate({1., 0., 0.}, tip.V.d0);
   M.addMesh(tip, X);
+  X.setZero().addRelativeTranslation(.45*scale, 0., 0.).addRelativeRotationDeg(90, 0., 1., 0);
+  ax.C = replicate({1., 0., 0.}, ax.V.d0);
+  M.addMesh(ax, X);
 
   X.setZero().addRelativeTranslation(0., .84*scale, 0.).addRelativeRotationDeg(90, -1., 0., 0);
   tip.C = replicate({0., 1., 0.}, tip.V.d0);
   M.addMesh(tip, X);
+  X.setZero().addRelativeTranslation(0., .45*scale, 0.).addRelativeRotationDeg(90, -1., 0., 0);
+  ax.C = replicate({0., 1., 0.}, ax.V.d0);
+  M.addMesh(ax, X);
 
   add().mesh(M, _X, .9, _marker);
 
-  add().lines({0.,0.,0., scale,0.,0.,
-               0.,scale,0., 0.,0.,0.,
-               0.,0.,0., 0.,0.,scale},
-              {1.,0.,0., 1.,0.,0.,
-               0.,1.,0., 0.,1.,0.,
-               0.,0.,1., 0.,0.,1.},
-              _X
-              );
+//  add().lines({0.,0.,0., scale,0.,0.,
+//               0.,scale,0., 0.,0.,0.,
+//               0.,0.,0., 0.,0.,scale},
+//              {1.,0.,0., 1.,0.,0.,
+//               0.,1.,0., 0.,1.,0.,
+//               0.,0.,1., 0.,0.,1.},
+//              _X
+//              );
 }
 
 void RenderFont::glInitialize(){
@@ -135,10 +146,6 @@ void RenderData::ensureInitialized(OpenGL &gl){
 
   glewExperimental = true; // Needed for core profile
   if(glewInit() != GLEW_OK) HALT("Failed to initialize GLEW\n");
-  glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
-  glEnable(GL_DEPTH_TEST);
-  glDepthFunc(GL_LESS);
-  glEnable(GL_CULL_FACE);
 
   id.prog_ID = LoadShaders( objVS, objFS );
 //  id.prog_ID = LoadShadersFile(rai::raiPath("src/Gui/shaderObj.vs"), rai::raiPath("src/Gui/shaderObj.fs") );
@@ -185,6 +192,7 @@ void RenderData::ensureInitialized(OpenGL &gl){
     // Always check that our framebuffer is ok
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) HALT("failed");
 
+    glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 
@@ -199,20 +207,20 @@ void RenderData::ensureInitialized(OpenGL &gl){
   id.initialized=true;
 }
 
-void RenderData::renderObjects(GLuint idT_WM, const uintA& sorting, RenderType type, GLuint idFlatColor){
+void RenderData::renderObjects(GLuint idT_WM, const uintA& sortedObjIDs, RenderType type, GLuint idFlatColor){
   arr T_WM = eye(4);
 
-  CHECK_EQ(sorting.N, objs.N, "");
+  CHECK_EQ(sortedObjIDs.N, objs.N, "");
 
   for(uint i=0;i<objs.N;i++){
 
-    uint j;
-    if(type!=_transparent) j = sorting.elem(i); //solid: near to far
-    else j = sorting.elem(objs.N-1-i);    //transparent: far to near
+    uint objID;
+    if(type!=_transparent) objID = sortedObjIDs.elem(i); //solid: near to far
+    else objID = sortedObjIDs.elem(objs.N-1-i);    //transparent: far to near
 
-    if((int)j==distMarkers.markerObj) continue;
+    if((int)objID==distMarkers.markerObj) continue;
 
-    std::shared_ptr<RenderObject>& obj = objs.elem(j);
+    std::shared_ptr<RenderObject>& obj = objs.elem(objID);
     if(obj->type!=type) continue;
 
     if(idT_WM){
@@ -282,11 +290,12 @@ void RenderData::glDraw(OpenGL& gl){
   sorting.setStraightPerm(objs.N);
   std::sort(sorting.p, sorting.p+sorting.N, [&](uint i,uint j){ return objs.elem(i)->cameraDist < objs.elem(j)->cameraDist; });
 
-  if(renderUntil>=_shadow) for(uint k=0;k<(renderCount?1:2);k++){ //why do I have to render twice on first pass??
+  if(renderUntil>=_shadow){
     // Render to shadowFramebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, id.shadowFramebuffer);
     glViewport(0, 0, bufW, bufH);
 
+    glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK); //FRONT would also work here, for shadows!
     glDisable(GL_BLEND);
@@ -305,6 +314,8 @@ void RenderData::glDraw(OpenGL& gl){
 
     renderObjects(id.progShadow_ModelT_WM, sorting, _solid, 0);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     glUseProgram(id.prog_ID);
     arr tmp = arr{{4,4},{ 0.5, 0.0, 0.0, 0.5,
                           0.0, 0.5, 0.0, 0.5,
@@ -313,9 +324,6 @@ void RenderData::glDraw(OpenGL& gl){
     tmp = tmp * Pshadow_IW;
     glUniformMatrix4fv(id.prog_ShadowProjection_W, 1, GL_TRUE, rai::convert<float>(tmp).p);
   }
-  //LOG(1) <<"rendering! " <<renderCount;
-
-  glEnable(GL_DEPTH_TEST);
 
   // Render to the screen
   if(gl.offscreen){
@@ -329,12 +337,13 @@ void RenderData::glDraw(OpenGL& gl){
     glViewport(gl.activeView->le*gl.width, gl.activeView->bo*gl.height, (gl.activeView->ri-gl.activeView->le)*gl.width+1, (gl.activeView->to-gl.activeView->bo)*gl.height+1);
   }
 
+  glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
-  if(renderUntil>=_transparent){
+//  if(renderUntil>=_transparent){
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  }
+//  }
 
   arr ViewT_CW = camera.getT_CW();
   arr Projection_W = camera.getT_IC() * ViewT_CW;
@@ -367,11 +376,13 @@ void RenderData::glDraw(OpenGL& gl){
 
     renderObjects(id.prog_ModelT_WM, sorting, _solid, id.prog_FlatColor);
 //    renderObjects(id.prog_ModelT_WM, sorting, _marker);
+
+    if(renderUntil>=_shadow) glBindTexture(GL_TEXTURE_2D, 0);
   }
 
   glDisable(GL_DEPTH_TEST);
 
-  if(renderUntil>=_marker) for(uint k=0;k<(renderCount?1:2);k++){
+  if(renderUntil>=_marker) {
     glUseProgram(id.progMarker);
     glUniformMatrix4fv(id.progMarker_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
     renderObjects(id.progMarker_ModelT_WM, sorting, _marker, 0);
@@ -379,13 +390,13 @@ void RenderData::glDraw(OpenGL& gl){
 
   glEnable(GL_DEPTH_TEST);
 
-  if(renderUntil>=_transparent) for(uint k=0;k<(renderCount?1:2);k++){
+  if(renderUntil>=_transparent) {
     glUseProgram(id.prog_ID);
     renderObjects(id.prog_ModelT_WM, sorting, _transparent, 0);
   }
 
 
-  /*if(dontRender>_text)*/for(uint k=0;k<(renderCount?1:2);k++){
+  /*if(dontRender>_text)*/ {
 
     glUseProgram(id.progText);
     glUniform1i(id.progText_useTexColor, 0);
@@ -430,10 +441,10 @@ RenderObject::~RenderObject(){
 void RenderObject::mesh(rai::Mesh& mesh, const rai::Transformation& _X, double avgNormalsThreshold, RenderType _type){
   X = _X;
   type = _type;
-  if(type==_solid && (mesh.C.N==4 || mesh.C.N==2) && mesh.C(-1)<1.) type = _transparent;
+  if(type==_solid && (mesh.C.N==4 || mesh.C.N==2 || mesh.C.d1==4) && mesh.C.elem(-1)<1.) type = _transparent;
   version=mesh.version;
 
-//  if(!mesh.isArrayFormatted) mesh.makeArrayFormatted(avgNormalsThreshold);
+  if(!mesh.isArrayFormatted) mesh.makeArrayFormatted(avgNormalsThreshold);
 
   if(mesh.isArrayFormatted){
     CHECK_EQ(mesh.V.d0, mesh.T.d0*3, "");
@@ -552,6 +563,7 @@ void RenderObject::glRender(){
 
   glBindVertexArray(vao);
   glDrawArrays(mode, 0, vertices.d0);
+  glBindVertexArray(0);
 
   glDisableVertexAttribArray(0);
   glDisableVertexAttribArray(1);
@@ -565,26 +577,25 @@ void RenderObject::glInitialize(){
   glGenBuffers(1, &vertexBuffer);
   glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
   glBufferData(GL_ARRAY_BUFFER, vertices.N*vertices.sizeT, vertices.p, GL_STATIC_DRAW);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glGenBuffers(1, &colorBuffer);
   glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
   glBufferData(GL_ARRAY_BUFFER, colors.N*colors.sizeT, colors.p, GL_STATIC_DRAW);
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glGenBuffers(1, &normalBuffer);
   glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
   glBufferData(GL_ARRAY_BUFFER, normals.N*normals.sizeT, normals.p, GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-  glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
-  glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-  glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+  glEnableVertexAttribArray(2);
   glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glBindVertexArray(0);
-
   initialized=true;
 }
 
@@ -803,13 +814,18 @@ void RenderText::glRender(GLuint progText_color, const RenderFont& font, float h
     // update content of VBO memory
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); // be sure to use glBufferSubData and not glBufferData
-
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     // render quad
     glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
     _x += (ch.advance_x >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64 (divide amount of 1/64th pixels by 64 to get amount of pixels))
   }
+
+  glBindVertexArray(0);
 
   glDisableVertexAttribArray(0);
   glDisableVertexAttribArray(1);
@@ -818,13 +834,15 @@ void RenderText::glRender(GLuint progText_color, const RenderFont& font, float h
 
 void RenderText::glInitialize(){
   glGenVertexArrays(1, &vao);
-  glGenBuffers(1, &vertexBuffer);
   glBindVertexArray(vao);
+
+  glGenBuffers(1, &vertexBuffer);
   glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
   glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
+
   glBindVertexArray(0);
   initialized = true;
 }
@@ -845,6 +863,8 @@ void RenderQuad::glRender(){
 
   glBindVertexArray(vao);
   glDrawArrays(GL_TRIANGLES, 0, 6);
+  glBindVertexArray(0);
+  glBindTexture(GL_TEXTURE_2D, 0);
 
   glDisableVertexAttribArray(0);
   glDisableVertexAttribArray(1);
@@ -852,14 +872,13 @@ void RenderQuad::glRender(){
 }
 
 void RenderQuad::glInitialize(){
-  //generate vertex array object
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
 
   glGenBuffers(1, &vertexBuffer);
   glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
   glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, vertices.p, GL_STATIC_DRAW);
-  glEnableVertexAttribArray(0); //?
+  glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 

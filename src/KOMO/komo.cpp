@@ -1497,7 +1497,7 @@ void KOMO::checkGradients() {
 
 int KOMO::view(bool pause, const char* txt) {
   pathConfig.get_viewer()->updateConfiguration(pathConfig, timeSlices);
-//  pathConfig.viewer()->recopyMeshes(pathConfig);
+//  pathConfig.get_viewer()->recopyMeshes(pathConfig);
 //  return pathConfig.view(pause, txt);
   pathConfig.get_viewer()->phaseOffset = 1.-double(k_order);
   pathConfig.get_viewer()->phaseFactor = 1./double(stepsPerPhase);

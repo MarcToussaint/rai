@@ -143,7 +143,7 @@ void testTouchAndRoll(rai::ArgWord pathOrSeq){
 
   komo->report(false, false, true);
   komo->view(true, "optimized motion");
-  while(komo->view_play(true, 1.));
+  while(komo->view_play(true, 0, 1.));
 }
 
 //===========================================================================

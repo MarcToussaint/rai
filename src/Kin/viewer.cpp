@@ -64,6 +64,7 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
   for(rai::Frame* f:frames) if(f->shape) {
     shared_ptr<Mesh> mesh = f->shape->_mesh;
     if(mesh && mesh->V.N){
+//      if(!mesh->isArrayFormatted) mesh->makeArrayFormatted(.8);
       frame2objID(f->ID) = objs.N;
       if(f->shape->type()==ST_pointCloud){
         add().pointCloud(mesh->V, mesh->C, f->ensure_X(), _marker);
@@ -113,12 +114,8 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
     auto lock = dataLock(RAI_HERE);
     for(rai::Frame* f : frames) {
       int objID = frame2objID(f->ID);
-      //shape pose
-      if(f->shape){
+      if(objID!=-1){
         objs(objID)->X = f->ensure_X();
-        if(f->shape->type()==ST_marker) { //these are two objects!
-          objs(objID+1)->X = f->ensure_X();
-        }
       }
       //forces
       if(f->forces.N){

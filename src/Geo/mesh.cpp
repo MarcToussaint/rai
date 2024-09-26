@@ -653,10 +653,10 @@ void Mesh::makeArrayFormatted(double avgNormalsThreshold){
   }
 
   V = vertices;
-  C = colors;
   Vn = normals;
+  C = colors;
   T.setStraightPerm(V.d0);
-  T.reshape(V.d0/3, 3);
+  T.reshape(-1, 3);
   Tn.clear();
   isArrayFormatted=true;
 }
@@ -745,7 +745,7 @@ void Mesh::setSSCvx(const arr& core, double r, uint fineness) {
   a strip */
 void Mesh::computeTriNormals() {
   CHECK(T.N, "can't compute normals for a point cloud");
-  CHECK(!isArrayFormatted, "not implemented");
+//  CHECK(!isArrayFormatted, "not implemented");
   Vector a, b, c;
   Tn.resize(T.d0, 3).setZero();
   for(uint i=0; i<T.d0; i++) {

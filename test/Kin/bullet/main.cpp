@@ -66,7 +66,7 @@ void simGfile(){
 //      bull_rai.motorizeMultiBody(f);
 //    }
     C.view(true);
-    C.viewer()->_resetPressedKey();
+    C.get_viewer()->_resetPressedKey();
 
     double tau = .01;
     double glTau = .025;

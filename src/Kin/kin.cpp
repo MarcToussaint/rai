@@ -3251,7 +3251,7 @@ int Configuration::animate(Inotify* ino) {
       setJointState(x);
       int key = view(false, STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lower_lim <<", " <<upper_lim <<']'));
 
-      if(key==13 || key==27 || key=='q') {
+      if(key){ //==13 || key==27 || key=='q') {
         setJointState(x0);
         return key;
       }
@@ -3315,8 +3315,7 @@ EditConfigurationHoverCall::EditConfigurationHoverCall(Configuration& _ors) {
 
 struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   Configuration& C;
-  bool& exit;
-  EditConfigurationKeyCall(Configuration& _C, bool& _exit): C(_C), exit(_exit) {}
+  EditConfigurationKeyCall(Configuration& _C): C(_C) {}
   bool keyCallback(OpenGL& gl) {
     if(!gl.keyIsDown) return true;
     switch(gl.pressedkey) {
@@ -3332,10 +3331,6 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
 //        case 'i':  gl.camera.X.pos -= gl.camera.X.rot*Vector(0, .1, 0);  break;
 //        case 'j':  gl.camera.X.pos += gl.camera.X.rot*Vector(.1, 0, 0);  break; //right
 //        case 'l':  gl.camera.X.pos -= gl.camera.X.rot*Vector(.1, 0, 0);  break; //left
-        case 'q' :
-          cout <<"EXITING" <<endl;
-          exit=true;
-          break;
       }
     gl.postRedrawEvent(true);
     return true;
@@ -3348,15 +3343,14 @@ void Configuration::watchFile(const char* filename) {
   std::shared_ptr<ConfigurationViewer> V = get_viewer();
 
   //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
-  bool exit=false;
   //  gl.addHoverCall(new EditConfigurationHoverCall(K));
-  V->ensure_gl().addKeyCall(new EditConfigurationKeyCall(*this, exit));
+  V->ensure_gl().addKeyCall(new EditConfigurationKeyCall(*this));
 //  V->ensure_gl().addClickCall(new EditConfigurationClickCall(*this));
   V->ensure_gl().setTitle(STRING("ConfigView <" <<filename <<">"));
 //  V->text = "waiting for file change ('h' for help)";
   //  gl()->ensure_gl().reportEvents=true;
   Inotify ino(filename);
-  for(; !exit;) {
+  for(;;) {
     //-- LOADING
     LOG(0) <<"reloading `" <<filename <<"' ... ";
     {
@@ -3393,10 +3387,9 @@ void Configuration::watchFile(const char* filename) {
 
     //-- WATCHING
     LOG(0) <<"watching...";
-    V->text = "waiting for file change ('h' for help, 'q' to close)";
     V->updateConfiguration(*this, {}, true);
     V->_resetPressedKey();
-    int key = V->view(false);
+    int key = V->view(false, "waiting for file change ('h' for help, 'q' to close)");
     for(;;) {
       key = V->gl->pressedkey;
 //      V->_resetPressedKey();
@@ -3407,9 +3400,10 @@ void Configuration::watchFile(const char* filename) {
                              "RIGHT CLICK - set focus point (move view and set center of rotation)\n"
                              "LEFT CLICK - rotate (ball; or around z at view rim)\n"
                              "q - quit\n"
-                             "[ENTER] - animate or force reload\n"
+                             "[ENTER] - force reload\n"
                              "[SPACE] - write object info\n"
                              "SHIFT-LEFT CLICK - move view\n"
+                             "a - animate\n"
                              "i - write info\n"
                              "c - compute and write collisions\n"
                              "s - simulate in PhysX\n"
@@ -3494,6 +3488,10 @@ void Configuration::watchFile(const char* filename) {
         writeURDF(FILE("z.urdf"));
         writeMesh("z.ply");
         writeCollada("z.dae");
+      }else if(key=='a') {
+        LOG(0) <<"animating..";
+        //while(ino.pollForModification());
+        key = animate(&ino);
       }else{
         if(key){
           V->text = "waiting for file change ('h' for help)";
@@ -3504,20 +3502,12 @@ void Configuration::watchFile(const char* filename) {
       if(ino.poll(false, true)) break;
       wait(.1);
     }
-    if(exit) break;
 
     //-- ANIMATING
-    if(key==13) {
-      LOG(0) <<"animating..";
-      //while(ino.pollForModification());
-      key = animate(&ino);
-    }
     //if(key) cout <<"*** KEYout:" <<key <<endl;
     if(key==27 || key=='q') break;
     if(key==-1) continue;
-    if(!getInteractivity()) {
-      exit=true;
-    }
+    if(!getInteractivity()) break;
   }
 }
 

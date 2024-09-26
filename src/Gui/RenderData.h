@@ -12,7 +12,7 @@
 
 namespace rai {
 
-enum RenderType { _solid, _shadow, _transparent, _marker, _text, _all };
+enum RenderType { _solid, _shadow, _marker, _transparent, _text, _all };
 
 struct RenderObject{
   rai::Transformation X=0;
@@ -116,7 +116,7 @@ struct RenderData {
   void glDeinitialize(OpenGL &gl);
 
 //private:
-  void renderObjects(GLuint idT_WM, const uintA& sorting, RenderType type, GLuint idFlatColor);
+  void renderObjects(GLuint idT_WM, const uintA& sortedObjIDs, RenderType type, GLuint idFlatColor);
 };
 
 }//namespace
