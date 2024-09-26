@@ -382,15 +382,15 @@ int OpenGL::watchImage(const floatA& _img, bool wait, float _zoom) {
     x=_img.p[i];
     img.p[i] = (x<0.)?0:((x>255.)?255:x);
   }
+  if(img.nd==2) make_RGB(img);
   return watchImage(img, wait, _zoom);
 }
 
-int OpenGL::watchImage(const byteA& _img, bool wait, float _zoom) {
-  NIY;
-//  background=_img;
-//  backgroundZoom=_zoom;
-//  if(!window) resize(_img.d1*_zoom, _img.d0*_zoom);
-//  resize(img->d1*zoom,img->d0*zoom);
+int OpenGL::watchImage(const byteA& img, bool wait, float _zoom) {
+  resize(img.d1*_zoom, img.d0*_zoom);
+  data().clear();
+  data().addStandardScene();
+  data().addQuad(img, 0, 0, img.d1*_zoom, -1);
   return update(wait);
 }
 

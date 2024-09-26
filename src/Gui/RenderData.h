@@ -28,8 +28,8 @@ struct RenderObject{
 
   ~RenderObject();
   void mesh(rai::Mesh &mesh, const rai::Transformation& _X=0, double avgNormalsThreshold=.9, RenderType _type=_solid);
-  void lines(const arr& lines, const arr& color, const rai::Transformation& _X, RenderType _type=_marker);
-  void pointCloud(const arr& points, const arr& color, const rai::Transformation& _X, RenderType _type=_solid);
+  void lines(const arr& lines, const arr& color, const rai::Transformation& _X=0, RenderType _type=_marker);
+  void pointCloud(const arr& points, const arr& color, const rai::Transformation& _X=0, RenderType _type=_solid);
 
   //engine specific -> should be refactored
   void glRender();

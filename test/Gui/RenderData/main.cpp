@@ -12,7 +12,7 @@ int main( void ){
 
 //  C.view(false, "test");
 
-  RenderScene scene;
+  rai::RenderData scene;
 //  scene.drawShadows=false;
 //  scene.drawTransparents=false;
 
@@ -62,7 +62,7 @@ int main( void ){
   OpenGL gl;
   gl.camera.setDefault();
 #if 1
-  gl.add(scene);
+  gl.add(&scene);
   gl.update(true);
 #else
   gl.add(scene);

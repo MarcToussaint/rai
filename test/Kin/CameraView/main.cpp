@@ -35,14 +35,14 @@ void TEST(CameraView){
   gl.text="depth";  gl.watchImage(depth, true);
   gl.text="segmentation";  gl.watchImage(segmentation, true);
 
-  rai::Mesh M;
-  M.V = pts.reshape(-1,3);
-  M.C = convert<double>(image).reshape(-1, 3);
-  M.C /= 255.;
-  gl.clear();
-  gl.add(glStandardScene);
-  gl.add(M);
-  gl.watch("point cloud");
+   rai::Mesh M;
+   M.V = pts.reshape(-1,3);
+   M.C = convert<double>(image).reshape(-1, 3);
+   M.C /= 255.;
+   gl.data().clear();
+   gl.data().addStandardScene();
+   gl.data().add().pointCloud(M.V, M.C);
+   gl.update(true, "point cloud");
 
   rai::wait();
 

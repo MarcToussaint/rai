@@ -141,8 +141,9 @@ void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
 
 byteA rai::CameraView::computeSegmentationImage() {
   updateCamera();
-  renderMode=seg;
+  renderFlatColors=true;
   gl->renderInBack();
+  renderFlatColors=false;
   byteA seg = gl->captureImage;
   flip_image(seg);
   return seg;
