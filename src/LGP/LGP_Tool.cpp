@@ -390,12 +390,12 @@ void LGP_Tool::solve(int _verbose){
   for(;;){
     if(verbose>0) cout <<"--------------------------------------------------------------------" <<endl;
     solve_step();
-//    wait();
     if(solutions.N>n){
       if(verbose>0) cout <<"--------------------------------------------------------------------" <<endl;
       if(verbose>0) cout <<"   SOLUTION FOUND:   " <<solutions(-1)->getPlanString() <<endl;
       break;
     }
+//    wait();
   }
 }
 
@@ -425,7 +425,7 @@ arrA LGP_Tool::solvePiecewiseMotions(int _verbose){
   arrA paths;
   for(uint i=0;i<plan.N;i++){
 //    cout <<"--- plan " <<i <<' ' <<plan(i) <<endl;
-    PTR<KOMO> path = get_piecewiseMotionProblem(i);
+    PTR<KOMO> path = get_piecewiseMotionProblem(i, true);
     NLP_Solver sol;
     sol.setProblem(path->nlp());
     auto ret = sol.solve(0, 0);
@@ -437,7 +437,7 @@ arrA LGP_Tool::solvePiecewiseMotions(int _verbose){
 }
 
 PTR<KOMO> LGP_Tool::solveFullMotion(int _verbose){
-  PTR<KOMO> path = get_fullMotionProblem();
+  PTR<KOMO> path = get_fullMotionProblem(true);
   //    path->view(true, "init");
   NLP_Solver sol;
   sol.setProblem(path->nlp());
@@ -448,18 +448,19 @@ PTR<KOMO> LGP_Tool::solveFullMotion(int _verbose){
   return path;
 }
 
-std::shared_ptr<KOMO> LGP_Tool::get_piecewiseMotionProblem(uint phase){ //should only retun a KOMO, I think
+std::shared_ptr<KOMO> LGP_Tool::get_piecewiseMotionProblem(uint phase, bool fixEnd){ //should only retun a KOMO, I think
   StringAA plan = getSolvedPlan();
   StringA action = plan(phase);
   StringA prev_action = (phase>0?plan(phase-1):StringA());
 
   ManipulationModelling manip(getSolvedKOMO());
-  auto komo = manip.sub_motion(phase)->komo;
-  trans.add_action_constraints_motion(komo, 1., prev_action, action);
+  auto komo = manip.sub_motion(phase, fixEnd)->komo;
+  if(!fixEnd) trans.add_action_constraints(komo, 1., action);
+  trans.add_action_constraints_motion(komo, 1., prev_action, action, phase);
   return komo;
 }
 
-std::shared_ptr<KOMO> LGP_Tool::get_fullMotionProblem(){
+std::shared_ptr<KOMO> LGP_Tool::get_fullMotionProblem(bool initWithWaypoints){
   StringAA path =  getSolvedPlan();
 
   ManipulationModelling manip;
@@ -474,14 +475,16 @@ std::shared_ptr<KOMO> LGP_Tool::get_fullMotionProblem(){
     manip.komo->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
   }
 
-  auto ways = getSolvedKOMO();
-  arr stable_q = ways->getConfiguration_qAll(-1);
-  manip.komo->setConfiguration_qAll(-2, stable_q);
-  arrA waypointsAll = ways->getPath_qAll();
-  manip.komo->initWithWaypoints(waypointsAll, 1, true, 0.1);
+  if(initWithWaypoints){
+    auto ways = getSolvedKOMO();
+    arr stable_q = ways->getConfiguration_qAll(-1);
+    manip.komo->setConfiguration_qAll(-2, stable_q);
+    arrA waypointsAll = ways->getPath_qAll();
+    manip.komo->initWithWaypoints(waypointsAll, 1, true, 0.1);
+  }
 
   for(uint t=0;t<path.N;t++){
-    trans.add_action_constraints_motion(manip.komo, double(t)+1., (t>0?path(t-1):StringA()), path(t));
+    trans.add_action_constraints_motion(manip.komo, double(t)+1., (t>0?path(t-1):StringA()), path(t), t);
   }
 
 //  for(uint k=0;k<waypointsAll.d0;k++){
@@ -618,10 +621,25 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
       }
 
       manip.straight_push({time,time+1}, obj, gripper, table);
+
+    }else if(action(0)=="end_push"){
+      str& gripper = action(1);
+      str& obj = action(2);
+      str& floor = action(3);
+      str& target = action(4);
+
+      if(time<manip.komo->T/manip.komo->stepsPerPhase){
+        NIY;
+      }
+
+      manip.place_box(time, obj, target, 0, "z");
+
+    }else{
+      HALT("action constraint not implemented: " <<action);
     }
   }
 
-  virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, double time, const StringA& prev_action, const StringA& action){
+  virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, double time, const StringA& prev_action, const StringA& action, uint actionPhase){
     if(!action.N) return;
 
     ManipulationModelling manip(komo);
@@ -637,6 +655,19 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
       manip.retract({time-1., time-.8}, gripper);
       manip.approach({time-.2, time}, gripper);
     }
+    else if(action(0)=="end_push"){
+      str& gripper = action(1);
+      str& obj = action(2);
+
+      //    komo->addObjective(time_interval, FS_positionRel, {gripper, helperStart}, OT_eq, 1e1*arr{{2, 3}, {1., 0., 0., 0., 0., 1.}});
+      str helperEnd = STRING("_straight_pushEnd_" <<gripper <<"_" <<obj <<'_' <<actionPhase+1);
+
+//      komo->addObjective({time-1., time}, FS_positionRel, {obj, helperEnd}, OT_eq, 1e1*arr{{2, 3}, {1., 0., 0., 0., 0., 1.}});
+      komo->addObjective({time-1., time}, FS_position, {obj}, OT_eq, 1e1*arr{{1, 3}, {0., 0., 1.}}, {}, 1);
+      komo->addObjective({time-1., time}, FS_vectorZ, {obj}, OT_eq, {1e1}, {0., 0., 1.});
+//      komo->addObjective({time-1., time}, FS_quaternion, {obj}, OT_eq, {1e1}, {}, 1);
+    }
+
   }
 };
 

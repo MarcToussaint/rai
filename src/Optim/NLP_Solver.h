@@ -43,7 +43,7 @@ struct NLP_Solver : NonCopyable {
   std::shared_ptr<NLP_Traced> P;
 
   NLP_Solver();
-  NLP_Solver(const shared_ptr<NLP>& _P, int verbose) { setProblem(_P); opt.verbose=verbose; }
+  NLP_Solver(const shared_ptr<NLP>& _P, int verbose=-100) { setProblem(_P); if(verbose>-100) opt.verbose=verbose; }
 
   NLP_Solver& setSolver(NLP_SolverID _solverID) { solverID=_solverID; return *this; }
   NLP_Solver& setProblem(const shared_ptr<NLP>& _P);

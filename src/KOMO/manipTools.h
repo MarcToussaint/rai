@@ -13,14 +13,6 @@
 
 //===========================================================================
 
-void addBoxPickObjectives(KOMO& komo, double time, rai::ArgWord dir,
-                          const char* boxName, const arr& boxSize,
-                          const char* gripperName, const char* palmName, const char* tableName, bool pre=false);
-
-void addBoxPlaceObjectives(KOMO& komo, double time,
-                           rai::ArgWord dir, const char* boxName, const arr& boxSize, const char* tableName,
-                           const char* gripperName, const char* palmName, double margin=-.02, bool pre=false);
-
 struct ManipulationModelling {
   str info;
   //created on setup (or given):
@@ -69,7 +61,7 @@ struct ManipulationModelling {
   arr sample(const char* sampleMethod=0, int verbose=1);
   void debug(bool listObjectives=true, bool plotOverTime=false);
 
-  std::shared_ptr<ManipulationModelling> sub_motion(uint phase, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=false, bool quaternion_norms=false);
+  std::shared_ptr<ManipulationModelling> sub_motion(uint phase, bool fixEnd, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=false, bool quaternion_norms=false);
   std::shared_ptr<ManipulationModelling> sub_rrt(uint phase, const StringA& explicitCollisionPairs= {});
 
   void play(rai::Configuration& C, double duration=1.);

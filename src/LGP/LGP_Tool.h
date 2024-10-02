@@ -13,7 +13,7 @@ struct Logic2KOMO_Translator {
   virtual ~Logic2KOMO_Translator() {}
   virtual std::shared_ptr<KOMO> setup_sequence(Configuration& C, uint K) = 0;
   virtual void add_action_constraints(std::shared_ptr<KOMO>& komo, double time, const StringA& action) = 0;
-  virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, double time, const StringA& prev_action, const StringA& action) = 0;
+  virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, double time, const StringA& prev_action, const StringA& action, uint actionPhase) = 0;
 };
 
 struct TAMP_Provider{
@@ -127,8 +127,8 @@ struct LGP_Tool{
   arrA solvePiecewiseMotions(int _verbose=1);
   std::shared_ptr<KOMO> solveFullMotion(int _verbose=1);
 
-  std::shared_ptr<KOMO> get_piecewiseMotionProblem(uint phase);
-  std::shared_ptr<KOMO> get_fullMotionProblem();
+  std::shared_ptr<KOMO> get_piecewiseMotionProblem(uint phase, bool fixEnd);
+  std::shared_ptr<KOMO> get_fullMotionProblem(bool initWithWaypoints);
 
 
   int display(PTR<KOMO>& komo, PTR<SolverReturn>& ret, bool pause=true, const char* msg=0, bool play=true);
