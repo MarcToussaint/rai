@@ -29,7 +29,6 @@
 void init_Frame(pybind11::module& m) {
   pybind11::class_<rai::Frame, shared_ptr<rai::Frame>>(m, "Frame", "A (coordinate) frame of a configuration, which can have a parent, and associated shape, joint, and/or inertia")
 
-  .def("setColor", &rai::Frame::setColor, "")
   .def("setPose",  [](shared_ptr<rai::Frame>& self, const char* pose) { self->setPose(rai::Transformation(pose)); }, "")
   .def("setPosition", &rai::Frame::setPosition, "")
   .def("setQuaternion", &rai::Frame::setQuaternion, "")
@@ -40,6 +39,7 @@ void init_Frame(pybind11::module& m) {
   .def("setJointState", &rai::Frame::setJointState, "")
   .def("setContact", &rai::Frame::setContact, "")
   .def("setMass", &rai::Frame::setMass, "")
+  .def("setColor", &rai::Frame::setColor, "")
   .def("setShape", &rai::Frame::setShape, "", pybind11::arg("type"), pybind11::arg("size"))
   .def("setMesh", &rai::Frame::setMesh,
        "attach a mesh shape",
@@ -55,7 +55,7 @@ void init_Frame(pybind11::module& m) {
 
   .def("setParent", &rai::Frame::setParent, "", pybind11::arg("parent"), pybind11::arg("keepAbsolutePose_and_adaptRelativePose") = false, pybind11::arg("checkForLoop") = false)
   .def("unLink", &rai::Frame::unLink, "")
-  .def("makeRoot", &rai::Frame::makeRoot, "")
+  .def("makeRoot", &rai::Frame::makeRoot, "", pybind11::arg("untilPartBreak"))
 
   .def("setAttribute", &rai::Frame::setAttribute, "")
   .def("addAttributes",  [](shared_ptr<rai::Frame>& self, const pybind11::dict& D) {

@@ -20,8 +20,10 @@ ManipulationModelling::ManipulationModelling(const std::shared_ptr<KOMO>& _komo)
 }
 
 void ManipulationModelling::setup_inverse_kinematics(rai::Configuration& C, double homing_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
+  /*
+    setup a 1 phase single step problem
+  */
   CHECK(!komo, "komo already given or previously setup")
-  // setup a 1 phase single step problem
   komo = make_shared<KOMO>(C, 1., 1, 0, accumulated_collisions);
   komo->addControlObjective({}, 0, homing_scale);
   if(accumulated_collisions) {

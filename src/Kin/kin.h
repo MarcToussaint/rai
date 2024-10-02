@@ -227,7 +227,7 @@ struct Configuration {
 
   /// @name features
   shared_ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}, const arr& scale=NoArr, const arr& target=NoArr, int order=-1) const;
-  template<class T> arr eval(const StringA& frames= {}) { return T().eval(getFrames(frames)); }
+  template<class T> arr eval(const StringA& frames= {}) { ensure_q(); return T().eval(getFrames(frames)); }
   arr eval(FeatureSymbol fs, const StringA& frames= {}, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 
   /// @name high level inverse kinematics

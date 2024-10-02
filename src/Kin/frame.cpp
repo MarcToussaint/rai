@@ -648,8 +648,19 @@ rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, 
 
 rai::Frame& rai::Frame::setColor(const arr& color) {
   C.view_lock(RAI_HERE);
-  getShape().mesh().C = color;
-  getShape().mesh().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
+  if(getShape().mesh().isArrayFormatted){
+    CHECK_EQ(color.nd, 1, "");
+    arr c = color;
+    if(c.N==1){ double g=c.elem(); c = arr{g,g,g,1.}; }
+    if(c.N==2){ double g=c.elem(0); c.prepend(g); c.prepend(g); }
+    if(c.N==3){ c.append(1.); }
+    arr& V = getShape().mesh().V;
+    arr& C = getShape().mesh().C;
+    C = replicate(c, V.d0);
+  }else{
+    getShape().mesh().C = color;
+  }
+  getShape().mesh().version++;
   C.view_unlock();
   return *this;
 }

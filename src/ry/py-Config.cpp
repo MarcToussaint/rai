@@ -92,7 +92,8 @@ void init_Config(pybind11::module& m) {
   },
   "get access to a frame by name; use the Frame methods to set/get frame properties",
   pybind11::arg("frameName"),
-  pybind11::arg("warnIfNotExist")=true
+  pybind11::arg("warnIfNotExist")=true,
+  pybind11::arg("reverse")=false
       )
 
   .def("frames", [](shared_ptr<rai::Configuration>& self) {

@@ -2891,6 +2891,7 @@ std::shared_ptr<Feature> Configuration::feature(FeatureSymbol fs, const StringA&
 }
 
 arr Configuration::eval(FeatureSymbol fs, const StringA& frames, const arr& scale, const arr& target, int order) {
+  ensure_q();
   std::shared_ptr<Feature> f = feature(fs, frames, scale, target, order);
   return f->eval(getFrames(f->frameIDs));
 }

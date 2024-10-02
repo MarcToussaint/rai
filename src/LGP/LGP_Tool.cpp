@@ -581,6 +581,7 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
       if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
 
       manip.grasp_box(time, gripper, obj, palm, "y");
+      manip.komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
 
     }else if(action(0)=="place"){
       str& obj = action(1);
@@ -593,7 +594,7 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
       }
 
       if(time<manip.komo->T/manip.komo->stepsPerPhase){
-        str snapFrame; snapFrame <<"placePose_" <<target <<'_' <<obj <<'_' <<time;;
+        str snapFrame; snapFrame <<"placePose_" <<target <<'_' <<obj <<'_' <<time;
         manip.komo->addFrameDof(snapFrame, target, JT_free, true, obj); //a permanent free stable target->place joint; and a snap place->object
         manip.komo->addRigidSwitch(time, {snapFrame, obj});
         if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
@@ -604,8 +605,19 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
       manip.komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
 
 
-    }else{
-      NIY;
+    }else if(action(0)=="gripper_push"){
+      str& obj = action(1);
+      str& table = action(2);
+      str& gripper = action(3);
+
+      if(time<manip.komo->T/manip.komo->stepsPerPhase){
+        str snapFrame; snapFrame <<"pushPose_" <<gripper <<'_' <<obj <<'_' <<time;
+        manip.komo->addFrameDof(snapFrame, gripper, rai::JT_free, true, obj);
+        manip.komo->addRigidSwitch(time, {snapFrame, obj});
+        if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
+      }
+
+      manip.straight_push({time,time+1}, obj, gripper, table);
     }
   }
 
