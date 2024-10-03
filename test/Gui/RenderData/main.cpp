@@ -5,7 +5,9 @@
 #include <Gui/opengl.h>
 #include <Algo/spline.h>
 
-int main( void ){
+int main(int argc, char **argv){
+  rai::initCmdLine(argc, argv);
+
   rai::Configuration C;
   rai::Frame *f = C.addFile(rai::raiPath("../rai-robotModels/panda/panda.g"));
   f->set_X()->addRelativeRotationDeg(90,0,0,1);
@@ -23,6 +25,9 @@ int main( void ){
     }
   }
 
+#if 1
+  scene.addStandardScene();
+#else
   { // floor
     rai::Mesh m;
     m.setQuad();
@@ -30,29 +35,27 @@ int main( void ){
     m.C = {1., .95, .9};
     scene.add().mesh(m, 0);
   }
+  scene.addLight({5.,5.,5.}, {0.,0.,1.});
+  scene.addLight({-5.,0.,5.}, {0.,0.,1.});
+#endif
 
   scene.addAxes(.2, "t(.2 .2 .2)");
 
   scene.addText("bla:dat 0.13098 t sec() []", 10.0, 20.0, 1.);
 
-  if(true){ // ball
-    rai::Mesh m;
-    m.setSSBox(.4, .4, .4, .1, 2);
-    //m.setSphere(0); m.scale(.2);
-    m.C = {1., .5, .5, .5};
-    scene.add().mesh(m, rai::Transformation("t(0 0 1.)"), .9);
+  rai::Mesh m;
+  m.setSSBox(.4, .4, .4, .1, 2);
+  //m.setSphere(0); m.scale(.2);
+  m.C = {1., .5, .5, .5};
+  scene.add().mesh(m, rai::Transformation("t(0 0 1.)"), .9);
 
-    m.setSSBox(.2, .2, .2, .05, 2);
-    m.C = {.5, 1., .5, .5};
-    scene.add().mesh(m, rai::Transformation("t(0 -.3 1.)"), .9);
+  m.setSSBox(.2, .2, .2, .05, 2);
+  m.C = {.5, 1., .5, .5};
+  scene.add().mesh(m, rai::Transformation("t(0 -.3 1.)"), .9);
 
-    m.setSSBox(.2, .2, .2, .05, 2);
-    m.C = {.5, .5, 1.};
-    scene.add().mesh(m, rai::Transformation("t(-.4 -.4 .4)"), .9);
-  }
-
-  scene.addLight({5.,5.,5.}, {0.,0.,1.});
-  scene.addLight({-5.,0.,5.}, {0.,0.,1.});
+  m.setSSBox(.2, .2, .2, .05, 2);
+  m.C = {.5, .5, 1.};
+  scene.add().mesh(m, rai::Transformation("t(-.4 -.4 .4)"), .9);
 
   byteA img;
   read_ppm(img, "../opengl/box.ppm",false);

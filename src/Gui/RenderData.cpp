@@ -17,6 +17,7 @@ struct OpenGL2Context {
 Singleton<OpenGL2Context> contextIDs;
 
 uint bufW=2000, bufH=2000;
+
 GLuint LoadShadersFile(const char * vertex_file_path,const char * fragment_file_path);
 GLuint LoadShaders(const std::string& VertexShaderCode, const std::string& FragmentShaderCode);
 
@@ -147,8 +148,12 @@ void RenderData::ensureInitialized(OpenGL &gl){
   glewExperimental = true; // Needed for core profile
   if(glewInit() != GLEW_OK) HALT("Failed to initialize GLEW\n");
 
-  id.prog_ID = LoadShaders( objVS, objFS );
-//  id.prog_ID = LoadShadersFile(rai::raiPath("src/Gui/shaderObj.vs"), rai::raiPath("src/Gui/shaderObj.fs") );
+  if(opt.userShaderFiles){
+    id.prog_ID = LoadShadersFile("shader.vs", "shader.fs" );
+  }else{
+    id.prog_ID = LoadShaders( objVS, objFS );
+    //  id.prog_ID = LoadShadersFile(rai::raiPath("src/Gui/shaderObj.vs"), rai::raiPath("src/Gui/shaderObj.fs") );
+  }
   id.prog_Projection_W = glGetUniformLocation(id.prog_ID, "Projection_W");
   id.prog_ViewT_CW = glGetUniformLocation(id.prog_ID, "ViewT_CW");
   id.prog_ModelT_WM = glGetUniformLocation(id.prog_ID, "ModelT_WM");
@@ -190,7 +195,8 @@ void RenderData::ensureInitialized(OpenGL &gl){
     glDrawBuffer(GL_NONE);
 
     // Always check that our framebuffer is ok
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) HALT("failed");
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+      HALT("shadow framebuffer generation failed");
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -290,7 +296,7 @@ void RenderData::glDraw(OpenGL& gl){
   sorting.setStraightPerm(objs.N);
   std::sort(sorting.p, sorting.p+sorting.N, [&](uint i,uint j){ return objs.elem(i)->cameraDist < objs.elem(j)->cameraDist; });
 
-  if(renderUntil>=_shadow){
+  if(renderUntil>=_shadow && opt.useShadow){
     // Render to shadowFramebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, id.shadowFramebuffer);
     glViewport(0, 0, bufW, bufH);
@@ -365,7 +371,7 @@ void RenderData::glDraw(OpenGL& gl){
     lightDirs.reshape(lights.N, 3);
     glUniform3fv(id.prog_lightDirection_C, lights.N, rai::convert<float>(-lightDirs).p);
 
-    if(renderUntil>=_shadow) {
+    if(renderUntil>=_shadow && opt.useShadow) {
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, id.shadowTexture);
       glUniform1i(id.prog_useShadow, 1);
@@ -377,10 +383,10 @@ void RenderData::glDraw(OpenGL& gl){
     renderObjects(id.prog_ModelT_WM, sorting, _solid, id.prog_FlatColor);
 //    renderObjects(id.prog_ModelT_WM, sorting, _marker);
 
-    if(renderUntil>=_shadow) glBindTexture(GL_TEXTURE_2D, 0);
+    if(renderUntil>=_shadow && opt.useShadow) glBindTexture(GL_TEXTURE_2D, 0);
   }
 
-  glDisable(GL_DEPTH_TEST);
+  //glDisable(GL_DEPTH_TEST);
 
   if(renderUntil>=_marker) {
     glUseProgram(id.progMarker);
@@ -388,7 +394,7 @@ void RenderData::glDraw(OpenGL& gl){
     renderObjects(id.progMarker_ModelT_WM, sorting, _marker, 0);
   }
 
-  glEnable(GL_DEPTH_TEST);
+  //glEnable(GL_DEPTH_TEST);
 
   if(renderUntil>=_transparent) {
     glUseProgram(id.prog_ID);
@@ -744,10 +750,16 @@ void RenderData::addQuad(const byteA& img, float x, float y, float w, float h){
 
 RenderData& RenderData::addStandardScene(){
   double shadowHeight = 5.;
-  arr floorColor = arr{.4, .45, .5};
+  arr floorColor = opt.floorColor;
+  if(!floorColor.N) floorColor = arr{.4, .45, .5};
   if(!lights.N){
-    addLight({-3.,2.,3.}, {0.,-0.,1.}, shadowHeight);
-    addLight({3.,0.,4.}, {0.,0.,1.});
+    arr lights = opt.lights;
+    if(!lights.N) lights = {-3.,2.,3., 3.,0.,4.};
+    lights.reshape(-1,3);
+    for(uint i=0; i<lights.d0; i++){
+      addLight(lights[i], {0.,0.,1.}, shadowHeight);
+//      addLight({3.,0.,4.}, {0.,0.,1.});
+    }
   }
   { // floor
     rai::Mesh m;
@@ -809,16 +821,14 @@ void RenderText::glRender(GLuint progText_color, const RenderFont& font, float h
       { xpos + w, ypos,       1.0f, 1.0f },
       { xpos + w, ypos + h,   1.0f, 0.0f }
     };
-    // render glyph texture over quad
-    glBindTexture(GL_TEXTURE_2D, ch.texture);
     // update content of VBO memory
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); // be sure to use glBufferSubData and not glBufferData
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // render quad
+    glBindTexture(GL_TEXTURE_2D, ch.texture);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // now advance cursors for next glyph (note that advance is number of 1/64 pixels)

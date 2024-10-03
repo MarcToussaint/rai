@@ -12,6 +12,14 @@
 
 namespace rai {
 
+struct Render_Options {
+  RAI_PARAM("Render/", bool, userShaderFiles, false)
+  RAI_PARAM("Render/", bool, flatColors, false)
+  RAI_PARAM("Render/", bool, useShadow, true)
+  RAI_PARAM("Render/", arr, floorColor, {})
+  RAI_PARAM("Render/", arr, lights, {})
+};
+
 enum RenderType { _solid, _shadow, _marker, _transparent, _text, _all };
 
 struct RenderObject{
@@ -75,6 +83,8 @@ struct DistMarkers {
 
 struct RenderData {
   Mutex dataLock;
+
+  Render_Options opt;
 
   rai::Camera camera;
   rai::Array<std::shared_ptr<RenderObject>> objs;
