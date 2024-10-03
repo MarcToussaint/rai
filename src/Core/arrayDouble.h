@@ -428,6 +428,7 @@ void swap_RGB_BGR(byteA& img);
 void flip_image(byteA& img);
 void flip_image(floatA& img);
 void image_halfResolution(byteA& img);
+arr reshapeColor(const arr& col, int d0=-1);
 
 void scanArrFile(const char* name);
 

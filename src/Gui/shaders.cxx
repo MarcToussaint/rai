@@ -120,7 +120,7 @@ void main() {
         //int index = j;
         //int index = int(16.0*random(gl_FragCoord.xyz, i))%16;
         int index = int(16.0*random(floor(worldCoord.xyz*1000.0), i))%16;
-        visibility -= 0.1 * (1.0-texture( shadowMap, vec3(shadowCoord.xy + poissonDisk[index]/700.0,  (shadowCoord.z-bias)/shadowCoord.w) ));
+        visibility -= 0.1 * (1.0-texture( shadowMap, vec3(shadowCoord.xy + poissonDisk[index]/2000.0,  (shadowCoord.z-bias)/shadowCoord.w) ));
       }
     }
 

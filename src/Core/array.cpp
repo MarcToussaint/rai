@@ -833,6 +833,18 @@ void swap_RGB_BGR(byteA& img) {
   }
 }
 
+arr reshapeColor(const arr& col, int d0){
+  arr c = col;
+  if(c.N==1){ double g=c.elem(); c = arr{g,g,g,1.}; }
+  if(c.N==2){ double g=c.elem(0); c.prepend(g); c.prepend(g); }
+  if(c.N==3){ c.append(1.); }
+  if(d0>=0 && (c.nd==1 || c.d0!=d0)){
+    CHECK_EQ(c.nd, 1, "");
+    c = replicate(c, d0);
+  }
+  return c;
+}
+
 uintA getIndexTuple(uint i, const uintA& d) {
   CHECK(i<product(d), "out of range");
   uintA I(d.N);

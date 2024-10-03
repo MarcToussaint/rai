@@ -465,11 +465,15 @@ void RenderObject::mesh(rai::Mesh& mesh, const rai::Transformation& _X, double a
     vertices.resize(mesh.T.d0*3, 3);
     colors.resize(vertices.d0, 4);
     normals.resizeAs(vertices);
+#if 1
+    arr c = reshapeColor(mesh.C);
+#else
     arr c;
     if(!mesh.C.N) c = arr{.8,.8,.8};
     if(mesh.C.nd==1) c = mesh.C;
     if(c.N==1){ double g=c.elem(); c = arr{g,g,g}; }
     if(c.N==2){ double g=c.elem(0); c.prepend(g); c.prepend(g); }
+#endif
     for(uint i=0;i<mesh.T.d0;i++){
       for(uint j=0;j<3;j++){
         if(mesh.C.nd==2) c.referToDim(mesh.C, mesh.T(i,j));

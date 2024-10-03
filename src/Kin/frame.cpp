@@ -15,10 +15,6 @@
 
 #include <climits>
 
-#ifdef RAI_GL
-#include "../Gui/opengl.h"
-#endif
-
 //===========================================================================
 
 template<> const char* rai::Enum<rai::JointType>::names []= {
@@ -398,9 +394,15 @@ void rai::Frame::write(Graph& G) {
   //if(parent) G.add<rai::String>("parent", parent->name);
 
   if(parent) {
-    if(!Q.isZero()) G.add<arr>("rel", Q.getArr7d());
+    if(!Q.isZero()){
+      if(Q.rot.isZero) G.add<arr>("Q", Q.pos.getArr());
+      else G.add<arr>("Q", Q.getArr7d());
+    }
   } else {
-    if(!X.isZero()) G.add<arr>("pose", X.getArr7d());
+    if(!X.isZero()){
+      if(X.rot.isZero) G.add<arr>("X", X.pos.getArr());
+      else G.add<arr>("X", X.getArr7d());
+    }
   }
 
   if(joint) joint->write(G);
@@ -577,7 +579,7 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
     getShape().type() = ST_ssCvx;
     getShape().sscCore().clear();
     getShape().sscCore().V=points; getShape().sscCore().V.reshape(-1, 3);
-    if(getShape().sscCore().V.d0>=4){
+    if(false && getShape().sscCore().V.d0>=4){
       getShape().sscCore().makeConvexHull();
       if(!getShape().sscCore().V.N){ //cvx hull of core failed
         getShape().sscCore().V=points; getShape().sscCore().V.reshape(-1, 3);
@@ -587,9 +589,7 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
     getShape().size = arr{radius};
   }
   if(colors.N) {
-    mesh.C = convert<double>(colors).reshape(-1, 3);
-    mesh.C /= 255.;
-    if(mesh.C.N <= 4) { mesh.C.reshape(-1); }
+    mesh.C = reshapeColor(convert<double>(colors) /= 255.);
   }
   mesh.version++; //if(shape->glListId>0) shape->glListId *= -1;
   C.view_unlock();
@@ -649,6 +649,9 @@ rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, 
 rai::Frame& rai::Frame::setColor(const arr& color) {
   C.view_lock(RAI_HERE);
   if(getShape().mesh().isArrayFormatted){
+#if 1
+    getShape().mesh().C = reshapeColor(color, getShape().mesh().V.d0);
+#else
     CHECK_EQ(color.nd, 1, "");
     arr c = color;
     if(c.N==1){ double g=c.elem(); c = arr{g,g,g,1.}; }
@@ -657,6 +660,7 @@ rai::Frame& rai::Frame::setColor(const arr& color) {
     arr& V = getShape().mesh().V;
     arr& C = getShape().mesh().C;
     C = replicate(c, V.d0);
+#endif
   }else{
     getShape().mesh().C = color;
   }
