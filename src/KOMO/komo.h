@@ -151,7 +151,7 @@ struct KOMO : NonCopyable {
   void initRandom(int verbose=0);
   void initWithConstant(const arr& q); ///< set all configurations EXCEPT the prefix to a particular state
   void initWithPath_qOrg(const arr& q);
-  uintA initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool interpolate=false, double qHomeInterpolate=0., int verbose=-1); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
+  uintA initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool interpolate=false, double qHomeInterpolate=-1., int verbose=-1); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
   void initPhaseWithDofsPath(uint t_phase, const uintA& dofIDs, const arr& path_org, bool autoResamplePath=false);
   void addWaypointsInterpolationObjectives(const arrA& waypoints, uint waypointStepsPerPhase=1);
   void straightenCtrlFrames_mod2Pi();

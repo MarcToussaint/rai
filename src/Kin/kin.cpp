@@ -1315,7 +1315,10 @@ bool Configuration::checkConsistency() const {
     a->Q.rot.checkZero();
   }
 
+  //check proxies
   for(const Proxy& p : proxies) {
+    CHECK(p.a, "ill defined proxy");
+    CHECK(p.b, "ill defined proxy");
     CHECK_EQ(this, &p.a->C, "");
     CHECK_EQ(this, &p.b->C, "");
   }
@@ -2197,7 +2200,7 @@ void Configuration::addProxies(const uintA& collisionPairs) {
     if(a<b) { uint z=a; a=b; b=z; }
     rai::Frame* f1 = frames.elem(a);
     rai::Frame* f2 = frames.elem(b);
-#if 1
+#if 0
     bool canCollide = f1->shape->canCollideWith(f2);
     if(!canCollide) {
       LOG(0) <<"you should not be here! filtering out: " <<f1->ID <<'.' <<f1->name  <<' ' <<f2->ID <<'.' <<f2->name;

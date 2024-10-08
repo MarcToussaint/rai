@@ -26,6 +26,7 @@ struct QueryResult {
   arr normal_y, normal_J;
   arr side_J;
 
+  double totalCollision=0.;
   bool isGoal=true;
   bool isFeasible=true;
 

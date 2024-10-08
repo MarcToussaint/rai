@@ -10,6 +10,7 @@
 
 #include "../Gui/opengl.h"
 #include "../Kin/viewer.h"
+#include "../KOMO/pathTools.h"
 
 #ifdef RAI_GL
 #  include <GL/glew.h>
@@ -192,6 +193,12 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
 
   //sample configuration towards target, possibly sideStepping
   arr q = rrt_A.getNewSample(t, stepsize, p_sideStep, isSideStep, 0);
+  uint parentID = rrt_A.nearestID;
+
+  //special rule: if parent is already in collision, isFeasible = smaller collisions
+  shared_ptr<QueryResult>& pr = rrt_A.queries(parentID);
+  double org_collisionTolerance = P.collisionTolerance;
+  if(pr->totalCollision>P.collisionTolerance) P.collisionTolerance = pr->totalCollision + 1e-6;
 
   //evaluate the sample
   auto qr = P.query(q);
@@ -208,18 +215,22 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
     if(isSideStep) {  n_sideStep++; if(qr->isFeasible) n_sideStepGood++; }
   };
 
-  // TODO: add checking motion
-  if(qr->isFeasible) {
-    const arr start = rrt_A.ann.X[rrt_A.nearestID];
-    if(subsampleChecks>0 && !checkConnection(P, start, q, subsampleChecks, true)) {
-      return false;
-    }
+  //checking subsamples
+  if(qr->isFeasible && subsampleChecks>0) {
+    const arr start = rrt_A.ann.X[parentID];
+    qr->isFeasible = checkConnection(P, start, q, subsampleChecks, true);
+  }
 
-    rrt_A.add(q, rrt_A.nearestID, qr);
+  P.collisionTolerance = org_collisionTolerance;
+
+  //finally adding the new node to the tree
+  if(qr->isFeasible){
+    rrt_A.add(q, parentID, qr);
     double dist = rrt_B.getNearest(q);
     if(subsampleChecks>0) { if(dist<stepsize/subsampleChecks) return true; }
     else { if(dist<stepsize) return true; }
   }
+
   return false;
 }
 
@@ -228,12 +239,13 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
 RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, const arr& _goals, double _stepsize, int _subsampleChecks, int _maxIters, int _verbose)
   : P(_P),
     stepsize(_stepsize),
+    maxIters(_maxIters),
     verbose(_verbose),
     subsampleChecks(_subsampleChecks) {
 
   if(stepsize<0.) stepsize = rai::getParameter<double>("rrt/stepsize", .1);
   if(subsampleChecks<0) subsampleChecks = rai::getParameter<int>("rrt/subsamples", 4);
-  if(maxIters<0) maxIters = rai::getParameter<double>("rrt/maxIters", 5000);
+  if(maxIters<0) maxIters = rai::getParameter<int>("rrt/maxIters", 5000);
   if(verbose<0) verbose = rai::getParameter<int>("rrt/verbose", 0);
 
   arr q0 = _starts;
@@ -309,13 +321,13 @@ int RRT_PathFinder::stepConnect() {
 
   //animation display
   if(verbose>2) {
-    if(DISP.frames.N!=P.C.frames.N) {
-      DISP.copy(P.C);
-    }
-
     if(!(iters%100)) {
       DISP.setJointState(rrt0->getLast());
       DISP.view(verbose>4, STRING("planConnect evals " <<P.evals));
+    }
+  }
+  if(verbose>1) {
+    if(!(iters%100)) {
       std::cout <<"RRT queries=" <<P.evals <<" tree sizes = " <<rrt0->getNumberNodes()  <<' ' <<rrtT->getNumberNodes() <<std::endl;
     }
   }
@@ -384,8 +396,9 @@ arr RRT_PathFinder::run(double timeBudget) {
 
 namespace rai {
 
-void PathFinder::setProblem(const Configuration& C, const arr& starts, const arr& goals) {
-  problem = make_shared<ConfigurationProblem>(C, true, 1e-3, 1);
+void PathFinder::setProblem(const Configuration& C, const arr& starts, const arr& goals, double collisionTolerance) {
+  if(collisionTolerance<0.) collisionTolerance = rai::getParameter<double>("rrt/collisionTolerance", 1e-4);
+  problem = make_shared<ConfigurationProblem>(C, true, collisionTolerance, 1);
   problem->verbose=0;
   rrtSolver = make_shared<RRT_PathFinder>(*problem, starts, goals);
 }
@@ -409,5 +422,7 @@ shared_ptr<SolverReturn> PathFinder::solve() {
 
   return ret;
 }
+
+arr PathFinder::get_resampledPath(uint T){ return path_resampleLinear(ret->x, T); }
 
 } //namespace

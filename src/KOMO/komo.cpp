@@ -1582,7 +1582,6 @@ void KOMO::plotPhaseTrajectory() {
 
 void KOMO::getSubProblem(uint phase, Configuration& C, arr& q0, arr& q1) {
   CHECK_EQ(stepsPerPhase, 1, "");
-  CHECK_EQ(k_order, 1, "");
   getConfiguration_full(C, phase-1, 0);
   if(!phase) C.selectJoints(DofL{}, true);
   C.ensure_indexedJoints();

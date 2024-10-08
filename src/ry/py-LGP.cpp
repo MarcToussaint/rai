@@ -24,7 +24,7 @@ void init_LGP(pybind11::module& m) {
       .def("getSolvedPlan", &rai::LGP_Tool::getSolvedPlan, "return list of discrete decisions of current solution")
       .def("getSolvedKOMO", &rai::LGP_Tool::getSolvedKOMO, "return the solved KOMO object (including its continuous solution) of current solution")
 
-      .def("get_piecewiseMotionProblem", &rai::LGP_Tool::get_piecewiseMotionProblem, "return the (unsolved) KOMO object corresponding to the k-th piece of the current solution", pybind11::arg("phase"))
+      .def("get_piecewiseMotionProblem", &rai::LGP_Tool::get_piecewiseMotionProblem, "return the (unsolved) KOMO object corresponding to the k-th piece of the current solution", pybind11::arg("phase"), pybind11::arg("fixEnd"))
       .def("get_fullMotionProblem", &rai::LGP_Tool::get_fullMotionProblem, "return the (unsolved) KOMO object corresponding to the full joint motion problem spanning all steps")
 
       .def("solvePiecewiseMotions", &rai::LGP_Tool::solvePiecewiseMotions, "solve full motion of current solution and return the (solved) KOMO object", pybind11::arg("verbose")=1)

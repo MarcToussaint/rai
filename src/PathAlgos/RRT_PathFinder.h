@@ -16,8 +16,8 @@
 /// just a data structure, no algorithms
 struct RRT_SingleTree {
   ANN ann;         //ann stores all points added to the tree in ann.X
-  uintA parent;    //for each point we also store the index of the parent node
-  rai::Array<shared_ptr<QueryResult>> queries;
+  uintA parent;    //for each point we store the index of the parent node
+  rai::Array<shared_ptr<QueryResult>> queries; //for each point we store the query result
 
   //fields for display (GLDrawer..)
   arr disp3d;
@@ -97,11 +97,13 @@ struct PathFinder : NonCopyable {
   std::shared_ptr<RRT_PathFinder> rrtSolver;
   std::shared_ptr<SolverReturn> ret;
 
-  void setProblem(const rai::Configuration& C, const arr& starts, const arr& goals);
+  void setProblem(const rai::Configuration& C, const arr& starts, const arr& goals, double collisionTolerance=-1.);
 
   void setExplicitCollisionPairs(const StringA& collisionPairs);
 
   shared_ptr<SolverReturn> solve();
+
+  arr get_resampledPath(uint T);
 };
 
 } //namespace

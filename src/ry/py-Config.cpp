@@ -92,8 +92,7 @@ void init_Config(pybind11::module& m) {
   },
   "get access to a frame by name; use the Frame methods to set/get frame properties",
   pybind11::arg("frameName"),
-  pybind11::arg("warnIfNotExist")=true,
-  pybind11::arg("reverse")=false
+  pybind11::arg("warnIfNotExist")=true
       )
 
   .def("frames", [](shared_ptr<rai::Configuration>& self) {
@@ -359,6 +358,9 @@ reloads, displays and animates the configuration whenever the file is changed"
   .def("writeCollada", &rai::Configuration::writeCollada,
        "write the full configuration in a collada file for export",
        pybind11::arg("filename"), pybind11::arg("format")="collada")
+
+
+  .def("checkConsistency", &rai::Configuration::checkConsistency, "internal use")
 
   ;
 

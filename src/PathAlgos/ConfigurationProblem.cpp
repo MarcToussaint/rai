@@ -32,7 +32,7 @@ ConfigurationProblem::ConfigurationProblem(const rai::Configuration& _C, bool _c
 
   computeCollisionFeatures = false;
   if(!computeCollisionFeatures) {
-    C.fcl(verbose-1)->mode = rai::FclInterface::_binaryCollisionAll; //Single;
+    C.fcl(verbose-1)->mode = rai::FclInterface::_binaryCollisionAll;
   }
 }
 
@@ -84,12 +84,16 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x) {
 
   if(!computeCollisionFeatures) {
 #if 1
-    bool feas=true;
-    for(rai::Proxy& p:C.proxies) if(p.d<=0.) { feas=false; break; }
-    qr->isFeasible = feas;
+    double D=0.;
+    for(rai::Proxy& p:C.proxies){
+      p.calc_coll();
+      if(p.d<0.) D -= p.d;
+    }
+    qr->totalCollision = D;
+    qr->isFeasible = (qr->totalCollision<collisionTolerance);
 #else
-    double p = C.getTotalPenetration();
-    qr->isFeasible = (p<collisionTolerance);
+    qr->totalCollision = C.getTotalPenetration();
+    qr->isFeasible = (qr->totalCollision<collisionTolerance);
 #endif
   } else {
     //collision features
