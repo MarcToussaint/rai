@@ -134,9 +134,15 @@ struct PhysXInterface_self {
         gScene->removeActor(*a);
         a->release();
       }
+    for(PxGeometry* geom: geometries) if(geom){
+      delete geom;
+    }
     if(gScene) {
       gScene->release();
       gScene = nullptr;
+    }
+    if(defaultCpuDispatcher){
+      defaultCpuDispatcher->release();
     }
 //    if(mPhysics) {
 //      mCooking->release();
@@ -146,6 +152,7 @@ struct PhysXInterface_self {
   }
 
   PxScene* gScene = nullptr;
+  rai::Array<PxGeometry*> geometries;
   rai::Array<PxRigidActor*> actors;
   rai::Array<rai::BodyType> actorTypes;
   rai::Array<PxArticulationAxis::Enum> jointAxis;
@@ -155,7 +162,8 @@ struct PhysXInterface_self {
 
   uint stepCount=0;
 
-  PxMaterial* defaultMaterial;
+  PxMaterial* defaultMaterial = nullptr;
+  PxDefaultCpuDispatcher* defaultCpuDispatcher = nullptr;
 
   void initPhysics();
   void addGround();
@@ -201,11 +209,11 @@ void PhysXInterface_self::initPhysics() {
   sceneDesc.solverType = PxSolverType::eTGS;
 
   if(!sceneDesc.cpuDispatcher) {
-    PxDefaultCpuDispatcher* mCpuDispatcher = PxDefaultCpuDispatcherCreate(1);
-    if(!mCpuDispatcher) {
+    defaultCpuDispatcher = PxDefaultCpuDispatcherCreate(1);
+    if(!defaultCpuDispatcher) {
       cerr << "PxDefaultCpuDispatcherCreate failed!" << endl;
     }
-    sceneDesc.cpuDispatcher = mCpuDispatcher;
+    sceneDesc.cpuDispatcher = defaultCpuDispatcher;
   }
   if(!sceneDesc.filterShader) {
     sceneDesc.filterShader  = core->gDefaultFilterShader;
@@ -644,10 +652,12 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
   switch(s->type()) {
     case rai::ST_box: {
       geometry = new PxBoxGeometry(.5*s->size(0), .5*s->size(1), .5*s->size(2));
+      if(opt.verbose>0) LOG(0) <<"  adding shape box '" <<s->frame.name <<"' (" <<s->type() <<")";
     }
     break;
     case rai::ST_sphere: {
       geometry = new PxSphereGeometry(s->size(-1));
+      if(opt.verbose>0) LOG(0) <<"  adding shape sphere '" <<s->frame.name <<"' (" <<s->type() <<")";
     }
     break;
     //      case rai::ST_capsule: {
@@ -664,6 +674,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
                                      *core->mPhysics, *core->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
                                      PxConvexFlag::eCOMPUTE_CONVEX);
       geometry = new PxConvexMeshGeometry(triangleMesh);
+      if(opt.verbose>0) LOG(0) <<"  adding shape cvx mesh '" <<s->frame.name <<"' (" <<s->type() <<")";
     } break;
     case rai::ST_sdf:
     case rai::ST_mesh: {
@@ -676,12 +687,13 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       geometry = new PxTriangleMeshGeometry(triangleMesh);
 #else
       rai::Mesh& M = s->mesh();
+      if(opt.verbose>0) LOG(0) <<"  adding shape mesh '" <<s->frame.name <<"' (" <<s->type() <<")";
       if(!M.cvxParts.N) {
         M.getComponents();
       }
       if(M.cvxParts.N) {
         floatA Vfloat;
-        LOG(0) <<"creating " <<M.cvxParts.N <<" convex parts for shape " <<s->frame.name;
+        if(opt.verbose>0) LOG(0) <<"  creating " <<M.cvxParts.N <<" convex parts for shape " <<s->frame.name;
         for(uint i=0; i<M.cvxParts.N; i++) {
           Vfloat.clear();
           int start = M.cvxParts(i);
@@ -691,6 +703,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
                                          *core->mPhysics, *core->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
                                          PxConvexFlag::eCOMPUTE_CONVEX);
           geometry = new PxConvexMeshGeometry(triangleMesh);
+          geometries.append(geometry);
           PxShape* shape = core->mPhysics->createShape(*geometry, *defaultMaterial);
           actor->attachShape(*shape);
           if(&s->frame!=f) {
@@ -704,7 +717,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
         }
         geometry=0;
       } else {
-        if(opt.verbose>1) LOG(0) <<"using cvx hull of mesh as no decomposition (M.cvsParts) is available";
+        if(opt.verbose>0) LOG(0) <<"  using cvx hull of mesh as no decomposition (M.cvsParts) is available";
         floatA Vfloat = rai::convert<float>(s->mesh().V);
         PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
                                        *core->mPhysics, *core->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
@@ -716,6 +729,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     case rai::ST_camera:
     case rai::ST_pointCloud:
     case rai::ST_marker: {
+      if(opt.verbose>0) LOG(0) <<"  skipping shape '" <<s->frame.name <<"' (" <<s->type() <<")";
       geometry = nullptr;
     } break;
     default:
@@ -745,6 +759,8 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       }
     }
     CHECK(shape, "create shape failed!");
+
+    geometries.append(geometry);
   }
 }
 

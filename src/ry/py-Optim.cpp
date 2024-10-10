@@ -427,7 +427,7 @@ void init_Optim(pybind11::module& m) {
   ENUMVAL(NLPS, gradientDescent) ENUMVAL(NLPS, rprop) ENUMVAL(NLPS, LBFGS) ENUMVAL(NLPS, newton)
   ENUMVAL(NLPS, augmentedLag) ENUMVAL(NLPS, squaredPenalty) ENUMVAL(NLPS, logBarrier) ENUMVAL(NLPS, singleSquaredPenalty)
   ENUMVAL(NLPS, NLopt) ENUMVAL(NLPS, Ipopt) ENUMVAL(NLPS, Ceres)
-  .export_values();
+  ;
 
   pybind11::enum_<ObjectiveType>(m, "OT")
   ENUMVAL(OT, none)
@@ -437,7 +437,7 @@ void init_Optim(pybind11::module& m) {
   ENUMVAL(OT, eq)
   ENUMVAL(OT, ineqB)
   ENUMVAL(OT, ineqP)
-  .export_values();
+  ;
 
 #undef ENUMVAL
 

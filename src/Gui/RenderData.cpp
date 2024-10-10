@@ -436,16 +436,6 @@ void RenderData::glDeinitialize(OpenGL& gl){
   objs.clear();
 }
 
-RenderObject::~RenderObject(){
-  if(initialized){
-    glDeleteBuffers(1, &vertexBuffer);
-    glDeleteBuffers(1, &colorBuffer);
-    glDeleteBuffers(1, &normalBuffer);
-    glDeleteVertexArrays(1, &vao);
-  }
-  initialized=false;
-}
-
 void RenderObject::mesh(rai::Mesh& mesh, const rai::Transformation& _X, double avgNormalsThreshold, RenderType _type){
   X = _X;
   type = _type;
@@ -532,21 +522,18 @@ void RenderObject::mesh(rai::Mesh& mesh, const rai::Transformation& _X, double a
 void RenderObject::pointCloud(const arr& points, const arr& color, const rai::Transformation& _X, RenderType _type){
   X = _X;
   type = _type;
+  mode = GL_POINTS;
   if(type==_solid && (color.N==4 || color.N==2) && color(-1)<1.) type = _transparent;
 
   vertices = rai::convert<float>(points);
-  colors.resize(vertices.d0, 4);
+  arr c = reshapeColor(color);
+
   if(color.nd==1){
-    arr c = color;
-    if(c.N==1){ double g=c.elem(); c = arr{g,g,g}; }
-    if(c.N<4) c.append(1.);
+    colors.resize(vertices.d0, 4);
     for(uint i=0;i<vertices.d0;i++) for(uint k=0;k<4;k++) colors(i,k) = c(k);
   }else{
-    colors = rai::convert<float>(color);
-    if(colors.d1==3){
-      colors.insColumns(-1,1);
-      for(uint i=0;i<vertices.d0;i++) colors(i,3) = 1.;
-    }
+    CHECK_EQ(color.d0, vertices.d0, "");
+    colors = rai::convert<float>(c);
   }
 }
 
@@ -609,6 +596,20 @@ void RenderObject::glInitialize(){
 
   glBindVertexArray(0);
   initialized=true;
+
+  GLint mem=0;
+  glGetIntegerv(GL_VBO_FREE_MEMORY_ATI, &mem);
+  if(mem<200000) LOG(0) <<" -- warning, little vbo memory left: " <<mem;
+}
+
+RenderObject::~RenderObject(){
+  if(initialized){
+    glDeleteBuffers(1, &vertexBuffer);
+    glDeleteBuffers(1, &colorBuffer);
+    glDeleteBuffers(1, &normalBuffer);
+    glDeleteVertexArrays(1, &vao);
+  }
+  initialized=false;
 }
 
 //===========================================================================
@@ -863,6 +864,14 @@ void RenderText::glInitialize(){
   initialized = true;
 }
 
+RenderText::~RenderText(){
+  if(initialized){
+    glDeleteBuffers(1, &vertexBuffer);
+    glDeleteVertexArrays(1, &vao);
+  }
+  initialized=false;
+}
+
 void RenderQuad::glRender(){
   CHECK(initialized, "");
   glActiveTexture(GL_TEXTURE0);
@@ -916,6 +925,15 @@ void RenderQuad::glInitialize(){
   glBindTexture(GL_TEXTURE_2D, 0);
 
   initialized=true;
+}
+
+RenderQuad::~RenderQuad(){
+  if(initialized){
+    glDeleteBuffers(1, &vertexBuffer);
+    glDeleteTextures(1, &texture);
+    glDeleteVertexArrays(1, &vao);
+  }
+  initialized=false;
 }
 
 }//namespace

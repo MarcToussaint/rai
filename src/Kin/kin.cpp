@@ -3348,7 +3348,8 @@ void Configuration::watchFile(const char* filename) {
 
   //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   //  gl.addHoverCall(new EditConfigurationHoverCall(K));
-  V->ensure_gl().addKeyCall(new EditConfigurationKeyCall(*this));
+  EditConfigurationKeyCall key_callback(*this);
+  V->ensure_gl().addKeyCall(&key_callback);
 //  V->ensure_gl().addClickCall(new EditConfigurationClickCall(*this));
   V->ensure_gl().setTitle(STRING("ConfigView <" <<filename <<">"));
 //  V->text = "waiting for file change ('h' for help)";
@@ -3431,6 +3432,7 @@ void Configuration::watchFile(const char* filename) {
           //C.reportProxies();
           //C.view();
         }
+        V->updateConfiguration(*this).view(false);
       } else if(key=='i') {
         LOG(0) <<"INFO:";
         report(cout);
@@ -3513,6 +3515,8 @@ void Configuration::watchFile(const char* filename) {
     if(key==-1) continue;
     if(!getInteractivity()) break;
   }
+
+  V->ensure_gl().keyCalls.remove(-1);
 }
 
 }//namespace

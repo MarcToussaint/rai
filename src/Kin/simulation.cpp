@@ -582,7 +582,7 @@ void glRasterImage(float x, float y, byteA& img, float zoom) {
 struct Simulation_DisplayThread : Thread, ConfigurationViewer {
   //data
   Mutex mux;
-  double time;
+  double time=0.;
   byteA image;
   floatA depth;
   byteA depthImage;

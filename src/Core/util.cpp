@@ -1204,7 +1204,7 @@ Inotify::Inotify(const char* filename): fd(0), wd(0) {
 Inotify::~Inotify() {
   inotify_rm_watch(fd, wd);
   close(fd);
-  delete buffer;
+  delete[] buffer;
   delete fil;
 }
 

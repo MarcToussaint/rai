@@ -40,26 +40,16 @@ void rai::ConfigurationViewer::close_gl() {
 }
 
 void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
+  {
+    if(gl && gl->window) gl->beginContext();
+    clear();
+    if(gl && gl->window) gl->endContext();
+  }
+
   auto lock = dataLock(RAI_HERE);
 
-#if 0
-  if(!lights.N){
-    addLight({-3.,2.,3.}, {0.,-0.,1.}, shadowHeight);
-    addLight({3.,0.,4.}, {0.,0.,1.});
-  }
-  if(objs.N) clear();
-
-  { // floor
-    rai::Mesh m;
-    m.setQuad();
-    m.scale(10., 10., 0.);
-    m.C = floorColor;
-    add().mesh(m, 0);
-  }
-#else
-  clear();
   addStandardScene();
-#endif
+
   frame2objID.resize(frames.N) = -1;
   for(rai::Frame* f:frames) if(f->shape) {
     shared_ptr<Mesh> mesh = f->shape->_mesh;
@@ -68,8 +58,10 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
       frame2objID(f->ID) = objs.N;
       if(f->shape->type()==ST_pointCloud){
         add().pointCloud(mesh->V, mesh->C, f->ensure_X(), _marker);
+        objs(-1)->version = mesh->version;
       }else if(f->shape->type()==ST_lines){
         add().lines(mesh->V, mesh->C, f->ensure_X(), _marker);
+        objs(-1)->version = mesh->version;
       }else if(mesh->T.d1==3){
         add().mesh(*mesh, f->ensure_X());
       }else{

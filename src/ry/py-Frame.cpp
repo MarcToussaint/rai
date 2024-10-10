@@ -136,7 +136,7 @@ void init_enums(pybind11::module& m) {
 
   pybind11::enum_<rai::JointType>(m, "JT")
   ENUMVAL(rai::JT, hingeX) ENUMVAL(rai::JT, hingeY) ENUMVAL(rai::JT, hingeZ) ENUMVAL(rai::JT, transX) ENUMVAL(rai::JT, transY) ENUMVAL(rai::JT, transZ) ENUMVAL(rai::JT, transXY) ENUMVAL(rai::JT, trans3) ENUMVAL(rai::JT, transXYPhi) ENUMVAL(rai::JT, transYPhi) ENUMVAL(rai::JT, universal) ENUMVAL(rai::JT, rigid) ENUMVAL(rai::JT, quatBall) ENUMVAL(rai::JT, phiTransXY) ENUMVAL(rai::JT, XBall) ENUMVAL(rai::JT, free) ENUMVAL(rai::JT, generic) ENUMVAL(rai::JT, tau)
-  .export_values();
+  ;
 
   pybind11::enum_<rai::ShapeType>(m, "ST")
   ENUMVAL(rai::ST, none)
@@ -154,7 +154,7 @@ void init_enums(pybind11::module& m) {
   ENUMVAL(rai::ST, quad)
   ENUMVAL(rai::ST, camera)
   ENUMVAL(rai::ST, sdf)
-  .export_values();
+  ;
 
   pybind11::enum_<FeatureSymbol>(m, "FS")
   ENUMVAL(FS, position)
@@ -212,12 +212,12 @@ void init_enums(pybind11::module& m) {
 
   ENUMVAL(FS, transAccelerations)
   ENUMVAL(FS, transVelocities)
-  .export_values();
+  ;
 
   pybind11::enum_<rai::SkeletonSymbol>(m, "SY")
   ENUMVAL(rai::SY, touch) ENUMVAL(rai::SY, above) ENUMVAL(rai::SY, inside) ENUMVAL(rai::SY, oppose) ENUMVAL(rai::SY, restingOn)
   ENUMVAL(rai::SY, poseEq) ENUMVAL(rai::SY, positionEq) ENUMVAL(rai::SY, stableRelPose) ENUMVAL(rai::SY, stablePose)
-  ENUMVAL(rai::SY, stable) ENUMVAL(rai::SY, stableOn) ENUMVAL(rai::SY, dynamic) ENUMVAL(rai::SY, dynamicOn) ENUMVAL(rai::SY, dynamicTrans) ENUMVAL(rai::SY, quasiStatic) ENUMVAL(rai::SY, quasiStaticOn) ENUMVAL(rai::SY, downUp) ENUMVAL(rai::SY, break) ENUMVAL(rai::SY, stableZero)
+  ENUMVAL(rai::SY, stable) ENUMVAL(rai::SY, stableOn) ENUMVAL(rai::SY, dynamic) ENUMVAL(rai::SY, dynamicOn) ENUMVAL(rai::SY, dynamicTrans) ENUMVAL(rai::SY, quasiStatic) ENUMVAL(rai::SY, quasiStaticOn) ENUMVAL(rai::SY, downUp) ENUMVAL(rai::SY, stableZero)
   ENUMVAL(rai::SY, contact) ENUMVAL(rai::SY, contactStick) ENUMVAL(rai::SY, contactComplementary) ENUMVAL(rai::SY, bounce) ENUMVAL(rai::SY, push)
   ENUMVAL(rai::SY, magic) ENUMVAL(rai::SY, magicTrans)
   ENUMVAL(rai::SY, pushAndPlace)
@@ -234,7 +234,7 @@ void init_enums(pybind11::module& m) {
   ENUMVAL(rai::SY, stableOnX)
   ENUMVAL(rai::SY, stableOnY)
   ENUMVAL(rai::SY, end)
-  .export_values();
+  ;
 
 #undef ENUMVAL
 #define ENUMVAL(x) .value(#x, rai::Simulation::_##x)
@@ -243,7 +243,7 @@ void init_enums(pybind11::module& m) {
   ENUMVAL(physx)
   ENUMVAL(bullet)
   ENUMVAL(kinematic)
-  .export_values();
+  ;
 
   pybind11::enum_<rai::Simulation::ControlMode>(m, "ControlMode")
   ENUMVAL(none)
@@ -251,7 +251,7 @@ void init_enums(pybind11::module& m) {
   ENUMVAL(velocity)
   ENUMVAL(acceleration)
   ENUMVAL(spline)
-  .export_values();
+  ;
 
 }
 

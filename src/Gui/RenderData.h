@@ -58,6 +58,7 @@ struct RenderText{
   float x, y, scale;
   bool initialized=false;
 
+  ~RenderText();
   //engine specific -> should be refactored
   void glRender(GLuint progText_color, const RenderFont& font, float height);
   void glInitialize();
@@ -69,6 +70,7 @@ struct RenderQuad {
   GLuint vao, vertexBuffer, texture;
   bool initialized=false;
 
+  ~RenderQuad();
   //engine specific -> should be refactored
   void glRender();
   void glInitialize();
