@@ -158,7 +158,7 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
   CHECK_EQ(p1.N, 3, "PairCollision failed");
   CHECK_EQ(p2.N, 3, "PairCollision failed");
 
-  if(fabs(distance)<1e-10) { //exact touch: the GJK computed things, let's make them consisten
+  if(fabs(distance)<1e-10) { //exact touch: the GJK computed things, let's make them consistent
     p1 = p2 = .5*(p1+p2);
   }
 

@@ -39,10 +39,13 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     }
     return;
   }
+
   CHECK_EQ(F.N, 2, "");
   rai::Frame* f1 = F.elem(0);
   rai::Frame* f2 = F.elem(1);
   double r1=0., r2=0.;
+
+  //which meshes should we collide? -> m1, m2
   rai::Mesh dot;
   dot.setDot();
   rai::Mesh* m1=&dot, *m2=&dot;
@@ -57,7 +60,8 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     if(!m2->V.N) m2 = &dot;
   }
 
-  if((type==_negScalar || type==_vector) && m1->V.d0==1 && m2->V.d0>2 && !m2->T.N) { //PclCollision!
+  //is this a point cloud collision? -> different method
+  if((type==_negScalar || type==_vector) && m1->V.d0==1 && m2->V.d0>2 && !m2->T.N) {
     arr Jp1, Jp2, Jx1, Jx2;
     if(!!J) {
       f1->C.jacobian_pos(Jp1, f1, f1->ensure_X().pos);
@@ -80,6 +84,7 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     return;
   }
 
+  //compute the collision
   coll.reset();
 #if 0 //use functionals!
   auto func1=f1->shape->functional();
@@ -90,11 +95,12 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     coll=make_shared<PairCollision>(*m1, *m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
   }
 #else
-  coll=make_shared<rai::PairCollision>(*m1, *m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
+  coll = make_shared<rai::PairCollision>(*m1, *m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
 #endif
 
   if(neglectRadii) coll->rad1=coll->rad2=0.;
 
+  //extract the specific feature with Jacobian
   if(type==_negScalar) {
     arr Jp1, Jp2;
     if(!!J) {

@@ -13,8 +13,8 @@
 
 namespace rai {
 
-/* A class to represent a basic function: distance between two objects
- * The constructor compute the collision geometry, the methods are mostly readouts
+/* A class to represent a basic function: distance between two convex (decomposed) meshes
+ * The constructor compute the collision geometry, the other methods are mostly readouts
  * The default is distance between two convex meshes
  * Also distance between point (=mesh1) and points (=mesh2)
  * Also distance between point (=mesh1) and decomposed mesh (=mesh2)

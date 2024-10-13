@@ -1512,11 +1512,13 @@ int KOMO::view(bool pause, const char* txt) {
   pathConfig.get_viewer()->ensure_gl().setTitle("KOMO Viewer");
   str text = txt;
   if(pause) text <<"\n[use SHIFT+scroll or arror keys to browse; press key to continue]";
-  return pathConfig.get_viewer()->view(pause, txt);
+  return pathConfig.get_viewer()->view(pause, text);
 }
 
 int KOMO::view_play(bool pause, const char* txt, double delay, const char* saveVideoPath) {
-  view(false, txt);
+  str text = txt;
+  if(pause) text <<"\n[use SHIFT+scroll or arror keys to browse; press key to continue]";
+  view(false, text);
   return pathConfig.get_viewer()->playVideo(pause, delay*tau*T, saveVideoPath);
 }
 

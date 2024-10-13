@@ -1,0 +1,9 @@
+fol: <lgp_single_pnp.fol>
+
+terminal: "(on trayG objG)"
+
+genericCollisions: true
+
+coll: [objR objG
+      objR objB
+      objG objB]

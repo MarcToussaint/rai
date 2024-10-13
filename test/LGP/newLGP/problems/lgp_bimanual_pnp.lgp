@@ -1,0 +1,8 @@
+fol: <lgp_bimanual_pnp.fol>
+
+terminal: "(on trayG objG)"
+
+genericCollisions: true
+
+#coll: [objR objG      objR objB      objG objB]
+coll: [objG objB]

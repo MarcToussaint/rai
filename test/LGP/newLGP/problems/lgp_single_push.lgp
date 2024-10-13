@@ -1,0 +1,7 @@
+fol: <lgp_single_push.fol>
+
+terminal: "(on trayB objB)"
+
+genericCollisions: true
+
+#coll: [objR objG      objR objB      objG objB]
