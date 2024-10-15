@@ -25,6 +25,7 @@
 
 //void checkView(shared_ptr<rai::Configuration>& self){ if(self->hasView()) self->view(); }
 void null_deleter(rai::Frame*) {}
+void Config_null_deleter(rai::Configuration*) {}
 
 void init_Config(pybind11::module& m) {
 

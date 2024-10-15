@@ -210,7 +210,7 @@ struct KOMO : NonCopyable {
   // internal (kind of private)
   //
 
-  rai::Frame* addFrameDof(const char* name, const char* parent, rai::JointType jointType, bool stable, const char* initFrame=0, rai::Transformation rel=0);
+  rai::Frame* addFrameDof(const char* name, const char* parent, rai::JointType jointType, bool stable, rai::Frame* initFrame=0, rai::Transformation rel=0);
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly= {});           ///< set the state trajectory of all configurations
 private:
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);

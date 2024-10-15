@@ -799,6 +799,11 @@ arr rai::Frame::getSize() const {
   return shape->size;
 }
 
+rai::ShapeType rai::Frame::getShapeType() const {
+  if(!shape) return ST_none;
+  return shape->_type.x;
+}
+
 arr rai::Frame::getMeshPoints() const {
   if(!shape) return {};
   return shape->mesh().V;

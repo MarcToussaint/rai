@@ -464,7 +464,7 @@ std::shared_ptr<KOMO> LGP_Tool::get_fullMotionProblem(bool initWithWaypoints){
   StringAA path =  getSolvedPlan();
 
   ManipulationModelling manip;
-  manip.setup_motion(C, path.N, -1.);
+  manip.setup_motion(C, path.N, 16, -1.);
 
   for(uint t=0;t<path.N;t++){
     trans.add_action_constraints(manip.komo, double(t)+1., path(t));
@@ -579,7 +579,7 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
       }
 
       str snapFrame; snapFrame <<"pickPose_" <<gripper <<'_' <<obj <<'_' <<time;
-      manip.komo->addFrameDof(snapFrame, gripper, JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
+      manip.komo->addFrameDof(snapFrame, gripper, JT_free, true, manip.komo->world[obj]); //a permanent free stable gripper->grasp joint; and a snap grasp->object
       manip.komo->addRigidSwitch(time, {snapFrame, obj});
       if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
 
@@ -598,7 +598,7 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
 
       if(time<manip.komo->T/manip.komo->stepsPerPhase){
         str snapFrame; snapFrame <<"placePose_" <<target <<'_' <<obj <<'_' <<time;
-        manip.komo->addFrameDof(snapFrame, target, JT_free, true, obj); //a permanent free stable target->place joint; and a snap place->object
+        manip.komo->addFrameDof(snapFrame, target, JT_free, true, manip.komo->world[obj]); //a permanent free stable target->place joint; and a snap place->object
         manip.komo->addRigidSwitch(time, {snapFrame, obj});
         if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
       }
@@ -615,7 +615,7 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
 
       if(time<manip.komo->T/manip.komo->stepsPerPhase){
         str snapFrame; snapFrame <<"pushPose_" <<gripper <<'_' <<obj <<'_' <<time;
-        manip.komo->addFrameDof(snapFrame, gripper, rai::JT_free, true, obj);
+        manip.komo->addFrameDof(snapFrame, gripper, rai::JT_free, true, manip.komo->world[obj]);
         manip.komo->addRigidSwitch(time, {snapFrame, obj});
         if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
       }

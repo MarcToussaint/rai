@@ -187,6 +187,7 @@ struct Frame : NonCopyable {
   arr getRelativeQuaternion() const { return get_Q().rot.getArr4d(); }
   arr getRelativeTransform() { return get_Q().getAffineMatrix(); }
   arr getSize() const ;
+  ShapeType getShapeType() const;
   arr getMeshPoints() const ;
   uintA getMeshTriangles() const ;
   byteA getMeshColors() const ;
@@ -333,7 +334,7 @@ struct Shape : NonCopyable {
   Mesh& mesh() { if(!_mesh) { if(_type==ST_none) _type=ST_mesh; _mesh = make_shared<Mesh>(); } return *_mesh; }
   Mesh& sscCore() { if(!_sscCore) { if(_type==ST_none) _type=ST_ssCvx;  _sscCore = make_shared<Mesh>();  } return *_sscCore; }
   SDF& sdf() { if(!_sdf) { if(_type==ST_none) _type=ST_sdf; _sdf = make_shared<SDF_GridData>(); } return *_sdf; }
-  double alpha() { arr& C=mesh().C; if(C.N==4 || C.N==2) return C(-1); return 1.; }
+  double alpha() { arr& C=mesh().C; if(C.N==4 || C.N==2 || (C.nd==2 && C.d1==4)) return C.elem(-1); return 1.; }
 
   void createMeshes();
   shared_ptr<ScalarFunction> functional(bool worldCoordinates=true);

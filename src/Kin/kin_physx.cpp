@@ -625,7 +625,7 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
       if(p->shape
           && p->getShape().type()!=rai::ST_marker
           && p->getShape().type()!=rai::ST_camera
-          && p->getShape().alpha()==1.) shapes.append(p->shape);
+          && p->getShape().alpha()==1.) shapes.append(p->shape); //exclude transparent objects!!
     }
   }
 

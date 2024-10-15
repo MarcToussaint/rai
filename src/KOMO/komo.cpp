@@ -1609,19 +1609,19 @@ void KOMO::getSubProblem(uint phase, Configuration& C, arr& q0, arr& q1) {
 
 rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
                               JointType jointType, bool stable,
-                              const char* initFrame, rai::Transformation rel) {
-
+                              rai::Frame* initFrame, rai::Transformation rel) {
   Frame* p0 = 0;
-  if(parent) p0 = world[parent];
+  if(parent && parent[0]) p0 = world[parent];
 
   //-- IN WORLD, NOT PATHCONFIG!
 
   // decide on a relative pose
-  Frame* init = 0;
   if(initFrame) {
-    init = world[initFrame];
-    if(rel.isZero()) {
-      rel = init->ensure_X()/p0->ensure_X();
+    CHECK(rel.isZero(), "double initialization");
+    if(p0){
+      rel = initFrame->ensure_X()/p0->ensure_X();
+    }else{
+      rel = initFrame->ensure_X();
     }
   }
 
@@ -1684,7 +1684,7 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
         }
       }
     }
-    if(initFrame) f->setPose(init->getPose());
+    if(initFrame) f->setPose(initFrame->getPose());
     if(jointType!=JT_none) {
       f->setJoint(jointType);
       f->joint->isPartBreak=false;

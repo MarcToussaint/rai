@@ -45,9 +45,14 @@ void init_KOMO(pybind11::module& m) {
        pybind11::arg("kOrder")
        )
   .def("clearObjectives", &KOMO::clearObjectives)
+  .def("getConfig",  [](std::shared_ptr<KOMO>& self) { return std::shared_ptr<rai::Configuration>(&(self->world), &Config_null_deleter); }, "")
+  .def("getFrame",  [](std::shared_ptr<KOMO>& self, const std::string& frameName, double phaseTime) {
+    uint t = conv_time2step(phaseTime, self->stepsPerPhase);
+    rai::Frame* f = self->timeSlices(self->k_order+t, self->world.getFrame(frameName.c_str(), true)->ID);
+    return std::shared_ptr<rai::Frame>(f, &null_deleter);
+  }, "",  pybind11::arg("frameName"), pybind11::arg("phaseTime"))
 
   //-- add objectives
-
   .def("addObjective", [](std::shared_ptr<KOMO>& self, const arr& times, const FeatureSymbol& feature, const StringA& frames, const ObjectiveType& type, const arr& scale, const arr& target, int order) {
     self->addObjective(times, feature, frames, type, scale, target, order);
   },
@@ -75,13 +80,14 @@ void init_KOMO(pybind11::module& m) {
        pybind11::arg("target")=arr(), pybind11::arg("deltaFromSlice")=0, pybind11::arg("deltaToSlice")=0)
 
   .def("addTimeOptimization", &KOMO::addTimeOptimization)
+  .def("addRigidSwitch", &KOMO::addRigidSwitch, "", pybind11::arg("times"), pybind11::arg("frames"), pybind11::arg("noJumpStart")=true)
   .def("addModeSwitch", &KOMO::addModeSwitch, "", pybind11::arg("times"), pybind11::arg("newMode"), pybind11::arg("frames"), pybind11::arg("firstSwitch")=true)
 
-  .def("addStableFrame", [](shared_ptr<KOMO>& self, const char* name, const char* parent, rai::JointType jointType, bool stable, const char* initFrame) {
+  .def("addStableFrame", [](shared_ptr<KOMO>& self, const char* name, const char* parent, rai::JointType jointType, bool stable, rai::Frame* initFrame) {
     rai::Frame* f = self->addFrameDof(name, parent, jointType, stable, initFrame);
     return shared_ptr<rai::Frame>(f, &null_deleter); //giving it a non-sense deleter!
   }, "complicated...",
-  pybind11::arg("name"), pybind11::arg("parent"), pybind11::arg("jointType"), pybind11::arg("stable"), pybind11::arg("initFrame")=0)
+  pybind11::arg("name"), pybind11::arg("parent"), pybind11::arg("jointType"), pybind11::arg("stable"), pybind11::arg("initFrame")=nullptr)
 
   //-- initialize (=set state)
   .def("initOrg", &KOMO::initOrg, "")

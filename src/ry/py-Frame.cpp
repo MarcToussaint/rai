@@ -81,6 +81,7 @@ void init_Frame(pybind11::module& m) {
   .def("getRelativeTransform", &rai::Frame::getRelativeTransform, "")
   .def("getJointState", &rai::Frame::getJointState, "")
   .def("getSize", &rai::Frame::getSize, "")
+  .def("getShapeType", &rai::Frame::getShapeType, "")
   .def("getMeshPoints", &rai::Frame::getMeshPoints, "")
   .def("getMeshTriangles", &rai::Frame::getMeshTriangles, "")
   .def("getMesh", [](shared_ptr<rai::Frame>& self){
@@ -135,7 +136,7 @@ void init_enums(pybind11::module& m) {
 #define ENUMVAL(pre, x) .value(#x, pre##_##x)
 
   pybind11::enum_<rai::JointType>(m, "JT")
-  ENUMVAL(rai::JT, hingeX) ENUMVAL(rai::JT, hingeY) ENUMVAL(rai::JT, hingeZ) ENUMVAL(rai::JT, transX) ENUMVAL(rai::JT, transY) ENUMVAL(rai::JT, transZ) ENUMVAL(rai::JT, transXY) ENUMVAL(rai::JT, trans3) ENUMVAL(rai::JT, transXYPhi) ENUMVAL(rai::JT, transYPhi) ENUMVAL(rai::JT, universal) ENUMVAL(rai::JT, rigid) ENUMVAL(rai::JT, quatBall) ENUMVAL(rai::JT, phiTransXY) ENUMVAL(rai::JT, XBall) ENUMVAL(rai::JT, free) ENUMVAL(rai::JT, generic) ENUMVAL(rai::JT, tau)
+  ENUMVAL(rai::JT, none) ENUMVAL(rai::JT, hingeX) ENUMVAL(rai::JT, hingeY) ENUMVAL(rai::JT, hingeZ) ENUMVAL(rai::JT, transX) ENUMVAL(rai::JT, transY) ENUMVAL(rai::JT, transZ) ENUMVAL(rai::JT, transXY) ENUMVAL(rai::JT, trans3) ENUMVAL(rai::JT, transXYPhi) ENUMVAL(rai::JT, transYPhi) ENUMVAL(rai::JT, universal) ENUMVAL(rai::JT, rigid) ENUMVAL(rai::JT, quatBall) ENUMVAL(rai::JT, phiTransXY) ENUMVAL(rai::JT, XBall) ENUMVAL(rai::JT, free) ENUMVAL(rai::JT, generic) ENUMVAL(rai::JT, tau)
   ;
 
   pybind11::enum_<rai::ShapeType>(m, "ST")
