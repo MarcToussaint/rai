@@ -15,6 +15,7 @@
 
 struct NLP_Sampler_Options {
   RAI_PARAM("sam/", double, eps, .05)
+  RAI_PARAM("sam/", double, tolerance, .01)
   RAI_PARAM("sam/", bool, useCentering, true)
 
   //--new
@@ -41,6 +42,8 @@ struct NLP_Sampler_Options {
   RAI_PARAM("sam/", rai::String, downhillRejectMethod, "none")
   RAI_PARAM("sam/", double, downhillNoiseSigma, .1)
 
+  //-- interior
+
   RAI_PARAM("sam/", rai::String, interiorMethod, "HR")
 
   RAI_PARAM("sam/", int, interiorBurnInSteps, 0)
@@ -62,6 +65,7 @@ struct NLP_Sampler {
 
   NLP_Sampler(const shared_ptr<NLP>& _nlp) : nlp(_nlp) {}
 
+  NLP_Sampler& setOptions(const NLP_Sampler_Options& _opt) { opt = _opt; return *this; }
   void run(arr& data, uintA& evals);
   std::shared_ptr<SolverReturn> sample();
 

@@ -337,7 +337,7 @@ bool NLP_Sampler::run_downhill(){
     }
 
     //-- good?
-    bool good = (ev.err<=.01);
+    bool good = (ev.err<=opt.tolerance);
 
     if(opt.verbose>2 || (good && opt.verbose>1)) {
       nlp->report(cout, (good?1:0)+opt.verbose, STRING("phase1 t: " <<t <<" err: " <<ev.err <<" good: " <<good));
@@ -364,7 +364,7 @@ void NLP_Sampler::run_interior(arr& data, uintA& dataEvals){
   for(int t=0;; t++) {
     //-- good?
     ensure_eval();
-    bool good = (ev.err<=.01);
+    bool good = (ev.err<=opt.tolerance);
 
     //-- manifoldRRT builds tree from all points (previously slack-stepped)
     if(opt.interiorMethod=="manifoldRRT"){
@@ -423,7 +423,7 @@ void NLP_Sampler::run_interior(arr& data, uintA& dataEvals){
     }else HALT("interior method not define: " <<opt.interiorMethod);
 
     ensure_eval();
-    good = (ev.err<=.01);
+    good = (ev.err<=opt.tolerance);
 
     //-- slack step
     if(opt.slackStepAlpha>0. && !good) {
@@ -432,7 +432,7 @@ void NLP_Sampler::run_interior(arr& data, uintA& dataEvals){
     }
 
     ensure_eval();
-    good = (ev.err<=.01);
+    good = (ev.err<=opt.tolerance);
 
     if(opt.verbose>2 || (good && opt.verbose>1)) {
       nlp->report(cout, (good?1:0)+opt.verbose, STRING("phase2 t: " <<t <<" err: " <<ev.err <<" data: " <<data.d0 <<" good: " <<good));
@@ -479,6 +479,7 @@ std::shared_ptr<SolverReturn> NLP_Sampler::sample(){
   ret->time += rai::cpuTime();
 
   ret->x = ev.x;
+  ret->evals = evals;
   ret->sos = sumOfSqr(ev.r);
   ret->f = 0.;
   ret->eq = sumOfAbs(ev.h);

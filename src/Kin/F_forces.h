@@ -96,8 +96,9 @@ struct F_fex_ForceIsNormal : Feature {
   uint dim_phi2(const FrameL& F) { return 3; }
 };
 
-struct F_fex_ForceInFrictionCone: Feature {
-  double mu=.5;
+struct F_fex_ForceInFrictionCone : Feature {
+  double mu;
+  F_fex_ForceInFrictionCone(double _mu=.5) : mu(_mu) {}
   arr phi(const FrameL& F);
   uint dim_phi2(const FrameL& F) { return 1; }
 };

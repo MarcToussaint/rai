@@ -493,17 +493,22 @@ arr F_fex_ForceInFrictionCone::phi(const FrameL& F) {
 
   //-- from the contact we need force
   arr force = F_fex_Force() .eval(F);
+  op_normalize(force); //optional
 
   //-- from the geometry we need normal
   arr normal = F_fex_POASurfaceAvgNormal() .eval(F);
   op_normalize(normal);
 
   //-- friction cone
+#if 0
   arr nf = normal*(~normal * force);
   arr a = force - nf;
   arr a2 = ~a * a;
   arr b2 = ~force * nf;
   return a2 - (mu*mu)*b2;
+#else //works only with normalized force (see above)
+  return mu - (~normal * force);
+#endif
 }
 
 void F_fex_ForceIsComplementary::phi2(arr& y, arr& J, const FrameL& F) {

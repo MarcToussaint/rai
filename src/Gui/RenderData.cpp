@@ -21,6 +21,14 @@ uint bufW=2000, bufH=2000;
 GLuint LoadShadersFile(const char * vertex_file_path,const char * fragment_file_path);
 GLuint LoadShaders(const std::string& VertexShaderCode, const std::string& FragmentShaderCode);
 
+RenderData::RenderData(){
+  rai::Mesh M;
+  M.setCylinder(.0025, 1., 1);
+  M.translate(0.,0.,.5);
+  M.C={1.,0.,1.};
+  cylin.mesh(M);
+}
+
 RenderObject& RenderData::add(){
   std::shared_ptr<RenderObject> obj = make_shared<RenderObject>();
   objs.append(obj);
@@ -257,21 +265,28 @@ void RenderData::renderObjects(GLuint idT_WM, const uintA& sortedObjIDs, RenderT
       arr b=distMarkers.pos(i,1,{});
       arr d = b-a;
       double l = length(d);
-      if(l<1e-10) continue;
-      d /= length(d);
+      if(l<1e-10) d = {0., 0., 1.};
+      else d /= length(d);
       rai::Transformation X=0;
-      X.pos.set(b);
-      X.rot.setDiff(Vector_z, d);
-      if(idT_WM){
-        T_WM = X.getAffineMatrix();
-        glUniformMatrix4fv(idT_WM, 1, GL_TRUE, rai::convert<float>(T_WM).p);
-      }
-      objs(distMarkers.markerObj)->glRender();
+//      X.pos.set(b);
+//      X.rot.setDiff(Vector_z, d);
+//      if(idT_WM){
+//        T_WM = X.getAffineMatrix();
+//        glUniformMatrix4fv(idT_WM, 1, GL_TRUE, rai::convert<float>(T_WM).p);
+//      }
+//      objs(distMarkers.markerObj)->glRender();
+//      X.pos.set(a);
+//      X.rot.addX(RAI_PI);
+//      T_WM = X.getAffineMatrix();
+//      glUniformMatrix4fv(idT_WM, 1, GL_TRUE, rai::convert<float>(T_WM).p);
+//      objs(distMarkers.markerObj)->glRender();
+
       X.pos.set(a);
-      X.rot.addX(RAI_PI);
+      X.rot.setDiff(Vector_z, d);
       T_WM = X.getAffineMatrix();
+      for(uint k=0;k<4;k++) T_WM(k,2) *= l; //scale length
       glUniformMatrix4fv(idT_WM, 1, GL_TRUE, rai::convert<float>(T_WM).p);
-      objs(distMarkers.markerObj)->glRender();
+      cylin.glRender();
     }
   }
 }
@@ -285,6 +300,7 @@ void RenderData::glDraw(OpenGL& gl){
   for(std::shared_ptr<RenderObject>& obj:objs) if(!obj->initialized) obj->glInitialize();
   for(std::shared_ptr<RenderText>& txt:texts) if(!txt->initialized) txt->glInitialize();
   for(std::shared_ptr<RenderQuad>& quad:quads) if(!quad->initialized) quad->glInitialize();
+  if(!cylin.initialized) cylin.glInitialize();
 
   if(!gl.activeView){
     camera = gl.camera;

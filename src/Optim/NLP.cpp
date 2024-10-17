@@ -435,7 +435,7 @@ void NLP_Viewer::plotCostTrace() {
 void SolverReturn::write(std::ostream& os) const {
   os <<"{ time: " <<time <<", evals: " <<evals;
   os <<", done: " <<done <<", feasible: " <<feasible;
-  os <<", sos: " <<sos <<", f: " <<f <<", ineq: " <<ineq <<", eq: " <<eq <<" }";
+  os <<", eq: " <<eq <<", ineq: " <<ineq <<", sos: " <<sos <<", f: " <<f <<" }";
 }
 
 //===========================================================================

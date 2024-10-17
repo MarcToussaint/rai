@@ -93,7 +93,8 @@ struct RenderData {
   rai::Array<std::shared_ptr<rai::Camera>> lights;
   rai::Array<std::shared_ptr<RenderText>> texts;
   rai::Array<std::shared_ptr<RenderQuad>> quads;
-  DistMarkers distMarkers;
+  DistMarkers distMarkers;  
+  RenderObject cylin; //predefined objects
 
   RenderType renderUntil=_all;
   bool renderFlatColors=false;
@@ -109,6 +110,8 @@ struct RenderData {
     GLuint progText, progText_color, progText_useTexColor;
     RenderFont font;
   };
+
+  RenderData();
 
   RenderObject& add();
 

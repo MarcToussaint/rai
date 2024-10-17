@@ -87,6 +87,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   else frames = C.frames;
   frames.reshape(-1);
 
+  //-- update meshes (checks if needed)
   if(frame2objID.N!=C.frames.N){
     copyMeshes = true;
   } else {
@@ -102,6 +103,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   }
   if(copyMeshes || forceCopyMeshes) recopyMeshes(frames);
 
+  //-- update poses
   {
     auto lock = dataLock(RAI_HERE);
     for(rai::Frame* f : frames) {
@@ -109,17 +111,10 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
       if(objID!=-1){
         objs(objID)->X = f->ensure_X();
       }
-      //forces
-      if(f->forces.N){
-        NIY;
-//        CHECK_EQ(fnew->forces.N, fold->forces.N, "");
-//        for(uint j=0;j<fnew->forces.N;j++){
-//          fold->forces.elem(j)->copy(*fnew->forces.elem(j));
-//        }
-      }
     }
   }
 
+  //-- update motion
   if(timeSlices.nd==2){
     auto lock = dataLock(RAI_HERE);
     drawSlice=-1;
@@ -134,19 +129,42 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
     motion.clear();
   }
 
-  if(false && C.proxies.N) {
+  {
     auto lock = dataLock(RAI_HERE);
     distMarkers.pos.clear();
     distMarkers.slices.clear();
+  }
+
+  //-- update proxies
+  if(C.proxies.N) {
+    auto lock = dataLock(RAI_HERE);
     for(const rai::Proxy& p: C.proxies){
       if(p.d<.05){
         int s=-1;
         if(timeSlices.N) s = p.a->ID/timeSlices.d1;
-        addDistMarker(p.posA.getArr(), p.posB.getArr(), s);
+        addDistMarker(p.posA.getArr(), p.posB.getArr(), s, .1);
       }
     }
   }
 
+  //-- update forces
+  if(true){
+    auto lock = dataLock(RAI_HERE);
+    for(rai::Frame* fr:frames) for(ForceExchange* f:fr->forces) if(f->sign(fr)>0.){
+
+      double scale = 2.;
+      arr _poa, _torque, _force;
+      f->kinPOA(_poa, NoArr);
+      f->kinForce(_force, NoArr);
+      f->kinTorque(_torque, NoArr);
+
+      int s=-1;
+      if(timeSlices.N) s = fr->ID/timeSlices.d1;
+      addDistMarker(_poa, _poa+.1*_force, s, .025);
+    }
+  }
+
+  //-- update camera
   rai::Frame* camF = C.getFrame("camera_gl", false);
   if(camF) setCamera(camF);
 
@@ -248,10 +266,7 @@ int rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* sa
 
     key = view_slice(t, delay<0.);
 
-    {
-      auto lock = gl->dataLock(RAI_HERE);
-      if(saveVideoPath) savePng(saveVideoPath);
-    }
+    if(saveVideoPath) savePng(saveVideoPath);
   }
   key = update(watch);
 //  drawText = tag;
@@ -268,6 +283,7 @@ int rai::ConfigurationViewer::view_slice(uint t, bool watch){
 }
 
 void rai::ConfigurationViewer::savePng(const char* saveVideoPath, int count) {
+  auto lock = gl->dataLock(RAI_HERE);
   if(count>=0) pngCount=count;
   write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"), true);
 }
