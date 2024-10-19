@@ -623,9 +623,9 @@ struct Default_KOMO_Translator : Logic2KOMO_Translator{
       manip.straight_push({time,time+1}, obj, gripper, table);
 
     }else if(action(0)=="end_push"){
-      str& gripper = action(1);
+      //str& gripper = action(1);
       str& obj = action(2);
-      str& floor = action(3);
+      //str& floor = action(3);
       str& target = action(4);
 
       if(time<manip.komo->T/manip.komo->stepsPerPhase){

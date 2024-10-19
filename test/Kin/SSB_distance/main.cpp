@@ -12,18 +12,6 @@ using rai::Shape;
 
 rai::Vector Pa, Pb;
 
-void draw(void*){
-  glLoadIdentity();
-  glColor(1., 0., 0., .9);
-  glDrawDiamond(Pa.x, Pa.y, Pa.z, .1, .1, .1);
-  glDrawDiamond(Pb.x, Pb.y, Pb.z, .1, .1, .1);
-  glBegin(GL_LINES);
-  glVertex3f(Pa.x, Pa.y, Pa.z);
-  glVertex3f(Pb.x, Pb.y, Pb.z);
-  glEnd();
-  glLoadIdentity();
-}
-
 inline void clip(double& x, double r){
   if(x<0.) x=0.; else if(x>r) x=r;
 }

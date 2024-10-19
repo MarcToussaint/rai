@@ -451,7 +451,7 @@ template<class T> bool Node::getFromDouble(T& x) const {
   }
   if(typeid(T)==typeid(uint)) {
     CHECK(!modf(y, &y), "numerical parameter " <<key <<" should be integer");
-    *((int*)&x)=(uint)y;
+    *((uint*)&x)=(uint)y;
     return true;
   }
   if(typeid(T)==typeid(bool)) {

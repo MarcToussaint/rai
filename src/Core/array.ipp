@@ -192,10 +192,19 @@ template<class T> Array<T>& Array<T>::resizeCopy(uint ND, uint* dim) {
 /// resize to multi-dimensional tensor
 template<class T> Array<T>& Array<T>::reshape(uint ND, uint* dim) {
   nd=ND; d0=d1=d2=0; resetD();
-  uint j, S;
-  for(j=0; j<nd && j<3; j++) {(&d0)[j]=dim[j]; }
-  if(nd>3) { d=new uint[nd];  memmove(d, dim, nd*sizeof(uint)); }
-  for(S=(nd>0?1:0), j=0; j<nd; j++) S*=dim[j];
+  if(nd>0){
+    d0=dim[0];
+    if(nd>1){
+      d1=dim[1];
+      if(nd>2){
+        d2=dim[2];
+        if(nd>3) { d=new uint[nd];  memmove(d, dim, nd*sizeof(uint)); }
+      }
+    }
+  }
+  //for(uint j=0; j<nd && j<3; j++) {(&d0)[j]=dim[j]; }
+  uint S=(nd>0?1:0);
+  for(uint j=0; j<nd; j++) S*=dim[j];
   CHECK_EQ(N, S, "reshape must preserve total memory size");
   return *this;
 }

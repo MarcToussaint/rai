@@ -152,7 +152,6 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
     auto lock = dataLock(RAI_HERE);
     for(rai::Frame* fr:frames) for(ForceExchange* f:fr->forces) if(f->sign(fr)>0.){
 
-      double scale = 2.;
       arr _poa, _torque, _force;
       f->kinPOA(_poa, NoArr);
       f->kinForce(_force, NoArr);

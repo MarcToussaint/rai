@@ -1,3 +1,5 @@
+//#include <Gui/opengl.h>
+
 #include <Optim/benchmarks.h>
 #include "problems.h"
 #include <Optim/constrained.h>
@@ -5,6 +7,7 @@
 
 //lecture.cpp:
 void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start=NoArr, uint iters=20);
+#include "lecture.cpp"
 
 //==============================================================================
 //

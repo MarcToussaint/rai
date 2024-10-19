@@ -26,7 +26,7 @@ void TEST(CameraView){
   segmentation = V.computeSegmentationImage();
   depthData2pointCloud(pts, depth, V.getFxycxy());
 
-  arr D = convert<double>(depth);
+  arr D = rai::convert<double>(depth);
   cout <<"depth min max:" <<min(D) <<' ' <<max(D) <<endl;
   depth *= float(255./max(D));
 
@@ -37,7 +37,7 @@ void TEST(CameraView){
 
    rai::Mesh M;
    M.V = pts.reshape(-1,3);
-   M.C = convert<double>(image).reshape(-1, 3);
+   M.C = rai::convert<double>(image).reshape(-1, 3);
    M.C /= 255.;
    gl.data().clear();
    gl.data().addStandardScene();

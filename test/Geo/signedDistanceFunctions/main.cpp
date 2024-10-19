@@ -1,6 +1,3 @@
-#include <stdlib.h>
-#include <GL/gl.h>
-
 #include <Geo/signedDistanceFunctions.h>
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>

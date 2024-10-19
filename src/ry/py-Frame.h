@@ -15,3 +15,9 @@
 void init_Frame(pybind11::module& m);
 
 #endif
+
+namespace rai {
+struct Frame;
+}
+
+void null_deleter(rai::Frame*);

@@ -44,7 +44,7 @@ void testPickAndPlace(){
     seq.komo->addFrameDof("obj_grasp", gripper, rai::JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
     seq.komo->addRigidSwitch(1., {"obj_grasp", obj});
 #else
-    seq.komo->addFrameDof("obj_grasp", obj, rai::JT_free, true, obj); //a permanent free stable object->grasp joint; and a snap gripper->grasp
+    seq.komo->addFrameDof("obj_grasp", obj, rai::JT_free, true, seq.komo->world[obj]); //a permanent free stable object->grasp joint; and a snap gripper->grasp
     seq.komo->addRigidSwitch(1., {gripper, "obj_grasp"});
 #endif
     //seq.grasp_top_box(1., gripper, box, graspDirection);
@@ -109,7 +109,7 @@ void testPush(){
 #if 0
     seq.komo->addModeSwitch({1., -1.}, rai::SY_stable, {gripper, obj}, true); //a temporary stable free joint gripper->obj
 #elif 1
-    seq.komo->addFrameDof("obj_grasp", gripper, rai::JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
+    seq.komo->addFrameDof("obj_grasp", gripper, rai::JT_free, true, seq.komo->world[obj]); //a permanent free stable gripper->grasp joint; and a snap grasp->object
     seq.komo->addRigidSwitch(1., {"obj_grasp", obj});
 #else
     seq.komo->addFrameDof("obj_trans", table, rai::JT_transXY, false, obj); //a permanent moving(!) transXY joint table->trans, and a snap trans->obj
@@ -174,10 +174,10 @@ void testPivot(){
     ManipulationModelling seq(info);
     seq.setup_sequence(C, 3, 1e-2, 1e-1, false);
 
-    seq.komo->addFrameDof("hinge_joint", "table", rai::JT_hingeZ, false, "hinge"); //a permanent moving(!) hinge joint table->hinge_joint, and a snap hinge_joint->hinge
+    seq.komo->addFrameDof("hinge_joint", "table", rai::JT_hingeZ, false, seq.komo->world["hinge"]); //a permanent moving(!) hinge joint table->hinge_joint, and a snap hinge_joint->hinge
     seq.komo->addRigidSwitch(1., {"hinge_joint", "hinge"});
 
-    seq.komo->addFrameDof("placement", "table", rai::JT_transXYPhi, true, "hinge"); //a permanent stable joint table->placement, and a snap placement->hinge
+    seq.komo->addFrameDof("placement", "table", rai::JT_transXYPhi, true, seq.komo->world["hinge"]); //a permanent stable joint table->placement, and a snap placement->hinge
     seq.komo->addRigidSwitch(2., {"placement", "hinge"});
 
     //geometric constraints: gripper at handle position, z-vector backward, no palm collision

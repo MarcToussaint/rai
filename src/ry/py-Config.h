@@ -26,3 +26,4 @@ struct CameraView;
 }
 
 void null_deleter(rai::Frame*);
+void Config_null_deleter(rai::Configuration*);
