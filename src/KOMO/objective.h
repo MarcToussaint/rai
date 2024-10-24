@@ -8,8 +8,18 @@
 
 #pragma once
 
-#include "../Optim/NLP.h"
-#include "../Kin/feature.h"
+#include "../Core/util.h"
+#include "../Core/array.h"
+
+//===========================================================================
+
+namespace rai{
+struct Frame;
+struct Configuration;
+}
+struct Feature;
+enum FeatureSymbol : int;
+enum ObjectiveType : int;
 
 //===========================================================================
 
@@ -33,7 +43,7 @@ stdOutPipe(Objective)
 struct GroundedObjective {
   std::shared_ptr<Feature> feat;
   const rai::Enum<ObjectiveType> type;  ///< element of {f, sumOfSqr, inequality, equality}
-  FrameL frames;
+  rai::Array<rai::Frame*> frames;
   intA timeSlices;
   int objId=-1;
   bool active = true;
@@ -41,12 +51,11 @@ struct GroundedObjective {
   GroundedObjective(const shared_ptr<Feature>& _feat, const ObjectiveType& _type, const intA& _timeSlices) : feat(_feat), type(_type), timeSlices(_timeSlices) {}
   ~GroundedObjective() {}
 
-  rai::String name() { return feat->shortTag(frames.first()->C); }
+  rai::String name();
 };
 
 //===========================================================================
 
-//TODO remove methods - not used anymore, I think
 struct ObjectiveL : rai::Array<shared_ptr<Objective>> {
 
   shared_ptr<struct Objective> add(const arr& times, const shared_ptr<Feature>& f, ObjectiveType type, const char* name=0);

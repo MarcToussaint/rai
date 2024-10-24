@@ -56,7 +56,7 @@ void init_Config(pybind11::module& m) {
   },
   "add the contents of the file to C",
   pybind11::arg("filename"),
-  pybind11::arg("namePrefix") = std::string()
+  pybind11::arg("namePrefix") = nullptr
       )
 
   .def("addFrame", [](shared_ptr<rai::Configuration>& self, const std::string& name, const std::string& parent, const std::string& args) {

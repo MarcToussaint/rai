@@ -8,6 +8,7 @@
 
 #include "opt-benchmarks.h"
 
+#include "../Kin/frame.h"
 #include "../KOMO/komo.h"
 
 OptBench_InvKin_Simple::OptBench_InvKin_Simple() {

@@ -12,7 +12,6 @@
 #include "kin_bullet.h"
 #include "kin_physx.h"
 #include "F_geometrics.h"
-#include "switch.h"
 #include "F_collisions.h"
 #include "../Gui/opengl.h"
 #include "../Algo/SplineCtrlFeed.h"

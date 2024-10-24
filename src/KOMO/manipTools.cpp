@@ -7,6 +7,9 @@
     --------------------------------------------------------------  */
 
 #include "manipTools.h"
+#include "skeletonSymbol.h"
+
+#include "../Kin/frame.h"
 
 #include "../Optim/NLP_Solver.h"
 #include "../Optim/NLP_Sampler.h"
@@ -96,8 +99,8 @@ void ManipulationModelling::setup_point_to_point_rrt(rai::Configuration& C, cons
   if(explicitCollisionPairs.N) rrt->setExplicitCollisionPairs(explicitCollisionPairs);
 }
 
-void ManipulationModelling::add_helper_frame(rai::JointType type, const char* parent, const char* name, rai::Frame* initFrame, double markerSize) {
-  rai::Frame* f = komo->addFrameDof(name, parent, type, true, initFrame);
+void ManipulationModelling::add_helper_frame(rai::JointType type, const char* parent, const char* name, const char* initName, rai::Frame* initFrame, double markerSize) {
+  rai::Frame* f = komo->addFrameDof(name, parent, type, true, initName, initFrame);
   if(markerSize>0.){
     f->setShape(rai::ST_marker, {.2});
     f->setColor({1., 0., 1.});
@@ -273,9 +276,9 @@ void ManipulationModelling::straight_push(arr time_interval, str obj, str grippe
   str helperStart = STRING("_straight_pushStart_" <<gripper <<"_" <<obj <<'_' <<time_interval(0));
   str helperEnd = STRING("_straight_pushEnd_" <<gripper <<"_" <<obj <<'_' <<time_interval(1));
   if(!komo->world.getFrame(helperStart, false))
-    add_helper_frame(rai::JT_hingeZ, table, helperStart, komo->world.getFrame(obj), .3);
+    add_helper_frame(rai::JT_hingeZ, table, helperStart, obj, 0, .3);
   if(!komo->world.getFrame(helperEnd, false))
-    add_helper_frame(rai::JT_transXYPhi, table, helperEnd, komo->world.getFrame(obj), .3);
+    add_helper_frame(rai::JT_transXYPhi, table, helperEnd, obj, 0, .3);
 
   //-- couple both frames symmetricaly
   //aligned orientation
@@ -347,7 +350,7 @@ void ManipulationModelling::retract(const arr& time_interval, const char* grippe
   auto helper = STRING("_" <<gripper <<"_retract_" <<time_interval(0));
   int t = conv_time2step(time_interval(0), komo->stepsPerPhase);
   rai::Frame *f = komo->timeSlices(komo->k_order+t, komo->world[gripper]->ID);
-  add_helper_frame(rai::JT_none, 0, helper, f);
+  add_helper_frame(rai::JT_none, 0, helper, 0, f);
 //  komo->view(true, helper);
 
   komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1, 3}, {1, 0, 0}});
@@ -359,7 +362,7 @@ void ManipulationModelling::approach(const arr& time_interval, const char* gripp
   auto helper = STRING("_" <<gripper <<"_approach_" <<time_interval(1));
   int t = conv_time2step(time_interval(1), komo->stepsPerPhase);
   rai::Frame *f = komo->timeSlices(komo->k_order+t, komo->world[gripper]->ID);
-  add_helper_frame(rai::JT_none, 0, helper, f);
+  add_helper_frame(rai::JT_none, 0, helper, 0, f);
 //  komo->view(true, helper);
 
   komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1, 3}, {1, 0, 0}});
@@ -371,7 +374,7 @@ void ManipulationModelling::retractPush(const arr& time_interval, const char* gr
   auto helper = STRING("_" <<gripper <<"_retractPush_"  <<time_interval(0));
   int t = conv_time2step(time_interval(0), komo->stepsPerPhase);
   rai::Frame *f = komo->timeSlices(komo->k_order+t, komo->world[gripper]->ID);
-  add_helper_frame(rai::JT_none, 0, helper, f);
+  add_helper_frame(rai::JT_none, 0, helper, 0, f);
 //  komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1,3},{1,0,0}});
 //  komo->addObjective(time_interval, FS_quaternionDiff, {gripper, helper}, OT_eq, {1e2});
   komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1, 3}, {1, 0, 0}});
@@ -386,7 +389,7 @@ void ManipulationModelling::approachPush(const arr& time_interval, const char* g
   auto helper = STRING("_" <<gripper <<"_approachPush_" <<time_interval(1));
   int t = conv_time2step(time_interval(1), komo->stepsPerPhase);
   rai::Frame *f = komo->timeSlices(komo->k_order+t, komo->world[gripper]->ID);
-  add_helper_frame(rai::JT_none, 0, helper, f);
+  add_helper_frame(rai::JT_none, 0, helper, 0, f);
   komo->addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1, 3}, {1, 0, 0}});
   komo->addObjective({time_interval(0)}, FS_positionRel, {gripper, helper}, OT_ineq, 1e2 * arr{{1, 3}, {0, 1, 0}}, {0., -dist, 0.});
   komo->addObjective({time_interval(0)}, FS_positionRel, {gripper, helper}, OT_ineq, -1e2 * arr{{1, 3}, {0, 0, 1}}, {0., 0., dist});

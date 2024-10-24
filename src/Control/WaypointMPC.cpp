@@ -9,6 +9,7 @@
 #include "WaypointMPC.h"
 
 #include "../Optim/options.h"
+#include "../Optim/NLP.h"
 
 WaypointMPC::WaypointMPC(KOMO& _komo, const arr& _qHome)
   : komo(_komo), qHome(_qHome) {

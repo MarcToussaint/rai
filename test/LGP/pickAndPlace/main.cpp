@@ -3,6 +3,7 @@
 #include <Core/graph.h>
 #include <Kin/proxy.h>
 #include <Kin/viewer.h>
+#include <Kin/frame.h>
 
 #include <LGP/LGP_tree.h>
 #include <KOMO/komo.h>

@@ -108,7 +108,7 @@ LIBS += -lrt
 
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
 
-CXXFLAGS += -Wno-terminate -Wno-pragmas -fPIC
+CXXFLAGS += -Wno-terminate -Wno-array-bounds -Wno-pragmas -fPIC
 CFLAGS += -fPIC -O3
 
 ifndef RAI_NO_CXX11

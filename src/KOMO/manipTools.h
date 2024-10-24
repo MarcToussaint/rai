@@ -33,7 +33,7 @@ struct ManipulationModelling {
   void setup_point_to_point_motion(rai::Configuration& C, const arr& q1, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
   void setup_point_to_point_rrt(rai::Configuration& C, const arr& q0, const arr& q1, const StringA& explicitCollisionPairs);
 
-  void add_helper_frame(rai::JointType type, const char* parent, const char* name, rai::Frame* initFrame=0, double markerSize=-1.);
+  void add_helper_frame(rai::JointType type, const char* parent, const char* name, const char* initName=0, rai::Frame* initFrame=0, double markerSize=-1.);
 
   void grasp_top_box(double time, const char* gripper, const char* obj, str grasp_direction="xz");
   void grasp_box(double time, const char* gripper, const char* obj, const char* palm, str grasp_direction="x", double margin=.02);

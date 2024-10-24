@@ -1,9 +1,11 @@
 #include "Motif.h"
 
-#include <KOMO/komo_NLP.h>
-#include <Optim/NLP_Solver.h>
-#include <Optim/NLP_Sampler.h>
-#include <Kin/frame.h>
+#include "../KOMO/komo_NLP.h"
+#include "../KOMO/objective.h"
+#include "../Optim/NLP_Solver.h"
+#include "../Optim/NLP_Sampler.h"
+#include "../Kin/frame.h"
+#include "../Kin/feature.h"
 
 bool KOMO_Motif::matches(GroundedObjective* ob, int _timeSlice){
   CHECK(objs.N, "");

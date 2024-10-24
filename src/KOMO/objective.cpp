@@ -7,8 +7,11 @@
     --------------------------------------------------------------  */
 
 #include "objective.h"
-#include "../Kin/switch.h"
+#include "../KOMO/switch.h"
+#include "../Kin/feature.h"
+#include "../Kin/frame.h"
 #include "../Core/graph.h"
+#include "../Optim/NLP.h"
 
 //===========================================================================
 
@@ -37,6 +40,8 @@ void Objective::write(std::ostream& os) const {
 }
 
 //===========================================================================
+
+rai::String GroundedObjective::name() { return feat->shortTag(frames.first()->C); }
 
 shared_ptr<Objective> ObjectiveL::add(const arr& times, const shared_ptr<Feature>& f, ObjectiveType type, const char* name) {
   append(make_shared<Objective>(f, type, name, times));

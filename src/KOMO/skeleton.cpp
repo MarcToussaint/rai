@@ -14,6 +14,7 @@
 #include "../Kin/F_pose.h"
 #include "../Kin/F_forces.h"
 #include "../Kin/F_qFeatures.h"
+#include "../KOMO/switch.h"
 #include "../Optim/NLP_Solver.h"
 #include "../Logic/fol.h"
 

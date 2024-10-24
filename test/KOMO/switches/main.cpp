@@ -2,9 +2,10 @@
 #include <string>
 #include <map>
 #include <Core/graph.h>
-#include <Kin/switch.h>
+#include <KOMO/switch.h>
 #include <Kin/frame.h>
 #include <Optim/NLP_Solver.h>
+#include <KOMO/skeletonSymbol.h>
 
 using namespace std;
 

@@ -10,7 +10,7 @@
 
 #include "../Core/array.h"
 
-enum FeatureSymbol {
+enum FeatureSymbol : int {
   FS_none=-1,
   FS_position,
   FS_positionDiff,

@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 #include <Core/graph.h>
-#include <Kin/switch.h>
+#include <KOMO/switch.h>
 #include <Kin/viewer.h>
 
 using namespace std;

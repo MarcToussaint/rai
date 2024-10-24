@@ -11,7 +11,7 @@
 
 #include "../MCTS/solver_PlainMC.h"
 #include "../KOMO/komo.h"
-#include "../Kin/switch.h"
+#include "../KOMO/switch.h"
 #include "../Gui/opengl.h"
 #include "../Kin/viewer.h"
 #include "../Optim/NLP_Solver.h"

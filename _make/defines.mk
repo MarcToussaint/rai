@@ -223,9 +223,9 @@ LIBS += -pthread -Wl,-Bsymbolic-functions  -lwx_gtk2u_richtext-2.8 -lwx_gtk2u_au
 endif
 
 ifeq ($(ANN),1)
-DEPEND_UBUNTU += libann-dev
+#DEPEND_UBUNTU += libann-dev
 CXXFLAGS  += -DRAI_ANN
-LIBS += -lann
+LIBS += -lANN
 endif
 
 ifeq ($(QHULL),1)

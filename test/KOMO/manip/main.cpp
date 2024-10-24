@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 #include <Core/graph.h>
-#include <Kin/switch.h>
+#include <KOMO/switch.h>
 #include <Kin/viewer.h>
 #include <KOMO/manipTools.h>
 
@@ -44,7 +44,7 @@ void testPickAndPlace(){
     seq.komo->addFrameDof("obj_grasp", gripper, rai::JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
     seq.komo->addRigidSwitch(1., {"obj_grasp", obj});
 #else
-    seq.komo->addFrameDof("obj_grasp", obj, rai::JT_free, true, seq.komo->world[obj]); //a permanent free stable object->grasp joint; and a snap gripper->grasp
+    seq.komo->addFrameDof("obj_grasp", obj, rai::JT_free, true, obj); //a permanent free stable object->grasp joint; and a snap gripper->grasp
     seq.komo->addRigidSwitch(1., {gripper, "obj_grasp"});
 #endif
     //seq.grasp_top_box(1., gripper, box, graspDirection);
@@ -87,8 +87,10 @@ void testPush(){
   rai::Configuration C;
   C.addFile("scene.g");
   C.delFrame("obstacle");
+
+  //close the gripper
   rai::Joint *j = C["l_panda_finger_joint1"]->joint;
-  j->setDofs(arr{.0});
+  j->setDofs(arr{.01});
 
   auto gripper = "l_gripper";
 //  auto palm = "l_palm";
@@ -109,7 +111,7 @@ void testPush(){
 #if 0
     seq.komo->addModeSwitch({1., -1.}, rai::SY_stable, {gripper, obj}, true); //a temporary stable free joint gripper->obj
 #elif 1
-    seq.komo->addFrameDof("obj_grasp", gripper, rai::JT_free, true, seq.komo->world[obj]); //a permanent free stable gripper->grasp joint; and a snap grasp->object
+    seq.komo->addFrameDof("obj_grasp", gripper, rai::JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
     seq.komo->addRigidSwitch(1., {"obj_grasp", obj});
 #else
     seq.komo->addFrameDof("obj_trans", table, rai::JT_transXY, false, obj); //a permanent moving(!) transXY joint table->trans, and a snap trans->obj
@@ -120,7 +122,7 @@ void testPush(){
     seq.komo->addObjective({2.}, FS_poseRel, {gripper, obj}, OT_eq, {1e1}, {}, 1); //constant relative pose! (redundant for first switch option)
     //random target position
     seq.komo->addObjective({2.}, FS_position, {obj}, OT_eq, 1e1*arr{{2,3}, {1,0,0,0,1,0}}, .4*rand(3) - .2+arr{.0,.3,.0});
-    seq.solve(0);
+    seq.solve(2);
     if(!seq.ret->feasible) continue;
 
     auto move0 = seq.sub_motion(0);
@@ -131,14 +133,14 @@ void testPush(){
                                  obj, "l_palm"}, .02);
     move0->no_collision({}, {table, "l_finger1",
                           table, "l_finger2"}, .0);
-    move0->solve();
+    move0->solve(2);
     if(!move0->ret->feasible) continue;
 
     auto move1 = seq.sub_motion(1);
 //    move1->komo->addObjective({}, FS_positionRel, {gripper, "_push_start"}, OT_eq, 1e1*arr{{2,3},{1,0,0,0,0,1}});
 //    move1->komo->addObjective({}, FS_negDistance, {gripper, obj}, OT_eq, {1e1}, {-.02});
     move1->komo->addObjective({}, FS_poseRel, {gripper, obj}, OT_eq, {1e1}, {}, 1); //constant relative pose! (redundant for first switch option)
-    move1->solve();
+    move1->solve(2);
     if(!move1->ret->feasible) continue;
 
     move0->play(C, 1.);
@@ -174,10 +176,10 @@ void testPivot(){
     ManipulationModelling seq(info);
     seq.setup_sequence(C, 3, 1e-2, 1e-1, false);
 
-    seq.komo->addFrameDof("hinge_joint", "table", rai::JT_hingeZ, false, seq.komo->world["hinge"]); //a permanent moving(!) hinge joint table->hinge_joint, and a snap hinge_joint->hinge
+    seq.komo->addFrameDof("hinge_joint", "table", rai::JT_hingeZ, false, "hinge"); //a permanent moving(!) hinge joint table->hinge_joint, and a snap hinge_joint->hinge
     seq.komo->addRigidSwitch(1., {"hinge_joint", "hinge"});
 
-    seq.komo->addFrameDof("placement", "table", rai::JT_transXYPhi, true, seq.komo->world["hinge"]); //a permanent stable joint table->placement, and a snap placement->hinge
+    seq.komo->addFrameDof("placement", "table", rai::JT_transXYPhi, true, "hinge"); //a permanent stable joint table->placement, and a snap placement->hinge
     seq.komo->addRigidSwitch(2., {"placement", "hinge"});
 
     //geometric constraints: gripper at handle position, z-vector backward, no palm collision

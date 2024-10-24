@@ -4,6 +4,7 @@
 #include <Kin/F_pose.h>
 #include <Optim/NLP_Solver.h>
 #include <Optim/utils.h>
+#include <KOMO/skeletonSymbol.h>
 
 //===========================================================================
 

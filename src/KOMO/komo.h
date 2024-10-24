@@ -9,18 +9,21 @@
 #pragma once
 
 #include "objective.h"
-#include "skeletonSymbol.h"
 #include "../Kin/kin.h"
 #include "../Optim/options.h"
-#include "../Optim/NLP.h"
-#include "../Kin/switch.h"
-#include "../Kin/featureSymbols.h"
 
 //===========================================================================
 
 namespace rai {
 struct FclInterface;
+enum SwitchInitializationType : int;
+enum SkeletonSymbol : int;
+enum JointType : int;
 }
+typedef rai::Array<ObjectiveType> ObjectiveTypeA;
+struct SolverReturn;
+struct NLP;
+struct NLP_Factored;
 
 //===========================================================================
 
@@ -210,7 +213,7 @@ struct KOMO : NonCopyable {
   // internal (kind of private)
   //
 
-  rai::Frame* addFrameDof(const char* name, const char* parent, rai::JointType jointType, bool stable, rai::Frame* initFrame=0, rai::Transformation rel=0);
+  rai::Frame* addFrameDof(const char* name, const char* parent, rai::JointType jointType, bool stable, const char* initName=0, rai::Frame* initFrame=0);
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly= {});           ///< set the state trajectory of all configurations
 private:
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);
@@ -234,3 +237,9 @@ public:
   void _addObjective(const std::shared_ptr<Objective>& ob, const intA& timeSlices);
 };
 
+int conv_time2step(double time, uint stepsPerPhase);
+double conv_step2time(int step, uint stepsPerPhase);
+void conv_times2steps(int& fromStep, int& toStep, const arr& times, int stepsPerPhase, uint T,
+                      int deltaFromStep, int deltaToStep);
+intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
+                       int deltaFromStep, int deltaToStep);

@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "bounds.h"
-//#include "../Kin/switch.h"
+//#include "../KOMO/switch.h"
 #include "../Kin/F_qFeatures.h"
 #include "../Kin/F_forces.h"
 #include "../Kin/F_pose.h"

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "frame.h"
+#include "../Kin/frame.h"
 
 namespace rai {
 
@@ -23,7 +23,7 @@ enum SwitchType {
   SW_addPOAonly,
 };
 
-enum SwitchInitializationType {
+enum SwitchInitializationType : int {
   SWInit_zero=0,
   SWInit_copy,
   SWInit_random
@@ -58,11 +58,3 @@ struct KinematicSwitch {
 } // namespace rai
 
 stdOutPipe(rai::KinematicSwitch)
-
-int conv_time2step(double time, uint stepsPerPhase);
-double conv_step2time(int step, uint stepsPerPhase);
-void conv_times2steps(int& fromStep, int& toStep, const arr& times, int stepsPerPhase, uint T,
-                      int deltaFromStep, int deltaToStep);
-intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
-                       int deltaFromStep, int deltaToStep);
-

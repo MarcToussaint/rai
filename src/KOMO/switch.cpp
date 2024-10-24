@@ -7,78 +7,14 @@
     --------------------------------------------------------------  */
 
 #include "switch.h"
-#include "kin.h"
-#include "forceExchange.h"
+#include "../Kin/kin.h"
+#include "../Kin/forceExchange.h"
 
 #include <climits>
 
 //===========================================================================
 
-/* x_{-1} = x_{time=0}
- * x_{9}: phase=1 (for stepsPerPhase=10 */
-int conv_time2step(double time, uint stepsPerPhase) {
-  return (floor(time*double(stepsPerPhase) + .500001))-1;
-}
-double conv_step2time(int step, uint stepsPerPhase) {
-  return double(step+1)/double(stepsPerPhase);
-}
-void conv_times2steps(int& fromStep, int& toStep, const arr& times, int stepsPerPhase, uint T,
-                      int deltaFromStep, int deltaToStep) {
-  //interpret times as always, single slice, interval, or tuples
-  double fromTime=0, toTime=-1.;
-  if(!times || !times.N) {
-  } else if(times.N==1) {
-    fromTime = toTime = times(0);
-  } else {
-    CHECK_EQ(times.N, 2, "");
-    fromTime = times(0);
-    toTime = times(1);
-  }
-
-  if(toTime>double(T)/stepsPerPhase+1. && toTime<1e6) {
-    LOG(-1) <<"beyond the time!: endTime=" <<toTime <<" phases=" <<double(T)/stepsPerPhase;
-  }
-
-  CHECK_GE(stepsPerPhase, 0, "");
-
-  //convert to steps
-  fromStep = (fromTime<0.?T-1:conv_time2step(fromTime, stepsPerPhase));
-  toStep   = (toTime<0.?T-1:conv_time2step(toTime, stepsPerPhase));
-
-  //account for deltas
-  if(deltaFromStep) fromStep+=deltaFromStep;
-  if(deltaToStep) toStep+=deltaToStep;
-
-  //clip
-  if(fromStep<0) fromStep=0;
-  if(toStep>=(int)T && T>0) toStep=T-1;
-}
-
-intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
-                       int deltaFromStep, int deltaToStep) {
-
-  if(times.N && times.elem(0)==-10.) {
-    intA configs(times.N-1);
-    for(uint i=0; i<configs.N; i++) configs(i) = times(i+1);
-    configs.reshape(-1, order+1);
-    return configs;
-  }
-
-  int fromStep, toStep;
-  conv_times2steps(fromStep, toStep, times, stepsPerPhase, T, deltaFromStep, deltaToStep);
-
-  //create tuples
-  intA configs;
-
-  if(toStep>=fromStep)
-    configs.resize(1+toStep-fromStep, order+1);
-  else configs.resize(0, order+1);
-
-  for(int t=fromStep; t<=toStep; t++)
-    for(uint j=0; j<configs.d1; j++) configs(t-fromStep, j) = t+j-int(order);
-
-  return configs;
-}
+int conv_time2step(double time, uint stepsPerPhase);
 
 //===========================================================================
 

@@ -13,7 +13,7 @@
 //===========================================================================
 
 /// symbols to declare of which type an objective feature is
-enum ObjectiveType { OT_none=0, OT_f, OT_sos, OT_ineq, OT_eq, OT_ineqB, OT_ineqP };
+enum ObjectiveType : int { OT_none=0, OT_f, OT_sos, OT_ineq, OT_eq, OT_ineqB, OT_ineqP };
 typedef rai::Array<ObjectiveType> ObjectiveTypeA;
 extern ObjectiveTypeA& NoObjectiveTypeA;
 

@@ -8,12 +8,13 @@
 
 #include "komo.h"
 #include "komo_NLP.h"
+#include "skeletonSymbol.h"
 
 #include "../Gui/opengl.h"
 #include "../Geo/fclInterface.h"
 
 #include "../Kin/frame.h"
-//#include "../Kin/switch.h"
+//#include "../KOMO/switch.h"
 #include "../Kin/proxy.h"
 #include "../Kin/forceExchange.h"
 //#include "../Kin/kin_swift.h"
@@ -25,6 +26,7 @@
 //#include "../Kin/F_operators.h"
 #include "../Kin/F_forces.h"
 #include "../Kin/viewer.h"
+#include "../KOMO/switch.h"
 
 //#include "../Optim/constrained.h"
 //#include "../Optim/primalDual.h"
@@ -1506,11 +1508,11 @@ int KOMO::view(bool pause, const char* txt) {
   pathConfig.get_viewer()->phaseOffset = 1.-double(k_order);
   pathConfig.get_viewer()->phaseFactor = 1./double(stepsPerPhase);
   if(featureValues.N){
-    pathConfig.get_viewer()->sliceTexts.resize(T);
+    pathConfig.get_viewer()->sliceTexts.resize(T+k_order);
     arr err = info_objectiveErrorTraces();
     for(uint t=0;t<T;t++){
-      pathConfig.get_viewer()->sliceTexts(t) = info_sliceErrors(t, err);
-      pathConfig.get_viewer()->sliceTexts(t) <<info_sliceCollisions(t);
+      pathConfig.get_viewer()->sliceTexts(t+k_order) = info_sliceErrors(t, err);
+      pathConfig.get_viewer()->sliceTexts(t+k_order) <<info_sliceCollisions(t);
     }
   }
   pathConfig.get_viewer()->ensure_gl().setTitle("KOMO Viewer");
@@ -1613,15 +1615,19 @@ void KOMO::getSubProblem(uint phase, Configuration& C, arr& q0, arr& q1) {
 
 rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
                               JointType jointType, bool stable,
-                              rai::Frame* initFrame, rai::Transformation rel) {
+                              const char* initName, rai::Frame* initFrame) {
   Frame* p0 = 0;
   if(parent && parent[0]) p0 = world[parent];
 
   //-- IN WORLD, NOT PATHCONFIG!
 
   // decide on a relative pose
+  rai::Transformation rel = 0;
+  if(initName){
+    CHECK(!initFrame, "can't specify both, initName and initFrame!");
+    initFrame = world.getFrame(initName, true);
+  }
   if(initFrame) {
-    CHECK(rel.isZero(), "double initialization");
     if(p0){
       rel = initFrame->ensure_X()/p0->ensure_X();
     }else{
@@ -1941,3 +1947,70 @@ StringA KOMO::getCollisionPairs(double belowMargin) {
   return cols;
 }
 
+//===========================================================================
+
+/* x_{-1} = x_{time=0}
+ * x_{9}: phase=1 (for stepsPerPhase=10 */
+int conv_time2step(double time, uint stepsPerPhase) {
+  return (floor(time*double(stepsPerPhase) + .500001))-1;
+}
+double conv_step2time(int step, uint stepsPerPhase) {
+  return double(step+1)/double(stepsPerPhase);
+}
+void conv_times2steps(int& fromStep, int& toStep, const arr& times, int stepsPerPhase, uint T,
+                      int deltaFromStep, int deltaToStep) {
+  //interpret times as always, single slice, interval, or tuples
+  double fromTime=0, toTime=-1.;
+  if(!times || !times.N) {
+  } else if(times.N==1) {
+    fromTime = toTime = times(0);
+  } else {
+    CHECK_EQ(times.N, 2, "");
+    fromTime = times(0);
+    toTime = times(1);
+  }
+
+  if(toTime>double(T)/stepsPerPhase+1. && toTime<1e6) {
+    LOG(-1) <<"beyond the time!: endTime=" <<toTime <<" phases=" <<double(T)/stepsPerPhase;
+  }
+
+  CHECK_GE(stepsPerPhase, 0, "");
+
+  //convert to steps
+  fromStep = (fromTime<0.?T-1:conv_time2step(fromTime, stepsPerPhase));
+  toStep   = (toTime<0.?T-1:conv_time2step(toTime, stepsPerPhase));
+
+  //account for deltas
+  if(deltaFromStep) fromStep+=deltaFromStep;
+  if(deltaToStep) toStep+=deltaToStep;
+
+  //clip
+  if(fromStep<0) fromStep=0;
+  if(toStep>=(int)T && T>0) toStep=T-1;
+}
+
+intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
+                       int deltaFromStep, int deltaToStep) {
+
+  if(times.N && times.elem(0)==-10.) {
+    intA configs(times.N-1);
+    for(uint i=0; i<configs.N; i++) configs(i) = times(i+1);
+    configs.reshape(-1, order+1);
+    return configs;
+  }
+
+  int fromStep, toStep;
+  conv_times2steps(fromStep, toStep, times, stepsPerPhase, T, deltaFromStep, deltaToStep);
+
+  //create tuples
+  intA configs;
+
+  if(toStep>=fromStep)
+    configs.resize(1+toStep-fromStep, order+1);
+  else configs.resize(0, order+1);
+
+  for(int t=fromStep; t<=toStep; t++)
+    for(uint j=0; j<configs.d1; j++) configs(t-fromStep, j) = t+j-int(order);
+
+  return configs;
+}

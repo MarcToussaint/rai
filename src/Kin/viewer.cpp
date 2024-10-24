@@ -328,6 +328,7 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
       s <<")";
       if(drawSlice<(int)sliceTexts.N){
 //        cout <<"- ConfigurationViewer -\n" <<s <<"\n" <<sliceTexts(drawSlice) <<endl;
+        s <<"\n" <<sliceTexts(drawSlice);
       }
       //C.glDraw_frames(gl, slices[drawSlice], 0);
       RenderData::setText(s);

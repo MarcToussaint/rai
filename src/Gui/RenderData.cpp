@@ -89,16 +89,23 @@ void RenderData::addAxes(double scale, const rai::Transformation& _X){
 }
 
 void RenderFont::glInitialize(){
-  characters.resize(128);
 
   FT_Library ft;
   int r = FT_Init_FreeType(&ft);
-  if(r) HALT("ERROR::FREETYPE: Could not init FreeType Library: " <<r);
+  if(r){
+    LOG(-1) <<"FreeType Error: Could not initialize FreeType Library. error code: " <<r <<" -> text rendering disabled";
+    return;
+  }
 
-  StringA fonts = { "tlwg/Sawasdee.ttf", "freefont/FreeSerif.ttf", "ubuntu/Ubuntu-L.ttf", "dejavu/DejaVuSans.ttf", "teluguvijayam/mallanna.ttf"};
+  StringA fonts = { "tlwg/Sawasdee.ttf", "freefont/FreeSerif.ttf", "ubuntu/Ubuntu-L.ttf", "dejavu/DejaVuSans.ttf", "teluguvijayam/mallanna.ttf", "none"};
+  uint fontID = 2;
   FT_Face face;
-  r = FT_New_Face(ft, "/usr/share/fonts/truetype/" + fonts(2), 0, &face);
-  if(r) HALT("ERROR::FREETYPE: Failed to load font: " <<r);
+  r = FT_New_Face(ft, "/usr/share/fonts/truetype/" + fonts(fontID), 0, &face);
+  if(r){
+    LOG(-1) <<"FreeType Error: Failed to load font '" <<fonts(fontID) <<"' error code: " <<r <<" -> text rendering disabled";
+    FT_Done_FreeType(ft);
+    return;
+  }
 
   FT_Set_Pixel_Sizes(face, 0, 16);
 
@@ -106,6 +113,7 @@ void RenderFont::glInitialize(){
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
   // load first 128 characters of ASCII set
+  characters.resize(128);
   for (unsigned char c = 0; c < 128; c++)
   {
     // Load character glyph
@@ -807,6 +815,8 @@ RenderData& RenderData::clear(){
 }
 
 void RenderText::glRender(GLuint progText_color, const RenderFont& font, float height){
+  if(!font.characters.N) return;
+
   CHECK(initialized, "");
   glUniform3f(progText_color, 0., 0., 0.); //color.x, color.y, color.z);
   glActiveTexture(GL_TEXTURE0);

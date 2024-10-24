@@ -14,6 +14,7 @@
 #include "../KOMO/skeleton.h"
 
 //#include "../LGP/bounds.h"
+#include "../Kin/frame.h"
 #include "../Kin/viewer.h"
 
 void init_KOMO(pybind11::module& m) {
@@ -83,11 +84,11 @@ void init_KOMO(pybind11::module& m) {
   .def("addRigidSwitch", &KOMO::addRigidSwitch, "", pybind11::arg("times"), pybind11::arg("frames"), pybind11::arg("noJumpStart")=true)
   .def("addModeSwitch", &KOMO::addModeSwitch, "", pybind11::arg("times"), pybind11::arg("newMode"), pybind11::arg("frames"), pybind11::arg("firstSwitch")=true)
 
-  .def("addStableFrame", [](shared_ptr<KOMO>& self, const char* name, const char* parent, rai::JointType jointType, bool stable, rai::Frame* initFrame) {
-    rai::Frame* f = self->addFrameDof(name, parent, jointType, stable, initFrame);
+  .def("addStableFrame", [](shared_ptr<KOMO>& self, const char* name, const char* parent, rai::JointType jointType, bool stable, const char* initName, rai::Frame* initFrame) {
+    rai::Frame* f = self->addFrameDof(name, parent, jointType, stable, initName, initFrame);
     return shared_ptr<rai::Frame>(f, &null_deleter); //giving it a non-sense deleter!
   }, "complicated...",
-  pybind11::arg("name"), pybind11::arg("parent"), pybind11::arg("jointType"), pybind11::arg("stable"), pybind11::arg("initFrame")=nullptr)
+  pybind11::arg("name"), pybind11::arg("parent"), pybind11::arg("jointType"), pybind11::arg("stable"), pybind11::arg("initName")=nullptr, pybind11::arg("initFrame")=nullptr)
 
   //-- initialize (=set state)
   .def("initOrg", &KOMO::initOrg, "")

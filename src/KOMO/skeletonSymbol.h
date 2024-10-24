@@ -10,7 +10,7 @@
 
 namespace rai {
 
-enum SkeletonSymbol {
+enum SkeletonSymbol : int {
   SY_none=-1,
 
   //geometric:
