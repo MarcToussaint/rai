@@ -231,8 +231,8 @@ void RenderData::ensureInitialized(OpenGL &gl){
   id.initialized=true;
 }
 
-void RenderData::renderObjects(GLuint idT_WM, const uintA& sortedObjIDs, RenderType type, GLuint idFlatColor){
-  arr T_WM = eye(4);
+void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs, RenderType type, GLuint idFlatColor){
+  arr ModelT_WM = eye(4);
 
   CHECK_EQ(sortedObjIDs.N, objs.N, "");
 
@@ -247,10 +247,8 @@ void RenderData::renderObjects(GLuint idT_WM, const uintA& sortedObjIDs, RenderT
     std::shared_ptr<RenderObject>& obj = objs.elem(objID);
     if(obj->type!=type) continue;
 
-    if(idT_WM){
-      T_WM = obj->X.getAffineMatrix();
-      glUniformMatrix4fv(idT_WM, 1, GL_TRUE, rai::convert<float>(T_WM).p);
-    }
+    ModelT_WM = obj->X.getAffineMatrix();
+    glUniformMatrix4fv(prog_ModelT_WM, 1, GL_TRUE, rai::convert<float>(ModelT_WM).p);
 
     if(renderFlatColors && idFlatColor && obj->flatColor.N){
       CHECK_EQ(obj->flatColor.N, 3, "");
@@ -291,9 +289,9 @@ void RenderData::renderObjects(GLuint idT_WM, const uintA& sortedObjIDs, RenderT
 
       X.pos.set(a);
       X.rot.setDiff(Vector_z, d);
-      T_WM = X.getAffineMatrix();
-      for(uint k=0;k<4;k++) T_WM(k,2) *= l; //scale length
-      glUniformMatrix4fv(idT_WM, 1, GL_TRUE, rai::convert<float>(T_WM).p);
+      ModelT_WM = X.getAffineMatrix();
+      for(uint k=0;k<4;k++) ModelT_WM(k,2) *= l; //scale length
+      glUniformMatrix4fv(prog_ModelT_WM, 1, GL_TRUE, rai::convert<float>(ModelT_WM).p);
       cylin.glRender();
     }
   }
@@ -623,7 +621,7 @@ void RenderObject::glInitialize(){
 
   GLint mem=0;
   glGetIntegerv(GL_VBO_FREE_MEMORY_ATI, &mem);
-  if(mem<200000) LOG(0) <<" -- warning, little vbo memory left: " <<mem;
+  if(mem && mem<200000) LOG(0) <<" -- warning, little vbo memory left: " <<mem;
 }
 
 RenderObject::~RenderObject(){
@@ -649,8 +647,7 @@ GLuint LoadShadersFile(const char * vertex_file_path,const char * fragment_file_
     VertexShaderCode = sstr.str();
     VertexShaderStream.close();
   }else{
-    printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", vertex_file_path);
-    getchar();
+    HALT("can't open vertex shader file " <<vertex_file_path);
     return 0;
   }
 
@@ -662,6 +659,9 @@ GLuint LoadShadersFile(const char * vertex_file_path,const char * fragment_file_
     sstr << FragmentShaderStream.rdbuf();
     FragmentShaderCode = sstr.str();
     FragmentShaderStream.close();
+  }else{
+    HALT("can't open fragment shader file " <<fragment_file_path);
+    return 0;
   }
 
   return LoadShaders(VertexShaderCode, FragmentShaderCode);

@@ -58,7 +58,7 @@ int main(int argc, char **argv){
   scene.add().mesh(m, rai::Transformation("t(-.4 -.4 .4)"), .9);
 
   byteA img;
-  read_ppm(img, "../opengl/box.ppm",false);
+  read_ppm(img, "../retired/opengl/box.ppm",false);
   add_alpha_channel(img, 120);
   scene.addQuad(img, 20, 20, 60, 60);
 
