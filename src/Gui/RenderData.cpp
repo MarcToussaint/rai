@@ -619,9 +619,9 @@ void RenderObject::glInitialize(){
   glBindVertexArray(0);
   initialized=true;
 
-  GLint mem=0;
-  glGetIntegerv(GL_VBO_FREE_MEMORY_ATI, &mem);
-  if(mem && mem<200000) LOG(0) <<" -- warning, little vbo memory left: " <<mem;
+  // GLint mem=0;
+  // glGetIntegerv(GL_VBO_FREE_MEMORY_ATI, &mem);
+  // if(mem && mem<200000) LOG(0) <<" -- warning, little vbo memory left: " <<mem;
 }
 
 RenderObject::~RenderObject(){

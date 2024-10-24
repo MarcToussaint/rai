@@ -604,8 +604,9 @@ struct Simulation_DisplayThread : Thread, ConfigurationViewer {
   }
 
   void step() {
-    text.clear() <<"Kin/Simulation" <<text <<" - time:" <<time;
-    update();
+    str txt;
+    txt <<"Kin/Simulation" <<text <<" - time:" <<time <<"\n[Simulation_DisplayThread; disable with Simulation.verbose=0]";
+    view(false, txt);
     //write_png(gl->captureImage, STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"));
     //if(!(step_count%10)) cout <<"display thread load:" <<timer.report() <<endl;
   }
