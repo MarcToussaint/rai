@@ -24,15 +24,17 @@ enum RenderType { _solid, _shadow, _marker, _transparent, _text, _all };
 
 struct RenderObject{
   rai::Transformation X=0;
-  floatA vertices, colors, normals;
-  GLuint vao, vertexBuffer, colorBuffer, normalBuffer;
   double cameraDist=-1.;
   RenderType type=_solid;
-  GLenum mode=GL_TRIANGLES;
-  int version=-1;
   int selection=-1;
   byteA flatColor;
+
+  floatA vertices, colors, normals;
+  GLuint vao, vertexBuffer, colorBuffer, normalBuffer;
+  GLenum mode=GL_TRIANGLES;
   bool initialized=false;
+  int version=-1;
+  RenderObject* mimic=0;
 
   ~RenderObject();
   void mesh(rai::Mesh &mesh, const rai::Transformation& _X=0, double avgNormalsThreshold=.9, RenderType _type=_solid);
@@ -132,6 +134,8 @@ struct RenderData {
 
 //private:
   void renderObjects(GLuint idT_WM, const uintA& sortedObjIDs, RenderType type, GLuint idFlatColor);
+
+  void report(std::ostream& os);
 };
 
 }//namespace

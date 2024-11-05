@@ -835,12 +835,17 @@ void swap_RGB_BGR(byteA& img) {
 
 arr reshapeColor(const arr& col, int d0){
   arr c = col;
+  if(c.N==0){ c = arr{.8, .8, .8, 1.}; }
   if(c.N==1){ double g=c.elem(); c = arr{g,g,g,1.}; }
   if(c.N==2){ double g=c.elem(0); c.prepend(g); c.prepend(g); }
   if(c.N==3){ c.append(1.); }
   if(d0>=0 && (c.nd==1 || (int)c.d0!=d0)){
     CHECK_EQ(c.nd, 1, "");
     c = replicate(c, d0);
+  }
+  if(c.nd==2 && c.d1==3){
+    c.insColumns(3, 1);
+    for(uint i=0;i<c.d0;i++) c(i, 3) = 1.;
   }
   return c;
 }

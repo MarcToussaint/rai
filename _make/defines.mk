@@ -14,6 +14,11 @@ LPATHS += ../build ../../build $(BASE)/../build
 LIBS += -lrai
 endif
 
+ifeq ($(RAI_LOCAL),1)
+DEPEND :=
+LIBS += -lrai
+endif
+
 ifeq ($(RAI_ROBOTIC),1)
 DEPEND :=
 PY_VER = $(shell python3 -c "import sys; print(str(sys.version_info[0])+'.'+str(sys.version_info[1]))")

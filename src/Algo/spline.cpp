@@ -182,6 +182,7 @@ void BSpline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
 
   //linear combination
   uint n = ctrlPoints.d1;
+#if 0
   if(!!x) x.resize(n).setZero();
   if(!!xDot) xDot.resize(n).setZero();
   if(!!xDDot) xDDot.resize(n).setZero();
@@ -190,6 +191,13 @@ void BSpline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
     if(!!xDot) for(uint k=0; k<n; k++) xDot.elem(k) += db.elem(j)*ctrlPoints(offset+j, k);
     if(!!xDDot) for(uint k=0; k<n; k++) xDDot.elem(k) += ddb.elem(j)*ctrlPoints(offset+j, k);
   }
+#else
+  arr sel_ctrlPoints;
+  sel_ctrlPoints.referToRange(ctrlPoints, offset, offset+b.N-1);
+  if(!!x) x = ~b * sel_ctrlPoints;
+  if(!!xDot) xDot = ~db * sel_ctrlPoints;
+  if(!!xDDot) xDDot = ~ddb * sel_ctrlPoints;
+#endif
 #endif
 }
 

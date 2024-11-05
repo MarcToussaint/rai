@@ -1043,7 +1043,7 @@ void Configuration::clear() {
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
   while(frames.N) { delete frames.last(); /*checkConsistency();*/ }
   reset_q();
-  //if(self->viewer) self->viewer->recopyMeshes(*this);
+  if(self->viewer) self->viewer->recopyMeshes(frames);
 
   _state_proxies_isGood=false;
 }

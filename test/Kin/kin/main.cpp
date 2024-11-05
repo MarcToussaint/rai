@@ -230,6 +230,38 @@ void TEST(Copy){
 
 //===========================================================================
 //
+// grid test
+//
+
+void TEST(Grid){
+  rai::Configuration C;
+  auto table = C.addFrame("table");
+  table-> setShape(rai::ST_ssBox, {.5, .5, .1, .01}) .setPosition({0,0,1}) .setColor({.5});
+  auto panda = C.addFile(rai::raiPath("../rai-robotModels/panda/panda.g"));
+  panda->setParent(table) .setRelativePosition({0,0,.05});
+  C.view();
+
+  rai::Configuration Cgrid;
+  int d = 10;
+  for(int x=0;x<d;x++){
+    for(int y=0;y<d;y++){
+      auto base = Cgrid.addConfigurationCopy(C, STRING("x" <<x <<"_y" <<y <<"_")); //the string adds a prefix to all frame names
+      base->setPosition({double(x-(d-1)/2.), double(y-(d-1)/2.), 1.});
+    }
+  }
+  Cgrid.report();
+  Cgrid.view();
+
+  C.get_viewer()->report(cout);
+  Cgrid.get_viewer()->renderUntil=rai::_solid;
+//  Cgrid.get_viewer()->nonThreaded=true;
+  Cgrid.get_viewer()->report(cout);
+
+  Cgrid.animateSpline();
+}
+
+//===========================================================================
+//
 // Kinematic speed test
 //
 
@@ -619,6 +651,8 @@ void TEST(BlenderImport){
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
+
+  testGrid(); return 0;
 
   testMini();
   testLoadSave();

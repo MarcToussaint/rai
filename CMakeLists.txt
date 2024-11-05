@@ -18,7 +18,7 @@ option(BUILD_TESTS "build tests" OFF)
 
 ## compile options
 add_compile_options(
-  -O3 -g -Wall -Wpedantic -fPIC
+  -O3 -g -Wall -Wpedantic
   $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
   $<$<COMPILE_LANGUAGE:CXX>:-Wno-terminate>
   $<$<COMPILE_LANGUAGE:CXX>:-Wno-array-bounds>
@@ -27,7 +27,7 @@ add_compile_options(
 ################################################################################
 
 add_definitions(
-  -DRAI_ROOT_PATH=\"${CMAKE_SOURCE_DIR}/rai\"
+  -DRAI_ROOT_PATH=\"${CMAKE_SOURCE_DIR}\"
   -DRAI_X11 -DRAI_LAPACK -DRAI_EIGEN -DRAI_PTHREAD
   -DRAI_GL
   -DRAI_GLFW -DRAI_ANN -DRAI_QHULL8 -DRAI_ASSIMP -DNO_CYCLE_DETECTION -DRAI_PNG -DRAI_PLY
@@ -41,18 +41,6 @@ include_directories(
   $ENV{HOME}/.local/include
   /usr/include/eigen3
   )
-
-link_directories(
-  $ENV{HOME}/.local/lib
-  )
-
-if(USE_PHYSX)
-  link_directories($ENV{HOME}/.local/lib/PhysX)
-endif()
-
-if(USE_H5)
-  link_directories(/usr/lib/x86_64-linux-gnu/hdf5/serial)
-endif()
 
 file(GLOB SRC_Core src/Core/*.cpp)
 file(GLOB SRC_Optim src/Optim/*.cpp)
@@ -72,7 +60,7 @@ file(GLOB SRC_GeoPly src/Geo/ply/*.c)
 file(GLOB SRC_GeoCcd src/Geo/ccd_rai/*.c)
 file(GLOB SRC_GeoLewiner src/Geo/Lewiner/*.cpp)
 
-add_library(rai SHARED
+add_library(raiobjs OBJECT
   ${SRC_Core}
   ${SRC_Optim}
   ${SRC_Geo}
@@ -92,8 +80,25 @@ add_library(rai SHARED
   )
 
 ################################################################################
-#
-# rai include/link
+
+link_directories(
+  $ENV{HOME}/.local/lib
+  )
+
+if(USE_H5)
+  link_directories(/usr/lib/x86_64-linux-gnu/hdf5/serial)
+endif()
+
+if(USE_PHYSX)
+  link_directories($ENV{HOME}/.local/lib/PhysX)
+endif()
+
+set_property(TARGET raiobjs PROPERTY POSITION_INDEPENDENT_CODE 1)
+add_library(rai SHARED $<TARGET_OBJECTS:raiobjs>)
+add_library(rai_static STATIC $<TARGET_OBJECTS:raiobjs>)
+
+################################################################################
+
 
 #find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 #target_link_libraries (rai Eigen3::Eigen)
@@ -122,13 +127,6 @@ if(USE_PHYSX)
 endif()
 
 if(USE_OPENCV)
-  find_package(OpenCV REQUIRED)
-  add_definitions(-DRAI_OPENCV)
-  target_link_libraries(rai PRIVATE ${OpenCV_LIBS})
-  message(STATUS "[rai] using OpenCV libs:" ${OpenCV_LIBS})
-endif()
-
-if(USE_OPENCV_LOCAL)
   add_definitions(-DRAI_OPENCV)
   include_directories($ENV{HOME}/.local/include/opencv4)
   target_link_libraries(rai opencv_core opencv_highgui opencv_imgproc opencv_videoio)
@@ -148,11 +146,10 @@ target_link_libraries(rai PRIVATE
   )
 
 ################################################################################
-#
-# verbosity: info on eventual compiler flags
 
 get_property(_defs DIRECTORY PROPERTY COMPILE_DEFINITIONS)
 message(STATUS "[rai] compiler flags: " "${_defs}")
+message(STATUS "[rai] source dir: " "${CMAKE_SOURCE_DIR}")
 
 ################################################################################
 
@@ -280,6 +277,10 @@ install(
   )
 
 install(
-  TARGETS rai
+  TARGETS rai rai_static
   DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+
+install(
+  TARGETS kinEdit meshTool
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 

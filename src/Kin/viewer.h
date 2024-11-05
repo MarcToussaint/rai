@@ -44,7 +44,7 @@ struct ConfigurationViewer : RenderData {
   void setCamera(rai::Frame* cam);
 
   //mimic a OpenGL, directly calling the same methods in its gl
-  int _update(bool wait=false, const char* _text=nullptr, bool nonThreaded=false);
+  int _update(bool wait=false, const char* _text=nullptr);
   void _resetPressedKey();
 
 private://draw data

@@ -54,9 +54,21 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
   for(rai::Frame* f:frames) if(f->shape) {
     shared_ptr<Mesh> mesh = f->shape->_mesh;
     if(mesh && mesh->V.N){
-//      if(!mesh->isArrayFormatted) mesh->makeArrayFormatted(.8);
+      //find mimic?
+      rai::Frame *f_mimic=0;
+      for(rai::Frame* fm:frames) if(fm->shape && fm->shape->_mesh.get()==mesh.get()){
+        if(fm!=f) f_mimic=fm;
+        break;
+      }
+//      f_mimic=0;
       frame2objID(f->ID) = objs.N;
-      if(f->shape->type()==ST_pointCloud){
+      if(f_mimic){
+        std::shared_ptr<RenderObject>& om = objs(frame2objID(f_mimic->ID));
+        add().mimic = om.get();
+        objs(-1)->X = f->ensure_X();
+        objs(-1)->type = om->type;
+        objs(-1)->version = om->version;
+      }else if(f->shape->type()==ST_pointCloud){
         add().pointCloud(mesh->V, mesh->C, f->ensure_X(), _marker);
         objs(-1)->version = mesh->version;
       }else if(f->shape->type()==ST_lines){
@@ -98,6 +110,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
       rai::Shape* s = f->shape;
       if(!s || !s->_mesh){ copyMeshes=true; break; }
       if((int)objs.N<=o){ copyMeshes=true; break; }
+      if(objs(o)->mimic) continue;
       if(s->_mesh->V.N && objs(o)->version != s->_mesh->version) { copyMeshes=true; break; }
     }
   }
@@ -209,7 +222,7 @@ void rai::ConfigurationViewer::setCamera(rai::Frame* camF) {
   gl->resize(gl->width, gl->height);
 }
 
-int rai::ConfigurationViewer::_update(bool wait, const char* _text, bool nonThreaded) {
+int rai::ConfigurationViewer::_update(bool wait, const char* _text) {
   if(_text) text =_text;
   ensure_gl();
   return gl->update(wait, nonThreaded);

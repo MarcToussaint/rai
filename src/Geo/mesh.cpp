@@ -594,21 +594,16 @@ void Mesh::makeArrayFormatted(double avgNormalsThreshold){
     return;
   }
   computeTriNormals();
+  C = reshapeColor(C, V.d0);
   arr vertices(T.d0*3, 3);
   arr colors(vertices.d0, 4);
   arr normals(vertices);
-  arr c;
-  if(!C.N) c = arr{.8,.8,.8};
-  if(C.nd==1) c = C;
-  if(c.N==1){ double g=c.elem(); c = arr{g,g,g}; }
-  if(c.N==2){ double g=c.elem(0); c.prepend(g); c.prepend(g); }
   for(uint i=0;i<T.d0;i++){
     for(uint j=0;j<3;j++){
-      if(C.nd==2) c.referToDim(C, T(i,j));
-      for(uint k=0;k<3;k++) vertices(3*i+j,k) = V(T(i,j), k);
-      for(uint k=0;k<3;k++) colors(3*i+j,k) = c(k); //m.C(m.T(i,j), k);
-      if(c.N==4) colors(3*i+j, 3)=c(3); else colors(3*i+j, 3)=1.;
-      for(uint k=0;k<3;k++) normals(3*i+j, k) = Tn(i,k);
+      uint v = T(i,j);
+      for(uint k=0;k<3;k++) vertices.p[3*(3*i+j) + k] = V.p[3*v + k]; //vertices(3*i+j, k) = V(v, k);
+      for(uint k=0;k<4;k++) colors.p[4*(3*i+j) + k] = C.p[4*v + k];
+      for(uint k=0;k<3;k++) normals.p[3*(3*i+j) + k] = Tn.p[3*i + k];
     }
   }
 

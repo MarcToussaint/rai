@@ -576,6 +576,8 @@ void RenderObject::lines(const arr& lines, const arr& color, const rai::Transfor
 }
 
 void RenderObject::glRender(){
+  if(mimic){ mimic->glRender(); return; }
+
   CHECK(initialized, "");
 
   glEnableVertexAttribArray(0);
@@ -592,6 +594,8 @@ void RenderObject::glRender(){
 }
 
 void RenderObject::glInitialize(){
+  if(mimic){ mimic->glInitialize(); initialized=true; return; }
+
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
 
@@ -619,9 +623,9 @@ void RenderObject::glInitialize(){
   glBindVertexArray(0);
   initialized=true;
 
-  // GLint mem=0;
-  // glGetIntegerv(GL_VBO_FREE_MEMORY_ATI, &mem);
-  // if(mem && mem<200000) LOG(0) <<" -- warning, little vbo memory left: " <<mem;
+//   GLint mem=0;
+//   glGetIntegerv(GL_VBO_FREE_MEMORY_ATI, &mem);
+//   if(mem) LOG(0) <<" -- warning, little vbo memory left: " <<mem;
 }
 
 RenderObject::~RenderObject(){
@@ -960,6 +964,18 @@ RenderQuad::~RenderQuad(){
     glDeleteVertexArrays(1, &vao);
   }
   initialized=false;
+}
+
+void RenderData::report(std::ostream& os){
+  uint mimics=0;
+  for(auto& o:objs) if(o->mimic) mimics++;
+  os <<"RenderData: #obj: " <<objs.N - mimics
+    <<" #mimics: " <<mimics
+    <<" #lights: " <<lights.N
+   <<" #texts: " <<texts.N
+  <<" #quads: " <<quads.N
+  <<" #distMarkers: " <<distMarkers.pos.d0
+  <<endl;
 }
 
 }//namespace
