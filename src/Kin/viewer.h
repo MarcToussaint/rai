@@ -18,7 +18,7 @@ namespace rai {
 
 struct ConfigurationViewer : RenderData {
   shared_ptr<struct OpenGL> gl;
-  intA frame2objID;
+  intA frame2itemID;
 
   ~ConfigurationViewer();
 

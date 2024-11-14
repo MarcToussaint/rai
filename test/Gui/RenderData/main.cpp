@@ -21,7 +21,7 @@ int main(int argc, char **argv){
   // meshes of C
   for(rai::Frame *f:C.frames){
     if(f->shape && f->shape->type()==rai::ST_mesh){
-      scene.add().mesh(f->shape->mesh(), f->ensure_X());
+      scene.add(f->ensure_X()).mesh(f->shape->mesh());
     }
   }
 
@@ -47,15 +47,15 @@ int main(int argc, char **argv){
   m.setSSBox(.4, .4, .4, .1, 2);
   //m.setSphere(0); m.scale(.2);
   m.C = {1., .5, .5, .5};
-  scene.add().mesh(m, rai::Transformation("t(0 0 1.)"), .9);
+  scene.add(rai::Transformation("t(0 0 1.)")).mesh(m, .9);
 
   m.setSSBox(.2, .2, .2, .05, 2);
   m.C = {.5, 1., .5, .5};
-  scene.add().mesh(m, rai::Transformation("t(0 -.3 1.)"), .9);
+  scene.add(rai::Transformation("t(0 -.3 1.)")).mesh(m, .9);
 
   m.setSSBox(.2, .2, .2, .05, 2);
   m.C = {.5, .5, 1.};
-  scene.add().mesh(m, rai::Transformation("t(-.4 -.4 .4)"), .9);
+  scene.add(rai::Transformation("t(-.4 -.4 .4)")).mesh(m, .9);
 
   byteA img;
   read_ppm(img, "../retired/opengl/box.ppm",false);

@@ -26,13 +26,22 @@ RenderData::RenderData(){
   M.setCylinder(.0025, 1., 1);
   M.translate(0.,0.,.5);
   M.C={1.,0.,1.};
-  cylin.mesh(M);
+  cylin.asset = make_shared<RenderAsset>();
+  cylin.asset->mesh(M);
 }
 
-RenderObject& RenderData::add(){
-  std::shared_ptr<RenderObject> obj = make_shared<RenderObject>();
-  objs.append(obj);
-  return *obj;
+RenderAsset& RenderData::add(const Transformation& _X, RenderType _type){
+  std::shared_ptr<RenderItem> obj = make_shared<RenderItem>(_X, _type);
+  items.append(obj);
+  obj->asset = make_shared<RenderAsset>();
+  return *(obj->asset);
+}
+
+RenderAsset& RenderData::addShared(std::shared_ptr<RenderItem>& _item, const rai::Transformation& _X, RenderType _type){
+  std::shared_ptr<RenderItem> item = make_shared<RenderItem>(_X, _type);
+  items.append(item);
+  item->asset = _item->asset;
+  return *(item->asset);
 }
 
 void RenderData::addLight(const arr& pos, const arr& focus, double heightAbs){
@@ -76,7 +85,7 @@ void RenderData::addAxes(double scale, const rai::Transformation& _X){
   ax.C = replicate({0., 1., 0.}, ax.V.d0);
   M.addMesh(ax, X);
 
-  add().mesh(M, _X, .9, _marker);
+  add(_X, _marker).mesh(M, .9);
 
 //  add().lines({0.,0.,0., scale,0.,0.,
 //               0.,scale,0., 0.,0.,0.,
@@ -234,17 +243,17 @@ void RenderData::ensureInitialized(OpenGL &gl){
 void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs, RenderType type, GLuint idFlatColor){
   arr ModelT_WM = eye(4);
 
-  CHECK_EQ(sortedObjIDs.N, objs.N, "");
+  CHECK_EQ(sortedObjIDs.N, items.N, "");
 
-  for(uint i=0;i<objs.N;i++){
+  for(uint i=0;i<items.N;i++){
 
     uint objID;
     if(type!=_transparent) objID = sortedObjIDs.elem(i); //solid: near to far
-    else objID = sortedObjIDs.elem(objs.N-1-i);    //transparent: far to near
+    else objID = sortedObjIDs.elem(items.N-1-i);    //transparent: far to near
 
     if((int)objID==distMarkers.markerObj) continue;
 
-    std::shared_ptr<RenderObject>& obj = objs.elem(objID);
+    std::shared_ptr<RenderItem>& obj = items.elem(objID);
     if(obj->type!=type) continue;
 
     ModelT_WM = obj->X.getAffineMatrix();
@@ -258,7 +267,7 @@ void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs,
       glUniform4f(idFlatColor, 0.f, 0.f, 0.f, 0.f);
     }
 
-    obj->glRender();
+    obj->asset->glRender();
   }
 
   if(type==_marker){
@@ -280,19 +289,19 @@ void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs,
 //        T_WM = X.getAffineMatrix();
 //        glUniformMatrix4fv(idT_WM, 1, GL_TRUE, rai::convert<float>(T_WM).p);
 //      }
-//      objs(distMarkers.markerObj)->glRender();
+//      items(distMarkers.markerObj)->glRender();
 //      X.pos.set(a);
 //      X.rot.addX(RAI_PI);
 //      T_WM = X.getAffineMatrix();
 //      glUniformMatrix4fv(idT_WM, 1, GL_TRUE, rai::convert<float>(T_WM).p);
-//      objs(distMarkers.markerObj)->glRender();
+//      items(distMarkers.markerObj)->glRender();
 
       X.pos.set(a);
       X.rot.setDiff(Vector_z, d);
       ModelT_WM = X.getAffineMatrix();
       for(uint k=0;k<4;k++) ModelT_WM(k,2) *= l; //scale length
       glUniformMatrix4fv(prog_ModelT_WM, 1, GL_TRUE, rai::convert<float>(ModelT_WM).p);
-      cylin.glRender();
+      cylin.asset->glRender();
     }
   }
 }
@@ -303,10 +312,10 @@ void RenderData::glDraw(OpenGL& gl){
   ContextIDs& id = contextIDs()->contextIDs[&gl];
   CHECK(id.initialized, "");
 
-  for(std::shared_ptr<RenderObject>& obj:objs) if(!obj->initialized) obj->glInitialize();
+  for(std::shared_ptr<RenderItem>& obj:items) if(!obj->asset->initialized) obj->asset->glInitialize();
   for(std::shared_ptr<RenderText>& txt:texts) if(!txt->initialized) txt->glInitialize();
   for(std::shared_ptr<RenderQuad>& quad:quads) if(!quad->initialized) quad->glInitialize();
-  if(!cylin.initialized) cylin.glInitialize();
+  if(!cylin.asset->initialized) cylin.asset->glInitialize();
 
   if(!gl.activeView){
     camera = gl.camera;
@@ -315,10 +324,13 @@ void RenderData::glDraw(OpenGL& gl){
   }
 
   //sort objects
-  for(std::shared_ptr<RenderObject>& obj:objs) obj->cameraDist = (obj->X.pos - camera.X.pos).length();
+  for(std::shared_ptr<RenderItem>& obj:items) obj->cameraDist = (obj->X.pos - camera.X.pos).length();
   uintA sorting;
-  sorting.setStraightPerm(objs.N);
-  std::sort(sorting.p, sorting.p+sorting.N, [&](uint i,uint j){ return objs.elem(i)->cameraDist < objs.elem(j)->cameraDist; });
+  sorting.setStraightPerm(items.N);
+  std::sort(sorting.p, sorting.p+sorting.N, [&](uint i,uint j){ return items.elem(i)->cameraDist < items.elem(j)->cameraDist; });
+
+  //mark transparent
+  for(std::shared_ptr<RenderItem>& obj:items) if(obj->type==_solid && obj->asset->isTransparent) obj->type=_transparent;
 
   if(renderUntil>=_shadow && opt.useShadow){
     // Render to shadowFramebuffer
@@ -455,13 +467,11 @@ void RenderData::glDeinitialize(OpenGL& gl){
   }
   contextIDs()->contextIDs.erase(&gl);
 
-  objs.clear();
+  items.clear();
 }
 
-void RenderObject::mesh(rai::Mesh& mesh, const rai::Transformation& _X, double avgNormalsThreshold, RenderType _type){
-  X = _X;
-  type = _type;
-  if(type==_solid && (mesh.C.N==4 || mesh.C.N==2 || mesh.C.d1==4) && mesh.C.elem(-1)<1.) type = _transparent;
+void RenderAsset::mesh(rai::Mesh& mesh, double avgNormalsThreshold){
+  isTransparent = (mesh.C.N==4 || mesh.C.N==2 || mesh.C.d1==4) && mesh.C.elem(-1)<1.;
   version=mesh.version;
 
   if(!mesh.isArrayFormatted) mesh.makeArrayFormatted(avgNormalsThreshold);
@@ -541,11 +551,9 @@ void RenderObject::mesh(rai::Mesh& mesh, const rai::Transformation& _X, double a
   }
 }
 
-void RenderObject::pointCloud(const arr& points, const arr& color, const rai::Transformation& _X, RenderType _type){
-  X = _X;
-  type = _type;
+void RenderAsset::pointCloud(const arr& points, const arr& color){
   mode = GL_POINTS;
-  if(type==_solid && (color.N==4 || color.N==2) && color(-1)<1.) type = _transparent;
+  isTransparent = (color.N==4 || color.N==2) && color(-1)<1.;
 
   vertices = rai::convert<float>(points);
   arr c = reshapeColor(color);
@@ -559,8 +567,7 @@ void RenderObject::pointCloud(const arr& points, const arr& color, const rai::Tr
   }
 }
 
-void RenderObject::lines(const arr& lines, const arr& color, const rai::Transformation& _X, RenderType _type){
-  X = _X;
+void RenderAsset::lines(const arr& lines, const arr& color){
   vertices = rai::convert<float>(lines).reshape(-1, 3);
   if(color.N>3){
     colors = rai::convert<float>(color).reshape(-1, 3);
@@ -571,13 +578,10 @@ void RenderObject::lines(const arr& lines, const arr& color, const rai::Transfor
   }
   if(colors.d1==3){ colors.insColumns(3); for(uint i=0;i<colors.d0;i++) colors(i,3)=1.; }
   normals.clear();
-  type = _type;
   mode = GL_LINES;
 }
 
-void RenderObject::glRender(){
-  if(mimic){ mimic->glRender(); return; }
-
+void RenderAsset::glRender(){
   CHECK(initialized, "");
 
   glEnableVertexAttribArray(0);
@@ -593,9 +597,7 @@ void RenderObject::glRender(){
   glDisableVertexAttribArray(2);
 }
 
-void RenderObject::glInitialize(){
-  if(mimic){ mimic->glInitialize(); initialized=true; return; }
-
+void RenderAsset::glInitialize(){
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
 
@@ -628,7 +630,7 @@ void RenderObject::glInitialize(){
 //   if(mem) LOG(0) <<" -- warning, little vbo memory left: " <<mem;
 }
 
-RenderObject::~RenderObject(){
+RenderAsset::~RenderAsset(){
   if(initialized){
     glDeleteBuffers(1, &vertexBuffer);
     glDeleteBuffers(1, &colorBuffer);
@@ -737,12 +739,12 @@ GLuint LoadShaders(const std::string& VertexShaderCode, const std::string& Fragm
 
 void RenderData::addDistMarker(const arr& a, const arr& b, int s, double size){
   if(distMarkers.markerObj==-1){
-    distMarkers.markerObj=objs.N;
+    distMarkers.markerObj=items.N;
     rai::Mesh m;
     m.setCone(size, size);
     m.translate(0.,0.,-size);
     m.C={1.,0.,1.};
-    add().mesh(m, 0, .9, _marker);
+    add(0, _marker).mesh(m, .9);
   }
   distMarkers.pos.append(a);
   distMarkers.pos.append(b);
@@ -801,13 +803,13 @@ RenderData& RenderData::addStandardScene(){
     m.setQuad();
     m.scale(10., 10., 0.);
     m.C = floorColor;
-    add().mesh(m, 0);
+    add().mesh(m);
   }
   return *this;
 }
 
 RenderData& RenderData::clear(){
-  objs.clear();
+  items.clear();
   texts.clear();
   quads.clear();
   distMarkers.markerObj=-1;
@@ -968,8 +970,8 @@ RenderQuad::~RenderQuad(){
 
 void RenderData::report(std::ostream& os){
   uint mimics=0;
-  for(auto& o:objs) if(o->mimic) mimics++;
-  os <<"RenderData: #obj: " <<objs.N - mimics
+  for(auto& o:items) if(o->mimic) mimics++;
+  os <<"RenderData: #obj: " <<items.N - mimics
     <<" #mimics: " <<mimics
     <<" #lights: " <<lights.N
    <<" #texts: " <<texts.N

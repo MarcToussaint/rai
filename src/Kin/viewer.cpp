@@ -50,7 +50,7 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
 
   addStandardScene();
 
-  frame2objID.resize(frames.N) = -1;
+  frame2itemID.resize(frames.N) = -1;
   for(rai::Frame* f:frames) if(f->shape) {
     shared_ptr<Mesh> mesh = f->shape->_mesh;
     if(mesh && mesh->V.N){
@@ -61,37 +61,34 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
         break;
       }
 //      f_mimic=0;
-      frame2objID(f->ID) = objs.N;
+      frame2itemID(f->ID) = items.N;
       if(f_mimic){
-        std::shared_ptr<RenderObject>& om = objs(frame2objID(f_mimic->ID));
-        add().mimic = om.get();
-        objs(-1)->X = f->ensure_X();
-        objs(-1)->type = om->type;
-        objs(-1)->version = om->version;
+        std::shared_ptr<RenderItem>& o_mimic = items(frame2itemID(f_mimic->ID));
+        addShared(o_mimic, f->ensure_X(), o_mimic->type);
       }else if(f->shape->type()==ST_pointCloud){
-        add().pointCloud(mesh->V, mesh->C, f->ensure_X(), _marker);
-        objs(-1)->version = mesh->version;
+        add(f->ensure_X(), _marker).pointCloud(mesh->V, mesh->C);
+        items(-1)->asset->version = mesh->version;
       }else if(f->shape->type()==ST_lines){
-        add().lines(mesh->V, mesh->C, f->ensure_X(), _marker);
-        objs(-1)->version = mesh->version;
+        add(f->ensure_X(), _marker).lines(mesh->V, mesh->C);
+        items(-1)->asset->version = mesh->version;
       }else if(mesh->T.d1==3){
-        add().mesh(*mesh, f->ensure_X());
+        add(f->ensure_X(), _solid).mesh(*mesh);
       }else{
         NIY
       }
-      objs(-1)->flatColor.resize(3);
-      id2color(objs(-1)->flatColor.p, f->ID);
+      items(-1)->flatColor.resize(3);
+      id2color(items(-1)->flatColor.p, f->ID);
     }
   }
   for(rai::Frame* f:frames) if(f->shape && f->shape->type()==ST_marker) {
-    frame2objID(f->ID) = objs.N;
+    frame2itemID(f->ID) = items.N;
     addAxes(f->shape->size(-1), f->ensure_X());
   }
 }
 
 rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const rai::Configuration& C, const FrameL& timeSlices, bool forceCopyMeshes) {
   bool copyMeshes = false;
-  if(!objs.N) copyMeshes = true;
+  if(!items.N) copyMeshes = true;
 
   FrameL frames;
   if(timeSlices.nd==2) frames=timeSlices[0];
@@ -100,18 +97,18 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   frames.reshape(-1);
 
   //-- update meshes (checks if needed)
-  if(frame2objID.N!=C.frames.N){
+  if(frame2itemID.N!=C.frames.N){
     copyMeshes = true;
   } else {
     for(rai::Frame *f : C.frames) {
-      int o = frame2objID(f->ID);
+      int o = frame2itemID(f->ID);
       if(f->shape && f->shape->_mesh && f->shape->_mesh->V.N && o==-1){ copyMeshes=true; break; }
       if(o==-1) continue;
       rai::Shape* s = f->shape;
       if(!s || !s->_mesh){ copyMeshes=true; break; }
-      if((int)objs.N<=o){ copyMeshes=true; break; }
-      if(objs(o)->mimic) continue;
-      if(s->_mesh->V.N && objs(o)->version != s->_mesh->version) { copyMeshes=true; break; }
+      if((int)items.N<=o){ copyMeshes=true; break; }
+      if(items(o)->mimic) continue;
+      if(s->_mesh->V.N && items(o)->asset->version != s->_mesh->version) { copyMeshes=true; break; }
     }
   }
   if(copyMeshes || forceCopyMeshes) recopyMeshes(frames);
@@ -120,9 +117,9 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   {
     auto lock = dataLock(RAI_HERE);
     for(rai::Frame* f : frames) {
-      int objID = frame2objID(f->ID);
+      int objID = frame2itemID(f->ID);
       if(objID!=-1){
-        objs(objID)->X = f->ensure_X();
+        items(objID)->X = f->ensure_X();
       }
     }
   }
@@ -131,9 +128,9 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   if(timeSlices.nd==2){
     auto lock = dataLock(RAI_HERE);
     drawSlice=-1;
-    motion.resize(timeSlices.d0, objs.N, 7).setZero();
+    motion.resize(timeSlices.d0, items.N, 7).setZero();
     for(uint t=0;t<timeSlices.d0;t++) for(uint i=0;i<timeSlices.d1;i++){
-      int o = frame2objID(timeSlices(0,i)->ID);
+      int o = frame2itemID(timeSlices(0,i)->ID);
       if(o!=-1){
         motion(t, o, {}) = timeSlices(t,i)->ensure_X().getArr7d();
       }
@@ -189,13 +186,13 @@ void rai::ConfigurationViewer::setMotion(const uintA& frameIDs, const arr& _moti
   auto lock = gl->dataLock(RAI_HERE);
   drawSlice=-1;
   //initialize with constant motion with current pose
-  motion.resize(_motion.d0, objs.N, 7).setZero();
+  motion.resize(_motion.d0, items.N, 7).setZero();
   for(uint t=0;t<motion.d0;t++) for(uint o=0;o<motion.d1;o++){
-    motion(t,o,{}) = objs(o)->X.getArr7d();
+    motion(t,o,{}) = items(o)->X.getArr7d();
   }
   //overwrite for indicated frames
   for(uint t=0;t<motion.d0;t++) for(uint i=0;i<frameIDs.N;i++){
-    int o = frame2objID(frameIDs(i));
+    int o = frame2itemID(frameIDs(i));
     motion(t,o,{}) = _motion(t,i,{});
   }
 }
@@ -346,16 +343,16 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
       //C.glDraw_frames(gl, slices[drawSlice], 0);
       RenderData::setText(s);
 
-      CHECK_LE(motion.d1, objs.N, "");
-      for(uint i=0;i<motion.d1;i++) objs(i)->X.set(motion(drawSlice, i, {}));
+      CHECK_LE(motion.d1, items.N, "");
+      for(uint i=0;i<motion.d1;i++) items(i)->X.set(motion(drawSlice, i, {}));
       RenderData::slice=drawSlice;
       RenderData::glDraw(gl);
     }else{
       RenderData::setText(text);
       RenderData::slice=-1;
       for(uint t=0;t<motion.d0;t++){
-        if(motion.d1>objs.N) LOG(-1) <<"motion.d1>objs.N" <<motion.d1 <<' ' <<objs.N; //CHECK_LE(motion.d1, objs.N, "");
-        for(uint i=0;i<motion.d1 && objs.N;i++) objs(i)->X.set(motion(t, i, {}));
+        if(motion.d1>items.N) LOG(-1) <<"motion.d1>items.N" <<motion.d1 <<' ' <<items.N; //CHECK_LE(motion.d1, items.N, "");
+        for(uint i=0;i<motion.d1 && items.N;i++) items(i)->X.set(motion(t, i, {}));
         RenderData::glDraw(gl);
         //C.glDraw_frames(gl, C.frames, 0);
       }

@@ -22,28 +22,36 @@ struct Render_Options {
 
 enum RenderType { _solid, _shadow, _marker, _transparent, _text, _all };
 
-struct RenderObject{
+struct RenderAsset{
+  floatA vertices, colors, normals;
+  GLuint vao, vertexBuffer, colorBuffer, normalBuffer;
+  GLenum mode=GL_TRIANGLES;
+  bool initialized=false;
+  bool isTransparent=false;
+  int version=-1;
+
+  ~RenderAsset();
+  void mesh(rai::Mesh &mesh, double avgNormalsThreshold=.9);
+  void lines(const arr& lines, const arr& color);
+  void pointCloud(const arr& points, const arr& color);
+
+  //engine specific -> should be refactored
+  void glRender();
+  void glInitialize();
+};
+
+struct RenderItem{
+  std::shared_ptr<RenderAsset> asset;
+
   rai::Transformation X=0;
   double cameraDist=-1.;
   RenderType type=_solid;
   int selection=-1;
   byteA flatColor;
 
-  floatA vertices, colors, normals;
-  GLuint vao, vertexBuffer, colorBuffer, normalBuffer;
-  GLenum mode=GL_TRIANGLES;
-  bool initialized=false;
-  int version=-1;
-  RenderObject* mimic=0;
+  RenderItem* mimic=0;
 
-  ~RenderObject();
-  void mesh(rai::Mesh &mesh, const rai::Transformation& _X=0, double avgNormalsThreshold=.9, RenderType _type=_solid);
-  void lines(const arr& lines, const arr& color, const rai::Transformation& _X=0, RenderType _type=_marker);
-  void pointCloud(const arr& points, const arr& color, const rai::Transformation& _X=0, RenderType _type=_solid);
-
-  //engine specific -> should be refactored
-  void glRender();
-  void glInitialize();
+  RenderItem(const rai::Transformation& _X=0, RenderType _type=_solid) : X(_X), type(_type) {}
 };
 
 struct RenderFont {
@@ -91,12 +99,12 @@ struct RenderData {
   Render_Options opt;
 
   rai::Camera camera;
-  rai::Array<std::shared_ptr<RenderObject>> objs;
+  rai::Array<std::shared_ptr<RenderItem>> items;
   rai::Array<std::shared_ptr<rai::Camera>> lights;
   rai::Array<std::shared_ptr<RenderText>> texts;
   rai::Array<std::shared_ptr<RenderQuad>> quads;
   DistMarkers distMarkers;  
-  RenderObject cylin; //predefined objects
+  RenderItem cylin; //predefined objects
 
   RenderType renderUntil=_all;
   bool renderFlatColors=false;
@@ -115,7 +123,8 @@ struct RenderData {
 
   RenderData();
 
-  RenderObject& add();
+  RenderAsset& add(const rai::Transformation& _X=0, RenderType _type=_solid);
+  RenderAsset& addShared(std::shared_ptr<RenderItem>& _item, const rai::Transformation& _X=0, RenderType _type=_solid);
 
   void addLight(const arr& pos, const arr& focus, double heightAbs=5.);
   void addAxes(double scale, const rai::Transformation& _X);
