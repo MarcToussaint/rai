@@ -1,4 +1,4 @@
-#include "rndGrasps.h"
+#include "shapenetGrasps.h"
 
 #include "../Kin/frame.h"
 #include "../KOMO/komo.h"
@@ -7,7 +7,7 @@
 #include "../Core/h5.h"
 #include "../Kin/viewer.h"
 
-RndGrasps::RndGrasps(){
+ShapenetGrasps::ShapenetGrasps(){
   files = fromFile<StringA>(opt.filesPrefix+"files");
   files.reshape(-1);
   if(opt.verbose>0){
@@ -15,15 +15,15 @@ RndGrasps::RndGrasps(){
   }
 }
 
-void RndGrasps::clearScene(){
+void ShapenetGrasps::clearScene(){
   C.clear();
 
   rai::Frame *ref = C.addFrame("ref");
-  ref->setShape(rai::ST_marker, {.05});
+  ref->setShape(rai::ST_marker, {.02});
   ref->setColor({1.,1.,0.});
 }
 
-bool RndGrasps::createScene(const char* file, int idx, bool rndPose){
+bool ShapenetGrasps::createScene(const char* file, int idx, bool rndPose){
   H5_Reader H(file);
 
   rai::Frame *ref = C.getFrame("ref");
@@ -77,7 +77,7 @@ bool RndGrasps::createScene(const char* file, int idx, bool rndPose){
   return true;
 }
 
-bool RndGrasps::generateRndCandidate(){
+bool ShapenetGrasps::generateRndCandidate(){
 
   rai::Frame *objPts = C["objPts0"];
   rai::Frame *ref = C["ref"];
@@ -147,7 +147,7 @@ bool RndGrasps::generateRndCandidate(){
 
     //komo.view(true, "init");
     //-- solve and display
-    auto ret = NLP_Solver().setInitialization(C.getJointState()) .setProblem(komo.nlp()).solve();
+    auto ret = NLP_Solver(komo.nlp(), opt.optVerbose).setInitialization(C.getJointState()) .solve();
     //komo.nlp()->checkJacobian(ret->x, 1e-4, komo.featureNames);
     C.setJointState(komo.getConfiguration_qOrg(0));
 
@@ -171,7 +171,7 @@ bool RndGrasps::generateRndCandidate(){
   }
 }
 
-arr RndGrasps::evaluateCandidate(){
+arr ShapenetGrasps::evaluateCandidate(){
   rai::Frame *obj = C["obj0"];
   rai::Frame *ref = C["ref"];
   //rai::Frame *palm = C["palm"];
@@ -204,7 +204,7 @@ arr RndGrasps::evaluateCandidate(){
   dirs.reshape(-1,3);
 
   //start a sim
-  PhysXInterface physx(C, opt.simVerbose);
+  PhysXInterface physx(C, opt.simVerbose, &physxOpt);
   physx.disableGravity(obj, true);
 
   arr scores(dirs.d0+1, 2);
@@ -261,7 +261,7 @@ arr RndGrasps::evaluateCandidate(){
   return scores;
 }
 
-void RndGrasps::run(){
+void ShapenetGrasps::run(){
   StringA files = fromFile<StringA>(opt.filesPrefix+"files");
   files.reshape(-1);
 
@@ -273,7 +273,7 @@ void RndGrasps::run(){
 
   for(int f=0;f<opt.numShapes;f++){
 
-    for(uint k=0;k<opt.dataPerShape;k++){
+    for(int k=0;k<opt.dataPerShape;k++){
       cout <<"f " <<f <<" k " <<k <<" " <<files(f) <<endl;
 
       //== CREATE SCENE
@@ -311,7 +311,7 @@ void RndGrasps::run(){
   fil.close();
 }
 
-void RndGrasps::getSamples(arr& X, arr& Contexts, arr& Scores, uint N){
+void ShapenetGrasps::getSamples(arr& X, arr& Contexts, arr& Scores, uint N){
   if(opt.numShapes<0) opt.numShapes = files.N - opt.startShape;
 
   for(uint n=0;n<N;){
@@ -366,7 +366,7 @@ void RndGrasps::getSamples(arr& X, arr& Contexts, arr& Scores, uint N){
   Contexts.reshape(N, 1);
 }
 
-arr RndGrasps::evaluateSample(const arr& x, const arr& context){
+arr ShapenetGrasps::evaluateSample(const arr& x, const arr& context){
   int shape = int(context.elem());
 
   clearScene();
@@ -383,7 +383,7 @@ arr RndGrasps::evaluateSample(const arr& x, const arr& context){
   return scores;
 }
 
-void RndGrasps::setRelGripperPose(const arr& pose, const char* objPts){
+void ShapenetGrasps::setRelGripperPose(const arr& pose, const char* objPts){
   rai::Transformation gripperPose = C[objPts]->ensure_X() * rai::Transformation(pose);
   arr q = C.getJointState();
   q({-8,-2}) = gripperPose.getArr7d();
@@ -391,9 +391,11 @@ void RndGrasps::setRelGripperPose(const arr& pose, const char* objPts){
   C.setJointState(q);
 }
 
-void RndGrasps::displaySamples(const arr& X, const arr& Contexts, const arr& Scores){
+void ShapenetGrasps::displaySamples(const arr& X, const arr& Contexts, const arr& Scores){
   uint N = X.d0;
   CHECK_EQ(N, Contexts.d0, "");
+
+  C.get_viewer()->renderUntil=rai::_marker;
 
   rai::Configuration Cgripper;
   Cgripper.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaFloatingGripper.g"));
@@ -428,7 +430,7 @@ void RndGrasps::displaySamples(const arr& X, const arr& Contexts, const arr& Sco
 }
 
 void generateTrainingData(){
-  RndGrasps_Options opt;
+  ShapenetGrasps_Options opt;
 
   ofstream fil(opt.trainingFile);
 
@@ -456,7 +458,7 @@ void generateTrainingData(){
   dat.add<arr>("input_com");
   dat.add<arr>("labels");
 
-  RndGrasps RG;
+  ShapenetGrasps RG;
   rai::String last_obj;
   RG.C.get_viewer()->renderUntil=rai::_solid;
 
@@ -528,7 +530,7 @@ void generateTrainingData(){
 }
 
 void testLoadTrainingData(){
-  RndGrasps_Options opt;
+  ShapenetGrasps_Options opt;
 
   double time = -rai::realTime();
 

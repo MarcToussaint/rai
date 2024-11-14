@@ -788,11 +788,12 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes
 
 //===========================================================================
 
-PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose): self(nullptr) {
+PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose, const rai::PhysX_Options* _opt) {
   CHECK(C._state_q_isGood, "PhysX needs joint angles for initialization");
 
   self = new PhysXInterface_self;
 
+  if(_opt) self->opt = *_opt;
   self->opt.verbose = verbose;
 
   if(self->opt.verbose>0) LOG(0) <<"starting PhysX engine ... (multiBody=" <<self->opt.multiBody <<")";

@@ -96,7 +96,7 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("warnIfNotExist")=true
       )
 
-  .def("frames", [](shared_ptr<rai::Configuration>& self) {
+  .def("getFrames", [](shared_ptr<rai::Configuration>& self) {
     std::vector<shared_ptr<rai::Frame>> F;
     for(rai::Frame* f:self->frames) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-sense deleter!
     return F;

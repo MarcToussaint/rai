@@ -301,17 +301,17 @@ void init_Optim(pybind11::module& m) {
            pybind11::arg("verbose")=0
           )
 
-      .def("setProblem", &NLP_Solver::setProblem)
-      .def("setSolver", &NLP_Solver::setSolver)
+      .def("setProblem", &NLP_Solver::setProblem, "")
+      .def("setSolver", &NLP_Solver::setSolver, "")
 
-      .def("setTracing", &NLP_Solver::setTracing)
+      .def("setTracing", &NLP_Solver::setTracing, "")
       .def("solve", &NLP_Solver::solve, "", pybind11::arg("resampleInitialization")=-1, pybind11::arg("verbose")=-1)
 
-      .def("getProblem", &NLP_Solver::getProblem)
+      .def("getProblem", &NLP_Solver::getProblem, "")
       .def("getTrace_x", &NLP_Solver::getTrace_x, "returns steps-times-n array with queries points in each row")
       .def("getTrace_costs", &NLP_Solver::getTrace_costs, "returns steps-times-3 array with rows (f+sos-costs, ineq, eq)")
-      .def("getTrace_phi", &NLP_Solver::getTrace_phi)
-      .def("getTrace_J", &NLP_Solver::getTrace_J)
+      .def("getTrace_phi", &NLP_Solver::getTrace_phi, "")
+      .def("getTrace_J", &NLP_Solver::getTrace_J, "")
 
   .def("reportLagrangeGradients", [](std::shared_ptr<NLP_Solver>& self, const StringA& featureNames) {
     rai::Graph R = self->reportLagrangeGradients(featureNames);

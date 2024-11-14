@@ -31,7 +31,7 @@ struct PhysX_Options {
 struct PhysXInterface {
   struct PhysXInterface_self* self=0;
 
-  PhysXInterface(const rai::Configuration& C, int verbose=1);
+  PhysXInterface(const rai::Configuration& C, int verbose=1, const rai::PhysX_Options* _opt=0);
   ~PhysXInterface();
 
   void step(double tau=.01);

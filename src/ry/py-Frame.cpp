@@ -84,6 +84,7 @@ void init_Frame(pybind11::module& m) {
   .def("getShapeType", &rai::Frame::getShapeType, "")
   .def("getMeshPoints", &rai::Frame::getMeshPoints, "")
   .def("getMeshTriangles", &rai::Frame::getMeshTriangles, "")
+  .def("getMeshColors", &rai::Frame::getMeshColors, "")
   .def("getMesh", [](shared_ptr<rai::Frame>& self){
       return pybind11::make_tuple(Array2numpy<double>(self->getMeshPoints()),
                                   Array2numpy<uint>(self->getMeshTriangles()),

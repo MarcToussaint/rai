@@ -20,6 +20,7 @@
 //#include "py-Control.h"
 #include "py-Optim.h"
 #include "py-tests.h"
+#include "py-DataGen.h"
 #include "types.h"
 
 #include <pybind11/pybind11.h>
@@ -81,6 +82,7 @@ PYBIND11_MODULE(_robotic, m) {
 
   init_Optim(m);
   init_tests(m);
+  init_DataGen(m);
 #ifdef RAI_BotOp
   init_BotOp(m);
 #endif
