@@ -23,7 +23,7 @@ void ShapenetGrasps::clearScene(){
   ref->setColor({1.,1.,0.});
 }
 
-bool ShapenetGrasps::createScene(const char* file, int idx, bool rndPose){
+bool ShapenetGrasps::createScene(const char* file, int idx, bool rndPose, bool visual){
   H5_Reader H(file);
 
   rai::Frame *ref = C.getFrame("ref");
@@ -44,7 +44,7 @@ bool ShapenetGrasps::createScene(const char* file, int idx, bool rndPose){
     ref->setParent(objPts, false);
   }
 
-  {
+  if(!visual){
     arr pts = H.read<double>("decomp/vertices");
     uintA faces = H.read<uint>("decomp/faces");
     byteA colors = H.read<byte>("decomp/colors");
@@ -64,6 +64,13 @@ bool ShapenetGrasps::createScene(const char* file, int idx, bool rndPose){
       //there are no collision shapes
       return false;
     }
+  }else{
+    arr pts = H.read<double>("mesh/vertices");
+    uintA faces = H.read<uint>("mesh/faces");
+
+    rai::Frame *objMesh = C.addFrame(STRING("objMesh"<<idx));
+    objMesh->setParent(obj);
+    objMesh->setMesh(pts, faces);
   }
 
   try{ obj->get_X().checkNan(); } catch(...) {
@@ -261,56 +268,6 @@ arr ShapenetGrasps::evaluateCandidate(){
   return scores;
 }
 
-void ShapenetGrasps::run(){
-  StringA files = fromFile<StringA>(opt.filesPrefix+"files");
-  files.reshape(-1);
-
-  LOG(0) <<"files: " <<files(0) <<" ... " <<files(-1);
-
-  ofstream fil(opt.evaluationsFile);
-
-  if(opt.numShapes<0) opt.numShapes = files.N;
-
-  for(int f=0;f<opt.numShapes;f++){
-
-    for(int k=0;k<opt.dataPerShape;k++){
-      cout <<"f " <<f <<" k " <<k <<" " <<files(f) <<endl;
-
-      //== CREATE SCENE
-      clearScene();
-      bool succ = createScene(opt.filesPrefix+files(f), 0, true);
-      if(!succ) continue;
-      C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaFloatingGripper.g"));
-      if(opt.verbose>0) C.view(opt.verbose>2, "random obj pose");
-
-      //== SAMPLE A RANDOM+REJECT+REFINE GRASP POSE
-      succ = generateRndCandidate();
-      rai::Transformation gripperPose = C["gripper"]->ensure_X();
-      rai::Transformation objPose = C["objPts"]->ensure_X();
-      rai::Transformation relGripperPose = gripperPose/objPose;
-//      cout <<"obj: " <<objPose <<"\nrel: " <<relGripperPose <<"\ngripper: " <<gripperPose <<endl;
-      if(!succ){
-        cout <<" FAILED creating candidate";
-        fil <<f <<'-' <<k <<": { shape: '" <<files(f) <<"', pose: " <<relGripperPose <<", motion: " <<consts(100., 8) <<" }" <<endl;
-        continue;
-      }
-      if(opt.verbose>0){
-        if(opt.verbose>2){
-          C.ensure_proxies(true);
-          C.reportProxies(std::cout, .01);
-        }
-        C.view(opt.verbose>1, "proposed grasp");
-      }
-
-      //== PHYSICAL SIMULATION
-      arr scores = evaluateCandidate();
-      fil <<f <<'-' <<k <<": { shape: '" <<files(f) <<"', pose: " <<relGripperPose <<", motion: " <<scores.reshape(-1) <<" }" <<endl;
-      if(opt.verbose>0) C.view(opt.verbose>1, "evaluation done");
-    }
-  }
-  fil.close();
-}
-
 void ShapenetGrasps::getSamples(arr& X, arr& Contexts, arr& Scores, uint N){
   if(opt.numShapes<0) opt.numShapes = files.N - opt.startShape;
 
@@ -410,7 +367,7 @@ void ShapenetGrasps::displaySamples(const arr& X, const arr& Contexts, const arr
     int idx=0;
     if(shape2place.find(shape) == shape2place.end()){
       idx = shape2place.size();
-      bool succ = createScene(opt.filesPrefix+files(shape), idx, false);
+      bool succ = createScene(opt.filesPrefix+files(shape), idx, false, true);
       CHECK(succ, "");
       shape2place[shape] = idx;
     }else{
@@ -427,119 +384,4 @@ void ShapenetGrasps::displaySamples(const arr& X, const arr& Contexts, const arr
     }
   }
   C.view(true, STRING("display n:" <<N));
-}
-
-void generateTrainingData(){
-  ShapenetGrasps_Options opt;
-
-  ofstream fil(opt.trainingFile);
-
-  rai::Graph evals(opt.evaluationsFile.p);
-  //rai::Graph evals("pose-to-motion-23-09-31.dat");
-
-  rai::Configuration Cgripper;
-  Cgripper.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaFloatingGripper.g"));
-
-  cout <<evals <<endl;
-
-//  rai::Mesh m;
-//  m.readFile("gripper.ply");
-
-//  rai::Configuration C;
-//  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaFloatingGripper.g"));
-//  C.addFrame("obj")
-//      ->setPosition({0.,0.,1.});
-////  C.addFrame("gripper", "obj")
-////      ->setMesh2(m);
-//  C.addFrame("feature", "gripper");
-
-  rai::Graph dat;
-  dat.add<arr>("input_pcl");
-  dat.add<arr>("input_com");
-  dat.add<arr>("labels");
-
-  ShapenetGrasps RG;
-  rai::String last_obj;
-  RG.C.get_viewer()->renderUntil=rai::_solid;
-
-  for(rai::Node* n:evals){
-    rai::Graph& g = n->graph();
-    rai::String obj = g.get<rai::String>("shape");
-    arr pose = g.get<arr>("pose");
-    arr motion = g.get<arr>("motion").reshape(-1,2);
-    cout <<obj <<pose <<endl;
-
-    //motion values to sigmoidal success labels
-    cout <<motion <<endl;
-    motion = motion % arr{ 1./.03, 1./.5 };
-    cout <<motion <<endl;
-//    for(double& m:motion){  m = 1.5-m;  rai::clip(m, 0., 1.);  }
-//    cout <<motion <<endl;
-    bool good = max(motion)<1.;
-    cout <<"good: " <<good <<endl;
-
-    if(obj!=last_obj){
-      RG.createScene( STRING(opt.filesPrefix <<obj), true);
-      last_obj = obj;
-    }
-    rai::Frame* addedGripper = RG.C.addCopy(Cgripper.frames, {});
-//        File(rai::raiPath("../rai-robotModels/scenarios/pandaFloatingGripper.g"), n->key);
-//    }
-
-    rai::Transformation relGripperPose(pose);
-    rai::Transformation objPose = RG.C["objPts"]->ensure_X();
-    rai::Transformation gripperPose = objPose * relGripperPose;
-    cout <<"obj: " <<objPose <<"\nrel: " <<relGripperPose <<"\ngripper: " <<gripperPose <<endl;
-
-    arr q = RG.C.getJointState();
-    q({-8,-2}) = gripperPose.getArr7d();
-    q(7) = .04;
-    RG.C.setJointState(q);
-    RG.C.view(false, STRING("good: " <<good));
-
-    if(!good){
-      FrameL F = addedGripper->getSubtree();
-      for(rai::Frame *f:F) delete f;
-      continue;
-    }
-
-    /*
-    arr x;
-    uintA idx;
-    for(uint i=0;i<P.d0;i++){
-      x.referToDim(P, i);
-      //if(x(0)>-.05 && x(0)<.05 && x(1)>-.025 && x(1)<.025 && x(2)>-.025 && x(2)<.025)
-      if(length(x)<.1) idx.append(i);
-    }
-    P = P.sub(idx);
-
-    C["feature"] ->setPointCloud(P) .setColor(arr{1.,0.,0.}) .setShape(rai::ST_mesh, arr{4.});
-*/
-
-    arr P;
-    dat.get<arr>("input_pcl") = P;
-    dat.get<arr>("input_com") = arr{0.,0.,0.}; //mesh.get<arr>("com");
-    dat.get<arr>("labels") = motion.reshape(-1);
-    fil <<n->key <<": ";
-    dat.write(fil, ",", "{}", 2);
-    fil <<endl;
-  }
-
-  fil.close();
-  RG.C.view(true);
-}
-
-void testLoadTrainingData(){
-  ShapenetGrasps_Options opt;
-
-  double time = -rai::realTime();
-
-  ifstream fil(opt.trainingFile);
-  rai::Graph data;
-  data.read(fil);
-  fil.close();
-
-  cout <<"time: " <<time+rai::realTime() <<"sec" <<endl;
-
-  //for(rai::Node *n:data) cout <<n->key <<endl;
 }

@@ -317,7 +317,7 @@ void init_Optim(pybind11::module& m) {
     rai::Graph R = self->reportLagrangeGradients(featureNames);
     return graph2dict(R);
   },"return dictionary of Lagrange gradients per objective",
-    pybind11::arg("list of names for each objective")=StringA{}
+    pybind11::arg("featureNames")=StringA{}
   )
 
   .def("setPyProblem", [](std::shared_ptr<NLP_Solver>& self, pybind11::object py_nlp){

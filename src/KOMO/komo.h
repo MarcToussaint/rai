@@ -104,7 +104,7 @@ struct KOMO : NonCopyable {
   void copyObjectives(KOMO& komoB, bool deepCopyFeatures=true);
 
   void addContact_slide(double startTime, double endTime, const char* from, const char* to);
-  void addContact_stick(double startTime, double endTime, const char* from, const char* to);
+  void addContact_stick(double startTime, double endTime, const char* from, const char* to, double frictionCone_mu=.8);
   void addContact_elasticBounce(double time, const char* from, const char* to, double elasticity=.8, double stickiness=0.);
   void addContact_ComplementarySlide(double startTime, double endTime, const char* from, const char* to);
   //  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);
