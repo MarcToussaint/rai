@@ -181,22 +181,28 @@ void BSpline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
   getCoeffs2(b, db, ddb, t, degree, knotTimes.p+offset, knotN, knotTimesN, derivative);
 
   //linear combination
-  uint n = ctrlPoints.d1;
 #if 0
+  uint n = ctrlPoints.d1;
   if(!!x) x.resize(n).setZero();
   if(!!xDot) xDot.resize(n).setZero();
   if(!!xDDot) xDDot.resize(n).setZero();
-  for(uint j=0; j<b.N; j++) {
+  for(uint j=0; j<b.N; j++) if(offset+j>=0) {
     if(!!x) for(uint k=0; k<n; k++) x.elem(k) += b.elem(j)*ctrlPoints(offset+j, k);
     if(!!xDot) for(uint k=0; k<n; k++) xDot.elem(k) += db.elem(j)*ctrlPoints(offset+j, k);
     if(!!xDDot) for(uint k=0; k<n; k++) xDDot.elem(k) += ddb.elem(j)*ctrlPoints(offset+j, k);
   }
 #else
   arr sel_ctrlPoints;
+  if(offset<0){
+    if(b.N) b=b.sub(-offset,-1);
+    if(db.N) db=db.sub(-offset,-1);
+    if(ddb.N) ddb=ddb.sub(-offset,-1);
+    offset=0;
+  }
   sel_ctrlPoints.referToRange(ctrlPoints, offset, offset+b.N-1);
-  if(!!x) x = ~b * sel_ctrlPoints;
-  if(!!xDot) xDot = ~db * sel_ctrlPoints;
-  if(!!xDDot) xDDot = ~ddb * sel_ctrlPoints;
+  if(!!x){ x = ~b * sel_ctrlPoints; x.reshape(-1); }
+  if(!!xDot){ xDot = ~db * sel_ctrlPoints; xDot.reshape(-1); }
+  if(!!xDDot){ xDDot = ~ddb * sel_ctrlPoints; xDDot.reshape(-1); }
 #endif
 #endif
 }
