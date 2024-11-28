@@ -23,17 +23,23 @@ struct ShapenetGrasps{
 
   ShapenetGrasps();
 
-  void getSamples(arr& X, arr& Contexts, arr& Scores, uint N);
-  arr evaluateSample(const arr& x, const arr& context);
-  void displaySamples(const arr& X, const arr& Contexts, const arr& Scores={});
+  //-- batch interfaces
+  void getSamples(arr& X, uintA& shapes, arr& Scores, uint N);
+  arr evaluateSample(const arr& x, uint shape);
+  void displaySamples(const arr& X, const uintA& shapes, const arr& Scores={});
+
+  //-- direct interfaces
+  bool loadObject(uint shape, bool rndPose=true);
+  arr getPointCloud();
+  arr sampleGraspPose();
+  void setGraspPose(const arr& pose, const char* objPts="objPts0");
+  arr evaluateGrasp();
+
 
 private:
-  bool generateRndCandidate();
-  arr evaluateCandidate();
-public:
   StringA files;
   rai::Configuration C;
   void clearScene();
-  bool createScene(const char* file, int idx, bool rndPose=true, bool visual=false);
-  void setRelGripperPose(const arr& pose, const char* objPts="objPts0");
+  void addSceneGripper();
+  bool addSceneObject(const char* file, int idx, bool rndPose=true, bool visual=false);
 };

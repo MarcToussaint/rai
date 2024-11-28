@@ -23,7 +23,12 @@ void ShapenetGrasps::clearScene(){
   ref->setColor({1.,1.,0.});
 }
 
-bool ShapenetGrasps::createScene(const char* file, int idx, bool rndPose, bool visual){
+void ShapenetGrasps::addSceneGripper(){
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaFloatingGripper.g"));
+}
+
+bool ShapenetGrasps::addSceneObject(const char* file, int idx, bool rndPose, bool visual){
+  LOG(0) <<"loading shapenet object " <<file;
   H5_Reader H(file);
 
   rai::Frame *ref = C.getFrame("ref");
@@ -84,13 +89,18 @@ bool ShapenetGrasps::createScene(const char* file, int idx, bool rndPose, bool v
   return true;
 }
 
-bool ShapenetGrasps::generateRndCandidate(){
+arr ShapenetGrasps::sampleGraspPose(){
 
   rai::Frame *objPts = C["objPts0"];
   rai::Frame *ref = C["ref"];
 
   for(uint s=0;;s++){
-    if(s>100) return false;
+    if(s>100){ //repeated fail
+      if(opt.verbose>0){
+        LOG(0) <<" FAILED creating candidate";
+      }
+      return arr{};
+    }
 
     //-- pick random point on the surface
     rai::Mesh& mesh = objPts->shape->mesh();
@@ -125,11 +135,10 @@ bool ShapenetGrasps::generateRndCandidate(){
     double collisions = C.getTotalPenetration();
 
     if(opt.verbose>0){
-      if(opt.verbose>1){
+      if(opt.verbose>2){
         C.reportProxies(cout, .0, false);
       }
-      C.view(opt.verbose>2, STRING("AArandom pick pose " <<s <<" collisions: " <<collisions <<" bounds: " <<inBounds));
-      C.view(opt.verbose>2, STRING("BBrandom pick pose " <<s <<" collisions: " <<collisions <<" bounds: " <<inBounds));
+      C.view(opt.verbose>2, STRING("random pick pose " <<s <<" collisions: " <<collisions <<" bounds: " <<inBounds));
       if(opt.verbose>1) rai::wait(.1);
     }
 
@@ -160,7 +169,7 @@ bool ShapenetGrasps::generateRndCandidate(){
 
     if(opt.verbose>0){
       cout <<"  refinement: " <<*ret <<endl;
-      if(opt.verbose>1){
+      if(opt.verbose>2){
         cout <<komo.report() <<endl;
         cout <<komo.pathConfig.reportForces() <<endl;
         //    komo.view(true);
@@ -174,11 +183,22 @@ bool ShapenetGrasps::generateRndCandidate(){
       continue;
 
     //-- success! break the loop
-    return true;
+    break;
   }
+
+  if(opt.verbose>0){
+    if(opt.verbose>2){
+      C.ensure_proxies(true);
+      C.reportProxies(std::cout, .01);
+    }
+    C.view(opt.verbose>1, STRING("proposed grasp"));
+  }
+
+  rai::Transformation relGripperPose = C["gripper"]->ensure_X()/C["objPts0"]->ensure_X();
+  return relGripperPose.getArr7d();
 }
 
-arr ShapenetGrasps::evaluateCandidate(){
+arr ShapenetGrasps::evaluateGrasp(){
   rai::Frame *obj = C["obj0"];
   rai::Frame *ref = C["ref"];
   //rai::Frame *palm = C["palm"];
@@ -265,54 +285,54 @@ arr ShapenetGrasps::evaluateCandidate(){
   scores = scores % arr{ 1./.03, 1./.5 };
   for(double& s:scores){  s = 1.-s; }
 
+  if(opt.verbose>0){
+    bool succ = min(scores)>.0;
+    cout <<"  eval: " <<succ <<' ' <<scores.reshape(-1) <<endl;
+    C.view(opt.verbose>1, STRING("evaluation - success: " <<succ <<" scores:\n" <<scores));
+  }
+
   return scores;
 }
 
-void ShapenetGrasps::getSamples(arr& X, arr& Contexts, arr& Scores, uint N){
+bool ShapenetGrasps::loadObject(uint shape, bool rndPose){
+  clearScene();
+  str file = opt.filesPrefix + files(shape);
+  bool succ = addSceneObject(file, 0, rndPose);
+  if(!succ) LOG(0) <<"loading object " <<shape <<" '" <<file <<"' failed";
+  addSceneGripper();
+  return succ;
+}
+
+arr ShapenetGrasps::getPointCloud(){
+  rai::Frame * objPts = C["objPts0"];
+  return objPts->getMeshPoints();
+}
+
+void ShapenetGrasps::getSamples(arr& X, uintA& shapes, arr& Scores, uint N){
   if(opt.numShapes<0) opt.numShapes = files.N - opt.startShape;
 
   for(uint n=0;n<N;){
     uint shape = opt.startShape + rnd(opt.numShapes);
-
     if(opt.verbose>0){
       cout <<"sample " <<n <<", shape " <<shape <<" (" <<files(shape) <<")" <<endl;
     }
 
     //== CREATE SCENE
-    clearScene();
-    bool succ = createScene(opt.filesPrefix+files(shape), 0, true);
+    bool succ = loadObject(shape, true);
     if(!succ) continue;
-    C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaFloatingGripper.g"));
     if(opt.verbose>0) C.view(opt.verbose>2, STRING(shape <<"\nrandom obj pose"));
 
     //== SAMPLE A RANDOM+REJECT+REFINE GRASP POSE
-    succ = generateRndCandidate();
-    if(!succ){
-      cout <<" FAILED creating candidate";
-      continue;
-    }
-    if(opt.verbose>0){
-      if(opt.verbose>2){
-        C.ensure_proxies(true);
-        C.reportProxies(std::cout, .01);
-      }
-      C.view(opt.verbose>1, STRING(shape <<"\nproposed grasp"));
-    }
-    rai::Transformation relGripperPose = C["gripper"]->ensure_X()/C["objPts0"]->ensure_X();
+    arr relGripperPose = sampleGraspPose();
+    if(!relGripperPose.N) continue;
 
     //== PHYSICAL SIMULATION
-    arr scores = evaluateCandidate();
-    succ = min(scores)>.0;
+    arr scores = evaluateGrasp();
 
-    if(opt.verbose>0){
-      cout <<"  eval: " <<succ <<' ' <<scores.reshape(-1) <<endl;
-      C.view(opt.verbose>1, STRING(shape <<"\nevaluation - success " <<succ <<" scores:\n" <<scores));
-    }
-
-    if(succ){ //success - store!
-      X.append(relGripperPose.getArr7d());
+    if(min(scores)>0.){ //success - store!
+      X.append(relGripperPose);
       Scores.append(scores);
-      Contexts.append(double(shape));
+      shapes.append(shape);
       n++;
     }else{
     }
@@ -320,27 +340,22 @@ void ShapenetGrasps::getSamples(arr& X, arr& Contexts, arr& Scores, uint N){
 
   X.reshape(N, 7);
   Scores.reshape(N, -1);
-  Contexts.reshape(N, 1);
+  shapes.reshape(N);
 }
 
-arr ShapenetGrasps::evaluateSample(const arr& x, const arr& context){
-  int shape = int(context.elem());
+arr ShapenetGrasps::evaluateSample(const arr& x, uint shape){
+  loadObject(shape, true);
 
-  clearScene();
-  bool succ = createScene(opt.filesPrefix+files(shape), 0,true);
-  CHECK(succ, "");
-  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaFloatingGripper.g"));
-  setRelGripperPose(x);
+  setGraspPose(x);
 
-  arr scores = evaluateCandidate();
-  succ = min(scores)>.0;
+  arr scores = evaluateGrasp();
 
-  if(opt.verbose>0) C.view(opt.verbose>1, STRING(shape <<"\nevaluation done - success " <<succ <<" scores:\n" <<scores));
+  if(opt.verbose>0) C.view(opt.verbose>1, STRING(shape <<"\nevaluation done - success " <<(min(scores)>.0) <<" scores:\n" <<scores));
 
   return scores;
 }
 
-void ShapenetGrasps::setRelGripperPose(const arr& pose, const char* objPts){
+void ShapenetGrasps::setGraspPose(const arr& pose, const char* objPts){
   rai::Transformation gripperPose = C[objPts]->ensure_X() * rai::Transformation(pose);
   arr q = C.getJointState();
   q({-8,-2}) = gripperPose.getArr7d();
@@ -348,9 +363,9 @@ void ShapenetGrasps::setRelGripperPose(const arr& pose, const char* objPts){
   C.setJointState(q);
 }
 
-void ShapenetGrasps::displaySamples(const arr& X, const arr& Contexts, const arr& Scores){
+void ShapenetGrasps::displaySamples(const arr& X, const uintA& shapes, const arr& Scores){
   uint N = X.d0;
-  CHECK_EQ(N, Contexts.d0, "");
+  CHECK_EQ(N, shapes.N, "");
 
   C.get_viewer()->renderUntil=rai::_marker;
 
@@ -358,16 +373,16 @@ void ShapenetGrasps::displaySamples(const arr& X, const arr& Contexts, const arr
   Cgripper.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaFloatingGripper.g"));
   clearScene();
 
-  std::map<int, int> shape2place;
+  std::map<uint, uint> shape2place;
 
   for(uint i=0;i<N;i++){
     arr pose = X[i];
-    int shape = uint(Contexts(i,0));
+    uint shape = shapes(i);
 
-    int idx=0;
+    uint idx=0;
     if(shape2place.find(shape) == shape2place.end()){
       idx = shape2place.size();
-      bool succ = createScene(opt.filesPrefix+files(shape), idx, false, true);
+      bool succ = addSceneObject(opt.filesPrefix+files(shape), idx, false, true);
       CHECK(succ, "");
       shape2place[shape] = idx;
     }else{
@@ -376,7 +391,7 @@ void ShapenetGrasps::displaySamples(const arr& X, const arr& Contexts, const arr
 
     //add gripper relative to objPts-idx
     C.addCopy(Cgripper.frames, {});
-    setRelGripperPose(pose, STRING("objPts"<<idx));
+    setGraspPose(pose, STRING("objPts"<<idx));
 
     if(opt.verbose>0){
       if(Scores.N) C.view(opt.verbose>1, STRING("sample #" <<i << " score:\n" <<Scores[i]));

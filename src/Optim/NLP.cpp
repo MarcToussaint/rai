@@ -417,7 +417,7 @@ void NLP_Viewer::display(double mu, double muLB) {
       cmd <<"plot 'z.table' w l, 'z.trace' us 1:2 w lp lw 2; ";
     }
   }
-  cout <<cmd <<endl;
+//  cout <<cmd <<endl;
   gnuplot(cmd);
 }
 

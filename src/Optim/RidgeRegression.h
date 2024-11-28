@@ -9,6 +9,15 @@
 #pragma once
 
 #include "../Core/array.h"
+#include "../Core/util.h"
+#include "../Algo/ann.h"
+
+//===========================================================================
+//
+// constructing features from data
+//
+
+arr makeFeatures(const arr& X, str featureType="readFromCfgFile", const arr& rbfCenters=NoArr, arr& Jacobian=NoArr);
 
 //===========================================================================
 //
@@ -24,7 +33,7 @@ arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda=-1.);
 struct RidgeRegression {
   arr beta; ///< (X^T X + lambda I)^-1 X^T y
   arr XtX_I; ///< (X^T X + lambda I)
-  double sigmaSqr; ///< mean squared error on training data; estimate of noise
+  double meanSqrErr; ///< mean squared error on training data; estimate of noise
   arr betaSigmaMatrix; ///< variance (matrix) of estimated beta
 
   RidgeRegression(const arr& X, const arr& y, double lambda=-1, const arr& weighted=NoArr, int verbose=1);
@@ -34,6 +43,16 @@ struct RidgeRegression {
   arr getBetaZscores();
   arr getMultiOutputSquaredErrors(const arr& X, const arr& y);
 };
+
+struct LocalLinearRidgeRegression {
+  arr X, y;
+  ANN ann;
+  int Knn;
+  double lambda;
+  LocalLinearRidgeRegression(const arr& _X, const arr& _y, int _Knn=-1, double _lambda=-1);
+  arr evaluate(const arr& x, arr& bayesSigma2=NoArr);
+};
+
 
 struct DefaultKernelFunction : KernelFunction {
   enum KernelType { readFromCfg=0, Gauss=1 } type;
@@ -73,3 +92,4 @@ struct KernelLogisticRegression {
 
 struct KernelCRF {
 };
+

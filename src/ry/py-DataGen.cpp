@@ -22,102 +22,116 @@ void init_DataGen(pybind11::module& m) {
 
       .def(pybind11::init<>())
 
-      .def("getSamples",  [](std::shared_ptr<ShapenetGrasps>& self, uint n) {
-        arr X, Z, S;
-        self->getSamples(X, Z, S, n);
-        return std::tuple<arr, arr, arr>(X, Z, S);
-           },
-           "return three arrays: samples X, contexts Z, scores S (each row are scores for one sample - see evaluateSamples)",
-           pybind11::arg("nSamples"))
-      .def("evaluateSample", &ShapenetGrasps::evaluateSample,
-           "returns scores for a single sample - this (row) are numbers where a single 'negative' means fail",
-           pybind11::arg("sample"),
-           pybind11::arg("context"))
-      .def("displaySamples", &ShapenetGrasps::displaySamples,
-           "displays all samples",
-           pybind11::arg("samples"),
-           pybind11::arg("context"),
-           pybind11::arg("scores") = arr{})
+  .def("getSamples",  [](std::shared_ptr<ShapenetGrasps>& self, uint n) {
+    arr X, Z, S;
+    self->getSamples(X, Z, S, n);
+    return std::tuple<arr, arr, arr>(X, Z, S);
+  },
+  "(batch interface) return three arrays: samples X, contexts Z, scores S (each row are scores for one sample - see evaluateSamples)",
+  pybind11::arg("nSamples"))
+  .def("evaluateSample", &ShapenetGrasps::evaluateSample,
+       "(batch interface) returns scores for a single sample - this (row) are numbers where a single 'negative' means fail",
+       pybind11::arg("sample"),
+       pybind11::arg("context"))
+  .def("displaySamples", &ShapenetGrasps::displaySamples,
+       "(batch interface) displays all samples",
+       pybind11::arg("samples"),
+       pybind11::arg("context"),
+       pybind11::arg("scores") = arr{})
 
+  .def("loadObject", &ShapenetGrasps::loadObject,
+       "(direct interface) clear scene and load object and gripper",
+       pybind11::arg("shape"),
+       pybind11::arg("rndPose")=true)
+  .def("getPointCloud", &ShapenetGrasps::getPointCloud,
+       "(direct interface) return pcl of loaded object")
+  .def("sampleGraspPose", &ShapenetGrasps::sampleGraspPose,
+       "(direct interface) return (relative) pose of random sampled grasp candidate")
+  .def("setGraspPose", &ShapenetGrasps::setGraspPose,
+       "(direct interface) set (relative) pose of grasp candidate",
+       pybind11::arg("pose"),
+       pybind11::arg("objPts")="objPts0")
+  .def("evaluateGrasp", &ShapenetGrasps::evaluateGrasp,
+       "(direct interface) return scores of grasp candidate (min(scores)<0. means fail)")
 
   .def("setOptions", [](std::shared_ptr<ShapenetGrasps>& self
-     #define OPT(type, name, x) ,type name
-       OPT(int, verbose, 1)
-       OPT(rai::String, filesPrefix, "shapenet/models/")
-       OPT(int, numShapes, -1)
-       OPT(int, startShape, 0)
-       OPT(int, simVerbose, 0)
-       OPT(int, optVerbose, 0)
-       OPT(double, simTau, .01)
-       OPT(double, gripperCloseSpeed, .001)
-       OPT(double, moveSpeed, .005)
-       OPT(double, pregraspNormalSdv, .2)
-     #undef OPT
-       ) {
+#define OPT(type, name, x) ,type name
+                        OPT(int, verbose, 1)
+                        OPT(rai::String, filesPrefix, "shapenet/models/")
+                        OPT(int, numShapes, -1)
+                        OPT(int, startShape, 0)
+                        OPT(int, simVerbose, 0)
+                        OPT(int, optVerbose, 0)
+                        OPT(double, simTau, .01)
+                        OPT(double, gripperCloseSpeed, .001)
+                        OPT(double, moveSpeed, .005)
+                        OPT(double, pregraspNormalSdv, .2)
+#undef OPT
+  ) {
     self->opt
-    #define OPT(type, name, x) .set_##name(name)
-        OPT(int, verbose, 1)
-        OPT(rai::String, filesPrefix, "shapenet/models/")
-        OPT(int, numShapes, -1)
-        OPT(int, startShape, 0)
-        OPT(int, simVerbose, 0)
-        OPT(int, optVerbose, 0)
-        OPT(double, simTau, .01)
-        OPT(double, gripperCloseSpeed, .001)
-        OPT(double, moveSpeed, .005)
-        OPT(double, pregraspNormalSdv, .2)
-    #undef OPT
-        ;
+#define OPT(type, name, x) .set_##name(name)
+    OPT(int, verbose, 1)
+    OPT(rai::String, filesPrefix, "shapenet/models/")
+    OPT(int, numShapes, -1)
+    OPT(int, startShape, 0)
+    OPT(int, simVerbose, 0)
+    OPT(int, optVerbose, 0)
+    OPT(double, simTau, .01)
+    OPT(double, gripperCloseSpeed, .001)
+    OPT(double, moveSpeed, .005)
+    OPT(double, pregraspNormalSdv, .2)
+#undef OPT
+    ;
     return self;
   }, "set options"
 #define OPT(type, name, x) , pybind11::arg(#name) = x
   OPT(int, verbose, 1)
-      OPT(rai::String, filesPrefix, "shapenet/models/")
-      OPT(int, numShapes, -1)
-      OPT(int, startShape, 0)
-      OPT(int, simVerbose, 0)
-      OPT(int, optVerbose, 0)
-      OPT(double, simTau, .01)
-      OPT(double, gripperCloseSpeed, .001)
-      OPT(double, moveSpeed, .005)
-      OPT(double, pregraspNormalSdv, .2)
-    #undef OPT
+  OPT(rai::String, filesPrefix, "shapenet/models/")
+  OPT(int, numShapes, -1)
+  OPT(int, startShape, 0)
+  OPT(int, simVerbose, 0)
+  OPT(int, optVerbose, 0)
+  OPT(double, simTau, .01)
+  OPT(double, gripperCloseSpeed, .001)
+  OPT(double, moveSpeed, .005)
+  OPT(double, pregraspNormalSdv, .2)
+#undef OPT
       )
 
   .def("setPhysxOptions", [](std::shared_ptr<ShapenetGrasps>& self
-     #define OPT(type, name, x) ,type name
-       OPT(int, verbose, 1)
-       OPT(bool, yGravity, false)
-       OPT(bool, softBody, false)
-       OPT(bool, multiBody, true)
-       OPT(bool, multiBodyDisableGravity, true)
-       OPT(bool, jointedBodies, false)
-       OPT(double, angularDamping, .1)
-       OPT(double, defaultFriction, 1.)
-       OPT(double, defaultRestitution, .1) //restitution=1 should be elastic...
-       OPT(double, motorKp, 1000.)
-       OPT(double, motorKd, 100.)
-       OPT(double, gripperKp, 10000.)
-       OPT(double, gripperKd, 100.)
-     #undef OPT
-       ) {
+#define OPT(type, name, x) ,type name
+                             OPT(int, verbose, 1)
+                             OPT(bool, yGravity, false)
+                             OPT(bool, softBody, false)
+                             OPT(bool, multiBody, true)
+                             OPT(bool, multiBodyDisableGravity, true)
+                             OPT(bool, jointedBodies, false)
+                             OPT(double, angularDamping, .1)
+                             OPT(double, defaultFriction, 1.)
+                             OPT(double, defaultRestitution, .1) //restitution=1 should be elastic...
+                             OPT(double, motorKp, 1000.)
+                             OPT(double, motorKd, 100.)
+                             OPT(double, gripperKp, 10000.)
+                             OPT(double, gripperKd, 100.)
+#undef OPT
+  ) {
     self->physxOpt
-    #define OPT(type, name, x) .set_##name(name)
-        OPT(int, verbose, 1)
-        OPT(bool, yGravity, false)
-        OPT(bool, softBody, false)
-        OPT(bool, multiBody, true)
-        OPT(bool, multiBodyDisableGravity, true)
-        OPT(bool, jointedBodies, false)
-        OPT(double, angularDamping, .1)
-        OPT(double, defaultFriction, 1.)
-        OPT(double, defaultRestitution, .1) //restitution=1 should be elastic...
-        OPT(double, motorKp, 1000.)
-        OPT(double, motorKd, 100.)
-        OPT(double, gripperKp, 10000.)
-        OPT(double, gripperKd, 100.)
-    #undef OPT
-        ;
+#define OPT(type, name, x) .set_##name(name)
+    OPT(int, verbose, 1)
+    OPT(bool, yGravity, false)
+    OPT(bool, softBody, false)
+    OPT(bool, multiBody, true)
+    OPT(bool, multiBodyDisableGravity, true)
+    OPT(bool, jointedBodies, false)
+    OPT(double, angularDamping, .1)
+    OPT(double, defaultFriction, 1.)
+    OPT(double, defaultRestitution, .1) //restitution=1 should be elastic...
+    OPT(double, motorKp, 1000.)
+    OPT(double, motorKd, 100.)
+    OPT(double, gripperKp, 10000.)
+    OPT(double, gripperKd, 100.)
+#undef OPT
+    ;
     return self;
   }, "set options"
 #define OPT(type, name, x) , pybind11::arg(#name) = x
@@ -134,7 +148,7 @@ void init_DataGen(pybind11::module& m) {
   OPT(double, motorKd, 100.)
   OPT(double, gripperKp, 10000.)
   OPT(double, gripperKd, 100.)
-    #undef OPT
+#undef OPT
       )
 
   ;
@@ -153,26 +167,26 @@ void init_DataGen(pybind11::module& m) {
       .def("report", &RndStableConfigs::report, "info on newton steps -per- feasible sample")
 
       .def("setOptions", [](std::shared_ptr<RndStableConfigs>& self
-         #define OPT(type, name, x) ,type name
-           OPT(int, verbose, 1)
-           OPT(double, frictionCone_mu, .8)
-         #undef OPT
-           ) {
-        self->opt
-        #define OPT(type, name, x) .set_##name(name)
-            OPT(int, verbose, 1)
-            OPT(double, frictionCone_mu, .8)
-        #undef OPT
-            ;
-        return self;
-      }, "set options"
-    #define OPT(type, name, x) , pybind11::arg(#name) = x
+#define OPT(type, name, x) ,type name
+                            OPT(int, verbose, 1)
+                            OPT(double, frictionCone_mu, .8)
+#undef OPT
+  ) {
+    self->opt
+#define OPT(type, name, x) .set_##name(name)
+    OPT(int, verbose, 1)
+    OPT(double, frictionCone_mu, .8)
+#undef OPT
+    ;
+    return self;
+  }, "set options"
+#define OPT(type, name, x) , pybind11::arg(#name) = x
   OPT(int, verbose, 1)
   OPT(double, frictionCone_mu, .8)
-        #undef OPT
+#undef OPT
           )
 
-      ;
+  ;
 }
 
 #endif

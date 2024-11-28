@@ -97,7 +97,7 @@ double clockTime(); //(really on the clock)
 double realTime(); //(since process start)
 double cpuTime();
 String date(bool forFileName=false);
-void wait(double sec);
+void wait(double sec, bool andKeyboard=false);
 bool wait(bool useX11=true);
 
 //----- timer functions

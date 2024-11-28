@@ -1339,7 +1339,7 @@ template<class T> void Array<T>::takeOver(Array<T>& a) {
 template<class T> Array<T>& Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
   uint i, j, k;
   if(dim==1) {
-    resize(steps+1);
+    resize(steps+1, 1);
     for(i=0; i<d0; i++) elem(i)=lo+(hi-lo)*i/steps;
     return *this;
   }

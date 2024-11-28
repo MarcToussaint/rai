@@ -422,8 +422,9 @@ String date(bool forFileName) {
 }
 
 /// wait double time
-void wait(double sec) {
+void wait(double sec, bool andKeyboard) {
   std::this_thread::sleep_for(std::chrono::duration<double>(sec));
+  if(andKeyboard) wait();
 }
 
 /// wait for an ENTER at the console
@@ -1312,8 +1313,8 @@ struct GnuplotServer {
   void send(const char* cmd, bool persist) {
 #ifndef RAI_MSVC
     if(!gp) {
-      if(!persist) gp=popen("env gnuplot -noraise -geometry 600x600-0-0 2> /dev/null", "w");
-      else         gp=popen("env gnuplot -noraise -persist -geometry 600x600-0-0 2> /dev/null", "w");
+      if(!persist) gp=popen("env gnuplot -noraise -geometry 800x600-0-0 2> /dev/null", "w");
+      else         gp=popen("env gnuplot -noraise -persist -geometry 800x600-0-0 2> /dev/null", "w");
       CHECK(gp, "could not open gnuplot pipe");
     }
     FILE("z.plotcmd") <<cmd; //for debugging..
@@ -1354,8 +1355,10 @@ void gnuplot(const char* command, bool pauseMouse, bool persist, const char* PDF
         <<"\nset terminal pop\n";
   }
 
-  if(pauseMouse) cmd <<"\n pause mouse key" <<endl;
+//  if(pauseMouse) cmd <<"\n pause mouse key" <<endl;
   gnuplotServer()->send(cmd.p, persist);
+
+  if(pauseMouse) rai::wait(.5, true);
 
   if(!rai::getInteractivity()) {
     rai::wait(.05);

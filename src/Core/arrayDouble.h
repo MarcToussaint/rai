@@ -514,6 +514,7 @@ double product(const arr& v);
 double trace(const arr& v);
 double var(const arr& v);
 arr mean(const arr& v);
+arr covar(const arr& X);
 arr stdDev(const arr& v);
 void clip(const arr& x, double lo, double hi);
 

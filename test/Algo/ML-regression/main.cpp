@@ -26,19 +26,22 @@ void testLinReg(const char *datafile=nullptr) {
   arr Phi = makeFeatures(X);
 
   //-- compute optimal parameters
-  arr Sigma;
-  arr beta = ridgeRegression(Phi, y, -1., Sigma);
-  double sigma = sqrt(sumOfSqr(Phi*beta-y)/double(X.d0-1));
+//  RidgeRegression R(Phi, y);
+  LocalLinearRidgeRegression R(X, y, -1);
 
-  cout <<"estimated beta = "<< beta <<endl;
-  if(beta.N==beta_true.N) cout <<"max-norm beta-beta_true = " <<maxDiff(beta, beta_true) <<endl; //beta_true is global and generated during artificialData
-  cout <<"Mean error (sdv) = " <<sigma <<endl;
+//  cout <<"estimated beta = "<< R.beta <<endl;
+//  if(R.beta.N==beta_true.N) cout <<"max-norm beta-beta_true = " <<maxDiff(R.beta, beta_true) <<endl; //beta_true is global and generated during artificialData
+//  cout <<"Mean error (sdv) = " <<R.meanSqrErr <<endl;
 
   //-- evaluate model on a grid
-  arr X_grid = grid(X.d1,-5,5, (X.d1==1?500:30));
-  Phi = makeFeatures(X_grid, readFromCfgFileFT, X);
-  arr y_grid = Phi*beta;
-  arr s_grid = sqrt(evaluateBayesianRidgeRegressionSigma(Phi, Sigma)/*+rai::sqr(sigma)*/);
+  arr X_grid = grid(X.d1, -3, 3, (X.d1==1?600:30));
+//  Phi = makeFeatures(X_grid, "readFromCfgFile", X);
+//  arr y_grid = R.evaluate(Phi, s_grid); //Phi*beta;
+//  s_grid = sqrt(s_grid);
+  arr y_grid = R.evaluate(X_grid);
+  arr s_grid;
+  if(!s_grid.N) s_grid.resizeAs(y_grid).setZero();
+//  arr s_grid = sqrt(evaluateBayesianRidgeRegressionSigma(Phi, Sigma)/*+rai::sqr(sigma)*/);
 
 //  if(X.d1==1){
 //    plot()->Gnuplot();
@@ -51,22 +54,25 @@ void testLinReg(const char *datafile=nullptr) {
   //-- gnuplot
   rai::arrayBrackets="  ";
   if(X.d1==1){
-    FILE("z.model") <<catCol(X_grid, y_grid);
-    gnuplot(STRING("plot [-3:3] '" <<datafile <<"' us 1:2 w p,'z.model' us 1:2 w l"), false, false,"z.pdf");
+    FILE("z.model") <<catCol(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid).modRaw();
+    gnuplot(STRING("plot [-3:3] '" <<datafile <<"' us 1:2 w p t 'data',\
+                   'z.model' us 1:2 w l t 'mean regression',\
+                   'z.model' us 1:3 w l ls 0 t 'upper',\
+                   'z.model' us 1:4 w l ls 0 t 'lower'"), true, false, "z.pdf");
   }
   if(X.d1==2){
-    if(false && plotDev){
+    if(plotDev){
       FILE("z.model") <<~y_grid.reshape(31,31);
       FILE("z.model_s") <<~(y_grid+s_grid).reshape(31,31);
       FILE("z.model__s") <<~(y_grid-s_grid).reshape(31,31);
-      gnuplot(STRING("splot [-3:3][-3:3] '" <<datafile <<"' w p ps 1 pt 3,\
-                     'z.model' matrix us ($1/5-3):($2/5-3):3 w l,\
-                     'z.model_s' matrix us ($1/5-3):($2/5-3):3 w l,\
-                     'z.model__s' matrix us ($1/5-3):($2/5-3):3 w l; pause mouse"), false, false, "z.pdf");
+      gnuplot(STRING("splot [-3:3][-3:3] '" <<datafile <<"' w p ps 1 pt 3 t 'data',\
+                     'z.model' matrix us ($1/5-3):($2/5-3):3 w l t 'regression',\
+                     'z.model_s' matrix us ($1/5-3):($2/5-3):3 w l ls 0 t 'upper',\
+                     'z.model__s' matrix us ($1/5-3):($2/5-3):3 w l ls 0 t 'lower'"), true, false, "z.pdf");
     }else{
       FILE("z.model") <<~y_grid.reshape(31,31);
       gnuplot(STRING("splot [-3:3][-3:3] '" <<datafile <<"' w p ps 1 pt 3,\
-                     'z.model' matrix us ($1/5-3):($2/5-3):3 w l"), false, false, "z.pdf");
+                     'z.model' matrix us ($1/5-3):($2/5-3):3 w l"), true, false, "z.pdf");
     }
   }
 }
@@ -78,7 +84,7 @@ void testRobustRegression(const char *datafile=nullptr) {
     datafile="z.train";
     arr X,y;
     artificialData(X, y);
-    FILE(datafile) <<catCol(X,y);
+    FILE(datafile) <<catCol(X,y).modRaw();
   }
 
   //-- load data from a file
@@ -101,7 +107,7 @@ void testRobustRegression(const char *datafile=nullptr) {
   //-- evaluate model on a grid
   arr X_grid,y_grid;
   X_grid.setGrid(X.d1,-5,5, (X.d1==1?500:30)).reshape(-1, X.d1);
-  Phi = makeFeatures(X_grid, readFromCfgFileFT, X);
+  Phi = makeFeatures(X_grid, "readFromCfgFile", X);
   y_grid = Phi*beta;
   arr s_grid = sqrt(evaluateBayesianRidgeRegressionSigma(Phi, Sigma)/*+rai::sqr(sigma)*/);
 
@@ -116,8 +122,8 @@ void testRobustRegression(const char *datafile=nullptr) {
   //-- gnuplot
   rai::arrayBrackets="  ";
 //  if(X.d1==1){
-//    FILE("z.model") <<catCol(X_grid, y_grid);
-//    gnuplot(STRING("plot [-3:3] '" <<datafile <<"' us 1:2 w p,'z.model' us 1:2 w l"), false, true,"z.pdf");
+//    FILE("z.model") <<catCol(X_grid, y_grid).modRaw();
+//    gnuplot(STRING("plot [-3:3] '" <<datafile <<"' us 1:2 w p,'z.model' us 1:2 w l"), true, false,"z.pdf");
 //  }
   if(X.d1==2){
     FILE("z.model") <<~y_grid.reshape(31,31);
@@ -126,7 +132,7 @@ void testRobustRegression(const char *datafile=nullptr) {
     gnuplot(STRING("splot [-3:3][-3:3] '" <<datafile <<"' w p ps 1 pt 3,\
                    'z.model' matrix us ($1/5-3):($2/5-3):3 w l,\
                    'z.model_s' matrix us ($1/5-3):($2/5-3):3 w l,\
-                   'z.model__s' matrix us ($1/5-3):($2/5-3):3 w l; pause mouse"), false, true, "z.pdf");
+                   'z.model__s' matrix us ($1/5-3):($2/5-3):3 w l"), true, false, "z.pdf");
   }
 }
 
@@ -157,7 +163,7 @@ void testKernelReg(const char *datafile=nullptr) {
     arr X,y;
     artificialData(X, y);
 
-    FILE(datafile) <<catCol(X,y);
+    FILE(datafile) <<catCol(X,y).modRaw();
   }
 
   //-- load data from a file
@@ -200,19 +206,16 @@ void testKernelReg(const char *datafile=nullptr) {
   arr y_grid = f.evaluate(X_grid, s_grid);
   s_grid = sqrt(s_grid);
 
-  if(X.d1==1){
-    plot()->Gnuplot();
-    plot()->FunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
-    plot()->Points(X,y);
-    plot()->update(true);
-  }
-
   //-- gnuplot
   rai::arrayBrackets="  ";
-//  if(X.d1==1){
-//    FILE("z.model") <<catCol(X_grid, y_grid);
-//    gnuplot(STRING("plot [-3:3] '" <<datafile <<"' us 1:2 w p,'z.model' us 1:2 w l"), false, true,"z.pdf");
-//  }
+  if(X.d1==1){
+    FILE("z.model") <<catCol(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid).modRaw();
+    gnuplot(STRING("plot [-3:3] '" <<datafile <<"' us 1:2 w p t 'data',\
+                   'z.model' us 1:2 w l t 'mean regression',\
+                   'z.model' us 1:3 w l ls 0 t 'upper',\
+                   'z.model' us 1:4 w l ls 0 t 'lower'"), true, false, "z.pdf");
+
+  }
   if(X.d1==2){
     FILE("z.model") <<~y_grid.reshape(31,31);
     FILE("z.model_s") <<~(y_grid+s_grid).reshape(31,31);
@@ -220,8 +223,7 @@ void testKernelReg(const char *datafile=nullptr) {
     gnuplot(STRING("splot [-3:3][-3:3] '" <<datafile <<"' w p ps 2 pt 4,\
                    'z.model' matrix us ($1/5-3):($2/5-3):3 w l,\
                    'z.model_s' matrix us ($1/5-3):($2/5-3):3 w l,\
-                   'z.model__s' matrix us ($1/5-3):($2/5-3):3 w l;\
-                    pause mouse"), false, true, "z.pdf");
+                   'z.model__s' matrix us ($1/5-3):($2/5-3):3 w l"), true, false, "z.pdf");
   }
 }
 
@@ -240,7 +242,7 @@ void test2Class() {
   
   arr X_grid;
   X_grid.setGrid(X.d1,-2,3, (X.d1==1?500:50));
-  Phi = makeFeatures(X_grid,readFromCfgFileFT, X);
+  Phi = makeFeatures(X_grid,"readFromCfgFile", X);
   arr y_grid = Phi*beta;
   arr s_grid = evaluateBayesianRidgeRegressionSigma(Phi, Sigma);
   arr ybay_grid = y_grid/ sqrt(1.+s_grid*RAI_PI/8.); //bayesian logistic regression: downscale discriminative function
@@ -261,21 +263,21 @@ void test2Class() {
 
   rai::arrayBrackets="  ";
 //  if(X.d1==1){
-//    FILE("z.train") <<catCol(X, y);
-//    FILE("z.model") <<catCol(X_grid, p_grid);
-//    gnuplot(STRING("plot [-3:3] 'z.train' us 1:2 w p,'z.model' us 1:2 w l"), false, true, "z.pdf");
+//    FILE("z.train") <<catCol(X, y).modRaw();
+//    FILE("z.model") <<catCol(X_grid, p_grid).modRaw();
+//    gnuplot(STRING("plot [-3:3] 'z.train' us 1:2 w p,'z.model' us 1:2 w l"), true, false, "z.pdf");
 //  }
   if(X.d1==2){
-    FILE("z.train") <<catCol(X, y);
+    FILE("z.train") <<catCol(X, y).modRaw();
     FILE("z.model") <<p_grid.reshape(51,51);
-    gnuplot("load 'plt.contour'; pause mouse", false, true, "z.pdf");
-    gnuplot("load 'plt.contour2'; pause mouse", false, true, "z.pdf");
+    gnuplot("load 'plt.contour'", true, false, "z.pdf");
+    gnuplot("load 'plt.contour2'", true, false, "z.pdf");
   }
 }
 
 //===========================================================================
 
-void TEST(KernelLogReg){
+void testKernelLogReg(){
 //  rnd.seed(1);
 
   arr X,y;
@@ -298,17 +300,17 @@ void TEST(KernelLogReg){
   }
   if(X.d1==2){
     rai::arrayBrackets="  ";
-    FILE("z.train") <<catCol(X, y);
+    FILE("z.train") <<catCol(X, y).modRaw();
     FILE("z.model") <<~p_grid.reshape(51,51);
-    gnuplot("load 'plt.contour'; pause mouse", false, true, "z.pdf");
-    gnuplot("load 'plt.contour2'; pause mouse", false, true, "z.pdf");
+    gnuplot("load 'plt.contour'", true, false, "z.pdf");
+    gnuplot("load 'plt.contour2'", true, false, "z.pdf");
   }
   rai::wait();
 }
 
 //===========================================================================
 
-void TEST(MultiClass){
+void testMultiClass(){
   //rnd.seed(1);
   rnd.clockSeed();
 
@@ -326,10 +328,10 @@ void TEST(MultiClass){
     label(i) = argmax(y[i]);
   }
   rai::arrayBrackets="  ";
-  FILE("z.train") <<catCol(X, label, y, p_pred);
+  FILE("z.train") <<catCol(X, label, y, p_pred).modRaw();
   
   arr X_grid = grid(2,-2,3,50);
-  Phi = makeFeatures(X_grid,readFromCfgFileFT,X);
+  Phi = makeFeatures(X_grid,"readFromCfgFile",X);
   arr p_grid = exp(Phi*beta);
   for(uint i=0; i<p_grid.d0; i++) p_grid[i] /= sum(p_grid[i]);
   p_grid = ~p_grid;
@@ -339,18 +341,18 @@ void TEST(MultiClass){
   FILE("z.model2") <<p_grid[1];
   if(y.d1==3){
     FILE("z.model3") <<p_grid[2];
-    gnuplot("load 'plt.contourMulti'; pause mouse", false, true, "z.pdf");
-    gnuplot("load 'plt.contourMulti2'; pause mouse", false, true, "z.pdf");
+    gnuplot("load 'plt.contourMulti'", true, false, "z.pdf");
+    gnuplot("load 'plt.contourMulti2'", true, false, "z.pdf");
   }
   if(y.d1==4){
     FILE("z.model3") <<p_grid[2];
     FILE("z.model4") <<p_grid[3];
-    gnuplot("load 'plt.contourM4'; pause mouse", false, true, "z.pdf");
-    gnuplot("load 'plt.contourM4_2'; pause mouse", false, true, "z.pdf");
+    gnuplot("load 'plt.contourM4'", true, false, "z.pdf");
+    gnuplot("load 'plt.contourM4_2'", true, false, "z.pdf");
   }
 }
 
-void TEST(CV){
+void testCV(){
 
   struct myCV:public CrossValidation {
     void  train(const arr& X, const arr& y, double param, arr& beta) {
@@ -366,7 +368,7 @@ void TEST(CV){
   arr X,y;
   artificialData(X, y);
   arr Phi = makeFeatures(X);
-  FILE("z.train") <<catCol(X, y);
+  FILE("z.train") <<catCol(X, y).modRaw();
 
   uint k_fold = rai::getParameter<double>("k_fold",10);
   cv.crossValidateMultipleLambdas(Phi, y, {1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4,1e5}, k_fold, false);
@@ -394,18 +396,18 @@ void exercise1() {
   //predict on grid
   arr X_grid,y_grid;
   X_grid.setGrid(X.d1,-3,3,30).reshape(-1, X.d1);
-  Phi = makeFeatures(X_grid,readFromCfgFileFT,X);
+  Phi = makeFeatures(X_grid,"readFromCfgFile",X);
   y_grid = Phi*beta;
 
   //save and plot
   rai::arrayBrackets="  ";
-  FILE("z.train") <<catCol(X, y);
+  FILE("z.train") <<catCol(X, y).modRaw();
   if(X.d1==1) {
-    FILE("z.model") <<catCol(X_grid, y_grid);
-    gnuplot("plot 'z.train' us 1:2 w p,'z.model' us 1:2 w l", false, true, "z.pdf");
+    FILE("z.model") <<catCol(X_grid, y_grid).modRaw();
+    gnuplot("plot 'z.train' us 1:2 w p,'z.model' us 1:2 w l", true, false, "z.pdf");
   } else {
     FILE("z.model") <<~y_grid.reshape(31,31);
-    gnuplot("splot [-3:3][-3:3] 'z.train' w p, 'z.model' matrix us ($1/5-3):($2/5-3):3 w l", false, true, "z.pdf");
+    gnuplot("splot [-3:3][-3:3] 'z.train' w p, 'z.model' matrix us ($1/5-3):($2/5-3):3 w l", true, false, "z.pdf");
   }
 }
 
@@ -457,7 +459,10 @@ int main(int argc, char *argv[]) {
 
   plotDev = rai::getParameter<bool>("plotDev", true);
 
-  switch((int)rai::getParameter<double>("mode",1)) {
+  int mode = rai::getParameter<int>("mode",1);
+
+//  for(mode=1;mode<=8;mode++)
+  switch(mode) {
     case 1:  testLinReg();  break;
     case 2:  test2Class();  break;
     case 3:  testMultiClass();  break;
@@ -469,8 +474,8 @@ int main(int argc, char *argv[]) {
     break;
   }
   
-  plot()->Clear();
-  rai::wait();
+//  plot()->Clear();
+//  rai::wait();
   return 0;
 }
 
