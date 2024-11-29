@@ -23,9 +23,10 @@ void init_DataGen(pybind11::module& m) {
       .def(pybind11::init<>())
 
   .def("getSamples",  [](std::shared_ptr<ShapenetGrasps>& self, uint n) {
-    arr X, Z, S;
+    arr X, S;
+    uintA Z;
     self->getSamples(X, Z, S, n);
-    return std::tuple<arr, arr, arr>(X, Z, S);
+    return std::tuple<arr, uintA, arr>(X, Z, S);
   },
   "(batch interface) return three arrays: samples X, contexts Z, scores S (each row are scores for one sample - see evaluateSamples)",
   pybind11::arg("nSamples"))
