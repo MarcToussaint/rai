@@ -210,6 +210,7 @@ struct Configuration {
 
   arr kinematics_pos(Frame* a, const Vector& rel=NoVector) const { arr y, J; kinematicsPos(y, J, a, rel); if(!!J) y.J()=J; return y; }
   arr kinematics_vec(Frame* a, const Vector& vec=NoVector) const { arr y, J; kinematicsVec(y, J, a, vec); if(!!J) y.J()=J; return y; }
+  arr kinematics_zero(uint n) const { arr y, J; kinematicsZero(y, J, n); if(!!J) y.J()=J; return y; }
 
   void kinematicsZero(arr& y, arr& J, uint n) const;
   void kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel=NoVector) const;

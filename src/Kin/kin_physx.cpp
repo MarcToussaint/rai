@@ -451,6 +451,9 @@ void PhysXInterface_self::unlockJoint(PxD6Joint* joint, rai::Joint* rai_joint) {
 void PhysXInterface_self::addMultiBody(rai::Frame* base) {
   //CHECK(!base->parent || (base->joint && base->joint->type==rai::JT_rigid) || (base->joint && base->inertia), "base needs to be either rigid or with inertia");
 
+  //decide on options
+  bool multibody_floating = base->ats->findNode("multibody_floating");
+
   //-- collect all links for that root
   FrameL F = {base};
   //base->getPartSubFrames(F);
@@ -474,11 +477,11 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
   linksPx = NULL;
 
   if(opt.verbose>0) {
-    LOG(0) <<"adding multibody with base '" <<base->name <<"' with the following links ...";
+    LOG(0) <<"adding multibody with base '" <<base->name <<"':";
   }
 
   PxArticulationReducedCoordinate* articulation = core->mPhysics->createArticulationReducedCoordinate();
-  articulation->setArticulationFlag(PxArticulationFlag::eFIX_BASE, true);
+  articulation->setArticulationFlag(PxArticulationFlag::eFIX_BASE, !multibody_floating);
   articulation->setArticulationFlag(PxArticulationFlag::eDISABLE_SELF_COLLISION, true);
   //articulation->setSolverIterationCounts(minPositionIterations, minVelocityIterations);
   //articulation->setMaxCOMLinearVelocity(maxCOMLinearVelocity);
@@ -503,7 +506,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 
     addShapesAndInertia(actor, shapes, type, f);
 
-    if(opt.multiBodyDisableGravity) {
+    if(opt.multiBodyDisableGravity && !multibody_floating) {
       actor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
     }
 

@@ -482,6 +482,29 @@ void testMotors(){
 
 //===========================================================================
 
+void testG1(){
+  rai::Configuration C;
+  C.addFile("../../../../playground/24-humanoid/scene.g");
+//  C.optimizeTree(true);
+
+  rai::Simulation S(C, S._physx, 3);
+//  rai::wait();
+
+  double tau=.001;
+  Metronome tic(1.*tau);
+
+  for(double t=0.;t<4.;t+=tau){
+    tic.waitForTic();
+//    rai::wait(1.);
+
+    S.step({}, tau, S._none);
+
+//    C.view(false, STRING("time:" <<t));
+  }
+}
+
+//===========================================================================
+
 void testSplineMode(){
   rai::Configuration C;
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
@@ -512,6 +535,8 @@ void testSplineMode(){
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
+
+  testG1(); return 0;
 
   testMotors();
   testRndScene();

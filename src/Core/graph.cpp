@@ -666,12 +666,11 @@ void Graph::read(std::istream& is, bool parseInfo) {
     } else if(n->key=="ChDir") {
       n->as<FileToken>().cd_file();
 
-    } else if(n->key.startsWith("Delete ")) {
-      n->key.replace(0, strlen("Delete "), 0, 0);
-      NodeL dels = getNodes(n->key);
-      if(!dels.N || (dels.N==1 && dels.elem(0)==n)) LOG(-1) <<"nothing to delete with key '" <<n->key <<"'";
+    } else if(n->key=="Delete" && n->is<String>()) {
+      NodeL dels = getNodes(n->as<String>());
+      if(!dels.N) LOG(-1) <<"nothing to delete with key '" <<n->as<String>() <<"'";
       for(Node* d: dels) { delete d; d=nullptr; }
-      n=nullptr;
+      delete n; n=nullptr;
 
     } else if(n->key.startsWith("DeleteBranch ")) {
       n->key.replace(0, strlen("DeleteBranch "), 0, 0);
