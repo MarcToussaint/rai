@@ -453,6 +453,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 
   //decide on options
   bool multibody_floating = base->ats->findNode("multibody_floating");
+  bool multibody_gravity = base->ats->findNode("multibody_gravity");
 
   //-- collect all links for that root
   FrameL F = {base};
@@ -506,7 +507,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 
     addShapesAndInertia(actor, shapes, type, f);
 
-    if(opt.multiBodyDisableGravity && !multibody_floating) {
+    if(opt.multiBodyDisableGravity && !multibody_gravity) {
       actor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
     }
 
@@ -564,16 +565,26 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
           axis = PxArticulationAxis::eZ;
           break;
         }
-//        case rai::JT_quatBall:{
-//          type = PxArticulationJointType::eSPHERICAL;
-//          axis = PxArticulationAxis::eZ;
-//          break;
-//        }
+        case rai::JT_quatBall:{
+          type = PxArticulationJointType::eSPHERICAL;
+          axis = PxArticulationAxis::eCOUNT;
+          break;
+        }
         default: NIY;
       }
       joint->setJointType(type);
-      joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
-      joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
+      if(axis!=PxArticulationAxis::eCOUNT){
+        joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
+        joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
+      }else{
+        joint->setMotion(PxArticulationAxis::eTWIST, PxArticulationMotion::eFREE); //eLIMITED
+        joint->setMotion(PxArticulationAxis::eSWING1, PxArticulationMotion::eFREE); //eLIMITED
+        joint->setMotion(PxArticulationAxis::eSWING2, PxArticulationMotion::eFREE); //eLIMITED
+        auto vec = f->get_Q().rot.getVec();
+        joint->setJointPosition(PxArticulationAxis::eTWIST, vec.x);
+        joint->setJointPosition(PxArticulationAxis::eSWING1, vec.y);
+        joint->setJointPosition(PxArticulationAxis::eSWING2, vec.z);
+      }
       jointAxis(f->ID) = axis;
 
 //      if(f->joint->limits.N){
@@ -592,7 +603,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
         //        world->addMultiBodyConstraint(gearCons);
       }
 
-      if(true) {
+      if(axis!=PxArticulationAxis::eCOUNT) { //only 1D joints have drives!
         PxArticulationDrive posDrive;
         if(f->joint->active) {
           posDrive.stiffness = opt.motorKp;                      // the spring constant driving the joint to a target position
@@ -609,6 +620,8 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
       }
     }
   }
+
+  articulation->updateKinematic(PxArticulationKinematicFlag::ePOSITION);
 
   gScene->addArticulation(*articulation);
 
@@ -636,9 +649,9 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
   bool shapesHaveInertia=false;
   for(rai::Shape* s:shapes) if(s->frame.inertia) { shapesHaveInertia=true; break; }
   if(shapesHaveInertia && !f->inertia) {
-    LOG(-1) <<"computing compound inertia for object frame '" <<f->name <<"' -- this should have been done earlier?";
+    LOG(-1) <<"computing compound inertia for object frame '" <<f->name;
     f->computeCompoundInertia();
-    f->transformToDiagInertia();
+//    f->transformToDiagInertia(); //the inertial needs to be at that link... not just a child...
   }
   if(f->inertia && !f->inertia->matrix.isDiagonal()) {
     LOG(-1) <<"DON'T DO THAT! PhysX can only properly handle (compound) inertias if transformed to diagonal tensor\n frame:" <<*f;
@@ -776,8 +789,17 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes
     if(f->inertia && f->inertia->mass>0.) {
       //PxRigidBodyExt::updateMassAndInertia(*actor, f->inertia->mass);
       actor->setMass(f->inertia->mass);
-      actor->setMassSpaceInertiaTensor({float(f->inertia->matrix.m00), float(f->inertia->matrix.m11), float(f->inertia->matrix.m22)});
-      //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
+      if(!f->inertia->com && f->inertia->matrix.isDiagonal()){
+        actor->setMassSpaceInertiaTensor({float(f->inertia->matrix.m00), float(f->inertia->matrix.m11), float(f->inertia->matrix.m22)});
+      }else{
+        arr I;
+        rai::Transformation t = f->inertia->getDiagTransform(I);
+        if(!t.pos.isZero || !t.rot.isZero){
+          actor->setCMassLocalPose(conv_Transformation2PxTrans(t));
+        }
+        actor->setMassSpaceInertiaTensor({float(I(0)), float(I(1)), float(I(2))});
+      }
+//      //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
     } else {
       PxRigidBodyExt::updateMassAndInertia(*actor, 1000.f);
       if(!f->inertia) new rai::Inertia(*f);
@@ -937,19 +959,19 @@ void PhysXInterface::pushMotorStates(const rai::Configuration& C, bool setInstan
         if(!joint) continue;
 
         auto axis = self->jointAxis(f->ID);
-        CHECK_LE(axis, self->jointAxis(0)-1, "");
+        if(axis!=PxArticulationAxis::eCOUNT){ //only joints with drive
+          if(setInstantly) joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
+          joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
 
-        if(setInstantly) joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
-        joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
-
-        if(!!qDot && qDot.N) { //also setting vel reference!
-          if(setInstantly) joint->setJointVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
-          joint->setDriveVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
-        } else {
-          if(setInstantly) joint->setJointVelocity(axis, 0.);
-          joint->setDriveVelocity(axis, 0.);
+          if(!!qDot && qDot.N) { //also setting vel reference!
+            if(setInstantly) joint->setJointVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
+            joint->setDriveVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
+          } else {
+            if(setInstantly) joint->setJointVelocity(axis, 0.);
+            joint->setDriveVelocity(axis, 0.);
+          }
         }
-      }
+    }
   } else if(self->opt.jointedBodies) {
     NIY;
   }
@@ -969,14 +991,15 @@ void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot) {
         if(!joint) continue;
 
         auto axis = self->jointAxis(f->ID);
-        CHECK_LE(axis, self->jointAxis(0)-1, "");
-        if(f->joint->active){
-          q(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
-          if(!!qDot) qDot(f->joint->qIndex) = joint->getJointVelocity(axis) / f->joint->scale;
-        }else{
-          qInactive(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
+        if(axis!=PxArticulationAxis::eCOUNT){ //only joints with drive
+          if(f->joint->active){
+            q(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
+            if(!!qDot) qDot(f->joint->qIndex) = joint->getJointVelocity(axis) / f->joint->scale;
+          }else{
+            qInactive(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
+          }
         }
-      }
+    }
   } else if(self->opt.jointedBodies) {
     NIY;
   }

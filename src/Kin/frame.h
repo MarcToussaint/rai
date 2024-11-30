@@ -299,7 +299,7 @@ stdOutPipe(Joint)
 /// a Frame with Inertia has mass and, in physical simulation, has forces associated with it
 struct Inertia : NonCopyable {
   Frame& frame;
-  double mass=-1.;
+  double mass=0.;
   Matrix matrix=0;
   Enum<BodyType> type;
   Vector com=0;             ///< its center of mass
@@ -310,6 +310,8 @@ struct Inertia : NonCopyable {
   void setZero() { mass=0; com=0; matrix=0; }
   void add(const Inertia& I, const rai::Transformation& rel);
   void defaultInertiaByShape();
+
+  rai::Transformation getDiagTransform(arr& diag);
 
   void write(std::ostream& os) const;
   void write(Graph& g);

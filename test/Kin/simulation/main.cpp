@@ -482,9 +482,9 @@ void testMotors(){
 
 //===========================================================================
 
-void testG1(){
+void testPassive(const char* filename){
   rai::Configuration C;
-  C.addFile("../../../../playground/24-humanoid/scene.g");
+  C.addFile(filename);
 //  C.optimizeTree(true);
 
   rai::Simulation S(C, S._physx, 3);
@@ -499,7 +499,7 @@ void testG1(){
 
     S.step({}, tau, S._none);
 
-//    C.view(false, STRING("time:" <<t));
+//    C.view(true, STRING("time:" <<t));
   }
 }
 
@@ -536,9 +536,10 @@ void testSplineMode(){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  testG1(); return 0;
 
   testMotors();
+  testPassive("../../../../playground/24-humanoid/scene.g");
+  testPassive("../../../../rai-robotModels/scenarios/pendulum.g");
   testRndScene();
   testConstructor();
   testPcl();

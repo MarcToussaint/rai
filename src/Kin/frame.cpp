@@ -283,11 +283,10 @@ void rai::Frame::prefixSubtree(const char* prefix) {
 }
 
 void rai::Frame::computeCompoundInertia(bool clearChildInertias) {
-  CHECK(!inertia, "this frame already has inertia");
   FrameL all = {};
   getRigidSubFrames(all, false);
-  Inertia* I = new Inertia(*this);
-  I->setZero();
+  Inertia* I = inertia;
+  if(!I){ I = new Inertia(*this);  I->setZero(); }
   for(rai::Frame* f:all) if(f->inertia) {
       I->add(*f->inertia, f->ensure_X() / ensure_X());
       if(clearChildInertias) delete f->inertia;
@@ -1561,7 +1560,7 @@ void rai::Joint::setType(rai::JointType _type) {
     dim = getDimFromType();
     frame->C.reset_q();
     q0 = calcDofsFromConfig();
-    isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_transZ));
+    isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_transZ) || type==JT_quatBall);
   }
 }
 
@@ -1640,7 +1639,7 @@ void rai::Joint::read(const Graph& ats) {
   else type=JT_rigid;
 
   dim = getDimFromType();
-  isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_transZ));
+  isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_transZ) || type==JT_quatBall);
 
   if(ats.get(d, "q")) {
     if(!dim) { //HACK convention
@@ -2070,6 +2069,23 @@ void rai::Inertia::defaultInertiaByShape() {
     case ST_mesh: inertiaMesh(matrix.p(), mass, (mass>0.?0.:1000.), frame.shape->mesh()); break;
     default: HALT("not implemented for this shape type");
   }
+}
+
+rai::Transformation rai::Inertia::getDiagTransform(arr& diag){
+  rai::Transformation t=0;
+  if(!com.isZero){
+    t.pos = com;
+  }
+  if(!matrix.isDiagonal()) {
+    arr I = matrix.getArr();
+    arr U, d, V;
+    svd(U, d, V, I, false);
+    t.rot.setMatrix(V);
+    if(!!diag) diag=d;
+  }else{
+    if(!!diag) diag = arr{matrix.m00, matrix.m11, matrix.m22};
+  }
+  return t;
 }
 
 void rai::Inertia::write(std::ostream& os) const {

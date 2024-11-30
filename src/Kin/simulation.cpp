@@ -214,7 +214,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     }
     self->physx->step(tau);
     self->physx->pullDynamicStates(C, self->frameVelocities);
-    self->physx->pullMotorStates(C, self->qDot);  //why not also pull the motor states?
+    self->physx->pullMotorStates(C, self->qDot);
   } else if(engine==_bullet) {
     self->bullet->pushKinematicStates(C);
     if(self->bullet->opt().multiBody) {
