@@ -33,7 +33,7 @@ void createPath(){
 //  komo.optimize();
 
   komo.view(false, "result");
-  while(komo.view_play(true));
+  komo.view_play(true);
 
   FILE("z.path") <<komo.getPath_qOrg();
 }

@@ -115,7 +115,7 @@ arr ShapenetGrasps::sampleGraspPose(){
     rai::Quaternion rel;
     rel.setDiff(X.rot.getX(), n);
     rai::Quaternion noise;
-    noise.setVec(opt.pregraspNormalSdv*randn(3));
+    noise.setVector(opt.pregraspNormalSdv*randn(3));
     X.rot = rel * X.rot * noise;
     ref->setRelativePose(X);
 

@@ -23,7 +23,9 @@ void generateProblem(rai::Configuration& C){
     for(uint i=0;i<numObj;i++){
       rai::Frame *f = C.addFrame(STRING("obj"<<i), "table1", "type:ssBox size:[.1 .1 .2 .02] color:[1. 0. 0.], contact, logical={ object }, joint:rigid" );
       f->setRelativePosition({rnd.uni(-.3, .3), rnd.uni(-1.,1.), .15});
-      f->setRelativeQuaternion(rai::Quaternion(0).addZ(rnd.uni(-RAI_PI,RAI_PI)).getArr4d());
+      rai::Quaternion q(0);
+      q.appendZ(rnd.uni(-RAI_PI,RAI_PI));
+      f->setRelativeQuaternion(q.getArr4d());
     }
     C.stepFcl();
     arr y, J;

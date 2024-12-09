@@ -407,7 +407,9 @@ Mesh& Mesh::setRandom(uint vertices) {
   V.resize(vertices, 3);
   rndUniform(V, -1., 1.);
 //  rndGauss(V);
-  Quaternion().setRandom().applyOnPointArray(V);
+  Quaternion q;
+  q.setRandom();
+  q.applyOnPointArray(V);
   makeConvexHull();
   return *this;
 }

@@ -652,8 +652,6 @@ void TEST(BlenderImport){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  testGrid(); return 0;
-
   testMini();
   testLoadSave();
   testCopy();
@@ -663,6 +661,7 @@ int MAIN(int argc,char **argv){
   testKinematics();
   testQuaternionKinematics();
   testKinematicSpeed();
+  testGrid();
   testFollowRedundantSequence();
   testDynamics();
   testContacts();

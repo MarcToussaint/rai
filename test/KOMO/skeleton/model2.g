@@ -5,19 +5,19 @@ table (world){
     shape:ssBox, size:[2. 2. .1 .02], color:[.3 .3 .3] }
 
 box0 (table){
-    joint:rigid, Q: "t(0 -.3 .1)"
+    joint:rigid, Q: "t(0 -.3 .1)", mass: .1
     shape:ssBox, size:[.1 .1 .1 .02], color:[.8 .8 .8] }
 
 box1 (table){
-    joint:rigid, Q: "t(0 -.1 .1)"
+    joint:rigid, Q: "t(0 -.1 .1)", mass: .1
     shape:ssBox, size:[.4 .2 .04 .02], color:[.8 .8 .8] }
 
 box2 (table){
-    joint:rigid, Q: "t(0 .1 .1)"
+    joint:rigid, Q: "t(0 .1 .1)", mass: .1
     shape:ssBox, size:[.1 .1 .1 .02], color:[.8 .8 .8] }
 
 box3 (table){
-    joint:rigid, Q: "t(0 .3 .1)"
+    joint:rigid, Q: "t(0 .3 .1)", mass: .1
     shape:ssBox, size:[.1 .1 .1 .02], color:[.8 .8 .8] }
 
 stick (table){

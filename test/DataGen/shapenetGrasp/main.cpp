@@ -10,7 +10,7 @@ int main(int argc,char** argv){
   //-- low-level interface
   {
     ShapenetGrasps SG;
-    SG.opt.verbose = 2;
+    // SG.opt.verbose = 2;
 
     SG.loadObject(3);
     arr pcl = SG.getPointCloud();

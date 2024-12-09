@@ -36,6 +36,36 @@ void TEST(Basics){
 
 //===========================================================================
 
+void testQuaternions(){
+  for(uint k=0;k<20;k++){
+    rai::Quaternion a,b,c;
+    rai::Vector w;
+
+    a.setRandom();
+    b.setRandom();
+
+    double t = rnd.uni();
+
+    w = a.getLog();
+    c.setExp(w);
+    CHECK(c.isNormalized(), "");
+    double err = c.sqrDiff(a);
+    cout <<err <<endl;
+    CHECK_ZERO(err, 1e-12, "");
+
+    double r=rnd.uni(), p=rnd.uni(), y=rnd.uni();
+    a.setRpy(r,p,y);
+    b.setZero(); b.appendZ(y); b.appendY(p); b.appendX(r);
+    err = b.sqrDiff(a);
+    cout <<a <<b <<err <<endl;
+    CHECK_ZERO(err, 1e-12, "");
+
+  }
+}
+
+
+//===========================================================================
+
 void TEST(QuaternionJacobian){
   for(uint k=0;k<1;k++){
     rai::Vector z;
@@ -58,6 +88,9 @@ void TEST(QuaternionJacobian){
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
+
+  testQuaternions(); return 0;
+
 
   testBasics();
   testQuaternionJacobian();

@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "BayesOpt.h"
-#include "RidgeRegression.h"
+#include "../Algo/RidgeRegression.h"
 //#include "../Gui/plot.h"
 //#include "../Algo/MLcourse.h"
 

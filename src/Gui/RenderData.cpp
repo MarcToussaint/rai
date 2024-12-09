@@ -262,7 +262,7 @@ void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs,
     if(renderFlatColors && idFlatColor && obj->flatColor.N){
       CHECK_EQ(obj->flatColor.N, 3, "");
       byte *rgb = obj->flatColor.p;
-      glUniform4f(idFlatColor, rgb[0]/256.f, rgb[1]/256.f, rgb[2]/256.f, 1.);
+      glUniform4f(idFlatColor, rgb[0]/255.f, rgb[1]/255.f, rgb[2]/255.f, 1.);
     }else{
       glUniform4f(idFlatColor, 0.f, 0.f, 0.f, 0.f);
     }

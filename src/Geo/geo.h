@@ -121,7 +121,8 @@ struct Quaternion {
   void set(const std::vector<double>& x) { CHECK_EQ(x.size(), 4, "");  set(x.data()); }
   void set(const double* p);
   void setZero();
-  Quaternion& setRandom();
+  void setRandom();
+  void setExp(const Vector& w);
   void setDeg(double degree, double axis0, double axis1, double axis2);
   void setDeg(double degree, const Vector& axis);
   void setRad(double radians, double axis0, double axis1, double axis2);
@@ -130,23 +131,24 @@ struct Quaternion {
   void setRadX(double radians);
   void setRadY(double radians);
   void setRadZ(double radians);
-  Quaternion& setRpy(double r, double p, double y);
-  void setVec(Vector w);
+  void setRpy(double r, double p, double y);
+  void setVector(const Vector& w){ setExp(w); }
   void setMatrix(double* m);
   void setMatrix(const arr& R) { CHECK_EQ(R.N, 9, ""); setMatrix(R.p); }
   void setDiff(const Vector& from, const Vector& to);
-  void setInterpolate(double t, const Quaternion& a, const Quaternion b);
+  void setInterpolateEmbedded(double t, const Quaternion& from, const Quaternion to);
+  void setInterpolateProper(double t, const Quaternion& from, const Quaternion to);
   void add(const Quaternion b, double w_b=1., double w_this=1.);
-  Quaternion& invert();
+  void invert();
   void flipSign();
   void uniqueSign();
   void normalize();
   void multiply(double f);
   void alignWith(const Vector& v);
 
-  void addX(double radians);
-  void addY(double radians);
-  Quaternion& addZ(double radians);
+  void appendX(double radians);
+  void appendY(double radians);
+  void appendZ(double radians);
   void append(const Quaternion& q);
 
   double diffZero() const;
@@ -155,11 +157,12 @@ struct Quaternion {
   double sqrDiff(const Quaternion& q2) const;
   double normalization() const;
   bool isNormalized() const;
+  Vector getLog() const;
   double getDeg() const;
   double getRad() const;
   void getDeg(double& degree, Vector& axis) const;
   void getRad(double& angle, Vector& axis) const;
-  Vector getVec() const;
+  Vector getVector() const { return getLog(); }
   Vector getX() const;
   Vector getY() const;
   Vector getZ() const;

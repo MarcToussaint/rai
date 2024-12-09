@@ -336,11 +336,14 @@ void testSweepingSDFs(){
     sweep2.V.append(V+(ones(V.d0)^vel));
     sweep2.makeConvexHull();
 
-    C.get_viewer()->clear();
+    {
+      auto lock = C.get_viewer()->dataLock(RAI_HERE);
+      C.get_viewer()->clear();
+      C.get_viewer()->addDistMarker(dist.x-dist.d1*dist.g1, dist.x-dist.d2*dist.g2, .1);
+      C.get_viewer()->add().mesh(sweep1);
+      C.get_viewer()->add().mesh(sweep2);
+    }
     C.get_viewer()->updateConfiguration(C);
-    C.get_viewer()->addDistMarker(dist.x-dist.d1*dist.g1, dist.x-dist.d2*dist.g2, .1);
-    C.get_viewer()->add().mesh(sweep1);
-    C.get_viewer()->add().mesh(sweep2);
     C.view(true);
   }
 

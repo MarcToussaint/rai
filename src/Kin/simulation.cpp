@@ -259,7 +259,7 @@ void Simulation::setSplineRef(const arr& _x, const arr& _times, bool append) {
   arr times = _times;
   if(times.N==1 && path.d0>1) {
     double t = times.elem();
-    times.setGrid(1, t/(path.d0), t, path.d0-1);
+    times.setGrid(1, t/(path.d0), t, path.d0-1).reshape(-1);
   }
   CHECK_EQ(path.d0, times.N, "need times for each control point");
 
@@ -338,8 +338,8 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   if(!gripper) return;
 
   rai::Frame* finger1 = fing1, *finger2=fing2;
-  while(!finger1->shape || finger1->shape->type()!=ST_capsule) finger1=finger1->children.last();
-  while(!finger2->shape || finger2->shape->type()!=ST_capsule) finger2=finger2->children.last();
+  while(!finger1->shape || finger1->shape->type()!=ST_ssBox) finger1=finger1->children.last();
+  while(!finger2->shape || finger2->shape->type()!=ST_ssBox) finger2=finger2->children.last();
 
   CHECK(finger1->shape && finger1->shape->cont, "");
   CHECK(finger2->shape && finger2->shape->cont, "");
@@ -396,8 +396,8 @@ void Simulation::closeGripperGrasp(const char* gripperFrameName, const char* obj
   if(!gripper) return;
 
   rai::Frame* finger1 = fing1, *finger2=fing2;
-  while(!finger1->shape || finger1->shape->type()!=ST_capsule) finger1=finger1->children.last();
-  while(!finger2->shape || finger2->shape->type()!=ST_capsule) finger2=finger2->children.last();
+  while(!finger1->shape || finger1->shape->type()!=ST_ssBox) finger1=finger1->children.last();
+  while(!finger2->shape || finger2->shape->type()!=ST_ssBox) finger2=finger2->children.last();
 
   rai::Frame* obj = 0;
   if(objectName) obj = C.getFrame(objectName);
@@ -725,8 +725,8 @@ Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Joint* _joint,  Frame* _fing
   when = _beforePhysics;
   type = Simulation::_closeGripper;
 
-  while(!finger1->shape || finger1->shape->type()!=ST_capsule) finger1=finger1->children.last();
-  while(!finger2->shape || finger2->shape->type()!=ST_capsule) finger2=finger2->children.last();
+  while(!finger1->shape || finger1->shape->type()!=ST_ssBox) finger1=finger1->children.last();
+  while(!finger2->shape || finger2->shape->type()!=ST_ssBox) finger2=finger2->children.last();
 
   if(obj) {
     coll1 = make_unique<F_PairCollision>(F_PairCollision::_negScalar, false);

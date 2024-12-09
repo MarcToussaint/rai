@@ -361,13 +361,13 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps);
 /// return a grid (1D: range) split in 'steps' steps
 inline arr grid(uint dim, double lo, double hi, uint steps) { arr g;  g.setGrid(dim, lo, hi, steps);  return g; }
 /// return a 1D-grid
-inline arr range(double lo, double hi, uint steps) { arr g;  g.setGrid(1, lo, hi, steps);  return g; }
+inline arr range(double lo, double hi, uint steps) { arr g;  g.setGrid(1, lo, hi, steps).reshape(-1);  return g; }
 //inline uintA range(uint n) { uintA r;  r.setStraightPerm(n);  return r; }
 
 arr repmat(const arr& A, uint m, uint n);
 
 //inline uintA randperm(uint n) {  uintA z;  z.setRandomPerm(n);  return z; }
-inline arr linspace(double base, double limit, uint n) {  arr z;  z.setGrid(1, base, limit, n);  return z;  }
+inline arr linspace(double base, double limit, uint n) {  arr z;  z.setGrid(1, base, limit, n).reshape(-1);  return z;  }
 arr logspace(double base, double limit, uint n);
 
 void normalizeWithJac(arr& y, arr& J, double eps=0.);

@@ -203,7 +203,7 @@ arr Skeleton::solve(const rai::Configuration& C, ArgWord sequenceOrPath, int ver
   if(verbose>0) komoPath->report(false, true, true);
   if(verbose>1) komoPath->view(true, "optimized motion");
   if(verbose>2) {
-    while(komoPath->view_play(true));
+    komoPath->view_play(true);
     komoPath->view_play(false, 0, .1, "z.vid/");
   }
 

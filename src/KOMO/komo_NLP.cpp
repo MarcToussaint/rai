@@ -142,7 +142,7 @@ void KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
   if(verbose>2) komo.view(verbose>3, STRING("KOMO nlp report - " <<msg));
 //  if(verbose>4) komo.view_play(false);
 //  if(verbose>6) {
-//    while(komo.view_play(true, -1));
+//    komo.view_play(true, -1);
 ////    rai::system("mkdir -p z.vid");
 ////    komo.view_play(false, .1, "z.vid/");
 //  }
@@ -420,12 +420,17 @@ arr Conv_KOMO_FactoredNLP::getInitializationSample(const arr& previousOptima) {
 void Conv_KOMO_FactoredNLP::randomizeSingleVariable(uint var_id) {
   for(Dof* d:__variableIndex(var_id).dofs) {
     if(d->limits.N && d->dim!=1) { //HACK!!
+#if 1
+      d->limits.reshape(2, -1);
+      arr q = rand(d->limits[0], d->limits[1]);
+#else
       arr q(d->dim);
       for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
         double lo = d->limits.elem(2*k+0); //lo
         double up = d->limits.elem(2*k+1); //up
         q(k) = rnd.uni(lo, up);
       }
+#endif
       LOG(0) <<"### initializing " <<d->frame->name <<" with " <<q;
       d->setDofs(q);
     } else {

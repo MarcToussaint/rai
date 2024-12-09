@@ -188,7 +188,7 @@ struct LGPcomp_OptimizePath : ComputeNode {
 //        if(opt.verbose>1) cout <<komoPath.report(false, true, opt.verbose>2);
 //        if(opt.verbose>0) komoPath.view(opt.verbose>1, STRING("optimized path\n" <<*ret));
 //        //komoPath.checkGradients();
-//        if(opt.verbose>1) while(komoPath.view_play(opt.verbose>2));
+//        if(opt.verbose>1) komoPath.view_play(opt.verbose>2);
 
   virtual int getNumDecisions() { return 0; }
   virtual std::shared_ptr<ComputeNode> createNewChild(int i) { HALT("is terminal"); }

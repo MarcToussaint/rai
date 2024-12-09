@@ -536,7 +536,6 @@ void testSplineMode(){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-
   testMotors();
   testPassive("../../../../playground/24-humanoid/scene.g");
   testPassive("../../../../rai-robotModels/scenarios/pendulum.g");

@@ -369,7 +369,7 @@ uint color2id(byte rgb[3]) {
 arr id2color(uint id) {
   byteA rgb(3);
   id2color(rgb.p, id);
-  return arr{rgb(0)/256., rgb(1)/256., rgb(2)/256.};
+  return arr{rgb(0)/255., rgb(1)/255., rgb(2)/255.};
 }
 
 #ifdef RAI_GL
@@ -983,7 +983,7 @@ void OpenGL::MouseMotion(double _x, double _y) {
       //not at margin: use starndard xy to rotate
       rai::Vector diff = vec - downVec;
       diff.set(-diff.y, diff.x, 0); //no rotation about
-      rot.setVec(3.*diff); //consider only xy-mouse-move
+      rot.setVector(3.*diff); //consider only xy-mouse-move
     }
     //rotate about focus
     cam->X.rot = downRot * rot;   //rotate camera's direction

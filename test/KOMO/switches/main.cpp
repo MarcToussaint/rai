@@ -81,7 +81,7 @@ void testPickAndPlace(uint order){
   //komo.checkGradients();
 
   komo.view(true, "optimized motion");
-  while(komo.view_play(true, 0, .2));
+  komo.view_play(true, 0, .2);
 }
 
 //===========================================================================
@@ -154,7 +154,7 @@ void testHandover(uint order){
   //komo.checkGradients();
 
   komo.view(true, "optimized motion");
-  while(komo.view_play(true, 0, .2));
+  komo.view_play(true, 0, .2);
 }
 
 //===========================================================================
@@ -203,7 +203,7 @@ void testFloat(uint order){
 //  cout <<"GRADS\n" <<sol.reportLangrangeGradients(komo.featureNames) <<endl;
 
   komo.view(true, "optimized motion");
-  while(komo.view_play(true, 0, -1.));
+  komo.view_play(true, 0, -1.);
 
 }
 

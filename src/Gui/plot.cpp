@@ -70,7 +70,7 @@ void rai::PlotModule::update(bool wait, const char* txt) {
     case gnupl:
       if(txt) self->title = txt;
       drawGnuplot(*self);
-      if(wait) rai::wait();
+      if(wait) rai::wait(); else rai::wait(.1);
       break;
 #ifdef RAI_GL
     case opengl:

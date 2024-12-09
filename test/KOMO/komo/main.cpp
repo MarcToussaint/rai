@@ -51,7 +51,7 @@ void TEST(Easy){
 
 
   komo.view(true, "result");
-  while(komo.view_play(true));
+  komo.view_play(true);
 }
 
 //===========================================================================
@@ -79,7 +79,7 @@ void TEST(Align){
 //  komo.plotTrajectory();
   komo.report(false, true, true);
   komo.view(true, "result");
-  while(komo.view_play(true));
+  komo.view_play(true);
 
 //  komo.pathConfig.setJointState(komo.x);
 //  V.setConfiguration(komo.pathConfig, "path", true);
@@ -190,7 +190,7 @@ void TEST(Thin){
   komo.checkGradients();
 
   komo.view(true, "result");
-  while(komo.view_play(true));
+  komo.view_play(true);
 }
 
 //===========================================================================
@@ -222,7 +222,7 @@ void TEST(PR2){
   komo.plotTrajectory();
 //  komo.checkGradients();
   komo.view(true, "result");
-  while(komo.view_play(true));
+  komo.view_play(true);
 }
 
 //===========================================================================

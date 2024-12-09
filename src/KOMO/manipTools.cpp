@@ -416,7 +416,7 @@ arr ManipulationModelling::solve(int verbose) {
         }
         komo->view(true, STRING("infeasible: " <<info <<"\n" <<*ret));
         if(verbose>2) {
-          while(komo->view_play(true, 0, 1.));
+          komo->view_play(true, 0, 1.);
         }
       } else {
         cout <<"  -- feasible:" <<info <<"\n     " <<*ret <<endl;
@@ -426,7 +426,7 @@ arr ManipulationModelling::solve(int verbose) {
           cout <<"  --" <<endl;
           komo->view(true, STRING("feasible: " <<info <<"\n" <<*ret));
           if(verbose>3) {
-            while(komo->view_play(true, 0, 1.));
+            komo->view_play(true, 0, 1.);
           }
         }
       }
@@ -493,7 +493,7 @@ arr ManipulationModelling::sample(const char* sampleMethod, int verbose) {
       }
       komo->view(true, STRING("infeasible: " <<info <<"\n" <<*ret));
       if(verbose>2) {
-        while(komo->view_play(true, 0, 1.));
+        komo->view_play(true, 0, 1.);
       }
     }
   } else {
@@ -504,7 +504,7 @@ arr ManipulationModelling::sample(const char* sampleMethod, int verbose) {
         cout <<"  --" <<endl;
         komo->view(true, STRING("feasible: " <<info <<"\n" <<*ret));
         if(verbose>3) {
-          while(komo->view_play(true, 0, 1.));
+          komo->view_play(true, 0, 1.);
         }
       }
     }

@@ -82,7 +82,9 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
   }
   for(rai::Frame* f:frames) if(f->shape && f->shape->type()==ST_marker) {
     frame2itemID(f->ID) = items.N;
-    addAxes(f->shape->size(-1), f->ensure_X());
+    double s = .1;
+    if(f->shape->size.N) s = f->shape->size(-1);
+    addAxes(s, f->ensure_X());
   }
 }
 

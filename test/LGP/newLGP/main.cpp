@@ -21,7 +21,7 @@ int main(int argc,char** argv){
 
   bool fixWaypoints = rai::getParameter<bool>("fixWaypoints", true);
 
-  for(uint k=0;k<10;k++){
+  for(uint k=0;k<3;k++){
     lgp.solve(verbose-1);
     cout <<"** solution " <<k <<" (" <<lgp.step_count <<"steps): " <<lgp.getSolvedPlan() <<' ' <<lgp.getSolvedKOMO().get() <<endl;
     lgp.view_solved(false);

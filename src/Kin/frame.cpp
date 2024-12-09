@@ -480,6 +480,13 @@ rai::Frame& rai::Frame::setQuaternion(const arr& quat) {
   return *this;
 }
 
+rai::Frame& rai::Frame::setRotationMatrix(const arr& R){
+  ensure_X();
+  X.rot.setMatrix(R);
+  _state_updateAfterTouchingX();
+  return *this;
+}
+
 rai::Frame& rai::Frame::setRelativePose(const rai::Transformation& _Q) {
   CHECK(parent, "you cannot set relative pose for a frame without parent");
   Q = _Q;
@@ -498,6 +505,13 @@ rai::Frame& rai::Frame::setRelativeQuaternion(const arr& quat) {
   CHECK(parent, "you cannot set relative pose for a frame without parent");
   Q.rot.set(quat);
   Q.rot.normalize();
+  _state_updateAfterTouchingQ();
+  return *this;
+}
+
+rai::Frame& rai::Frame::setRelativeRotationMatrix(const arr& R){
+  CHECK(parent, "you cannot set relative pose for a frame without parent");
+  Q.rot.setMatrix(R);
   _state_updateAfterTouchingQ();
   return *this;
 }
@@ -774,18 +788,17 @@ void rai::Frame::setAutoLimits() {
     }
     if(maxsize>1e-4) {
       joint->limits = {
-        -.9*maxsize, .9*maxsize,
-        -.9*maxsize, .9*maxsize,
-        -.9*maxsize, .9*maxsize,
+        -.9*maxsize, -.9*maxsize, -.9*maxsize, -1.1, -1.1, -1.1, -1.1,
+         .9*maxsize,  .9*maxsize,  .9*maxsize,  1.1,  1.1,  1.1,  1.1
         //            0., 1.1, -.5,.5, -.5,.5, -.5,.5 }; //no limits on rotation
-        -1.1, 1.1, -1.1, 1.1, -1.1, 1.1, -1.1, 1.1
+
       }; //no limits on rotation
     }
     //        f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
   } else if(jointType==JT_transXY || jointType==JT_transXYPhi) {
     CHECK_EQ(from->type(), rai::ST_ssBox, "");
-    joint->limits = { -.5*from->size(0), .5*from->size(0),
-                      -.5*from->size(1), .5*from->size(1)
+    joint->limits = { -.5*from->size(0), -.5*from->size(1),
+                       .5*from->size(0),  .5*from->size(1)
                     };
     if(jointType==JT_transXYPhi) joint->limits.append({-RAI_2PI, RAI_2PI});
   }
@@ -964,8 +977,8 @@ void rai::Dof::setRandom(uint timeSlices_d1, int verbose) {
     } else {
       CHECK(limits.N>=2*dim, "uniform sampling (for '" <<frame->name <<"') requires limits!")
       for(uint k=0; k<dim; k++) {
-        double lo = limits.elem(2*k+0); //lo
-        double up = limits.elem(2*k+1); //up
+        double lo = limits.elem(k); //lo
+        double up = limits.elem(dim+k); //up
         if(up>=lo) {
           q(k) = rnd.uni(lo, up);
           if(q0.N) q0(k) = q(k); //CRUCIAL to impose a bias to that random initialization
@@ -997,8 +1010,8 @@ void rai::Dof::setRandom(uint timeSlices_d1, int verbose) {
     //clip
     if(limits.N) {
       for(uint k=0; k<dim; k++) { //in case joint has multiple dimensions
-        double lo = limits.elem(2*k+0); //lo
-        double up = limits.elem(2*k+1); //up
+        double lo = limits.elem(k); //lo
+        double up = limits.elem(dim+k); //up
         if(up>=lo) rai::clip(q(k), lo, up);
       }
       if(verbose>0) LOG(0) <<"clipped to " <<limits <<" -> " <<q;
@@ -1196,12 +1209,12 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
             case 'Y':  Q.pos.y = -qp[i];  Q.pos.isZero=false;  break;
             case 'z':  Q.pos.z = qp[i];  Q.pos.isZero=false;  break;
             case 'Z':  Q.pos.z = -qp[i];  Q.pos.isZero=false;  break;
-            case 'a':  Q.rot.addX(qp[i]);  break;
-            case 'A':  Q.rot.addX(-qp[i]);  break;
-            case 'b':  Q.rot.addY(qp[i]);  break;
-            case 'B':  Q.rot.addY(-qp[i]);  break;
-            case 'c':  Q.rot.addZ(qp[i]);  break;
-            case 'C':  Q.rot.addZ(-qp[i]);  break;
+            case 'a':  Q.rot.appendX(qp[i]);  break;
+            case 'A':  Q.rot.appendX(-qp[i]);  break;
+            case 'b':  Q.rot.appendY(qp[i]);  break;
+            case 'B':  Q.rot.appendY(-qp[i]);  break;
+            case 'c':  Q.rot.appendZ(qp[i]);  break;
+            case 'C':  Q.rot.appendZ(-qp[i]);  break;
             case 'w': {
               CHECK_EQ(code.N-i, 4, "");
               Q.rot.set(qp+i);
@@ -1282,6 +1295,15 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
       j->frame->tau = frame->tau;
     }
   }
+
+  //copy into C state
+  // if(frame->C._state_q_isGood && &q_full!=&frame->C.q){
+  //   if(active){
+  //     frame->C.q({qIndex, qIndex+dim-1}) = q_full;
+  //   }else{
+  //     frame->C.qInactive({qIndex, qIndex+dim-1}) = q_full;
+  //   }
+  // }
 }
 
 arr rai::Joint::calcDofsFromConfig() const {

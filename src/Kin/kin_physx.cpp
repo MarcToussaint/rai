@@ -580,7 +580,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
         joint->setMotion(PxArticulationAxis::eTWIST, PxArticulationMotion::eFREE); //eLIMITED
         joint->setMotion(PxArticulationAxis::eSWING1, PxArticulationMotion::eFREE); //eLIMITED
         joint->setMotion(PxArticulationAxis::eSWING2, PxArticulationMotion::eFREE); //eLIMITED
-        auto vec = f->get_Q().rot.getVec();
+        auto vec = f->get_Q().rot.getVector();
         joint->setJointPosition(PxArticulationAxis::eTWIST, vec.x);
         joint->setJointPosition(PxArticulationAxis::eSWING1, vec.y);
         joint->setJointPosition(PxArticulationAxis::eSWING2, vec.z);

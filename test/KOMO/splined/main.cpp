@@ -35,7 +35,7 @@ void createPath(){
 //    arr phi, J;
 //    skomo->evaluate(phi, J, x);
 //    komo.view(true, "init");
-//    while(komo.view_play(true, -.5));
+//    komo.view_play(true, -.5);
 //  }
 //  return;
 
@@ -47,7 +47,7 @@ void createPath(){
 //  komo.optimize();
 
   komo.view(true, "result");
-  while(komo.view_play(true));
+  komo.view_play(true);
 
   FILE("z.path") <<komo.getPath_qOrg();
 }

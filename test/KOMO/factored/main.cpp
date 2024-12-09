@@ -84,7 +84,7 @@ void testFactored(){
   }
 
   komo.view(true, "optimized motion");
-  while(komo.view_play(true));
+  komo.view_play(true);
 #endif
 
   //== testing a partial problem

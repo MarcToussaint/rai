@@ -893,8 +893,8 @@ arr Configuration::getJointLimits(const DofL& dofs) const {
   for(Dof* d:dofs) if(!d->mimic) {
       for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
         if(d->limits.N) {
-          limits(0, N+k) = d->limits.elem(2*k+0); //lo
-          limits(1, N+k) = d->limits.elem(2*k+1); //up
+          limits(0, N+k) = d->limits.elem(k); //lo
+          limits(1, N+k) = d->limits.elem(d->dim+k); //up
         }
       }
       N += d->dim;
@@ -2826,7 +2826,7 @@ void Configuration::reportLimits(std::ostream& os) const {
       arr l = d->limits;
       bool good=true;
 //      if(d->dim>1) {
-        l = ~l.reshape(-1, 2);
+        l.reshape(2, -1);
         good = boundCheck(q, l);
 //      } else {
 //        good = boundCheck(q, l({0, 0}), l({1, 1}));
@@ -3217,7 +3217,7 @@ void Configuration::animateSpline(uint T) {
   X[0] = x0;
   X[-1] = x0;
   rai::BSpline S;
-  S.set(2, X, grid(1, 0., double(T+1), T+1));
+  S.set(2, X, grid(1, 0., double(T+1), T+1).reshape(-1));
   double tau = .02;
   for(double t=0.; t<=T+1; t+=tau) {
     setJointState(S.eval(t));
@@ -3406,7 +3406,7 @@ void Configuration::watchFile(const char* filename) {
                              "LEFT CLICK - rotate (ball; or around z at view rim)\n"
                              "q - quit\n"
                              "[ENTER] - force reload\n"
-                             "[SPACE] - write object info\n"
+                             "[SPACE] - pick object info\n"
                              "SHIFT-LEFT CLICK - move view\n"
                              "a - animate\n"
                              "i - write info\n"
@@ -3496,20 +3496,20 @@ void Configuration::watchFile(const char* filename) {
         writeCollada("z.dae");
       }else if(key=='a') {
         LOG(0) <<"animating..";
-        //while(ino.pollForModification());
         key = animate(&ino);
       }else{
         if(key){
           V->text = "waiting for file change ('h' for help)";
         }
       }
+
+      if(key==27 || key=='q') break;
       V->_resetPressedKey();
 
       if(ino.poll(false, true)) break;
       wait(.1);
     }
 
-    //-- ANIMATING
     //if(key) cout <<"*** KEYout:" <<key <<endl;
     if(key==27 || key=='q') break;
     if(key==-1) continue;

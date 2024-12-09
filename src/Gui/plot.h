@@ -43,7 +43,7 @@ struct PlotModule {
 
   void Gnuplot();
   void Opengl(bool perspective=false, double xl=-1., double xh=1., double yl=-1., double yh=1., double zl=-1., double zh=1.);
-  void update(bool wait=true, const char* txt=0);
+  void update(bool wait=false, const char* txt=0);
   void Close();
   void writeGnuplotFiles();
 

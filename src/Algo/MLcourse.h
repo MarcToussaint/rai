@@ -9,7 +9,7 @@
 #pragma once
 
 #include "../Core/array.h"
-#include "../Optim/RidgeRegression.h"
+#include "RidgeRegression.h"
 
 //===========================================================================
 //

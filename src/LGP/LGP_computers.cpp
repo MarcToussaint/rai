@@ -261,7 +261,7 @@ void rai::LGPcomp_Waypoints::untimedCompute() {
 
   if(!isComplete && sket->verbose()>4) {
     komoWaypoints->view(sket->verbose()>5, STRING(name <<" - intermediate results, c:" <<c <<"\n" <<*ret));
-    if(sket->verbose()>5) while(komoWaypoints->view_play(true));
+    if(sket->verbose()>5) komoWaypoints->view_play(true);
   }
 
   if(isComplete) {
@@ -274,7 +274,7 @@ void rai::LGPcomp_Waypoints::untimedCompute() {
     } else {
       isFeasible = true;
       if(sket->verbose()>2) komoWaypoints->view(sket->verbose()>3, STRING(name <<" - final, c:" <<c <<"\n" <<*ret));
-      if(sket->verbose()>3) while(komoWaypoints->view_play(true));
+      if(sket->verbose()>3) komoWaypoints->view_play(true);
       //    if(sket->verbose()>1){
       //      static int count=0;
       //      if(ret->feasible)  write_png(komoWaypoints->pathConfig.gl()->getScreenshot(), STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<count++<<".png"));
@@ -359,7 +359,7 @@ rai::LGPcomp_OptimizePath::LGPcomp_OptimizePath(rai::LGPcomp_Skeleton* _sket)
   //random initialize
   komoPath->initRandom(0);
   if(sket->verbose()>2) komoPath->view(sket->verbose()>3, STRING(name <<" - init random from Skeleton directly"));
-  if(sket->verbose()>3) while(komoPath->view_play(true, 0, .1));
+  if(sket->verbose()>3) komoPath->view_play(true, 0, .1);
 
   komoPath->run_prepare(0.);
   //  komoPath->opt.animateOptimization=2;
@@ -381,7 +381,7 @@ rai::LGPcomp_OptimizePath::LGPcomp_OptimizePath(rai::LGPcomp_Waypoints* _ways)
   komoPath->initWithWaypoints(ways->komoWaypoints->getPath_qAll(), 1, true);
   komoPath->run_prepare(0.);
   if(sket->verbose()>2) komoPath->view(sket->verbose()>3, STRING(name <<" - init with interpolated waypoints"));
-  if(sket->verbose()>3) while(komoPath->view_play(true, 0, .1));
+  if(sket->verbose()>3) komoPath->view_play(true, 0, .1);
 
   komoPath->run_prepare(0.);
   //  komoPath->opt.animateOptimization=2;
@@ -413,7 +413,7 @@ rai::LGPcomp_OptimizePath::LGPcomp_OptimizePath(rai::LGPcomp_RRTpath* _par, rai:
 //  if(rrtpath.N) komoPath->initWithPath_qOrg(rrtpath);
   komoPath->run_prepare(0.);
   if(sket->verbose()>2) komoPath->view(sket->verbose()>3, STRING(name <<" - init with constant waypoints"));
-  if(sket->verbose()>3) while(komoPath->view_play(true, 0, .1));
+  if(sket->verbose()>3) komoPath->view_play(true, 0, .1);
 
   for(uint t=0; t<ways->komoWaypoints->T; t++) {
     CHECK(rrts(t)->isFeasible, "rrt of t=" <<t <<" is infeasible - can't use RRT-initialized KOMO")
@@ -444,7 +444,7 @@ void rai::LGPcomp_OptimizePath::untimedCompute() {
     komoPath->pathConfig.get_viewer()->renderUntil=rai::_shadow;
     komoPath->view(sket->verbose()>5, STRING(name <<" - intermediate result c:" <<c <<"\n" <<*sol.ret));
     if(sket->verbose()>3) {
-      if(sket->verbose()>5) while(komoPath->view_play(true, 0, .1));
+      if(sket->verbose()>5) komoPath->view_play(true, 0, .1);
       else komoPath->view_play(false, 0, .1);
     }
   }
@@ -457,7 +457,7 @@ void rai::LGPcomp_OptimizePath::untimedCompute() {
     if(sket->verbose()>1) cout <<komoPath->report(false, true, sket->verbose()>2);
     if(sket->verbose()>0) komoPath->view(sket->verbose()>2, STRING(name <<" - optimized \n" <<*sol.ret <<"\n" <<sket->planString <<"\n"));
     //komoPath->checkGradients();
-    if(sket->verbose()>1) while(komoPath->view_play(sket->verbose()>1 && sol.ret->feasible));
+    if(sket->verbose()>1) komoPath->view_play(sket->verbose()>1 && sol.ret->feasible);
 
     if(!sol.ret->feasible) {
       //l = 1e10;

@@ -317,8 +317,8 @@ void F_qLimits::phi2(arr& y, arr& J, const FrameL& F) {
   DofL dofs = getDofs(F);
   for(rai::Dof* dof: dofs) if(dof->limits.N) {
       for(uint k=0; k<dof->dim; k++) { //in case joint has multiple dimensions
-        double lo = dof->limits(2*k+0);
-        double up = dof->limits(2*k+1);
+        double lo = dof->limits.elem(k);
+        double up = dof->limits.elem(dof->dim+k);
         if(up>=lo) {
           uint i = dof->qIndex+k;
           double qi = F.last()->C.q(i);

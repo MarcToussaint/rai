@@ -295,7 +295,7 @@ void G4Rec::load(const char* recdir, bool interpolate) {
           arr diff = sF - s0;
           for(uint tt = 0; tt < no; tt++) {
             data[t+tt][i] = s0 + diff*(tt+1.)/(no+1.);
-            qt.setInterpolate((tt+1.)/(no+1.), q0, qF);
+            qt.setInterpolateEmbedded((tt+1.)/(no+1.), q0, qF);
             data(t+tt, i, 3) = qt.w;
             data(t+tt, i, 4) = qt.x;
             data(t+tt, i, 5) = qt.y;

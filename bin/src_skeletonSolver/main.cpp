@@ -110,7 +110,7 @@ int main(int argc,char **argv){
       komo_way->pathConfig.get_viewer()->raiseWindow();
       komo_way->view(true, STRING("solved sample " <<i <<"\n" <<*ret));
       if(!ret->feasible) continue;
-      while(komo_way->view_play(true));
+      komo_way->view_play(true);
     }
 
     //-- setup pathconfig
@@ -158,7 +158,7 @@ int main(int argc,char **argv){
       rai::wait(.1);
       komo_path->pathConfig.get_viewer()->raiseWindow();
       komo_path->view(true, STRING("solved sample " <<i <<"\n" <<*ret));
-      while(komo_path->view_play(true));
+      komo_path->view_play(true);
     }
 
     //-- readout in case of float

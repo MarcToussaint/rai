@@ -241,9 +241,7 @@ void testConvConvIntersect(){
     plot()->Line(C-.002, true);
     plot()->Line(C1, true);
     plot()->Line(C2, true);
-    plot()->Opengl();
-
-    rai::wait();
+    plot()->update();
   }
 
   //rnd case
@@ -268,9 +266,7 @@ void testConvConvIntersect(){
     plot()->Line(C-.002, true);
     plot()->Line(C1, true);
     plot()->Line(C2, true);
-    plot()->Opengl();
-
-    rai::wait();
+    plot()->update();
   }
 
   plot()->Close();

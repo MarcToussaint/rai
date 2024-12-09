@@ -157,9 +157,11 @@ struct Frame : NonCopyable {
   Frame& setPose(const rai::Transformation& _X);
   Frame& setPosition(const arr& pos);
   Frame& setQuaternion(const arr& quat);
+  Frame& setRotationMatrix(const arr& R);
   Frame& setRelativePose(const rai::Transformation& _Q);
   Frame& setRelativePosition(const arr& pos);
   Frame& setRelativeQuaternion(const arr& quat);
+  Frame& setRelativeRotationMatrix(const arr& R);
   Frame& setMesh2(const rai::Mesh& m);
   Frame& setMesh(const arr& verts, const uintA& tris, const byteA& colors={}, const uintA& cvxParts={});
   Frame& setLines(const arr& verts, const byteA& colors={});

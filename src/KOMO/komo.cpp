@@ -476,11 +476,9 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
         }
         if(maxsize>1e-4) {
           f->joint->limits = {
-            -.9*maxsize, .9*maxsize,
-              -.9*maxsize, .9*maxsize,
-              -.9*maxsize, .9*maxsize,
+            -.9*maxsize, -.9*maxsize, -.9*maxsize, -1.1, -1.1, -1.1, -1.1,
+             .9*maxsize,  .9*maxsize,  .9*maxsize,  1.1,  1.1,  1.1,  1.1
 //            0., 1.1, -.5,.5, -.5,.5, -.5,.5 }; //no limits on rotation
-              -1.1, 1.1, -1.1, 1.1, -1.1, 1.1, -1.1, 1.1
             }; //no limits on rotation
         }
 //        f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
@@ -501,9 +499,8 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
         rai::Shape* on = world.getFrame(frames(0))->shape;
         CHECK_EQ(on->type(), rai::ST_ssBox, "")
         f->joint->limits = {
-          -.5*on->size(0), .5*on->size(0),
-            -.5*on->size(1), .5*on->size(1),
-            -RAI_2PI, RAI_2PI
+          -.5*on->size(0), -.5*on->size(1), -RAI_2PI,
+           .5*on->size(0),  .5*on->size(1),  RAI_2PI
           };
         //init heuristic
         f->joint->sampleUniform=1.;
@@ -512,16 +509,15 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
     } else if(newMode==SY_stableOnX) {
       Transformation rel = 0;
       rel.pos.set(.5*(shapeSize(world.getFrame(frames(0)), 0) + shapeSize(world.getFrame(frames(1)), 2)), 0., 0.);
-      rel.rot.addY(.5*RAI_PI);
+      rel.rot.appendY(.5*RAI_PI);
       rai::Frame* f = addSwitch(times(0), true, true, JT_transXYPhi, SWInit_zero, frames(0), frames(1), rel);
       if(f) {
         //limits?
         rai::Shape* on = world.getFrame(frames(0))->shape;
         CHECK_EQ(on->type(), rai::ST_ssBox, "")
         f->joint->limits = {
-          -.5*on->size(2), .5*on->size(2),
-            -.5*on->size(1), .5*on->size(1),
-            -RAI_2PI, RAI_2PI
+          -.5*on->size(2), -.5*on->size(1), -RAI_2PI,
+           .5*on->size(2),  .5*on->size(1),  RAI_2PI
           };
         //init heuristic
         f->joint->sampleUniform=1.;
@@ -530,7 +526,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
     } else if(newMode==SY_stableOnY) {
       Transformation rel = 0;
       rel.pos.set(0., 0, -.5*(shapeSize(world.getFrame(frames(0)), 2) + shapeSize(world.getFrame(frames(1)), 1)));
-      rel.rot.addX(.5*RAI_PI);
+      rel.rot.appendX(.5*RAI_PI);
       rai::Frame* f = addSwitch(times(0), true, true, JT_generic, SWInit_zero, frames(0), frames(1), rel);
       f->joint->setGeneric("xzb");
       if(f) {
@@ -538,9 +534,8 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
         rai::Shape* on = world.getFrame(frames(1))->shape;
         CHECK_EQ(on->type(), rai::ST_ssBox, "")
         f->joint->limits = {
-          -.5*on->size(0), .5*on->size(0),
-            -.5*on->size(2), .5*on->size(2),
-            -RAI_2PI, RAI_2PI
+          -.5*on->size(0), -.5*on->size(2), -RAI_2PI,
+           .5*on->size(0),  .5*on->size(2),  RAI_2PI
           };
         //init heuristic
         f->joint->sampleUniform=1.;
@@ -606,9 +601,8 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       rai::Shape* on = world.getFrame(frames(0))->shape;
       if(on->type()==rai::ST_ssBox) {
         f->joint->limits = {
-          -.5*on->size(0), .5*on->size(0),
-            -.5*on->size(1), .5*on->size(1),
-            -RAI_2PI, RAI_2PI
+          -.5*on->size(0), -.5*on->size(1), -RAI_2PI,
+           .5*on->size(0),  .5*on->size(1),  RAI_2PI
           };
         //init heuristic
         f->joint->sampleUniform=1.;

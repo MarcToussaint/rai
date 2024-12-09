@@ -31,7 +31,7 @@ void run_rrt(rai::Configuration& C, const arr& q0, const arr& q1) {
 void test_minimalistic(){
   rai::Configuration C;
   C.addFrame("base") -> setPosition({0.,0.,.05});
-  C.addFrame("ego", "base")-> setShape(rai::ST_ssBox, {.05, .5, .1, .01}) .setJoint(rai::JT_transXYPhi, {-1.,1.,-1.,1.,-3.,3.}) .setContact(1);
+  C.addFrame("ego", "base")-> setShape(rai::ST_ssBox, {.05, .5, .1, .01}) .setJoint(rai::JT_transXYPhi, {-1.,-1.,-3.,1.,1.,3.}) .setContact(1);
   C.addFrame("obstacle")-> setShape(rai::ST_ssBox, {.05, .5, .1, .01}) .setPosition({.0, .0, .05}) .setContact(1);
   C.addFrame("obstacle0")-> setShape(rai::ST_ssBox, {.05, .5, .1, .01}) .setPosition({.2, .0, .05}) .setContact(1);
 

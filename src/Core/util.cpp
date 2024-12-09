@@ -1313,8 +1313,8 @@ struct GnuplotServer {
   void send(const char* cmd, bool persist) {
 #ifndef RAI_MSVC
     if(!gp) {
-      if(!persist) gp=popen("env gnuplot -noraise -geometry 800x600-0-0 2> /dev/null", "w");
-      else         gp=popen("env gnuplot -noraise -persist -geometry 800x600-0-0 2> /dev/null", "w");
+      if(!persist) gp=popen("env gnuplot 2> /dev/null", "w");
+      else         gp=popen("env gnuplot -persist 2> /dev/null", "w");
       CHECK(gp, "could not open gnuplot pipe");
     }
     FILE("z.plotcmd") <<cmd; //for debugging..

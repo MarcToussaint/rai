@@ -499,7 +499,7 @@ Matrix& operator+=(Matrix& a, const Matrix& b) {
 //==============================================================================
 
 /// inverts the current rotation
-Quaternion& Quaternion::invert() { w=-w; return *this; }
+void Quaternion::invert() { w=-w; }
 
 /// flips the sign of the quaterion -- which still represents the same rotation
 void Quaternion::flipSign() { w=-w; x=-x; y=-y; z=-z; }
@@ -553,7 +553,7 @@ void Quaternion::alignWith(const Vector& v) {
   normalize();
 }
 
-void Quaternion::addX(double radians) {
+void Quaternion::appendX(double radians) {
   if(isZero) { setRadX(radians); return; }
   if(!radians) { return; }
   radians/=2.;
@@ -569,7 +569,7 @@ void Quaternion::addX(double radians) {
   set(a.w, a.x, a.y, a.z);
 }
 
-void Quaternion::addY(double radians) {
+void Quaternion::appendY(double radians) {
   if(isZero) { setRadY(radians); return; }
   if(!radians) { return; }
   radians/=2.;
@@ -585,9 +585,9 @@ void Quaternion::addY(double radians) {
   set(a.w, a.x, a.y, a.z);
 }
 
-Quaternion& Quaternion::addZ(double radians) {
-  if(isZero) { setRadZ(radians); return *this; }
-  if(!radians) { return *this; }
+void Quaternion::appendZ(double radians) {
+  if(isZero) { setRadZ(radians); return; }
+  if(!radians) { return; }
   radians/=2.;
   double cw=cos(radians);
   double cz=sin(radians);
@@ -599,7 +599,6 @@ Quaternion& Quaternion::addZ(double radians) {
   a.z = w*cz + z*cw;
 
   set(a.w, a.x, a.y, a.z);
-  return *this;
 }
 
 void Quaternion::append(const Quaternion& q) {
@@ -627,23 +626,40 @@ void Quaternion::set(double _w, double _x, double _y, double _z) { w=_w; x=_x; y
 void Quaternion::setZero() { memset(this, 0, sizeof(Quaternion));  w=1.; isZero=true; }
 
 /// samples the rotation uniformly from the whole SO(3)
-rai::Quaternion& Quaternion::setRandom() {
+void Quaternion::setRandom() {
   arr q = randn(4);
   set(q);
   normalize();
-  return *this;
 }
 
-/// sets this to a smooth interpolation between two rotations
-void Quaternion::setInterpolate(double t, const Quaternion& a, const Quaternion b) {
+/// exponential map
+void Quaternion::setExp(const Vector& wvec) {
+  // setRad(w.length(), w.x, w.y, w.z);
+  double phi = wvec.length();
+  if(phi<1e-10) { setZero(); return; }
+  w = cos(.5*phi);
+  double s = sin(.5*phi)/phi;
+  x = s*wvec.x;
+  y = s*wvec.y;
+  z = s*wvec.z;
+  isZero=false;
+}
+
+/// sets this to the embedded interpolation between two rotations
+void Quaternion::setInterpolateEmbedded(double t, const Quaternion& from, const Quaternion to) {
   double sign=1.;
-  if(quat_scalarProduct(a, b)<0) sign=-1.;
-  w=a.w+t*(sign*b.w-a.w);
-  x=a.x+t*(sign*b.x-a.x);
-  y=a.y+t*(sign*b.y-a.y);
-  z=a.z+t*(sign*b.z-a.z);
+  if(quat_scalarProduct(from, to)<0) sign=-1.;
+  w=from.w+t*(sign*to.w-from.w);
+  x=from.x+t*(sign*to.x-from.x);
+  y=from.y+t*(sign*to.y-from.y);
+  z=from.z+t*(sign*to.z-from.z);
   normalize();
   isZero=false;
+}
+
+void Quaternion::setInterpolateProper(double t, const Quaternion& from, const Quaternion to){
+  setExp(t*(to/from).getLog());
+  *this = from * *this;
 }
 
 /// euclidean addition (with weights) modulated by scalar product -- leaves you with UNNORMALIZED quaternion
@@ -730,32 +746,11 @@ void Quaternion::setRadZ(double radians) {
   isZero=false;
 }
 
-Quaternion& Quaternion::setRpy(double r, double p, double y) {
-#if 1
-  Quaternion q;
+void Quaternion::setRpy(double r, double p, double y) {
   setZero();
-  q.setRadZ(y); *this = *this * q;
-  q.setRadY(p); *this = *this * q;
-  q.setRadX(r); *this = *this * q;
-  return *this;
-#else
-  double cr=::cos(.5*r), sr=::sin(.5*r);
-  double cp=::cos(.5*p), sp=::sin(.5*p);
-  double cy=::cos(.5*y), sy=::sin(.5*y);
-  w = cr*cp*cy + sr*sp*sy;
-  x = sr*cp*cy - cr*sp*sy;
-  y = cr*sp*cy + sr*cp*sy;
-  z = cr*cp*sy - sr*sp*cy;
-#endif
-  isZero=(w==1. || w==-1.);
-  CHECK(isNormalized(), "bad luck");
-  return *this;
-}
-
-/// rotation around the given vector with angle (in rad) equal to norm of the vector
-void Quaternion::setVec(Vector w) {
-  double phi=w.length();
-  setRad(phi, w.x, w.y, w.z);
+  appendZ(y);
+  appendY(p);
+  appendX(r);
 }
 
 /// rotation that will rotate 'from' to 'to' on direct path
@@ -792,6 +787,23 @@ double Quaternion::sqrDiff(const Quaternion& _q2) const {
   return sumOfSqr(q1+q2);
 }
 
+/// log mapping (inverse of exponential map): gets the axis rotation vector with length equal to the rotation angle in rad
+Vector Quaternion::getLog() const {
+  Vector vec;
+  if(w>=1. || w<=-1. || (x==0. && y==0. && z==0.)) { vec.setZero(); return vec; }
+  double phi, s;
+  if(w>=0.) {
+    phi=acos(w);
+    s=2.*phi/sin(phi);
+  } else { //flip quaternion sign to get rotation vector of length < PI
+    phi=acos(-w);
+    s=-2.*phi/sin(phi);
+  }
+  vec.x=s*x; vec.y=s*y; vec.z=s*z;
+  return vec;
+}
+
+
 /// gets rotation angle (in rad [0, 2pi])
 double Quaternion::getRad() const {
   if(w>=1. || w<=-1. || (x==0. && y==0. && z==0.)) return 0;
@@ -823,22 +835,6 @@ void Quaternion::getRad(double& angle, Vector& vec) const {
   CHECK(angle>=0. && angle<=RAI_2PI, "");
 }
 
-/// gets the axis rotation vector with length equal to the rotation angle in rad
-Vector Quaternion::getVec() const {
-  Vector vec;
-  if(w>=1. || w<=-1. || (x==0. && y==0. && z==0.)) { vec.setZero(); return vec; }
-  double phi, s;
-  if(w>=0.) {
-    phi=acos(w);
-    s=2.*phi/sin(phi);
-  } else { //flip quaternion sign to get rotation vector of length < PI
-    phi=acos(-w);
-    s=-2.*phi/sin(phi);
-  }
-  vec.x=s*x; vec.y=s*y; vec.z=s*z;
-  return vec;
-}
-
 Vector Quaternion::getX() const {
   Vector Rx;
   double q22 = 2.*y*y;
@@ -856,13 +852,12 @@ Vector Quaternion::getY() const { return (*this)*Vector_y; }
 Vector Quaternion::getZ() const { return (*this)*Vector_z; }
 
 void Quaternion::setMatrix(double* m) {
-  w = .5*sqrt(1.+m[0]+m[4]+m[8]); //sqrt(1.-(3.-(m[0]+m[4]+m[8]))/4.);
+  w = .5*sqrt(1.+m[0]+m[4]+m[8]);
   z = (m[3]-m[1])/(4.*w);
   y = (m[2]-m[6])/(4.*w);
   x = (m[7]-m[5])/(4.*w);
   isZero=(w==1. || w==-1.);
   normalize();
-  //CHECK(normalized(), "failed :-(");
 }
 
 /// exports the rotation to a double[9] matrix, row-by-row
@@ -1030,7 +1025,8 @@ arr Quaternion::getQuaternionMultiplicationMatrix() const {
     });
 }
 
-void Quaternion::writeNice(std::ostream& os) const { os <<"Quaternion: " <<getDeg() <<" around " <<getVec() <<"\n"; }
+void Quaternion::writeNice(std::ostream& os) const { os <<"Quaternion: " <<getDeg() <<" around " <<getVector() <<"\n"; }
+
 void Quaternion::write(std::ostream& os) const {
   os <<'[' <<w <<", " <<x <<", " <<y <<", " <<z <<']';
 }
@@ -1042,7 +1038,9 @@ void Quaternion::read(std::istream& is) {
 
 /// inverse rotation
 Quaternion operator-(const Quaternion& b) {
-  return Quaternion(b).invert();
+  Quaternion binv(b);
+  binv.invert();
+  return binv;
 }
 
 /// compound of two rotations (A=B*C)
@@ -1411,7 +1409,7 @@ void Transformation::setDifference(const Transformation& from, const Transformat
 
 void Transformation::setInterpolate(double t, const Transformation& a, const Transformation b) {
   pos = (1.-t)*a.pos + t*b.pos;
-  rot.setInterpolate(t, a.rot, b.rot);
+  rot.setInterpolateEmbedded(t, a.rot, b.rot);
 }
 
 /// get the current position/orientation/scale in an OpenGL format matrix (of type double[16])
@@ -1574,7 +1572,13 @@ void Transformation::read(std::istream& is) {
         case 'q': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationQuat(x[0], x[1], x[2], x[3]); break;
         case 'r': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationRad(x[0], x[1], x[2], x[3]); break;
         case 'd': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationDeg(x[0], x[1], x[2], x[3]); break;
-        case 'E': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")"); addRelativeRotation(Quaternion().setRpy(x[0], x[1], x[2])); break;
+        case 'E': {
+          is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");
+          Quaternion q;
+          q.setRpy(x[0], x[1], x[2]);
+          addRelativeRotation(q);
+          break;
+        }
         case 'p': {
           is>>PARSE("(")>>x[0]>>x[1]>>x[2];       addRelativeTranslation(x[0], x[1], x[2]);
           is>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationQuat(x[0], x[1], x[2], x[3]);
@@ -1795,7 +1799,13 @@ void DynamicTransformation::read(std::istream& is) {
         case 'q': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationQuat(x[0], x[1], x[2], x[3]); break;
         case 'r': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationRad(x[0], x[1], x[2], x[3]); break;
         case 'd': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationDeg(x[0], x[1], x[2], x[3]); break;
-        case 'E': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")"); addRelativeRotation(Quaternion().setRpy(x[0], x[1], x[2])); break;
+        case 'E': {
+          is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");
+          Quaternion q;
+          q.setRpy(x[0], x[1], x[2]);
+          addRelativeRotation(q);
+          break;
+        }
         case 'v': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       addRelativeVelocity(x[0], x[1], x[2]); break;
         case 'w': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       addRelativeAngVelocityRad(x[0], x[1], x[2]); break;
         //case 's': is>>PARSE("(")>>x[0]>>PARSE(")");                   scale(x[0]); break;
