@@ -78,6 +78,7 @@ void init_Frame(pybind11::module& m) {
   .def("getQuaternion", &rai::Frame::getQuaternion, "")
   .def("getRotationMatrix", [](shared_ptr<rai::Frame>& self) { return self->ensure_X().rot.getArr(); }, "")
   .def("getTransform", &rai::Frame::getTransform, "")
+  .def("getRelativePose", &rai::Frame::getRelativePose, "")
   .def("getRelativePosition", &rai::Frame::getRelativePosition, "")
   .def("getRelativeQuaternion", &rai::Frame::getRelativeQuaternion, "")
   .def("getRelativeTransform", &rai::Frame::getRelativeTransform, "")

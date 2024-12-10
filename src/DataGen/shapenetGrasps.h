@@ -36,9 +36,9 @@ struct ShapenetGrasps{
   arr evaluateGrasp();
 
 
+  rai::Configuration C;
 private:
   StringA files;
-  rai::Configuration C;
   void clearScene();
   void addSceneGripper();
   bool addSceneObject(const char* file, int idx, bool rndPose=true, bool visual=false);
