@@ -86,13 +86,8 @@ struct Matrix {
   void setId();
   void setDiag(const arr& diag);
   void setSymmetric(const arr& entries6);
-  void setFrame(Vector&, Vector&, Vector&);
-  void setInvFrame(Vector&, Vector&, Vector&);
-  void setXrot(double);
   void setSkew(const Vector&);
   void setExponential(const Vector&);
-  void setOdeMatrix(double*);
-  void setTensorProduct(const Vector&, const Vector&);
 
   double diffZero() const;
 
@@ -127,24 +122,21 @@ struct Quaternion {
   void setDeg(double degree, const Vector& axis);
   void setRad(double radians, double axis0, double axis1, double axis2);
   void setRad(double radians, const Vector& axis);
-  void setRad(double angle);
   void setRadX(double radians);
   void setRadY(double radians);
   void setRadZ(double radians);
-  void setRpy(double r, double p, double y);
+  void setRollPitchYaw(double roll, double pitch, double yaw);
   void setVector(const Vector& w){ setExp(w); }
   void setMatrix(double* m);
   void setMatrix(const arr& R) { CHECK_EQ(R.N, 9, ""); setMatrix(R.p); }
   void setDiff(const Vector& from, const Vector& to);
   void setInterpolateEmbedded(double t, const Quaternion& from, const Quaternion to);
   void setInterpolateProper(double t, const Quaternion& from, const Quaternion to);
-  void add(const Quaternion b, double w_b=1., double w_this=1.);
   void invert();
   void flipSign();
   void uniqueSign();
   void normalize();
   void multiply(double f);
-  void alignWith(const Vector& v);
 
   void appendX(double radians);
   void appendY(double radians);
@@ -152,22 +144,20 @@ struct Quaternion {
   void append(const Quaternion& q);
 
   double diffZero() const;
-  double sqrDiffZero() const;
   void checkZero() const;
   double sqrDiff(const Quaternion& q2) const;
-  double normalization() const;
+  double sqrNorm() const;
   bool isNormalized() const;
   Vector getLog() const;
+  Vector getVector() const { return getLog(); }
   double getDeg() const;
   double getRad() const;
   void getDeg(double& degree, Vector& axis) const;
   void getRad(double& angle, Vector& axis) const;
-  Vector getVector() const { return getLog(); }
   Vector getX() const;
   Vector getY() const;
   Vector getZ() const;
-  Matrix getMatrix() const;
-  arr    getArr() const;
+  arr    getMatrix() const;
   arr    getArr4d() const { return arr(&w, 4, false); }
   double* getMatrix(double* m) const;
   double* getMatrixOde(double* m) const; //in Ode foramt: 3x4 memory storae
@@ -175,7 +165,7 @@ struct Quaternion {
   double getRoll_X() const;
   double getPitch_Y() const;
   double getYaw_Z() const;
-  arr getEulerRPY() const;
+  arr getRollPitchYaw() const;
   void applyOnPointArray(arr& pts) const;
 
   arr getJacobian() const;
@@ -211,7 +201,7 @@ struct Transformation {
   void set(const arr& t);
   Transformation& setRandom();
   void setInverse(const Transformation& f);
-  void setDifference(const Transformation& from, const Transformation& to);
+  void setRelative(const Transformation& from, const Transformation& to);
   void setInterpolate(double t, const Transformation& a, const Transformation b);
   void setAffineMatrix(const double* m);
 
@@ -219,62 +209,27 @@ struct Transformation {
   double diffZero() const;
   void checkNan() const;
 
-  Transformation& addRelativeTranslation(const Vector& t);
-  Transformation& addRelativeTranslation(double x, double y, double z);
-  void addRelativeRotation(const Quaternion&);
-  void addRelativeRotationDeg(double degree, double x, double y, double z);
-  void addRelativeRotationRad(double rad, double x, double y, double z);
-  void addRelativeRotationQuat(double w, double x, double y, double z);
+  Transformation& appendRelativeTranslation(const Vector& t);
+  Transformation& appendRelativeTranslation(double x, double y, double z);
+  void appendRelativeRotation(const Quaternion&);
+  void appendRelativeRotationDeg(double degree, double x, double y, double z);
+  void appendRelativeRotationRad(double rad, double x, double y, double z);
+  void appendRelativeRotationQuat(double w, double x, double y, double z);
 
   void appendTransformation(const Transformation& f);     // this = this * f
   void appendInvTransformation(const Transformation& f);     // this = this * f^{-1}
 
-  double* getAffineMatrix(double* m) const;         // 4x4 matrix with 3x3=rotation and right-column=translation
-  arr getAffineMatrix() const;                      // 4x4 matrix with 3x3=rotation and right-column=translation
-  double* getInverseAffineMatrix(double* m) const;  // 4x4 matrix with 3x3=R^{-1}   and bottom-row=R^{-1}*translation
-  arr getInverseAffineMatrix() const;
-  double* getAffineMatrixGL(double* m) const;       // in OpenGL format (transposed memory storage!!)
-  double* getInverseAffineMatrixGL(double* m) const;// in OpenGL format (transposed memory storage!!)
+  double* getMatrix(double* m) const;         // 4x4 matrix with 3x3=rotation and right-column=translation
+  arr getMatrix() const;                      // 4x4 matrix with 3x3=rotation and right-column=translation
+  double* getInverseMatrix(double* m) const;  // 4x4 matrix with 3x3=R^{-1}   and bottom-row=R^{-1}*translation
+  arr getInverseMatrix() const;
+  double* getMatrixGL(double* m) const;       // in OpenGL format (transposed memory storage!!)
+  double* getInverseMatrixGL(double* m) const;// in OpenGL format (transposed memory storage!!)
   arr getArr7d() const;
   arr getWrenchTransform() const;
 
   void applyOnPoint(arr& pt) const;
   arr& applyOnPointArray(arr& pts) const;
-
-  void write(std::ostream& os) const;
-  void read(std::istream& is);
-};
-
-/// includes linear & angular velocities
-struct DynamicTransformation : Transformation {
-  Vector vel;     ///< linear velocity
-  Vector angvel;  ///< angular velocity
-  bool zeroVels;    ///< velocities are identically zero
-
-  DynamicTransformation() {}
-  DynamicTransformation(int zero) { CHECK_EQ(zero, 0, "this is only for initialization with zero"); setZero(); }
-  DynamicTransformation(const DynamicTransformation& t) : Transformation(t), vel(t.vel), angvel(t.angvel), zeroVels(t.zeroVels) {}
-  DynamicTransformation(const char* init);
-
-  DynamicTransformation& setZero();
-  DynamicTransformation& setText(const char* txt);
-  void setRandom();
-  void setInverse(const DynamicTransformation& f);
-  void setDifference(const DynamicTransformation& from, const DynamicTransformation& to);
-  void setAffineMatrix(const double* m);
-
-  bool isZero() const;
-  double diffZero() const;
-
-  void addRelativeTranslation(double x, double y, double z);
-  void addRelativeTranslation(const Vector& x_rel);
-  void addRelativeVelocity(double x, double y, double z);
-  void addRelativeAngVelocityDeg(double degree, double x, double y, double z);
-  void addRelativeAngVelocityRad(double rad, double x, double y, double z);
-  void addRelativeAngVelocityRad(double wx, double wy, double wz);
-
-  void appendTransformation(const DynamicTransformation& f);     // this = this * f
-  void appendInvTransformation(const DynamicTransformation& f);     // this = this * f^{-1}
 
   void write(std::ostream& os) const;
   void read(std::istream& is);
@@ -379,7 +334,7 @@ bool    operator!=(const Matrix&, const Matrix&);
 // QUATERNION
 Quaternion operator-(const Quaternion&);
 Quaternion operator*(const Quaternion& b, const Quaternion& c);
-Quaternion operator/(const Quaternion& b, const Quaternion& c);
+// Quaternion operator/(const Quaternion& b, const Quaternion& c);
 Quaternion operator*=(Quaternion&, double);
 bool       operator==(const Quaternion&, const Quaternion&);
 bool       operator!=(const Quaternion&, const Quaternion&);

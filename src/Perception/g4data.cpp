@@ -527,8 +527,8 @@ void G4Rec::computeDQuat(const char* sensor) {
       qX.set(quatX[f].p);
       qY.set(quatY[j][f].p);
       if(f == 0)
-        A = qX / qY;
-      quat = qX / (A * qY);
+        A = qX * -qY;
+      quat = qX * -(A * qY);
       bamDQuat[j][f] = { quat.w, quat.x, quat.y, quat.z };
     }
   }

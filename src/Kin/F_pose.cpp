@@ -36,7 +36,7 @@ void F_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Frame* f2 = F.elem(1);
   arr y1 = f1->C.kinematics_pos(f1);
   arr y2 = f2->C.kinematics_pos(f2);
-  arr Rinv = ~(f2->ensure_X().rot.getArr());
+  arr Rinv = ~(f2->ensure_X().rot.getMatrix());
   y = Rinv * (y1 - y2);
   grabJ(y, J);
   if(!!J) {
@@ -89,7 +89,7 @@ void F_VectorRel::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Frame* f1 = F.elem(0);
   rai::Frame* f2 = F.elem(1);
   arr y1 = f1->C.kinematics_vec(f1, vec);
-  arr Rinv = ~(f2->ensure_X().rot.getArr());
+  arr Rinv = ~(f2->ensure_X().rot.getMatrix());
   y = Rinv * y1;
   grabJ(y, J);
   if(!!J) {

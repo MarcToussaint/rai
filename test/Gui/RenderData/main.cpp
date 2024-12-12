@@ -10,7 +10,7 @@ int main(int argc, char **argv){
 
   rai::Configuration C;
   rai::Frame *f = C.addFile(rai::raiPath("../rai-robotModels/panda/panda.g"));
-  f->set_X()->addRelativeRotationDeg(90,0,0,1);
+  f->set_X()->appendRelativeRotationDeg(90,0,0,1);
 
 //  C.view(false, "test");
 

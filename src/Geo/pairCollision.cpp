@@ -74,7 +74,7 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
     if(!t2->isZero()) { //we computed everything relative to t2
       t2->applyOnPoint(p1);
       t2->applyOnPoint(p2);
-      normal = t2->rot.getArr() * normal;
+      normal = t2->rot.getMatrix() * normal;
     }
 
     arr del = p1-p2;
@@ -513,8 +513,8 @@ void PairCollision::GJK_sqrDistance() {
   // convert transformations to affine matrices
   arr T1, T2;
   rai::Array<double*> Thelp1, Thelp2;
-  if(!!t1) {  T1=t1->getAffineMatrix();  Thelp1 = getCarray(T1);  }
-  if(!!t2) {  T2=t2->getAffineMatrix();  Thelp2 = getCarray(T2);  }
+  if(!!t1) {  T1=t1->getMatrix();  Thelp1 = getCarray(T1);  }
+  if(!!t2) {  T2=t2->getMatrix();  Thelp2 = getCarray(T2);  }
 
   // call GJK
   simplex_point simplex;
@@ -786,7 +786,7 @@ void PairCollision::nearSupportAnalysis(double eps) {
   //get projection onto the normal plane
   rai::Quaternion R;
   R.setDiff(normal, Vector_z);
-  arr P = R.getArr();
+  arr P = R.getMatrix();
   P.delRows(2);
 
   //compute the convex intersection polygon of projected points, and unproject back

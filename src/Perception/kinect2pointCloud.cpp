@@ -44,7 +44,7 @@ void Kinect2PointCloud::step() {
 //  rai::Transformation k = K.get()->getShapeByName("endeffKinect")->X;
 //  cout <<"ors: frame=" <<k <<" real/k" <<frame/k <<" k/real" <<k/frame <<endl;
 
-  if(frameShift.N) frame.addRelativeTranslation(frameShift(0), frameShift(1), frameShift(2));
+  if(frameShift.N) frame.appendRelativeTranslation(frameShift(0), frameShift(1), frameShift(2));
   if(!frame.isZero()) frame.applyOnPointArray(pts);
 
   kinect_points.set() = pts;

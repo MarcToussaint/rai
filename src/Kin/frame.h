@@ -183,11 +183,11 @@ struct Frame : NonCopyable {
   arr getPose() { return ensure_X().getArr7d(); }
   arr getPosition() { return ensure_X().pos.getArr(); }
   arr getQuaternion() { return ensure_X().rot.getArr4d(); }
-  arr getTransform() { return ensure_X().getAffineMatrix(); }
+  arr getTransform() { return ensure_X().getMatrix(); }
   arr getRelativePose() const { return get_Q().getArr7d(); }
   arr getRelativePosition() const { return get_Q().pos.getArr(); }
   arr getRelativeQuaternion() const { return get_Q().rot.getArr4d(); }
-  arr getRelativeTransform() { return get_Q().getAffineMatrix(); }
+  arr getRelativeTransform() { return get_Q().getMatrix(); }
   arr getSize() const ;
   ShapeType getShapeType() const;
   arr getMeshPoints() const ;

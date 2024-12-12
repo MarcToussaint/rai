@@ -62,7 +62,7 @@ void Surfels::glDraw(bool renderIndex) {
     }
     T.pos.set(pos(i, 0), pos(i, 1), pos(i, 2));
     T.rot.setDiff(Vector_z, rai::Vector(norm[i]));
-    glLoadMatrixd(T.getAffineMatrixGL(tmp));
+    glLoadMatrixd(T.getMatrixGL(tmp));
     glScaled(rad(i), rad(i), rad(i));
     glCallList(1);
   }

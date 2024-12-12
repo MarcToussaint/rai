@@ -78,11 +78,11 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
   x.resize(11);
   rai::Quaternion rot;
   rot.setRandom();
-  arr tX = X * rot.getArr(); //rotate points (with rot^{-1})
+  arr tX = X * rot.getMatrix(); //rotate points (with rot^{-1})
   arr ma = max(tX, 0), mi = min(tX, 0); //get coordinate-wise min and max
   x({0, 2}) = (ma-mi)/2.;  //sizes
   x(3) = 1.; //sum(ma-mi)/6.;  //radius
-  x({4, 6}) = rot.getArr() * (mi+.5*(ma-mi)); //center (rotated back)
+  x({4, 6}) = rot.getMatrix() * (mi+.5*(ma-mi)); //center (rotated back)
   x({7, 10}) = conv_quat2arr(rot);
   rndGauss(x({7, 10}).noconst(), .1, true);
   x({7, 10}) /= length(x({7, 10}));

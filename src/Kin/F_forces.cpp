@@ -56,8 +56,8 @@ void POA_rel_vel2(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool 
   arr cp, Jcp;
   ex->kinPOA(cp, Jcp);
 
-  arr Ra = ex->a.ensure_X().rot.getArr();
-  arr Rb = ex->b.ensure_X().rot.getArr();
+  arr Ra = ex->a.ensure_X().rot.getMatrix();
+  arr Rb = ex->b.ensure_X().rot.getMatrix();
 
   arr p0a, p0b, Jp0a, Jp0b;
   ex->a.C.kinematicsPos(p0a, Jp0a, &ex->a);
@@ -75,8 +75,8 @@ void POA_rel_vel2(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool 
   K(0)->C.kinematicsPos(pa, Jpa, K(0), rela);
   K(2)->C.kinematicsPos(pb, Jpb, K(1), relb);
   if(!!J) {
-    Jpa += F(0)->ensure_X().rot.getArr() * Jrela;
-    Jpb += F(1)->ensure_X().rot.getArr() * Jrelb;
+    Jpa += F(0)->ensure_X().rot.getMatrix() * Jrela;
+    Jpb += F(1)->ensure_X().rot.getMatrix() * Jrelb;
   }
   y = pa - pb;
   if(!!J) J = Jpa - Jpb;
@@ -737,7 +737,7 @@ void F_fex_POA_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
   arr y1, y2, J1, J2;
   ex->kinPOA(y1, J1);
   f2->C.kinematicsPos(y2, J2, f2);
-  arr Rinv = ~(f2->ensure_X().rot.getArr());
+  arr Rinv = ~(f2->ensure_X().rot.getMatrix());
   y = Rinv * (y1 - y2);
   if(!!J) {
     arr A;

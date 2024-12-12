@@ -114,7 +114,7 @@ void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
   CHECK(parent, "");
   CHECK(_state_X_isGood, "");
 
-  Q.setDifference(parent->ensure_X(), X);
+  Q.setRelative(parent->ensure_X(), X);
   if(joint && enforceWithinJoint) {
     arr q = joint->calcDofsFromConfig();
     joint->setDofs(q, 0);
@@ -156,7 +156,7 @@ void rai::Frame::_state_updateAfterTouchingX() {
   _state_setXBadinBranch();
   _state_X_isGood = true;
   if(parent) {
-    Q.setDifference(parent->ensure_X(), X);
+    Q.setRelative(parent->ensure_X(), X);
     _state_updateAfterTouchingQ();
   }
 }
@@ -1164,7 +1164,7 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
       case JT_quatBall: {
         Q.rot.set(qp);
         {
-          double n=Q.rot.normalization();
+          double n=Q.rot.sqrNorm();
           if(!rai_Kin_frame_ignoreQuatNormalizationWarning) if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
         }
         Q.rot.normalize();
@@ -1175,7 +1175,7 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
         Q.pos.set(qp);
         Q.rot.set(qp+3);
         {
-          double n=Q.rot.normalization();
+          double n=Q.rot.sqrNorm();
           if(!rai_Kin_frame_ignoreQuatNormalizationWarning) if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
         }
         Q.rot.normalize();
@@ -1189,7 +1189,7 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
         Q.pos.isZero = false;
         Q.rot.set(qp+1);
         {
-          double n=Q.rot.normalization();
+          double n=Q.rot.sqrNorm();
           if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
         }
         Q.rot.normalize();
@@ -1219,7 +1219,7 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
               CHECK_EQ(code.N-i, 4, "");
               Q.rot.set(qp+i);
               {
-                double n=Q.rot.normalization();
+                double n=Q.rot.sqrNorm();
                 if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
               }
               Q.rot.normalize();
@@ -1485,11 +1485,11 @@ arr rai::Joint::getScrewMatrix() {
     S(1, 0, {}) = axis.getArr();
   } else if(type==JT_transXY) {
     if(mimic) NIY;
-    arr R = X().rot.getArr();
+    arr R = X().rot.getMatrix();
     S[1] = R({0, 1});
   } else if(type==JT_transXYPhi) {
     if(mimic) NIY;
-    arr R = X().rot.getArr();
+    arr R = X().rot.getMatrix();
     axis = R[2];
     S(1, 0, {}) = R[0];
     S(1, 1, {}) = R[1];
@@ -1497,7 +1497,7 @@ arr rai::Joint::getScrewMatrix() {
     S(1, 2, {}) = (-axis ^ (X().pos + X().rot*Q().pos)).getArr();
   } else if(type==JT_transYPhi) {
     if(mimic) NIY;
-    arr R = X().rot.getArr();
+    arr R = X().rot.getMatrix();
     axis = R[2];
     S(1, 0, {}) = R[1];
     S(0, 1, {}) = axis.getArr();
@@ -1507,18 +1507,18 @@ arr rai::Joint::getScrewMatrix() {
     axis = X().rot.getX();
     S(0, 0, {}) = axis.getArr();
     S(1, 0, {}) = (-axis ^ X().pos).getArr();
-    arr R = (X().rot*Q().rot).getArr();
+    arr R = (X().rot*Q().rot).getMatrix();
     S[1] = R({0, 1});
   }
   if(type==JT_trans3 || type==JT_free) {
     if(mimic) NIY;
-    arr R = X().rot.getArr();
+    arr R = X().rot.getMatrix();
     S[1] = R;
   }
   if(type==JT_quatBall || type==JT_free) {
     uint offset=0;
     if(type==JT_free) offset=3;
-    arr Jrot = X().rot.getArr() * Q().rot.getJacobian(); //transform w-vectors into world coordinate
+    arr Jrot = X().rot.getMatrix() * Q().rot.getJacobian(); //transform w-vectors into world coordinate
     NIY; //Jrot /= sqrt(sumOfSqr( q({qIndex+offset, qIndex+offset+3}) )); //account for the potential non-normalization of q
     //    Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(X().pos+X().rot*Q().pos)) ); //cross-product of all 4 w-vectors with lever
     for(uint i=0; i<4; i++) for(uint k=0; k<3; k++) S(0, i+offset, k) = Jrot(k, i);
@@ -2067,7 +2067,7 @@ void rai::Inertia::add(const rai::Inertia& I, const rai::Transformation& rel) {
   arr deltaB = ((I.com+rel.pos) - newCom).getArr();
   arr deltaA = (com - newCom).getArr();
   //additional inertias due to displacement
-  arr rotB = rel.rot.getArr();
+  arr rotB = rel.rot.getMatrix();
   arr matrixB =  rotB * I.matrix.getArr() * ~rotB + I.mass*(sumOfSqr(deltaB) * eye(3) - (deltaB^deltaB));
   arr matrixA =  matrix.getArr() + mass*(sumOfSqr(deltaA) * eye(3) - (deltaA^deltaA));
   //assign new inertias

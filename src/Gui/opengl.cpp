@@ -987,7 +987,7 @@ void OpenGL::MouseMotion(double _x, double _y) {
     }
     //rotate about focus
     cam->X.rot = downRot * rot;   //rotate camera's direction
-    rot = downRot * rot / downRot; //interpret rotation relative to current viewing
+    rot = downRot * rot * -downRot; //interpret rotation relative to current viewing
     cam->X.pos = downFoc + rot * (downPos - downFoc);   //rotate camera's position
     needsUpdate=true;
   }

@@ -18,8 +18,8 @@ void TEST(GJK_Jacobians) {
   rai::Shape s1(B1), s2(B2);
   j1.setType(rai::JT_free);
   j2.setType(rai::JT_free);
-  j1.frame->insertPreLink(rai::Transformation(0))->set_Q()->addRelativeTranslation(1,1,1);
-  j2.frame->insertPreLink(rai::Transformation(0))->set_Q()->addRelativeTranslation(-1,-1,1);
+  j1.frame->insertPreLink(rai::Transformation(0))->set_Q()->appendRelativeTranslation(1,1,1);
+  j2.frame->insertPreLink(rai::Transformation(0))->set_Q()->appendRelativeTranslation(-1,-1,1);
   J1.setType(rai::JT_free);
   J2.setType(rai::JT_free);
 

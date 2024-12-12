@@ -727,7 +727,7 @@ void Configuration::setFrameState(const arr& X, const FrameL& F) {
     f->_state_X_isGood = true;
   }
   for(Frame* f:F) if(f->parent) {
-      f->Q.setDifference(f->parent->ensure_X(), f->X);
+      f->Q.setRelative(f->parent->ensure_X(), f->X);
       _state_q_isGood=false;
     }
 }
@@ -931,7 +931,10 @@ double Configuration::getEnergy(const arr& qdot) {
 
       m=f->inertia->mass;
       const Quaternion& rot = f->ensure_X().rot;
-      I=(rot).getMatrix() * f->inertia->matrix * (-rot).getMatrix();
+      Matrix R, Rinv;
+      rot.getMatrix(&R.m00);
+      (-rot).getMatrix(&Rinv.m00);
+      I = R * f->inertia->matrix * Rinv;
       v = linVel.length();
       w = angVel;
       E += .5*m*v*v;
@@ -1234,8 +1237,8 @@ bool Configuration::checkConsistency() const {
 
     a->Q.checkNan();
     a->X.checkNan();
-    CHECK_ZERO(a->Q.rot.normalization()-1., 1e-6, "");
-    if(a->_state_X_isGood) CHECK_ZERO(a->X.rot.normalization()-1., 1e-6, "");
+    CHECK_ZERO(a->Q.rot.sqrNorm()-1., 1e-6, "");
+    if(a->_state_X_isGood) CHECK_ZERO(a->X.rot.sqrNorm()-1., 1e-6, "");
 
     // frame has no parent -> Q needs to be zero, X is good
     if(!a->parent) {
@@ -1524,7 +1527,8 @@ arr Configuration::calc_fwdPropagateVelocities(const arr& qdot) {
           q_angvel.set(0., 0., qdot(j->qIndex+2));
         } else NIY;
 
-        Matrix R = j->X().rot.getMatrix();
+	Matrix R;
+	j->X().rot.getMatrix(&R.m00);
         Vector qV(R*q_vel); //relative vel in global coords
         Vector qW(R*q_angvel); //relative ang vel in global coords
         linVel += angVel^(f->X.pos - from->X.pos);
@@ -1611,11 +1615,11 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           J.elem(1, j_idx) += j->scale * j->axis.y;
           J.elem(2, j_idx) += j->scale * j->axis.z;
         } else if(j->type==JT_transXY) {
-          arr R = j->X().rot.getArr();
+          arr R = j->X().rot.getMatrix();
           R *= j->scale;
           J.setMatrixBlock(R.sub(0, -1, 0, 1), 0, j_idx);
         } else if(j->type==JT_transXYPhi) {
-          arr R = j->X().rot.getArr();
+          arr R = j->X().rot.getMatrix();
           R *= j->scale;
           J.setMatrixBlock(R.sub(0, -1, 0, 1), 0, j_idx);
           Vector tmp = j->axis ^ (pos_world-(j->X().pos + j->X().rot*a->Q.pos));
@@ -1629,12 +1633,12 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           J.elem(0, j_idx) += tmp.x;
           J.elem(1, j_idx) += tmp.y;
           J.elem(2, j_idx) += tmp.z;
-          arr R = (j->X().rot*a->Q.rot).getArr();
+          arr R = (j->X().rot*a->Q.rot).getMatrix();
           R *= j->scale;
           J.setMatrixBlock(R.sub(0, -1, 0, 1), 0, j_idx+1);
         }
         if(j->type==JT_generic) {
-          arr R = j->frame->parent->get_X().rot.getArr();
+          arr R = j->frame->parent->get_X().rot.getMatrix();
           R *= j->scale;
           arr Rt =~R;
           Vector d = (pos_world-j->X()*j->Q().pos);
@@ -1656,7 +1660,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
               case 'c':  J.setMatrixBlock(-D*Rt[2], 0, j_idx+i);  break;
               case 'C':  J.setMatrixBlock(D*Rt[2], 0, j_idx+i);  break;
               case 'w': {
-                arr Jrot = j->X().rot.getArr() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
+                arr Jrot = j->X().rot.getMatrix() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
                 Jrot *= j->scale;
                 Jrot = crossProduct(Jrot, conv_vec2arr(d));  //cross-product of all 4 w-vectors with lever
                 Jrot /= sqrt(sumOfSqr(q({j_idx+i, j_idx+i+3})));   //account for the potential non-normalization of q
@@ -1673,7 +1677,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           J.setMatrixBlock(R, 0, j_idx);
         }
         if(j->type==JT_trans3 || j->type==JT_free) {
-          arr R = j->X().rot.getArr();
+          arr R = j->X().rot.getMatrix();
           R *= j->scale;
           J.setMatrixBlock(R, 0, j_idx);
         }
@@ -1681,7 +1685,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           uint offset = 0;
           if(j->type==JT_XBall) offset=1;
           if(j->type==JT_free) offset=3;
-          arr Jrot = j->X().rot.getArr() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
+          arr Jrot = j->X().rot.getMatrix() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*a->Q.pos)));  //cross-product of all 4 w-vectors with lever
           Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3})));   //account for the potential non-normalization of q
           //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J.elem(k,j_idx+offset+i) += Jrot(k,i);
@@ -1736,14 +1740,14 @@ void Configuration::jacobian_angular(arr& J, Frame* a) const {
           uint offset = 0;
           if(j->type==JT_XBall) offset=1;
           if(j->type==JT_free) offset=3;
-          arr Jrot = j->X().rot.getArr() * a->get_Q().rot.getJacobian(); //transform w-vectors into world coordinate
+          arr Jrot = j->X().rot.getMatrix() * a->get_Q().rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3}))); //account for the potential non-normalization of q
           //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J.elem(k,j_idx+offset+i) += Jrot(k,i);
           Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx+offset);
         }
         if(j->type==JT_generic) {
-          arr R = j->frame->parent->get_X().rot.getArr();
+          arr R = j->frame->parent->get_X().rot.getMatrix();
           R *= j->scale;
           arr Rt =~R;
 
@@ -1757,7 +1761,7 @@ void Configuration::jacobian_angular(arr& J, Frame* a) const {
               case 'c':  J.setMatrixBlock(Rt[2], 0, j_idx+i);  break;
               case 'C':  J.setMatrixBlock(-Rt[2], 0, j_idx+i);  break;
               case 'w': {
-                arr Jrot = j->X().rot.getArr() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
+                arr Jrot = j->X().rot.getMatrix() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
                 Jrot *= j->scale;
                 Jrot /= sqrt(sumOfSqr(q({j_idx+i, j_idx+i+3}))); //account for the potential non-normalization of q
                 J.setMatrixBlock(Jrot, 0, j_idx+i);
@@ -1841,7 +1845,7 @@ void Configuration::kinematicsVec(arr& y, arr& J, Frame* a, const Vector& vec) c
 void Configuration::kinematicsMat(arr& y, arr& J, Frame* a) const {
   CHECK_EQ(&a->C, this, "");
 
-  arr R = a->ensure_X().rot.getMatrix().getArr();
+  arr R = a->ensure_X().rot.getMatrix();
   transpose(R); //the transpose has easier Jacobian...
   if(!!y) {
     y = R;
@@ -2441,7 +2445,7 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
           }
           os <<"      <material> <color rgba=\"" <<b->shape->mesh().C <<"\" /> </material>\n";
           os <<"    </geometry>\n";
-          os <<"  <origin xyz=\"" <<b->get_Q().pos.getArr() <<"\" rpy=\"" <<b->get_Q().rot.getEulerRPY() <<"\" />\n";
+          os <<"  <origin xyz=\"" <<b->get_Q().pos.getArr() <<"\" rpy=\"" <<b->get_Q().rot.getRollPitchYaw() <<"\" />\n";
           os <<"  <inertial>  <mass value=\"1\"/>  </inertial>\n";
           os <<"  </visual>\n";
         }
@@ -2455,7 +2459,7 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
       if(!p)    os <<"  <parent link=\"base_link\"/>\n";
       else      os <<"  <parent link=\"" <<p->name <<"\"/>\n";
       os <<"  <child  link=\"" <<a->name <<"\"/>\n";
-      os <<"  <origin xyz=\"" <<Q.pos.getArr() <<"\" rpy=\"" <<Q.rot.getEulerRPY() <<"\" />\n";
+      os <<"  <origin xyz=\"" <<Q.pos.getArr() <<"\" rpy=\"" <<Q.rot.getRollPitchYaw() <<"\" />\n";
       os <<"</joint>" <<endl;
     }
 
@@ -2513,8 +2517,8 @@ void Configuration::writeCollada(const char* filename, const char* format) const
       node->mMetaData = new aiMetadata();
       node->mMetaData->Add<double>("mass", f->inertia->mass);
     }
-    if(f->parent) f->get_Q().getAffineMatrix(T.p);
-    else f->get_X().getAffineMatrix(T.p);
+    if(f->parent) f->get_Q().getMatrix(T.p);
+    else f->get_X().getMatrix(T.p);
     for(uint j=0; j<4; j++) for(uint k=0; k<4; k++) {
         node->mTransformation[j][k] = T(j, k);
       }

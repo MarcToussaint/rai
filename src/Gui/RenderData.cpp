@@ -64,24 +64,24 @@ void RenderData::addAxes(double scale, const rai::Transformation& _X){
   ax.setCylinder(.02, .9, 1);
   ax.scale(scale);
 
-  X.setZero().addRelativeTranslation(0., 0., .84*scale);
+  X.setZero().appendRelativeTranslation(0., 0., .84*scale);
   tip.C = replicate({0., 0., 1.}, tip.V.d0);
   M.addMesh(tip, X);
-  X.setZero().addRelativeTranslation(0., 0., .45*scale);
+  X.setZero().appendRelativeTranslation(0., 0., .45*scale);
   ax.C = replicate({0., 0., 1.}, ax.V.d0);
   M.addMesh(ax, X);
 
-  X.setZero().addRelativeTranslation(.84*scale, 0., 0.).addRelativeRotationDeg(90, 0., 1., 0);
+  X.setZero().appendRelativeTranslation(.84*scale, 0., 0.).appendRelativeRotationDeg(90, 0., 1., 0);
   tip.C = replicate({1., 0., 0.}, tip.V.d0);
   M.addMesh(tip, X);
-  X.setZero().addRelativeTranslation(.45*scale, 0., 0.).addRelativeRotationDeg(90, 0., 1., 0);
+  X.setZero().appendRelativeTranslation(.45*scale, 0., 0.).appendRelativeRotationDeg(90, 0., 1., 0);
   ax.C = replicate({1., 0., 0.}, ax.V.d0);
   M.addMesh(ax, X);
 
-  X.setZero().addRelativeTranslation(0., .84*scale, 0.).addRelativeRotationDeg(90, -1., 0., 0);
+  X.setZero().appendRelativeTranslation(0., .84*scale, 0.).appendRelativeRotationDeg(90, -1., 0., 0);
   tip.C = replicate({0., 1., 0.}, tip.V.d0);
   M.addMesh(tip, X);
-  X.setZero().addRelativeTranslation(0., .45*scale, 0.).addRelativeRotationDeg(90, -1., 0., 0);
+  X.setZero().appendRelativeTranslation(0., .45*scale, 0.).appendRelativeRotationDeg(90, -1., 0., 0);
   ax.C = replicate({0., 1., 0.}, ax.V.d0);
   M.addMesh(ax, X);
 
@@ -256,7 +256,7 @@ void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs,
     std::shared_ptr<RenderItem>& obj = items.elem(objID);
     if(obj->type!=type) continue;
 
-    ModelT_WM = obj->X.getAffineMatrix();
+    ModelT_WM = obj->X.getMatrix();
     glUniformMatrix4fv(prog_ModelT_WM, 1, GL_TRUE, rai::convert<float>(ModelT_WM).p);
 
     if(renderFlatColors && idFlatColor && obj->flatColor.N){
@@ -286,19 +286,19 @@ void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs,
 //      X.pos.set(b);
 //      X.rot.setDiff(Vector_z, d);
 //      if(idT_WM){
-//        T_WM = X.getAffineMatrix();
+//        T_WM = X.getMatrix();
 //        glUniformMatrix4fv(idT_WM, 1, GL_TRUE, rai::convert<float>(T_WM).p);
 //      }
 //      items(distMarkers.markerObj)->glRender();
 //      X.pos.set(a);
 //      X.rot.addX(RAI_PI);
-//      T_WM = X.getAffineMatrix();
+//      T_WM = X.getMatrix();
 //      glUniformMatrix4fv(idT_WM, 1, GL_TRUE, rai::convert<float>(T_WM).p);
 //      items(distMarkers.markerObj)->glRender();
 
       X.pos.set(a);
       X.rot.setDiff(Vector_z, d);
-      ModelT_WM = X.getAffineMatrix();
+      ModelT_WM = X.getMatrix();
       for(uint k=0;k<4;k++) ModelT_WM(k,2) *= l; //scale length
       glUniformMatrix4fv(prog_ModelT_WM, 1, GL_TRUE, rai::convert<float>(ModelT_WM).p);
       cylin.asset->glRender();
@@ -401,7 +401,7 @@ void RenderData::glDraw(OpenGL& gl){
 
     arr lightDirs;
     for(uint i=0;i<lights.N;i++){
-      arr l_C = ViewT_CW * lights(i)->X.getAffineMatrix();
+      arr l_C = ViewT_CW * lights(i)->X.getMatrix();
       lightDirs.append({l_C(0,2), l_C(1,2), l_C(2,2)});
     }
     lightDirs.reshape(lights.N, 3);

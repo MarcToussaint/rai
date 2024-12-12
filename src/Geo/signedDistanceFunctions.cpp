@@ -17,7 +17,7 @@
 //===========================================================================
 
 double SDF::f(arr& g, arr& H, const arr& x) {
-  arr rot = pose.rot.getArr();
+  arr rot = pose.rot.getMatrix();
   arr x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
   double f = f_raw(g, H, x_rel);
   g = rot*g;
@@ -245,7 +245,7 @@ double SDF_Capsule::f(arr& g, arr& H, const arr& x) {
 
 /// dx, dy, dz are box-wall-coordinates: width=2*dx...; t is box transform; x is query point in world
 void closestPointOnBox(arr& closest, arr& signs, const rai::Transformation& t, double dx, double dy, double dz, const arr& x) {
-  arr rot = t.rot.getArr();
+  arr rot = t.rot.getMatrix();
   arr x_rel = (~rot)*(x-conv_vec2arr(t.pos)); //point in box coordinates
   arr dim = {dx, dy, dz};
   signs.resize(3);
@@ -269,7 +269,7 @@ void closestPointOnBox(arr& closest, arr& signs, const rai::Transformation& t, d
 //===========================================================================
 
 double SDF_ssBox::f(arr& g, arr& H, const arr& x) {
-  arr rot = pose.rot.getArr();
+  arr rot = pose.rot.getMatrix();
   arr x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
   arr box = .5*size;
   if(r) box -= r;
@@ -366,7 +366,7 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x) {
   if(pose.isZero()) {
     x_rel=x;
   } else {
-    rot = pose.rot.getArr();
+    rot = pose.rot.getMatrix();
     x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
   }
 
@@ -385,7 +385,7 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x) {
     arr size = up - lo - 2.*eps;
     arr center = .5*(up+lo);
     rai::Transformation boxPose=pose;
-    boxPose.addRelativeTranslation(center);
+    boxPose.appendRelativeTranslation(center);
     SDF_ssBox B(boxPose, size);
     fBox = B.f(gBox, HBox, x);
     CHECK(fBox>=0., "");
@@ -559,7 +559,7 @@ DensityDisplayData::DensityDisplayData(SDF_GridData& sdf) {
   if(!volumeY.N) { //yzx
     volumeY.resize(volumeImgY.d0);
     rai::Transformation T=0;
-    T.addRelativeRotationDeg(90, 1, 0, 0);
+    T.appendRelativeRotationDeg(90, 1, 0, 0);
     for(uint i=0; i<volumeY.N; i++) {
       volumeY(i).setQuad(totalSize(0), totalSize(2), volumeImgY[i], true, true);
       volumeY(i).C = {1., 1., 1., 1.};
@@ -572,7 +572,7 @@ DensityDisplayData::DensityDisplayData(SDF_GridData& sdf) {
   if(!volumeX.N) { //xyz
     volumeX.resize(volumeImgX.d0);
     rai::Transformation T=0;
-    T.addRelativeRotationDeg(-90, 0, 1, 0);
+    T.appendRelativeRotationDeg(-90, 0, 1, 0);
     for(uint i=0; i<volumeX.N; i++) {
       volumeX(i).setQuad(totalSize(2), totalSize(1), volumeImgX[i], true, true);
       volumeX(i).C = {1., 1., 1., 1.};

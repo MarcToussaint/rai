@@ -299,14 +299,14 @@ bool operator==(const Transformation& lhs, const Transformation& rhs) {
   return lhs.pos == rhs.pos && lhs.rot == rhs.rot;
 }
 
-bool operator==(const DynamicTransformation& lhs, const DynamicTransformation& rhs) {
-  bool vel_equal = false;
-  if(lhs.zeroVels == rhs.zeroVels && rhs.zeroVels == false)
-    vel_equal = lhs.vel == rhs.vel && lhs.angvel == rhs.angvel;
-  else if(lhs.zeroVels == rhs.zeroVels && rhs.zeroVels == true)
-    vel_equal = true;
-  return vel_equal && lhs.pos == rhs.pos && lhs.rot == rhs.rot;
-}
+// bool operator==(const DynamicTransformation& lhs, const DynamicTransformation& rhs) {
+//   bool vel_equal = false;
+//   if(lhs.zeroVels == rhs.zeroVels && rhs.zeroVels == false)
+//     vel_equal = lhs.vel == rhs.vel && lhs.angvel == rhs.angvel;
+//   else if(lhs.zeroVels == rhs.zeroVels && rhs.zeroVels == true)
+//     vel_equal = true;
+//   return vel_equal && lhs.pos == rhs.pos && lhs.rot == rhs.rot;
+// }
 
 bool operator!=(const Transformation& lhs, const Transformation& rhs) {
   return !(lhs == rhs);
@@ -375,27 +375,6 @@ void Matrix::set(double* p) {
   m20=p[6]; m21=p[7]; m22=p[8];
 }
 
-/// assign the matrix to the transformation from unit frame to given XYZ frame
-void Matrix::setFrame(Vector& X, Vector& Y, Vector& Z) {
-  m00=X.x; m01=Y.x; m02=Z.x;
-  m10=X.y; m11=Y.y; m12=Z.y;
-  m20=X.z; m21=Y.z; m22=Z.z;
-}
-
-/// assign the matrix to the transformation from the ORTHOGONAL XYZ frame to the unit frame
-void Matrix::setInvFrame(Vector& X, Vector& Y, Vector& Z) {
-  m00=X.x; m01=X.y; m02=X.z;
-  m10=Y.x; m11=Y.y; m12=Y.z;
-  m20=Z.x; m21=Z.y; m22=Z.z;
-}
-
-/// assign the matrix to a rotation around the X-axis with angle a (in rad units)
-void Matrix::setXrot(double a) {
-  m00=1.; m01=0.;     m02=0.;
-  m10=0.; m11=cos(a); m12=-sin(a);
-  m20=0.; m21=sin(a); m22= cos(a);
-}
-
 void Matrix::setSkew(const Vector& a) {
   m00=  0.; m01=-a.z; m02= a.y;
   m10= a.z; m11=  0.; m12=-a.x;
@@ -411,22 +390,10 @@ void Matrix::setExponential(const Vector& a) {
   m00+=1.; m11+=1.; m22+=1.;
 }
 
-void Matrix::setOdeMatrix(double* o) {
-  m00=o[0]; m01=o[1]; m02=o[2];
-  m10=o[4]; m11=o[5]; m12=o[6];
-  m20=o[8]; m21=o[9]; m22=o[10];
-}
-
-void Matrix::setTensorProduct(const Vector& b, const Vector& c) {
-  m00=b.x*c.x; m01=b.x*c.y; m02=b.x*c.z;
-  m10=b.y*c.x; m11=b.y*c.y; m12=b.y*c.z;
-  m20=b.z*c.x; m21=b.z*c.y; m22=b.z*c.z;
-}
-
 /// 1-norm to zero
 double Matrix::diffZero() const {
   double d=0.;
-  for(uint i=0; i<9; i++) d += (&m00)[i];
+  for(uint i=0; i<9; i++) d += fabs((&m00)[i]);
   return d;
 }
 
@@ -499,7 +466,7 @@ Matrix& operator+=(Matrix& a, const Matrix& b) {
 //==============================================================================
 
 /// inverts the current rotation
-void Quaternion::invert() { w=-w; }
+void Quaternion::invert() { x=-x; y=-y; z=-z; } //w=-w; }
 
 /// flips the sign of the quaterion -- which still represents the same rotation
 void Quaternion::flipSign() { w=-w; x=-x; y=-y; z=-z; }
@@ -525,7 +492,7 @@ void Quaternion::multiply(double f) {
   x*=f; y*=f; z*=f;
 }
 
-double Quaternion::normalization() const {
+double Quaternion::sqrNorm() const {
   return w*w + x*x + y*y + z*z;
 }
 
@@ -539,18 +506,6 @@ void Quaternion::normalize() {
   double n=w*w + x*x + y*y + z*z;
   n=sqrt(n);
   w/=n; x/=n; y/=n; z/=n;
-}
-
-/** @brief roughly, removes all ``components'' of the rotation that are not
-    around the given vector v. More precisely, aligns/projects
-    the rotation axis (given by q[1], q[2], q[3] of the quaternion)
-    with v and re-normalizes afterwards. */
-void Quaternion::alignWith(const Vector& v) {
-  double s=x*v.x + y*v.y + z*v.z;
-  if(!s) { setZero(); return; }  // are orthogonal
-  s/=v*v;
-  x=s*v.x; y=s*v.y; z=s*v.z;
-  normalize();
 }
 
 void Quaternion::appendX(double radians) {
@@ -658,25 +613,25 @@ void Quaternion::setInterpolateEmbedded(double t, const Quaternion& from, const 
 }
 
 void Quaternion::setInterpolateProper(double t, const Quaternion& from, const Quaternion to){
-  setExp(t*(to/from).getLog());
+  setExp(t*(-from * to).getLog());
   *this = from * *this;
 }
 
 /// euclidean addition (with weights) modulated by scalar product -- leaves you with UNNORMALIZED quaternion
-void Quaternion::add(const Quaternion b, double w_b, double w_this) {
-  if(quat_scalarProduct(*this, b)<0.) w_b *= -1.;
-  if(w_this!=-1.) {
-    w *= w_this;
-    x *= w_this;
-    y *= w_this;
-    z *= w_this;
-  }
-  w += w_b*b.w;
-  x += w_b*b.x;
-  y += w_b*b.y;
-  z += w_b*b.z;
-  isZero=false;
-}
+// void Quaternion::add(const Quaternion b, double w_b, double w_this) {
+//   if(quat_scalarProduct(*this, b)<0.) w_b *= -1.;
+//   if(w_this!=-1.) {
+//     w *= w_this;
+//     x *= w_this;
+//     y *= w_this;
+//     z *= w_this;
+//   }
+//   w += w_b*b.w;
+//   x += w_b*b.x;
+//   y += w_b*b.y;
+//   z += w_b*b.z;
+//   isZero=false;
+// }
 
 /// assigns the rotation to \c a DEGREES around the vector (x, y, z)
 void Quaternion::setDeg(double degree, double _x, double _y, double _z) { setRad(degree*RAI_PI/180., _x, _y, _z); }
@@ -700,20 +655,6 @@ void Quaternion::setRad(double angle, double _x, double _y, double _z) {
 /// ..
 void Quaternion::setRad(double angle, const Vector& axis) {
   setRad(angle, axis.x, axis.y, axis.z);
-}
-
-/// assigns the rotation to \c a RADIANTS (2*PI-units) around the current axis
-void Quaternion::setRad(double angle) {
-  if(!angle) { setZero(); return; }
-  double l = x*x + y*y + z*z;
-  if(l<1e-15) { setZero(); return; }
-  angle/=2.;
-  l=sin(angle)/sqrt(l);
-  w=cos(angle);
-  x*=l;
-  y*=l;
-  z*=l;
-  isZero=false;
 }
 
 /// rotation around X-axis by given radiants
@@ -746,11 +687,11 @@ void Quaternion::setRadZ(double radians) {
   isZero=false;
 }
 
-void Quaternion::setRpy(double r, double p, double y) {
+void Quaternion::setRollPitchYaw(double roll, double pitch, double yaw) {
   setZero();
-  appendZ(y);
-  appendY(p);
-  appendX(r);
+  appendZ(yaw);
+  appendY(pitch);
+  appendX(roll);
 }
 
 /// rotation that will rotate 'from' to 'to' on direct path
@@ -771,7 +712,7 @@ void Quaternion::setDiff(const Vector& from, const Vector& to) {
 /// L1-norm to zero (i.e., identical rotation)
 double Quaternion::diffZero() const { return (w>0.?fabs(w-1.):fabs(w+1.))+fabs(x)+fabs(y)+fabs(z); }
 
-double Quaternion::sqrDiffZero() const { return (w>0.?rai::sqr(w-1.):rai::sqr(w+1.))+rai::sqr(x)+rai::sqr(y)+rai::sqr(z); }
+// double Quaternion::sqrDiffZero() const { return (w>0.?rai::sqr(w-1.):rai::sqr(w+1.))+rai::sqr(x)+rai::sqr(y)+rai::sqr(z); }
 
 /// check whether isZero is true
 void Quaternion::checkZero() const {
@@ -860,26 +801,7 @@ void Quaternion::setMatrix(double* m) {
   normalize();
 }
 
-/// exports the rotation to a double[9] matrix, row-by-row
-Matrix Quaternion::getMatrix() const {
-  Matrix R;
-  double P1=2.*x, P2=2.*y, P3=2.*z;
-  double q11 = x*P1;
-  double q22 = y*P2;
-  double q33 = z*P3;
-  double q12 = x*P2;
-  double q13 = x*P3;
-  double q23 = y*P3;
-  double q01 = w*P1;
-  double q02 = w*P2;
-  double q03 = w*P3;
-  R.m00=1.-q22-q33; R.m01=q12-q03;     R.m02=q13+q02;
-  R.m10=q12+q03;    R.m11=1.-q11-q33;  R.m12=q23-q01;
-  R.m20=q13-q02;    R.m21=q23+q01;     R.m22=1.-q11-q22;
-  return R;
-}
-
-arr Quaternion::getArr() const {
+arr Quaternion::getMatrix() const {
   arr R(3, 3);
   getMatrix(R.p);
   return R;
@@ -960,12 +882,12 @@ double Quaternion::getYaw_Z() const {
   return atan2(siny, cosy);
 }
 
-arr Quaternion::getEulerRPY() const {
+arr Quaternion::getRollPitchYaw() const {
   return {getRoll_X(), getPitch_Y(), getYaw_Z()};
 }
 
 void Quaternion::applyOnPointArray(arr& pts) const {
-  arr R = ~getArr(); //transposed, to make it applicable to an n-times-3 array
+  arr R = ~getMatrix(); //transposed, to make it applicable to an n-times-3 array
   pts = pts * R;
 }
 
@@ -978,10 +900,11 @@ arr Quaternion::getJacobian() const {
     if(i==1) e.set(0., 1., 0., 0.);
     if(i==2) e.set(0., 0., 1., 0.);
     if(i==3) e.set(0., 0., 0., 1.); //TODO: the following could be simplified/compressed/made more efficient
-    e = e / *this;
-    J(0, i) = -2.*e.x;
-    J(1, i) = -2.*e.y;
-    J(2, i) = -2.*e.z;
+    // e = (- *this) * e;
+    e = e * (- *this);
+    J(0, i) = 2.*e.x;
+    J(1, i) = 2.*e.y;
+    J(2, i) = 2.*e.z;
   }
   return J;
 }
@@ -1019,9 +942,9 @@ arr Quaternion::getQuaternionMultiplicationMatrix() const {
   return arr(
   {4, 4}, {
     +w, -x, -y, -z,
-      +x, +w, +z, -y,
-      +y, -z, +w, +x,
-      +z, +y, -x, +w
+    +x, +w, +z, -y,
+    +y, -z, +w, +x,
+    +z, +y, -x, +w
     });
 }
 
@@ -1067,16 +990,16 @@ Quaternion operator*(const Quaternion& b, const Quaternion& c) {
 }
 
 /// A=B*C^{-1}
-Quaternion operator/(const Quaternion& b, const Quaternion& c) {
-  // same as b * (-c), where c is just inverted (c.w \gets - c.w)
-  Quaternion a;
-  a.w =-b.w*c.w - b.x*c.x - b.y*c.y - b.z*c.z;
-  a.x = b.w*c.x - b.x*c.w + b.y*c.z - b.z*c.y;
-  a.y = b.w*c.y - b.y*c.w + b.z*c.x - b.x*c.z;
-  a.z = b.w*c.z - b.z*c.w + b.x*c.y - b.y*c.x;
-  a.isZero=(a.w==1. || a.w==-1.);
-  return a;
-}
+// Quaternion operator/(const Quaternion& b, const Quaternion& c) {
+//   // same as b * (-c), where c is just inverted (c.w \gets - c.w)
+//   Quaternion a;
+//   a.w =-b.w*c.w - b.x*c.x - b.y*c.y - b.z*c.z;
+//   a.x = b.w*c.x - b.x*c.w + b.y*c.z - b.z*c.y;
+//   a.y = b.w*c.y - b.y*c.w + b.z*c.x - b.x*c.z;
+//   a.z = b.w*c.z - b.z*c.w + b.x*c.y - b.y*c.x;
+//   a.isZero=(a.w==1. || a.w==-1.);
+//   return a;
+// }
 
 /// Euclidean(!) difference between two quaternions
 Quaternion operator-(const Quaternion& b, const Quaternion& c) {
@@ -1131,7 +1054,8 @@ Vector operator*(const Quaternion& b, const Vector& c) {
 
 /// inverse transform of a vector by a rotation
 Vector operator/(const Vector& c, const Quaternion& b) {
-  Matrix M = b.getMatrix();
+  Matrix M;
+  b.getMatrix(&M.m00);
   Vector a;
   a.x = M.m00*c.x + M.m10*c.y + M.m20*c.z;
   a.y = M.m01*c.x + M.m11*c.y + M.m21*c.z;
@@ -1155,7 +1079,7 @@ Transformation operator*(const Transformation& X, const Transformation& c) {
 Transformation operator/(const Transformation& to, const Transformation& from) {
   // same as (-from) * to
   Transformation f;
-  f.setDifference(from, to);
+  f.setRelative(from, to);
   return f;
 }
 
@@ -1320,37 +1244,37 @@ Transformation& Transformation::setRandom() {
 }
 
 /// move the turtle by the vector (x, z, y) WITH RESPECT TO the current orientation/scale
-Transformation& Transformation::addRelativeTranslation(double x, double y, double z) {
-  addRelativeTranslation(Vector(x, y, z));
+Transformation& Transformation::appendRelativeTranslation(double x, double y, double z) {
+  appendRelativeTranslation(Vector(x, y, z));
   return *this;
 }
 
-Transformation& Transformation::addRelativeTranslation(const Vector& x_rel) {
+Transformation& Transformation::appendRelativeTranslation(const Vector& x_rel) {
   pos += rot*x_rel;
   return *this;
 }
 
 /// rotate the turtle orientation
-void Transformation::addRelativeRotation(const Quaternion& q) {
+void Transformation::appendRelativeRotation(const Quaternion& q) {
   rot = rot*q;
 }
 
 /// rotate the turtle orientation by an angle (given in DEGREE) around the vector (x, y, z) (given relative to the current orientation)
-void Transformation::addRelativeRotationDeg(double degree, double x, double y, double z) {
+void Transformation::appendRelativeRotationDeg(double degree, double x, double y, double z) {
   Quaternion R;
   R.setDeg(degree, x, y, z);
   rot = rot*R;
 }
 
 /// rotate the turtle orientation by an angle (given in radiants) around the vector (x, y, z) (given relative to the current orientation)
-void Transformation::addRelativeRotationRad(double rad, double x, double y, double z) {
+void Transformation::appendRelativeRotationRad(double rad, double x, double y, double z) {
   Quaternion R;
   R.setRad(rad, x, y, z);
   rot = rot*R;
 }
 
 /// rotate the turtle orientation as given by a quaternion
-void Transformation::addRelativeRotationQuat(double w, double x, double y, double z) {
+void Transformation::appendRelativeRotationQuat(double w, double x, double y, double z) {
   Quaternion R(w, x, y, z);
   rot = rot*R;
 }
@@ -1373,7 +1297,7 @@ void Transformation::appendTransformation(const Transformation& f) {
 /// inverse transform (new = old * f^{-1})
 void Transformation::appendInvTransformation(const Transformation& f) {
   if(!f.rot.isZero) {
-    rot = rot/f.rot;
+    rot = rot * -f.rot;
   }
   if(!f.pos.isZero) {
     pos -= rot*f.pos;
@@ -1400,7 +1324,7 @@ void Transformation::setAffineMatrix(const double* m) {
 }
 
 ///  to = new * from
-void Transformation::setDifference(const Transformation& from, const Transformation& to) {
+void Transformation::setRelative(const Transformation& from, const Transformation& to) {
   // same as (-from) * to
   rot = (-from.rot) * to.rot;
   pos = (-from.rot) * (to.pos-from.pos);
@@ -1413,8 +1337,9 @@ void Transformation::setInterpolate(double t, const Transformation& a, const Tra
 }
 
 /// get the current position/orientation/scale in an OpenGL format matrix (of type double[16])
-double* Transformation::getAffineMatrix(double* m) const {
-  Matrix M = rot.getMatrix();
+double* Transformation::getMatrix(double* m) const {
+  Matrix M;
+  rot.getMatrix(&M.m00);
   m[0] = M.m00; m[1] = M.m01; m[2] = M.m02; m[3] =pos.x;
   m[4] = M.m10; m[5] = M.m11; m[6] = M.m12; m[7] =pos.y;
   m[8] = M.m20; m[9] = M.m21; m[10]= M.m22; m[11]=pos.z;
@@ -1422,15 +1347,16 @@ double* Transformation::getAffineMatrix(double* m) const {
   return m;
 }
 
-arr Transformation::getAffineMatrix() const {
+arr Transformation::getMatrix() const {
   arr T(4, 4);
-  getAffineMatrix(T.p);
+  getMatrix(T.p);
   return T;
 }
 
 /// get inverse OpenGL matrix for this frame (of type double[16])
-double* Transformation::getInverseAffineMatrix(double* m) const {
-  Matrix M = rot.getMatrix();
+double* Transformation::getInverseMatrix(double* m) const {
+  Matrix M;
+  rot.getMatrix(&M.m00);
   Vector pinv; pinv=pos/rot;
   m[0] =M.m00; m[1] =M.m10; m[2] =M.m20; m[3] =-pinv.x;
   m[4] =M.m01; m[5] =M.m11; m[6] =M.m21; m[7] =-pinv.y;
@@ -1439,15 +1365,16 @@ double* Transformation::getInverseAffineMatrix(double* m) const {
   return m;
 }
 
-arr Transformation::getInverseAffineMatrix() const {
+arr Transformation::getInverseMatrix() const {
   arr T(4, 4);
-  getInverseAffineMatrix(T.p);
+  getInverseMatrix(T.p);
   return T;
 }
 
 /// get the current position/orientation/scale in an OpenGL format matrix (of type double[16])
-double* Transformation::getAffineMatrixGL(double* m) const {
-  Matrix M = rot.getMatrix();
+double* Transformation::getMatrixGL(double* m) const {
+  Matrix M;
+  rot.getMatrix(&M.m00);
   m[0]=M.m00; m[4]=M.m01; m[8] =M.m02; m[12]=pos.x;
   m[1]=M.m10; m[5]=M.m11; m[9] =M.m12; m[13]=pos.y;
   m[2]=M.m20; m[6]=M.m21; m[10]=M.m22; m[14]=pos.z;
@@ -1456,8 +1383,9 @@ double* Transformation::getAffineMatrixGL(double* m) const {
 }
 
 /// get inverse OpenGL matrix for this frame (of type double[16]) */
-double* Transformation::getInverseAffineMatrixGL(double* m) const {
-  Matrix M = rot.getMatrix();
+double* Transformation::getInverseMatrixGL(double* m) const {
+  Matrix M;
+  rot.getMatrix(&M.m00);
   Vector pinv; pinv=pos/rot;
   m[0]=M.m00; m[4]=M.m10; m[8] =M.m20; m[12]=-pinv.x;
   m[1]=M.m01; m[5]=M.m11; m[9] =M.m21; m[13]=-pinv.y;
@@ -1481,7 +1409,7 @@ arr Transformation::getArr7d() const {
 arr Transformation::getWrenchTransform() const {
   arr z(3, 3);  z.setZero();
   arr r = skew(pos.getArr()); //(3, 3);  Featherstone::skew(r, &pos.x); skew pos
-  arr R = rot.getArr(); //(3, 3);  rot.getMatrix(R.p);
+  arr R = rot.getMatrix(); //(3, 3);  rot.getMatrix(R.p);
   transpose(R);
   arr X(6, 6);
   X.setMatrixBlock(R, 0, 0);
@@ -1494,7 +1422,7 @@ arr Transformation::getWrenchTransform() const {
 
 void Transformation::applyOnPoint(arr& pt) const {
   CHECK_EQ(pt.N, 3, "");
-  if(!rot.isZero) pt = rot.getArr() * pt;
+  if(!rot.isZero) pt = rot.getMatrix() * pt;
   if(!pos.isZero) pt += pos.getArr();
 }
 
@@ -1504,7 +1432,7 @@ arr& Transformation::applyOnPointArray(arr& pts) const {
     return pts;
   }
   if(!rot.isZero) {
-    arr R = ~rot.getArr(); //transposed, only to make it applicable to an n-times-3 array
+    arr R = ~rot.getMatrix(); //transposed, only to make it applicable to an n-times-3 array
     pts = pts * R;
   }
   if(!pos.isZero) {
@@ -1563,25 +1491,25 @@ void Transformation::read(std::istream& is) {
         is.putback(c);
         is>>x[0]>>x[1]>>x[2]>>x[3]>>x[4]>>x[5]>>x[6];
       }
-      addRelativeTranslation(x[0], x[1], x[2]);
-      addRelativeRotationQuat(x[3], x[4], x[5], x[6]);
+      appendRelativeTranslation(x[0], x[1], x[2]);
+      appendRelativeRotationQuat(x[3], x[4], x[5], x[6]);
       break;
     } else switch(c) {
         //case '<': break; //do nothing -- assume this is an opening tag
-        case 't': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       addRelativeTranslation(x[0], x[1], x[2]); break;
-        case 'q': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationQuat(x[0], x[1], x[2], x[3]); break;
-        case 'r': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationRad(x[0], x[1], x[2], x[3]); break;
-        case 'd': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationDeg(x[0], x[1], x[2], x[3]); break;
+        case 't': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       appendRelativeTranslation(x[0], x[1], x[2]); break;
+        case 'q': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); appendRelativeRotationQuat(x[0], x[1], x[2], x[3]); break;
+        case 'r': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); appendRelativeRotationRad(x[0], x[1], x[2], x[3]); break;
+        case 'd': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); appendRelativeRotationDeg(x[0], x[1], x[2], x[3]); break;
         case 'E': {
           is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");
           Quaternion q;
-          q.setRpy(x[0], x[1], x[2]);
-          addRelativeRotation(q);
+          q.setRollPitchYaw(x[0], x[1], x[2]);
+          appendRelativeRotation(q);
           break;
         }
         case 'p': {
-          is>>PARSE("(")>>x[0]>>x[1]>>x[2];       addRelativeTranslation(x[0], x[1], x[2]);
-          is>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationQuat(x[0], x[1], x[2], x[3]);
+          is>>PARSE("(")>>x[0]>>x[1]>>x[2];       appendRelativeTranslation(x[0], x[1], x[2]);
+          is>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); appendRelativeRotationQuat(x[0], x[1], x[2], x[3]);
         } break;
         //case 's': is>>PARSE("(")>>x[0]>>PARSE(")");                   scale(x[0]); break;
         case 'T': break; //old convention
@@ -1599,225 +1527,228 @@ void Transformation::read(std::istream& is) {
 
 //==============================================================================
 
-/// initialize by reading from the string
-DynamicTransformation& DynamicTransformation::setText(const char* txt) { read(rai::String(txt)()); return *this; }
+// /// initialize by reading from the string
+// DynamicTransformation& DynamicTransformation::setText(const char* txt) { read(rai::String(txt)()); return *this; }
 
-/// resets the position to origin, rotation to identity, velocities to zero, scale to unit
-DynamicTransformation::DynamicTransformation(const char* init) { read(rai::String(init).stream()); }
+// /// resets the position to origin, rotation to identity, velocities to zero, scale to unit
+// DynamicTransformation::DynamicTransformation(const char* init) { read(rai::String(init).stream()); }
 
-DynamicTransformation& DynamicTransformation::setZero() {
-  memset(this, 0, sizeof(DynamicTransformation));
-  rot.w = 1.;
-  pos.isZero = rot.isZero = vel.isZero = angvel.isZero = true;
-  zeroVels = true;
-  return *this;
-}
+// DynamicTransformation& DynamicTransformation::setZero() {
+//   memset(this, 0, sizeof(DynamicTransformation));
+//   rot.w = 1.;
+//   pos.isZero = rot.isZero = vel.isZero = angvel.isZero = true;
+//   zeroVels = true;
+//   return *this;
+// }
 
-/// randomize the frame
-void DynamicTransformation::setRandom() {
-  rot.setRandom();
-  pos.setRandom();
-  if(rnd.uni()<.8) {
-    vel.setZero(); angvel.setZero(); zeroVels=true;
-  } else {
-    vel.setRandom(); angvel.setRandom(); zeroVels = false;
-  }
-}
+// /// randomize the frame
+// void DynamicTransformation::setRandom() {
+//   rot.setRandom();
+//   pos.setRandom();
+//   if(rnd.uni()<.8) {
+//     vel.setZero(); angvel.setZero(); zeroVels=true;
+//   } else {
+//     vel.setRandom(); angvel.setRandom(); zeroVels = false;
+//   }
+// }
 
-/// move the turtle by the vector (x, z, y) WITH RESPECT TO the current orientation/scale
-void DynamicTransformation::addRelativeTranslation(double x, double y, double z) {
-  addRelativeTranslation(Vector(x, y, z));
-}
+// /// move the turtle by the vector (x, z, y) WITH RESPECT TO the current orientation/scale
+// void DynamicTransformation::appendRelativeTranslation(double x, double y, double z) {
+//   appendRelativeTranslation(Vector(x, y, z));
+// }
 
-void DynamicTransformation::addRelativeTranslation(const Vector& x_rel) {
-  Vector x = rot*x_rel;
-  pos+=x;
-  if(!zeroVels) vel+=angvel^x;
-}
+// void DynamicTransformation::appendRelativeTranslation(const Vector& x_rel) {
+//   Vector x = rot*x_rel;
+//   pos+=x;
+//   if(!zeroVels) vel+=angvel^x;
+// }
 
-/// add a velocity to the turtle's inertial frame
-void DynamicTransformation::addRelativeVelocity(double x, double y, double z) {
-  Vector X(x, y, z);
-  //v+=r*(s*X);
-  vel+=rot*X;
-  zeroVels = false;
-}
+// /// add a velocity to the turtle's inertial frame
+// void DynamicTransformation::addRelativeVelocity(double x, double y, double z) {
+//   Vector X(x, y, z);
+//   //v+=r*(s*X);
+//   vel+=rot*X;
+//   zeroVels = false;
+// }
 
-/// add an angular velocity to the turtle inertial frame
-void DynamicTransformation::addRelativeAngVelocityDeg(double degree, double x, double y, double z) {
-  Vector W(x, y, z); W.normalize();
-  W*=degree*RAI_PI/180.;
-  angvel+=rot*W;
-  zeroVels = false;
-}
+// /// add an angular velocity to the turtle inertial frame
+// void DynamicTransformation::addRelativeAngVelocityDeg(double degree, double x, double y, double z) {
+//   Vector W(x, y, z); W.normalize();
+//   W*=degree*RAI_PI/180.;
+//   angvel+=rot*W;
+//   zeroVels = false;
+// }
 
-/// add an angular velocity to the turtle inertial frame
-void DynamicTransformation::addRelativeAngVelocityRad(double rad, double x, double y, double z) {
-  Vector W(x, y, z); W.normalize();
-  W*=rad;
-  angvel+=rot*W;
-  zeroVels = false;
-}
+// /// add an angular velocity to the turtle inertial frame
+// void DynamicTransformation::addRelativeAngVelocityRad(double rad, double x, double y, double z) {
+//   Vector W(x, y, z); W.normalize();
+//   W*=rad;
+//   angvel+=rot*W;
+//   zeroVels = false;
+// }
 
-/// add an angular velocity to the turtle inertial frame
-void DynamicTransformation::addRelativeAngVelocityRad(double wx, double wy, double wz) {
-  Vector W(wx, wy, wz);
-  angvel+=rot*W;
-  zeroVels = false;
-}
+// /// add an angular velocity to the turtle inertial frame
+// void DynamicTransformation::addRelativeAngVelocityRad(double wx, double wy, double wz) {
+//   Vector W(wx, wy, wz);
+//   angvel+=rot*W;
+//   zeroVels = false;
+// }
 
-/** @brief transform the turtle into the frame f,
-    which is interpreted RELATIVE to the current frame
-    (new = f * old) */
-void DynamicTransformation::appendTransformation(const DynamicTransformation& f) {
-  if(zeroVels && f.zeroVels) {
-    if(!f.pos.isZero) { if(rot.isZero) pos += f.pos; else pos += rot*f.pos; }
-    if(!f.rot.isZero) { if(rot.isZero) rot = f.rot; else rot = rot*f.rot; }
-  } else {
-    //Vector P(r*(s*f.p)); //relative offset in global coords
-    //Vector V(r*(s*f.v)); //relative vel in global coords
-    Matrix R = rot.getMatrix();
-    Vector P(R*f.pos); //relative offset in global coords
-    Vector V(R*f.vel); //relative vel in global coords
-    Vector W(R*f.angvel); //relative ang vel in global coords
-    pos += P;
-    vel += angvel^P;
-    vel += V;
-    //a += b^P;
-    //a += w^((w^P) + 2.*V);
-    //a += r*(s*f.a);
-    //b += w^W;
-    //b += r*f.b;
-    angvel += W;
-    rot = rot*f.rot;
-    //s*=f.s;
-    zeroVels = false;
-  }
-}
+// /** @brief transform the turtle into the frame f,
+//     which is interpreted RELATIVE to the current frame
+//     (new = f * old) */
+// void DynamicTransformation::appendTransformation(const DynamicTransformation& f) {
+//   if(zeroVels && f.zeroVels) {
+//     if(!f.pos.isZero) { if(rot.isZero) pos += f.pos; else pos += rot*f.pos; }
+//     if(!f.rot.isZero) { if(rot.isZero) rot = f.rot; else rot = rot*f.rot; }
+//   } else {
+//     //Vector P(r*(s*f.p)); //relative offset in global coords
+//     //Vector V(r*(s*f.v)); //relative vel in global coords
+//     Matrix R;
+//     rot.getMatrix(&R.m00);
+//     Vector P(R*f.pos); //relative offset in global coords
+//     Vector V(R*f.vel); //relative vel in global coords
+//     Vector W(R*f.angvel); //relative ang vel in global coords
+//     pos += P;
+//     vel += angvel^P;
+//     vel += V;
+//     //a += b^P;
+//     //a += w^((w^P) + 2.*V);
+//     //a += r*(s*f.a);
+//     //b += w^W;
+//     //b += r*f.b;
+//     angvel += W;
+//     rot = rot*f.rot;
+//     //s*=f.s;
+//     zeroVels = false;
+//   }
+// }
 
-/// inverse transform (new = f^{-1} * old) or (old = f * new)
-void DynamicTransformation::appendInvTransformation(const DynamicTransformation& f) {
-  if(zeroVels && f.zeroVels) {
-    rot = rot/f.rot;
-    pos -= rot*f.pos;
-  } else {
-    rot=rot/f.rot;
-    Matrix R = rot.getMatrix();
-    Vector P(R*f.pos);
-    angvel -= R*f.angvel;
-    vel -= R*f.vel;
-    vel -= angvel^P;
-    pos -= P;
-    zeroVels = false;
-  }
-}
+// /// inverse transform (new = f^{-1} * old) or (old = f * new)
+// void DynamicTransformation::appendInvTransformation(const DynamicTransformation& f) {
+//   if(zeroVels && f.zeroVels) {
+//     rot = rot * -f.rot;
+//     pos -= rot*f.pos;
+//   } else {
+//     rot = rot * -f.rot;
+//     Matrix R;
+//     rot.getMatrix(&R.m00);
+//     Vector P(R*f.pos);
+//     angvel -= R*f.angvel;
+//     vel -= R*f.vel;
+//     vel -= angvel^P;
+//     pos -= P;
+//     zeroVels = false;
+//   }
+// }
 
-/// this = f^{-1}
-void DynamicTransformation::setInverse(const DynamicTransformation& f) {
-  if(f.zeroVels) {
-    rot = -f.rot;
-    pos = - (rot * f.pos);
-    vel.setZero();
-    angvel.setZero();
-    zeroVels = true;
-  } else {
-    rot = -f.rot;
-    Matrix R = rot.getMatrix();
-    pos = - (R * f.pos);
-    vel = R * ((f.angvel^f.pos) - f.vel);
-    angvel = - (R * f.angvel);
-    zeroVels = false;
-  }
-}
+// /// this = f^{-1}
+// void DynamicTransformation::setInverse(const DynamicTransformation& f) {
+//   if(f.zeroVels) {
+//     rot = -f.rot;
+//     pos = - (rot * f.pos);
+//     vel.setZero();
+//     angvel.setZero();
+//     zeroVels = true;
+//   } else {
+//     rot = -f.rot;
+//     Matrix R;
+//     rot.getMatrix(&R.m00);
+//     pos = - (R * f.pos);
+//     vel = R * ((f.angvel^f.pos) - f.vel);
+//     angvel = - (R * f.angvel);
+//     zeroVels = false;
+//   }
+// }
 
-/// set double[4*4] to Transformation. Matrix needs to be orthogonal
-void DynamicTransformation::setAffineMatrix(const double* m) {
-  double M[9];
-  uint i, j;
-  for(i=0; i<3; ++i)
-    for(j=0; j<3; ++j)
-      M[i*3+j] = m[i*4+j];
-  rot.setMatrix(M);                 // set 3x3 submatrix as rotation
-  pos.x=m[3];  // set last column as translation
-  pos.y=m[7];  // set last column as translation
-  pos.z=m[11];  // set last column as translation
-  zeroVels=true;
-}
+// /// set double[4*4] to Transformation. Matrix needs to be orthogonal
+// void DynamicTransformation::setAffineMatrix(const double* m) {
+//   double M[9];
+//   uint i, j;
+//   for(i=0; i<3; ++i)
+//     for(j=0; j<3; ++j)
+//       M[i*3+j] = m[i*4+j];
+//   rot.setMatrix(M);                 // set 3x3 submatrix as rotation
+//   pos.x=m[3];  // set last column as translation
+//   pos.y=m[7];  // set last column as translation
+//   pos.z=m[11];  // set last column as translation
+//   zeroVels=true;
+// }
 
-///  to = new * from
-void DynamicTransformation::setDifference(const DynamicTransformation& from, const DynamicTransformation& to) {
-  if(from.zeroVels && to.zeroVels) {
-    rot = Quaternion_Id / from.rot * to.rot;
-    pos = (-from.rot) * (to.pos-from.pos);
-    zeroVels = true;
-  } else {
-    rot = Quaternion_Id / from.rot * to.rot;
-    angvel = (-from.rot) * (to.angvel-from.angvel);
-    vel = (-from.rot) * (to.vel-from.vel);
-    vel-= (-from.rot) * (from.angvel^(to.pos-from.pos));
-    pos = (-from.rot) * (to.pos-from.pos);
-    zeroVels = false;
-  }
-}
+// ///  to = new * from
+// void DynamicTransformation::setRelative(const DynamicTransformation& from, const DynamicTransformation& to) {
+//   if(from.zeroVels && to.zeroVels) {
+//     rot = Quaternion_Id * -from.rot * to.rot;
+//     pos = (-from.rot) * (to.pos-from.pos);
+//     zeroVels = true;
+//   } else {
+//     rot = Quaternion_Id * -from.rot * to.rot;
+//     angvel = (-from.rot) * (to.angvel-from.angvel);
+//     vel = (-from.rot) * (to.vel-from.vel);
+//     vel-= (-from.rot) * (from.angvel^(to.pos-from.pos));
+//     pos = (-from.rot) * (to.pos-from.pos);
+//     zeroVels = false;
+//   }
+// }
 
-bool DynamicTransformation::isZero() const {
-  return pos.isZero && rot.isZero && vel.isZero && angvel.isZero;
-}
+// bool DynamicTransformation::isZero() const {
+//   return pos.isZero && rot.isZero && vel.isZero && angvel.isZero;
+// }
 
-/// L1-norm to zero
-double DynamicTransformation::diffZero() const {
-  return pos.diffZero() + rot.diffZero() + vel.diffZero() + angvel.diffZero();
-}
+// /// L1-norm to zero
+// double DynamicTransformation::diffZero() const {
+//   return pos.diffZero() + rot.diffZero() + vel.diffZero() + angvel.diffZero();
+// }
 
-/// operator<<
-void DynamicTransformation::write(std::ostream& os) const {
-  os <<pos.x <<", " <<pos.y <<", " <<pos.z <<", "
-     <<rot.w <<", " <<rot.x <<", " <<rot.y <<", " <<rot.z;
-  if(!zeroVels) {
-    os <<" v" <<vel <<" w" <<angvel;
-  }
-}
+// /// operator<<
+// void DynamicTransformation::write(std::ostream& os) const {
+//   os <<pos.x <<", " <<pos.y <<", " <<pos.z <<", "
+//      <<rot.w <<", " <<rot.x <<", " <<rot.y <<", " <<rot.z;
+//   if(!zeroVels) {
+//     os <<" v" <<vel <<" w" <<angvel;
+//   }
+// }
 
-/// operator>>
-void DynamicTransformation::read(std::istream& is) {
-  setZero();
-  char c;
-  double x[4];
-  rai::skip(is, " \n\r\t<|");
-  for(;;) {
-    is >>c;
-    if(is.fail()) return;  //EOF I guess
-    //if(c==';') break;
-    //if(c==',') is >>c;
-    if((c>='0' && c<='9') || c=='.' || c=='-') {  //read a 7-vector (pos+quat) for the transformation
-      is.putback(c);
-      is>>x[0]>>x[1]>>x[2];       addRelativeTranslation(x[0], x[1], x[2]);
-      is>>x[0]>>x[1]>>x[2]>>x[3]; addRelativeRotationQuat(x[0], x[1], x[2], x[3]);
-    } else switch(c) {
-        //case '<': break; //do nothing -- assume this is an opening tag
-        case 't': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       addRelativeTranslation(x[0], x[1], x[2]); break;
-        case 'q': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationQuat(x[0], x[1], x[2], x[3]); break;
-        case 'r': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationRad(x[0], x[1], x[2], x[3]); break;
-        case 'd': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationDeg(x[0], x[1], x[2], x[3]); break;
-        case 'E': {
-          is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");
-          Quaternion q;
-          q.setRpy(x[0], x[1], x[2]);
-          addRelativeRotation(q);
-          break;
-        }
-        case 'v': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       addRelativeVelocity(x[0], x[1], x[2]); break;
-        case 'w': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       addRelativeAngVelocityRad(x[0], x[1], x[2]); break;
-        //case 's': is>>PARSE("(")>>x[0]>>PARSE(")");                   scale(x[0]); break;
-        case '|':
-        case '>': is.putback(c); return; //those symbols finish the reading without error
-        default: RAI_MSG("unknown DynamicTransformation read tag: " <<c <<"abort reading this frame"); is.putback(c); return;
-      }
-    if(is.fail()) HALT("error reading '" <<c <<"' parameters in frame");
-  }
-  if(is.fail()) HALT("could not read DynamicTransformation struct");
-  zeroVels = vel.isZero && angvel.isZero;
-}
+// /// operator>>
+// void DynamicTransformation::read(std::istream& is) {
+//   setZero();
+//   char c;
+//   double x[4];
+//   rai::skip(is, " \n\r\t<|");
+//   for(;;) {
+//     is >>c;
+//     if(is.fail()) return;  //EOF I guess
+//     //if(c==';') break;
+//     //if(c==',') is >>c;
+//     if((c>='0' && c<='9') || c=='.' || c=='-') {  //read a 7-vector (pos+quat) for the transformation
+//       is.putback(c);
+//       is>>x[0]>>x[1]>>x[2];       appendRelativeTranslation(x[0], x[1], x[2]);
+//       is>>x[0]>>x[1]>>x[2]>>x[3]; appendRelativeRotationQuat(x[0], x[1], x[2], x[3]);
+//     } else switch(c) {
+//         //case '<': break; //do nothing -- assume this is an opening tag
+//         case 't': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       appendRelativeTranslation(x[0], x[1], x[2]); break;
+//         case 'q': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); appendRelativeRotationQuat(x[0], x[1], x[2], x[3]); break;
+//         case 'r': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); appendRelativeRotationRad(x[0], x[1], x[2], x[3]); break;
+//         case 'd': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); appendRelativeRotationDeg(x[0], x[1], x[2], x[3]); break;
+//         case 'E': {
+//           is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");
+//           Quaternion q;
+//           q.setRollPitchYaw(x[0], x[1], x[2]);
+//           appendRelativeRotation(q);
+//           break;
+//         }
+//         case 'v': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       addRelativeVelocity(x[0], x[1], x[2]); break;
+//         case 'w': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")");       addRelativeAngVelocityRad(x[0], x[1], x[2]); break;
+//         //case 's': is>>PARSE("(")>>x[0]>>PARSE(")");                   scale(x[0]); break;
+//         case '|':
+//         case '>': is.putback(c); return; //those symbols finish the reading without error
+//         default: RAI_MSG("unknown DynamicTransformation read tag: " <<c <<"abort reading this frame"); is.putback(c); return;
+//       }
+//     if(is.fail()) HALT("error reading '" <<c <<"' parameters in frame");
+//   }
+//   if(is.fail()) HALT("could not read DynamicTransformation struct");
+//   zeroVels = vel.isZero && angvel.isZero;
+// }
 
 //===========================================================================
 //
@@ -1939,7 +1870,7 @@ arr Camera::getT_IC() const{
 }
 
 arr Camera::getT_CW() const{
-  return X.getInverseAffineMatrix();
+  return X.getInverseMatrix();
 }
 
 /** sets OpenGL's GL_PROJECTION matrix accordingly -- should be
@@ -1976,12 +1907,12 @@ void Camera::glSetProjectionMatrix() const {
 //    gluPerspective(heightAngle, whRatio, zNear, zFar);
 //  }
   double m[16];
-  glMultMatrixd(X.getInverseAffineMatrixGL(m));
+  glMultMatrixd(X.getInverseMatrixGL(m));
 #endif
 }
 
 arr Camera::getProjectionMatrix() const {
-  arr Tinv = X.getInverseAffineMatrix();
+  arr Tinv = X.getInverseMatrix();
 
   if(focalLength>0.) { //normal perspective mode
     CHECK(!heightAbs, "");
@@ -2001,7 +1932,7 @@ arr Camera::getProjectionMatrix() const {
 }
 
 arr Camera::getGLProjectionMatrix(bool includeCameraPose) const {
-  arr Tinv = X.getInverseAffineMatrix();
+  arr Tinv = X.getInverseMatrix();
 
   if(focalLength > 0.) { //focal lengh mode
     CHECK(!heightAbs, "");
@@ -2029,7 +1960,7 @@ arr Camera::getGLProjectionMatrix(bool includeCameraPose) const {
 }
 
 arr Camera::getInverseProjectionMatrix() const {
-  arr T = X.getAffineMatrix();
+  arr T = X.getMatrix();
 
   if(focalLength>0.) { //normal perspective mode
     arr Pinv(4, 4);

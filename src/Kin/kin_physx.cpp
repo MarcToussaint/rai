@@ -507,6 +507,18 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 
     addShapesAndInertia(actor, shapes, type, f);
 
+    //decide on options
+    double motorKp = f->ats->get<double>("motorKp", opt.motorKp);
+    double motorKd = f->ats->get<double>("motorKd", opt.motorKd);
+    double motorLambda =  f->ats->get<double>("motorLambda", -1.);
+    if(motorLambda>0.){
+      double motorMass =  f->ats->get<double>("motorMass", f->inertia->mass);
+      double dampingRatio = 1.;
+      double freq = 1./motorLambda;
+      motorKp = motorMass*freq*freq;
+      motorKd = 2.*motorMass*dampingRatio*freq;
+    }
+
     if(opt.multiBodyDisableGravity && !multibody_gravity) {
       actor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
     }
@@ -518,6 +530,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
       str <<")";
       if(f->joint){
         str <<" and joint " <<f->joint->type;
+        str <<" (Kp=" <<motorKp <<" Kd=" <<motorKd <<")";
         if(!f->joint->active) str <<"(inactive)";
       }
       if(f->inertia) str <<" and mass " <<f->inertia->mass;
@@ -606,8 +619,8 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
       if(axis!=PxArticulationAxis::eCOUNT) { //only 1D joints have drives!
         PxArticulationDrive posDrive;
         if(f->joint->active) {
-          posDrive.stiffness = opt.motorKp;                      // the spring constant driving the joint to a target position
-          posDrive.damping = opt.motorKd;                        // the damping coefficient driving the joint to a target velocity
+          posDrive.stiffness = motorKp;                      // the spring constant driving the joint to a target position
+          posDrive.damping = motorKd;                        // the damping coefficient driving the joint to a target velocity
         } else { //hack for grippers
           posDrive.stiffness = opt.gripperKp;
           posDrive.damping = opt.gripperKd;

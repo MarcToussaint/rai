@@ -205,7 +205,7 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
   // retract: only longitudial velocity, only about-z rotation
   if(endeffRetract) {
     for(rai::String endeff:endeffectors) {
-      arr ori = ~C[endeff]->ensure_X().rot.getArr();
+      arr ori = ~C[endeff]->ensure_X().rot.getMatrix();
       arr yz = ori({1, 2});
       komo.addObjective({0., .2}, FS_position, {endeff}, OT_eq, ori[0].reshape(1, -1)*1e2, {}, 1);
       komo.addObjective({0., .2}, FS_angularVel, {endeff}, OT_eq, yz*1e1, {}, 1);
@@ -215,7 +215,7 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
   // approach: only longitudial velocity, only about-z rotation
   if(endeffApproach) {
     for(rai::String endeff:endeffectors) {
-      arr ori = ~C[STRING(endeff<<"_target")]->get_X().rot.getArr();
+      arr ori = ~C[STRING(endeff<<"_target")]->get_X().rot.getMatrix();
       arr yz = ori({1, 2});
       komo.addObjective({.8, 1.}, FS_position, {endeff}, OT_eq, ori[0].reshape(1, -1)*1e2, {}, 1);
       komo.addObjective({.8, 1.}, FS_angularVel, {endeff}, OT_eq, yz*1e1, {}, 1);
