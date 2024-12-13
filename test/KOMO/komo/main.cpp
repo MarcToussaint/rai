@@ -110,54 +110,11 @@ struct MyFeature : Feature {
     arr weight = 1. + D/range;
     double normalWeight = 1.;
 
-//    arr CJ = C.J_reset();
-//    arr DJ = D.J_reset();
-//    arr VJ = V.J_reset();
-
-//    arr P = eye(3) + normalWeight*(C*~C);
     y = weight * (V + C*normalWeight*(~C * V));
     grabJ(y, J);
-//    if(!!J){
-//      J = weight * P * VJ;
-//      J += P * V.reshape(3,1) * (1./range)*DJ;
-//      J += (weight * 2. * normalWeight * scalarProduct(C,V)) * CJ;
-//    }
-
-#if 0
-    //penalizing normal velocity
-    double normalVel = scalarProduct(V, C);
-    if(normalVel>0.){
-      y = 0.;
-      if(!!J) J = zeros(1, V.J().d1);
-      return;
-    }
-
-    double scale = 3.;
-    double weight = ::exp(scale * D.scalar());
-    weight = 1.; scale=0.;
-
-    y.resize(1);
-    y(0) = weight * normalVel;
-    if(!!J){
-      J = weight * ( ~V * C.J() + ~C * V.J() );
-      J += (normalVel * weight * scale) * D.J();
-    }
-
-#if 0
-    normalVel += 1.;
-
-    y = D / normalVel;
-
-    if(!!J){
-      J = D.J() / normalVel;
-      J += (-D.scalar() / (normalVel*normalVel)) * ( ~V * C.J() + ~C * V.J() );
-    }
-#endif
-#endif
-
   }
 
-  virtual uint dim_phi2(const FrameL& F) {  return 3;  }
+  virtual uint dim_phi(const FrameL& F) {  return 3;  }
 };
 
 void TEST(Thin){

@@ -6,11 +6,11 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "forceExchange.h"
+#include "dof_forceExchange.h"
 #include "../Gui/opengl.h"
 #include "../Geo/pairCollision.h"
 
-rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeType _type, const ForceExchange* copy)
+rai::ForceExchangeDof::ForceExchangeDof(rai::Frame& a, rai::Frame& b, ForceExchangeType _type, const ForceExchangeDof* copy)
   : a(a), b(b), type(_type), scale(1.) {
   CHECK(&a != &b, "");
   CHECK_EQ(&a.C, &b.C, "contact between frames of different configuration!");
@@ -35,14 +35,14 @@ rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeTyp
   }
 }
 
-rai::ForceExchange::~ForceExchange() {
+rai::ForceExchangeDof::~ForceExchangeDof() {
   a.C.reset_q();
   a.forces.removeValue(this);
   b.forces.removeValue(this);
   a.C.otherDofs.removeValue(this);
 }
 
-void rai::ForceExchange::setZero() {
+void rai::ForceExchangeDof::setZero() {
   a.C._state_q_isGood=false;
   force.resize(3).setZero();
   torque.resize(3).setZero();
@@ -58,14 +58,14 @@ void rai::ForceExchange::setZero() {
   if(__coll) { delete __coll; __coll=0; }
 }
 
-uint rai::ForceExchange::getDimFromType() {
+uint rai::ForceExchangeDof::getDimFromType() {
   if(type==FXT_forceZ) return 1;
   else if(type==FXT_force) return 3;
   else if(type==FXT_poaOnly) return 3;
   else return 6;
 }
 
-void rai::ForceExchange::setDofs(const arr& q, uint n) {
+void rai::ForceExchangeDof::setDofs(const arr& q, uint n) {
   if(type==FXT_poa) {
     poa = q({n, n+2});
     force = q({n+3, n+5});
@@ -94,7 +94,7 @@ void rai::ForceExchange::setDofs(const arr& q, uint n) {
   if(__coll) { delete __coll; __coll=0; }
 }
 
-arr rai::ForceExchange::calcDofsFromConfig() const {
+arr rai::ForceExchangeDof::calcDofsFromConfig() const {
   arr q;
   if(type==FXT_poa) {
     q.resize(6);
@@ -114,13 +114,13 @@ arr rai::ForceExchange::calcDofsFromConfig() const {
   return q;
 }
 
-void rai::ForceExchange::setRandom(uint timeSlices_d1, int verbose) {
+void rai::ForceExchangeDof::setRandom(uint timeSlices_d1, int verbose) {
   setZero();
 //  q0 = calcDofsFromConfig();
   Dof::setRandom(timeSlices_d1, verbose);
 }
 
-void rai::ForceExchange::kinPOA(arr& y, arr& J) const {
+void rai::ForceExchangeDof::kinPOA(arr& y, arr& J) const {
   a.C.kinematicsZero(y, J, 3);
 
   if(type==FXT_poa) {
@@ -135,7 +135,7 @@ void rai::ForceExchange::kinPOA(arr& y, arr& J) const {
   } else NIY;
 }
 
-void rai::ForceExchange::kinForce(arr& y, arr& J) const {
+void rai::ForceExchangeDof::kinForce(arr& y, arr& J) const {
   a.C.kinematicsZero(y, J, 3);
 
   if(type==FXT_poa) {
@@ -157,7 +157,7 @@ void rai::ForceExchange::kinForce(arr& y, arr& J) const {
   } else NIY;
 }
 
-void rai::ForceExchange::kinTorque(arr& y, arr& J) const {
+void rai::ForceExchangeDof::kinTorque(arr& y, arr& J) const {
   a.C.kinematicsZero(y, J, 3);
 
   if(type==FXT_poa || type==FXT_force || type==FXT_poaOnly) {
@@ -176,7 +176,7 @@ void rai::ForceExchange::kinTorque(arr& y, arr& J) const {
   } else NIY;
 }
 
-rai::PairCollision* rai::ForceExchange::coll() {
+rai::PairCollision* rai::ForceExchangeDof::coll() {
   if(!__coll) {
     rai::Shape* s1 = a.shape;
     rai::Shape* s2 = b.shape;
@@ -199,7 +199,7 @@ arr gnuplot(const double x) {
 }
 
 
-void rai::ForceExchange::write(std::ostream& os) const {
+void rai::ForceExchangeDof::write(std::ostream& os) const {
   os <<a.name <<'-' <<b.name;
   double d = 0.;
   if(__coll) {
@@ -209,8 +209,8 @@ void rai::ForceExchange::write(std::ostream& os) const {
 //  <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
 }
 
-rai::ForceExchange* rai::getContact(rai::Frame* a, rai::Frame* b, bool raiseErrorIfNonExist) {
-  for(rai::ForceExchange* c : a->forces) if(&c->a==a && &c->b==b) return c;
+rai::ForceExchangeDof* rai::getContact(rai::Frame* a, rai::Frame* b, bool raiseErrorIfNonExist) {
+  for(rai::ForceExchangeDof* c : a->forces) if(&c->a==a && &c->b==b) return c;
   if(raiseErrorIfNonExist) HALT("can't retrieve contact " <<a->name <<"--" <<b->name);
   return nullptr;
 }

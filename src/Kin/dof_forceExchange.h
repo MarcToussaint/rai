@@ -20,7 +20,7 @@ struct PairCollision;
 enum ForceExchangeType { FXT_none=-1, FXT_poa=0, FXT_torque=1, FXT_force, FXT_forceZ, FXT_poaOnly };
 
 ///Description of a ForceExchange
-struct ForceExchange : Dof, NonCopyable {
+struct ForceExchangeDof : Dof, NonCopyable {
   Frame& a, &b;
   ForceExchangeType type;
   double scale=1.;
@@ -33,8 +33,8 @@ struct ForceExchange : Dof, NonCopyable {
   arr force;
   arr torque;
 
-  ForceExchange(Frame& a, Frame& b, ForceExchangeType _type, const ForceExchange* copyContact=nullptr);
-  ~ForceExchange();
+  ForceExchangeDof(Frame& a, Frame& b, ForceExchangeType _type, const ForceExchangeDof* copyContact=nullptr);
+  ~ForceExchangeDof();
 
   void setZero();
   uint getDimFromType();
@@ -43,7 +43,7 @@ struct ForceExchange : Dof, NonCopyable {
   void setRandom(uint timeSlices_d1, int verbose);
   String name() const { return STRING("fex-" <<a.name <<'-' <<b.name); }
 
-  void copy(ForceExchange& fex){ poa=fex.poa; force=fex.force; torque=fex.torque; }
+  void copy(ForceExchangeDof& fex){ poa=fex.poa; force=fex.force; torque=fex.torque; }
 
   virtual double sign(Frame* f) const { if(&a==f) return 1.; return -1.; }
   virtual void kinPOA(arr& y, arr& J) const;
@@ -54,10 +54,10 @@ struct ForceExchange : Dof, NonCopyable {
 
   virtual void write(ostream& os) const;
 };
-stdOutPipe(ForceExchange)
+stdOutPipe(ForceExchangeDof)
 
 //===========================================================================
 
-rai::ForceExchange* getContact(rai::Frame* a, rai::Frame* b, bool raiseErrorIfNonExist=true);
+rai::ForceExchangeDof* getContact(rai::Frame* a, rai::Frame* b, bool raiseErrorIfNonExist=true);
 
 } //rai

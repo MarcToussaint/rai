@@ -8,9 +8,10 @@
 
 #include "kin.h"
 #include "frame.h"
-#include "forceExchange.h"
+#include "dof_forceExchange.h"
 #include "dof_particles.h"
 #include "dof_path.h"
+#include "dof_direction.h"
 #include "proxy.h"
 //#include "kin_swift.h"
 #include "kin_physx.h"
@@ -168,8 +169,8 @@ void Configuration::copy(const Configuration& C, bool referenceFclOnCopy) {
 
   //copy contacts
   for(Dof* dof:C.otherDofs) {
-    const ForceExchange* ex = dof->fex();
-    if(ex) new ForceExchange(*frames.elem(ex->a.ID), *frames.elem(ex->b.ID), ex->type, ex);
+    const ForceExchangeDof* ex = dof->fex();
+    if(ex) new ForceExchangeDof(*frames.elem(ex->a.ID), *frames.elem(ex->b.ID), ex->type, ex);
   }
 
   //copy fcl reference
@@ -347,6 +348,14 @@ Frame* Configuration::addCopy(const FrameL& F, const DofL& _dofs, const str& pre
         f_new->joint->setMimic(f_orig->joint);
       }
     }
+    //convert constant joints to mimic joints
+    if(f->dirDof && f->dirDof->isStable) {
+      Frame* f_orig = getFrame(f_new->name); //identify by name!!!
+      if(f_orig!=f_new) {
+        CHECK(f_orig->dirDof, "");
+        f_new->dirDof->setMimic(f_orig->dirDof);
+      }
+    }
 
     //auto-create prev link if names match
     if(f_new->ID>=F.N) {
@@ -372,8 +381,8 @@ Frame* Configuration::addCopy(const FrameL& F, const DofL& _dofs, const str& pre
 
   //copy force exchanges
   for(Dof* dof:_dofs) {
-    const ForceExchange* ex = dof->fex();
-    if(ex) new ForceExchange(*frames.elem(FId2thisId(ex->a.ID)), *frames.elem(FId2thisId(ex->b.ID)), ex->type, ex);
+    const ForceExchangeDof* ex = dof->fex();
+    if(ex) new ForceExchangeDof(*frames.elem(FId2thisId(ex->a.ID)), *frames.elem(FId2thisId(ex->b.ID)), ex->type, ex);
   }
 
   if(!(frames.N%F.N)) frames.reshape(-1, F.N);
@@ -509,7 +518,11 @@ DofL Configuration::getDofs(const FrameL& F, bool actives, bool inactives, bool 
     if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
       dofs.append(dof);
     }
-    for(ForceExchange* dof: f->forces) if(&dof->a==f) {
+    dof = f->dirDof;
+    if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
+      dofs.append(dof);
+    }
+    for(ForceExchangeDof* dof: f->forces) if(&dof->a==f) {
         if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
           dofs.append(dof);
         }
@@ -763,7 +776,7 @@ void Configuration::setActiveDofs(const DofL& dofs) {
   for(Dof* d:dofs) {
     d->active = true;
     if(d->mimic) mimics.append(d->mimic); //activate also the joint mimic'ed
-    for(Dof* dd:d->mimicers) mimics.append(dd); //activate also mimicing joints
+    for(Dof* m:d->mimicers) mimics.append(m); //activate also mimicing joints
   }
   reset_q();
   activeDofs = dofs;
@@ -977,7 +990,7 @@ bool Configuration::getCollisionFree() {
 Graph Configuration::reportForces() {
   Graph G;
   for(Dof* dof : otherDofs) {
-    const ForceExchange* ex = dof->fex();
+    const ForceExchangeDof* ex = dof->fex();
     if(ex) {
       Graph& g = G.addSubgraph();
       g.add<String>("from", ex->a.name);
@@ -1132,14 +1145,15 @@ void Configuration::reconnectLinksToClosestJoints() {
 void Configuration::pruneUselessFrames(bool pruneNamed, bool pruneNonContactNonMarker, bool pruneNonVisible) {
   for(uint i=frames.N; i--;) {
     Frame* f=frames.elem(i);
-    if((pruneNamed || !f->name) && !f->children.N && !f->joint && !f->inertia) {
-      if(!f->shape){
-        delete f; //that's all there is to do
-      }else if(pruneNonContactNonMarker && !f->shape->cont && f->shape->type()!=ST_marker){
-        delete f;
-      }else if(pruneNonVisible && f->shape->alpha()<1.){
-        delete f;
-      }
+    if(f->children.N || f->joint || f->dirDof || f->inertia) continue;
+    if(f->name && !pruneNamed) continue;
+    //prune with shape?
+    if(!f->shape){
+      delete f; //that's all there is to do
+    }else if(pruneNonContactNonMarker && !f->shape->cont && f->shape->type()!=ST_marker){
+      delete f;
+    }else if(pruneNonVisible && f->shape->alpha()<1.){
+      delete f;
     }
   }
 }
@@ -1275,7 +1289,7 @@ bool Configuration::checkConsistency() const {
       CHECK_EQ(j->dim, j->mimic->dim, "");
     }
 
-    for(Joint* m:j->mimicers) {
+    for(Dof* m:j->mimicers) {
       CHECK_EQ(m->mimic, j, "");
     }
   }
@@ -1306,7 +1320,7 @@ bool Configuration::checkConsistency() const {
     boolA jointIsInActiveSet = consts<byte>(false, frames.N);
     for(Dof* j: activeDofs) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
     if(q.nd) {
-      for(Frame* f: frames) if(f->joint && f->joint->active && f->joint->type!=JT_rigid) CHECK(jointIsInActiveSet(f->ID), "");
+      for(Frame* f: frames) if(f->joint && f->joint->active && f->joint->type!=JT_rigid) CHECK(jointIsInActiveSet(f->ID), "joint: " <<f->name);
     }
   }
 
@@ -1390,10 +1404,15 @@ void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
   if(resetActiveJointSet) {
     reset_q();
 
+    //-- deactivate non-dof joints
+    for(Frame* f:frames) if(f->joint && !f->joint->dim) f->joint->active=false;
+
     //-- collect active dofs
+#if 1
+    activeDofs = getDofs(frames, true, false, true);
+#else
     activeDofs.clear();
     for(Frame* f:frames) {
-      if(f->joint && !f->joint->dim) f->joint->active=false;
       if(f->joint && f->joint->active) {
         activeDofs.append(f->joint);
       }
@@ -1403,12 +1422,13 @@ void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
       if(f->pathDof && f->pathDof->active) {
         activeDofs.append(f->pathDof);
       }
-      for(rai::ForceExchange* fex:f->forces) {
+      for(rai::ForceExchangeDof* fex:f->forces) {
         if(fex->frame==f && fex->active) {
           activeDofs.append(fex);
         }
       }
     }
+#endif
   } else {
     //we assume the activeJoints were set properly before!
   }
@@ -2301,7 +2321,7 @@ void Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double tau, d
   qdot = x1[1];
 }
 
-void __merge(ForceExchange* c, Proxy* p) {
+void __merge(ForceExchangeDof* c, Proxy* p) {
   CHECK(&c->a==p->a && &c->b==p->b, "");
   if(!p->collision) p->calc_coll();
   //  c->a_rel = c->a.X / Vector(p->coll->p1);
@@ -2762,7 +2782,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
         j->mimic=0; //UNDO the =(Joint*)1
         j->setMimic(mimicFrame->joint);
         if(!j->mimic) HALT("The joint '" <<*j <<"' is declared mimicking '" <<jointName <<"' -- but that doesn't exist!");
-        j->type = j->mimic->type;
+        j->type = mimicFrame->joint->type;
         j->q0 = j->mimic->q0;
         j->active = j->mimic->active;
         j->setDofs(j->q0, 0);
@@ -2814,7 +2834,7 @@ void Configuration::reportProxies(std::ostream& os, double belowMargin, bool bri
   }
   cout <<"  TOTAL PENETRATION: " <<pen <<endl;
   os <<"ForceExchange report:" <<endl;
-  for(Frame* a:frames) for(ForceExchange* c:a->forces) {
+  for(Frame* a:frames) for(ForceExchangeDof* c:a->forces) {
       if(&c->a==a) {
         c->coll();
         os <<*c <<endl;

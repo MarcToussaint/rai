@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "F_pose.h"
+#include "dof_direction.h"
 
 //===========================================================================
 
@@ -64,7 +65,12 @@ void F_Vector::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 1, "");
   rai::Frame* f = F.elem(0);
-  f->C.kinematicsVec(y, J, f, vec);
+  if(!f->dirDof){
+    f->C.kinematicsVec(y, J, f, vec);
+  }else{
+    CHECK(vec==Vector_x, "dirDof is always assumed ==Vector_x")
+    f->dirDof->kinVec(y, J);
+  }
 }
 
 //===========================================================================

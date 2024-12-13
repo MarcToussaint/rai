@@ -10,7 +10,7 @@
 
 #include "F_pose.h"
 #include "frame.h"
-#include "forceExchange.h"
+#include "dof_forceExchange.h"
 #include "F_collisions.h"
 #include "../Geo/pairCollision.h"
 
@@ -19,7 +19,7 @@
 //===========================================================================
 //helper methods:
 
-void POA_distance(arr& y, arr& J, rai::ForceExchange* ex, bool b_or_a) {
+void POA_distance(arr& y, arr& J, rai::ForceExchangeDof* ex, bool b_or_a) {
   rai::Shape* s = ex->a.shape;
   if(b_or_a) s = ex->b.shape;
   CHECK(s, "contact object does not have a shape!");
@@ -44,7 +44,7 @@ void POA_distance(arr& y, arr& J, rai::ForceExchange* ex, bool b_or_a) {
   coll.kinDistance(y, J, Jpos, Jp);
 }
 
-void POA_rel_vel2(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool after_or_before) {
+void POA_rel_vel2(arr& y, arr& J, const FrameL& F, rai::ForceExchangeDof* ex, bool after_or_before) {
   CHECK_EQ(F.d0, 3, "");
   CHECK_EQ(F.d1, 2, "");
   CHECK_EQ(F(1, 0), &ex->a, "");
@@ -83,7 +83,7 @@ void POA_rel_vel2(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool 
 }
 
 //3-dim feature: the difference in POA velocities (V)
-arr POA_rel_vel(const FrameL& F, rai::ForceExchange* ex, bool after_or_before) {
+arr POA_rel_vel(const FrameL& F, rai::ForceExchangeDof* ex, bool after_or_before) {
   CHECK_EQ(F.d0, 2, "");
   CHECK_EQ(F.d1, 2, "");
   if(after_or_before) {
@@ -119,7 +119,7 @@ arr POA_rel_vel(const FrameL& F, rai::ForceExchange* ex, bool after_or_before) {
 }
 
 //3-dim feature: the POA velocities (V)
-arr POA_vel(const FrameL& F, rai::ForceExchange* ex, bool b_or_a) {
+arr POA_vel(const FrameL& F, rai::ForceExchangeDof* ex, bool b_or_a) {
   CHECK_GE(F.d0, 2, "");
   CHECK_GE(F.d1, 2, "");
   CHECK_EQ(F(1, 0), &ex->a, "");
@@ -152,29 +152,29 @@ void shapeFunction(double& x, double& dx);
 void F_fex_POA::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_GE(F.N, 2, "");
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1));
   ex->kinPOA(y, J);
 }
 
 void F_fex_Force::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
-  if(!ex) { F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
+  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1), false);
+  if(!ex) { F.elem(0)->C.kinematicsZero(y, J, dim_phi(F)); return; }
   ex->kinForce(y, J);
 }
 
 void F_fex_Torque::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1));
   ex->kinTorque(y, J);
 }
 
 void F_fex_Wrench::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1));
   arr y1, y2, J1, J2;
   ex->kinForce(y1, J1);
   ex->kinTorque(y2, J2);
@@ -191,7 +191,7 @@ void F_HingeXTorque::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Frame* f2 = F.elem(1);
   CHECK(f2->joint, "second frame needs to be a joint");
   CHECK_EQ(f2->joint->type, rai::JT_hingeX, "second frame needs to be a joint")
-  rai::ForceExchange* ex = getContact(f1, f2);
+  rai::ForceExchangeDof* ex = getContact(f1, f2);
   arr y2, J2;
   ex->kinTorque(y2, J2);
 
@@ -228,20 +228,20 @@ void F_TotalForce::phi2(arr& y, arr& J, const FrameL& F) {
   }
 
   //-- collect contacts and signs FOR ALL shapes attached to this link
-  rai::Array<rai::ForceExchange*> contacts;
+  rai::Array<rai::ForceExchangeDof*> contacts;
   arr signs;
   FrameL linkF;
   linkF.append(a);
   a->getRigidSubFrames(linkF, false);
   for(rai::Frame* f:linkF) {
-    for(rai::ForceExchange* ex:f->forces) {
+    for(rai::ForceExchangeDof* ex:f->forces) {
       contacts.append(ex);
       signs.append(ex->sign(f));
     }
   }
 
   for(uint i=0; i<contacts.N; i++) {
-    rai::ForceExchange* con = contacts(i);
+    rai::ForceExchangeDof* con = contacts(i);
     double sign = signs(i);
 
     //get the force
@@ -465,8 +465,8 @@ FrameL getShapesAbove(rai::Frame* a) {
 //===========================================================================
 
 arr F_fex_ForceIsNormal::phi(const FrameL& F) {
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
-  if(!ex) { arr y; F.elem(0)->C.kinematicsZero(y, y.J(), dim_phi2(F)); return y; }
+  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1), false);
+  if(!ex) { arr y; F.elem(0)->C.kinematicsZero(y, y.J(), dim_phi(F)); return y; }
 
   //-- from the contact we need force
   arr force = F_fex_Force()
@@ -488,8 +488,8 @@ arr F_fex_ForceIsNormal::phi(const FrameL& F) {
 }
 
 arr F_fex_ForceInFrictionCone::phi(const FrameL& F) {
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
-  if(!ex) { arr y; F.elem(0)->C.kinematicsZero(y, y.J(), dim_phi2(F)); return y; }
+  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1), false);
+  if(!ex) { arr y; F.elem(0)->C.kinematicsZero(y, y.J(), dim_phi(F)); return y; }
 
   //-- from the contact we need force
   arr force = F_fex_Force() .eval(F);
@@ -513,7 +513,7 @@ arr F_fex_ForceInFrictionCone::phi(const FrameL& F) {
 
 void F_fex_ForceIsComplementary::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.N, 2, "");
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1));
 
   //-- from the contact we need force
   arr force, Jforce;
@@ -538,11 +538,11 @@ void F_fex_ForceIsComplementary::phi2(arr& y, arr& J, const FrameL& F) {
   J.setBlockMatrix(J1, J2);
 }
 
-uint F_fex_ForceIsComplementary::dim_phi2(const FrameL& F) { return 6; }
+uint F_fex_ForceIsComplementary::dim_phi(const FrameL& F) { return 6; }
 
 void F_fex_ForceIsPositive::phi2(arr& y, arr& J, const FrameL& F) {
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
-  if(!ex) { F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
+  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1), false);
+  if(!ex) { F.elem(0)->C.kinematicsZero(y, J, dim_phi(F)); return; }
 
   //-- from the contact we need force
   arr force = F_fex_Force()
@@ -567,8 +567,8 @@ void F_fex_ForceIsPositive::phi2(arr& y, arr& J, const FrameL& F) {
 void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
-  if(!ex) { F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
+  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1), false);
+  if(!ex) { F.elem(0)->C.kinematicsZero(y, J, dim_phi(F)); return; }
   rai::Frame* f=0;
   if(leftRight == rai::_left) f = F.elem(0);
   if(leftRight == rai::_right) f = F.elem(1);
@@ -597,8 +597,8 @@ void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F) {
 void F_fex_POASurfaceNormal::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
-  if(!ex) { F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
+  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1), false);
+  if(!ex) { F.elem(0)->C.kinematicsZero(y, J, dim_phi(F)); return; }
   rai::Frame* f=0;
   if(leftRight == rai::_left) f = F.elem(0);
   if(leftRight == rai::_right) f = F.elem(1);
@@ -653,7 +653,7 @@ void F_fex_POAContactDistances::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Frame* f1 = F.elem(0);
   rai::Frame* f2 = F.elem(1);
 
-  rai::ForceExchange* ex = getContact(f1, f2);
+  rai::ForceExchangeDof* ex = getContact(f1, f2);
 
   //-- POA inside objects (eventually on surface!)
   rai::Shape* s1 = f1->shape;
@@ -690,7 +690,7 @@ void F_fex_POAContactDistances::phi2(arr& y, arr& J, const FrameL& F) {
 
 void F_fex_POA_isAtWitnesspoint::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.N, 2, "");
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1));
 
   arr poa, Jpoa;
   ex->kinPOA(poa, Jpoa);
@@ -728,7 +728,7 @@ void F_fex_NormalForceEqualsNormalPOAmotion::phi2(arr& y, arr& J, const FrameL& 
 void F_fex_POA_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1));
 
   //rai::Frame *f1 = F.elem(0);
   rai::Frame* f2 = F.elem(1);
@@ -748,7 +748,7 @@ void F_fex_POA_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
 
 arr F_fex_POAzeroRelVel::phi(const FrameL& F) {
   CHECK_EQ(order, 1, "");
-  rai::ForceExchange* ex = getContact(F(1, 0), F(1, 1));
+  rai::ForceExchangeDof* ex = getContact(F(1, 0), F(1, 1));
 #if 1
   arr y = POA_rel_vel(F, ex, false);
   return y;
@@ -773,7 +773,7 @@ arr F_fex_ElasticVel::phi(const FrameL& F) {
   rai::Frame* f1 = F(1, 0);
   rai::Frame* f2 = F(1, 1);
 
-  rai::ForceExchange* ex = getContact(f1, f2);
+  rai::ForceExchangeDof* ex = getContact(f1, f2);
   arr v0 = POA_rel_vel(F({0, 1}), ex, false);
   arr v1 = POA_rel_vel(F({1, 2}), ex, true);
 
@@ -811,7 +811,7 @@ arr F_fex_ElasticVel::phi(const FrameL& F) {
 
 arr F_fex_NormalVelIsComplementary::phi(const FrameL& F) {
   CHECK_EQ(F.d0, 2, "");
-  rai::ForceExchange* ex = getContact(F(0, 0), F(0, 1));
+  rai::ForceExchangeDof* ex = getContact(F(0, 0), F(0, 1));
 
   //-- get the pre and post V:
 //  POA_rel_vel(v0, Jv0, Ktuple, con, false);

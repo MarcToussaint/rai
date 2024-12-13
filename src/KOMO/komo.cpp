@@ -16,7 +16,7 @@
 #include "../Kin/frame.h"
 //#include "../KOMO/switch.h"
 #include "../Kin/proxy.h"
-#include "../Kin/forceExchange.h"
+#include "../Kin/dof_forceExchange.h"
 //#include "../Kin/kin_swift.h"
 //#include "../Kin/kin_physx.h"
 #include "../Kin/F_qFeatures.h"
@@ -1456,50 +1456,9 @@ arr KOMO::info_errorTotals(const arr& errorTraces){
 }
 
 void KOMO::checkGradients() {
-  CHECK(T, "");
-#if 1
-  shared_ptr<NLP> CP = nlp();
+  CHECK(timeSlices.N, "path config is not setup");
   arr x0 = pathConfig.getJointState();
-  CP->checkJacobian(x0, 1e-6, featureNames);
-#else
-  double tolerance=1e-4;
-
-  shared_ptr<NLP> CP = nlp();
-
-  VectorFunction F = [CP](const arr& x) -> arr{
-    arr phi, J;
-    CP->evaluate(phi, J, x);
-    phi.J() = J;
-    return phi;
-  };
-
-  arr x0 = pathConfig.getJointState();
-  //    checkJacobian(F, x0, tolerance);
-  arr J;
-  arr JJ=finiteDifferenceJacobian(F, x0, J);
-  bool succ=true;
-  double mmd=0.;
-  for(uint i=0; i<J.d0; i++) {
-    uint j;
-    double md=maxDiff(J[i], JJ[i], &j);
-    if(md>mmd) mmd=md;
-    if(md>tolerance && md>fabs(J(i, j))*tolerance) {
-      if(featureNames.N) {
-        LOG(-1) <<"FAILURE in line " <<i <<" t=" <</*CP_komo.featureTimes(i) <<*/' ' <<featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
-      } else {
-        LOG(-1) <<"FAILURE in line " <<i <<" t=" <</*CP_komo.featureTimes(i) <<' ' <<komo_problem.featureNames(i) <<*/" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
-      }
-      J[i] >>FILE("z.J_analytical");
-      JJ[i] >>FILE("z.J_empirical");
-      //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
-      //HALT("");
-      //        return;
-      rai::wait();
-      succ=false;
-    }
-  }
-  if(succ) cout <<"jacobianCheck -- SUCCESS (max diff error=" <<mmd <<")" <<endl;
-#endif
+  nlp()->checkJacobian(x0, 1e-6, featureNames);
 }
 
 int KOMO::view(bool pause, const char* txt) {
@@ -1751,8 +1710,8 @@ rai::Frame* KOMO::applySwitch(const KinematicSwitch& sw) {
       f0=f;
     } else {
       if(sw.symbol==SW_addContact) {
-        rai::ForceExchange* ex0 = f0->forces.last();
-        rai::ForceExchange* ex1 = f->forces.last();
+        rai::ForceExchangeDof* ex0 = f0->forces.last();
+        rai::ForceExchangeDof* ex1 = f->forces.last();
         ex1->poa = ex0->poa;
       } else {
         f->set_Q() = f0->get_Q(); //copy the relative pose (switch joint initialization) from the first application

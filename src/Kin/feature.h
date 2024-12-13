@@ -41,15 +41,15 @@ struct Feature {
  protected:
   //-- core methods to imlement the feature -- to be overloaded (you can choose to overload phi or phi2
   virtual arr phi(const FrameL& F);
+  virtual uint dim_phi(const FrameL& F) {  NIY; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2(const FrameL& F) {  NIY; }
 
  public:
   arr eval(const FrameL& F) { arr y = phi(F); applyLinearTrans(y); return y; }
 //  Value eval(const FrameL& F) { arr y, J; eval(y, J, F); return Value(y, J); }
   arr eval(const rai::Configuration& C) { return eval(getFrames(C)); }
-  uint dim(const FrameL& F) { uint d=dim_phi2(F); return applyLinearTrans_dim(d); }
-  fct vf2(const FrameL& F);
+  uint dim(const FrameL& F) { uint d=dim_phi(F); return applyLinearTrans_dim(d); }
+  fct asFct(const FrameL& F);
 
   virtual const char* typeString() { return rai::niceTypeidName(typeid(*this)); }
   virtual rai::String shortTag(const rai::Configuration& C);

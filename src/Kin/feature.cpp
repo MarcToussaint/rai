@@ -15,8 +15,8 @@ arr Feature::phi_finiteDifferenceReduce(const FrameL& F) {
 
   timeIntegral--;
   order--;
-  arr y0 = phi(F({0, -2}));
-  arr y1 = phi(F({1, -1}));
+  arr y0 = phi(F({0, 0}));
+  arr y1 = phi(F({1, 1}));
   order++;
   timeIntegral++;
 
@@ -165,7 +165,7 @@ rai::String Feature::shortTag(const rai::Configuration& C) {
 //  };
 //}
 
-fct Feature::vf2(const FrameL& F) { ///< direct conversion to vector function: use to check gradient or evaluate
+fct Feature::asFct(const FrameL& F) { ///< direct conversion to vector function: use to check gradient or evaluate
   return [this, &F](const arr& x) -> arr {
     F.first()->C.setJointState(x);
 //    auto jacMode = F.first()->C.jacMode;

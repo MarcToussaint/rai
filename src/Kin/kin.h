@@ -29,8 +29,8 @@ struct Joint;
 struct Shape;
 struct Frame;
 struct Proxy;
-struct ForceExchange;
-struct ForceExchange;
+struct ForceExchangeDof;
+struct ForceExchangeDof;
 struct Configuration;
 struct KinematicSwitch;
 
@@ -49,7 +49,7 @@ typedef rai::Array<rai::Joint*> JointL;
 typedef rai::Array<rai::Frame*> FrameL;
 typedef rai::Array<rai::Proxy*> ProxyL;
 typedef rai::Array<rai::Proxy> ProxyA;
-typedef rai::Array<rai::ForceExchange*> ForceExchangeL;
+typedef rai::Array<rai::ForceExchangeDof*> ForceExchangeL;
 typedef rai::Array<rai::KinematicSwitch*> KinematicSwitchL;
 typedef rai::Array<rai::Configuration*> ConfigurationL;
 

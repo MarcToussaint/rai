@@ -35,7 +35,7 @@ struct WheelConstraint : Feature{
 
   }
 
-  virtual uint dim_phi2(const FrameL& F){ return 3; }
+  virtual uint dim_phi(const FrameL& F){ return 3; }
 };
 
 //===========================================================================

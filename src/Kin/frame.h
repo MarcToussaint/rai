@@ -26,10 +26,11 @@ struct Dof;
 struct Joint;
 struct Shape;
 struct Inertia;
-struct ForceExchange;
+struct ForceExchangeDof;
 struct ParticleDofs;
 struct PathDof;
-enum JointType : int { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_transYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_generic, JT_tau, JT_path };
+struct DirectionDof;
+enum JointType : int { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_transYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_generic, JT_tau, JT_path, JT_direction };
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static, BT_soft };
 }
 
@@ -99,9 +100,10 @@ struct Frame : NonCopyable {
   Shape* shape=nullptr;          ///< this frame has a (collision or visual) geometry
   Inertia* inertia=nullptr;      ///< this frame has inertia (is a mass)
   //TODO have a single list of all attached dofs (also joint)
-  Array<ForceExchange*> forces;  ///< this frame exchanges forces with other frames
+  Array<ForceExchangeDof*> forces;  ///< this frame exchanges forces with other frames
   ParticleDofs* particleDofs=nullptr; ///< this frame is a set of particles that are dofs themselves
   PathDof* pathDof=nullptr; ///< this frame has a pathDof
+  DirectionDof* dirDof=nullptr;
 
   Frame(Configuration& _C, const Frame* copyFrame=nullptr);
   Frame(Frame* _parent);
@@ -214,8 +216,8 @@ struct Dof {
   uint dim=UINT_MAX;
   uint qIndex=UINT_MAX;
   arr  limits;       ///< joint limits (lo, up, [maxvel, maxeffort])
-  Joint* mimic=0;    ///< if non-nullptr, this joint's state is identical to another's
-  JointL mimicers;   ///< list of mimicing joints
+  Dof* mimic=0;    ///< if non-nullptr, this joint's state is identical to another's
+  DofL mimicers;   ///< list of mimicing joints
   bool isStable=false;
 
   // sampling info:
@@ -223,7 +225,7 @@ struct Dof {
   double sampleSdv=.01; //sdv of gaussian around default
   arr q0; //mean of gaussian, if not defined -> copyX from prev
 
-  virtual ~Dof() {}
+  virtual ~Dof();
   virtual void setDofs(const arr& q, uint n=0) = 0;
   virtual arr calcDofsFromConfig() const = 0;
   virtual void setRandom(uint timeSlices_d1, int verbose);
@@ -238,9 +240,10 @@ struct Dof {
     sampleUniform=copy->sampleUniform;  sampleSdv=copy->sampleSdv;
   }
   void setActive(bool _active);
+  void setMimic(Dof* m, bool unsetPreviousMimic=false);
 
   const Joint* joint() const;
-  const ForceExchange* fex() const;
+  const ForceExchangeDof* fex() const;
 
   virtual void write(std::ostream& os) const;
 };
@@ -273,7 +276,6 @@ struct Joint : Dof, NonCopyable {
   Frame* from() const { return frame->parent; }
   virtual String name() const { return STRING(frame->name<<'.'<<frame->ID); }
 
-  void setMimic(Joint* j, bool unsetPreviousMimic=false);
   void setDofs(const arr& q, uint n=0);
   arr calcDofsFromConfig() const;
   arr getScrewMatrix();

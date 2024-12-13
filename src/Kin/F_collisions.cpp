@@ -8,7 +8,7 @@
 
 #include "F_collisions.h"
 #include "proxy.h"
-#include "forceExchange.h"
+#include "dof_forceExchange.h"
 
 #include "../Geo/pairCollision.h"
 #include "../Optim/newton.h"
@@ -16,7 +16,7 @@
 
 //===========================================================================
 
-uint F_PairCollision::dim_phi2(const FrameL& F) {
+uint F_PairCollision::dim_phi(const FrameL& F) {
   if(type==_negScalar) {
     if(F.nd==3) { CHECK_EQ(F.d0, 1, ""); return F.d1; }
     if(F.nd==2) return F.d0;
@@ -30,7 +30,7 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   if(F.nd>=2) {
     FrameL _F = F.ref();
     if(F.nd==3) _F.reshape(F.d1, F.d2);
-    F.last()->C.kinematicsZero(y, J, dim_phi2(_F));
+    F.last()->C.kinematicsZero(y, J, dim_phi(_F));
     arr ysub, Jsub;
     for(uint i=0; i<_F.d0; i++) {
       F_PairCollision(type).phi2(ysub, Jsub, _F[i]);
@@ -318,7 +318,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F) {
     };
 
     arr seed = .5*(f1->getPosition()+f2->getPosition());
-    rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
+    rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1), false);
     if(ex) seed = ex->poa;
 
 //    checkGradient(f, seed, 1e-5);

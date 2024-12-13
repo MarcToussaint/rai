@@ -11,8 +11,9 @@
 #include "../Core/thread.h"
 #include "../Gui/opengl.h"
 #include <iomanip>
-#include <Kin/forceExchange.h>
-#include <Kin/proxy.h>
+#include "../Kin/dof_forceExchange.h"
+#include "../Kin/dof_direction.h"
+#include "../Kin/proxy.h"
 
 double shadowHeight = 3.; //5.;
 //arr floorColor = ones(3);
@@ -162,7 +163,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   //-- update forces
   if(true){
     auto lock = dataLock(RAI_HERE);
-    for(rai::Frame* fr:frames) for(ForceExchange* f:fr->forces) if(f->sign(fr)>0.){
+    for(rai::Frame* fr:frames) for(ForceExchangeDof* f:fr->forces) if(f->sign(fr)>0.){
 
       arr _poa, _torque, _force;
       f->kinPOA(_poa, NoArr);
@@ -173,6 +174,19 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
       if(timeSlices.N) s = fr->ID/timeSlices.d1;
       addDistMarker(_poa, _poa+.1*_force, s, .025);
     }
+  }
+
+  //-- update directions
+  {
+    auto lock = dataLock(RAI_HERE);
+    for(rai::Frame* f:frames) if(f->dirDof){
+        arr p = f->getPosition();
+        arr v = (f->get_X().rot * f->dirDof->vec).getArr();
+        LOG(0) <<*f->dirDof <<' ' <<v <<' ' <<p;
+        int s=-1;
+        if(timeSlices.N) s = f->ID/timeSlices.d1;
+        addDistMarker(p, p+.2*v, s, .025);
+      }
   }
 
   //-- update camera

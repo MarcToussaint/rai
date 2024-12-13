@@ -8,7 +8,7 @@
 
 #include "switch.h"
 #include "../Kin/kin.h"
-#include "../Kin/forceExchange.h"
+#include "../Kin/dof_forceExchange.h"
 
 #include <climits>
 
@@ -164,20 +164,20 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
 
   else if(symbol==SW_addContact) {
     CHECK_EQ(jointType, JT_none, "");
-    new ForceExchange(*from, *to, FXT_poa);
+    new ForceExchangeDof(*from, *to, FXT_poa);
     return from;
   }
 
   else if(symbol==SW_addPOAonly) {
     CHECK_EQ(jointType, JT_none, "");
-    new ForceExchange(*from, *to, FXT_poaOnly);
+    new ForceExchangeDof(*from, *to, FXT_poaOnly);
     return from;
   }
 
   else if(symbol==SW_delContact) {
     CHECK_EQ(jointType, JT_none, "");
-    ForceExchange* c = nullptr;
-    for(ForceExchange* cc:to->forces) if(&cc->a==from || &cc->b==from) { c=cc; break; }
+    ForceExchangeDof* c = nullptr;
+    for(ForceExchangeDof* cc:to->forces) if(&cc->a==from || &cc->b==from) { c=cc; break; }
     if(!c) HALT("not found");
     delete c;
     return 0;

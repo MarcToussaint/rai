@@ -28,14 +28,14 @@ struct F_PairCollision : Feature {
     : type(_type), neglectRadii(_neglectRadii) {
   }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2(const FrameL& F);
+  virtual uint dim_phi(const FrameL& F);
 };
 
 //===========================================================================
 
 struct F_PairFunctional : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2(const FrameL& F) { return 1; }
+  virtual uint dim_phi(const FrameL& F) { return 1; }
   std::shared_ptr<struct SweepingSDFPenetration> P;
   arr x;
   double d1, d2;
@@ -50,6 +50,6 @@ struct F_AccumulatedCollisions : Feature {
   bool selectXor=false;
   F_AccumulatedCollisions(double _margin=.0, bool selAll=false, bool selXor=false) : margin(_margin), selectAll(selAll), selectXor(selXor) {}
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2(const FrameL& F) { return 1; }
+  virtual uint dim_phi(const FrameL& F) { return 1; }
 };
 

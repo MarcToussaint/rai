@@ -2,7 +2,7 @@
 #include <Kin/F_collisions.h>
 #include <Kin/F_pose.h>
 #include <Kin/F_forces.h>
-#include <Kin/forceExchange.h>
+#include <Kin/dof_forceExchange.h>
 #include <iomanip>
 #include <Kin/featureSymbols.h>
 
@@ -29,7 +29,7 @@ void testFeature() {
   obj1->setMass(1.);
   obj2->setMass(1.);
 
-  rai::ForceExchange con(*obj1, *obj2, rai::FXT_poa);
+  rai::ForceExchangeDof con(*obj1, *obj2, rai::FXT_poa);
 
   C.setTaus(.1);
 
@@ -93,7 +93,7 @@ void testFeature() {
 
     for(shared_ptr<Feature>& f: F){
       cout <<k <<std::setw(30) <<f->shortTag(C) <<' ';
-      succ &= checkJacobian(f->vf2(f->getFrames(pathConfig)), x, 1e-5);
+      succ &= checkJacobian(f->asFct(f->getFrames(pathConfig)), x, 1e-5);
     }
 
     arr y = F.first()->eval(F.first()->getFrames(pathConfig));

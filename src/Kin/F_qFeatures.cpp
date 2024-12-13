@@ -9,8 +9,9 @@
 #include "F_qFeatures.h"
 
 #include "frame.h"
-#include "forceExchange.h"
+#include "dof_forceExchange.h"
 #include "dof_path.h"
+#include "dof_direction.h"
 
 #include <climits>
 
@@ -50,7 +51,9 @@ F_qItself::F_qItself(const uintA& _selectedFrames, bool relative_q0)
   fs = FS_qItself;
 }
 
+#if 0
 void F_qItself::phi(arr& q, arr& J, const rai::Configuration& C) {
+  HALT("you're here??");
   CHECK(C._state_q_isGood, "");
   if(!frameIDs.nd) {
     q = C.getJointState();
@@ -97,13 +100,14 @@ void F_qItself::phi(arr& q, arr& J, const rai::Configuration& C) {
     }
   }
 }
+#endif
 
 void F_qItself::phi2(arr& q, arr& J, const FrameL& F) {
   if(order!=0) {
     Feature::phi2(q, J, F);
     return;
   }
-  uint n=dim_phi2(F);
+  uint n=dim_phi(F);
   if(!n) { q.clear(); J.clear(); return; }
   rai::Configuration& C = F.last()->C;
   CHECK(C._state_q_isGood, "");
@@ -170,7 +174,7 @@ uint F_qItself::dim_phi(const rai::Configuration& C) {
   return C.getJointStateDimension();
 }
 
-uint F_qItself::dim_phi2(const FrameL& F) {
+uint F_qItself::dim_phi(const FrameL& F) {
   uint m=0;
   FrameL FF = F[0];
   for(uint i=0; i<FF.d0; i++) {
@@ -195,7 +199,7 @@ uint F_qItself::dim_phi2(const FrameL& F) {
 //===========================================================================
 
 void F_q0Bias::phi2(arr& y, arr& J, const FrameL& F) {
-  uint n=dim_phi2(F);
+  uint n=dim_phi(F);
   if(!n) { y.clear(); J.clear(); return; }
   rai::Configuration& C = F.last()->C;
   CHECK(C._state_q_isGood, "");
@@ -218,7 +222,7 @@ void F_q0Bias::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(n, m, "");
 }
 
-uint F_q0Bias::dim_phi2(const FrameL& F) {
+uint F_q0Bias::dim_phi(const FrameL& F) {
   uint m=0;
   for(rai::Frame* f:F) {
     rai::Dof* d = f->getDof();
@@ -253,7 +257,7 @@ void F_qZeroVel::phi2(arr& y, arr& J, const FrameL& F) {
   if(!!J) J = y.J_reset();
 }
 
-uint F_qZeroVel::dim_phi2(const FrameL& F) {
+uint F_qZeroVel::dim_phi(const FrameL& F) {
   return F_qItself()
          .setOrder(order)
          .dim(F);
@@ -302,7 +306,7 @@ DofL getDofs(const FrameL& F) {
     if(f->joint && f->joint->active) {
       if(f->joint->limits.N) dofs.append(f->joint);
     }
-    for(rai::ForceExchange* fex:f->forces) if(&fex->a==f) {
+    for(rai::ForceExchangeDof* fex:f->forces) if(&fex->a==f) {
         if(fex->active && fex->limits.N) dofs.append(fex);
       }
   }
@@ -310,7 +314,7 @@ DofL getDofs(const FrameL& F) {
 }
 
 void F_qLimits::phi2(arr& y, arr& J, const FrameL& F) {
-  uint M = dim_phi2(F);
+  uint M = dim_phi(F);
   F.last()->C.kinematicsZero(y, J, M);
   CHECK(F.last()->C._state_q_isGood, "");
   uint m=0;
@@ -340,7 +344,7 @@ void F_qLimits::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(m, M, "");
 }
 
-uint F_qLimits::dim_phi2(const FrameL& F) {
+uint F_qLimits::dim_phi(const FrameL& F) {
   uint m=0;
   DofL dofs = getDofs(F);
   for(rai::Dof* dof: dofs) if(dof->limits.N) m += 2*dof->dim;
@@ -350,38 +354,55 @@ uint F_qLimits::dim_phi2(const FrameL& F) {
 //===========================================================================
 
 void F_qQuaternionNorms::phi2(arr& y, arr& J, const FrameL& F) {
-  uint n=dim_phi2(F);
+  uint n=dim_phi(F);
   if(!n) { y.clear(); J.clear(); return; }
   rai::Configuration& C=F.first()->C;
   C.kinematicsZero(y, J, n);
   uint i=0;
   for(const rai::Frame* f:F) {
-    rai::Joint* j = f->joint;
-    if(!j || !j->active) continue;
-    if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) {
-      arr q;
-      if(j->type==rai::JT_quatBall) q.referToRange(C.q, j->qIndex+0, j->qIndex+3);
-      if(j->type==rai::JT_XBall)    q.referToRange(C.q, j->qIndex+1, j->qIndex+4);
-      if(j->type==rai::JT_free)     q.referToRange(C.q, j->qIndex+3, j->qIndex+6);
-      double norm = sumOfSqr(q);
-      y(i) = norm - 1.;
+    {
+      rai::Joint* j = f->joint;
+      if(j && j->active && (j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall)) {
+        arr q;
+        if(j->type==rai::JT_quatBall) q.referToRange(C.q, j->qIndex+0, j->qIndex+3);
+        if(j->type==rai::JT_XBall)    q.referToRange(C.q, j->qIndex+1, j->qIndex+4);
+        if(j->type==rai::JT_free)     q.referToRange(C.q, j->qIndex+3, j->qIndex+6);
+        double norm = sumOfSqr(q);
+        y(i) = norm - 1.;
 
-      if(!!J) {
-        if(j->type==rai::JT_quatBall) for(uint k=0; k<4; k++) J.elem(i, j->qIndex+0+k) = 2.*q.elem(k);
-        if(j->type==rai::JT_XBall)    for(uint k=0; k<4; k++) J.elem(i, j->qIndex+1+k) = 2.*q.elem(k);
-        if(j->type==rai::JT_free)     for(uint k=0; k<4; k++) J.elem(i, j->qIndex+3+k) = 2.*q.elem(k);
+	if(!!J) {
+	  if(j->type==rai::JT_quatBall) for(uint k=0; k<4; k++) J.elem(i, j->qIndex+0+k) = 2.*q.elem(k);
+	  if(j->type==rai::JT_XBall)    for(uint k=0; k<4; k++) J.elem(i, j->qIndex+1+k) = 2.*q.elem(k);
+	  if(j->type==rai::JT_free)     for(uint k=0; k<4; k++) J.elem(i, j->qIndex+3+k) = 2.*q.elem(k);
+	}
+	i++;
       }
-      i++;
+    }
+    {
+      rai::DirectionDof* dof = f->dirDof;
+      if(dof && dof->active){
+        arr q;
+        q.referToRange(C.q, dof->qIndex+0, dof->qIndex+2);
+        double norm = sumOfSqr(q);
+        y(i) = norm - 1.;
+
+	if(!!J) {
+	  for(uint k=0; k<3; k++) J.elem(i, dof->qIndex+k) = 2.*q.elem(k);
+	}
+	i++;
+      }
     }
   }
 }
 
-uint F_qQuaternionNorms::dim_phi2(const FrameL& F) {
+uint F_qQuaternionNorms::dim_phi(const FrameL& F) {
   uint n=0;
   for(const rai::Frame* f:F) {
     rai::Joint* j = f->joint;
-    if(!j || !j->active) continue;
-    if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) n++;
+    if(j && j->active && (j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall)) n++;
+
+    rai::DirectionDof* dof = f->dirDof;
+    if(dof && dof->active) n++;
   }
   return n;
 }
@@ -390,7 +411,9 @@ void F_qQuaternionNorms::setAllActiveQuats(const rai::Configuration& C) {
   frameIDs.clear();
   for(const rai::Dof* dof:C.activeDofs) {
     const rai::Joint* j = dof->joint();
-    if(j && (j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall)) frameIDs.append(j->frame->ID);
+    const rai::DirectionDof* dir = dof->frame->dirDof;
+
+    if((j && (j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall)) || (dir)) frameIDs.append(j->frame->ID);
   }
 }
 

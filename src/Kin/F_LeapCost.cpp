@@ -12,8 +12,8 @@ CubicSplineLeapCost::CubicSplineLeapCost(const uintA& _selectedFrames) {
   setFrameIDs(_selectedFrames);
 }
 
-uint CubicSplineLeapCost::dim_phi2(const FrameL& F) {
-  uint d = F_qItself().dim_phi2(F);
+uint CubicSplineLeapCost::dim_phi(const FrameL& F) {
+  uint d = F_qItself().dim_phi(F);
   return 2*d;
 }
 

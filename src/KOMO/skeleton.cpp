@@ -30,8 +30,7 @@ namespace rai {
 
 Array<SkeletonSymbol> skeletonModes = { SY_stable, SY_stableOn, SY_stableYPhi, SY_stableZero, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn,
                                         //SY_magicTrans,
-                                        SY_stableOnX, SY_stableOnY
-                                      };
+                                        SY_stableOnX, SY_stableOnY };
 
 void SkeletonEntry::write(std::ostream& os) const {
   os <<"[" <<phase0 <<", " <<phase1 <<"] " <<symbol <<' ';

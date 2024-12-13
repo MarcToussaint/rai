@@ -77,19 +77,19 @@ void TEST(GJK_Jacobians) {
 
     arr y = dist.eval(F);
     cout <<k <<" dist ";
-    succ &= checkJacobian(dist.vf2(F), q, 1e-5);
+    succ &= checkJacobian(dist.asFct(F), q, 1e-5);
 
     arr y2 = distVec.eval(F);
     cout <<k <<" vec  ";
-    succ &= checkJacobian(distVec.vf2(F), q, 1e-5);
+    succ &= checkJacobian(distVec.asFct(F), q, 1e-5);
 
     arr y3 = distNorm.eval(F);
     cout <<k <<" norm  ";
-    succ &= checkJacobian(distNorm.vf2(F), q, 1e-5);
+    succ &= checkJacobian(distNorm.asFct(F), q, 1e-5);
 
     y3 = distCenter.eval(F);
     cout <<k <<" center  ";
-    succ &= checkJacobian(distCenter.vf2(F), q, 1e-5);
+    succ &= checkJacobian(distCenter.asFct(F), q, 1e-5);
 
     rai::PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.ensure_X(), s2.frame.ensure_X(), s1.size(-1), s2.size(-1));
 
@@ -261,7 +261,7 @@ void TEST(Functional) {
 //    F_PairCollision dist(F_PairCollision::_negScalar);
     F_PairFunctional dist;
     auto y = dist.eval({C(1), C(2)});
-    checkJacobian(dist.vf2({C(1), C(2)}), x, 1e-4);
+    checkJacobian(dist.asFct({C(1), C(2)}), x, 1e-4);
 
     C.get_viewer()->clear();
     C.get_viewer()->updateConfiguration(C);
@@ -316,7 +316,7 @@ void testSweepingSDFs(){
 //    checkJacobian(dist.vf2({C.frames(0,1), C.frames(0,2)}), x, 1e-4);
     dist.setOrder(1);
     auto y = dist.eval(F);
-    checkJacobian(dist.vf2(F), x, 1e-4);
+    checkJacobian(dist.asFct(F), x, 1e-4);
 
     arr V = F(0,0)->getMeshPoints();
     F(0,0)->ensure_X().applyOnPointArray(V);

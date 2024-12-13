@@ -10,7 +10,7 @@
 
 #include "../Kin/frame.h"
 #include "../Kin/proxy.h"
-#include "../Kin/forceExchange.h"
+#include "../Kin/dof_forceExchange.h"
 #include "../Algo/spline.h"
 
 namespace rai {

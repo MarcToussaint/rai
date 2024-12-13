@@ -8,9 +8,10 @@
 
 #include "frame.h"
 #include "kin.h"
-#include "forceExchange.h"
+#include "dof_forceExchange.h"
 #include "dof_particles.h"
 #include "dof_path.h"
+#include "dof_direction.h"
 #include "../Geo/signedDistanceFunctions.h"
 
 #include <climits>
@@ -18,7 +19,7 @@
 //===========================================================================
 
 template<> const char* rai::Enum<rai::JointType>::names []= {
-  "none", "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "transYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "generic", "tau", "path", nullptr
+  "none", "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "transYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "generic", "tau", "path", "direction", nullptr
 };
 
 template<> const char* rai::Enum<rai::BodyType>::names []= {
@@ -57,6 +58,7 @@ rai::Frame::Frame(Configuration& _C, const Frame* copyFrame)
     if(copyFrame->inertia) new Inertia(*this, copyFrame->inertia);
     if(copyFrame->particleDofs) new ParticleDofs(*this, copyFrame->particleDofs);
     if(copyFrame->pathDof) new PathDof(*this, copyFrame->pathDof);
+    if(copyFrame->dirDof) new DirectionDof(*this, copyFrame->dirDof);
   }
 }
 
@@ -70,6 +72,9 @@ rai::Frame::Frame(Frame* _parent)
 rai::Frame::~Frame() {
   while(forces.N) delete forces.last();
   if(joint) delete joint;
+  if(particleDofs) delete particleDofs;
+  if(pathDof) delete pathDof;
+  if(dirDof) delete dirDof;
   if(shape) delete shape;
   if(inertia) delete inertia;
   if(parent) unLink();
@@ -372,6 +377,9 @@ void rai::Frame::read(const Graph& ats) {
     if(n->as<String>()=="path") {
       new PathDof(*this);
       pathDof->read(ats);
+    } else if(n->as<String>()=="direction") {
+      new DirectionDof(*this);
+      dirDof->read(ats);
     } else if(n->as<String>()!="none") {
       new Joint(*this);
       joint->read(ats);
@@ -405,6 +413,7 @@ void rai::Frame::write(Graph& G) {
   }
 
   if(joint) joint->write(G);
+  if(dirDof) dirDof->write(G);
   if(shape) shape->write(G);
   if(inertia) inertia->write(G);
 
@@ -959,6 +968,11 @@ bool rai::Frame::isChildOf(const rai::Frame* par, int order) const {
 
 //===========================================================================
 
+rai::Dof::~Dof() {
+  for(Dof* m:mimicers) m->mimic=0;
+  if(mimic && mimic!=(Joint*)1) mimic->mimicers.removeValue(this);
+}
+
 void rai::Dof::setRandom(uint timeSlices_d1, int verbose) {
   if(sampleUniform>0. && (sampleUniform>=1. || sampleUniform>=rnd.uni())) {
     //** UNIFORM
@@ -1027,14 +1041,33 @@ arr rai::Dof::getDofState() {
 void rai::Dof::setActive(bool _active) {
   if(mimic) { mimic->setActive(_active); return; }
   active = _active;
-  for(Joint* j:mimicers) j->active=_active;
+  for(Dof* m:mimicers) m->active=_active;
   qIndex=UINT_MAX;
   if(frame) frame->C.reset_q();
 }
 
+void rai::Dof::setMimic(Dof* m, bool unsetPreviousMimic) {
+  if(!m) {
+    if(mimic) mimic->mimicers.removeValue(this);
+    mimic=0;
+  } else {
+    if(mimic && unsetPreviousMimic) {
+      mimic->mimicers.removeValue(this);
+      mimic=0;
+    }
+    if(joint()){
+      CHECK(m->joint(), "");
+      CHECK_EQ(m->joint()->type, joint()->type, "can't mimic joints of different type [could be generalized to dim]:" <<*this->frame <<" -- " <<*m->frame);
+    }
+    CHECK(!mimic, "");
+    mimic=m;
+    mimic->mimicers.append(this);
+  }
+}
+
 const rai::Joint* rai::Dof::joint() const { return dynamic_cast<const Joint*>(this); }
 
-const rai::ForceExchange* rai::Dof::fex() const { return dynamic_cast<const ForceExchange*>(this); }
+const rai::ForceExchangeDof* rai::Dof::fex() const { return dynamic_cast<const ForceExchangeDof*>(this); }
 
 void rai::Dof::write(std::ostream& os) const {
   os <<"DOF of frame '" <<frame->name <<"'";
@@ -1086,8 +1119,6 @@ rai::Joint::Joint(Frame& from, Frame& f, Joint* copyJoint)
 rai::Joint::~Joint() {
   frame->C.reset_q();
   frame->joint = nullptr;
-  for(Joint* j:mimicers) j->mimic=0;
-  if(mimic &&  mimic!=(Joint*)1) mimic->mimicers.removeValue(this);
 }
 
 const rai::Transformation& rai::Joint::X() const {
@@ -1096,22 +1127,6 @@ const rai::Transformation& rai::Joint::X() const {
 
 const rai::Transformation& rai::Joint::Q() const {
   return frame->get_Q();
-}
-
-void rai::Joint::setMimic(rai::Joint* j, bool unsetPreviousMimic) {
-  if(!j) {
-    if(mimic) mimic->mimicers.removeValue(this);
-    mimic=0;
-  } else {
-    if(mimic && unsetPreviousMimic) {
-      mimic->mimicers.removeValue(this);
-      mimic=0;
-    }
-    CHECK_EQ(j->type, type, "can't mimic joints of different type [could be generalized to dim]:" <<*this->frame <<" -- " <<*j->frame);
-    CHECK(!mimic, "");
-    mimic=j;
-    mimic->mimicers.append(this);
-  }
 }
 
 void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
@@ -1283,7 +1298,8 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
   }
   //    link->link = A * Q * B; //total rel transformation
 
-  for(Joint* j:mimicers) {
+  for(Dof* m:mimicers) {
+    Joint *j = dynamic_cast<Joint*>(m);
     if(type!=JT_tau) {
       j->frame->Q = Q;
       if(j->scale==-1.) {
@@ -1591,7 +1607,7 @@ void rai::Joint::setGeneric(const char* _code) {
   code = _code;
   dim = getDimFromType();
   frame->C.reset_q();
-  for(Joint* m:mimicers) m->setGeneric(code);
+  for(Dof *m:mimicers) dynamic_cast<Joint*>(m)->setGeneric(code);
 }
 
 void rai::Joint::flip() {
@@ -1700,6 +1716,9 @@ void rai::Joint::read(const Graph& ats) {
   bool _active=true;
   ats.get(_active, "joint_active");
   if(!_active) setActive(false);
+
+  //stable
+  if(ats.get<bool>("joint_stable", false)) isStable=true;
 
   //coupled to another joint requires post-processing by the Graph::read!!
   if(ats["mimic"]) {

@@ -8,6 +8,7 @@
 #include <Gui/plot.h>
 #include <GL/gl.h>
 #include <Kin/feature.h>
+#include <Kin/dof_direction.h>
 
 //===========================================================================
 //
@@ -205,6 +206,37 @@ void TEST(QuaternionKinematics){
 }
 
 //===========================================================================
+
+struct F_Direction : Feature {
+  F_Direction() {}
+  virtual arr phi(const FrameL& F){
+    rai::Frame *f = F.elem();
+    CHECK(f->dirDof, "");
+    arr y;
+    f->dirDof->kinVec(y, y.J());
+    return y;
+  }
+  uint dim_phi(const FrameL& F) { return 3; }
+};
+
+void testDirectionKinematics(){
+  rai::Configuration C("kinematicTestDir.g");
+  rai::Frame *dir = C["dir"];
+
+  for(uint k=0;k<20;k++){
+    // arr q = rand(C.getJointStateDimension());
+    // C.setJointState(q);
+    C.setRandom();
+    arr q = C.getJointState();
+    cout <<k <<' ' <<q <<dir->dirDof->vec <<endl;
+
+    checkJacobian(F_Direction().asFct({dir}), q, 1e-5);
+
+    C.view(true);
+  }
+}
+
+//===========================================================================
 //
 // copy operator test
 //
@@ -348,9 +380,9 @@ void TEST(Contacts){
 //===========================================================================
 
 void TEST(Limits){
-  rai::Configuration G("arm7.g");
+  rai::Configuration C("arm7.g");
 
-  arr limits = G.getJointLimits();
+  arr limits = C.getJointLimits();
   cout <<"limits: " <<limits <<endl;
 //  VectorFunction F = [&G, &limits](arr& y, arr& J, const arr& x){
 //    G.setJointState(x);
@@ -358,22 +390,22 @@ void TEST(Limits){
 //    G.kinematicsLimits(y,J,limits);
 //  };
 
-  auto F = G.feature(FS_jointLimits);
+  auto F = C.feature(FS_jointLimits);
 
-  uint n=G.getJointStateDimension();
+  uint n=C.getJointStateDimension();
   arr x(n);
   for(uint k=0;k<10;k++){
     rndUniform(x,-2.,2.,false);
-    checkJacobian(F->vf2(F->getFrames(G)),x,1e-4);
+    checkJacobian(F->asFct(F->getFrames(C)),x,1e-4);
     for(uint t=0;t<10;t++){
-      arr lim = F->eval(F->getFrames(G));
+      arr lim = F->eval(F->getFrames(C));
       cout <<"y=" <<lim <<"  " <<std::flush;
 //      cout <<"J:" <<lim.J <<endl;
       for(uint i=0;i<lim.N;i++) if(lim(i)<0.) lim(i)=0.; //penalize only positive
       x -= 1. * pseudoInverse(lim.J()) * lim;
-      checkJacobian(F->vf2(F->getFrames(G)),x,1e-4);
-      G.setJointState(x);
-      G.view();
+      checkJacobian(F->asFct(F->getFrames(C)),x,1e-4);
+      C.setJointState(x);
+      C.view();
     }
   }
 }
@@ -652,6 +684,8 @@ void TEST(BlenderImport){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
+  // testDirectionKinematics(); return 0;
+
   testMini();
   testLoadSave();
   testCopy();
@@ -660,6 +694,7 @@ int MAIN(int argc,char **argv){
   testViewer();
   testKinematics();
   testQuaternionKinematics();
+  testDirectionKinematics();
   testKinematicSpeed();
   testGrid();
   testFollowRedundantSequence();
