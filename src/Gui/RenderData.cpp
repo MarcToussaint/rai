@@ -98,7 +98,6 @@ void RenderData::addAxes(double scale, const rai::Transformation& _X){
 }
 
 void RenderFont::glInitialize(){
-
   FT_Library ft;
   int r = FT_Init_FreeType(&ft);
   if(r){
@@ -177,7 +176,7 @@ void RenderData::ensureInitialized(OpenGL &gl){
     id.prog_ID = LoadShadersFile("shader.vs", "shader.fs" );
   }else{
     id.prog_ID = LoadShaders( objVS, objFS );
-    //  id.prog_ID = LoadShadersFile(rai::raiPath("src/Gui/shaderObj.vs"), rai::raiPath("src/Gui/shaderObj.fs") );
+    //id.prog_ID = LoadShadersFile(rai::raiPath("src/Gui/shaderObj.vs"), rai::raiPath("src/Gui/shaderObj.fs") );
   }
   id.prog_Projection_W = glGetUniformLocation(id.prog_ID, "Projection_W");
   id.prog_ViewT_CW = glGetUniformLocation(id.prog_ID, "ViewT_CW");
@@ -194,7 +193,8 @@ void RenderData::ensureInitialized(OpenGL &gl){
   id.progMarker_ModelT_WM = glGetUniformLocation(id.progMarker, "ModelT_WM");
 
   { //if(stopRender>_shadows){
-    id.progShadow_ID = LoadShaders( shadowVS, shadowFS ); //rai::raiPath("src/Gui/shaderShadow.vs"), rai::raiPath("src/Gui/shaderShadow.fs") );
+    id.progShadow_ID = LoadShaders( shadowVS, shadowFS );
+    //id.progShadow_ID = LoadShadersFile( rai::raiPath("src/Gui/shaderShadow.vs"), rai::raiPath("src/Gui/shaderShadow.fs") );
     id.progShadow_ShadowProjection_W = glGetUniformLocation(id.progShadow_ID, "ShadowProjection_W");
     id.progShadow_ModelT_WM = glGetUniformLocation(id.progShadow_ID, "ModelT_WM");
 

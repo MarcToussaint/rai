@@ -48,7 +48,7 @@ struct PhysXInterface {
   void postAddObject(rai::Frame* f);
   void setArticulatedBodiesKinematic(const rai::Configuration& C);
 
-  void watch(bool pause=false, const char* txt=nullptr);
+  void view(bool pause=false, const char* txt=nullptr);
 
   void setGravity(float grav);
   void disableGravity(rai::Frame* f, bool disable=true);

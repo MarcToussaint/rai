@@ -57,6 +57,10 @@ int main(int argc, char **argv){
   m.C = {.5, .5, 1.};
   scene.add(rai::Transformation("t(-.4 -.4 .4)")).mesh(m, .9);
 
+  m.setBox({.2,.2,0.}, {.3,.3,.1}, false);
+  m.C = {.5};
+  scene.add().mesh(m, .9);
+
   byteA img;
   read_ppm(img, "../retired/opengl/box.ppm",false);
   add_alpha_channel(img, 120);

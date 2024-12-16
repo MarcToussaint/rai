@@ -804,12 +804,16 @@ void rai::Frame::setAutoLimits() {
       }; //no limits on rotation
     }
     //        f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
+  } else if(jointType==JT_quatBall){
+    joint->limits = {-1.1, -1.1, -1.1, -1.1,  1.1,  1.1,  1.1,  1.1};
   } else if(jointType==JT_transXY || jointType==JT_transXYPhi) {
     CHECK_EQ(from->type(), rai::ST_ssBox, "");
     joint->limits = { -.5*from->size(0), -.5*from->size(1),
                        .5*from->size(0),  .5*from->size(1)
                     };
     if(jointType==JT_transXYPhi) joint->limits.append({-RAI_2PI, RAI_2PI});
+  } else {
+    NIY;
   }
   //sample heuristic
   joint->q0 = joint->calcDofsFromConfig();
@@ -935,6 +939,11 @@ rai::Frame& rai::Frame::setParent(rai::Frame* _parent, bool keepAbsolutePose_and
   CHECK(_parent, "you need to set a parent to link from");
   CHECK(!parent, "this frame ('" <<name <<"') already has a parent");
   if(parent==_parent) return *this;
+  //if(parent){ //unlink first...
+  //  parent->children.removeValue(this);
+  //  parent=nullptr;
+  //  
+  //}
 
   if(checkForLoop) {
     rai::Frame* f=_parent;
@@ -1598,7 +1607,7 @@ void rai::Joint::setType(rai::JointType _type) {
     dim = getDimFromType();
     frame->C.reset_q();
     q0 = calcDofsFromConfig();
-    isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_transZ) || type==JT_quatBall);
+    isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_trans3) || type==JT_quatBall);
   }
 }
 
@@ -1677,7 +1686,7 @@ void rai::Joint::read(const Graph& ats) {
   else type=JT_rigid;
 
   dim = getDimFromType();
-  isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_transZ) || type==JT_quatBall);
+  isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_trans3) || type==JT_quatBall);
 
   if(ats.get(d, "q")) {
     if(!dim) { //HACK convention

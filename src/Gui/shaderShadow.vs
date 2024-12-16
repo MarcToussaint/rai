@@ -6,5 +6,5 @@ uniform mat4 ShadowProjection_W;
 uniform mat4 ModelT_WM;
 
 void main() {
-  gl_Position =  ShadowProjection_W * ModelT_WM * vec4(vertexPosition_M, 1);
+  gl_Position = ShadowProjection_W * ModelT_WM * vec4(vertexPosition_M, 1);
 }

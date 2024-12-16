@@ -73,16 +73,16 @@ void main() {
     vec3 reflectedLightDirection_C = reflect(-lightDirection_C[i], N);
     float cosAlpha = clamp(dot(E, reflectedLightDirection_C), 0.f, 1.f);
 
-    float bias = 0.005;
+    float bias = 0.001;
     float visibility = 1.;
     if(i==0 && useShadow>0){
       //visibility = texture(shadowMap, vec3(shadowCoord.xy, (shadowCoord.z-bias)/shadowCoord.w));
       visibility -= 0.5 * (1.0-texture(shadowMap, vec3(shadowCoord.xy, (shadowCoord.z-bias)/shadowCoord.w)));
-      for (int j=0;j<4;j++){
+      for (int j=0;j<2;j++){
         //int index = j;
         //int index = int(16.0*random(gl_FragCoord.xyz, i))%16;
         int index = int(16.0*random(floor(worldCoord.xyz*1000.0), i))%16;
-        visibility -= 0.1 * (1.0-texture( shadowMap, vec3(shadowCoord.xy + poissonDisk[index]/2000.0,  (shadowCoord.z-bias)/shadowCoord.w) ));
+        visibility -= 0.2 * (1.0-texture( shadowMap, vec3(shadowCoord.xy + poissonDisk[index]/2000.0,  (shadowCoord.z-bias)/shadowCoord.w) ));
       }
     }
 

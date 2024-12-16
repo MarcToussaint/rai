@@ -242,13 +242,8 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   if(verbose>0) self->updateDisplayData(time, C); //does not update with freq >20hz - see method
 
-  if(engine==_physx && verbose>3) {
-    if(!self->glDebug) {
-      self->glDebug = make_shared<OpenGL>("physx sim DEBUG", 500, 300);
-      self->glDebug->camera.setDefault();
-      NIY; //self->glDebug->add(*self->physx);
-    }
-    self->glDebug->update();
+  if(engine==_physx && verbose>3){
+    self->physx->view(false, STRING("Simulation physx debug time: " <<time));
   }
 }
 
@@ -663,42 +658,6 @@ void Simulation_self::updateDisplayData(double _time, const rai::Configuration& 
   display->mux.unlock();
 
   display->updateConfiguration(_C);
-#if 0
-  bool copyMeshes = false;
-  if(_C.frames.N!=display->Ccopy.frames.N) copyMeshes = true;
-  else {
-    for(uint i=0; i<_C.frames.N; i++) {
-      rai::Shape* s = _C.frames.elem(i)->shape;
-      rai::Shape* r = display->Ccopy.frames.elem(i)->shape;
-      if((!s) != (!r)) { copyMeshes=true; break; }
-      if(!s) continue;
-      if(s->_type != r->_type) { copyMeshes=true; break; }
-      if(s->size != r->size) { copyMeshes=true; break; }
-      if(s->_mesh && r->_mesh && (s->_mesh->V.N != r->_mesh->V.N)) { copyMeshes=true; break; }
-    }
-  }
-  if(copyMeshes) {
-    display->Ccopy.copy(_C, false);
-    //deep copy meshes!
-    for(rai::Frame* f:display->Ccopy.frames) if(f->shape) {
-        if(f->shape->_mesh) {
-          f->shape->_mesh = make_shared<Mesh> (*f->shape->_mesh.get());
-          f->shape->glListId = 0;
-        }
-      }
-    LOG(0) <<"simulation frames changed: #frames: " <<display->Ccopy.frames.N <<" last: " <<display->Ccopy.frames(-1)->name;
-  }
-#if 0
-  display->Ccopy.setFrameState(_C.getFrameState());
-#else
-  for(uint i=0; i<_C.frames.N; i++) {
-    rai::Frame* f = _C.frames.elem(i);
-    if(f->shape) display->Ccopy.frames.elem(i)->set_X() = f->ensure_X();
-  }
-#endif
-
-  display->Ccopy.copyProxies(_C.proxies);
-#endif
 }
 
 void Simulation_self::updateDisplayData(const byteA& _image, const floatA& _depth) {

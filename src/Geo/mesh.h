@@ -56,7 +56,7 @@ struct Mesh {
   /// @name set or create
   void clear();
   void setBox(bool edgesOnly=false);
-  void setBox(const arr& lo, const arr& up, bool edgesOnly=true);
+  void setBox(const arr& lo, const arr& up, bool edgesOnly=false);
   Mesh& setDot(); ///< an awkward mesh: just a single dot, not tris (e.g. cvx core of a sphere...)
   void setLine(double l); ///< an awkward mesh: just a single line, not tris (e.g. cvx core of a sphere...)
   void setQuad(double x_width=1., double y_width=1., const byteA& _texImg= {}, bool flipY=false, bool texByReference=false); ///< a quat, optionally with texture

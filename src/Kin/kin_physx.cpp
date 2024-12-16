@@ -165,6 +165,8 @@ struct PhysXInterface_self {
   PxMaterial* defaultMaterial = nullptr;
   PxDefaultCpuDispatcher* defaultCpuDispatcher = nullptr;
 
+  rai::Configuration debugConfig;
+
   void initPhysics();
   void addGround();
   void addLink(rai::Frame* b);
@@ -177,6 +179,8 @@ struct PhysXInterface_self {
   void prepareLinkShapes(ShapeL& shapes, rai::BodyType& type, rai::Frame* f);
   void addSingleShape(PxRigidActor* actor, rai::Frame* f, rai::Shape* s);
   void addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes, rai::BodyType type, rai::Frame* f);
+
+  void syncDebugConfig();
 };
 
 PhysXInterface_self::Engine* PhysXInterface_self::core = 0;
@@ -451,9 +455,9 @@ void PhysXInterface_self::unlockJoint(PxD6Joint* joint, rai::Joint* rai_joint) {
 void PhysXInterface_self::addMultiBody(rai::Frame* base) {
   //CHECK(!base->parent || (base->joint && base->joint->type==rai::JT_rigid) || (base->joint && base->inertia), "base needs to be either rigid or with inertia");
 
-  //decide on options
-  bool multibody_floating = base->ats->findNode("multibody_floating");
-  bool multibody_gravity = base->ats->findNode("multibody_gravity");
+  //multibody options
+  bool multibody_fixedBase = base->ats->get<bool>("multibody_fixedBase", true);
+  bool multibody_gravity = base->ats->get<bool>("multibody_gravity", false);
 
   //-- collect all links for that root
   FrameL F = {base};
@@ -482,7 +486,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
   }
 
   PxArticulationReducedCoordinate* articulation = core->mPhysics->createArticulationReducedCoordinate();
-  articulation->setArticulationFlag(PxArticulationFlag::eFIX_BASE, !multibody_floating);
+  articulation->setArticulationFlag(PxArticulationFlag::eFIX_BASE, multibody_fixedBase);
   articulation->setArticulationFlag(PxArticulationFlag::eDISABLE_SELF_COLLISION, true);
   //articulation->setSolverIterationCounts(minPositionIterations, minVelocityIterations);
   //articulation->setMaxCOMLinearVelocity(maxCOMLinearVelocity);
@@ -507,7 +511,8 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 
     addShapesAndInertia(actor, shapes, type, f);
 
-    //decide on options
+    //link/motor options
+    bool noMotor = f->ats->get<bool>("noMotor", false);
     double motorKp = f->ats->get<double>("motorKp", opt.motorKp);
     double motorKd = f->ats->get<double>("motorKd", opt.motorKd);
     double motorLambda =  f->ats->get<double>("motorLambda", -1.);
@@ -530,7 +535,8 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
       str <<")";
       if(f->joint){
         str <<" and joint " <<f->joint->type;
-        str <<" (Kp=" <<motorKp <<" Kd=" <<motorKd <<")";
+        if(noMotor) str <<" (no motor!)";
+        else str <<" (Kp=" <<motorKp <<" Kd=" <<motorKd <<")";
         if(!f->joint->active) str <<"(inactive)";
       }
       if(f->inertia) str <<" and mass " <<f->inertia->mass;
@@ -578,8 +584,19 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
           axis = PxArticulationAxis::eZ;
           break;
         }
+        case rai::JT_transXY: {
+          NIY; //ePRISMATIC is only for SINGLE dof!
+          break;
+        }
         case rai::JT_quatBall:{
           type = PxArticulationJointType::eSPHERICAL;
+          joint->setMotion(PxArticulationAxis::eTWIST, PxArticulationMotion::eFREE); //eLIMITED
+          joint->setMotion(PxArticulationAxis::eSWING1, PxArticulationMotion::eFREE); //eLIMITED
+          joint->setMotion(PxArticulationAxis::eSWING2, PxArticulationMotion::eFREE); //eLIMITED
+          auto vec = f->get_Q().rot.getVector();
+          joint->setJointPosition(PxArticulationAxis::eTWIST, vec.x);
+          joint->setJointPosition(PxArticulationAxis::eSWING1, vec.y);
+          joint->setJointPosition(PxArticulationAxis::eSWING2, vec.z);
           axis = PxArticulationAxis::eCOUNT;
           break;
         }
@@ -587,22 +604,15 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
       }
       joint->setJointType(type);
       if(axis!=PxArticulationAxis::eCOUNT){
-        joint->setMotion(axis, PxArticulationMotion::eFREE); //eLIMITED
+        if(f->joint->limits.N){
+          joint->setMotion(axis, PxArticulationMotion::eLIMITED);
+          joint->setLimitParams(axis, {(float)f->joint->limits(0), (float)f->joint->limits(1)});
+        }else{
+          joint->setMotion(axis, PxArticulationMotion::eFREE);
+        }
         joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
-      }else{
-        joint->setMotion(PxArticulationAxis::eTWIST, PxArticulationMotion::eFREE); //eLIMITED
-        joint->setMotion(PxArticulationAxis::eSWING1, PxArticulationMotion::eFREE); //eLIMITED
-        joint->setMotion(PxArticulationAxis::eSWING2, PxArticulationMotion::eFREE); //eLIMITED
-        auto vec = f->get_Q().rot.getVector();
-        joint->setJointPosition(PxArticulationAxis::eTWIST, vec.x);
-        joint->setJointPosition(PxArticulationAxis::eSWING1, vec.y);
-        joint->setJointPosition(PxArticulationAxis::eSWING2, vec.z);
       }
       jointAxis(f->ID) = axis;
-
-//      if(f->joint->limits.N){
-//        joint->setLimitParams(axis, {(float)f->joint->limits(0), (float)f->joint->limits(1)});
-//      }
 
       if(f->joint->mimic) {
 //        NIY;
@@ -616,7 +626,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
         //        world->addMultiBodyConstraint(gearCons);
       }
 
-      if(axis!=PxArticulationAxis::eCOUNT) { //only 1D joints have drives!
+      if(!noMotor && axis!=PxArticulationAxis::eCOUNT) { //only 1D joints have drives!
         PxArticulationDrive posDrive;
         if(f->joint->active) {
           posDrive.stiffness = motorKp;                      // the spring constant driving the joint to a target position
@@ -824,6 +834,118 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes
   }
 }
 
+void PhysXInterface_self::syncDebugConfig() {
+  if(!debugConfig.frames.N){
+    for(PxRigidActor* actor: actors) {
+      if(actor) {
+        rai::Frame* frame = (rai::Frame*)actor->userData;
+        rai::Frame* f = debugConfig.addFrame(frame->name);
+
+	PxU32 nShapes = actor->getNbShapes();
+	PxShape** shapes=new PxShape*[nShapes];
+	//cout <<"#shapes=" <<nShapes;
+
+	actor->getShapes(shapes, nShapes);
+	rai::Mesh mesh;
+
+	while(nShapes--) {
+	  PxShape* shape = shapes[nShapes];
+
+	  //    // use the color of the first shape of the body for the entire body
+	  //    rai::Shape* s = frame->shape;
+	  //    if(!s) for(rai::Frame* ch:frame->children) {
+	  // if(ch->shape && ch->shape->alpha()==1.) {
+	  //   s = ch->shape;
+	  //   break;
+	  // }
+	  //      }
+	  //    if(s) glColor(s->mesh().C);
+
+	  //cout <<"drawing shape " <<body->name <<endl;
+	  switch(shape->getGeometryType()) {
+	    case PxGeometryType::eBOX: {
+	      PxBoxGeometry g;
+	      shape->getBoxGeometry(g);
+	      //glutSolidCube(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
+	      rai::Mesh m;
+	      m.setBox();
+	      m.scale(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
+	      mesh.addMesh(m);
+	    } break;
+	    case PxGeometryType::eSPHERE: {
+	      PxSphereGeometry g;
+	      shape->getSphereGeometry(g);
+	      // glutSolidSphere(g.radius, 10, 10);
+	      rai::Mesh m;
+	      m.setSphere();
+	      m.scale(g.radius);
+	      mesh.addMesh(m);
+	    } break;
+	    case PxGeometryType::eCAPSULE: {
+	      PxCapsuleGeometry g;
+	      shape->getCapsuleGeometry(g);
+	      // glDrawCappedCylinder(g.radius, g.halfHeight*2);
+	      rai::Mesh m;
+	      m.setCapsule(g.radius, g.halfHeight*2.);
+	      m.scale(g.radius);
+	      mesh.addMesh(m);
+	    } break;
+	    case PxGeometryType::eCONVEXMESH: {
+#if 1
+	      PxConvexMeshGeometry g;
+	      shape->getConvexMeshGeometry(g);
+	      floatA Vfloat;
+	      Vfloat.referTo((float*)g.convexMesh->getVertices(), 3*g.convexMesh->getNbVertices()); //reference!
+	      rai::Mesh m;
+	      copy(m.V, Vfloat);
+	      m.V.reshape(g.convexMesh->getNbVertices(), 3);
+	      m.makeConvexHull();
+	      mesh.addMesh(m);
+#else
+	      self->mesh.glDraw();
+#endif
+	    } break;
+	    case PxGeometryType::eTRIANGLEMESH: {
+	      PxTriangleMeshGeometry g;
+	      shape->getTriangleMeshGeometry(g);
+	      floatA Vfloat;
+	      Vfloat.referTo((float*)g.triangleMesh->getVertices(), 3*g.triangleMesh->getNbVertices()).reshape(-1, 3);
+	      rai::Mesh m;
+	      m.V = rai::convert<double>(Vfloat);
+	      if(g.triangleMesh->getTriangleMeshFlags()&PxTriangleMeshFlag::e16_BIT_INDICES) {
+		rai::Array<uint16_t> T16;
+		T16.referTo((uint16_t*)g.triangleMesh->getTriangles(), 3*g.triangleMesh->getNbTriangles()).reshape(-1, 3);
+		m.T = rai::convert<uint>(T16);
+	      } else {
+		m.T.referTo((uint*)g.triangleMesh->getTriangles(), 3*g.triangleMesh->getNbTriangles()).reshape(-1, 3);
+	      }
+	      mesh.addMesh(m);
+	    } break;
+
+	    default:
+	      RAI_MSG("can't draw this type");
+	  }
+	}
+	delete [] shapes;
+	f->setMesh2(mesh);
+      }
+    }
+  }
+
+  uint id=0;
+  for(PxRigidActor* actor: actors) {
+    if(actor) {
+      rai::Frame* frame = (rai::Frame*)actor->userData;
+      rai::Frame* f = debugConfig.frames(id++);
+      CHECK_EQ(frame->name, f->name, "");
+
+      rai::Transformation X;
+      PxTrans2raiTrans(X, actor->getGlobalPose());
+      f->set_X() = X;
+    }
+  }
+}
+
 //===========================================================================
 
 PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose, const rai::PhysX_Options* _opt) {
@@ -913,6 +1035,7 @@ void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& frameVelociti
 
   //-- pull joint state directly
   if(self->opt.jointedBodies) {
+    HALT("will be deactivated");
     arr q = C.getJointState();
     for(rai::Dof* d:C.activeDofs) if(self->joints(d->frame->ID)) {
         PxRevoluteJoint* revJoint = self->joints(d->frame->ID)->is<PxRevoluteJoint>();
@@ -1064,16 +1187,9 @@ void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) 
     }
 }
 
-void PhysXInterface::watch(bool pause, const char* txt) {
-  NIY;
-//  if(!s->gl) {
-//    self->gl = new OpenGL("PHYSX direct");
-//    self->gl->add(glStandardScene, nullptr);
-//    self->gl->add(*this);
-//    self->gl->camera.setDefault();
-//  }
-//  if(pause) self->gl->watch(txt);
-  //  else self->gl->update(txt);
+void PhysXInterface::view(bool pause, const char* txt) {
+  self->syncDebugConfig();
+  self->debugConfig.view(pause, txt);
 }
 
 void PhysXInterface::setGravity(float grav) {
