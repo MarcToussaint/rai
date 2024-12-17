@@ -55,6 +55,8 @@ void init_DataGen(pybind11::module& m) {
   .def("evaluateGrasp", &ShapenetGrasps::evaluateGrasp,
        "(direct interface) return scores of grasp candidate (min(scores)<0. means fail)")
 
+  .def("getConfig",  [](std::shared_ptr<ShapenetGrasps>& self) { return std::shared_ptr<rai::Configuration>(&(self->C), &Config_null_deleter); }, "")
+
   .def("setOptions", [](std::shared_ptr<ShapenetGrasps>& self
 #define OPT(type, name, x) ,type name
                         OPT(int, verbose, 1)

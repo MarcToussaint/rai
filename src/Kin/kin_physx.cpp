@@ -1224,7 +1224,7 @@ rai::PhysX_Options& PhysXInterface::opt() {
 #else //RAI_PHYSX
 
 #include "kin_physx.h"
-PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose) : self(nullptr) { NICO }
+PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose, const rai::PhysX_Options* _opt) { NICO }
 PhysXInterface::~PhysXInterface() { NICO }
 
 void PhysXInterface::step(double tau) { NICO }

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import sys
 from lxml import etree
@@ -75,7 +75,7 @@ def writeShape(link):
 #            print('colorName:%s' % elem.attrib['name'])
 
 
-links = xmlData.findall('/link')
+links = xmlData.findall('./link')
 for link in links:
     name = link.attrib['name']
     print('%s: {' % name, end='')
@@ -113,7 +113,7 @@ for link in links:
             print(' contact: -2 }') # end of shape
 
 
-joints = xmlData.findall('/joint')
+joints = xmlData.findall('./joint')
 for joint in joints:
     name = joint.attrib['name']
     if joint.find('child') is not None:
