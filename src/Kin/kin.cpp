@@ -2045,7 +2045,7 @@ void Configuration::fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gr
   fs().update();
   if(gravity) fs().setGravity(); else fs().setGravity(0.);
   //  cout <<tree <<endl;
-//  fs().fwdDynamics_MF(qdd, qd, tau);
+  // fs().fwdDynamics_MF(qdd, qd, tau); //fail safe
     fs().fwdDynamics_aba_1D(qdd, qd, tau); //works
   //  fwdDynamics_aba_nD(qdd, tree, qd, tau); //does not work
 }
@@ -2059,7 +2059,7 @@ void Configuration::inverseDynamics(arr& tau, const arr& qd, const arr& qdd, boo
   fs().invDynamics(tau, qd, qdd);
 #else
   arr M, F;
-  fs().equationOfMotion(M, F, qdd);
+  fs().equationOfMotion(M, F, qd);
   tau = M * qdd + F;
 #endif
 }
@@ -2581,10 +2581,10 @@ void Configuration::writeMeshes(const char* pathPrefix) const {
         (f->shape->type()==ST_mesh || f->shape->type()==ST_ssCvx || f->shape->type()==ST_sdf)) {
       String filename = pathPrefix;
       if(!f->ats) f->ats = make_shared<Graph>();
-      filename <<f->name <<".mesh";
+      filename <<f->name <<".h5";
       f->ats->getNew<FileToken>("mesh").name = filename;
-      if(f->shape->type()==ST_mesh || f->shape->type()==ST_sdf) f->shape->mesh().writeArr(FILE(filename));
-      else if(f->shape->type()==ST_ssCvx) f->shape->sscCore().writeArr(FILE(filename));
+      if(f->shape->type()==ST_mesh || f->shape->type()==ST_sdf) f->shape->mesh().writeH5(filename, "mesh");
+      else if(f->shape->type()==ST_ssCvx) f->shape->sscCore().writeH5(filename, "mesh");
       else if(f->shape->_sdf) {
         filename.clear() <<pathPrefix <<f->name <<".vol";
         f->ats->getNew<FileToken>("sdf").name = filename;
@@ -2946,6 +2946,116 @@ void Configuration::inverseKinematicsPos(Frame& frame, const arr& ytarget,
     }
     setJointState(q);
   }
+}
+
+arr Configuration::dyn_inertia(Frame* f){
+  CHECK(f->inertia, "")
+  arr R = f->X.rot.getMatrix();
+  return R * f->inertia->matrix.getArr() * ~R;
+}
+
+arr Configuration::dyn_J_dot(Frame* f, const arr& q_dot, const arr& Jpos, const arr& Jang){
+  rai::Vector p_j = f->X.pos;
+  arr J_dot = zeros(6, Jang.d1);
+  for(uint i=0;i<Jang.d1;i++){
+    arr a_i = Jang.col(i);
+    if(sumOfAbs(a_i)>1e-10){
+      rai::Frame *f_i = activeDofs(i)->frame;
+      CHECK_EQ(f_i->joint->qIndex, i, "");
+      arr Jpos_i, Jang_i;
+      rai::Vector p_i = f_i->X.pos;
+      jacobian_pos(Jpos_i, f_i, p_i);
+      jacobian_angular(Jang_i, f_i);
+
+      arr a_i_dot = crossProduct(Jang_i * q_dot, a_i);
+      arr tmp = crossProduct(a_i_dot, (p_j - p_i).getArr());
+      tmp += crossProduct(a_i, (Jpos * q_dot - Jpos_i*q_dot));
+
+      if(sumOfAbs(tmp)>1e-10){
+        J_dot.setMatrixBlock(tmp.reshape(3,1), 0, i);
+      }
+
+      if(sumOfAbs(a_i_dot)>1e-10){
+        J_dot.setMatrixBlock(a_i_dot.reshape(3,1), 3, i);
+      }
+    }
+    // cout <<a <<endl;
+  }
+  return J_dot;
+}
+
+arr Configuration::dyn_coriolis(Frame* f, const arr& q_dot, const arr& I_f, const arr& Jpos, const arr& Jang){
+  arr J_dot = dyn_J_dot(f, q_dot, Jpos, Jang);
+  arr M = dyn_M(f, I_f);
+  arr w = Jang * q_dot;
+  arr c = zeros(6);
+  c.setVectorBlock(crossProduct(w, I_f * w), 3);
+  c += M * (J_dot * q_dot);
+  return c;
+}
+
+arr Configuration::dyn_M(Frame* f, const arr& I_f){
+  arr M(6,6);
+  M.setZero();
+  double m = f->inertia->mass;
+  for(uint i=0;i<3;i++) M(i,i) = m;
+  M.setMatrixBlock(I_f, 3, 3);
+  return M;
+}
+
+arr Configuration::dyn_inverseDyamics(const arr& q_dot, const arr& q_ddot){
+#if 1
+  arr u = zeros(q_dot.N);
+  arr Jpos, Jang, J, I, M, c, g;
+  for(Frame *f:frames) if(f->inertia){
+      CHECK(f->inertia->com.isZero, "");
+      f->ensure_X();
+      jacobian_pos(Jpos, f, f->X.pos);
+      jacobian_angular(Jang, f);
+      I = dyn_inertia(f);
+      M = dyn_M(f, I);
+      c = dyn_coriolis(f, q_dot, I, Jpos, Jang);
+      g = arr{0., 0., 9.81*f->inertia->mass, 0., 0., 0.};
+      J.setBlockMatrix(Jpos, Jang);
+      u += ~J * (M*(J*q_ddot)+c+g);
+    }
+  return u;
+#else
+  return dyn_M() * q_ddot + dyn_F(q_dot);
+#endif
+}
+
+arr Configuration::dyn_M(){
+  uint n = getJointStateDimension();
+  arr M = zeros(n,n);
+  arr Jpos, Jang, J, I_f, M_f;
+  for(Frame *f:frames) if(f->inertia){
+      jacobian_pos(Jpos, f, f->X.pos);
+      jacobian_angular(Jang, f);
+      I_f = dyn_inertia(f);
+      M_f = dyn_M(f, I_f);
+      J.setBlockMatrix(Jpos, Jang);
+      M += ~J*(M_f*J);
+    }
+  return M;
+}
+
+arr Configuration::dyn_F(const arr& q_dot){
+  uint n = getJointStateDimension();
+  arr F = zeros(n);
+  arr Jpos, Jang, J, I, c, g;
+  for(Frame *f:frames) if(f->inertia){
+      CHECK(f->inertia->com.isZero, "");
+      f->ensure_X();
+      jacobian_pos(Jpos, f, f->X.pos);
+      jacobian_angular(Jang, f);
+      I = dyn_inertia(f);
+      c = dyn_coriolis(f, q_dot, I, Jpos, Jang);
+      g = arr{0., 0., 9.81*f->inertia->mass, 0., 0., 0.};
+      J.setBlockMatrix(Jpos, Jang);
+      F += ~J * (c+g);
+    }
+  return F;
 }
 
 #if 0

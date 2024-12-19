@@ -201,16 +201,10 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   //-- call the physics engine
   if(engine==_physx) {
-    if(self->physx->opt().jointedBodies || self->physx->opt().multiBody) {
-      self->physx->pushFrameStates(C, NoArr, true); //kinematicOnly (usually none anyway)
-      if(q_ref.N) {
-        C.setJointState(q_ref);
-        self->physx->pushMotorStates(C); //qDot_ref, motor control
-      }
-    } else {
-      if(q_ref.N) C.setJointState(q_ref); //kinematic control
-      if(qDot_ref.N) self->qDot = qDot_ref;
-      self->physx->pushFrameStates(C, NoArr, true); //kinematicOnly
+    self->physx->pushFrameStates(C, NoArr, true); //kinematicOnly (usually none anyway)
+    if(q_ref.N) {
+      C.setJointState(q_ref);
+      self->physx->pushMotorStates(C); //qDot_ref, motor control
     }
     self->physx->step(tau);
     self->physx->pullDynamicStates(C, self->frameVelocities);

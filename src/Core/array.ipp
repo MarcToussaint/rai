@@ -1104,8 +1104,8 @@ template<class T> void Array<T>::setBlockMatrix(const Array<T>& A, const Array<T
   CHECK(A.nd==2 && B.nd==2 && C.nd==2 && D.nd==2, "");
   CHECK(A.d0==B.d0 && A.d1==C.d1 && B.d1==D.d1 && C.d0==D.d0, "");
   resize(A.d0+C.d0, A.d1+B.d1);
-  setMatrixBlock(A,  0, 0);
-  setMatrixBlock(B,  0, A.d1);
+  setMatrixBlock(A, 0, 0);
+  setMatrixBlock(B, 0, A.d1);
   setMatrixBlock(C, A.d0, 0);
   setMatrixBlock(D, A.d0, A.d1);
 }
@@ -1115,7 +1115,7 @@ template<class T> void Array<T>::setBlockMatrix(const Array<T>& A, const Array<T
   CHECK(A.nd==2 && B.nd==2, "");
   CHECK(A.d1==B.d1, "");
   resize(A.d0+B.d0, A.d1);
-  setMatrixBlock(A,  0, 0);
+  setMatrixBlock(A, 0, 0);
   setMatrixBlock(B, A.d0, 0);
 }
 

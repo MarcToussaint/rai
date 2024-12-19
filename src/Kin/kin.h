@@ -234,6 +234,15 @@ struct Configuration {
   /// @name high level inverse kinematics
   void inverseKinematicsPos(Frame& frame, const arr& ytarget, const Vector& rel_offset=NoVector, int max_iter=3);
 
+  /// @name dynamics following the lecture notes
+  arr dyn_inertia(Frame* f);
+  arr dyn_J_dot(Frame *f, const arr& q_dot, const arr& Jpos, const arr& Jang);
+  arr dyn_coriolis(Frame *f, const arr& q_dot, const arr& I_f, const arr& Jpos, const arr& Jang);
+  arr dyn_M(Frame *f, const arr& I_f);
+  arr dyn_inverseDyamics(const arr& q_dot, const arr& q_ddot);
+  arr dyn_M();
+  arr dyn_F(const arr& q_dot);
+
   /// @name dynamics based on the fs() interface
   void equationOfMotion(arr& M, arr& F, const arr& qdot, bool gravity=true);
   void fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity=true);

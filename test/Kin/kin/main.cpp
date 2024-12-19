@@ -538,6 +538,12 @@ void TEST(Dynamics){
     checkNan(u);
     arr y;
     C.fwdDynamics(y, x[1], u, true);
+    arr M, F;
+    C.equationOfMotion(M, F, x[1], true);
+    arr Mtest = C.dyn_M();
+    arr Ftest = C.dyn_F(x[1]);
+    cout <<"M precision: " <<sumOfSqr(M-Mtest) <<endl; // <<M <<endl <<Mtest <<endl
+    cout <<"F precision: " <<sumOfSqr(F-Ftest) <<endl; // <<F <<endl <<Ftest <<endl;
     checkNan(y);
     return y;
   };
@@ -560,6 +566,8 @@ void TEST(Dynamics){
       double tau = .5, xi = 0.9, kp = 1/(tau*tau), kd = 2*xi/tau;
       qdd_des = -kp * q - kd * qd;
       C.inverseDynamics(u, qd, qdd_des);
+      arr utest = C.dyn_inverseDyamics(qd, qdd_des);
+      cout <<"inv precision: " <<sumOfSqr(u-utest) <<endl; //<<u <<utest <<endl;
       C.fwdDynamics(qdd, qd, u);
       CHECK(maxDiff(qdd,qdd_des,0)<1e-5,"dynamics and inverse dynamics inconsistent:\n" <<qdd <<'\n' <<qdd_des);
       q  += .5*dt*qd;

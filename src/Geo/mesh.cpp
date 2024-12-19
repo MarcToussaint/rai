@@ -1738,7 +1738,7 @@ void Mesh::writeH5(const char* filename, const str& group) {
   if(texImg.N) H.add(group+"/texImg", texImg);
 }
 
-void Mesh::readH5(const char* filename, const str& group="mesh") {
+void Mesh::readH5(const char* filename, const str& group) {
   H5_Reader H(filename);
   V = H.read<double>(group+"/vertices");
   Vn = H.read<double>(group+"/normals", true);
@@ -1749,6 +1749,7 @@ void Mesh::readH5(const char* filename, const str& group="mesh") {
   texImg = H.read<byte>(group+"/texImg", true);
 }
 
+#if 1
 void Mesh::readArr(std::istream& is) {
   clear();
   Graph G(is);
@@ -1760,6 +1761,15 @@ void Mesh::readArr(std::istream& is) {
   G.get(tex, "tex");
   G.get(texImg, "texImg");
 }
+#else //old version...
+void rai::Mesh::readArr(std::istream& is){
+  V.readTagged(is, "V");
+  T.readTagged(is, "T");
+  C.readTagged(is, "C");
+  tex.readTagged(is, "tex");
+  texImg.readTagged(is, "texImg");
+}
+#endif
 
 void Mesh::readPts(std::istream& is) {
   floatA pts;
