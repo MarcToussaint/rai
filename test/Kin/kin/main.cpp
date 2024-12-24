@@ -536,14 +536,15 @@ void TEST(Dynamics){
     if(!u.N) u.resize(x.d1).setZero();
     if(friction) u = -1e-1 * x[1];
     checkNan(u);
-    arr y;
+    arr y, ytest;
     C.fwdDynamics(y, x[1], u, true);
-    arr M, F;
+    ytest = C.dyn_fwdDynamics(x[1], u);
+    arr M, F, Mtest, Ftest;
+    cout <<"qdd precision: " <<sumOfSqr(y-ytest) <<endl; // <<M <<endl <<Mtest <<endl
     C.equationOfMotion(M, F, x[1], true);
-    arr Mtest = C.dyn_M();
-    arr Ftest = C.dyn_F(x[1]);
-    cout <<"M precision: " <<sumOfSqr(M-Mtest) <<endl; // <<M <<endl <<Mtest <<endl
-    cout <<"F precision: " <<sumOfSqr(F-Ftest) <<endl; // <<F <<endl <<Ftest <<endl;
+    C.dyn_MF(Mtest, Ftest, x[1]);
+    cout <<"M precision:   " <<sumOfSqr(M-Mtest) <<endl; // <<M <<endl <<Mtest <<endl
+    cout <<"F precision:   " <<sumOfSqr(F-Ftest) <<endl; // <<F <<endl <<Ftest <<endl;
     checkNan(y);
     return y;
   };
@@ -691,8 +692,6 @@ void TEST(BlenderImport){
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
-
-  // testDirectionKinematics(); return 0;
 
   testMini();
   testLoadSave();

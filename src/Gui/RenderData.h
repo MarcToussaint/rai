@@ -20,11 +20,11 @@ struct Render_Options {
   RAI_PARAM("Render/", arr, lights, {})
 };
 
-enum RenderType { _solid, _shadow, _marker, _transparent, _text, _all };
+enum RenderType { _solid, _shadow, _tensor, _marker, _transparent, _text, _all };
 
 struct RenderAsset{
-  floatA vertices, colors, normals;
-  GLuint vao, vertexBuffer, colorBuffer, normalBuffer;
+  floatA vertices, colors, normals, texture;
+  GLuint vao, vertexBuffer, colorBuffer, normalBuffer, textureBuffer;
   GLenum mode=GL_TRIANGLES;
   bool initialized=false;
   bool isTransparent=false;
@@ -34,22 +34,21 @@ struct RenderAsset{
   void mesh(rai::Mesh &mesh, double avgNormalsThreshold=.9);
   void lines(const arr& lines, const arr& color);
   void pointCloud(const arr& points, const arr& color);
+  void tensor(const arr& vol);
 
   //engine specific -> should be refactored
   void glRender();
   void glInitialize();
 };
 
+//an asset can be drawn multiple times in a scene, with different poses -> each time it is drawn is a RenderItem
 struct RenderItem{
   std::shared_ptr<RenderAsset> asset;
 
   rai::Transformation X=0;
   double cameraDist=-1.;
   RenderType type=_solid;
-  int selection=-1;
   byteA flatColor;
-
-  RenderItem* mimic=0;
 
   RenderItem(const rai::Transformation& _X=0, RenderType _type=_solid) : X(_X), type(_type) {}
 };
@@ -77,7 +76,7 @@ struct RenderText{
 struct RenderQuad {
   byteA img;
   floatA vertices;
-  GLuint vao, vertexBuffer, texture;
+  GLuint vao, vertexBuffer, textureBuffer;
   bool initialized=false;
 
   ~RenderQuad();
@@ -113,9 +112,10 @@ struct RenderData {
 
   struct ContextIDs{
     bool initialized=false;
-    GLuint prog_ID, prog_Projection_W, prog_ViewT_CW, prog_ModelT_WM, prog_ShadowProjection_W, prog_useShadow, prog_shadowMap, prog_numLights, prog_lightDirection_C, prog_FlatColor;
-    GLuint progShadow_ID, progShadow_ShadowProjection_W, progShadow_ModelT_WM;
     GLuint shadowFramebuffer, shadowTexture;
+    GLuint prog_ID, prog_Projection_W, prog_ModelT_WM, prog_eyePosition_W, prog_ShadowProjection_W, prog_useShadow, prog_shadowMap, prog_numLights, prog_lightDirection_W, prog_FlatColor;
+    GLuint progShadow, progShadow_ShadowProjection_W, progShadow_ModelT_WM;
+    GLuint progTensor, progTensor_Projection_W, progTensor_ModelT_WM, progTensor_eyePosition_W, progTensor_tensorTexture;
     GLuint progMarker, progMarker_Projection_W, progMarker_ModelT_WM;
     GLuint progText, progText_color, progText_useTexColor;
     RenderFont font;

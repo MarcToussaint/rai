@@ -110,7 +110,6 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
       rai::Shape* s = f->shape;
       if(!s || !s->_mesh){ copyMeshes=true; break; }
       if((int)items.N<=o){ copyMeshes=true; break; }
-      if(items(o)->mimic) continue;
       if(s->_mesh->V.N && items(o)->asset->version != s->_mesh->version) { copyMeshes=true; break; }
     }
   }

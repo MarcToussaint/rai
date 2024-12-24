@@ -8,14 +8,14 @@ const vec3 SpecularColor = vec3(1, 1, 1);
 const float SpecularNarrow = 20.f;
 
 in vec4 objColor;
-in vec3 objNormal_C;
-in vec3 eyeDirection_C;
-in vec4 worldCoord;
+in vec3 objNormal_W;
+in vec4 objPosition_W;
 in vec4 shadowCoord;
 
 layout(location = 0) out vec4 color;
 
-uniform vec3 lightDirection_C[2];
+uniform vec3 eyePosition_W;
+uniform vec3 lightDirection_W[2];
 uniform int numLights;
 uniform int useShadow;
 uniform sampler2DShadow shadowMap;
@@ -59,19 +59,19 @@ void main() {
 
   vec3 rgb = AmbientPower * objRgb;
 
-  vec3 E = normalize(eyeDirection_C);
-  vec3 N = normalize(objNormal_C);
+  vec3 eyeDirection_W = normalize(eyePosition_W - objPosition_W.xyz);
+  vec3 N = normalize(objNormal_W);
 
   for(int i=0; i<numLights; i++) {
     // Distance to the light
     //float distance = length( lightPosition_W - objPosition_W );
 
     //diffuse: alignment of object-normal and obj->light
-    float cosTheta = clamp(dot(N, lightDirection_C[i]), 0.f, 1.f);
+    float cosTheta = clamp(dot(N, lightDirection_W[i]), 0.f, 1.f);
 
     //specular: alignment of obj->eye and obj->reflectedLight directions
-    vec3 reflectedLightDirection_C = reflect(-lightDirection_C[i], N);
-    float cosAlpha = clamp(dot(E, reflectedLightDirection_C), 0.f, 1.f);
+    vec3 reflectedLightDirection_W = reflect(-lightDirection_W[i], N);
+    float cosAlpha = clamp(dot(eyeDirection_W, reflectedLightDirection_W), 0.f, 1.f);
 
     float bias = 0.001;
     float visibility = 1.;
@@ -81,7 +81,7 @@ void main() {
       for (int j=0;j<2;j++){
         //int index = j;
         //int index = int(16.0*random(gl_FragCoord.xyz, i))%16;
-        int index = int(16.0*random(floor(worldCoord.xyz*1000.0), i))%16;
+        int index = int(16.0*random(floor(objPosition_W.xyz*1000.0), i))%16;
         visibility -= 0.2 * (1.0-texture( shadowMap, vec3(shadowCoord.xy + poissonDisk[index]/2000.0,  (shadowCoord.z-bias)/shadowCoord.w) ));
       }
     }

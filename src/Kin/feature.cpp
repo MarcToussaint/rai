@@ -12,11 +12,14 @@
 
 arr Feature::phi_finiteDifferenceReduce(const FrameL& F) {
   CHECK(order>0, "can't reduce for order=0");
+  CHECK_EQ(F.d0, order+1, "");
 
   timeIntegral--;
   order--;
-  arr y0 = phi(F({0, 0}));
-  arr y1 = phi(F({1, 1}));
+  // arr y0 = phi(F({0, -2}));
+  // arr y1 = phi(F({1, -1}));
+  arr y0 = phi(F({0, 0+order}));
+  arr y1 = phi(F({1, 1+order}));
   order++;
   timeIntegral++;
 

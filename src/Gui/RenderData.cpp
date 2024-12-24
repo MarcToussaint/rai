@@ -173,30 +173,37 @@ void RenderData::ensureInitialized(OpenGL &gl){
   if(glewInit() != GLEW_OK) HALT("Failed to initialize GLEW\n");
 
   if(opt.userShaderFiles){
-    id.prog_ID = LoadShadersFile("shader.vs", "shader.fs" );
+    id.prog_ID = LoadShadersFile("shader.vs", "shader.fs");
   }else{
     id.prog_ID = LoadShaders( objVS, objFS );
-    //id.prog_ID = LoadShadersFile(rai::raiPath("src/Gui/shaderObj.vs"), rai::raiPath("src/Gui/shaderObj.fs") );
+    // id.prog_ID = LoadShadersFile(rai::raiPath("src/Gui/shaderObj.vs"), rai::raiPath("src/Gui/shaderObj.fs") );
   }
   id.prog_Projection_W = glGetUniformLocation(id.prog_ID, "Projection_W");
-  id.prog_ViewT_CW = glGetUniformLocation(id.prog_ID, "ViewT_CW");
   id.prog_ModelT_WM = glGetUniformLocation(id.prog_ID, "ModelT_WM");
+  id.prog_eyePosition_W = glGetUniformLocation(id.prog_ID, "eyePosition_W");
   id.prog_ShadowProjection_W = glGetUniformLocation(id.prog_ID, "ShadowProjection_W");
   id.prog_useShadow = glGetUniformLocation(id.prog_ID, "useShadow");
   id.prog_shadowMap = glGetUniformLocation(id.prog_ID, "shadowMap");
   id.prog_numLights = glGetUniformLocation(id.prog_ID, "numLights");
-  id.prog_lightDirection_C = glGetUniformLocation(id.prog_ID, "lightDirection_C");
+  id.prog_lightDirection_W = glGetUniformLocation(id.prog_ID, "lightDirection_W");
   id.prog_FlatColor = glGetUniformLocation(id.prog_ID, "flatColor");
+
+  id.progTensor = LoadShaders( tensorVS, tensorFS );
+  //id.progTensor = LoadShadersFile(rai::raiPath("src/Gui/shaderTensor.vs"), rai::raiPath("src/Gui/shaderTensor.fs") );
+  id.progTensor_Projection_W = glGetUniformLocation(id.progTensor, "Projection_W");
+  id.progTensor_ModelT_WM = glGetUniformLocation(id.progTensor, "ModelT_WM");
+  id.progTensor_eyePosition_W = glGetUniformLocation(id.progTensor, "eyePosition_W");
+  id.progTensor_tensorTexture = glGetUniformLocation(id.progTensor, "tensorTexture");
 
   id.progMarker = LoadShaders( markerVS, markerFS ); //rai::raiPath("src/Gui/shaderMarker.vs"), rai::raiPath("src/Gui/shaderMarker.fs") );
   id.progMarker_Projection_W = glGetUniformLocation(id.progMarker, "Projection_W");
   id.progMarker_ModelT_WM = glGetUniformLocation(id.progMarker, "ModelT_WM");
 
   { //if(stopRender>_shadows){
-    id.progShadow_ID = LoadShaders( shadowVS, shadowFS );
-    //id.progShadow_ID = LoadShadersFile( rai::raiPath("src/Gui/shaderShadow.vs"), rai::raiPath("src/Gui/shaderShadow.fs") );
-    id.progShadow_ShadowProjection_W = glGetUniformLocation(id.progShadow_ID, "ShadowProjection_W");
-    id.progShadow_ModelT_WM = glGetUniformLocation(id.progShadow_ID, "ModelT_WM");
+    id.progShadow = LoadShaders( shadowVS, shadowFS );
+    //id.progShadow = LoadShadersFile( rai::raiPath("src/Gui/shaderShadow.vs"), rai::raiPath("src/Gui/shaderShadow.fs") );
+    id.progShadow_ShadowProjection_W = glGetUniformLocation(id.progShadow, "ShadowProjection_W");
+    id.progShadow_ModelT_WM = glGetUniformLocation(id.progShadow, "ModelT_WM");
 
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
     id.shadowFramebuffer = 0;
@@ -344,13 +351,15 @@ void RenderData::glDraw(OpenGL& gl){
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(id.progShadow_ID);
+    glUseProgram(id.progShadow);
 
     //set shadow projection matrix
-    arr flip = eye(4);
+    arr flip = eye(4), P_IC=eye(4), T_CW=eye(4);
     flip(1,1) = flip(2,2) = -1.;
-    arr P_IC = lights(0)->getT_IC();
-    arr T_CW = lights(0)->getT_CW();
+    if(lights.N){
+      P_IC = lights(0)->getT_IC();
+      T_CW = lights(0)->getT_CW();
+    }
     arr Pshadow_IW = flip * P_IC * flip * T_CW;
     glUniformMatrix4fv(id.progShadow_ShadowProjection_W, 1, GL_TRUE, rai::convert<float>(Pshadow_IW).p);
 
@@ -393,19 +402,19 @@ void RenderData::glDraw(OpenGL& gl){
     glUseProgram(id.prog_ID);
 
     //set camera parameters
-    glUniformMatrix4fv(id.prog_ViewT_CW, 1, GL_TRUE, rai::convert<float>(ViewT_CW).p);
     glUniformMatrix4fv(id.prog_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
+    glUniform3f(id.prog_eyePosition_W, camera.X.pos.x, camera.X.pos.y, camera.X.pos.z);
 
     //set light parameters
     glUniform1i(id.prog_numLights, lights.N);
 
     arr lightDirs;
     for(uint i=0;i<lights.N;i++){
-      arr l_C = ViewT_CW * lights(i)->X.getMatrix();
+      arr l_C = /*ViewT_CW * */lights(i)->X.getMatrix();
       lightDirs.append({l_C(0,2), l_C(1,2), l_C(2,2)});
     }
     lightDirs.reshape(lights.N, 3);
-    glUniform3fv(id.prog_lightDirection_C, lights.N, rai::convert<float>(-lightDirs).p);
+    glUniform3fv(id.prog_lightDirection_W, lights.N, rai::convert<float>(-lightDirs).p);
 
     if(renderUntil>=_shadow && opt.useShadow) {
       glActiveTexture(GL_TEXTURE1);
@@ -423,6 +432,14 @@ void RenderData::glDraw(OpenGL& gl){
   }
 
   //glDisable(GL_DEPTH_TEST);
+
+  if(renderUntil>=_tensor) {
+    glUseProgram(id.progTensor);
+    glUniformMatrix4fv(id.progTensor_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
+    glUniform3f(id.progTensor_eyePosition_W, camera.X.pos.x, camera.X.pos.y, camera.X.pos.z);
+    glUniform1i(id.progTensor_tensorTexture, 0);
+    renderObjects(id.progTensor_ModelT_WM, sorting, _tensor, 0);
+  }
 
   if(renderUntil>=_marker) {
     glUseProgram(id.progMarker);
@@ -460,7 +477,10 @@ void RenderData::glDeinitialize(OpenGL& gl){
   ContextIDs& id = contextIDs()->contextIDs[&gl];
   if(id.initialized){
     glDeleteProgram(id.prog_ID);
-    glDeleteProgram(id.progShadow_ID);
+    glDeleteProgram(id.progShadow);
+    glDeleteProgram(id.progTensor);
+    glDeleteProgram(id.progMarker);
+    glDeleteProgram(id.progText);
     glDeleteFramebuffers(1, &id.shadowFramebuffer);
     glDeleteTextures(1, &id.shadowTexture);
     id.initialized=false;
@@ -581,8 +601,24 @@ void RenderAsset::lines(const arr& lines, const arr& color){
   mode = GL_LINES;
 }
 
+void RenderAsset::tensor(const arr& vol){
+  texture = rai::convert<float>(vol);
+
+  rai::Mesh mesh;
+  mesh.setBox();
+  mesh.makeArrayFormatted();
+  vertices = rai::convert<float>(mesh.V);
+  colors = rai::convert<float>(mesh.C);
+  normals = rai::convert<float>(mesh.Vn);
+}
+
+
 void RenderAsset::glRender(){
   CHECK(initialized, "");
+
+  if(texture.nd) glActiveTexture(GL_TEXTURE0);
+  if(texture.nd==2) glBindTexture(GL_TEXTURE_2D, textureBuffer);
+  if(texture.nd==3) glBindTexture(GL_TEXTURE_3D, textureBuffer);
 
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
@@ -595,6 +631,9 @@ void RenderAsset::glRender(){
   glDisableVertexAttribArray(0);
   glDisableVertexAttribArray(1);
   glDisableVertexAttribArray(2);
+
+  if(texture.nd==2) glBindTexture(GL_TEXTURE_2D, 0);
+  if(texture.nd==3) glBindTexture(GL_TEXTURE_3D, 0);
 }
 
 void RenderAsset::glInitialize(){
@@ -623,6 +662,39 @@ void RenderAsset::glInitialize(){
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glBindVertexArray(0);
+
+  //generate texture
+  if(texture.nd){
+    glGenTextures(1, &textureBuffer);
+    glActiveTexture(GL_TEXTURE0);
+    if(texture.nd==2){
+      glBindTexture(GL_TEXTURE_2D, textureBuffer);
+      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      if(texture.d2==1) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, texture.d1, texture.d0, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, texture.p);
+      else if(texture.d2==2) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, texture.d1, texture.d0, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, texture.p);
+      else if(texture.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.d1, texture.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, texture.p);
+      else if(texture.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.d1, texture.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture.p);
+      glBindTexture(GL_TEXTURE_2D, 0);
+    }
+    if(texture.nd==3){
+      glEnable(GL_TEXTURE_3D);
+      glBindTexture(GL_TEXTURE_3D, textureBuffer);
+      glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+      glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, texture.d2, texture.d1, texture.d0, 0, GL_RED, GL_FLOAT, texture.p);
+      glBindTexture(GL_TEXTURE_3D, 0);
+    }
+  }
+
   initialized=true;
 
 //   GLint mem=0;
@@ -912,7 +984,8 @@ void RenderQuad::glRender(){
   glEnableVertexAttribArray(1);
   glEnableVertexAttribArray(2);
 
-  glBindTexture(GL_TEXTURE_2D, texture);
+  glBindTexture(GL_TEXTURE_2D, textureBuffer);
+  //only necessary because texture could change
   if(img.nd==2 || img.d2==1) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, img.d1, img.d0, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img.p);
   else if(img.d2==2) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, img.d1, img.d0, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, img.p);
   else if(img.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.d1, img.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, img.p);
@@ -943,8 +1016,8 @@ void RenderQuad::glInitialize(){
 
   //generate texture
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  glGenTextures(1, &textureBuffer);
+  glBindTexture(GL_TEXTURE_2D, textureBuffer);
   if(img.nd==2 || img.d2==1) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, img.d1, img.d0, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img.p);
   else if(img.d2==2) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, img.d1, img.d0, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, img.p);
   else if(img.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.d1, img.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, img.p);
@@ -962,17 +1035,14 @@ void RenderQuad::glInitialize(){
 RenderQuad::~RenderQuad(){
   if(initialized){
     glDeleteBuffers(1, &vertexBuffer);
-    glDeleteTextures(1, &texture);
+    glDeleteTextures(1, &textureBuffer);
     glDeleteVertexArrays(1, &vao);
   }
   initialized=false;
 }
 
 void RenderData::report(std::ostream& os){
-  uint mimics=0;
-  for(auto& o:items) if(o->mimic) mimics++;
-  os <<"RenderData: #obj: " <<items.N - mimics
-    <<" #mimics: " <<mimics
+  os <<"RenderData: #obj: " <<items.N
     <<" #lights: " <<lights.N
    <<" #texts: " <<texts.N
   <<" #quads: " <<quads.N

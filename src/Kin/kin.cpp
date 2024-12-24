@@ -2948,6 +2948,48 @@ void Configuration::inverseKinematicsPos(Frame& frame, const arr& ytarget,
   }
 }
 
+Configuration::FrameDynState& Configuration::dyn_ensure(Frame* f, const arr& q_dot, Array<FrameDynState>& buffer){
+  if(!buffer.N){ //needs initialization
+    buffer.resize(frames.N);
+    for(Frame *a: frames) if(!a->parent){
+        FrameDynState& b = buffer(a->ID);
+        b.p = a->ensure_X().pos;
+        a->ensure_X().rot.getMatrix(&b.R.m00);
+        b.v.setZero(); b.w.setZero(); b.vd.setZero(); b.wd.setZero();
+        b.isGood=true;
+      }
+  }
+  if(!buffer(f->ID).isGood){
+    CHECK(f->parent, "");
+    f->ensure_X();
+    dyn_ensure(f->parent, q_dot, buffer);
+
+    //parent
+    FrameDynState& par = buffer(f->parent->ID);
+
+    //relative (in world coordinates)
+    Vector P = par.R * f->Q.pos;
+    Matrix R = par.R * Matrix(f->Q.rot.getMatrix());
+    Vector V = 0;
+    Vector W = 0;
+    if(f->joint){
+      CHECK_EQ(f->joint->dim, 1, "");
+      W = q_dot(f->joint->qIndex) * f->joint->axis; //axis is already in world coordinates! (see Frame::calc_X_from_parent())
+    }
+
+    //this child
+    FrameDynState& chi = buffer(f->ID);
+    chi.p = par.p + P;  CHECK_ZERO((chi.p-f->X.pos).lengthSqr(), 1e-10, "");
+    chi.R = R;          CHECK_ZERO(sumOfSqr(chi.R.getArr()-f->X.rot.getMatrix()), 1e-10, "");
+    chi.v = par.v + V + (par.w^P);
+    chi.w = par.w + W;
+    chi.vd = par.vd + (par.w^V) + (par.w^(par.w^P)) + (par.wd^P);
+    chi.wd = par.wd + (par.w^W);
+    chi.isGood = true;
+  }
+  return buffer(f->ID);
+}
+
 arr Configuration::dyn_inertia(Frame* f){
   CHECK(f->inertia, "")
   arr R = f->X.rot.getMatrix();
@@ -2984,7 +3026,7 @@ arr Configuration::dyn_J_dot(Frame* f, const arr& q_dot, const arr& Jpos, const 
   return J_dot;
 }
 
-arr Configuration::dyn_coriolis(Frame* f, const arr& q_dot, const arr& I_f, const arr& Jpos, const arr& Jang){
+arr Configuration::dyn_coriolis(Frame* f, const arr& q_dot, const arr& I_f, const arr& Jpos, const arr& Jang, Array<FrameDynState>& buffer){
   arr J_dot = dyn_J_dot(f, q_dot, Jpos, Jang);
   arr M = dyn_M(f, I_f);
   arr w = Jang * q_dot;
@@ -3003,21 +3045,61 @@ arr Configuration::dyn_M(Frame* f, const arr& I_f){
   return M;
 }
 
-arr Configuration::dyn_inverseDyamics(const arr& q_dot, const arr& q_ddot){
-#if 1
-  arr u = zeros(q_dot.N);
-  arr Jpos, Jang, J, I, M, c, g;
+void Configuration::dyn_MF(arr& M, arr& F, const arr& q_dot){
+  Array<FrameDynState> buffer;
+  uint n = getJointStateDimension();
+  if(!!M) M = zeros(n,n);
+  if(!!F) F = zeros(n);
+  arr Jpos, Jang, J, I, M_f, cg = zeros(6);
   for(Frame *f:frames) if(f->inertia){
       CHECK(f->inertia->com.isZero, "");
-      f->ensure_X();
       jacobian_pos(Jpos, f, f->X.pos);
       jacobian_angular(Jang, f);
-      I = dyn_inertia(f);
-      M = dyn_M(f, I);
-      c = dyn_coriolis(f, q_dot, I, Jpos, Jang);
-      g = arr{0., 0., 9.81*f->inertia->mass, 0., 0., 0.};
       J.setBlockMatrix(Jpos, Jang);
-      u += ~J * (M*(J*q_ddot)+c+g);
+      I = dyn_inertia(f);
+      M_f = dyn_M(f, I);
+      if(!!M) M += ~J*(M_f*J);
+      if(!!F){
+#if 1
+	FrameDynState& B = dyn_ensure(f, q_dot, buffer);
+	arr acc = (B.vd.getArr(), B.wd.getArr());
+	arr w = B.w.getArr();
+	cg.setVectorBlock(crossProduct(w, I * w), 3);
+	cg(2) = 9.81*f->inertia->mass;
+	F += ~J * (M_f*acc+cg);
+#else
+	cg = dyn_coriolis(f, q_dot, I, Jpos, Jang, buffer);
+	cg(2) += 9.81*f->inertia->mass;
+	F += ~J * cg;
+#endif
+      }
+    }
+}
+
+arr Configuration::dyn_inverseDyamics(const arr& q_dot, const arr& q_ddot){
+#if 1
+  Array<FrameDynState> buffer;
+  arr u = zeros(q_dot.N);
+  arr Jpos, Jang, J, I, M_f, cg=zeros(6);
+  for(Frame *f:frames) if(f->inertia){
+      CHECK(f->inertia->com.isZero, "");
+      jacobian_pos(Jpos, f, f->X.pos);
+      jacobian_angular(Jang, f);
+      J.setBlockMatrix(Jpos, Jang);
+      I = dyn_inertia(f);
+      M_f = dyn_M(f, I);
+#if 1
+      FrameDynState& B = dyn_ensure(f, q_dot, buffer);
+      arr acc = (B.vd.getArr(), B.wd.getArr());
+      arr w = B.w.getArr();
+      cg.setVectorBlock(crossProduct(w, I * w), 3);
+      cg(2) = 9.81*f->inertia->mass;
+      u += ~J * (M_f*(J*q_ddot+acc)+cg);
+#else
+      cg = dyn_coriolis(f, q_dot, I, Jpos, Jang, buffer);
+      cg(2) += 9.81*f->inertia->mass;
+      u += ~J * (M*J*q_ddot+cg);
+#endif
     }
   return u;
 #else
@@ -3025,37 +3107,10 @@ arr Configuration::dyn_inverseDyamics(const arr& q_dot, const arr& q_ddot){
 #endif
 }
 
-arr Configuration::dyn_M(){
-  uint n = getJointStateDimension();
-  arr M = zeros(n,n);
-  arr Jpos, Jang, J, I_f, M_f;
-  for(Frame *f:frames) if(f->inertia){
-      jacobian_pos(Jpos, f, f->X.pos);
-      jacobian_angular(Jang, f);
-      I_f = dyn_inertia(f);
-      M_f = dyn_M(f, I_f);
-      J.setBlockMatrix(Jpos, Jang);
-      M += ~J*(M_f*J);
-    }
-  return M;
-}
-
-arr Configuration::dyn_F(const arr& q_dot){
-  uint n = getJointStateDimension();
-  arr F = zeros(n);
-  arr Jpos, Jang, J, I, c, g;
-  for(Frame *f:frames) if(f->inertia){
-      CHECK(f->inertia->com.isZero, "");
-      f->ensure_X();
-      jacobian_pos(Jpos, f, f->X.pos);
-      jacobian_angular(Jang, f);
-      I = dyn_inertia(f);
-      c = dyn_coriolis(f, q_dot, I, Jpos, Jang);
-      g = arr{0., 0., 9.81*f->inertia->mass, 0., 0., 0.};
-      J.setBlockMatrix(Jpos, Jang);
-      F += ~J * (c+g);
-    }
-  return F;
+arr Configuration::dyn_fwdDynamics(const arr& q_dot, const arr& u){
+  arr M, F;
+  dyn_MF(M, F, q_dot);
+  return lapack_Ainv_b_sym(M, u - F);
 }
 
 #if 0
