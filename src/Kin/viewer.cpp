@@ -379,7 +379,7 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
       RenderData::slice=drawSlice;
       RenderData::glDraw(gl);
     }else{
-      RenderData::setText(text);
+      RenderData::setText(STRING(text <<"\n(motion T:" <<motion.d0 <<", use SHIFT-scroll or SHIFT-RIGHT/LEFT to browse)"));
       RenderData::slice=-1;
       for(uint t=0;t<motion.d0;t++){
         if(motion.d1>items.N) LOG(-1) <<"motion.d1>items.N" <<motion.d1 <<' ' <<items.N; //CHECK_LE(motion.d1, items.N, "");

@@ -94,7 +94,7 @@ void ManipulationModelling::setup_point_to_point_motion(rai::Configuration& C, c
 }
 
 void ManipulationModelling::setup_point_to_point_rrt(rai::Configuration& C, const arr& q0, const arr& q1, const StringA& explicitCollisionPairs) {
-  rrt = make_shared<rai::PathFinder>();
+  rrt = make_shared<rai::RRT_PathFinder>();
   rrt->setProblem(C, q0, q1);
   if(explicitCollisionPairs.N) rrt->setExplicitCollisionPairs(explicitCollisionPairs);
 }
@@ -434,15 +434,15 @@ arr ManipulationModelling::solve(int verbose) {
     }
 
   } else if(rrt) {
-    rrt->rrtSolver->verbose=verbose;
+    rrt->opt.verbose=verbose;
     ret = rrt->solve();
     if(ret->feasible){
       path = ret->x;
       if(verbose>0) {
-        rrt->rrtSolver->report();
-        rrt->rrtSolver->view(true, STRING(info <<"RRT path " <<rrt->rrtSolver->path.dim()));
-        rrt->rrtSolver->path = rrt->get_resampledPath(50);
-        rrt->rrtSolver->view(true, STRING(info <<"RRT path " <<rrt->rrtSolver->path.dim()));
+        rrt->report();
+        rrt->view(true, STRING(info <<"RRT path " <<rrt->path.dim()));
+        rrt->path = rrt->get_resampledPath(50);
+        rrt->view(true, STRING(info <<"RRT path " <<rrt->path.dim()));
       }
     } else path.clear();
   } else {

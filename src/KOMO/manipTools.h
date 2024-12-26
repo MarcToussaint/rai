@@ -19,7 +19,7 @@ struct ManipulationModelling {
   std::shared_ptr<KOMO> komo;
 
   //solver buffers:
-  std::shared_ptr<rai::PathFinder> rrt;
+  std::shared_ptr<rai::RRT_PathFinder> rrt;
   std::shared_ptr<SolverReturn> ret;
   arr path;
 

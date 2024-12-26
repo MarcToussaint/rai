@@ -129,7 +129,7 @@ int main(int argc,char **argv){
         //cout <<C.getJointNames() <<endl;
         ConfigurationProblem cp(C, true, rrtTolerance);
         if(S.explicitCollisions.N) cp.setExplicitCollisionPairs(S.explicitCollisions);
-        cp.computeAllCollisions = S.collisions;
+        cp.useBroadCollisions = S.collisions;
 
         for(rai::Frame *f:C.frames) f->ensure_X();
         RRT_PathFinder rrt(cp, q0, qT, rrtStepsize);

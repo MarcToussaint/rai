@@ -7,23 +7,22 @@
 // =============================================================================
 
 void run_rrt(rai::Configuration& C, const arr& q0, const arr& q1) {
-  int verbose = rai::getParameter<int>("rrt/verbose", 3);
-  bool useFcl = rai::getParameter<bool>("useFcl", true);
 
-  ConfigurationProblem P(C, useFcl, 1e-3, verbose-2);
-  P.verbose=0;
-  if(!useFcl){
+  rai::RRT_PathFinder rrt;
+  rrt.setProblem(C, q0, q1);
+  if(!rrt.opt.useBroadCollisions){
     StringA pairs = rai::getParameter<StringA>("collisionPairs", {});
-    for(rai::String& s:pairs) P.collisionPairs.append(C[s]->ID);
-    P.collisionPairs.reshape(-1,2);
+    rrt.setExplicitCollisionPairs(pairs);
   }
 
-  RRT_PathFinder rrt(P, q0, q1);
   double time = -rai::cpuTime();
-  rrt.run();
+  rrt.solve();
   time += rai::cpuTime();
 
   cout <<"rrt time: " <<time <<"sec or " <<1000.*time/double(rrt.iters) <<"msec/iter (tree sizes: " <<rrt.rrt0->getNumberNodes() <<' ' <<rrt.rrtT->getNumberNodes() <<")" <<endl;
+  if(rrt.opt.verbose>0){
+    rrt.view(true, STRING(*rrt.ret));
+  }
 }
 
 // =============================================================================
@@ -120,7 +119,7 @@ int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
 //  rnd.clockSeed();
-  test_minimalistic(); return 0;
+  // test_minimalistic(); return 0;
 
   cout <<"=== RRT test" <<endl;
   testRRT();

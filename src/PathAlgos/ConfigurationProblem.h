@@ -17,26 +17,13 @@
 struct ConfigurationProblem;
 
 struct QueryResult {
-  //goal features
-  arr goal_y, goal_J;
-
   //collision features
   uintA collisions;
-  arr coll_y, coll_J;
-  arr normal_y, normal_J;
-  arr side_J;
-
   double totalCollision=0.;
-  bool isGoal=true;
   bool isFeasible=true;
 
   //optional a 3D coordinate for display
   arr disp3d;
-
-  void getViolatedContacts(arr& y, arr& J, double margin=0.);
-  arr getSideStep();
-  arr getForwardStep();
-  arr getBackwardStep(double relativeStepLength=1.1, double margin=0., const arr& nullRef=NoArr); //1.1 means overstepping the constraint IK a bit
 
   void write(ostream& os) const;
   void writeDetails(ostream& os, const ConfigurationProblem& P, double margin=0.) const;
@@ -45,14 +32,10 @@ stdOutPipe(QueryResult)
 
 struct ConfigurationProblem {
   rai::Configuration C;
-  arr q0, limits, max_step;
-
-  //what constraints are evaluated?
-  rai::Array<shared_ptr<GroundedObjective>> objectives;
+  arr limits;
 
   //what collisions are evaluated?
-  bool computeAllCollisions;
-  bool computeCollisionFeatures=true;
+  bool useBroadCollisions;
   uintA collisionPairs;
   double collisionTolerance;
 
@@ -64,6 +47,5 @@ struct ConfigurationProblem {
 
   void setExplicitCollisionPairs(const StringA& _collisionPairs);
 
-  shared_ptr<GroundedObjective> addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr);
   shared_ptr<QueryResult> query(const arr& x);
 };
