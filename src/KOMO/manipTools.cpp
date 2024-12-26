@@ -423,6 +423,7 @@ arr ManipulationModelling::solve(int verbose) {
         if(verbose>2) {
           cout <<sol.reportLagrangeGradients(komo->featureNames) <<endl;
           cout <<komo->report(false, true, verbose>2) <<endl;
+          rai::wait(.5);
           cout <<"  --" <<endl;
           komo->view(true, STRING("feasible: " <<info <<"\n" <<*ret));
           if(verbose>3) {
@@ -435,8 +436,15 @@ arr ManipulationModelling::solve(int verbose) {
   } else if(rrt) {
     rrt->rrtSolver->verbose=verbose;
     ret = rrt->solve();
-    if(ret->feasible) path = ret->x;
-    else path.clear();
+    if(ret->feasible){
+      path = ret->x;
+      if(verbose>0) {
+        rrt->rrtSolver->report();
+        rrt->rrtSolver->view(true, STRING(info <<"RRT path " <<rrt->rrtSolver->path.dim()));
+        rrt->rrtSolver->path = rrt->get_resampledPath(50);
+        rrt->rrtSolver->view(true, STRING(info <<"RRT path " <<rrt->rrtSolver->path.dim()));
+      }
+    } else path.clear();
   } else {
     NIY
   }

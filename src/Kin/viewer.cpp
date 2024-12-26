@@ -198,7 +198,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
 void rai::ConfigurationViewer::setMotion(const uintA& frameIDs, const arr& _motion){
   CHECK_EQ(_motion.d1, frameIDs.N, "");
   CHECK_EQ(_motion.d2, 7, "");
-  auto lock = gl->dataLock(RAI_HERE);
+  auto lock = dataLock(RAI_HERE);
   drawSlice=-1;
   //initialize with constant motion with current pose
   motion.resize(_motion.d0, items.N, 7).setZero();
@@ -209,6 +209,22 @@ void rai::ConfigurationViewer::setMotion(const uintA& frameIDs, const arr& _moti
   for(uint t=0;t<motion.d0;t++) for(uint i=0;i<frameIDs.N;i++){
     int o = frame2itemID(frameIDs(i));
     motion(t,o,{}) = _motion(t,i,{});
+  }
+}
+
+void rai::ConfigurationViewer::setMotion(Configuration& C, const arr& path){
+  CHECK_EQ(path.nd, 2, "");
+  auto lock = dataLock(RAI_HERE);
+  drawSlice=-1;
+  motion.resize(path.d0, items.N, 7).setZero();
+  for(uint t=0;t<path.d0;t++){
+    C.setJointState(path[t]);
+    for(rai::Frame* f:C.frames){
+      int o = frame2itemID(f->ID);
+      if(o!=-1){
+        motion(t, o, {}) = f->ensure_X().getArr7d();
+      }
+    }
   }
 }
 

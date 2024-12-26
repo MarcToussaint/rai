@@ -357,7 +357,7 @@ bool transFromAts(rai::Transformation& X, const rai::Graph& ats, const char* key
   if(!n) return false;
   if(n->is<rai::String>()) X.read(n->as<rai::String>().resetIstream());
   else if(n->is<arr>()) X.set(n->as<arr>());
-  else NIY;
+  else THROW("reading transformation from Node '" <<*n <<"' failed");
   if(!X.isZero()) X.rot.normalize();
   return true;
 }
@@ -812,6 +812,8 @@ void rai::Frame::setAutoLimits() {
                        .5*from->size(0),  .5*from->size(1)
                     };
     if(jointType==JT_transXYPhi) joint->limits.append({-RAI_2PI, RAI_2PI});
+  } else if(jointType>=JT_hingeX && jointType<=JT_hingeZ) {
+    joint->limits = {-RAI_2PI, RAI_2PI};
   } else {
     NIY;
   }

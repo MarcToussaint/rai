@@ -256,10 +256,6 @@ RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, con
   if(!qTret->isFeasible) { LOG(0) <<"initializing with infeasible qT:"; qTret->writeDetails(std::cout, P); }
   rrt0 = make_shared<RRT_SingleTree>(q0, q0ret);
   rrtT = make_shared<RRT_SingleTree>(qT, qTret);
-
-  if(verbose>2) {
-    DISP.copy(P.C);
-  }
 }
 
 void RRT_PathFinder::planForward(const arr& q0, const arr& qT) {
@@ -299,6 +295,7 @@ void RRT_PathFinder::planForward(const arr& q0, const arr& qT) {
   //display
   if(verbose>1) {
     std::cout << "path-length= " << path.d0 <<std::endl;
+    ensure_DISP();
     DISP.proxies.clear();
 
     for(uint t=0; t<path.d0; t++) {
@@ -312,6 +309,10 @@ void RRT_PathFinder::planForward(const arr& q0, const arr& qT) {
   path >>FILE("z.path");
 }
 
+void RRT_PathFinder::report(){
+  std::cout <<"RRT - queries: " <<P.evals <<" tree sizes: " <<rrt0->getNumberNodes()  <<' ' <<rrtT->getNumberNodes() <<" path length: " <<path.d0 <<std::endl;
+}
+
 int RRT_PathFinder::stepConnect() {
   iters++;
   if(iters>(uint)maxIters) return -1;
@@ -322,13 +323,14 @@ int RRT_PathFinder::stepConnect() {
   //animation display
   if(verbose>2) {
     if(!(iters%100)) {
+      ensure_DISP();
       DISP.setJointState(rrt0->getLast());
       DISP.view(verbose>4, STRING("planConnect evals " <<P.evals));
     }
   }
   if(verbose>1) {
     if(!(iters%100)) {
-      std::cout <<"RRT queries=" <<P.evals <<" tree sizes = " <<rrt0->getNumberNodes()  <<' ' <<rrtT->getNumberNodes() <<std::endl;
+      report();
     }
   }
 
@@ -337,7 +339,7 @@ int RRT_PathFinder::stepConnect() {
   if(success) {
     if(verbose>0) {
       std::cout <<"  -- rrt success:";
-      std::cout <<" queries:" <<P.evals <<" tree sizes: " <<rrt0->getNumberNodes()  <<' ' <<rrtT->getNumberNodes() <<std::endl;
+      report();
 //      std::cout <<"  forwardSteps: " <<(100.*n_forwardStepGood/n_forwardStep) <<"%/" <<n_forwardStep;
 //      std::cout <<"  backSteps: " <<(100.*n_backStepGood/n_backStep) <<"%/" <<n_backStep;
 //      std::cout <<"  rndSteps: " <<(100.*n_rndStepGood/n_rndStep) <<"%/" <<n_rndStep;
@@ -355,6 +357,7 @@ int RRT_PathFinder::stepConnect() {
     if(verbose>1) {
       std::cout <<"  path-length=" <<path.d0 <<std::endl;
       if(verbose>2) {
+        ensure_DISP();
         DISP.proxies.clear();
         for(uint t=0; t<path.d0; t++) {
           DISP.setJointState(path[t]);
@@ -392,6 +395,19 @@ void revertPath(arr& path) {
 arr RRT_PathFinder::run(double timeBudget) {
   planConnect();
   return path;
+}
+
+void RRT_PathFinder::view(bool pause, const char* txt){
+  ensure_DISP();
+  DISP.get_viewer() -> updateConfiguration(DISP);
+  DISP.get_viewer() -> setMotion(DISP, path);
+  DISP.get_viewer() -> view(pause, txt);
+}
+
+void RRT_PathFinder::ensure_DISP(){
+  if(DISP.getJointStateDimension() != P.C.getJointStateDimension()){
+    DISP.copy(P.C);
+  }
 }
 
 namespace rai {

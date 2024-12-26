@@ -28,6 +28,7 @@ struct ConfigurationViewer : RenderData {
   void recopyMeshes(const FrameL& frames);
   ConfigurationViewer& updateConfiguration(const rai::Configuration& C, const FrameL& timeSlices={}, bool forceCopyMeshes=false);
   void setMotion(const uintA& frameIDs, const arr& _motion);
+  void setMotion(rai::Configuration& C, const arr& path);
 
   int view(bool watch=false, const char* _text=0);
   int view_slice(uint t, bool watch=false);

@@ -26,11 +26,11 @@ struct ManipulationModelling {
   ManipulationModelling(const str& _info={});
   ManipulationModelling(const std::shared_ptr<KOMO>& _komo);
 
-  void setup_inverse_kinematics(rai::Configuration& C, double homing_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
-  void setup_sequence(rai::Configuration& C, uint K, double homing_scale=1e-2, double velocity_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
-  void setup_motion(rai::Configuration& C, uint K, uint steps_per_phase, double homing_scale=0., double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
-  void setup_pick_and_place_waypoints(rai::Configuration& C, const char* gripper, const char* obj, double homing_scale=1e-2, double velocity_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
-  void setup_point_to_point_motion(rai::Configuration& C, const arr& q1, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
+  void setup_inverse_kinematics(rai::Configuration& C, double homing_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true);
+  void setup_sequence(rai::Configuration& C, uint K, double homing_scale=1e-2, double velocity_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true);
+  void setup_motion(rai::Configuration& C, uint K, uint steps_per_phase, double homing_scale=0., double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true);
+  void setup_pick_and_place_waypoints(rai::Configuration& C, const char* gripper, const char* obj, double homing_scale=1e-2, double velocity_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true);
+  void setup_point_to_point_motion(rai::Configuration& C, const arr& q1, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true);
   void setup_point_to_point_rrt(rai::Configuration& C, const arr& q0, const arr& q1, const StringA& explicitCollisionPairs);
 
   void add_helper_frame(rai::JointType type, const char* parent, const char* name, const char* initName=0, rai::Frame* initFrame=0, double markerSize=-1.);

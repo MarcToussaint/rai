@@ -3452,7 +3452,7 @@ int Configuration::animate(Inotify* ino) {
     }
   }
   setJointState(x0);
-  return view(true);
+  return 0;
 }
 
 Frame* movingBody=nullptr;

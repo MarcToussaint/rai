@@ -83,9 +83,15 @@ struct RRT_PathFinder {
   bool growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B);
 
   arr run(double timeBudget=1.); //obsolete
+  void view(bool pause, const char* txt=0);
 
- private:
+
+public:
+  void report();
+
+private:
   rai::Configuration DISP;
+   void ensure_DISP();
 };
 
 //===========================================================================
