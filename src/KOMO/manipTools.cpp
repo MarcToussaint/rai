@@ -437,11 +437,11 @@ arr ManipulationModelling::solve(int verbose) {
     rrt->opt.verbose=verbose;
     ret = rrt->solve();
     if(ret->feasible){
-      path = ret->x;
+      path = rrt->get_resampledPath(50);
       if(verbose>0) {
         rrt->report();
-        rrt->view(true, STRING(info <<"RRT path " <<rrt->path.dim()));
-        rrt->path = rrt->get_resampledPath(50);
+        // rrt->view(true, STRING(info <<"RRT path " <<rrt->path.dim()));
+        rrt->path = path;
         rrt->view(true, STRING(info <<"RRT path " <<rrt->path.dim()));
       }
     } else path.clear();
@@ -553,10 +553,19 @@ std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_motion(uint ph
   return manip;
 }
 
-std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_rrt(uint phase, const StringA& explicitCollisionPairs) {
+std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_rrt(uint phase, const StringA& explicitCollisionPairs, const StringA& activeDofs) {
   rai::Configuration C;
   arr q0, q1;
   komo->getSubProblem(phase, C, q0, q1);
+
+  if(activeDofs.N){
+    DofL orgDofs = C.activeDofs;
+    C.selectJointsByName(activeDofs);
+    C.setDofState(q1, orgDofs);
+    q1 = C.getJointState();
+    C.setDofState(q0, orgDofs);
+    q0 = C.getJointState();
+  }
 
   std::shared_ptr<ManipulationModelling> manip = make_shared<ManipulationModelling>(STRING("sub_rrt"<<phase));
   manip->setup_point_to_point_rrt(C, q0, q1, explicitCollisionPairs);

@@ -2,6 +2,8 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
+#OPTIM = debug
+
 DEPEND = Core
 
 ANN = 1

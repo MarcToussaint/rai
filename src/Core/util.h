@@ -631,6 +631,6 @@ inline bool operator==(Type& t1, Type& t2) { return t1.typeId() == t2.typeId(); 
 // gnuplot calls
 //
 
-void gnuplot(const char* command, bool pauseMouse=false, bool persist=false, const char* PDFfile=nullptr);
+void gnuplot(const char* command, bool pause=false, bool persist=false, const char* PDFfile=nullptr);
 void gnuplotClose();
 

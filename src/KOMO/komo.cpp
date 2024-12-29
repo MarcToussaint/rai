@@ -858,7 +858,6 @@ arr KOMO::getConfiguration_X(int t) {
 }
 
 void KOMO::getConfiguration_full(Configuration& C, int t, int verbose) {
-#if 1
   C.clear();
   FrameL F = timeSlices[k_order+t].copy();
   for(uint i=0; i<F.N; i++) {
@@ -870,20 +869,6 @@ void KOMO::getConfiguration_full(Configuration& C, int t, int verbose) {
   C.addCopy(F, {}); //, pathConfig.getDofs(F, false));
   C.frames.reshape(-1);
   //C.checkConsistency();
-#else
-  //note: the alternative would be to copy the frames komo.timeSlices[step] into a new config
-  CHECK_EQ(k_order, 1, "");
-  C.copy(world);
-  for(std::shared_ptr<rai::KinematicSwitch>& sw:switches) {
-    int s = sw->timeOfApplication;
-    if(s<=t) {
-      if(verbose) { LOG(0) <<"applying switch:"; sw->write(cout, C.frames); cout <<endl; }
-      sw->apply(C.frames);
-    }
-  }
-  arr X = getConfiguration_X(t);
-  C.setFrameState(X, C.frames({0, X.d0-1}));
-#endif
 }
 
 arr KOMO::getPath_qOrg() {

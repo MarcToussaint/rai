@@ -23,247 +23,178 @@ void BSpline::clear() {
   knotTimes.clear();
 }
 
-arr BSpline::getCoeffs(double t, uint K, uint derivative) const {
-  arr b(K+1), b_0(K+1), db(K+1), db_0(K+1), ddb(K+1), ddb_0(K+1);
-  for(uint p=0; p<=degree; p++) {
-    b_0=b; b.setZero();
-    if(derivative>0) { db_0=db; db.setZero(); }
-    if(derivative>1) { ddb_0=ddb; ddb.setZero(); }
-    for(uint k=0; k<=K; k++) {
-      if(!p) {
-        if(!k && t<knotTimes(0)) b(k)=1.;
-        else if(k==K && t>=knotTimes(k)) b(k)=1.;
-        else if(knotTimes(k)<=t && t<knotTimes(k+1)) b(k)=1.;
-      } else {
-        if(k+p<knotTimes.N) {
-          double xnom = t - knotTimes(k);
-          double xden = knotTimes(k+p) - knotTimes(k);
-          double x = DIV(xnom, xden, true);
-          b(k) = x * b_0(k);
-          if(derivative>0) db(k) = DIV(1., xden, true) * b_0(k) + x * db_0(k);
-          if(derivative>1) ddb(k) = DIV(2., xden, true) * db_0(k) + x * ddb_0(k);
-        }
-        if(k<K && k+p+1<knotTimes.N) {
-          double ynom = knotTimes(k+p+1) - t;
-          double yden = knotTimes(k+p+1) - knotTimes(k+1);
-          double y = DIV(ynom, yden, true);
-          b(k) += y * b_0(k+1);
-          if(derivative>0) db(k) += DIV(-1., yden, true) * b_0(k+1) + y * db_0(k+1);
-          if(derivative>1) ddb(k) += DIV(-2., yden, true) * db_0(k+1) + y * ddb_0(k+1);
-        }
-      }
+void BSplineCore::setKnots(uint degree, const arr& times){
+  uint nCtrls = times.N + 2*(degree/2);
+  uint nKnots = nCtrls+degree+1;
+  knots.resize(nKnots);
+
+  for(uint i=0; i<nKnots; i++) {
+    if(i<=degree) knots(i)=0.;
+    else if(i>=nCtrls) knots(i)=1.;
+    else if((degree%2)) {
+      knots(i) = times(i-degree);
+    } else {
+      knots(i) = .5*(times(i-degree-1)+times(i-degree));
     }
-    if(t<knotTimes(0) || t>=knotTimes.last()) break;
   }
-  switch(derivative) {
-    case 0:
-      return b;
-    case 1:
-      return db;
-    case 2:
-      return ddb;
-  }
-  HALT("Derivate of order " << derivative << " not yet implemented.");
 }
 
-#define ZDIV(x,y) (y?x/y:0.)
+void BSplineCore::setUniformKnots(uint degree, uint nPointsWODuplicates) {
+  if(!degree && nPointsWODuplicates==1){
+    knots = {0., 1.};
+  }else{
+    setKnots(degree, ::range(0., 1., nPointsWODuplicates-1));
+  }
+}
 
-arr BSplineCore::get(double t, uint degree, arr& J) {
+arr BSplineCore::get(double t, uint degree, uint derivatives, bool calc_JBtimes) {
   B.resize(knots.N-degree, degree+1).setZero();
+  if(derivatives>0) Bdot.resize(knots.N-degree, degree+1).setZero();
+  if(derivatives>1) Bddot.resize(knots.N-degree, degree+1).setZero();
+  if(calc_JBtimes) JBtimes.resize(B.d0, B.d1, knots.N).setZero();
 //  CHECK_LE(knots(0), t, "");
 //  CHECK_LE(t, knots(-1), "");
 
-  if(!!J) J.resize(B.d0, B.d1, knots.N).setZero();
+//profiling: defines to make access faster - avoiding checks
+#define _knots(i) knots.p[i]
+#define _B(i,j) B.p[(i)*B.d1+j]
+#define _DIV(x, y) (x==0.?0.:(y==0.?0.:x/y))
 
   //initialize rank 0
   for(uint k=0; k<B.d0; k++) {
-    if(knots(k)<=t && t<knots(k+1)) B(k, 0)=1.;
+    if(_knots(k)<=t && k+1<knots.N && t<_knots(k+1)) _B(k, 0)=1.;
   }
 
   //recursion
   for(uint p=1; p<=degree; p++) {
     for(uint i=0; i<B.d0; i++) {
       if(i+p<knots.N) {
-        double xnom = t - knots(i);
-        double xden = knots(i+p) - knots(i);
+        double xnom = t - _knots(i);
+        double xden = _knots(i+p) - _knots(i);
         if(xnom!=0. && xden!=0.) {
-          double x = DIV(xnom, xden, true);
-          B(i, p) = x * B(i, p-1);
-          if(!!J) {
-            J(i, p, i) += (-1./xnom + 1./xden) * x * B(i, p-1);
-            J(i, p, i+p) += (-1./xden) * x * B(i, p-1);
+          double x = _DIV(xnom, xden);
+          _B(i, p) = x * _B(i, p-1);
+          if(derivatives>0) Bdot(i, p) = _DIV(1., xden) * B(i,p-1) + x * Bdot(i,p-1);
+          if(derivatives>1) Bddot(i, p) = _DIV(2., xden) * Bdot(i,p-1) + x * Bddot(i,p-1);
+          if(calc_JBtimes) {
+            JBtimes(i, p, i) += (-1./xnom + 1./xden) * x * _B(i, p-1);
+            JBtimes(i, p, i+p) += (-1./xden) * x * _B(i, p-1);
 //            J(i,p,{}) += x * J(i, p-1, {});
-            for(double* a=&J(i, p, 0), *b=&J(i, p-1, 0), *stop=a+J.d2; a!=stop; a++, b++) *a += x * (*b);
+            for(double* a=&JBtimes(i, p, 0), *b=&JBtimes(i, p-1, 0), *stop=a+JBtimes.d2; a!=stop; a++, b++) *a += x * (*b);
           }
         }
       }
       if(i+1<knots.N && i+p+1<knots.N && i+1<B.d0) {
-        double ynom = knots(i+p+1) - t;
-        double yden = knots(i+p+1) - knots(i+1);
+        double ynom = _knots(i+p+1) - t;
+        double yden = _knots(i+p+1) - _knots(i+1);
         if(ynom!=0. && yden!=0.) {
-          double y = DIV(ynom, yden, true);
-          B(i, p) += y * B(i+1, p-1);
-          if(!!J) {
-            J(i, p, i+1) += (1./yden) * y * B(i+1, p-1);
-            J(i, p, i+p+1) += (1./ynom - 1./yden) * y * B(i+1, p-1);
+          double y = _DIV(ynom, yden);
+          _B(i, p) += y * _B(i+1, p-1);
+          if(derivatives>0) Bdot(i, p) += _DIV(-1., yden) * B(i+1,p-1) + y * Bdot(i+1,p-1);
+          if(derivatives>1) Bddot(i, p) += _DIV(-2., yden) * Bdot(i+1,p-1) + y * Bddot(i+1,p-1);
+          if(calc_JBtimes) {
+            JBtimes(i, p, i+1) += (1./yden) * y * _B(i+1, p-1);
+            JBtimes(i, p, i+p+1) += (1./ynom - 1./yden) * y * _B(i+1, p-1);
 //            J(i,p,{}) += y * J(i+1, p-1, {});
-            for(double* a=&J(i, p, 0), *b=&J(i+1, p-1, 0), *stop=a+J.d2; a!=stop; a++, b++) *a += y * (*b);
+            for(double* a=&JBtimes(i, p, 0), *b=&JBtimes(i+1, p-1, 0), *stop=a+JBtimes.d2; a!=stop; a++, b++) *a += y * (*b);
           }
         }
       }
     }
   }
+
+  //special case: outside the knots
+  if(t>=knots(-1)) B(-2,-1) = 1.; //for(uint p=0;p<=degree;p++) B(B.d0-degree-1+p, p) = 1.;
+  // if(t<knots(0))   for(uint p=0;p<=degree;p++) B(0, p) = 1.;
+
+#undef _knots
+#undef _B
+#undef _DIV
+
   return B;
 }
 
-void BSpline::getCoeffs2(arr& b, arr& db, arr& ddb, double t, uint degree, double* knotTimes, uint knotN, uint knotTimesN, uint derivatives) {
-  CHECK_EQ(knotN+degree+1, knotTimesN, "");
-
-  b.resize(knotN).setZero();
-  if(derivatives>0) db.resize(knotN).setZero();
-  if(derivatives>1) ddb.resize(knotN).setZero();
-
-  arr b_prev, db_prev, ddb_prev;
-  for(uint p=0; p<=degree; p++) {
-    b_prev=b; b.setZero();
-    if(derivatives>0) { db_prev=db; db.setZero(); }
-    if(derivatives>1) { ddb_prev=ddb; ddb.setZero(); }
-    for(uint k=0; k<knotN; k++) {
-      if(!p) {
-        if(!k && t<knotTimes[0]) b.elem(k)=1.;
-        else if(k==knotN-1 && t>=knotTimes[k]) b.elem(k)=1.;
-        else if(knotTimes[k]<=t && t<knotTimes[k+1]) b.elem(k)=1.;
-      } else {
-        if(k+p<knotTimesN) {
-          double xnom = t - knotTimes[k];
-          double xden = knotTimes[k+p] - knotTimes[k];
-          double x = ZDIV(xnom, xden);
-          b.elem(k) = x * b_prev.elem(k);
-          if(derivatives>0) db.elem(k) = ZDIV(1., xden) * b_prev.elem(k) + x * db_prev.elem(k);
-          if(derivatives>1) ddb.elem(k) = ZDIV(2., xden) * db_prev.elem(k) + x * ddb_prev.elem(k);
-        }
-        if(k<knotN-1 && k+p+1<knotTimesN) {
-          double ynom = knotTimes[k+p+1] - t;
-          double yden = knotTimes[k+p+1] - knotTimes[k+1];
-          double y = ZDIV(ynom, yden);
-          b.elem(k) += y * b_prev.elem(k+1);
-          if(derivatives>0) db.elem(k) += ZDIV(-1., yden) * b_prev.elem(k+1) + y * db_prev.elem(k+1);
-          if(derivatives>1) ddb.elem(k) += ZDIV(-2., yden) * db_prev.elem(k+1) + y * ddb_prev.elem(k+1);
-        }
-      }
-    }
-    if(t<knotTimes[0] || t>=knotTimes[knotTimesN-1]) break;
+arr BSplineCore::getBmatrix(uint T, uint degree) {
+  uint m = knots.N-1;
+  uint K = m - degree - 1;
+  arr Bmatrix(T, K+1), B;
+  for(uint t=0; t<T; t++){
+    B = get(double(t)/double(T-1), degree);
+    for(uint i=0;i<=K;i++) Bmatrix(t,i) = B(i, degree);
   }
-}
-
-void BSpline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
-#if 0 //computing coeffs for ALL knot points (most zero...)
-//  uint K = knotPoints.d0-1;
-  arr coeffs = getCoeffs(t, knotPoints.d0-1, derivative);
-//  arr coeffs = getCoeffs2(t, degree, knotTimes.p, knotPoints.d0, knotTimes.N, derivative);
-  return (~coeffs * knotPoints).reshape(knotPoints.d1);
-#else //pick out only the LOCAL knot points
-
-  //find the first knotTime >t
-  int offset = knotTimes.rankInSorted(t, rai::lowerEqual<double>, true);
-  offset -= degree+1;
-  if(offset<0) offset=0;
-
-  uint knotN = degree+1;
-  uint knotTimesN = knotN + 1+degree;
-  if(offset+knotTimesN>knotTimes.N) offset = knotTimes.N - knotTimesN;
-
-  //get coeffs
-  arr b, db, ddb;
-  uint derivative=0;
-  if(!!xDot) derivative=1;
-  if(!!xDDot) derivative=2;
-  getCoeffs2(b, db, ddb, t, degree, knotTimes.p+offset, knotN, knotTimesN, derivative);
-
-  //linear combination
-#if 0
-  uint n = ctrlPoints.d1;
-  if(!!x) x.resize(n).setZero();
-  if(!!xDot) xDot.resize(n).setZero();
-  if(!!xDDot) xDDot.resize(n).setZero();
-  for(uint j=0; j<b.N; j++) if(offset+j>=0) {
-    if(!!x) for(uint k=0; k<n; k++) x.elem(k) += b.elem(j)*ctrlPoints(offset+j, k);
-    if(!!xDot) for(uint k=0; k<n; k++) xDot.elem(k) += db.elem(j)*ctrlPoints(offset+j, k);
-    if(!!xDDot) for(uint k=0; k<n; k++) xDDot.elem(k) += ddb.elem(j)*ctrlPoints(offset+j, k);
-  }
-#else
-  arr sel_ctrlPoints;
-  if(offset<0){
-    if(b.N) b=b.sub(-offset,-1);
-    if(db.N) db=db.sub(-offset,-1);
-    if(ddb.N) ddb=ddb.sub(-offset,-1);
-    offset=0;
-  }
-  sel_ctrlPoints.referToRange(ctrlPoints, offset, offset+b.N-1);
-  if(!!x){ x = ~b * sel_ctrlPoints; x.reshape(-1); }
-  if(!!xDot){ xDot = ~db * sel_ctrlPoints; xDot.reshape(-1); }
-  if(!!xDDot){ xDDot = ~ddb * sel_ctrlPoints; xDDot.reshape(-1); }
-#endif
-#endif
+  return Bmatrix;
 }
 
 arr BSpline::eval(double t, uint derivative) const {
   arr x;
-  if(derivative==0) eval(x, NoArr, NoArr, t);
-  else if(derivative==1) eval(NoArr, x, NoArr, t);
-  else if(derivative==2) eval(NoArr, NoArr, x, t);
+  if(derivative==0) eval2(x, NoArr, NoArr, t);
+  else if(derivative==1) eval2(NoArr, x, NoArr, t);
+  else if(derivative==2) eval2(NoArr, NoArr, x, t);
   else NIY;
   return x;
 }
 
-arr BSpline::eval2(double t, uint derivative, arr& Jpoints, arr& Jtimes) const {
-  if(!!Jpoints) Jpoints.resize(ctrlPoints.d1, ctrlPoints.d0, ctrlPoints.d1).setZero();
-  if(!!Jtimes) Jtimes.resize(ctrlPoints.d1, knotTimes.N).setZero();
+void BSpline::eval2(arr& x, arr& xDot, arr& xDDot, double t, arr& Jpoints, arr& Jtimes) const {
+  uint n = ctrlPoints.d1;
+  if(!!x) x.resize(n).setZero();
+  if(!!xDot) xDot.resize(n).setZero();
+  if(!!xDDot) xDDot.resize(n).setZero();
+  if(!!Jpoints) Jpoints.resize(n, ctrlPoints.d0, n).setZero();
+  if(!!Jtimes) Jtimes.resize(n, knotTimes.N).setZero();
+  uint derivative=0;
+  if(!!xDot) derivative=1;
+  if(!!xDDot) derivative=2;
 
-  if(t<knotTimes(0)) return ctrlPoints[0];
+  //-- handle out-of-interval cases
+  if(t<knotTimes(0)){
+    if(!!x) x = ctrlPoints[0];
+    return;
+  }
   if(t>=knotTimes(-1)) {
-    if(!!Jpoints) for(uint i=0; i<ctrlPoints.d1; i++) Jpoints(i, -1, i) = 1.;
-    return ctrlPoints[-1];
+    if(!!Jpoints) for(uint i=0; i<n; i++) Jpoints(i, -1, i) = 1.;
+    if(!!x) x = ctrlPoints[-1];
+    return;
   }
 
+  //-- grab range of relevant knots
   int center = knotTimes.rankInSorted(t, rai::lowerEqual<double>, true);
   center -= 1;
   int lo = center - degree;  if(lo<0) lo=0;
-  int up = center + degree;  if(up>(int)knotTimes.N-1) up=knotTimes.N-1;
+  int up = lo + 2*degree;  if(up>(int)knotTimes.N-1) up=knotTimes.N-1;
+  lo = up - 2*degree;  if(lo<0) lo=0;
 
-  arr Jtmp, Jtmp2;
-
+  //-- compute B-spline coefficients on relevant knots
   BSplineCore core;
   core.knots.referToRange(knotTimes, lo, up);
-  core.get(t, degree, (!Jtimes?NoArr:Jtmp));
+  core.get(t, degree, derivative, (!!Jtimes));
 
-  arr x(ctrlPoints.d1);
-  x.setZero();
+  //-- multiply coefficients with control points
+  arr Jtmp2;
+  double b=0., bd=0., bdd=0.;
   for(uint j=0; j<core.B.d0; j++) {
-    double b = core.B(j, degree);
+    b = core.B(j, degree);
+    if(derivative>=1) bd = core.Bdot(j, degree);
+    if(derivative>=2) bdd = core.Bddot(j, degree);
     if(lo+j>=ctrlPoints.d0) { CHECK_ZERO(b, 1e-4, ""); continue; }
-    x += b * ctrlPoints[lo+j];
+    // x += b * ctrlPoints[lo+j]; //following is faster:
+    if(!!x) for(uint i=0;i<n;i++) x.elem(i) += b*ctrlPoints(lo+j,i);
+    if(!!xDot) for(uint i=0;i<n;i++) xDot.elem(i) += bd*ctrlPoints(lo+j,i);
+    if(!!xDDot) for(uint i=0;i<n;i++) xDDot.elem(i) += bdd*ctrlPoints(lo+j,i);
     if(!!Jpoints) {
-      for(uint i=0; i<ctrlPoints.d1; i++) Jpoints(i, lo+j, i) = b;
+      for(uint i=0; i<n; i++) Jpoints(i, lo+j, i) = b;
     }
     if(!!Jtimes) {
-      Jtmp2.resize(ctrlPoints.d1, knotTimes.N).setZero();
-      Jtmp2.setMatrixBlock(ctrlPoints[lo+j] * ~Jtmp(j, degree, {}), 0, lo);
+      Jtmp2.resize(n, knotTimes.N).setZero();
+      Jtmp2.setMatrixBlock(ctrlPoints[lo+j] * ~core.JBtimes(j, degree, {}), 0, lo);
       Jtimes += Jtmp2;
     }
   }
-  return x;
 }
 
 arr BSpline::eval(const arr& ts) {
   arr f(ts.N, ctrlPoints.d1);
-  for(uint i=0; i<ts.N; i++) f[i] = eval(ts(i));
+  for(uint i=0; i<ts.N; i++) eval2(f[i].noconst(), NoArr, NoArr, ts(i));
   return f;
-}
-
-arr BSpline::jac_point(double t, uint derivative) const {
-  NIY;
-  return {};
 }
 
 BSpline& BSpline::set(uint _degree, const arr& _points, const arr& _times, const arr& startVel, const arr& endVel) {
@@ -322,12 +253,18 @@ BSpline& BSpline::setUniform(uint _degree, uint steps) {
 }
 
 arr BSpline::getGridBasis(uint T) {
+#if 0
   arr basis(T+1, ctrlPoints.d0);
   arr db, ddb;
   for(uint t=0; t<=T; t++) {
     getCoeffs2(basis[t].noconst(), db, ddb, double(t)/double(T), degree, knotTimes.p, ctrlPoints.d0, knotTimes.N, 0);
   }
   return basis;
+#else
+  BSplineCore core;
+  core.knots.referTo(knotTimes);
+  return core.getBmatrix(T+1, degree);
+#endif
 }
 
 void BSpline::append(const arr& _points, const arr& _times, bool inside) {
@@ -405,39 +342,6 @@ void BSpline::setDoubleKnotVel(int t, const arr& vel) {
     a -= vel/degree*(knotTimes(t+degree)-knotTimes(t+degree-1));
     b += vel/degree*(knotTimes(t+degree+2)-knotTimes(t+degree+1));
   } else NIY;
-}
-
-//==============================================================================
-
-arr Path::getPosition(double t) const {
-  return BSpline::eval(t);
-}
-
-arr Path::getVelocity(double t) const {
-  return BSpline::eval(t, 1);
-}
-
-void Path::transform_CurrentBecomes_EndFixed(const arr& current, double t) {
-  arr delta = current - eval(t);
-  for(uint i=0; i<ctrlPoints.d0; i++) {
-    double ti = double(i)/double(ctrlPoints.d0-1);
-    double a = (1.-ti)/(1.-t);
-    ctrlPoints[i] += a*delta;
-  }
-}
-
-void Path::transform_CurrentFixed_EndBecomes(const arr& end, double t) {
-  arr delta = end - eval(1.);
-  for(uint i=0; i<ctrlPoints.d0; i++) {
-    double ti = double(i)/double(ctrlPoints.d0-1);
-    double a = (ti-t)/(1.-t);
-    ctrlPoints[i] += a*delta;
-  }
-}
-
-void Path::transform_CurrentBecomes_AllFollow(const arr& current, double t) {
-  arr delta = current - eval(t);
-  for(uint i=0; i<ctrlPoints.d0; i++) ctrlPoints[i] += delta;
 }
 
 //==============================================================================
@@ -764,6 +668,29 @@ void CubicSplinePosVelAcc(arr& pos, arr& vel, arr& acc, double trel, const arr& 
   if(!!vel) vel = (3.*t*t)*a + (2.*t)*b + c;
   if(!!acc) acc = (6.*t)*a + (2.)*b;
 #endif
+}
+
+arr BSpline_path2ctrlPoints(const arr& path, uint numCtrlPoints, uint degree, bool flatEnds){
+  BSplineCore S;
+  S.setUniformKnots(degree, numCtrlPoints);
+  std::cout <<S.knots.N <<' ' <<S.knots <<std::endl;
+  arr B = S.getBmatrix(path.d0, degree);
+
+  if(flatEnds){//map duplicated control points
+    arr A = zeros(B.d1, numCtrlPoints);
+    uint off = (B.d1-numCtrlPoints)/2;
+    for(uint i=0;i<A.d0;i++){
+      if(i<off) A(i,0) = 1.;
+      else if(i-off<A.d1) A(i,i-off)=1.;
+      else A(i,-1) = 1.;
+    }
+    std::cout <<A <<std::endl;
+    B = B * A;
+  }
+
+  arr Binv = pseudoInverse(B);
+  arr ctrlPoints = Binv * path;
+  return ctrlPoints;
 }
 
 } //namespace rai

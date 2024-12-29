@@ -16,11 +16,13 @@ namespace rai {
 
 struct BSplineCore {
   arr knots;
-  arr B;
+  arr B, Bdot, Bddot;
+  arr JBtimes;
 
-  arr get(double t, uint degree, arr& J=NoArr);
-  arr jacobian(double t, uint degree);
-
+  void setUniformKnots(uint degree, uint nPointsWODuplicates);
+  arr get(double t, uint degree, uint derivatives=0, bool calc_JBtimes=false);
+  arr getBmatrix(uint T, uint degree);
+  void setKnots(uint degree, const arr& times);
 };
 
 /// a B-spline
@@ -46,23 +48,27 @@ struct BSpline {
   void setDoubleKnotVel(int t, const arr& vel);
 
   /// core method to evaluate spline
-  void eval(arr& x, arr& xDot, arr& xDDot, double t) const;
+  // void eval(arr& x, arr& xDot, arr& xDDot, double t) const;
   arr eval(double t, uint derivative=0) const;
-  arr eval2(double t, uint derivative=0, arr& Jpoints=NoArr, arr& Jtimes=NoArr) const;
+  void eval2(arr& x, arr& xDot, arr& xDDot, double t, arr& Jpoints=NoArr, arr& Jtimes=NoArr) const;
   arr eval(const arr& ts);
 
-  arr jac_point(double t, uint derivative=0) const;
+  // arr jac_point(double t, uint derivative=0) const;
 
   /// for t \in [0,1] the coefficients are the weighting of the points: f(t) = coeffs(t)^T * points
-  arr getCoeffs(double t, uint K, uint derivative=0) const;
+  // arr getCoeffs(double t, uint K, uint derivative=0) const;
 
   double begin() const { return knotTimes.first(); }
   double end() const { return knotTimes.last(); }
 
 //  arr getGridBasis(uint derivative=0){ HALT("see retired/spline-21-04-01.cpp"); }
 
-  static void getCoeffs2(arr& c0, arr& c1, arr& c2, double t, uint degree, double* knotTimes, uint knotN, uint knotTimesN, uint derivatives=0);
+  // static void getCoeffs2(arr& c0, arr& c1, arr& c2, double t, uint degree, double* knots, uint nCtrls, uint nKnots, uint derivatives=0);
 };
+
+//==============================================================================
+
+arr BSpline_path2ctrlPoints(const arr& path, uint numCtrlPoints, uint degree=2, bool flatEnds=true);
 
 //==============================================================================
 
@@ -102,22 +108,5 @@ arr CubicSplineMaxVel(const arr& x0, const arr& v0, const arr& x1, const arr& v1
 arr CubicSplineAcc0(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ= {});
 arr CubicSplineAcc1(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ= {});
 void CubicSplinePosVelAcc(arr& pos, arr& vel, arr& acc, double trel, const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ);
-
-//===========================================================================
-
-/// a wrapper around a spline with methods specific to online path adaptation
-struct Path : BSpline {
-  Path(arr& X, uint degree=3) { set(3, X, grid(1, 0., 1., X.d0-1)); }
-
-  arr getPosition(double t) const;
-  arr getVelocity(double t) const;
-
-  /// use this when your endeffector moved differently than expected, but the goal remains fixed
-  void transform_CurrentBecomes_EndFixed(const arr& current, double t);
-  /// use this when your sensors say that the goal moved, but the endeffector remains fixed
-  void transform_CurrentFixed_EndBecomes(const arr& end, double t);
-  /// use this when sensor say that the whole task space has to be recalibrated, including current and end
-  void transform_CurrentBecomes_AllFollow(const arr& current, double t);
-};
 
 } //namespace rai

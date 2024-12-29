@@ -1328,10 +1328,10 @@ struct GnuplotServer {
 
 Singleton<GnuplotServer> gnuplotServer;
 
-void gnuplot(const char* command, bool pauseMouse, bool persist, const char* PDFfile) {
+void gnuplot(const char* command, bool pause, bool persist, const char* PDFfile) {
   if(rai::getDisableGui()) return;
   if(!rai::getInteractivity()) {
-    pauseMouse=false;
+    pause=false;
     persist=false;
   }
 
@@ -1358,7 +1358,7 @@ void gnuplot(const char* command, bool pauseMouse, bool persist, const char* PDF
 //  if(pauseMouse) cmd <<"\n pause mouse key" <<endl;
   gnuplotServer()->send(cmd.p, persist);
 
-  if(pauseMouse) rai::wait(.5, true);
+  if(pause) rai::wait(.5, true);
 
   if(!rai::getInteractivity()) {
     rai::wait(.05);

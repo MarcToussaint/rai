@@ -2,7 +2,8 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-OPTIM = debug
+#OPTIM = debug
+
 DEPEND = Core Geo Kin Optim KOMO Algo Gui
 
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
