@@ -408,7 +408,7 @@ arr ManipulationModelling::solve(int verbose) {
     }
     if(verbose>0) {
       if(!ret->feasible) {
-        cout <<"  -- infeasible:" <<info <<"\n     " <<*ret <<endl;
+        cout <<"  -- infeasible: " <<info <<"\n     " <<*ret <<endl;
         if(verbose>1) {
           cout <<sol.reportLagrangeGradients(komo->featureNames) <<endl;
           cout <<komo->report(false, true, verbose>1) <<endl;
@@ -419,7 +419,7 @@ arr ManipulationModelling::solve(int verbose) {
           komo->view_play(true, 0, 1.);
         }
       } else {
-        cout <<"  -- feasible:" <<info <<"\n     " <<*ret <<endl;
+        cout <<"  -- feasible: " <<info <<"\n     " <<*ret <<endl;
         if(verbose>2) {
           cout <<sol.reportLagrangeGradients(komo->featureNames) <<endl;
           cout <<komo->report(false, true, verbose>2) <<endl;

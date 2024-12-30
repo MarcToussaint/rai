@@ -84,7 +84,6 @@ struct RRT_PathFinder : NonCopyable {
 
   void setExplicitCollisionPairs(const StringA& collisionPairs);
 
-
   arr get_resampledPath(uint T);
 
 private:

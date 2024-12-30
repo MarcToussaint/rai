@@ -30,6 +30,8 @@ struct Simulation {
   Engine engine;
   Array<shared_ptr<SimulationImp>> imps; ///< list of (adversarial) imps doing things/perturbations/noise in addition to clean physics engine
   int verbose;
+  int writeData=0;
+  ofstream dataFile;
   FrameL grasps;
   std::shared_ptr<TeleopCallbacks> teleopCallbacks;
 

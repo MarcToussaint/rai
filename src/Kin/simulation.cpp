@@ -234,6 +234,15 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   C.ensure_q();
 
+  //-- data log?
+  if(writeData>0){ // && !(steps%10)){
+    if(!dataFile.is_open()) dataFile.open(STRING("z.sim.dat"));
+    dataFile <<time <<' '; //single number
+    dataFile <<C.getJointState().modRaw() <<' ' <<q_ref.modRaw() <<' ';
+    //self->qDot, qDot_ref
+    dataFile <<endl;
+  }
+
   if(verbose>0) self->updateDisplayData(time, C); //does not update with freq >20hz - see method
 
   if(engine==_physx && verbose>3){

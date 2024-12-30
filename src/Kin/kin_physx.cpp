@@ -34,9 +34,11 @@ using namespace physx;
 
 //===========================================================================
 
-void PxTrans2raiTrans(rai::Transformation& f, const PxTransform& pose) {
-  f.pos.set(pose.p.x, pose.p.y, pose.p.z);
-  f.rot.set(pose.q.w, pose.q.x, pose.q.y, pose.q.z);
+rai::Transformation conv_PxTrans2Transformation(const PxTransform& pose) {
+  rai::Transformation X;
+  X.pos.set(pose.p.x, pose.p.y, pose.p.z);
+  X.rot.set(pose.q.w, pose.q.x, pose.q.y, pose.q.z);
+  return X;
 }
 
 PxTransform conv_Transformation2PxTrans(const rai::Transformation& f) {
@@ -524,9 +526,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
       motorKd = 2.*motorMass*dampingRatio*freq;
     }
 
-    if(!multibody_gravity) {
-      actor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
-    }
+    actor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, !multibody_gravity);
 
     if(opt.verbose>0) {
       rai::String str;
@@ -862,6 +862,7 @@ void PhysXInterface_self::syncDebugConfig() {
 	  //    if(s) glColor(s->mesh().C);
 
 	  //cout <<"drawing shape " <<body->name <<endl;
+	  rai::Transformation Q = conv_PxTrans2Transformation(shape->getLocalPose());
 	  switch(shape->getGeometryType()) {
 	    case PxGeometryType::eBOX: {
 	      PxBoxGeometry g;
@@ -870,6 +871,7 @@ void PhysXInterface_self::syncDebugConfig() {
 	      rai::Mesh m;
 	      m.setBox();
 	      m.scale(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
+	      if(!Q.isZero()) m.transform(Q);
 	      mesh.addMesh(m);
 	    } break;
 	    case PxGeometryType::eSPHERE: {
@@ -879,6 +881,7 @@ void PhysXInterface_self::syncDebugConfig() {
 	      rai::Mesh m;
 	      m.setSphere();
 	      m.scale(g.radius);
+	      if(!Q.isZero()) m.transform(Q);
 	      mesh.addMesh(m);
 	    } break;
 	    case PxGeometryType::eCAPSULE: {
@@ -888,6 +891,7 @@ void PhysXInterface_self::syncDebugConfig() {
 	      rai::Mesh m;
 	      m.setCapsule(g.radius, g.halfHeight*2.);
 	      m.scale(g.radius);
+	      if(!Q.isZero()) m.transform(Q);
 	      mesh.addMesh(m);
 	    } break;
 	    case PxGeometryType::eCONVEXMESH: {
@@ -900,6 +904,7 @@ void PhysXInterface_self::syncDebugConfig() {
 	      copy(m.V, Vfloat);
 	      m.V.reshape(g.convexMesh->getNbVertices(), 3);
 	      m.makeConvexHull();
+	      if(!Q.isZero()) m.transform(Q);
 	      mesh.addMesh(m);
 #else
 	      self->mesh.glDraw();
@@ -919,6 +924,7 @@ void PhysXInterface_self::syncDebugConfig() {
 	      } else {
 		m.T.referTo((uint*)g.triangleMesh->getTriangles(), 3*g.triangleMesh->getNbTriangles()).reshape(-1, 3);
 	      }
+	      if(!Q.isZero()) m.transform(Q);
 	      mesh.addMesh(m);
 	    } break;
 
@@ -939,9 +945,7 @@ void PhysXInterface_self::syncDebugConfig() {
       rai::Frame* f = debugConfig.frames(id++);
       CHECK_EQ(frame->name, f->name, "");
 
-      rai::Transformation X;
-      PxTrans2raiTrans(X, actor->getGlobalPose());
-      f->set_X() = X;
+      f->set_X() = conv_PxTrans2Transformation(actor->getGlobalPose());
     }
   }
 }
@@ -1009,12 +1013,10 @@ void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& frameVelociti
     PxRigidActor* a = self->actors(f->ID);
     if(!a) continue;
 
-    if(f->joint && !f->joint->active && f->joint->dim==1) continue; //don't pull gripper joint states
+    // if(f->joint && !f->joint->active && f->joint->dim==1) continue; //don't pull gripper joint states
 
     if(self->actorTypes(f->ID) == rai::BT_dynamic) {
-      rai::Transformation X;
-      PxTrans2raiTrans(X, a->getGlobalPose());
-      f->set_X() = X;
+      f->set_X() = conv_PxTrans2Transformation(a->getGlobalPose());
       if(!!frameVelocities && a->getType() == PxActorType::eRIGID_DYNAMIC) {
         PxRigidBody* px_body = (PxRigidBody*) a;
         frameVelocities(f->ID, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());

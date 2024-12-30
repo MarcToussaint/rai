@@ -673,7 +673,6 @@ void CubicSplinePosVelAcc(arr& pos, arr& vel, arr& acc, double trel, const arr& 
 arr BSpline_path2ctrlPoints(const arr& path, uint numCtrlPoints, uint degree, bool flatEnds){
   BSplineCore S;
   S.setUniformKnots(degree, numCtrlPoints);
-  std::cout <<S.knots.N <<' ' <<S.knots <<std::endl;
   arr B = S.getBmatrix(path.d0, degree);
 
   if(flatEnds){//map duplicated control points
@@ -684,7 +683,6 @@ arr BSpline_path2ctrlPoints(const arr& path, uint numCtrlPoints, uint degree, bo
       else if(i-off<A.d1) A(i,i-off)=1.;
       else A(i,-1) = 1.;
     }
-    std::cout <<A <<std::endl;
     B = B * A;
   }
 
