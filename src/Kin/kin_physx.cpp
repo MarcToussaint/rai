@@ -298,7 +298,7 @@ void PhysXInterface_self::addLink(rai::Frame* f) {
   actorTypes(f->ID) = type;
 }
 
-#if 0
+#if 1
 void PhysXInterface_self::addJoint(const rai::Joint* jj) {
   //HALT("REALLY?");
   while(joints.N <= jj->frame->ID)
@@ -606,7 +606,11 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
       if(axis!=PxArticulationAxis::eCOUNT){
         if(f->joint->limits.N){
           joint->setMotion(axis, PxArticulationMotion::eLIMITED);
-          joint->setLimitParams(axis, {(float)f->joint->limits(0), (float)f->joint->limits(1)});
+          if(f->joint->scale>0.){
+            joint->setLimitParams(axis, {float(f->joint->scale*f->joint->limits(0)), float(f->joint->scale*f->joint->limits(1))});
+          }else{
+            joint->setLimitParams(axis, {float(f->joint->scale*f->joint->limits(1)), float(f->joint->scale*f->joint->limits(0))});
+          }
         }else{
           joint->setMotion(axis, PxArticulationMotion::eFREE);
         }
@@ -628,13 +632,8 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 
       if(!noMotor && axis!=PxArticulationAxis::eCOUNT) { //only 1D joints have drives!
         PxArticulationDrive posDrive;
-        if(f->joint->active) {
-          posDrive.stiffness = motorKp;                      // the spring constant driving the joint to a target position
-          posDrive.damping = motorKd;                        // the damping coefficient driving the joint to a target velocity
-        } else { //hack for grippers
-          posDrive.stiffness = opt.gripperKp;
-          posDrive.damping = opt.gripperKd;
-        }
+        posDrive.stiffness = motorKp;                      // the spring constant driving the joint to a target position
+        posDrive.damping = motorKd;                        // the damping coefficient driving the joint to a target velocity
         posDrive.maxForce = PX_MAX_F32; //1e10f;                              // force limit for the drive
         posDrive.driveType = PxArticulationDriveType::eFORCE;  // make the drive output be a force/torque (default)
         joint->setDriveParams(axis, posDrive);
@@ -1045,7 +1044,7 @@ void PhysXInterface::changeObjectType(rai::Frame* f, int _type) {
 
 #if 1
 void PhysXInterface::addJoint(rai::Joint* j) {
-  HALT("deprecated?"); //self->addJoint(j);
+  self->addJoint(j);
 }
 
 void PhysXInterface::removeJoint(rai::Joint* j) {
@@ -1069,7 +1068,7 @@ void PhysXInterface::postAddObject(rai::Frame* f) {
   }
 }
 
-void PhysXInterface::pushMotorStates(const rai::Configuration& C, bool setInstantly, const arr& qDot) {
+void PhysXInterface::pushMotorTargets(const rai::Configuration& C, const arr& q_ref, const arr& qDot_ref, bool setStatesInstantly) {
   for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)) {
       PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
       if(!actor) continue;
@@ -1078,14 +1077,15 @@ void PhysXInterface::pushMotorStates(const rai::Configuration& C, bool setInstan
 
       auto axis = self->jointAxis(f->ID);
       if(axis!=PxArticulationAxis::eCOUNT){ //only joints with drive
-        if(setInstantly) joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
-        joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
+        double q = (f->joint->active ? q_ref(f->joint->qIndex) : f->joint->get_q());
+        if(setStatesInstantly) joint->setJointPosition(axis, f->joint->scale*q);
+        joint->setDriveTarget(axis, f->joint->scale*q);
 
-	if(!!qDot && qDot.N) { //also setting vel reference!
-	  if(setInstantly) joint->setJointVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
-	  joint->setDriveVelocity(axis, f->joint->scale*qDot(f->joint->qIndex));
+	if(!!qDot_ref && qDot_ref.N) { //also setting vel reference!
+	  if(setStatesInstantly) joint->setJointVelocity(axis, f->joint->scale*qDot_ref(f->joint->qIndex));
+	  joint->setDriveVelocity(axis, f->joint->scale*qDot_ref(f->joint->qIndex));
 	} else {
-	  if(setInstantly) joint->setJointVelocity(axis, 0.);
+	  if(setStatesInstantly) joint->setJointVelocity(axis, 0.);
 	  joint->setDriveVelocity(axis, 0.);
 	}
       }
@@ -1114,7 +1114,7 @@ void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot) {
         }
       }
     }
-//  C.qInactive = qInactive;
+  // C.qInactive = qInactive;
   C.setJointState(q);
 
 #if 0

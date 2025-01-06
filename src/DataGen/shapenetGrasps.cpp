@@ -257,9 +257,9 @@ arr ShapenetGrasps::evaluateGrasp(){
       rai::clip(q_ref(3), q_real(3)-.01, q_real(3)+.01);
 
       //step simulation
-      C.setJointState(q_ref);
+      // C.setJointState(q_ref);
       //physx.pushKinematicStates(C); //not necessary, no kinematic robot involved
-      physx.pushMotorStates(C);
+      physx.pushMotorTargets(C, q_ref);
       physx.step(opt.simTau);
       physx.pullDynamicStates(C);
       q_real = C.getJointState();
@@ -287,8 +287,8 @@ arr ShapenetGrasps::evaluateGrasp(){
 
   if(opt.verbose>0){
     bool succ = min(scores)>.0;
-    cout <<"  eval: " <<succ <<' ' <<scores.reshape(-1) <<endl;
-    C.view(opt.verbose>1, STRING("evaluation - success: " <<succ <<" scores:\n" <<scores));
+    cout <<"  eval: " <<(succ?"success":"failure") <<' ' <<scores.reshape(-1) <<endl;
+    C.view(opt.verbose>1, STRING("evaluation: " <<(succ?"success":"failure") <<" scores:\n" <<scores));
   }
 
   return scores;

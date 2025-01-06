@@ -13,9 +13,9 @@
 
 #include "ConfigurationProblem.h"
 
-ConfigurationProblem::ConfigurationProblem(const rai::Configuration& _C, bool _computeCollisions, double _collisionTolerance, int _verbose)
+ConfigurationProblem::ConfigurationProblem(const rai::Configuration& _C, bool _useBroadCollisions, double _collisionTolerance, int _verbose)
   : C(_C),
-    useBroadCollisions(_computeCollisions),
+    useBroadCollisions(_useBroadCollisions),
     collisionTolerance(_collisionTolerance),
     verbose(_verbose) {
 

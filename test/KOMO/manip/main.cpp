@@ -111,7 +111,7 @@ void testPush(){
 #if 0
     seq.komo->addModeSwitch({1., -1.}, rai::SY_stable, {gripper, obj}, true); //a temporary stable free joint gripper->obj
 #elif 1
-    seq.komo->addFrameDof("obj_grasp", gripper, rai::JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
+    seq.komo->addFrameDof("obj_grasp", gripper, rai::JT_free, true, obj); //a permanent stable free gripper->grasp joint; and a snap grasp->object
     seq.komo->addRigidSwitch(1., {"obj_grasp", obj});
 #else
     seq.komo->addFrameDof("obj_trans", table, rai::JT_transXY, false, obj); //a permanent moving(!) transXY joint table->trans, and a snap trans->obj

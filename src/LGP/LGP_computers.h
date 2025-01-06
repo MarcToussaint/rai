@@ -43,7 +43,7 @@ struct LGP_GlobalInfo {
 struct LGPComp_root : ComputeNode {
   FOL_World& L;
   Configuration& C;
-  bool genericCollisions=false;
+  bool useBroadCollisions=false;
   StringA explicitCollisions;
   StringA explicitLift;
   String explicitTerminalSkeleton;
@@ -51,7 +51,7 @@ struct LGPComp_root : ComputeNode {
   std::shared_ptr<LGP_GlobalInfo> info;
   bool fixedSkeleton=false;
 
-  LGPComp_root(FOL_World& _L, Configuration& _C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton);
+  LGPComp_root(FOL_World& _L, Configuration& _C, bool useBroadCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton);
 
   virtual void untimedCompute() {}
   virtual int getNumDecisions() { return -1.; }
@@ -147,7 +147,6 @@ struct LGPcomp_RRTpath : ComputeNode {
 
   Configuration C;
   uint t;
-  shared_ptr<ConfigurationProblem> cp;
   shared_ptr<RRT_PathFinder> rrt;
   arr q0, qT;
   arr path;

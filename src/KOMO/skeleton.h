@@ -50,7 +50,7 @@ struct Skeleton {
   std::shared_ptr<KOMO> komoFinal;
   StringA explicitCollisions;
   StringA explicitLiftPriors;
-  bool collisions=false;
+  bool useBroadCollisions=false;
   int verbose=1;
 
   Skeleton() {}

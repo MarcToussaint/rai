@@ -16,7 +16,7 @@ struct OpenGL2Context {
 
 Singleton<OpenGL2Context> contextIDs;
 
-uint bufW=2000, bufH=2000;
+uint bufW=2048, bufH=2048;
 
 GLuint LoadShadersFile(const char * vertex_file_path,const char * fragment_file_path);
 GLuint LoadShaders(const std::string& VertexShaderCode, const std::string& FragmentShaderCode);
@@ -173,7 +173,7 @@ void RenderData::ensureInitialized(OpenGL &gl){
   if(glewInit() != GLEW_OK) HALT("Failed to initialize GLEW\n");
 
   if(opt.userShaderFiles){
-    id.prog_ID = LoadShadersFile("shader.vs", "shader.fs");
+    id.prog_ID = LoadShadersFile("shaderObj.vs", "shaderObj.fs");
   }else{
     id.prog_ID = LoadShaders( objVS, objFS );
     // id.prog_ID = LoadShadersFile(rai::raiPath("src/Gui/shaderObj.vs"), rai::raiPath("src/Gui/shaderObj.fs") );

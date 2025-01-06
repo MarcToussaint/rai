@@ -66,7 +66,7 @@ void controlMobile(){
   CtrlSolver ctrl(C, tau, 2);
 
   ofstream fil("z.path");
-  for(uint k=0;k<20;k++){
+  for(uint k=0;k<5;k++){
     arr vstar = randn(3);
     vstar(2) *= 5.;
     co->feat->setTarget(vstar);

@@ -14,9 +14,9 @@
 #include "../Kin/F_qFeatures.h"
 #include "../Optim/constrained.h"
 
-rai::LGPComp_root::LGPComp_root(rai::FOL_World& _L, rai::Configuration& _C, bool genericCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton)
+rai::LGPComp_root::LGPComp_root(rai::FOL_World& _L, rai::Configuration& _C, bool useBroadCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton)
   : ComputeNode(0), L(_L), C(_C),
-    genericCollisions(genericCollisions),
+    useBroadCollisions(useBroadCollisions),
     explicitCollisions(explicitCollisions),
     explicitLift(explicitLift),
     explicitTerminalSkeleton(explicitTerminalSkeleton) {
@@ -50,7 +50,7 @@ rai::LGPcomp_Skeleton::LGPcomp_Skeleton(rai::LGPComp_root* _root, const rai::Ske
   planString <<skeleton;
 
   //same as last part of compute...
-  skeleton.collisions=root->genericCollisions;
+  skeleton.useBroadCollisions=root->useBroadCollisions;
 //  sol = make_shared<SkeletonSolver>(skeleton, root->kin);
   skeleton.addExplicitCollisions(root->explicitCollisions);
   skeleton.addLiftPriors(root->explicitLift);
@@ -96,7 +96,7 @@ void rai::LGPcomp_Skeleton::untimedCompute() {
   }
 
   //-- create NLPs
-  skeleton.collisions=root->genericCollisions;
+  skeleton.useBroadCollisions=root->useBroadCollisions;
 //  sol = make_shared<SkeletonSolver>(skeleton, root->kin);
   skeleton.addExplicitCollisions(root->explicitCollisions);
   skeleton.addLiftPriors(root->explicitLift);
@@ -304,14 +304,17 @@ rai::LGPcomp_RRTpath::LGPcomp_RRTpath(ComputeNode* _par, rai::LGPcomp_Waypoints*
   if(sket->verbose()>1) LOG(0) <<"rrt for phase:" <<t;
   rai::Skeleton::getTwoWaypointProblem(t, C, q0, qT, *ways->komoWaypoints);
   //cout <<C.getJointNames() <<endl;
-  cp = make_shared<ConfigurationProblem>(C, true, sket->root->info->rrtTolerance);
-  if(sket->skeleton.explicitCollisions.N) cp->setExplicitCollisionPairs(sket->skeleton.explicitCollisions);
-  cp->computeAllCollisions = sket->skeleton.collisions;
 
   for(rai::Frame* f:C.frames) f->ensure_X();
-  rrt = make_shared<RRT_PathFinder>(*cp, q0, qT, sket->root->info->rrtStepsize);
-  if(sket->verbose()>1) rrt->verbose=sket->verbose()-2;
-  rrt->maxIters=sket->root->info->rrtStopEvals;
+  rrt = make_shared<RRT_PathFinder>();
+  rrt->P = make_shared<ConfigurationProblem>(C, true, sket->root->info->rrtTolerance);
+  if(sket->skeleton.explicitCollisions.N) rrt->P->setExplicitCollisionPairs(sket->skeleton.explicitCollisions);
+  rrt->P->useBroadCollisions = sket->skeleton.useBroadCollisions;
+  rrt->setStartGoal(q0, qT);
+  rrt->opt.stepsize = sket->root->info->rrtStepsize;
+
+  if(sket->verbose()>1) rrt->opt.verbose=sket->verbose()-2;
+  rrt->opt.maxIters=sket->root->info->rrtStopEvals;
 }
 
 void rai::LGPcomp_RRTpath::untimedCompute() {
@@ -330,7 +333,6 @@ void rai::LGPcomp_RRTpath::untimedCompute() {
     path.clear();
   }
   if(isComplete) {
-    cp.reset();
     rrt.reset();
   }
 }

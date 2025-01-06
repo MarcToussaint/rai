@@ -109,8 +109,8 @@ void main() {
     float visibility = 1.;
     if(i==0 && useShadow>0){
       //visibility = texture(shadowMap, vec3(shadowCoord.xy, (shadowCoord.z-bias)/shadowCoord.w));
-      visibility -= 0.5 * (1.0-texture(shadowMap, vec3(shadowCoord.xy, (shadowCoord.z-bias)/shadowCoord.w)));
-      for (int j=0;j<2;j++){
+      visibility -= 1.0 * (1.0-texture(shadowMap, vec3(shadowCoord.xy, (shadowCoord.z-bias)/shadowCoord.w)));
+      for (int j=0;j<0;j++){
         //int index = j;
         //int index = int(16.0*random(gl_FragCoord.xyz, i))%16;
         int index = int(16.0*random(floor(objPosition_W.xyz*1000.0), i))%16;

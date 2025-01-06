@@ -192,6 +192,16 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     arr q = C.getJointState();
     if(!self->qDot.N) self->qDot = zeros(q.N);
     self->ref.getReference(q_ref, qDot_ref, NoArr, q, self->qDot, time);
+
+    //-- cap the reference difference
+    if(false){
+      double err = length(q_ref - q);
+      if(err>.02){ //if(err>.02){ //stall!
+        // time -= tau;
+        cout <<"STALLING - ctrlTime: " <<time <<" err: " <<err << " q: " <<q <<" q_ref: " <<q_ref <<endl;
+      }
+    }
+
   } else NIY;
 
   //-- imps before physics
@@ -203,8 +213,9 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   if(engine==_physx) {
     self->physx->pushFrameStates(C, NoArr, true); //kinematicOnly (usually none anyway)
     if(q_ref.N) {
-      C.setJointState(q_ref);
-      self->physx->pushMotorStates(C); //qDot_ref, motor control
+      // C.setJointState(q_ref);
+      C.ensure_q();
+      self->physx->pushMotorTargets(C, q_ref); //qDot_ref, motor control
     }
     self->physx->step(tau);
     self->physx->pullDynamicStates(C, self->frameVelocities);
@@ -443,7 +454,7 @@ void Simulation::setState(const arr& frameState, const arr& q, const arr& frameV
 void Simulation::pushConfigurationToSimulator(const arr& frameVelocities, const arr& qDot) {
   if(engine==_physx) {
     self->physx->pushFrameStates(C, frameVelocities);
-    self->physx->pushMotorStates(C, true, qDot);
+    self->physx->pushMotorTargets(C, C.getJointState(), qDot, true);
   } else if(engine==_bullet) {
     self->bullet->pushFullState(C, frameVelocities);
   } else NIY;
@@ -493,8 +504,8 @@ bool Simulation::getGripperIsClose(const char* gripperFrameName) {
   if(joint->frame->parent->name.contains("robotiq")) speed=-1.;
   if(joint) {
     double q = joint->get_q();
-    if((speed>0. && q<joint->limits(0)+.01)
-        || (speed<0. && q>joint->limits(1)-.01)) return true;
+    if((speed>0. && q<joint->limits(0)+.005)
+        || (speed<0. && q>joint->limits(1)-.005)) return true;
   } else {
     NIY;
   }
@@ -510,8 +521,8 @@ bool Simulation::getGripperIsOpen(const char* gripperFrameName) {
   if(joint->frame->parent->name.contains("robotiq")) speed=1.;
   if(joint) {
     double q = joint->get_q();
-    if((speed>0. && q<joint->limits(0)+.001)
-        || (speed<0. && q>joint->limits(1)-.001)) return true;
+    if((speed>0. && q<joint->limits(0)+.005)
+        || (speed<0. && q>joint->limits(1)-.005)) return true;
   } else {
     NIY;
   }

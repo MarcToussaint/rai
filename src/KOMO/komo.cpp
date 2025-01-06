@@ -1651,7 +1651,7 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
         f->setAutoLimits();
       }
     }
-    f->setShape(ST_marker, {.3});
+    f->setShape(ST_marker, {.1});
     if(!f0) f0=f;
     F.append(f);
   }

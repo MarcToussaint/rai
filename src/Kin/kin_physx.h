@@ -35,7 +35,7 @@ struct PhysXInterface {
   void pushFrameStates(const rai::Configuration& C, const arr& frameVelocities=NoArr, bool onlyKinematic=false);
   void pullDynamicStates(rai::Configuration& C, arr& frameVelocities=NoArr);
 
-  void pushMotorStates(const rai::Configuration& C, bool setInstantly=false, const arr& qDot=NoArr);
+  void pushMotorTargets(const rai::Configuration& C, const arr& q_ref, const arr& qDot_ref=NoArr, bool setStatesInstantly=false);
   void pullMotorStates(rai::Configuration& C, arr& qDot);
 
   void changeObjectType(rai::Frame* f, int type);

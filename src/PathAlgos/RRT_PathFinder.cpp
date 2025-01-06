@@ -194,11 +194,12 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
 //===========================================================================
 
 
-void RRT_PathFinder::setProblem(const Configuration& C, const arr& _starts, const arr& _goals){
-
+void RRT_PathFinder::setProblem(const Configuration& C){
   P = make_shared<ConfigurationProblem>(C, opt.useBroadCollisions, opt.collisionTolerance, 1);
   P->verbose=0;
+}
 
+void RRT_PathFinder::setStartGoal(const arr& _starts, const arr& _goals){
   arr q0 = _starts;
   arr qT = _goals;
   auto q0ret = P->query(q0);

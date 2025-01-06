@@ -95,14 +95,15 @@ void ManipulationModelling::setup_point_to_point_motion(rai::Configuration& C, c
 
 void ManipulationModelling::setup_point_to_point_rrt(rai::Configuration& C, const arr& q0, const arr& q1, const StringA& explicitCollisionPairs) {
   rrt = make_shared<rai::RRT_PathFinder>();
-  rrt->setProblem(C, q0, q1);
+  rrt->setProblem(C);
+  rrt->setStartGoal(q0, q1);
   if(explicitCollisionPairs.N) rrt->setExplicitCollisionPairs(explicitCollisionPairs);
 }
 
 void ManipulationModelling::add_helper_frame(rai::JointType type, const char* parent, const char* name, const char* initName, rai::Frame* initFrame, double markerSize) {
   rai::Frame* f = komo->addFrameDof(name, parent, type, true, initName, initFrame);
   if(markerSize>0.){
-    f->setShape(rai::ST_marker, {.2});
+    f->setShape(rai::ST_marker, {.1});
     f->setColor({1., 0., 1.});
   }
   if(f->joint){
@@ -409,10 +410,10 @@ arr ManipulationModelling::solve(int verbose) {
     if(verbose>0) {
       if(!ret->feasible) {
         cout <<"  -- infeasible: " <<info <<"\n     " <<*ret <<endl;
+        cout <<komo->report(false, true, verbose>1) <<endl;
+        cout <<"  --" <<endl;
         if(verbose>1) {
           cout <<sol.reportLagrangeGradients(komo->featureNames) <<endl;
-          cout <<komo->report(false, true, verbose>1) <<endl;
-          cout <<"  --" <<endl;
         }
         komo->view(true, STRING("infeasible: " <<info <<"\n" <<*ret));
         if(verbose>2) {

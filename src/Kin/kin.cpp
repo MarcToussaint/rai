@@ -2832,7 +2832,7 @@ void Configuration::reportProxies(std::ostream& os, double belowMargin, bool bri
     p.write(os, brief);
     os <<endl;
   }
-  cout <<"  TOTAL PENETRATION: " <<pen <<endl;
+  os <<"  TOTAL PENETRATION: " <<pen <<endl;
   os <<"ForceExchange report:" <<endl;
   for(Frame* a:frames) for(ForceExchangeDof* c:a->forces) {
       if(&c->a==a) {
@@ -3633,7 +3633,7 @@ void Configuration::watchFile(const char* filename) {
         double eps=.1;
         V->text.clear();
         reportProxies(V->text, eps, true);
-        V->text <<"TOTAL PENETRATION: " <<p <<endl;
+        cout <<V->text <<endl;
         V->updateConfiguration(*this).view(false);
 #if 0
         FrameL collisionPairs = C.getCollisionAllPairs();

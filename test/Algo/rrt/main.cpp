@@ -9,7 +9,8 @@
 void run_rrt(rai::Configuration& C, const arr& q0, const arr& q1) {
 
   rai::RRT_PathFinder rrt;
-  rrt.setProblem(C, q0, q1);
+  rrt.setProblem(C);
+  rrt.setStartGoal(q0, q1);
   if(!rrt.opt.useBroadCollisions){
     StringA pairs = rai::getParameter<StringA>("collisionPairs", {});
     rrt.setExplicitCollisionPairs(pairs);

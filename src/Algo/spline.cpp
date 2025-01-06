@@ -671,6 +671,8 @@ void CubicSplinePosVelAcc(arr& pos, arr& vel, arr& acc, double trel, const arr& 
 }
 
 arr BSpline_path2ctrlPoints(const arr& path, uint numCtrlPoints, uint degree, bool flatEnds){
+  CHECK_EQ(path.nd, 2, "");
+  CHECK(path.d0, "");
   BSplineCore S;
   S.setUniformKnots(degree, numCtrlPoints);
   arr B = S.getBmatrix(path.d0, degree);

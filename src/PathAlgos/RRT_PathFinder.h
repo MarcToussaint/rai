@@ -77,17 +77,25 @@ struct RRT_PathFinder : NonCopyable {
   //output
   arr path;
 
-  void setProblem(const Configuration& C, const arr& starts, const arr& goals);
-  shared_ptr<SolverReturn> solve();
-  void view(bool pause, const char* txt=0);
-  void report();
-
+  //setup
+  void setProblem(const Configuration& C);
+  void setStartGoal(const arr& _starts, const arr& _goals);
   void setExplicitCollisionPairs(const StringA& collisionPairs);
 
+  //solve
+  shared_ptr<SolverReturn> solve();
+
+  //output
+  void view(bool pause, const char* txt=0);
+  void report();
   arr get_resampledPath(uint T);
 
-private:
+  //low-level
   int stepConnect();
+
+public:
+
+private:
   void planForward(const arr& q0, const arr& qT);
   bool growTreeTowardsRandom(RRT_SingleTree& rrt);
   bool growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B);

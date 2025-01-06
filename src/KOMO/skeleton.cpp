@@ -303,14 +303,14 @@ void Skeleton::getTwoWaypointProblem(int t2, Configuration& C, arr& q1, arr& q2,
 shared_ptr<KOMO> Skeleton::getKomo_path(const rai::Configuration& C, uint stepsPerPhase, double accScale, double lenScale, double homingScale, double collScale) {
   shared_ptr<KOMO> komo=make_shared<KOMO>();
   komo->opt.verbose = verbose-2;
-  komo->setConfig(C, collisions);
+  komo->setConfig(C, useBroadCollisions);
 
   double maxPhase = getMaxPhase();
   komo->setTiming(maxPhase, stepsPerPhase, 5., 2);
   if(accScale>0.) komo->addControlObjective({}, 2, accScale);
   if(homingScale>0.) komo->addControlObjective({}, 0, homingScale);
   komo->addQuaternionNorms();
-  if(collisions) komo->add_collision(true);
+  if(useBroadCollisions) komo->add_collision(true);
 
   addObjectives(*komo);
 
@@ -331,14 +331,14 @@ shared_ptr<KOMO> Skeleton::getKomo_path(const rai::Configuration& C, uint stepsP
 shared_ptr<KOMO> Skeleton::getKomo_waypoints(const Configuration& C, double lenScale, double homingScale, double collScale) {
   shared_ptr<KOMO> komo=make_shared<KOMO>();
   komo->opt.verbose = verbose-2;
-  komo->setConfig(C, collisions);
+  komo->setConfig(C, useBroadCollisions);
 
   double maxPhase = getMaxPhase();
   komo->setTiming(maxPhase, 1, 5., 1);
   if(lenScale>0.) komo->addControlObjective({}, 1, lenScale);
   if(homingScale>0.) komo->addControlObjective({}, 0, homingScale);
   komo->addQuaternionNorms();
-  if(collisions) komo->add_collision(true);
+  if(useBroadCollisions) komo->add_collision(true);
 
   addObjectives(*komo);
 
@@ -381,12 +381,12 @@ shared_ptr<KOMO> Skeleton::getKomo_finalSlice(const rai::Configuration& C, doubl
     finalS.write(cout, finalS.getSwitches(C));
   }
 
-  komo->setConfig(C, collisions);
+  komo->setConfig(C, useBroadCollisions);
   komo->setTiming(optHorizon, 1, 10., 1);
   if(lenScale>0.) komo->addControlObjective({}, 1, lenScale);
   if(homingScale>0.) komo->addControlObjective({}, 0, homingScale);
   komo->addQuaternionNorms();
-  if(collisions) komo->add_collision(false);
+  if(useBroadCollisions) komo->add_collision(false);
 
   finalS.addObjectives(*komo);
 

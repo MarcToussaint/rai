@@ -434,7 +434,7 @@ void testCompound(){
 
 void testMotors(){
   rai::Configuration C;
-  C.addFile("../bullet/bots.g");
+  C.addFile("bots.g");
 //  C.addFile("../kin/arm3.g");
   arr q0 = C.getJointState();
   arr qT = q0;
