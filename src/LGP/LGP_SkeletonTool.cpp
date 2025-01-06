@@ -69,7 +69,7 @@ void LGP_SkeletonTool::viewConfig() {
 
 //-- extract skeleton
 void LGP_SkeletonTool::getSkeleton(Skeleton& skeleton, String& skeletonString) {
-  skeleton.collisions=lgproot->genericCollisions;
+  skeleton.useBroadCollisions=lgproot->useBroadCollisions;
   skeleton.addExplicitCollisions(lgproot->explicitCollisions);
   skeleton.addLiftPriors(lgproot->explicitLift);
 
@@ -264,7 +264,7 @@ void LGP_SkeletonTool::report(std::ostream& os) const {
   os <<"=== LGP info ===" <<endl;
   lgproot->L.report(os);
   lgproot->C.report(os);
-  os <<"genericCollisions: " <<lgproot->genericCollisions <<endl;
+  os <<"useBroadCollisions: " <<lgproot->useBroadCollisions <<endl;
   os <<"#explicitCollisions: " <<lgproot->explicitCollisions.d0 <<endl;
   os <<"#explicitLift: " <<lgproot->explicitLift.d0 <<endl;
   os <<"================" <<endl;

@@ -122,10 +122,10 @@ void LGP_Node::expand(int verbose) {
   isExpanded=true;
 }
 
-void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
+void LGP_Node::optBound(BoundType bound, bool useBroadCollisions, int verbose) {
   if(tree.filComputes)(*tree.filComputes) <<id <<'-' <<step <<'-' <<bound <<endl;
   ensure_skeleton();
-  skeleton->collisions = collisions;
+  skeleton->useBroadCollisions = useBroadCollisions;
   skeleton->verbose = verbose;
 
   arrA waypoints;

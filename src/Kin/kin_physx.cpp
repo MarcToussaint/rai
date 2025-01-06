@@ -514,9 +514,11 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
     addShapesAndInertia(actor, shapes, type, f);
 
     //link/motor options
-    bool noMotor = f->ats->get<bool>("noMotor", false);
-    double motorKp = f->ats->get<double>("motorKp", opt.motorKp);
-    double motorKd = f->ats->get<double>("motorKd", opt.motorKd);
+    rai::Graph *ats = f->ats.get();
+    if(f->joint->mimic) ats = f->joint->mimic->frame->ats.get();
+    bool noMotor = ats->get<bool>("noMotor", false);
+    double motorKp = ats->get<double>("motorKp", opt.motorKp);
+    double motorKd = ats->get<double>("motorKd", opt.motorKd);
     double motorLambda =  f->ats->get<double>("motorLambda", -1.);
     if(motorLambda>0.){
       double motorMass =  f->ats->get<double>("motorMass", f->inertia->mass);
@@ -1068,7 +1070,7 @@ void PhysXInterface::postAddObject(rai::Frame* f) {
   }
 }
 
-void PhysXInterface::pushMotorTargets(const rai::Configuration& C, const arr& q_ref, const arr& qDot_ref, bool setStatesInstantly) {
+void PhysXInterface::pushMotorTargets(const rai::Configuration& C, const arr& qDot_ref, bool setStatesInstantly) {
   for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)) {
       PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
       if(!actor) continue;
@@ -1077,9 +1079,8 @@ void PhysXInterface::pushMotorTargets(const rai::Configuration& C, const arr& q_
 
       auto axis = self->jointAxis(f->ID);
       if(axis!=PxArticulationAxis::eCOUNT){ //only joints with drive
-        double q = (f->joint->active ? q_ref(f->joint->qIndex) : f->joint->get_q());
-        if(setStatesInstantly) joint->setJointPosition(axis, f->joint->scale*q);
-        joint->setDriveTarget(axis, f->joint->scale*q);
+        if(setStatesInstantly) joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
+        joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
 
 	if(!!qDot_ref && qDot_ref.N) { //also setting vel reference!
 	  if(setStatesInstantly) joint->setJointVelocity(axis, f->joint->scale*qDot_ref(f->joint->qIndex));

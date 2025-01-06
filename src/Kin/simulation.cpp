@@ -42,6 +42,14 @@ struct Simulation_self {
 
   BSplineCtrlReference ref;
 
+  struct PositionRef{ rai::Dof* dof; arr q_ref; double cap=-1.; double err=0.; uint stall_counter=0; };
+  rai::Array<PositionRef> positionRefs;
+  PositionRef* getPositionRef(rai::Dof* dof, bool create){
+    for(PositionRef& r:positionRefs) if(r.dof==dof) return &r;
+    if(create){ positionRefs.append().dof=dof; return &positionRefs(-1); }
+    return nullptr;
+  }
+
   void updateDisplayData(double _time, const Configuration& _C);
   void updateDisplayData(const byteA& _image, const floatA& _depth);
 };
@@ -164,7 +172,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
       imp->modControl(*this, ucontrol, tau, u_mode);
     }
 
-  //-- define a reference depending on control mode (size zero means no reference)
+  //-- bring C in reference state depending on control mode (size zero means no reference)
   arr q_ref, qDot_ref;
   time += tau;
   if(u_mode==_none) {
@@ -203,6 +211,24 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     }
 
   } else NIY;
+  if(q_ref.N) C.setJointState(q_ref);
+  //more refs:
+  for(Simulation_self::PositionRef& ref:self->positionRefs){
+    CHECK_EQ(&ref.dof->frame->C, &C, "this is not a dof of this configuration!");
+    if(ref.cap<0.){
+      ref.dof->setDofs(ref.q_ref);
+    }else{
+      arr q = ref.dof->getDofState();
+      double err = euclideanDistance(q, ref.q_ref);
+      if(err<ref.cap) ref.dof->setDofs(ref.q_ref);
+      else ref.dof->setDofs(q + (ref.cap/err)*(ref.q_ref-q));
+      {
+        if(err>ref.err-1e-8) ref.stall_counter++; //else ref.stall_counter=0.;
+        ref.err = err;
+      }
+    }
+  }
+  q_ref = C.getJointState();
 
   //-- imps before physics
   for(shared_ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_beforePhysics) {
@@ -212,11 +238,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   //-- call the physics engine
   if(engine==_physx) {
     self->physx->pushFrameStates(C, NoArr, true); //kinematicOnly (usually none anyway)
-    if(q_ref.N) {
-      // C.setJointState(q_ref);
-      C.ensure_q();
-      self->physx->pushMotorTargets(C, q_ref); //qDot_ref, motor control
-    }
+    self->physx->pushMotorTargets(C); //qDot_ref, motor control
     self->physx->step(tau);
     self->physx->pullDynamicStates(C, self->frameVelocities);
     self->physx->pullMotorStates(C, self->qDot);
@@ -233,17 +255,15 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->bridgeC.view(false, "bullet bridge");
 #endif
   } else if(engine==_kinematic) {
-    if(q_ref.N) {
-      C.setJointState(q_ref);
-    }
+    //already done
   } else NIY;
+  C.ensure_q();
 
   //-- imps after physics
   for(shared_ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_afterPhysics) {
       imp->modConfiguration(*this, tau);
     }
 
-  C.ensure_q();
 
   //-- data log?
   if(writeData>0){ // && !(steps%10)){
@@ -274,6 +294,13 @@ void Simulation::setSplineRef(const arr& _x, const arr& _times, bool append) {
 
   if(append) self->ref.append(path, times, time);
   else self->ref.overwriteSmooth(path, times, time);
+}
+
+void Simulation::setPositionRef(Dof* dof, const arr& q_ref, double cap){
+  auto* ref = self->getPositionRef(dof, true);
+  ref->q_ref = q_ref;
+  ref->cap = cap;
+  ref->stall_counter = 0;
 }
 
 void Simulation::resetSplineRef() {
@@ -336,8 +363,12 @@ void Simulation::moveGripper(const char* gripperFrameName, double width, double 
     if(verbose>1) LOG(1) <<"initiating opening gripper " <<gripper->name <<" (without releasing obj)" <<" width:" <<width <<" speed:" <<speed;
   }
 
+#if 0
   C.ensure_q();
   imps.append(make_shared<Imp_GripperMove>(gripper, joint, fing1, fing2, speed, width));
+#else
+  setPositionRef(joint, arr{.5*width}, .01*speed);
+#endif
 }
 
 void Simulation::closeGripper(const char* gripperFrameName, double width, double speed, double force) {
@@ -416,6 +447,7 @@ void Simulation::closeGripperGrasp(const char* gripperFrameName, const char* obj
 }
 
 bool Simulation::gripperIsDone(const char* gripperFrameName) {
+#if 0
   rai::Frame* gripper = C.getFrame(gripperFrameName);
   if(!gripper) {
     LOG(-1) <<"you passed me a non-existing gripper name!";
@@ -427,6 +459,21 @@ bool Simulation::gripperIsDone(const char* gripperFrameName) {
     if(std::dynamic_pointer_cast<Imp_CloseGripper>(imp) && std::dynamic_pointer_cast<Imp_CloseGripper>(imp)->gripper==gripper) return false;
   }
   return true;
+#else
+  rai::Frame* gripper, *fing1, *fing2;
+  rai::Joint* joint;
+  getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
+  auto* ref = self->getPositionRef(joint, false);
+  if(ref){
+    if(ref->stall_counter>3) return true;
+    arr q = ref->dof->getDofState();
+    double diff = euclideanDistance(q, ref->q_ref);
+    if(ref->cap<0.) return diff<1e-3;
+    else return diff<ref->cap;
+  }
+  LOG(0) <<"you didn't set a reference for gripper " <<gripperFrameName <<"!!";
+  return false;
+#endif
 }
 
 void Simulation::getState(arr& frameState, arr& q, arr& frameVelocities, arr& qDot) {
@@ -454,7 +501,7 @@ void Simulation::setState(const arr& frameState, const arr& q, const arr& frameV
 void Simulation::pushConfigurationToSimulator(const arr& frameVelocities, const arr& qDot) {
   if(engine==_physx) {
     self->physx->pushFrameStates(C, frameVelocities);
-    self->physx->pushMotorTargets(C, C.getJointState(), qDot, true);
+    self->physx->pushMotorTargets(C, qDot, true);
   } else if(engine==_bullet) {
     self->bullet->pushFullState(C, frameVelocities);
   } else NIY;
