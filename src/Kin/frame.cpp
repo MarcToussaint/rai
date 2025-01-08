@@ -1326,9 +1326,9 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
   //copy into C state
   if(frame->C._state_q_isGood && &q_full!=&frame->C.q && &q_full!=&frame->C.qInactive){
     if(active){
-      frame->C.q({qIndex, qIndex+dim-1}) = q_full;
+      for(uint i=0;i<dim;i++) frame->C.q(qIndex+i) = q_full(_qIndex+i);
     }else{
-      frame->C.qInactive({qIndex, qIndex+dim-1}) = q_full;
+      for(uint i=0;i<dim;i++) frame->C.qInactive(qIndex+i) = q_full(_qIndex+i);
     }
   }
 }

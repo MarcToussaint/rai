@@ -16,9 +16,14 @@
 #include <pybind11/functional.h>
 #include <pybind11/iostream.h>
 
+/* Explanation: The python user implement a derivation of the nlp.NLP template class, which is defined in the separate nlp.py
+ * that ensures that the class has methods "getDimension, getFeatureTypes, getBounds, evaluate, report"
+ * that class is passed to setPyProblem
+ * that creates a PyNLP container which hosts the python class as py_nlp and implements the C++ rai::NLP
+ */
 struct PyNLP : NLP{
   pybind11::object py_nlp; //the python object implementing the NLP
-  pybind11::object py_evaluate; //the python method
+  // pybind11::object py_evaluate; //the python method
 
   PyNLP(pybind11::object py_nlp) : py_nlp(py_nlp){
     dimension = py_nlp.attr("getDimension")().cast<int>();
@@ -29,18 +34,23 @@ struct PyNLP : NLP{
   virtual void evaluate(arr& phi, arr& J, const arr& x){
     pybind11::object _phiJ = py_nlp.attr("evaluate")(arr2numpy(x));
     auto phiJ = _phiJ.cast< std::tuple< pybind11::array_t<double>, pybind11::array_t<double> > >();
-    LOG(0) <<"before";
     phi = numpy2arr(std::get<0>(phiJ));
     J = numpy2arr(std::get<1>(phiJ));
-    LOG(0) <<"size:" <<phi.dim();
+    if(J.d0!=phi.N && J.d1==3){ //assume sparse triplet storage!!
+      arr T = J;
+      J.sparse().setFromTriplets(T, phi.N, x.N);
+    }
   }
 
 //  virtual void getFHessian(arr& H, const arr& x) {
 //    NIY;
 //  }
 
-  virtual void report(ostream& os, int verbose, const char* msg="binding in py-Optim.cpp:39"){
-    NLP::report(os, verbose, msg);
+  virtual void report(ostream& os, int verbose, const char* nomsg=0){
+    NLP::report(os, verbose, "(binding in py-Optim.cpp:52)");
+    pybind11::object _msg = py_nlp.attr("report")(verbose);
+    auto msg = _msg.cast<std::string>();
+    os <<msg <<endl;
   }
 
 };
@@ -49,7 +59,7 @@ void init_Optim(pybind11::module& m) {
 
   //===========================================================================
 
-  pybind11::class_<NLP, shared_ptr<NLP>> __mp(m, "NLP", "Representation of a Nonlinear Mathematical Program");
+  pybind11::class_<NLP, shared_ptr<NLP>> __mp(m, "NLP", "A Nonlinear Mathematical Program (bindings to the c++ object - distinct from the python template nlp.NLP" );
   __mp
 
   .def("evaluate", [](std::shared_ptr<NLP>& self, const arr& x) {
@@ -307,7 +317,7 @@ void init_Optim(pybind11::module& m) {
       .def("setTracing", &NLP_Solver::setTracing, "")
       .def("solve", &NLP_Solver::solve, "", pybind11::arg("resampleInitialization")=-1, pybind11::arg("verbose")=-1)
 
-      .def("getProblem", &NLP_Solver::getProblem, "")
+      .def("getProblem", &NLP_Solver::getProblem, "returns the NLP problem")
       .def("getTrace_x", &NLP_Solver::getTrace_x, "returns steps-times-n array with queries points in each row")
       .def("getTrace_costs", &NLP_Solver::getTrace_costs, "returns steps-times-3 array with rows (f+sos-costs, ineq, eq)")
       .def("getTrace_phi", &NLP_Solver::getTrace_phi, "")
@@ -323,7 +333,6 @@ void init_Optim(pybind11::module& m) {
   .def("setPyProblem", [](std::shared_ptr<NLP_Solver>& self, pybind11::object py_nlp){
     std::shared_ptr<NLP> nlp = std::dynamic_pointer_cast<NLP>( std::make_shared<PyNLP>(py_nlp) );
     self->setProblem(nlp);
-    nlp->report(cout, 10);
   })
 
   .def("getOptions", [](std::shared_ptr<NLP_Solver>& self) { return self->opt; })

@@ -499,6 +499,7 @@ void Simulation::setState(const arr& frameState, const arr& q, const arr& frameV
 }
 
 void Simulation::pushConfigurationToSimulator(const arr& frameVelocities, const arr& qDot) {
+  C.ensure_q();
   if(engine==_physx) {
     self->physx->pushFrameStates(C, frameVelocities);
     self->physx->pushMotorTargets(C, qDot, true);

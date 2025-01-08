@@ -2236,6 +2236,19 @@ void SparseMatrix::setFromDense(const arr& X) {
     }
 }
 
+void SparseMatrix::setFromTriplets(const arr& T, uint d0, uint d1) {
+  CHECK_EQ(T.nd, 2, "");
+  CHECK_EQ(T.d1, 3, "");
+  CHECK(&Z!=&T, "can't initialize from yourself");
+  //resize
+  resize(d0, d1, T.d0);
+  //set entries
+  for(uint i=0; i<T.d0; i++){
+    double *t=T.p+3*i;
+    entry(uint(t[0]), uint(t[1]), i) = t[2];
+  }
+}
+
 void SparseMatrix::setupRowsCols() {
   rows.resize(Z.d0);
   cols.resize(Z.d1);

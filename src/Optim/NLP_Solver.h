@@ -57,7 +57,7 @@ struct NLP_Solver : NonCopyable {
   std::shared_ptr<SolverReturn> solveStepping(int resampleInitialization=-1); ///< -1: only when not yet set
   bool step();
 
-  std::shared_ptr<NLP> getProblem(){ return P; }
+  std::shared_ptr<NLP> getProblem(){ return P->P; }
   arr getTrace_x() { return P->xTrace; }
   arr getTrace_costs() { return P->costTrace; }
   arr getTrace_phi() { return P->phiTrace; }

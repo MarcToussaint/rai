@@ -197,6 +197,7 @@ struct Frame : NonCopyable {
   byteA getMeshColors() const ;
   arr getMeshCorePoints() const ;
   arr getJointState() const; ///< throws error if this frame is not also a joint
+  Graph& getAts(){ if(!ats) ats=make_shared<Graph>(); return *ats; }
 
   friend struct Configuration;
   friend struct Configuration_ext;

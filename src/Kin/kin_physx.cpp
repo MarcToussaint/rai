@@ -458,8 +458,8 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
   //CHECK(!base->parent || (base->joint && base->joint->type==rai::JT_rigid) || (base->joint && base->inertia), "base needs to be either rigid or with inertia");
 
   //multibody options
-  bool multibody_fixedBase = base->ats->get<bool>("multibody_fixedBase", true);
-  bool multibody_gravity = base->ats->get<bool>("multibody_gravity", false);
+  bool multibody_fixedBase = base->getAts().get<bool>("multibody_fixedBase", true);
+  bool multibody_gravity = base->getAts().get<bool>("multibody_gravity", false);
 
   //-- collect all links for that root
   FrameL F = {base};
@@ -514,14 +514,14 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
     addShapesAndInertia(actor, shapes, type, f);
 
     //link/motor options
-    rai::Graph *ats = f->ats.get();
-    if(f->joint->mimic) ats = f->joint->mimic->frame->ats.get();
+    rai::Graph *ats = &f->getAts();
+    if(f->joint && f->joint->mimic) ats = &f->joint->mimic->frame->getAts();
     bool noMotor = ats->get<bool>("noMotor", false);
     double motorKp = ats->get<double>("motorKp", opt.motorKp);
     double motorKd = ats->get<double>("motorKd", opt.motorKd);
-    double motorLambda =  f->ats->get<double>("motorLambda", -1.);
+    double motorLambda =  ats->get<double>("motorLambda", -1.);
     if(motorLambda>0.){
-      double motorMass =  f->ats->get<double>("motorMass", f->inertia->mass);
+      double motorMass =  ats->get<double>("motorMass", f->inertia->mass);
       double dampingRatio = 1.;
       double freq = 1./motorLambda;
       motorKp = motorMass*freq*freq;

@@ -127,8 +127,6 @@ struct NLP_Traced : NLP {
   //trivial
   virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
   virtual void getFHessian(arr& H, const arr& x) { P->getFHessian(H, x); }
-
-  virtual void report(std::ostream& os, int verbose, const char* msg=0);
 };
 
 //===========================================================================

@@ -50,9 +50,10 @@ arr NLP::getInitializationSample(const arr& previousOptima) {
 }
 
 void NLP::report(std::ostream& os, int verbose, const char* msg) {
-  os <<"NLP of type '" <<rai::niceTypeidName(typeid(*this)) <<"' -- no special reporting implemented";
-  os <<"-- signature:\n  dimension:" <<dimension <<"\n  featureTypes: " <<EnumArr(featureTypes) <<"\n  bounds: " <<bounds;
-  os <<msg <<endl;
+  os <<"NLP of type '" <<rai::niceTypeidName(typeid(*this)) <<"'";
+  if(msg) os <<' ' <<msg;
+  os <<" dimension:" <<dimension <<endl;
+  if(verbose>1) os <<"\n  featureTypes: " <<EnumArr(featureTypes) <<"\n  bounds: " <<bounds <<endl;
 }
 
 double NLP::eval_scalar(arr& g, arr& H, const arr& x) {
@@ -344,13 +345,6 @@ void NLP_Traced::evaluate(arr& phi, arr& J, const arr& x) {
   if(trace_costs) { costTrace.append(summarizeErrors(phi, featureTypes)); costTrace.reshape(-1, 3);  }
   if(trace_phi && !!phi) { phiTrace.append(phi);  phiTrace.reshape(-1, phi.N); }
   if(trace_J && !!J) { JTrace.append(J);  JTrace.reshape(-1, phi.N, x.N); }
-}
-
-void NLP_Traced::report(std::ostream& os, int verbose, const char* msg) {
-  os <<"TRACE: #evals: " <<evals;
-  if(costTrace.N) os <<" costs: " <<costTrace[-1];
-  if(xTrace.N && xTrace.d1<10) os <<" x: " <<xTrace[-1];
-  os <<endl;
 }
 
 //===========================================================================

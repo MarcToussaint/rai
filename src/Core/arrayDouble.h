@@ -696,6 +696,7 @@ struct SparseMatrix : SpecialArray {
   arr memRef() const { arr x; x.referTo(Z.p, Z.N); return x; }
   //construction
   void setFromDense(const arr& X);
+  void setFromTriplets(const arr& T, uint d0, uint d1);
   void setupRowsCols();
   //manipulations
   SparseMatrix& resize(uint d0, uint d1, uint n);

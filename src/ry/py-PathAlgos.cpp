@@ -13,13 +13,14 @@
 #include "../PathAlgos/RRT_PathFinder.h"
 
 void init_PathAlgos(pybind11::module& m) {
-  pybind11::class_<rai::PathFinder, std::shared_ptr<rai::PathFinder>>(m, "PathFinder", "todo doc")
+  pybind11::class_<rai::RRT_PathFinder, std::shared_ptr<rai::RRT_PathFinder>>(m, "RRT_PathFinder", "todo doc")
 
       .def(pybind11::init<>())
-      .def("setProblem", &rai::PathFinder::setProblem, "", pybind11::arg("Configuration"), pybind11::arg("starts"), pybind11::arg("goals"), pybind11::arg("collisionTolerance")=1e-4)
-      .def("setExplicitCollisionPairs", &rai::PathFinder::setExplicitCollisionPairs, "only after setProblem", pybind11::arg("collisionPairs"))
-      .def("solve", &rai::PathFinder::solve, "")
-      .def("get_resampledPath", &rai::PathFinder::get_resampledPath, "")
+      .def("setProblem", &rai::RRT_PathFinder::setProblem, "", pybind11::arg("Configuration"))
+      .def("setStartGoal", &rai::RRT_PathFinder::setStartGoal, "", pybind11::arg("starts"), pybind11::arg("goals"))
+      .def("setExplicitCollisionPairs", &rai::RRT_PathFinder::setExplicitCollisionPairs, "only after setProblem", pybind11::arg("collisionPairs"))
+      .def("solve", &rai::RRT_PathFinder::solve, "")
+      .def("get_resampledPath", &rai::RRT_PathFinder::get_resampledPath, "")
 
       ;
 

@@ -533,8 +533,46 @@ void testSplineMode(){
 
 //===========================================================================
 
+void testResetState(){
+  rai::Configuration C;
+
+  for(uint i=0;i<5;i++){
+    rai::Frame *f = C.addFrame(STRING("block_" <<i));
+    f->setShape(rai::ST_ssBox, {.2,.3,.2,.02});
+    f->setColor({1,.2*i,1-.2*i});
+    f->setPosition({0,0, .25*(i+1)});
+    f->setMass(.1);
+  }
+
+  rai::Frame *f = C.addFrame("base");
+  f->setPosition({1., 0, .5});
+  f->getAts().add<bool>("multibody", true);
+
+  f = C.addFrame("finger", "base");
+  f->setShape(rai::ST_ssBox, {.3, .1, .1, .02}) .setColor({.9});
+  f->setMass(.1);
+  f->setJoint(rai::JT_transX);
+
+// q0 = C.getJointState()
+// X0 = C.getFrameState()
+
+  C.view();
+
+  double tau = .01;
+  rai::Simulation S(C, S._physx, 4);
+  Metronome tic(tau);
+  for(uint t=0;t<2./tau;t++){
+    tic.waitForTic();
+    S.step({}, tau, S._none);
+    C.view();
+  }
+}
+//===========================================================================
+
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
+
+  testResetState(); return 0;
 
   testMotors();
   testPassive("../../../../playground/24-humanoid/scene.g");

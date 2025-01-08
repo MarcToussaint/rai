@@ -12,7 +12,7 @@
 #include "types.h"
 
 #include "../Kin/kin.h"
-#include "../Kin/forceExchange.h"
+//#include "../Kin/forceExchange.h"
 #include "../Kin/kin_bullet.h"
 #include "../Kin/kin_physx.h"
 #include "../Kin/proxy.h"

@@ -105,10 +105,6 @@ void init_DataGen(pybind11::module& m) {
 #define OPT(type, name, x) ,type name
                              OPT(int, verbose, 1)
                              OPT(bool, yGravity, false)
-                             OPT(bool, softBody, false)
-                             OPT(bool, multiBody, true)
-                             OPT(bool, multiBodyDisableGravity, true)
-                             OPT(bool, jointedBodies, false)
                              OPT(double, angularDamping, .1)
                              OPT(double, defaultFriction, 1.)
                              OPT(double, defaultRestitution, .1) //restitution=1 should be elastic...
@@ -122,10 +118,6 @@ void init_DataGen(pybind11::module& m) {
 #define OPT(type, name, x) .set_##name(name)
     OPT(int, verbose, 1)
     OPT(bool, yGravity, false)
-    OPT(bool, softBody, false)
-    OPT(bool, multiBody, true)
-    OPT(bool, multiBodyDisableGravity, true)
-    OPT(bool, jointedBodies, false)
     OPT(double, angularDamping, .1)
     OPT(double, defaultFriction, 1.)
     OPT(double, defaultRestitution, .1) //restitution=1 should be elastic...
@@ -140,10 +132,6 @@ void init_DataGen(pybind11::module& m) {
 #define OPT(type, name, x) , pybind11::arg(#name) = x
   OPT(int, verbose, 1)
   OPT(bool, yGravity, false)
-  OPT(bool, softBody, false)
-  OPT(bool, multiBody, true)
-  OPT(bool, multiBodyDisableGravity, true)
-  OPT(bool, jointedBodies, false)
   OPT(double, angularDamping, .1)
   OPT(double, defaultFriction, 1.)
   OPT(double, defaultRestitution, .1) //restitution=1 should be elastic...
