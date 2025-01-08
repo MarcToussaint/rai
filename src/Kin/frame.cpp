@@ -637,17 +637,23 @@ rai::Frame& rai::Frame::setSdf(std::shared_ptr<SDF>& sdf) {
   return *this;
 }
 
-rai::Frame& rai::Frame::setDensity(const floatA& data, const arr& size) {
+rai::Frame& rai::Frame::setTensorShape(const floatA& data, const arr& size) {
   C.view_lock(RAI_HERE);
-  getShape().type() = ST_density;
-  std::shared_ptr<SDF_GridData> sdf = make_shared<SDF_GridData>();
+  getShape().type() = ST_tensor;
+  std::shared_ptr<TensorShape> sdf = make_shared<TensorShape>();
   sdf->lo = -.5*size;
   sdf->up = +.5*size;
   sdf->gridData = data;
-  sdf->_densityDisplayData = make_shared<DensityDisplayData>(*sdf);
+  // sdf->_densityDisplayData = make_shared<DensityDisplayData>(*sdf);
+  getShape().size = size;
   getShape()._sdf = sdf;
-  getShape().createMeshes();
-  getShape().mesh().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
+  // getShape().createMeshes();
+  // getShape().mesh().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
+  // if(withBox){
+  //   getShape().mesh().clear();
+  //   getShape().mesh().setBox(true);
+  //   getShape().mesh().scale(size(0), size(1), size(2));
+  // }
   C.view_unlock();
   return *this;
 }
@@ -655,7 +661,7 @@ rai::Frame& rai::Frame::setDensity(const floatA& data, const arr& size) {
 rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, uint blur, double resample) {
   C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
-  SDF_GridData sdf(0, data, -.5*size, +.5*size);
+  TensorShape sdf(0, data, -.5*size, +.5*size);
   sdf.smooth(3, blur);
   if(resample>0.) {
     arr d = size/resample;
@@ -1963,7 +1969,7 @@ void rai::Shape::createMeshes() {
       if(!sdf().lo.N) sdf().lo = -.5*size;
       if(!sdf().up.N) sdf().up = +.5*size;
       if(!mesh().V.N) {
-        auto gridSdf = std::dynamic_pointer_cast<SDF_GridData>(_sdf);
+        auto gridSdf = std::dynamic_pointer_cast<TensorShape>(_sdf);
         if(gridSdf && gridSdf->gridData.N) {
           mesh().setImplicitSurface(gridSdf->gridData, sdf().lo, sdf().up);
         } else {
@@ -1971,8 +1977,8 @@ void rai::Shape::createMeshes() {
         }
       }
     } break;
-    case rai::ST_density: {
-      auto gridSdf = std::dynamic_pointer_cast<SDF_GridData>(_sdf);
+    case rai::ST_tensor: {
+      auto gridSdf = std::dynamic_pointer_cast<TensorShape>(_sdf);
       if(gridSdf && gridSdf->gridData.N) {
         gridSdf->_densityDisplayData = make_shared<DensityDisplayData>(*gridSdf);
       }

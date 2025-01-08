@@ -188,10 +188,15 @@ void RenderData::ensureInitialized(OpenGL &gl){
   id.prog_lightDirection_W = glGetUniformLocation(id.prog_ID, "lightDirection_W");
   id.prog_FlatColor = glGetUniformLocation(id.prog_ID, "flatColor");
 
-  id.progTensor = LoadShaders( tensorVS, tensorFS );
-  //id.progTensor = LoadShadersFile(rai::raiPath("src/Gui/shaderTensor.vs"), rai::raiPath("src/Gui/shaderTensor.fs") );
+  if(opt.userShaderFiles){
+    id.progTensor = LoadShadersFile("shaderTensor.vs", "shaderTensor.fs");
+  }else{
+    id.progTensor = LoadShaders( tensorVS, tensorFS );
+    //id.progTensor = LoadShadersFile(rai::raiPath("src/Gui/shaderTensor.vs"), rai::raiPath("src/Gui/shaderTensor.fs") );
+  }
   id.progTensor_Projection_W = glGetUniformLocation(id.progTensor, "Projection_W");
   id.progTensor_ModelT_WM = glGetUniformLocation(id.progTensor, "ModelT_WM");
+  id.progTensor_ModelScale = glGetUniformLocation(id.progTensor, "ModelScale");
   id.progTensor_eyePosition_W = glGetUniformLocation(id.progTensor, "eyePosition_W");
   id.progTensor_tensorTexture = glGetUniformLocation(id.progTensor, "tensorTexture");
 
@@ -247,7 +252,7 @@ void RenderData::ensureInitialized(OpenGL &gl){
   id.initialized=true;
 }
 
-void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs, RenderType type, GLuint idFlatColor){
+void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs, RenderType type, GLint idFlatColor, GLint idScale){
   arr ModelT_WM = eye(4);
 
   CHECK_EQ(sortedObjIDs.N, items.N, "");
@@ -266,7 +271,11 @@ void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs,
     ModelT_WM = obj->X.getMatrix();
     glUniformMatrix4fv(prog_ModelT_WM, 1, GL_TRUE, rai::convert<float>(ModelT_WM).p);
 
-    if(renderFlatColors && idFlatColor && obj->flatColor.N){
+    if(idScale>=0 && obj->scale.N==3){
+      glUniform3f(idScale, obj->scale(0), obj->scale(1), obj->scale(2));
+    }
+
+    if(renderFlatColors && idFlatColor>=0 && obj->flatColor.N){
       CHECK_EQ(obj->flatColor.N, 3, "");
       byte *rgb = obj->flatColor.p;
       glUniform4f(idFlatColor, rgb[0]/255.f, rgb[1]/255.f, rgb[2]/255.f, 1.);
@@ -363,7 +372,7 @@ void RenderData::glDraw(OpenGL& gl){
     arr Pshadow_IW = flip * P_IC * flip * T_CW;
     glUniformMatrix4fv(id.progShadow_ShadowProjection_W, 1, GL_TRUE, rai::convert<float>(Pshadow_IW).p);
 
-    renderObjects(id.progShadow_ModelT_WM, sorting, _solid, 0);
+    renderObjects(id.progShadow_ModelT_WM, sorting, _solid);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -431,29 +440,26 @@ void RenderData::glDraw(OpenGL& gl){
     if(renderUntil>=_shadow && opt.useShadow) glBindTexture(GL_TEXTURE_2D, 0);
   }
 
-  //glDisable(GL_DEPTH_TEST);
-
+  // glDisable(GL_DEPTH_TEST);
   if(renderUntil>=_tensor) {
     glUseProgram(id.progTensor);
     glUniformMatrix4fv(id.progTensor_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
     glUniform3f(id.progTensor_eyePosition_W, camera.X.pos.x, camera.X.pos.y, camera.X.pos.z);
     glUniform1i(id.progTensor_tensorTexture, 0);
-    renderObjects(id.progTensor_ModelT_WM, sorting, _tensor, 0);
+    renderObjects(id.progTensor_ModelT_WM, sorting, _tensor, -1, id.progTensor_ModelScale);
   }
+  // glEnable(GL_DEPTH_TEST);
 
   if(renderUntil>=_marker) {
     glUseProgram(id.progMarker);
     glUniformMatrix4fv(id.progMarker_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
-    renderObjects(id.progMarker_ModelT_WM, sorting, _marker, 0);
+    renderObjects(id.progMarker_ModelT_WM, sorting, _marker);
   }
-
-  //glEnable(GL_DEPTH_TEST);
 
   if(renderUntil>=_transparent) {
     glUseProgram(id.prog_ID);
-    renderObjects(id.prog_ModelT_WM, sorting, _transparent, 0);
+    renderObjects(id.prog_ModelT_WM, sorting, _transparent);
   }
-
 
   /*if(dontRender>_text)*/ {
 
@@ -601,11 +607,12 @@ void RenderAsset::lines(const arr& lines, const arr& color){
   mode = GL_LINES;
 }
 
-void RenderAsset::tensor(const arr& vol){
-  texture = rai::convert<float>(vol);
-
+void RenderAsset::tensor(const floatA& vol, const arr& size){
+  CHECK_EQ(size.N, 3, "");
+  texture = vol;
   rai::Mesh mesh;
   mesh.setBox();
+  mesh.scale(size);
   mesh.makeArrayFormatted();
   vertices = rai::convert<float>(mesh.V);
   colors = rai::convert<float>(mesh.C);
@@ -687,8 +694,8 @@ void RenderAsset::glInitialize(){
       glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
       glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, texture.d2, texture.d1, texture.d0, 0, GL_RED, GL_FLOAT, texture.p);
       glBindTexture(GL_TEXTURE_3D, 0);
@@ -870,7 +877,7 @@ RenderData& RenderData::addStandardScene(){
 //      addLight({3.,0.,4.}, {0.,0.,1.});
     }
   }
-  { // floor
+  if(floorColor.N==3){ // floor
     rai::Mesh m;
     m.setQuad();
     m.scale(10., 10., 0.);

@@ -339,7 +339,7 @@ double interpolate3D(double v000, double v100, double v010, double v110, double 
   return interpolate1D(s, t, z);
 }
 
-SDF_GridData::SDF_GridData(uint N, const arr& _lo, const arr& _up, bool isoGrid)
+TensorShape::TensorShape(uint N, const arr& _lo, const arr& _up, bool isoGrid)
   : SDF(0) {
   lo=_lo; up=_up;
   if(isoGrid) {
@@ -351,7 +351,7 @@ SDF_GridData::SDF_GridData(uint N, const arr& _lo, const arr& _up, bool isoGrid)
   }
 }
 
-SDF_GridData::SDF_GridData(SDF& f, const arr& _lo, const arr& _up, const uintA& res)
+TensorShape::TensorShape(SDF& f, const arr& _lo, const arr& _up, const uintA& res)
   : SDF(0) {
   lo=_lo; up=_up;
   //compute grid data
@@ -361,7 +361,7 @@ SDF_GridData::SDF_GridData(SDF& f, const arr& _lo, const arr& _up, const uintA& 
   gridData.reshape({res(0)+1, res(1)+1, res(2)+1});
 }
 
-double SDF_GridData::f(arr& g, arr& H, const arr& x) {
+double TensorShape::f(arr& g, arr& H, const arr& x) {
   arr rot, x_rel;
   if(pose.isZero()) {
     x_rel=x;
@@ -455,14 +455,14 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x) {
   return f;
 }
 
-void SDF_GridData::resample(uint d0, int d1, int d2) {
+void TensorShape::resample(uint d0, int d1, int d2) {
   if(d1<0) d1=d0;
   if(d2<0) d2=d0;
   arr X = grid(lo, up, {d0, (uint)d1, (uint)d2});
   gridData = evalFloat(X).reshape(d0+1, d1+1, d2+1);
 }
 
-void SDF_GridData::smooth(uint width, uint iters) {
+void TensorShape::smooth(uint width, uint iters) {
   arr dat = rai::convert<double>(gridData);
 //  uint half = (width-1)/2;
   for(uint i=0; i<iters; i++) {
@@ -477,7 +477,7 @@ void SDF_GridData::smooth(uint width, uint iters) {
   gridData = rai::convert<float>(dat);
 }
 
-void SDF_GridData::getNeighborsAndWeights(uintA& neigh, arr& weights, const arr& x_rel) {
+void TensorShape::getNeighborsAndWeights(uintA& neigh, arr& weights, const arr& x_rel) {
   arr res = arr{(double)gridData.d0-1, (double)gridData.d1-1, (double)gridData.d2-1};
   res /= (up-lo);
   arr fidx = (x_rel-lo) % res;
@@ -526,7 +526,7 @@ void fillVolumeImg(byteA& vol, const floatA& dat) {
   vol.reshape({dat.d0, dat.d1, dat.d2, 4});
 }
 
-DensityDisplayData::DensityDisplayData(SDF_GridData& sdf) {
+DensityDisplayData::DensityDisplayData(TensorShape& sdf) {
   arr totalSize = sdf.up - sdf.lo;
   box.setBox(true);
   box.scale(totalSize);
@@ -584,7 +584,7 @@ DensityDisplayData::DensityDisplayData(SDF_GridData& sdf) {
   }
 }
 
-void SDF_GridData::write(std::ostream& os) const {
+void TensorShape::write(std::ostream& os) const {
 #if 1
   rai::Graph G;
   G.add("lo", lo);
@@ -598,7 +598,7 @@ void SDF_GridData::write(std::ostream& os) const {
 #endif
 }
 
-void SDF_GridData::read(std::istream& is) {
+void TensorShape::read(std::istream& is) {
   char c = rai::peerNextChar(is, " \n\r\t", true);
   if(c=='l') {
     lo.readTagged(is, "lo");

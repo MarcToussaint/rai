@@ -7,11 +7,12 @@ layout(location = 2) in vec3 vertexNormal_M;
 out vec4 objColor;
 out vec3 eyePosition_M;
 out vec4 objPosition_W;
-out vec3 tensorCoord;
+out vec3 surfacePoint_M;
 
 uniform vec3 eyePosition_W;
 uniform mat4 Projection_W;
 uniform mat4 ModelT_WM;
+uniform vec3 ModelScale;
 
 void main() {
   objPosition_W = ModelT_WM * vec4(vertexPosition_M, 1);
@@ -21,6 +22,5 @@ void main() {
   eyePosition_M = (inverse(ModelT_WM) * vec4(eyePosition_W, 1)).xyz;
 
   objColor = vertexColor;
-  tensorCoord = vertexPosition_M;
+  surfacePoint_M = vertexPosition_M;
 }
-

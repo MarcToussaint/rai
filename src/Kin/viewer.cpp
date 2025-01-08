@@ -27,6 +27,7 @@ OpenGL& rai::ConfigurationViewer::ensure_gl() {
   if(!gl) {
     gl = make_shared<OpenGL>("ConfigurationViewer", 600, 500);
 //    gl->reportEvents=true;
+    if(opt.backgroundColor.N) gl->clearColor = convert<float>(opt.backgroundColor);
     gl->camera.setDefault();
     gl->add(this);
   }
@@ -74,11 +75,23 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
         items(-1)->asset->version = mesh->version;
       }else if(mesh->T.d1==3){
         add(f->ensure_X(), _solid).mesh(*mesh);
+      }else if(mesh->T.d1==2){
+        add(f->ensure_X(), _marker).lines(mesh->V, mesh->C);
       }else{
         NIY
       }
       items(-1)->flatColor.resize(3);
       id2color(items(-1)->flatColor.p, f->ID);
+    }
+    shared_ptr<SDF> sdf = f->shape->_sdf;
+    if(sdf){
+      if(f->shape->type()==ST_tensor){
+        auto tensor = dynamic_pointer_cast<TensorShape>(sdf);
+        add(f->ensure_X(), _tensor).tensor(tensor->gridData, f->shape->size);
+        items(-1)->scale = f->shape->size;
+      }else{
+        NIY;
+      }
     }
   }
   for(rai::Frame* f:frames) if(f->shape && f->shape->type()==ST_marker) {
@@ -248,12 +261,6 @@ void rai::ConfigurationViewer::setCamera(rai::Frame* camF) {
     }
   }
   gl->resize(gl->width, gl->height);
-}
-
-int rai::ConfigurationViewer::_update(bool wait, const char* _text) {
-  if(_text) text =_text;
-  ensure_gl();
-  return gl->update(wait, nonThreaded);
 }
 
 void rai::ConfigurationViewer::_resetPressedKey() {

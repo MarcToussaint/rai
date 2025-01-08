@@ -104,19 +104,19 @@ struct DensityDisplayData {
   byteA volumeImgZ, volumeImgY, volumeImgX;
   rai::Array<rai::Mesh> volumeZ, volumeY, volumeX;
 
-  DensityDisplayData(struct SDF_GridData& sdf);
+  DensityDisplayData(struct TensorShape& sdf);
 };
 
-struct SDF_GridData : SDF {
+struct TensorShape : SDF {
   floatA gridData;
   shared_ptr<DensityDisplayData> _densityDisplayData;
 
-  SDF_GridData(const rai::Transformation& _pose, const floatA& _data, const arr& _lo, const arr& _up)
+  TensorShape(const rai::Transformation& _pose, const floatA& _data, const arr& _lo, const arr& _up)
     : SDF(_pose), gridData(_data) {  lo = _lo;  up = _up;  }
-  SDF_GridData(uint N, const arr& _lo, const arr& _up, bool isoGrid=true);
-  SDF_GridData(SDF& f, const arr& _lo, const arr& _up, const uintA& res);
-  SDF_GridData() : SDF(0) {}
-  SDF_GridData(istream& is) : SDF(0) { read(is); }
+  TensorShape(uint N, const arr& _lo, const arr& _up, bool isoGrid=true);
+  TensorShape(SDF& f, const arr& _lo, const arr& _up, const uintA& res);
+  TensorShape() : SDF(0) {}
+  TensorShape(istream& is) : SDF(0) { read(is); }
 
   double f(arr& g, arr& H, const arr& x);
 
@@ -138,17 +138,17 @@ struct SDF_GridData : SDF {
   void write(std::ostream& os) const;
   void read(std::istream& is);
 };
-stdPipes(SDF_GridData)
+stdPipes(TensorShape)
 
 //===========================================================================
 
 struct PCL2Field {
-  SDF_GridData& field;
+  TensorShape& field;
   floatA source;
   double alpha = .1;
   double lastErr = -1.;
 
-  PCL2Field(SDF_GridData& _field):field(_field) {}
+  PCL2Field(TensorShape& _field):field(_field) {}
 
   double stepDiffusion(const arr& pts, const arr& values, double boundValue);
 

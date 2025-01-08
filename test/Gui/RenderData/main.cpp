@@ -110,15 +110,18 @@ void testShader(){
   for(uint i=0;i<density.d0;i++) for(uint j=0;j<density.d1;j++) for(uint k=0;k<density.d2;k++){
         data(k,j,i) = (double(density(i,j,k)) - threshold) / scale;
       }
-  LOG(0) <<"data size: " <<data.dim() <<" max: " <<max(data) <<" min: " <<min(data) <<" pixdim: " <<pixdim;
-  arr size=arr{160, 160, 160} / pixdim;
-  data = data.sub(0,size(2)-1, 0, size(1)-1, 0, size(0)-1);
-  LOG(0) <<"data size: " <<data.dim() <<" max: " <<max(data) <<" min: " <<min(data) <<" pixdim: " <<pixdim;
+  arr size = .001*convert<double>(data.dim()) % arr{pixdim(2), pixdim(1), pixdim(0)};
+  LOG(0) <<"data size: " <<data.dim() <<" max: " <<max(data) <<" min: " <<min(data) <<" pixdim: " <<pixdim <<" size: " <<size;
+  // arr size=arr{160, 160, 160} / pixdim;
+  // data = data.sub(0,size(2)-1, 0, size(1)-1, 0, size(0)-1);
+  // LOG(0) <<"data size: " <<data.dim() <<" max: " <<max(data) <<" min: " <<min(data) <<" pixdim: " <<pixdim;
   // for(uint i=0; i<2; i++) {
   //   data = integral(data);
   //   data = differencing(data, 3);
   // }
 #endif
+
+#if 0
   // cout <<data <<endl;
   scene.add(rai::Transformation("t(0 0 1.)"), rai::_tensor).tensor(data);
 
@@ -126,6 +129,14 @@ void testShader(){
   gl.camera.setDefault();
   gl.add(&scene);
   gl.update(true);
+#else
+  rai::Configuration C;
+  rai::Frame *f = C.addFrame("tensor");
+  f->setPosition({0.,0.,1.}) .setQuaternion({1.,.5,0.,0.});
+  f->setTensorShape(rai::convert<float>(data), 3.*size);
+  // C.addFrame("box", "tensor") ->setShape(rai::ST_box, 3.*size) .setColor({1.,1.,0.,.2});
+  C.view(true);
+#endif
 }
 
 int main(int argc, char **argv){

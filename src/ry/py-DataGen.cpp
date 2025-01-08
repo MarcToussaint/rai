@@ -9,6 +9,7 @@
 #ifdef RAI_PYBIND
 
 #include "types.h"
+#include "py-Config.h"
 
 #include "../DataGen/shapenetGrasps.h"
 #include "../DataGen/rndStableConfigs.h"

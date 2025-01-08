@@ -16,6 +16,7 @@ struct Render_Options {
   RAI_PARAM("Render/", bool, userShaderFiles, false)
   RAI_PARAM("Render/", bool, flatColors, false)
   RAI_PARAM("Render/", bool, useShadow, true)
+  RAI_PARAM("Render/", arr, backgroundColor, {})
   RAI_PARAM("Render/", arr, floorColor, {})
   RAI_PARAM("Render/", arr, lights, {})
 };
@@ -34,7 +35,7 @@ struct RenderAsset{
   void mesh(rai::Mesh &mesh, double avgNormalsThreshold=.9);
   void lines(const arr& lines, const arr& color);
   void pointCloud(const arr& points, const arr& color);
-  void tensor(const arr& vol);
+  void tensor(const floatA& vol, const arr& size={1.,1.,1.});
 
   //engine specific -> should be refactored
   void glRender();
@@ -46,6 +47,7 @@ struct RenderItem{
   std::shared_ptr<RenderAsset> asset;
 
   rai::Transformation X=0;
+  arr scale;
   double cameraDist=-1.;
   RenderType type=_solid;
   byteA flatColor;
@@ -115,7 +117,7 @@ struct RenderData {
     GLuint shadowFramebuffer, shadowTexture;
     GLuint prog_ID, prog_Projection_W, prog_ModelT_WM, prog_eyePosition_W, prog_ShadowProjection_W, prog_useShadow, prog_shadowMap, prog_numLights, prog_lightDirection_W, prog_FlatColor;
     GLuint progShadow, progShadow_ShadowProjection_W, progShadow_ModelT_WM;
-    GLuint progTensor, progTensor_Projection_W, progTensor_ModelT_WM, progTensor_eyePosition_W, progTensor_tensorTexture;
+    GLuint progTensor, progTensor_Projection_W, progTensor_ModelT_WM, progTensor_ModelScale, progTensor_eyePosition_W, progTensor_tensorTexture;
     GLuint progMarker, progMarker_Projection_W, progMarker_ModelT_WM;
     GLuint progText, progText_color, progText_useTexColor;
     RenderFont font;
@@ -142,7 +144,7 @@ struct RenderData {
   void glDeinitialize(OpenGL &gl);
 
 //private:
-  void renderObjects(GLuint idT_WM, const uintA& sortedObjIDs, RenderType type, GLuint idFlatColor);
+  void renderObjects(GLuint idT_WM, const uintA& sortedObjIDs, RenderType type, GLint idFlatColor=-1, GLint idScale=-1);
 
   void report(std::ostream& os);
 };

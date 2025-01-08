@@ -23,7 +23,7 @@ void TEST(DistanceFunctions) {
 //    make_shared<SDF_Capsule>(t, 2., 1.)
   };
 
-  auto f2 = make_shared<SDF_GridData>(*fcts(0), arr{-2.,-2.,-2.}, arr{2.,2.,2.}, uintA{100,100,100});
+  auto f2 = make_shared<TensorShape>(*fcts(0), arr{-2.,-2.,-2.}, arr{2.,2.,2.}, uintA{100,100,100});
   fcts.append(f2);
 
   for(shared_ptr<SDF>& f: fcts){
@@ -101,9 +101,9 @@ void TEST(SimpleImplicitSurfaces) {
     make_shared<SDF_Torus>(),
   };
 
-  fcts.append( make_shared<SDF_GridData>(*fcts(0), arr{-2.,-3.,-4.}, arr{2.,3.,4.}, uintA{20,20,20}) );
-  fcts.append( make_shared<SDF_GridData>(*fcts(1), arr{-5.,-5.,-5.}, arr{5.,5.,5.}, uintA{100,100,100}) );
-  fcts.append( make_shared<SDF_GridData>(*fcts(2), arr{-5.,-5.,-5.}, arr{5.,5.,5.}, uintA{100,100,100}) );
+  fcts.append( make_shared<TensorShape>(*fcts(0), arr{-2.,-3.,-4.}, arr{2.,3.,4.}, uintA{20,20,20}) );
+  fcts.append( make_shared<TensorShape>(*fcts(1), arr{-5.,-5.,-5.}, arr{5.,5.,5.}, uintA{100,100,100}) );
+  fcts.append( make_shared<TensorShape>(*fcts(2), arr{-5.,-5.,-5.}, arr{5.,5.,5.}, uintA{100,100,100}) );
 
   rai::Mesh m;
   OpenGL gl;
@@ -165,7 +165,7 @@ void display(){
 
   arr lo =  arr{-1.,-1.,-1.};
   arr up = arr{1.,1.,1.};
-  auto f2 = make_shared<SDF_GridData>(*fcts(0), lo, up, uintA{20,20,20});
+  auto f2 = make_shared<TensorShape>(*fcts(0), lo, up, uintA{20,20,20});
   fcts.append(f2);
 
   OpenGL gl;
