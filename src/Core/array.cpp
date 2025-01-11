@@ -2192,7 +2192,7 @@ arr SparseMatrix::getSparseRow(uint i) const {
       S.entry(0, r(k, 0), k) = Z.elem(r(k, 1));
     }
   } else {
-    NIY
+    HALT("you need to setupRowsCols() first");
   }
 #endif
   return v;
@@ -2479,6 +2479,16 @@ void SparseMatrix::add(const arr& B, uint lo0, uint lo1, double coeff) {
   }
   if(lo1) {
     for(int* i=&elems(Nold, 1); i!=elems.p+elems.N+1; i+=2)(*i) += lo1;
+  }
+}
+
+void SparseMatrix::multRow(uint i, double a){
+  if(rows.N) {
+    uintA& r = rows(i);
+    uint n=r.d0;
+    for(uint k=0; k<n; k++) Z.elem(r(k, 1)) *= a;
+  } else {
+    HALT("you need to setupRowsCols() first");
   }
 }
 

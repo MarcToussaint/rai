@@ -163,6 +163,7 @@ bool OptConstrained::ministep() {
     if(numBadSteps) cout <<" (bad:" <<numBadSteps <<")";
     if(newton.x.N<5) cout <<" \tx:" <<newton.x;
     cout <<endl;
+    if(opt.verbose>4) L.P->report(cout, opt.verbose, STRING("evals:" <<newton.evals));
   }
 
   //-- STOPPING CRITERIA
@@ -229,6 +230,8 @@ bool OptConstrained::ministep() {
   }
 
 #if 0 //this would trigger a new evaluation; only to confirm that autoUpdate updates also fx correctly
+  //add noise!?
+  // rndGauss(newton.x, 1e-3, true);
   newton.reinit(newton.x);
   if(opt.verbose>0) {
     //START of new Newton loop

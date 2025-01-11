@@ -16,6 +16,7 @@
 struct NLP_Sampler_Options {
   RAI_PARAM("sam/", double, eps, .05)
   RAI_PARAM("sam/", double, tolerance, .01)
+  RAI_PARAM("sam/", double, margin, .0)
   RAI_PARAM("sam/", bool, useCentering, true)
 
   //--new

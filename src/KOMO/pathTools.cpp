@@ -10,6 +10,7 @@
 #include "komo.h"
 #include "manipTools.h"
 #include "../Kin/F_collisions.h"
+#include "../Optim/NLP_Solver.h"
 
 arr getVelocities_centralDifference(const arr& q, double tau) {
   arr v;
@@ -457,17 +458,20 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
   KOMO komo;
   komo.setConfig(C);
   komo.setTiming(1., 1, 1., 1);
-  komo.addControlObjective({}, 1, 1e-1);
+  komo.addControlObjective({}, 1, 1e-2);
   komo.addQuaternionNorms();
 
   if(collisionPairs.N) {
-    komo.addObjective({}, FS_distance, framesToNames(collisionPairs), OT_ineq, {1e2}, {-.001});
+    komo.addObjective({}, FS_distance, framesToNames(collisionPairs), OT_ineq, {1e2}, {.0});
   } else {
-    komo.addObjective({}, FS_accumulatedCollisions, {}, OT_ineq, {1e2}, {-.001});
+    komo.add_collision(true, .001, 1e2);
   }
 
-  komo.opt.verbose=0;
-  auto ret = komo.optimize(0., -1, rai::OptOptions().set_verbose(0).set_stopTolerance(1e-3));
+  // komo.opt.verbose=0;
+  // auto ret = komo.optimize(0., -1, rai::OptOptions().set_verbose(0).set_stopTolerance(1e-3));
+  // komo.opt.animateOptimization = 2;
+  NLP_Solver sol(komo.nlp(), 0);
+  std::shared_ptr<SolverReturn> ret = sol.solve();
 
   if(ret->ineq>1e-1) {
     if(verbose) LOG(-1) <<"solveForFeasible failed!" <<komo.report();
@@ -476,17 +480,12 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
     return false;
   } else {
     if(verbose) LOG(0) <<"collisions resolved";
-//          if(B.N){
-//            bool good = boundCheck(komo.x, B[0], B[1]);
-//            LOG(0) <<"bounds=good after resolution: " <<good;
-//            if(!good) HALT("this should not be the case! collision resolution should respect bounds!");
-//          }
-    C.setJointState(komo.x);
+    C.setJointState(ret->x);
     if(verbose>1) {
       C.ensure_proxies();
       double p = C.getTotalPenetration();
       if(verbose>1) C.reportProxies();
-      CHECK(p<=0., "not resolved");
+      CHECK_LE(p, 0., "collisions were not resolved");
     }
     return true;
   }

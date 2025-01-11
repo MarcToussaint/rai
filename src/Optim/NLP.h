@@ -68,6 +68,7 @@ struct NLP : NonCopyable {
   bool checkJacobian(const arr& x, double tolerance, const StringA& featureNames= {});
   bool checkHessian(const arr& x, double tolerance);
   arr getUniformSample() { return bounds[0] + rand(dimension) % (bounds[1] - bounds[0]); }
+  rai::String reportSignature();
 };
 
 //===========================================================================
@@ -127,6 +128,7 @@ struct NLP_Traced : NLP {
   //trivial
   virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
   virtual void getFHessian(arr& H, const arr& x) { P->getFHessian(H, x); }
+  virtual void report(ostream& os, int verbose, const char* msg=0){ P->report(os, verbose, msg); }
 };
 
 //===========================================================================

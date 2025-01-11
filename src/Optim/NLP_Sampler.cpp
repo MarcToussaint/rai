@@ -181,8 +181,17 @@ bool NLP_Sampler::step_GaussNewton(bool slackMode, double penaltyMu, double alph
   //compute delta
   arr delta;
   if(slackMode){
+#if 0
     arr Hinv = lapack_inverseSymPosDef(((2.*penaltyMu)*~ev.Js)*ev.Js+lambda*eye(x.N));
     delta = (-2.*penaltyMu) * Hinv * (~ev.Js) * ev.s;
+#else
+    arr R = comp_At_A(ev.Js);
+    R *= 2.*penaltyMu;
+    for(uint i=0;i<R.d1;i++) R.elem(i,i) += lambda;
+    arr g = comp_At_x(ev.Js, ev.s);
+    g *= -2.*penaltyMu;
+    delta = lapack_Ainv_b_sym(R, g);
+#endif
   }else{
     arr Hinv = lapack_inverseSymPosDef(((2.*penaltyMu)*~ev.Jr)*ev.Jr+lambda*eye(x.N));
     delta = (-2.*penaltyMu) * Hinv * (~ev.Jr) * ev.r;
@@ -599,14 +608,21 @@ void NLP_Sampler::Eval::eval(const arr& _x, NLP_Sampler& walker) {
 
   phi, J;
   walker.nlp->evaluate(phi, J, _x);
-  if(rai::isSparse(J)) J = J.sparse().unsparse();
+  // if(rai::isSparse(J)) J = J.sparse().unsparse();
+  if(rai::isSparse(J)) J.sparse().setupRowsCols();
 
   {
     //grab ineqs
     uintA ineqIdx;
     for(uint i=0; i<walker.nlp->featureTypes.N; i++) if(walker.nlp->featureTypes(i)==OT_ineq) ineqIdx.append(i);
     g = phi.sub(ineqIdx);
-    Jg = J.sub(ineqIdx);
+    if(walker.opt.margin>0.) g += walker.opt.margin;
+    if(!rai::isSparse(J)){
+      Jg = J.sub(ineqIdx);
+    }else{
+      Jg.sparse().resize(ineqIdx.N, J.d1, 0);
+      for(uint i=0;i<ineqIdx.N;i++) Jg.sparse().add(J.sparse().getSparseRow(ineqIdx(i)), i, 0);
+    }
   }
 
   {
@@ -614,20 +630,47 @@ void NLP_Sampler::Eval::eval(const arr& _x, NLP_Sampler& walker) {
     uintA eqIdx;
     for(uint i=0; i<walker.nlp->featureTypes.N; i++) if(walker.nlp->featureTypes(i)==OT_eq) eqIdx.append(i);
     h = phi.sub(eqIdx);
-    Jh = J.sub(eqIdx);
+    if(!rai::isSparse(J)){
+      Jh = J.sub(eqIdx);
+    }else{
+      Jh.sparse().resize(eqIdx.N, J.d1, 0);
+      for(uint i=0;i<eqIdx.N;i++) Jh.sparse().add(J.sparse().getSparseRow(eqIdx(i)), i, 0);
+    }
   }
 
   {
     //define slack
     s = g; Js = Jg;
-    for(uint i=0; i<s.N; i++) if(s(i)<0.) { s(i)=0.; Js[i]=0.; } //ReLu for g
+    if(rai::isSparse(J)) Js.sparse().setupRowsCols();
+    for(uint i=0; i<s.N; i++) if(s(i)<0.) {  //ReLu for g
+        s(i)=0.;
+        if(!rai::isSparse(J)){
+          Js[i]=0.;
+        }else{
+          Js.sparse().multRow(i, 0.);
+        }
+      }
     gpos = s;
     if(walker.opt.ineqOverstep>1.){
       Js /= walker.opt.ineqOverstep;
     }
 
-    s.append(h); Js.append(Jh);
-    for(uint i=g.N; i<s.N; i++) if(s(i)<0.) { s(i)*=-1.; Js[i]*=-1.; } //make positive
+    s.append(h);
+    if(rai::isSparse(J)){
+      Js.sparse().reshape(g.N+h.N, Js.d1);
+      Js.sparse().add(Jh, g.N, 0);
+      Js.sparse().setupRowsCols();
+    }else{
+      Js.append(Jh);
+    }
+    for(uint i=g.N; i<s.N; i++) if(s(i)<0.) { //make positive
+        s(i)*=-1.;
+        if(!rai::isSparse(J)){
+          Js[i]*=-1.;
+        }else{
+          Js.sparse().multRow(i, -1.);
+        }
+      }
 
     err = sum(s);
   }
@@ -637,7 +680,12 @@ void NLP_Sampler::Eval::eval(const arr& _x, NLP_Sampler& walker) {
     uintA sosIdx;
     for(uint i=0; i<walker.nlp->featureTypes.N; i++) if(walker.nlp->featureTypes(i)==OT_sos) sosIdx.append(i);
     r = phi.sub(sosIdx);
-    Jr = J.sub(sosIdx);
+    if(!rai::isSparse(J)){
+      Jr = J.sub(sosIdx);
+    }else{
+      Jr.sparse().resize(sosIdx.N, J.d1, 0);
+      for(uint i=0;i<sosIdx.N;i++) Jr.sparse().add(J.sparse().getSparseRow(sosIdx(i)), i, 0);
+    }
   }
 
 //  if(h.N) { //projection of equality constraints

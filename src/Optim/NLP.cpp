@@ -139,6 +139,21 @@ bool NLP::checkHessian(const arr& x, double tolerance) {
   return ::checkHessian(F, x, tolerance);
 }
 
+rai::String NLP::reportSignature(){
+  rai::String s;
+  s <<"NLP<" <<rai::niceTypeidName(typeid(*this)) <<"> dimension:" <<dimension;
+  if(featureTypes.N<4){
+    s <<" featureTypes: " <<EnumArr(featureTypes);
+  }else{
+    uintA types(OT_ineqP+1);
+    types.setZero();
+    for(auto t:featureTypes) types(t)++;
+    s <<" objectives: #eq:" <<types(OT_eq) <<" #ineq:" <<types(OT_ineq) <<" #sos:"  <<types(OT_sos)<<" #f:" <<types(OT_f);
+  }
+  s <<" bounds: [" <<bounds.elem(0) <<" .. " <<bounds.elem(-1) <<']';
+  return s;
+}
+
 //===========================================================================
 
 void NLP_Factored::evaluate(arr& phi, arr& J, const arr& x) {
