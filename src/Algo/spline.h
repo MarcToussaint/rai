@@ -14,34 +14,32 @@ namespace rai {
 
 //==============================================================================
 
-struct BSplineCore {
-  arr knots;
-  arr B, Bdot, Bddot;
-  arr JBtimes;
-
-  void setUniformKnots(uint degree, uint nPointsWODuplicates);
-  arr get(double t, uint degree, uint derivatives=0, bool calc_JBtimes=false);
-  arr getBmatrix(uint T, uint degree);
-  void setKnots(uint degree, const arr& times);
-};
-
 /// a B-spline
 struct BSpline {
   uint degree;
-  arr ctrlPoints, knotTimes; ///< the points and times with (non-intuitive) head and tail added depending on degree
+  arr knots;
+  arr ctrlPoints;
+  //return values of calcB
+  arr B, Bdot, Bddot;
+  arr JBtimes;
 
-  //-- methods to define the points and times
-  BSpline& set(uint degree, const arr& _points, const arr& _times, const arr& startVel=NoArr, const arr& endVel=NoArr);
-  BSpline& set_vel(uint degree, const arr& _points, const arr& velocities, const arr& _times);
-  BSpline& setUniform(uint _degree, uint steps);
-  arr getGridBasis(uint T);
+  //-- core Bspline methods concerning knots and coefficients
+  void setKnots(uint _degree, const arr& times);
+  void calcB(double t, uint derivatives=0, bool calc_JBtimes=false);
+  arr getBmatrix(const arr& sampleTimes, bool startDuplicates=false, bool endDuplicates=false);
 
-  void append(const arr& _points, const arr& _times, bool inside);
+  //-- methods concerning ctrl points
+  void setCtrlPoints(const arr& pts, bool addStartDuplicates=true, bool addEndDuplicates=true, const arr& setStartVel=NoArr, const arr& setEndVel=NoArr);
+  void append(const arr& points, const arr& times, bool inside);
+
+  //-- convenience user functions
+  BSpline& set(uint _degree, const arr& points, const arr& times, const arr& startVel=NoArr, const arr& endVel=NoArr);
   void clear();
-
-  //
   arr getPoints();
-  void setPoints(const arr& pts);
+
+  //-- obsolete
+  // BSpline& set_vel(uint degree, const arr& points, const arr& velocities, const arr& _times);
+
 
   //experimental
   void doubleKnot(uint t);
@@ -58,12 +56,8 @@ struct BSpline {
   /// for t \in [0,1] the coefficients are the weighting of the points: f(t) = coeffs(t)^T * points
   // arr getCoeffs(double t, uint K, uint derivative=0) const;
 
-  double begin() const { return knotTimes.first(); }
-  double end() const { return knotTimes.last(); }
-
-//  arr getGridBasis(uint derivative=0){ HALT("see retired/spline-21-04-01.cpp"); }
-
-  // static void getCoeffs2(arr& c0, arr& c1, arr& c2, double t, uint degree, double* knots, uint nCtrls, uint nKnots, uint derivatives=0);
+  double begin() const { return knots.elem(0); }
+  double end() const { return knots.elem(-1); }
 };
 
 //==============================================================================

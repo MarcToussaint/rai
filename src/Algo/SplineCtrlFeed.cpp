@@ -17,7 +17,7 @@ void BSplineCtrlReference::initialize(const arr& q_real, const arr& qDot_real, d
 }
 
 void BSplineCtrlReference::waitForInitialized() {
-  while(!spline.get()->knotTimes.N) spline.waitForNextRevision();
+  while(!spline.get()->knots.N) spline.waitForNextRevision();
 }
 
 void BSplineCtrlReference::getReference(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, const arr& q_real, const arr& qDot_real, double ctrlTime) {
@@ -43,7 +43,7 @@ void BSplineCtrlReference::append(const arr& x, const arr& t, double ctrlTime) {
 
 void BSplineCtrlReference::overwriteSmooth(const arr& x, const arr& t, double ctrlTime) {
   CHECK(t.first()>.001, "that's too harsh!");
-  if(!spline.get()->knotTimes.N) { //not yet initialized
+  if(!spline.get()->knots.N) { //not yet initialized
     append(x, t, ctrlTime);
     return;
   }
@@ -81,10 +81,10 @@ void BSplineCtrlReference::report(double ctrlTime) {
   waitForInitialized();
   arr x, xDot;
   auto splineGet = spline.get();
-  cout <<"times: current: " <<ctrlTime << " knots: " <<splineGet->knotTimes <<endl;
-  splineGet->eval2(x, xDot, NoArr, splineGet->knotTimes.first());
+  cout <<"times: current: " <<ctrlTime << " knots: " <<splineGet->knots <<endl;
+  splineGet->eval2(x, xDot, NoArr, splineGet->knots.first());
   cout <<"eval(first): " <<x <<' ' <<xDot <<endl;
-  splineGet->eval2(x, xDot, NoArr, splineGet->knotTimes.last());
+  splineGet->eval2(x, xDot, NoArr, splineGet->knots.last());
   cout <<"eval(last): " <<x <<' ' <<xDot <<endl;
   splineGet->eval2(x, xDot, NoArr, ctrlTime);
   cout <<"eval(current): " <<x <<' ' <<xDot <<endl;

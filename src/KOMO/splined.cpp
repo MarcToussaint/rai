@@ -52,9 +52,9 @@ SplinedKOMO::SplinedKOMO(uint degree, uint numCtrlPoints, KOMO& _komo)
 void SplinedKOMO::evaluate(arr& phi, arr& J, const arr& x) {
   arr pts = x;
   pts.prepend(x0);
-  S.setPoints(pts);
+  S.setCtrlPoints(pts);
 
-  arr timeGrid = range(S.knotTimes(0), S.knotTimes(-1), komo.T);
+  arr timeGrid = range(S.knots(0), S.knots(-1), komo.T);
   timeGrid.popFirst();
   arr x_fine(timeGrid.N, x0.N);
   arr x_fineJ, Jpoints, tmp, tail;

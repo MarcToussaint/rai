@@ -40,6 +40,18 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
 
   distance=-1.;
 
+  //-- special cases: point to point
+  if(mesh1.V.d0==1 && mesh2.V.d0==1) {
+    p1=mesh1.V; p1.reshape(3); _t1.applyOnPoint(p1);
+    p2=mesh2.V; p2.reshape(3); _t2.applyOnPoint(p2);
+    normal = p1-p2;
+    distance = length(normal);
+    if(distance>1e-10) normal /= distance;
+    simplex1=p1; simplex1.reshape(1,3);
+    simplex2=p2; simplex2.reshape(1,3);
+    return;
+  }
+
   //-- special cases: point to pcl
   if(mesh1.V.d0==1 && mesh2.V.d0>2 && !mesh2.T.N) {
     _mesh2.ensure_ann();
@@ -125,8 +137,7 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
     mesh2.V = _mesh2.V({start, end});
   }
 
-  //-- standard case
-
+  //-- generic case
 #ifdef FCLmode
   //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
   rai::Mesh M1(*mesh1); if(!t1->isZero()) t1->applyOnPointArray(M1.V);

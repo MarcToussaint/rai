@@ -1337,6 +1337,7 @@ template<class T> void Array<T>::takeOver(Array<T>& a) {
   filling the range [lo, hi] in each dimension. Note: returned array is
   `flat', rather than grid-shaped. */
 template<class T> Array<T>& Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
+  CHECK(steps, "steps needs to be >0");
   uint i, j, k;
   if(dim==1) {
     resize(steps+1, 1);

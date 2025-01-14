@@ -23,12 +23,12 @@ void TEST(Basics){
   arr vel = {1.};
   S.set(3, X, T);
 
-  cout <<"\ntimes = " <<S.knotTimes <<endl;
+  cout <<"\ntimes = " <<S.knots <<endl;
   cout <<"points = " <<~S.ctrlPoints <<endl;
   plotIt(S);
 
   S.append(arr{0., 1.}.reshape(-1,1), {.5, 1.}, true);
-  cout <<"\ntimes = " <<S.knotTimes <<endl;
+  cout <<"\ntimes = " <<S.knots <<endl;
   cout <<"points = " <<~S.ctrlPoints <<endl;
   plotIt(S);
 
@@ -36,7 +36,7 @@ void TEST(Basics){
   S.setDoubleKnotVel(1, vel);
   S.setDoubleKnotVel(5, -vel);
 
-  cout <<"\ntimes = " <<S.knotTimes <<endl;
+  cout <<"\ntimes = " <<S.knots <<endl;
   cout <<"points = " <<~S.ctrlPoints <<endl;
   plotIt(S);
 
@@ -46,23 +46,12 @@ void TEST(Basics){
 
 void TEST(BasisMatrix){
   rai::BSpline S;
-  rai::BSplineCore SC;
 
   uint n=300;
   for(uint deg=0;deg<5;deg++){
-    if(deg) S.setUniform(deg, deg+deg%2);
-    else{ S.degree=0; S.knotTimes={0., 1.}; S.ctrlPoints=zeros(1,1); }
-    //S.knotTimes = ::range(0.,1.,S.knotTimes.N-1);
-    arr B = S.getGridBasis(n);
-
-    {
-      SC.setUniformKnots(deg, deg+deg%2+1);
-      //cout <<"==========\n" <<SC.knots <<endl <<S.knotTimes <<endl;
-      CHECK_ZERO(::maxDiff(SC.knots, S.knotTimes), 1e-10, "");
-      arr BB = SC.getBmatrix(n+1, deg);
-      //cout <<"==========\n" <<B <<endl <<BB <<endl;
-      CHECK_ZERO(::maxDiff(B, BB), 1e-10, "");
-    }
+    if(deg) S.setKnots(deg, ::range(0., 1., deg+deg%2));
+    else{ S.degree=0; S.knots={0., 1.}; }
+    arr B = S.getBmatrix(::range(0., 1., n));
 
     FILE("z.dat") <<B.modRaw() <<endl;
 
@@ -70,7 +59,7 @@ void TEST(BasisMatrix){
     cmd <<"set style data lines;\n";
     cmd <<"set key off;\n";
     cmd <<"set xtics (";
-    for(uint i=0;i<S.knotTimes.N;i++) cmd <<"\"t_{" <<i <<"}\" " <<S.knotTimes(i) <<",";
+    for(uint i=0;i<S.knots.N;i++) cmd <<"\"t_{" <<i <<"}\" " <<S.knots(i) <<",";
     cmd <<");\n";
     cmd <<"plot [-.05:1.05][0:1.05] 'z.dat' us ($0/" <<n <<"):1";
     for(uint i=1;i<B.d1;i++) cmd <<", '' us ($0/" <<n <<"):" <<i+1;
@@ -85,20 +74,17 @@ void TEST(BasisMatrix){
 
 void TEST(Fitting){
   uint N = 10, n=1, z=10, deg=3;
+  bool flatEnds=false;
   arr X = randn(N, n);
-  arr Z = rai::BSpline_path2ctrlPoints(X, z, deg, false);
+  arr Z = rai::BSpline_path2ctrlPoints(X, z, deg, flatEnds);
   rai::BSpline S;
-#if 1
-  rai::BSplineCore SC;
-  SC.setUniformKnots(deg, z);
-  S.degree = deg;
-  S.knotTimes = SC.knots;
-  S.ctrlPoints = Z;
-  // S.setPoints(Z);
-#else
-  S.set(deg, Z, ::range(0., 1., Z.d0-1));
-#endif
-  CHECK_EQ(S.ctrlPoints.d0, S.knotTimes.N - deg - 1, "");
+  S.setKnots(deg, ::range(0., 1., z-1));
+  if(!flatEnds){
+    S.ctrlPoints = Z;
+  }else{
+    S.setCtrlPoints(Z);
+  }
+  CHECK_EQ(S.ctrlPoints.d0, S.knots.N - deg - 1, "");
 
   FILE("z.X.dat") <<rai::catCol(~~::range(0.,1.,X.d0-1), X).modRaw();
   FILE("z.Z.dat") <<rai::catCol(~~::range(0.,1.,Z.d0-1), Z).modRaw();
@@ -130,7 +116,7 @@ void TEST(Speed){
 
 //==============================================================================
 
-void testDiff(){
+void testJacobian(){
   uint T=100, deg=3;
   arr X(T,7);
   rndUniform(X,-1,1,false);
@@ -141,7 +127,7 @@ void testDiff(){
   //-- test w.r.t. knots
   double teval, time;
   fct evalFromKnots = [&S, &teval](const arr& knots) -> arr {
-    S.knotTimes = knots;
+    S.knots = knots;
     arr y;
     S.eval2(y, NoArr, NoArr, teval, NoArr, y.J());
     return y;
@@ -150,13 +136,13 @@ void testDiff(){
   time = -rai::cpuTime();
   for(uint k=0;k<100;k++){
     teval = rnd.uni(-.1, 1.1);
-    arr knots = S.knotTimes;
+    arr knots = S.knots;
     arr x = S.eval(teval);
     arr y = evalFromKnots(knots);
     CHECK_ZERO(maxDiff(x,y), 1e-10, "");
     cout <<teval <<' ' <<x <<' ' <<y.noJ() <<' ' <<maxDiff(x, y) <<endl;
     checkJacobian(evalFromKnots, knots, 1e-4);
-    S.knotTimes = knots;
+    S.knots = knots;
   }
   time += rai::cpuTime();
   cout <<"time: " <<time <<endl;
@@ -215,7 +201,7 @@ int MAIN(int argc,char** argv){
   testSpeed();
 
   // testPath();
-  testDiff();
+  testJacobian();
 
   return 0;
 }

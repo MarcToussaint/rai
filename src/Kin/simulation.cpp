@@ -237,6 +237,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   //-- call the physics engine
   if(engine==_physx) {
+    C.ensure_q();
     self->physx->pushFrameStates(C, NoArr, true); //kinematicOnly (usually none anyway)
     self->physx->pushMotorTargets(C); //qDot_ref, motor control
     self->physx->step(tau);

@@ -572,8 +572,6 @@ void testResetState(){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  testResetState(); return 0;
-
   testMotors();
   testPassive("../../../../playground/24-humanoid/scene.g");
   testPassive("../../../../rai-robotModels/scenarios/pendulum.g");
@@ -586,6 +584,7 @@ int MAIN(int argc,char **argv){
   testPushes();
   testOpenClose();
   testGrasp();
+  testResetState();
   testSplineMode();
 
   return 0;

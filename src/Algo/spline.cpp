@@ -18,19 +18,15 @@
 
 namespace rai {
 
-void BSpline::clear() {
-  ctrlPoints.clear();
-  knotTimes.clear();
-}
-
-void BSplineCore::setKnots(uint degree, const arr& times){
+void BSpline::setKnots(uint _degree, const arr& times){
+  degree = _degree;
   uint nCtrls = times.N + 2*(degree/2);
   uint nKnots = nCtrls+degree+1;
   knots.resize(nKnots);
 
   for(uint i=0; i<nKnots; i++) {
-    if(i<=degree) knots(i)=0.;
-    else if(i>=nCtrls) knots(i)=1.;
+    if(i<=degree) knots(i)=times.elem(0);
+    else if(i>=nCtrls) knots(i)=times.elem(-1);
     else if((degree%2)) {
       knots(i) = times(i-degree);
     } else {
@@ -39,15 +35,7 @@ void BSplineCore::setKnots(uint degree, const arr& times){
   }
 }
 
-void BSplineCore::setUniformKnots(uint degree, uint nPointsWODuplicates) {
-  if(!degree && nPointsWODuplicates==1){
-    knots = {0., 1.};
-  }else{
-    setKnots(degree, ::range(0., 1., nPointsWODuplicates-1));
-  }
-}
-
-arr BSplineCore::get(double t, uint degree, uint derivatives, bool calc_JBtimes) {
+void BSpline::calcB(double t, uint derivatives, bool calc_JBtimes) {
   B.resize(knots.N-degree, degree+1).setZero();
   if(derivatives>0) Bdot.resize(knots.N-degree, degree+1).setZero();
   if(derivatives>1) Bddot.resize(knots.N-degree, degree+1).setZero();
@@ -110,20 +98,83 @@ arr BSplineCore::get(double t, uint degree, uint derivatives, bool calc_JBtimes)
 #undef _knots
 #undef _B
 #undef _DIV
-
-  return B;
 }
 
-arr BSplineCore::getBmatrix(uint T, uint degree) {
+arr BSpline::getBmatrix(const arr& sampleTimes, bool startDuplicates, bool endDuplicates){
+  CHECK(knots.N, "need to set knots first");
   uint m = knots.N-1;
   uint K = m - degree - 1;
-  arr Bmatrix(T, K+1), B;
-  for(uint t=0; t<T; t++){
-    B = get(double(t)/double(T-1), degree);
+  arr Bmatrix(sampleTimes.N, K+1);
+  for(uint t=0; t<sampleTimes.N; t++){
+    calcB(sampleTimes(t));
     for(uint i=0;i<=K;i++) Bmatrix(t,i) = B(i, degree);
+  }
+  if(startDuplicates||endDuplicates){
+    Bmatrix = ~Bmatrix;
+    if(startDuplicates){
+      Bmatrix[1] += Bmatrix[0];
+      Bmatrix.delRows(0);
+    }
+    if(endDuplicates){
+      Bmatrix[-2] += Bmatrix[-1];
+      Bmatrix.delRows(-1);
+    }
+    Bmatrix = ~Bmatrix;
   }
   return Bmatrix;
 }
+
+//==============================================================================
+
+void BSpline::clear() {
+  ctrlPoints.clear();
+  knots.clear();
+}
+
+void BSpline::setCtrlPoints(const arr& pts, bool addStartDuplicates, bool addEndDuplicates, const arr& setStartVel, const arr& setEndVel) {
+  CHECK(knots.N, "need to set knots first");
+  if(!pts.d1){ ctrlPoints.resize(pts.d0+2*(degree/2), pts.d1); return; }
+
+  ctrlPoints = pts;
+  for(uint i=0; i<degree/2; i++) {
+    if(addStartDuplicates) ctrlPoints.prepend(pts[0]);
+    if(addEndDuplicates) ctrlPoints.append(pts[-1]);
+  }
+  CHECK_EQ(ctrlPoints.d0, knots.N-degree-1, "");
+
+  if(!!setStartVel) setDoubleKnotVel(-1, setStartVel);
+  if(!!setEndVel) setDoubleKnotVel(pts.d0-1, setEndVel);
+}
+
+BSpline& BSpline::set(uint _degree, const arr& points, const arr& times, const arr& startVel, const arr& endVel) {
+  CHECK_EQ(times.nd, 1, "");
+  CHECK_EQ(points.nd, 2, "");
+  CHECK_EQ(points.d0, times.N, "");
+
+  setKnots(_degree, times);
+  setCtrlPoints(points, true, true, startVel, endVel);
+
+  return *this;
+}
+
+// BSpline& BSpline::set_vel(uint degree, const arr& _points, const arr& velocities, const arr& _times) {
+//   arr pts = repmat(_points, 1, 2).reshape(-1, _points.d1);
+//   arr tms = repmat(_times, 1, 2).reshape(-1);
+//   set(degree, pts, tms);
+//   if(velocities.N) {
+//     for(uint t=0; t<velocities.d0; t++) {
+//       setDoubleKnotVel(2*t, velocities[t]);
+//     }
+//   }
+//   return *this;
+// }
+
+// BSpline& BSpline::setUniform(uint _degree, uint steps) {
+//   arr t = ::range(0., 1., steps);
+//   arr x = t;
+//   set(_degree, x.reshape(-1, 1), t);
+//   return *this;
+// }
 
 arr BSpline::eval(double t, uint derivative) const {
   arr x;
@@ -140,33 +191,35 @@ void BSpline::eval2(arr& x, arr& xDot, arr& xDDot, double t, arr& Jpoints, arr& 
   if(!!xDot) xDot.resize(n).setZero();
   if(!!xDDot) xDDot.resize(n).setZero();
   if(!!Jpoints) Jpoints.resize(n, ctrlPoints.d0, n).setZero();
-  if(!!Jtimes) Jtimes.resize(n, knotTimes.N).setZero();
+  if(!!Jtimes) Jtimes.resize(n, knots.N).setZero();
   uint derivative=0;
   if(!!xDot) derivative=1;
   if(!!xDDot) derivative=2;
 
   //-- handle out-of-interval cases
-  if(t<knotTimes(0)){
+  if(t<knots(0)){
     if(!!x) x = ctrlPoints[0];
+    if(!!Jpoints) for(uint i=0; i<n; i++) Jpoints(i, 0, i) = 1.;
     return;
   }
-  if(t>=knotTimes(-1)) {
-    if(!!Jpoints) for(uint i=0; i<n; i++) Jpoints(i, -1, i) = 1.;
+  if(t>=knots(-1)) {
     if(!!x) x = ctrlPoints[-1];
+    if(!!Jpoints) for(uint i=0; i<n; i++) Jpoints(i, -1, i) = 1.;
     return;
   }
 
   //-- grab range of relevant knots
-  int center = knotTimes.rankInSorted(t, rai::lowerEqual<double>, true);
+  int center = knots.rankInSorted(t, rai::lowerEqual<double>, true);
   center -= 1;
   int lo = center - degree;  if(lo<0) lo=0;
-  int up = lo + 2*degree;  if(up>(int)knotTimes.N-1) up=knotTimes.N-1;
+  int up = lo + 2*degree;  if(up>(int)knots.N-1) up=knots.N-1;
   lo = up - 2*degree;  if(lo<0) lo=0;
 
   //-- compute B-spline coefficients on relevant knots
-  BSplineCore core;
-  core.knots.referToRange(knotTimes, lo, up);
-  core.get(t, degree, derivative, (!!Jtimes));
+  BSpline core;
+  core.degree = degree;
+  core.knots.referToRange(knots, lo, up);
+  core.calcB(t, derivative, (!!Jtimes));
 
   //-- multiply coefficients with control points
   arr Jtmp2;
@@ -184,7 +237,7 @@ void BSpline::eval2(arr& x, arr& xDot, arr& xDDot, double t, arr& Jpoints, arr& 
       for(uint i=0; i<n; i++) Jpoints(i, lo+j, i) = b;
     }
     if(!!Jtimes) {
-      Jtmp2.resize(n, knotTimes.N).setZero();
+      Jtmp2.resize(n, knots.N).setZero();
       Jtmp2.setMatrixBlock(ctrlPoints[lo+j] * ~core.JBtimes(j, degree, {}), 0, lo);
       Jtimes += Jtmp2;
     }
@@ -197,112 +250,49 @@ arr BSpline::eval(const arr& ts) {
   return f;
 }
 
-BSpline& BSpline::set(uint _degree, const arr& _points, const arr& _times, const arr& startVel, const arr& endVel) {
-  CHECK_EQ(_times.nd, 1, "");
-  CHECK_EQ(_points.nd, 2, "");
-  CHECK_EQ(_points.d0, _times.N, "");
 
-  degree = _degree;
+// arr BSpline::getGridBasis(uint T) {
+//   BSpline core;
+//   core.knots.referTo(knots);
+//   return core.getBmatrix(::range(0., 1., T), degree);
+// }
 
-  //knot points with head and tail
-  ctrlPoints = _points;
-  for(uint i=0; i<degree/2; i++) {
-    ctrlPoints.prepend(_points[0]);
-    ctrlPoints.append(_points[-1]);
-  }
+void BSpline::append(const arr& points, const arr& times, bool inside) {
+  CHECK_EQ(points.nd, 2, "");
+  CHECK_EQ(points.d0, times.N, "");
 
-  //knot times with head and tail
-  uint m=ctrlPoints.d0+degree;
-  knotTimes.resize(m+1);
-  for(uint i=0; i<=m; i++) {
-    if(i<=degree) knotTimes(i)=_times.first();
-    else if(i>=m-degree) knotTimes(i)=_times.last();
-    else if((degree%2)) {
-      knotTimes(i) = _times(i-degree);
-    } else {
-      knotTimes(i) = .5*(_times(i-degree-1)+_times(i-degree));
-    }
-  }
-
-  //can also tune startVel and endVel for degree 2
-  if(!!startVel) setDoubleKnotVel(-1, startVel);
-  if(!!endVel) setDoubleKnotVel(_points.d0-1, endVel);
-
-  CHECK_EQ(ctrlPoints.d0, knotTimes.N-degree-1, "");
-
-  return *this;
-}
-
-BSpline& BSpline::set_vel(uint degree, const arr& _points, const arr& velocities, const arr& _times) {
-  arr pts = repmat(_points, 1, 2).reshape(-1, _points.d1);
-  arr tms = repmat(_times, 1, 2).reshape(-1);
-  set(degree, pts, tms);
-  if(velocities.N) {
-    for(uint t=0; t<velocities.d0; t++) {
-      setDoubleKnotVel(2*t, velocities[t]);
-    }
-  }
-  return *this;
-}
-
-BSpline& BSpline::setUniform(uint _degree, uint steps) {
-  arr t = ::range(0., 1., steps);
-  arr x = t;
-  set(_degree, x.reshape(-1, 1), t);
-  return *this;
-}
-
-arr BSpline::getGridBasis(uint T) {
-#if 0
-  arr basis(T+1, ctrlPoints.d0);
-  arr db, ddb;
-  for(uint t=0; t<=T; t++) {
-    getCoeffs2(basis[t].noconst(), db, ddb, double(t)/double(T), degree, knotTimes.p, ctrlPoints.d0, knotTimes.N, 0);
-  }
-  return basis;
-#else
-  BSplineCore core;
-  core.knots.referTo(knotTimes);
-  return core.getBmatrix(T+1, degree);
-#endif
-}
-
-void BSpline::append(const arr& _points, const arr& _times, bool inside) {
-  CHECK_EQ(_points.nd, 2, "");
-  CHECK_EQ(_points.d0, _times.N, "");
-
-  CHECK_GE(_times.first(), 0., "append needs to be in relative time, always with _times.first()>=0.");
-  if(!_times.first()) {
-    CHECK_LE(maxDiff(ctrlPoints[-1], _points[0]), 1e-10, "when appending with _times.first()=0., the first point needs to be identical to the previous last, making this a double knot");
+  CHECK_GE(times.first(), 0., "append needs to be in relative time, always with _times.first()>=0.");
+  if(!times.first()) {
+    CHECK_LE(maxDiff(ctrlPoints[-1], points[0]), 1e-10, "when appending with _times.first()=0., the first point needs to be identical to the previous last, making this a double knot");
   }
 
   //remember end time
-  double Tend = knotTimes.last();
+  double Tend = knots.last();
 
   //remove tails
   if(inside) {
     ctrlPoints.resizeCopy(ctrlPoints.d0-degree/2, ctrlPoints.d1);
-    knotTimes.resizeCopy(knotTimes.N-1-2*(degree/2));
+    knots.resizeCopy(knots.N-1-2*(degree/2));
   } else {
-    knotTimes.resizeCopy(knotTimes.N-1-(degree/2));
+    knots.resizeCopy(knots.N-1-(degree/2));
   }
 
   //append things:
-  ctrlPoints.append(_points);
-  knotTimes.append(_times+Tend);
+  ctrlPoints.append(points);
+  knots.append(times+Tend);
   if(!(degree%2)) {
-    arr tmp = knotTimes;
-    for(uint i=knotTimes.N-1; i>=knotTimes.N-_times.N; i--) {
+    arr tmp = knots;
+    for(uint i=knots.N-1; i>=knots.N-times.N; i--) {
 //      times(i) = .5*(times(i-1)+times(i));
-      knotTimes(i) = .5*(tmp(i-1) + tmp(i));
+      knots(i) = .5*(tmp(i-1) + tmp(i));
     }
   }
 
   //append tails;
-  for(uint i=0; i<degree/2; i++) ctrlPoints.append(_points[-1]);
-  knotTimes.append(_times(-1)+Tend, 1+2*(degree/2)); //multiple
+  for(uint i=0; i<degree/2; i++) ctrlPoints.append(points[-1]);
+  knots.append(times(-1)+Tend, 1+2*(degree/2)); //multiple
 
-  CHECK_EQ(ctrlPoints.d0, knotTimes.N-degree-1, "");
+  CHECK_EQ(ctrlPoints.d0, knots.N-degree-1, "");
 }
 
 arr BSpline::getPoints() {
@@ -313,21 +303,11 @@ arr BSpline::getPoints() {
   return pts;
 }
 
-void BSpline::setPoints(const arr& pts) {
-  CHECK_EQ(pts.d1, ctrlPoints.d1, "");
-  CHECK_EQ(pts.d0+2*(degree/2), ctrlPoints.d0, "");
-  ctrlPoints = pts;
-  for(uint i=0; i<degree/2; i++) {
-    ctrlPoints.prepend(pts[0]);
-    ctrlPoints.append(pts[-1]);
-  }
-}
-
 void BSpline::doubleKnot(uint t) {
   ctrlPoints.insRows(t + degree/2);
   ctrlPoints[t+degree/2] = ctrlPoints[t+degree/2-1];
 
-  knotTimes.insert(t+degree+1, knotTimes(t+degree));
+  knots.insert(t+degree+1, knots(t+degree));
 }
 
 void BSpline::setDoubleKnotVel(int t, const arr& vel) {
@@ -336,11 +316,11 @@ void BSpline::setDoubleKnotVel(int t, const arr& vel) {
   arr b=ctrlPoints[t+degree/2+1];
   CHECK(maxDiff(a, b)<1e-10, "this is not a double knot!");
   if(degree==2) {
-    a -= vel/degree*(knotTimes(t+degree+1)-knotTimes(t+degree));
-    b += vel/degree*(knotTimes(t+degree+2)-knotTimes(t+degree+1));
+    a -= vel/degree*(knots(t+degree+1)-knots(t+degree));
+    b += vel/degree*(knots(t+degree+2)-knots(t+degree+1));
   } else if(degree==3) {
-    a -= vel/degree*(knotTimes(t+degree)-knotTimes(t+degree-1));
-    b += vel/degree*(knotTimes(t+degree+2)-knotTimes(t+degree+1));
+    a -= vel/degree*(knots(t+degree)-knots(t+degree-1));
+    b += vel/degree*(knots(t+degree+2)-knots(t+degree+1));
   } else NIY;
 }
 
@@ -673,20 +653,9 @@ void CubicSplinePosVelAcc(arr& pos, arr& vel, arr& acc, double trel, const arr& 
 arr BSpline_path2ctrlPoints(const arr& path, uint numCtrlPoints, uint degree, bool flatEnds){
   CHECK_EQ(path.nd, 2, "");
   CHECK(path.d0, "");
-  BSplineCore S;
-  S.setUniformKnots(degree, numCtrlPoints);
-  arr B = S.getBmatrix(path.d0, degree);
-
-  if(flatEnds){//map duplicated control points
-    arr A = zeros(B.d1, numCtrlPoints);
-    uint off = (B.d1-numCtrlPoints)/2;
-    for(uint i=0;i<A.d0;i++){
-      if(i<off) A(i,0) = 1.;
-      else if(i-off<A.d1) A(i,i-off)=1.;
-      else A(i,-1) = 1.;
-    }
-    B = B * A;
-  }
+  BSpline S;
+  S.setKnots(degree, ::range(0., 1., numCtrlPoints-1));
+  arr B = S.getBmatrix(::range(0., 1., path.d0-1), flatEnds, flatEnds);
 
   arr Binv = pseudoInverse(B);
   arr ctrlPoints = Binv * path;
