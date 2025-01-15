@@ -86,7 +86,7 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
     shared_ptr<SDF> sdf = f->shape->_sdf;
     if(sdf){
       if(f->shape->type()==ST_tensor){
-        auto tensor = dynamic_pointer_cast<TensorShape>(sdf);
+        auto tensor = std::dynamic_pointer_cast<TensorShape>(sdf);
         add(f->ensure_X(), _tensor).tensor(tensor->gridData, f->shape->size);
         items(-1)->scale = f->shape->size;
       }else{

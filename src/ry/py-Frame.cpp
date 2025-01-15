@@ -52,7 +52,7 @@ void init_Frame(pybind11::module& m) {
   .def("setConvexMesh", &rai::Frame::setConvexMesh,
        "attach a convex mesh as shape",
        pybind11::arg("points"), pybind11::arg("colors") = byteA{}, pybind11::arg("radius")=0.)
-  .def("setDensity", &rai::Frame::setTensorShape, "", pybind11::arg("data"), pybind11::arg("size"))
+  .def("setTensorShape", &rai::Frame::setTensorShape, "", pybind11::arg("data"), pybind11::arg("size"))
   .def("setImplicitSurface", &rai::Frame::setImplicitSurface, "", pybind11::arg("data"), pybind11::arg("size"), pybind11::arg("blur"), pybind11::arg("resample")=-1.)
 
   .def("setParent", &rai::Frame::setParent, "", pybind11::arg("parent"), pybind11::arg("keepAbsolutePose_and_adaptRelativePose") = false, pybind11::arg("checkForLoop") = false)

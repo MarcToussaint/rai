@@ -542,7 +542,7 @@ KOMO_Spline_NLP::KOMO_Spline_NLP(KOMO& _komo, uint splineT, uint degree){
   arr z = replicate(x, t.N);
   S.set(degree, z, t);
   CHECK_EQ(_komo.timeSlices.d0, _komo.k_order+_komo.T, "");
-  arr B = S.getGridBasis(_komo.T);
+  arr B = S.getBmatrix(::range(0., 1., _komo.T));
   B.delRows(0, 1);
 
   { //prefix

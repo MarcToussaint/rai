@@ -142,8 +142,8 @@ void BSpline::setCtrlPoints(const arr& pts, bool addStartDuplicates, bool addEnd
   }
   CHECK_EQ(ctrlPoints.d0, knots.N-degree-1, "");
 
-  if(!!setStartVel) setDoubleKnotVel(-1, setStartVel);
-  if(!!setEndVel) setDoubleKnotVel(pts.d0-1, setEndVel);
+  if(!!setStartVel && setStartVel.N) setDoubleKnotVel(-1, setStartVel);
+  if(!!setEndVel && setEndVel.N) setDoubleKnotVel(pts.d0-1, setEndVel);
 }
 
 BSpline& BSpline::set(uint _degree, const arr& points, const arr& times, const arr& startVel, const arr& endVel) {
@@ -175,15 +175,6 @@ BSpline& BSpline::set(uint _degree, const arr& points, const arr& times, const a
 //   set(_degree, x.reshape(-1, 1), t);
 //   return *this;
 // }
-
-arr BSpline::eval(double t, uint derivative) const {
-  arr x;
-  if(derivative==0) eval2(x, NoArr, NoArr, t);
-  else if(derivative==1) eval2(NoArr, x, NoArr, t);
-  else if(derivative==2) eval2(NoArr, NoArr, x, t);
-  else NIY;
-  return x;
-}
 
 void BSpline::eval2(arr& x, arr& xDot, arr& xDDot, double t, arr& Jpoints, arr& Jtimes) const {
   uint n = ctrlPoints.d1;
@@ -244,9 +235,21 @@ void BSpline::eval2(arr& x, arr& xDot, arr& xDDot, double t, arr& Jpoints, arr& 
   }
 }
 
-arr BSpline::eval(const arr& ts) {
-  arr f(ts.N, ctrlPoints.d1);
-  for(uint i=0; i<ts.N; i++) eval2(f[i].noconst(), NoArr, NoArr, ts(i));
+arr BSpline::eval(double t, uint derivative) const {
+  arr x;
+  if(derivative==0) eval2(x, NoArr, NoArr, t);
+  else if(derivative==1) eval2(NoArr, x, NoArr, t);
+  else if(derivative==2) eval2(NoArr, NoArr, x, t);
+  else NIY;
+  return x;
+}
+
+arr BSpline::eval(const arr& sampleTimes, uint derivative) const {
+  arr f(sampleTimes.N, ctrlPoints.d1);
+  if(derivative==0){ for(uint i=0; i<sampleTimes.N; i++) eval2(f[i].noconst(), NoArr, NoArr, sampleTimes(i)); }
+  else if(derivative==1){ for(uint i=0; i<sampleTimes.N; i++) eval2(NoArr, f[i].noconst(), NoArr, sampleTimes(i)); }
+  else if(derivative==2){ for(uint i=0; i<sampleTimes.N; i++) eval2(NoArr, NoArr, f[i].noconst(), sampleTimes(i)); }
+  else NIY;
   return f;
 }
 

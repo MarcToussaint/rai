@@ -52,7 +52,7 @@ arr NLP::getInitializationSample(const arr& previousOptima) {
 void NLP::report(std::ostream& os, int verbose, const char* msg) {
   os <<"NLP of type '" <<rai::niceTypeidName(typeid(*this)) <<"'";
   if(msg) os <<' ' <<msg;
-  os <<" dimension:" <<dimension <<endl;
+  os <<" dimension:" <<dimension <<" #objectives: " <<featureTypes.N <<endl;
   if(verbose>1) os <<"\n  featureTypes: " <<EnumArr(featureTypes) <<"\n  bounds: " <<bounds <<endl;
 }
 

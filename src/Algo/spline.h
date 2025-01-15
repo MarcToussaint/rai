@@ -35,6 +35,8 @@ struct BSpline {
   //-- convenience user functions
   BSpline& set(uint _degree, const arr& points, const arr& times, const arr& startVel=NoArr, const arr& endVel=NoArr);
   void clear();
+  arr& getKnots(){ return knots; }
+  arr& getCtrlPoints(){ return ctrlPoints; }
   arr getPoints();
 
   //-- obsolete
@@ -47,9 +49,9 @@ struct BSpline {
 
   /// core method to evaluate spline
   // void eval(arr& x, arr& xDot, arr& xDDot, double t) const;
-  arr eval(double t, uint derivative=0) const;
   void eval2(arr& x, arr& xDot, arr& xDDot, double t, arr& Jpoints=NoArr, arr& Jtimes=NoArr) const;
-  arr eval(const arr& ts);
+  arr eval(double t, uint derivative=0) const;
+  arr eval(const arr& sampleTimes, uint derivative=0) const;
 
   // arr jac_point(double t, uint derivative=0) const;
 
