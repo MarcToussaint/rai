@@ -598,7 +598,7 @@ void CtrlProblem_NLP::getNames(StringA& variableNames, StringA& featureNames) {
     }
 }
 
-arr CtrlProblem_NLP::getInitializationSample(const arr& previousOptima) {
+arr CtrlProblem_NLP::getInitializationSample() {
   NIY;
 }
 

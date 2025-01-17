@@ -266,7 +266,7 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x) {
   }
 }
 
-arr TimingProblem::getInitializationSample(const arr& previousOptima) {
+arr TimingProblem::getInitializationSample() {
   arr x;
   if(optTau) x = (tau, v);
   else x = v;

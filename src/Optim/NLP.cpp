@@ -44,7 +44,7 @@ arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
 
 //===========================================================================
 
-arr NLP::getInitializationSample(const arr& previousOptima) {
+arr NLP::getInitializationSample() {
   if(!bounds.N) return 2.*rand(dimension)-1.;
   return getUniformSample();
 }

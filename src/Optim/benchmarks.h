@@ -169,7 +169,7 @@ struct NLP_Squared : NLP {
   NLP_Squared(uint n, double condition=100., bool random=true);
 
   virtual void evaluate(arr& phi, arr& J, const arr& x) { phi=C*x; if(!!J) J=C; }
-//  virtual arr getInitializationSample(const arr &previousOptima={}){ return ones(n); }
+//  virtual arr getInitializationSample(){ return ones(n); }
 };
 
 //===========================================================================

@@ -21,7 +21,7 @@
  * that class is passed to setPyProblem
  * that creates a PyNLP container which hosts the python class as py_nlp and implements the C++ rai::NLP
  */
-struct PyNLP : NLP{
+struct PyNLP : NLP {
   pybind11::object py_nlp; //the python object implementing the NLP
   // pybind11::object py_evaluate; //the python method
 
@@ -42,15 +42,21 @@ struct PyNLP : NLP{
     }
   }
 
-//  virtual void getFHessian(arr& H, const arr& x) {
-//    NIY;
-//  }
+  virtual void getFHessian(arr& H, const arr& x) {
+    pybind11::object _H = py_nlp.attr("getFHessian")(arr2numpy(x));
+    H = numpy2arr(_H.cast<pybind11::array_t<double>>());
+  }
+
+  virtual arr getInitializationSample(){
+    pybind11::object _x = py_nlp.attr("getInitializationSample")();
+    return numpy2arr(_x.cast<pybind11::array_t<double>>());
+  }
 
   virtual void report(ostream& os, int verbose, const char* nomsg=0){
     NLP::report(os, verbose, "(binding in py-Optim.cpp:52)");
     pybind11::object _msg = py_nlp.attr("report")(verbose);
     auto msg = _msg.cast<std::string>();
-    os <<msg <<endl;
+    os <<"user report: " <<msg <<endl;
   }
 
 };
@@ -88,8 +94,7 @@ void init_Optim(pybind11::module& m) {
 
   .def("getInitializationSample",
        &NLP::getInitializationSample,
-       "returns a sample (e.g. uniform within bounds) to initialize an optimization -- not necessarily feasible",
-       pybind11::arg("previousOptima") = arr()
+       "returns a sample (e.g. uniform within bounds) to initialize an optimization -- not necessarily feasible"
       )
 
   .def("getFHessian",  [](std::shared_ptr<NLP>& self, const arr& x) {
@@ -311,11 +316,17 @@ void init_Optim(pybind11::module& m) {
            pybind11::arg("verbose")=0
           )
 
-      .def("setProblem", &NLP_Solver::setProblem, "")
+      .def_readwrite("x", &NLP_Solver::x)
+      .def_readwrite("dual", &NLP_Solver::dual)
+
       .def("setSolver", &NLP_Solver::setSolver, "")
+      .def("setProblem", &NLP_Solver::setProblem, "")
+      .def("setInitialization", &NLP_Solver::setInitialization, "")
 
       .def("setTracing", &NLP_Solver::setTracing, "")
-      .def("solve", &NLP_Solver::solve, "", pybind11::arg("resampleInitialization")=-1, pybind11::arg("verbose")=-1)
+      .def("solve", &NLP_Solver::solve,
+           "resampleInitialization=-1 means: only when not already solved",
+           pybind11::arg("resampleInitialization")=-1, pybind11::arg("verbose")=-100)
 
       .def("getProblem", &NLP_Solver::getProblem, "returns the NLP problem")
       .def("getTrace_x", &NLP_Solver::getTrace_x, "returns steps-times-n array with queries points in each row")

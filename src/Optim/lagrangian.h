@@ -38,7 +38,7 @@ struct LagrangianProblem : ScalarFunction, NLP {
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);       //evaluate all features and (optionally) their Jacobians for state x
   virtual void getFHessian(arr& H, const arr& x);              //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
-  virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
+  virtual arr  getInitializationSample() { return P->getInitializationSample(); }
 
   double lagrangian(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
 

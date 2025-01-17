@@ -21,7 +21,7 @@ struct Conv_KOMO_TimeFactoredNLP : NLP_Factored {
 
   Conv_KOMO_TimeFactoredNLP(KOMO& _komo);
 
-  virtual arr getInitializationSample(const arr& previousOptima= {});
+  virtual arr getInitializationSample();
 
   virtual void setAllVariables(const arr& x);
   virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
@@ -117,7 +117,7 @@ Conv_KOMO_TimeFactoredNLP::Conv_KOMO_TimeFactoredNLP(KOMO& _komo) : komo(_komo) 
   }
 }
 
-arr Conv_KOMO_TimeFactoredNLP::getInitializationSample(const arr& previousOptima) {
+arr Conv_KOMO_TimeFactoredNLP::getInitializationSample() {
   komo.run_prepare(.01);
   return komo.x;
 }

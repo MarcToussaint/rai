@@ -148,7 +148,7 @@ void KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
 //  }
 }
 
-arr KOMO_NLP::getInitializationSample(const arr& previousOptima) {
+arr KOMO_NLP::getInitializationSample() {
   komo.run_prepare(.01);
   return komo.x;
 }
@@ -176,7 +176,7 @@ KOMO_SubNLP::KOMO_SubNLP(KOMO& _komo, const rai::Array<GroundedObjective*>& _obj
   }
 }
 
-arr KOMO_SubNLP::getInitializationSample(const arr& previousOptima) {
+arr KOMO_SubNLP::getInitializationSample() {
   komo.run_prepare(.01);
   return komo.pathConfig.getJointState();
 }
@@ -382,7 +382,7 @@ void Conv_KOMO_FactoredNLP::subSelect(const uintA& activeVariables, const uintA&
   }
 }
 
-arr Conv_KOMO_FactoredNLP::getInitializationSample(const arr& previousOptima) {
+arr Conv_KOMO_FactoredNLP::getInitializationSample() {
 #if 1
   komo.run_prepare(0.);
   return komo.x; //pathConfig.getJointState();
@@ -575,10 +575,10 @@ KOMO_Spline_NLP::KOMO_Spline_NLP(KOMO& _komo, uint splineT, uint degree){
   bounds[1] = replicate(limits[1], splineT+1). reshape(-1);
 }
 
-arr KOMO_Spline_NLP::getInitializationSample(const arr& previousOptima){
+arr KOMO_Spline_NLP::getInitializationSample(){
   arr x0 = fine_nlp->komo.world.getJointState();
   return replicate(x0, spline_B.d1/x0.N). reshape(-1);
-//  return nlp->getInitializationSample(previousOptima);
+//  return nlp->getInitializationSample();
 }
 
 }//namespace

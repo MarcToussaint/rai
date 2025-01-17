@@ -201,7 +201,7 @@ struct TimeOpt : NLP {
 
   }
 
-  virtual arr  getInitializationSample(const arr& previousOptima= {}){
+  virtual arr  getInitializationSample(){
     arr tau(dimension);
     tau = 1e-0;
     return tau;

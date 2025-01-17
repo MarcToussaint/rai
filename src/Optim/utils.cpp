@@ -79,8 +79,8 @@ NLP_LinTransformed::NLP_LinTransformed(std::shared_ptr<NLP> _P, const arr& _A, c
 //  bounds[1] = Ainv*(P->bounds[1]-b);
 }
 
-arr NLP_LinTransformed::getInitializationSample(const arr& previousOptima){
-  arr x = P->getInitializationSample(previousOptima);
+arr NLP_LinTransformed::getInitializationSample(){
+  arr x = P->getInitializationSample();
   return Ainv * x;
 }
 

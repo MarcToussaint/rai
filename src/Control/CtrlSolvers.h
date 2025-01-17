@@ -61,7 +61,7 @@ struct CtrlProblem_NLP : NLP {
 
   virtual void getNames(StringA& variableNames, StringA& featureNames);
 
-  virtual arr getInitializationSample(const arr& previousOptima= {});
+  virtual arr getInitializationSample();
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 };

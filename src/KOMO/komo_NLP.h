@@ -21,7 +21,7 @@ struct KOMO_NLP : NLP {
 
   KOMO_NLP(KOMO& _komo);
 
-  virtual arr getInitializationSample(const arr& previousOptima= {});
+  virtual arr getInitializationSample();
   virtual void evaluate(arr& phi, arr& J, const arr& x);
   virtual void getFHessian(arr& H, const arr& x);
 
@@ -35,7 +35,7 @@ struct KOMO_Spline_NLP : NLP {
 
   KOMO_Spline_NLP(KOMO& _komo, uint splineT, uint degree);
 
-  virtual arr getInitializationSample(const arr& previousOptima={});
+  virtual arr getInitializationSample();
   virtual void evaluate(arr& phi, arr& J, const arr& x){ nlp->evaluate(phi, J, x); }
   virtual void report(ostream& os, int verbose, const char* msg=0){ fine_nlp->report(os, verbose, msg); }
 };
@@ -49,7 +49,7 @@ struct KOMO_SubNLP : NLP {
 
   KOMO_SubNLP(KOMO& _komo, const rai::Array<GroundedObjective*>& _objs, const DofL& _dofs);
 
-  virtual arr getInitializationSample(const arr& previousOptima= {});
+  virtual arr getInitializationSample();
   virtual void evaluate(arr& phi, arr& J, const arr& x);
   virtual void getFHessian(arr& H, const arr& x);
 
@@ -84,7 +84,7 @@ struct Conv_KOMO_FactoredNLP : NLP_Factored {
 
   ///-- signature/structure of the mathematical problem
 //    virtual arr getInitializationSample();
-  virtual arr getInitializationSample(const arr& previousOptima);
+  virtual arr getInitializationSample();
   virtual arr  getSingleVariableInitSample(uint var_id);
   virtual void randomizeSingleVariable(uint var_id);
 

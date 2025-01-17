@@ -87,7 +87,7 @@ struct NLP_LinTransformed : NLP {
 
   NLP_LinTransformed(std::shared_ptr<NLP> _P, const arr& _A, const arr& _b);
 
-  virtual arr getInitializationSample(const arr& previousOptima={});
+  virtual arr getInitializationSample();
   virtual void evaluate(arr& phi, arr& J, const arr& x);
   virtual void report(ostream& os, int verbose, const char* msg=0){ P->report(os, verbose, msg); }
 };

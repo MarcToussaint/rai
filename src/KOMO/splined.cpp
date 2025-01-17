@@ -129,7 +129,7 @@ void SplinedKOMO::evaluate(arr& phi, arr& J, const arr& x) {
 //  }
 }
 
-arr SplinedKOMO::getInitializationSample(const arr& previousOptima) {
+arr SplinedKOMO::getInitializationSample() {
   arr ways = S.getPoints();
   ways.delRows(0);
   return ways;

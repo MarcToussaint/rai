@@ -54,7 +54,7 @@ struct NLP : NonCopyable {
   virtual void evaluate(arr& phi, arr& J, const arr& x) = 0;       //evaluate all features and (optionally) their Jacobians for state x
 
   // optional initialization method
-  virtual arr  getInitializationSample(const arr& previousOptima= {}); //get an initialization (for MC sampling/restarts) [default: initialize random within bounds]
+  virtual arr  getInitializationSample(); //get an initialization (for MC sampling/restarts) [default: initialize random within bounds]
 
   // optional evaluation of Hessian of all scalar objectives
   virtual void getFHessian(arr& H, const arr& x) { H.clear(); } //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
@@ -126,7 +126,7 @@ struct NLP_Traced : NLP {
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 
   //trivial
-  virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
+  virtual arr  getInitializationSample() { return P->getInitializationSample(); }
   virtual void getFHessian(arr& H, const arr& x) { P->getFHessian(H, x); }
   virtual void report(ostream& os, int verbose, const char* msg=0){ P->report(os, verbose, msg); }
 };
@@ -184,7 +184,7 @@ struct Conv_NLP_TrivialFactoreded : NLP_Factored {
     featureVariables = { uintA({0}) };
   }
 
-  virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
+  virtual arr  getInitializationSample() { return P->getInitializationSample(); }
 
   virtual void setSingleVariable(uint var_id, const arr& x) { x_buffer = x; }
   virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) {  P->evaluate(phi, J, x_buffer);   if(!!H) NIY;  }
@@ -203,7 +203,7 @@ struct Conv_FactoredNLP_BandedNLP : NLP {
   Conv_FactoredNLP_BandedNLP(const shared_ptr<NLP_Factored>& P, uint _maxBandSize, bool _sparseNotBanded=false);
 
   // trivial
-  virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
+  virtual arr  getInitializationSample() { return P->getInitializationSample(); }
   virtual void getFHessian(arr& H, const arr& x) { P->getFHessian(H, x); }
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);

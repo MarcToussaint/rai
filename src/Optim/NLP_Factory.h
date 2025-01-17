@@ -19,7 +19,7 @@ struct NLP_Factory : NLP {
 
   std::function<void(arr& y, arr& J, const arr& x, void* _userData)> eval;
   std::function<std::tuple<arr, arr> (const arr&)> eval2;
-  std::function<arr(const arrL& previousOptima, void* _userData)> init;
+  std::function<arr(void* _userData)> init;
 
   NLP_Factory() {}
 
@@ -29,7 +29,7 @@ struct NLP_Factory : NLP {
 
   void setEvalCallback1(const std::function<void(arr& y, arr& J, const arr& x, void* _userData)>& _eval, void* _userData=0) { eval = _eval;  userData = _userData; }
   void setEvalCallback2(const std::function<std::tuple<arr, arr> (const arr&)>& _eval) { eval2 = _eval; }
-  void setInitCallback(const std::function<arr(const arrL& previousOptima, void* _userData)>& _init) { init = _init; }
+  void setInitCallback(const std::function<arr(void* _userData)>& _init) { init = _init; }
 
   //-- helpers for analysis
   void checkGradients(const arr& x, double eps = 1e-4);
