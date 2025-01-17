@@ -73,7 +73,7 @@ struct CubicPiece {
   void set(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau);
   void eval(arr& x, arr& xDot, arr& xDDot, double t) const;
   arr eval(double t, uint diff);
-  void write(ostream& os) const { os <<"a:" <<a <<"b:" <<b <<"c:" <<c <<"d:" <<d; }
+  void write(ostream& os) const { os <<"a:" <<a <<" b:" <<b <<" c:" <<c <<" d:" <<d; }
 };
 stdOutPipe(CubicPiece)
 

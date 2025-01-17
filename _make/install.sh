@@ -73,11 +73,11 @@ case ${lib} in
 	;;
 
     physx)
-	if [ -z "$version" ]; then version="106.1-physx-5.4.2"; fi #release/104.1
+	if [ -z "$version" ]; then version="release/104.1"; fi #106.1-physx-5.4.2
         git clone --single-branch -b ${version} https://github.com/NVIDIA-Omniverse/PhysX.git
 	cd PhysX/physx/buildtools/packman; ./packman update -y
         cd ../..; ./generate_projects.sh linux; cd compiler/linux-release/
-	cmake ../../compiler/public -DPX_BUILDPVDRUNTIME=OFF -DPX_BUILDSNIPPETS=OFF -DCMAKE_INSTALL_PREFIX=${pre}
+	cmake ../../compiler/public -DPX_BUILDPVDRUNTIME=OFF -DPX_BUILDSNIPPETS=OFF -DCMAKE_INSTALL_PREFIX=${pre} -DCMAKE_CXX_FLAGS='-w'
 	make install
 	cd ${pre}/lib; ln -sf ../bin/linux.clang/release PhysX
 	;;

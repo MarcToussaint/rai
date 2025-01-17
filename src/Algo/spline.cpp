@@ -59,7 +59,7 @@ void BSpline::calcB(double t, uint derivatives, bool calc_JBtimes) {
       if(i+p<knots.N) {
         double xnom = t - _knots(i);
         double xden = _knots(i+p) - _knots(i);
-        if(xnom!=0. && xden!=0.) {
+        if(xden!=0.) {
           double x = _DIV(xnom, xden);
           _B(i, p) = x * _B(i, p-1);
           if(derivatives>0) Bdot(i, p) = _DIV(1., xden) * B(i,p-1) + x * Bdot(i,p-1);
@@ -75,7 +75,7 @@ void BSpline::calcB(double t, uint derivatives, bool calc_JBtimes) {
       if(i+1<knots.N && i+p+1<knots.N && i+1<B.d0) {
         double ynom = _knots(i+p+1) - t;
         double yden = _knots(i+p+1) - _knots(i+1);
-        if(ynom!=0. && yden!=0.) {
+        if(yden!=0.) {
           double y = _DIV(ynom, yden);
           _B(i, p) += y * _B(i+1, p-1);
           if(derivatives>0) Bdot(i, p) += _DIV(-1., yden) * B(i+1,p-1) + y * Bdot(i+1,p-1);

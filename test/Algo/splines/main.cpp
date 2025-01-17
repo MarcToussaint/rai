@@ -116,6 +116,52 @@ void TEST(Speed){
 
 //==============================================================================
 
+void testConvertToHermite(){
+  uint deg=2;
+  arr Z(5,1);
+  rndUniform(Z,-1,1,false);
+
+  rai::BSpline S;
+  S.set(deg, Z, ::range(0., 1., Z.d0-1));
+
+  FILE("z.Z.dat") <<rai::catCol(~~::range(0.,1.,Z.d0-1), Z).modRaw();
+  arr t = ::range(-0.1,1.1,100.);
+  FILE("z.S.dat") <<rai::catCol(t, S.eval(t)).modRaw();
+  FILE("z.s.dat") <<rai::catCol(t, S.eval(t, 1)).modRaw();
+  // gnuplot("plot 'z.S.dat' us 1:2 w l, 'z.Z.dat' us 1:2 w p", true);
+
+  rai::CubicSpline C;
+  arr X, V, T;
+
+  C.times.append(S.knots(0));
+  X.append(S.ctrlPoints[0]);
+  T.append(S.knots(0));
+
+  for(uint i=0;i<S.knots.N-1;i++){
+    double tau = S.knots(i) - S.knots(i-1);
+    if(tau>0.){
+      arr x0,v0,x1,v1;
+      S.eval2(x0, v0, NoArr, S.knots(i-1));
+      S.eval2(x1, v1, NoArr, S.knots(i));
+      rai::CubicPiece p;
+      p.set(x0, v0, x1, v1, tau);
+      // cout <<i <<' ' <<tau <<" x0,v0: " <<S.knots(i-1) <<x0 <<v0 <<" x1,v1: " <<S.knots(i) <<x1 <<v1 <<endl;
+      cout <<i <<' ' <<p <<endl;
+      C.pieces.append(p);
+      C.times.append(S.knots(i));
+      X.append(x1);
+      T.append(S.knots(i));
+    }
+  }
+
+  FILE("z.X.dat") <<rai::catCol(T, X).modRaw();
+  FILE("z.C.dat") <<rai::catCol(t, C.eval(t)).modRaw();
+  gnuplot("plot 'z.S.dat' us 1:2 w l, 'z.Z.dat' us 1:2 w p, 'z.X.dat' us 1:2 w p, 'z.C.dat' us 1:2 w l", true);
+
+}
+
+//==============================================================================
+
 void testJacobian(){
   uint T=100, deg=3;
   arr X(T,7);
@@ -203,5 +249,6 @@ int MAIN(int argc,char** argv){
   // testPath();
   testJacobian();
 
+  testConvertToHermite();
   return 0;
 }
