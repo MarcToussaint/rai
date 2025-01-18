@@ -92,7 +92,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
     F.checkHessian(x, 1e-4);
   }
 
-  OptConstrained opt(x, NoArr, F.ptr(), rai::OptOptions()
+  ConstrainedSolver opt(x, NoArr, F.ptr(), rai::OptOptions()
                      .set_stopTolerance(1e-4)
                      .set_stopFTolerance(1e-3)
                      .set_damping(1)
@@ -107,8 +107,9 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
     F.checkHessian(x, 1e-4);
   }
 
-  f = opt.L.get_costs();
-  g = opt.L.get_sumOfGviolations();
+  arr err = F.summarizeErrors(opt.L.phi_x);
+  f = err(OT_f)+err(OT_sos);
+  g = err(OT_ineq);
 }
 
 void computeOptimalSSBox(rai::Mesh& mesh, arr& x_ret, rai::Transformation& t_ret, const arr& X, uint trials, int verbose) {
@@ -256,7 +257,7 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
     P.checkHessian(x, 1e-4);
   }
 
-  OptConstrained opt(x, NoArr, P.ptr(), rai::OptOptions()
+  ConstrainedSolver opt(x, NoArr, P.ptr(), rai::OptOptions()
                      .set_stopTolerance(1e-4)
                      .set_stopFTolerance(1e-3)
                      .set_damping(1.)
@@ -268,7 +269,8 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
   opt.run();
 
   if(verbose>0) {
-    LOG(0) <<" f: " <<opt.L.get_costs() <<" g: " <<opt.L.get_sumOfGviolations();
+    arr err = P.summarizeErrors(opt.L.phi_x);
+    LOG(0) <<" f: " <<err(OT_f)+err(OT_sos) <<" g: " <<err(OT_ineq);
 
     P.gl.update(true);
   }
@@ -438,7 +440,7 @@ double sphereReduceConvex(rai::Mesh& M, double radius, int verbose) {
     arr x = M.V[i];
     arr c = -M.Vn[i];
     LinearProgram LP(c, G, g);
-    OptConstrained opt(x, NoArr, LP.ptr(), rai::OptOptions().set_stopTolerance(1e-4).set_stopGTolerance(1e-4));
+    ConstrainedSolver opt(x, NoArr, LP.ptr(), rai::OptOptions().set_stopTolerance(1e-4).set_stopGTolerance(1e-4));
     opt.run();
   }
 
@@ -583,7 +585,7 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
   }
 
 #if 1
-  OptConstrained opt(x, NoArr, F, rai::OptOptions()
+  ConstrainedSolver opt(x, NoArr, F, rai::OptOptions()
                      .set_stopTolerance(1e-4)
                      .set_stopFTolerance(1e-3)
                      .set_damping(1)
@@ -612,8 +614,7 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
   core.reshape(-1, 3);
   radius = x.last();
 
-  double f = opt.L.get_costs();
-  double g = opt.L.get_sumOfGviolations();
+  arr err = F->summarizeErrors(opt.L.phi_x);
   cout <<"core:" <<core <<" radius:"<<radius <<endl;
-  cout <<"cost:" <<f <<" ineq:"<<g <<endl;
+  cout <<" f: " <<err(OT_f)+err(OT_sos) <<" g: " <<err(OT_ineq) <<endl;
 }

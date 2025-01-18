@@ -23,7 +23,7 @@ double I_lambda_x(uint i, arr& lambda, arr& g) {
 
 //==============================================================================
 
-LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOptions& opt, arr& lambdaInit)
+LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOptions& opt)
   : P(P), muLB(0.), mu(0.), useLB(false) {
 
   CHECK(P, "null problem given");
@@ -38,8 +38,8 @@ LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOpt
   mu=opt.muInit;
   muLB=opt.muLBInit;
 
-  if(!!lambdaInit) lambda = lambdaInit;
-
+  dimension = P->dimension;
+  bounds = P->bounds;
   featureTypes.clear();
   for(ObjectiveType& t:P->featureTypes) {
     if(t==OT_f) featureTypes.append(OT_f);                    // direct cost term
@@ -225,24 +225,8 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     if(!HL.special) HL.reshape(x.N, x.N);
   }
 
-  if(logFile)(*logFile) <<"{ lagrangianQuery: True, errors: [" <<get_costs() <<", " <<get_sumOfGviolations() <<", " <<get_sumOfHviolations() <<"] }," <<endl;
-
   return L;
 #endif
-}
-
-arr LagrangianProblem::get_totalFeatures() {
-  arr feat(OT_ineqP+1);
-  feat.setZero();
-  for(uint i=0; i<phi_x.N; i++) {
-    if(P->featureTypes.elem(i)==OT_f) feat.elem(OT_f) += phi_x.elem(i);
-    else if(P->featureTypes.elem(i)==OT_sos) feat.elem(OT_sos) += rai::sqr(phi_x.elem(i));
-    else if(P->featureTypes.elem(i)==OT_ineq && phi_x.elem(i)>0.) feat.elem(OT_ineq) += phi_x.elem(i);
-    else if(P->featureTypes.elem(i)==OT_eq) feat.elem(OT_eq) += fabs(phi_x.elem(i));
-    else if(P->featureTypes.elem(i)==OT_ineqB && phi_x.elem(i)>0.) feat.elem(OT_ineqB) += phi_x.elem(i);
-    else if(P->featureTypes.elem(i)==OT_ineqP && phi_x.elem(i)>0.) feat.elem(OT_ineqP) += phi_x.elem(i);
-  }
-  return feat;
 }
 
 rai::Graph LagrangianProblem::reportGradients(const StringA& featureNames) {
@@ -345,49 +329,6 @@ void LagrangianProblem::reportMatrix(std::ostream& os) {
     os <<"  { " <<" c: " <<e.c <<" (" <<e.i <<',' <<e.j <<") }" <<endl;
   }
 
-}
-
-double LagrangianProblem::get_cost_f() {
-  double S=0.;
-  for(uint i=0; i<phi_x.N; i++) {
-    if(P->featureTypes.p[i]==OT_f) S += phi_x(i);
-  }
-  return S;
-}
-
-double LagrangianProblem::get_cost_sos() {
-  double S=0.;
-  for(uint i=0; i<phi_x.N; i++) {
-    if(P->featureTypes(i)==OT_sos) S += rai::sqr(phi_x(i));
-  }
-  return S;
-}
-
-double LagrangianProblem::get_costs() { return get_cost_f() + get_cost_sos(); }
-
-double LagrangianProblem::get_sumOfGviolations() {
-  double S=0.;
-  for(uint i=0; i<phi_x.N; i++) {
-    if(P->featureTypes(i)==OT_ineq && phi_x(i)>0.) {
-      S += phi_x(i);
-//      cout <<"g violation" <<i << phi_x(i) <<' '<<(lambda.N?lambda(i):-1.) <<endl;
-    }
-  }
-  return S;
-}
-
-double LagrangianProblem::get_sumOfHviolations() {
-  double S=0.;
-  for(uint i=0; i<phi_x.N; i++) {
-    if(P->featureTypes(i)==OT_eq) S += fabs(phi_x(i));
-  }
-  return S;
-}
-
-uint LagrangianProblem::get_dimOfType(const ObjectiveType& ot) {
-  uint d=0;
-  for(uint i=0; i<P->featureTypes.N; i++) if(P->featureTypes(i)==ot) d++;
-  return d;
 }
 
 void LagrangianProblem::aulaUpdate(const rai::OptOptions& opt, bool anyTimeVariant, double lambdaStepsize, double* L_x, arr& dL_x, arr& HL_x) {

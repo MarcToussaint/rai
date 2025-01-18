@@ -76,33 +76,34 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     Rprop().loop(x, P1, opt.stopTolerance, opt.initStep, opt.stopEvals, opt.verbose);
   } else if(solverID==NLPS_augmentedLag) {
     opt.set_constrainedMethod(rai::augmentedLag);
-    optCon = make_shared<OptConstrained>(x, dual, P, opt);
+    optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
     optCon->run();
   } else if(solverID==NLPS_squaredPenalty) {
     opt.set_constrainedMethod(rai::squaredPenalty);
-    optCon = make_shared<OptConstrained>(x, dual, P, opt);
+    optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
     optCon->run();
   } else if(solverID==NLPS_logBarrier) {
     opt.set_constrainedMethod(rai::logBarrier);
-    optCon = make_shared<OptConstrained>(x, dual, P, opt);
+    optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
     optCon->run();
   } else if(solverID==NLPS_NLopt) {
     NLoptInterface nlo(P);
     x = nlo.solve(x);
   } else if(solverID==NLPS_Ipopt) {
-    IpoptInterface nlo(P);
-    x = nlo.solve(x);
+    IpoptInterface ipo(P);
+    x = ipo.solve(x);
   } else if(solverID==NLPS_Ceres) {
     auto P1 = make_shared<Conv_NLP_TrivialFactoreded>(P);
-    CeresInterface nlo(P1);
-    x = nlo.solve();
+    CeresInterface ceres(P1);
+    x = ceres.solve();
   } else HALT("solver wrapper not implemented yet for solver ID '" <<rai::Enum<NLP_SolverID>(solverID) <<"'");
 
   if(optCon) {
-    ret->ineq = optCon->L.get_sumOfGviolations();
-    ret->eq = optCon->L.get_sumOfHviolations();
-    ret->sos = optCon->L.get_cost_sos();
-    ret->f = optCon->L.get_cost_f();
+    arr err = P->summarizeErrors(optCon->L.phi_x);
+    ret->ineq = err(OT_ineq);
+    ret->eq = err(OT_eq);
+    ret->sos = err(OT_sos);
+    ret->f = err(OT_f);
     ret->feasible = (ret->ineq<.1) && (ret->eq<.1);
   }
 
@@ -117,8 +118,9 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
   return ret;
 }
 
-shared_ptr<SolverReturn> NLP_Solver::solveStepping(int resampleInitialization) {
+shared_ptr<SolverReturn> NLP_Solver::solveStepping(int resampleInitialization, int verbose) {
   if(resampleInitialization==1) x.clear();
+  if(verbose>-100) opt.verbose=verbose;
   while(!step());
   return ret;
 }
@@ -146,31 +148,27 @@ bool NLP_Solver::step() {
     } else if(solverID==NLPS_logBarrier) {
       opt.set_constrainedMethod(rai::logBarrier);
     }
-    optCon = make_shared<OptConstrained>(x, dual, P, opt);
+    optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
 
   }
 
   ret->time -= rai::cpuTime();
-  ret->done=optCon->ministep();
+  ret->done = optCon->ministep();
   ret->time += rai::cpuTime();
 
-  ret->x=x;
-  ret->dual=dual;
-  ret->evals=P->evals;
+  ret->x = x;
+  ret->dual = dual;
+  ret->evals = P->evals;
 
-  arr feats = optCon->L.get_totalFeatures();
-  ret->f = feats(OT_f);
-  ret->sos = feats(OT_sos);
-  ret->ineq = feats(OT_ineq) + feats(OT_ineqB) + feats(OT_ineqP);
-  ret->eq = feats(OT_eq);
-  ret->feasible = (ret->ineq<.5) && (ret->eq<.5);
+  arr err = P->summarizeErrors(optCon->L.phi_x);
+  ret->f = err(OT_f);
+  ret->sos = err(OT_sos);
+  ret->ineq = err(OT_ineq);
+  ret->eq = err(OT_eq);
+  ret->feasible = (ret->ineq<.1) && (ret->eq<.1);
 
   return ret->done;
 }
-
-arr NLP_Solver::getTrace_lambda() { CHECK(optCon, ""); return optCon->lambdaTrace; }
-
-arr NLP_Solver::getTrace_evals() { CHECK(optCon, ""); return optCon->evalsTrace; }
 
 rai::Graph NLP_Solver::reportLagrangeGradients(const StringA& featureNames) {
   CHECK(optCon, "");

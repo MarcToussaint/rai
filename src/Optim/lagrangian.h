@@ -22,7 +22,7 @@
 struct LagrangianProblem : ScalarFunction, NLP {
   shared_ptr<NLP> P;
 
-  //-- parameters of the unconstrained (Lagrangian) scalar function
+  //-- parameters of the inner problem (Lagrangian, unconstrained problem)
   double muLB;       ///< log barrier mu
   double mu;         ///< penalty parameter for inequalities g and equalities h
   arr lambda;        ///< lagrange multipliers for inequalities g and equalities h
@@ -32,24 +32,13 @@ struct LagrangianProblem : ScalarFunction, NLP {
   arr x;               ///< point where P was last evaluated
   arr phi_x, J_x, H_x; ///< features at x
 
-  ostream* logFile=nullptr;  ///< file for logging
-
-  LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOptions& opt=DEFAULT_OPTIONS, arr& lambdaInit=NoArr);
+  LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOptions& opt);
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);       //evaluate all features and (optionally) their Jacobians for state x
   virtual void getFHessian(arr& H, const arr& x);              //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
   virtual arr  getInitializationSample() { return P->getInitializationSample(); }
 
   double lagrangian(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
-
-  arr get_totalFeatures();
-
-  double get_cost_f();            ///< info on the terms from last call
-  double get_cost_sos();            ///< info on the terms from last call
-  double get_costs();            ///< info on the terms from last call
-  double get_sumOfGviolations(); ///< info on the terms from last call
-  double get_sumOfHviolations(); ///< info on the terms from last call
-  uint get_dimOfType(const ObjectiveType& ot); ///< info on the terms from last call
 
   rai::Graph reportGradients(const StringA& featureNames);
   void reportMatrix(std::ostream& os);

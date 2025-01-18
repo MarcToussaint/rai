@@ -5,6 +5,7 @@
 #include <Optim/lagrangian.h>
 #include <Optim/constrained.h>
 #include <Core/arrayDouble.h>
+#include <Optim/opt-ipopt.h>
 
 #include <Kin/kin.h>
 #include <Kin/frame.h>
@@ -187,6 +188,7 @@ struct SpherePacking : NLP{
       m++;
     }
 
+    // report(cout, 10, "inner");
     CHECK_EQ(m, dimphi, "");
   }
 
@@ -209,7 +211,7 @@ struct SpherePacking : NLP{
 };
 
 void testSpherePacking(){
-  auto P =   std::make_shared<SpherePacking>(50, .21, true);
+  auto P =   std::make_shared<SpherePacking>(50, .21, false);
   std::cout <<P->reportSignature() <<std::endl;
 
   //-- sample a feasible (=no collision) solution
@@ -219,13 +221,19 @@ void testSpherePacking(){
   cout <<*retSam <<endl;
   // P->report(std::cout, 10);
 
+#if 0
+  IpoptInterface ipo(P);
+  ipo.solve(retSam->x);
+  P->report(std::cout, 10);
+#endif
+
   //-- optimize
   NLP_Solver S;
   S.setProblem(P);
   S.setInitialization(retSam->x);
   // S.getProblem()->checkJacobian(S.x, 1e-6);
-  // S.setSolver(NLPS_logBarrier);
-  S.setSolver(NLPS_augmentedLag);
+  S.setSolver(NLPS_logBarrier);
+  // S.setSolver(NLPS_augmentedLag);
   S.opt.set_muMax(1e6) .set_stopEvals(5000) .set_muLBInit(1e-3) .set_muInit(1e3);
   auto ret = S.solve(-1, 2);
   // S.getProblem()->checkJacobian(ret->x, 1e-5);
@@ -238,11 +246,11 @@ void testSpherePacking(){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  rnd.clockSeed();
-  // rnd.seed(0);
+  // rnd.clockSeed();
+  rnd.seed(0);
 
-  //  testDisplay();
-  //testSolver();
+  // testDisplay();
+  // testSolver();
 
   testSpherePacking();
   return 0;

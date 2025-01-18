@@ -89,7 +89,7 @@ void TEST(KOrderMarkov2) {
   rndUniform(x,-1.,1.);
   arr K;
 //  if(P.hasKernel()) K = buildKernelMatrix(P);
-  OptConstrained(x, NoArr, Convert(P) )
+  ConstrainedSolver(x, NoArr, Convert(P) )
           .run();
 
   write(LIST<arr>(x),"z.output");

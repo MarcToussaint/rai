@@ -75,27 +75,9 @@ struct NLP_TrivialSquareFunction : NLP {
 struct NLP_RandomLP : NLP {
   arr randomG;
 
-  NLP_RandomLP(uint dim) {
-    dimension = dim;
+  NLP_RandomLP(uint dim);
 
-    randomG.resize(5*dim+5, dim+1);
-    rndGauss(randomG, 1.);
-    for(uint i=0; i<randomG.d0; i++) {
-      if(randomG(i, 0)>0.) randomG(i, 0) *= -1.; //ensure (0,0) is feasible
-      randomG(i, 0) -= .2;
-    }
-
-    featureTypes = { OT_f };
-    featureTypes.append(rai::consts(OT_ineq, randomG.d0));
-  }
-
-  virtual void evaluate(arr& phi, arr& J, const arr& x) {
-    phi = {sum(x)};
-    if(!!J) J = ones(1, x.N);
-
-    phi.append(randomG * (arr{1.}, x));
-    if(!!J) J.append(randomG.sub(0, -1, 1, -1));
-  }
+  virtual void evaluate(arr& phi, arr& J, const arr& x);
 
 };
 

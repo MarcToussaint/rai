@@ -60,7 +60,9 @@ struct Conv_MP_Ipopt : Ipopt::TNLP {
                                  Ipopt::IpoptCalculatedQuantities* ip_cq);
 };
 
-Conv_MP_Ipopt::Conv_MP_Ipopt(const shared_ptr<NLP>& P) : P(P) {}
+Conv_MP_Ipopt::Conv_MP_Ipopt(const shared_ptr<NLP>& P) : P(P) {
+  if(!P->checkBounds(true)) HALT("IPopt needs strict > bounds");
+}
 
 Conv_MP_Ipopt::~Conv_MP_Ipopt() {}
 
@@ -129,16 +131,9 @@ bool Conv_MP_Ipopt::get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index&
 }
 
 bool Conv_MP_Ipopt::get_bounds_info(Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u, Ipopt::Index m, Ipopt::Number* g_l, Ipopt::Number* g_u) {
-  arr bounds_lo=bounds[0], bounds_up=bounds[1];
-  P->getBounds(bounds_lo, bounds_up);
   for(int i=0; i<n; i++) {
-    double l = bounds_lo.elem(i), u = bounds_up.elem(i);
-    if(l<u) {
-      x_l[i] = l;
-      x_u[i] = u;
-    } else {
-      HALT("Ipopt really needs bounds");
-    }
+    x_l[i] = P->bounds(0,i);
+    x_u[i] = P->bounds(1,i);
   }
 
   uint j=0;

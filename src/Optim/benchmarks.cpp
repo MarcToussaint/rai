@@ -342,7 +342,7 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
       else if(bs==BS_RandomSquared) org = make_shared<NLP_Squared>(dim, condition, true);
       else if(bs==BS_RastriginSOS) org = make_shared<NLP_RastriginSOS>();
       if(org) {
-        auto lag = make_shared<LagrangianProblem>(org); //convert to scalar
+        auto lag = make_shared<LagrangianProblem>(org, DEFAULT_OPTIONS); //convert to scalar
         nlp = make_shared<ScalarUnconstrainedProgram>(lag, dim);
       }
     }
@@ -368,9 +368,9 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
   else if(bs==BS_CircleLine) nlp = make_shared<NLP_CircleLine>();
   else HALT("can't interpret benchmark symbol: " <<bs);
 
-  nlp->bounds = rai::getParameter<arr>("benchmark/bounds", {});
-  if(nlp->bounds.N){
-    nlp->bounds.reshape(2, nlp->dimension);
+  arr B = rai::getParameter<arr>("benchmark/bounds", {});
+  if(B.N){
+    nlp->bounds = B.reshape(2, nlp->dimension);
   }
 
   return nlp;
@@ -391,4 +391,30 @@ void NLP_RastriginSOS::evaluate(arr& phi, arr& J, const arr& x) {
     J(2, 0) = 2.;
     J(3, 1) = 2.*condition;
   }
+}
+
+NLP_RandomLP::NLP_RandomLP(uint dim) {
+  dimension = dim;
+
+  bounds.resize(2, dimension);
+  bounds[0]=-2.;
+  bounds[1]=+2.;
+
+  randomG.resize(5*dim+5, dim+1);
+  rndGauss(randomG, 1.);
+  for(uint i=0; i<randomG.d0; i++) {
+    if(randomG(i, 0)>0.) randomG(i, 0) *= -1.; //ensure (0,0) is feasible
+    randomG(i, 0) -= .2;
+  }
+
+  featureTypes = { OT_f };
+  featureTypes.append(rai::consts(OT_ineq, randomG.d0));
+}
+
+void NLP_RandomLP::evaluate(arr& phi, arr& J, const arr& x) {
+  phi = {sum(x)};
+  if(!!J) J = ones(1, x.N);
+
+  phi.append(randomG * (arr{1.}, x));
+  if(!!J) J.append(randomG.sub(0, -1, 1, -1));
 }

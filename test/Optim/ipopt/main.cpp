@@ -13,6 +13,7 @@ void TEST(Ipopt){
   {
     IpoptInterface ipo(traced);
     ipo.solve(x_init);
+    cout <<"#evals: " <<traced->evals <<endl;
   }
 
   NLP_Viewer(nlp, traced).display();
@@ -25,7 +26,7 @@ void TEST(Ipopt){
   traced->clear();
   {
     arr x = x_init;
-    OptConstrained opt(x, NoArr, traced);
+    ConstrainedSolver opt(x, NoArr, traced);
     opt.run();
   }
 

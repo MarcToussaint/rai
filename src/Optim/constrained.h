@@ -18,18 +18,14 @@ extern const char* MethodName[];
 // Solvers
 //
 
-struct OptConstrained {
+struct ConstrainedSolver {
   LagrangianProblem L;
   OptNewton newton;
   arr& dual;
   rai::OptOptions opt;
-  int its=0, numBadSteps=0;
-  ostream* logFile=nullptr;
+  int outer_iters=0, numBadSteps=0;
 
-  bool trace_lambda=true;
-  arr lambdaTrace, evalsTrace;
-
-  OptConstrained(arr& x, arr& dual, const shared_ptr<NLP>& P, rai::OptOptions opt=DEFAULT_OPTIONS, ostream* _logFile=0);
+  ConstrainedSolver(arr& x, arr& dual, const shared_ptr<NLP>& P, const rai::OptOptions& opt=DEFAULT_OPTIONS);
 
   uint run();
   bool ministep();
@@ -38,13 +34,6 @@ struct OptConstrained {
   arr x_beforeNewton;
   double org_stopTol, org_stopGTol;
 };
-
-//==============================================================================
-//
-// evaluating
-//
-
-void evaluateNLP(const arr& x, NLP& P, std::ostream& os);
 
 //==============================================================================
 //

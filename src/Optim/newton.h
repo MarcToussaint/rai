@@ -14,13 +14,13 @@
 int optNewton(arr& x, const ScalarFunction& f, rai::OptOptions opt=DEFAULT_OPTIONS);
 
 struct OptNewton {
-  arr& x;
   ScalarFunction f;
-  rai::OptOptions options;
+  arr& x;
+  rai::OptOptions opt;
 
   enum StopCriterion { stopNone=0, stopDeltaConverge, stopTinyFSteps, stopTinyXSteps, stopCritEvals, stopStepFailed, stopLineSearchSteps };
 
-  OptNewton(arr& x, const ScalarFunction& f, rai::OptOptions options=DEFAULT_OPTIONS, ostream* _logFile=0);
+  OptNewton(arr& _x, const ScalarFunction& _f, const rai::OptOptions& _opt);
   ~OptNewton();
   OptNewton& setBounds(const arr& _bounds);
   void reinit(const arr& _x);
@@ -29,13 +29,12 @@ struct OptNewton {
   StopCriterion run(uint maxIt = 1000);
 
  public:
+  arr bounds;
   double fx;
   arr gx, Hx;
   double alpha, beta;
-  int its=0, evals=0, numTinyFSteps=0, numTinyXSteps=0;
+  int inner_iters=0, evals=0, numTinyFSteps=0, numTinyXSteps=0;
   StopCriterion stopCriterion;
-  arr bounds;
   bool rootFinding=false;
-  ostream* logFile=nullptr, *simpleLog=nullptr;
   double timeNewton=0., timeEval=0.;
 };

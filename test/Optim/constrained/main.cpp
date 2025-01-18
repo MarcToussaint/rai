@@ -19,7 +19,7 @@ void testConstraint2(NLP& p, arr& x_start=NoArr){
   arr x = p.getInitializationSample();
   if(!!x_start) x=x_start;
 
-  OptConstrained(x, NoArr, p.ptr())
+  ConstrainedSolver(x, NoArr, p.ptr())
       .run();
 
   if(!!x_start) x_start = x;
@@ -59,7 +59,7 @@ void TEST(CoveringSphere){
   cout <<"point = " <<x <<endl;
   cout <<"cr_init=" <<cr <<endl;
   F.checkJacobian(cr, 1e-4);
-  OptConstrained(cr, NoArr, F.ptr())
+  ConstrainedSolver(cr, NoArr, F.ptr())
       .run();
   cout <<"cr_opt=" <<cr <<endl;
 }
@@ -78,7 +78,7 @@ void TEST(NLP){
   //Conv_NLP_ConstrainedProblem F(P);
   P->checkJacobian(x, 1e-4);
 
-  OptConstrained opt(x, NoArr, P, rai::OptOptions().set_verbose(6));
+  ConstrainedSolver opt(x, NoArr, P, rai::OptOptions().set_verbose(6));
   opt.newton.bounds = P->bounds;
   opt.run();
 

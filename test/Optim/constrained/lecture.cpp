@@ -12,62 +12,73 @@
 //
 
 void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start, uint iters){
-  rai::OptOptions options;
-  LagrangianProblem lag(P, options);
+  rai::OptOptions opt;
+  auto traced = make_shared<NLP_Traced>(P);
+  auto lag = make_shared<LagrangianProblem>(traced, opt);
+
+  { //initial display
+    auto lag = make_shared<LagrangianProblem>(P, opt);
+    lag->useLB = false;
+    lag->mu = 1e5;
+    displayFunction(*lag);
+    rai::wait();
+  }
+  { //initial display
+    auto lag = make_shared<LagrangianProblem>(P, opt);
+    displayFunction(*lag);
+    rai::wait();
+  }
 
   //-- initial x
   arr x = P->getInitializationSample();
   if(!!x_start) x=x_start;
 
   //  cout <<std::setprecision(2);
-  cout <<"x0=" <<x <<endl;
+  cout <<"x0:" <<x <<endl;
 
   rai::system("rm -f z.opt_all");
 
   uint evals=0;
+  arr err;
   for(uint k=0;k<iters;k++){
     P->checkJacobian(x, 1e-4);
 //    checkGradient(lag, x, 1e-4);
 //    checkHessian (lag, x, 1e-4); //will throw errors: no Hessians for g!
 
-    lag.lagrangian(NoArr, NoArr, x);
-
-    if(x.N==2){
-      displayFunction(lag);
-      rai::wait();
-      gnuplot("load 'plt'", false, true);
-      rai::wait();
-    }
+    lag->lagrangian(NoArr, NoArr, x);
 
 //    optRprop(x, UCP, options);
 //    optGrad(x, lag, options);
 //    system("cat z.opt >> z.opt_all");
 
-    OptNewton newton(x, lag, options);
-    newton.bounds = lag.bounds;
-    ofstream fil("z.opt");
-    newton.simpleLog = &fil;
+    OptNewton newton(x, *lag, opt);
+    newton.bounds = lag->bounds;
     newton.reinit(x);
     newton.run();
     evals += newton.evals;
 
-    rai::system("cat z.opt >> z.opt_all");
-    if(x.N==2){
-      gnuplot("load 'plt'", false, true);
-      rai::wait();
-    }
+    traced->setTracing(false, false, false, false);
+    NLP_Viewer(lag, traced).display();
+    traced->setTracing(true, true, false, false);
+    rai::wait();
+    // rai::system("cat z.opt >> z.opt_all");
+    // if(x.N==2){
+    //   gnuplot("load 'plt'", false, true);
+    //   rai::wait();
+    // }
 
     //upate unconstraint problem parameters
-    lag.autoUpdate(options, &newton.fx, newton.gx, newton.Hx);
+    lag->autoUpdate(opt, &newton.fx, newton.gx, newton.Hx);
 
-    cout <<k <<' ' <<evals <<" f(x)=" <<lag.get_costs()
-         <<" \tg_compl=" <<lag.get_sumOfGviolations()
-         <<" \th_compl=" <<lag.get_sumOfHviolations()
-      <<" \tmu=" <<lag.mu <<" \tmuLB=" <<lag.muLB;
-    if(x.N<5) cout <<" \tx=" <<x <<" \tlambda=" <<lag.lambda /*<<" \tg=" <<UCP.g_x <<" \th=" <<UCP.h_x*/;
+    err = P->summarizeErrors(lag->phi_x);
+    cout <<k <<' ' <<evals <<" f:" <<err(OT_f)+err(OT_sos)
+         <<" \tg:" <<err(OT_ineq)
+         <<" \th:" <<err(OT_eq)
+      <<" \tmu:" <<lag->mu <<" \tmuLB:" <<lag->muLB;
+    if(x.N<5) cout <<" \tx:" <<x <<" \tlambda:" <<lag->lambda /*<<" \tg:" <<UCP.g_x <<" \th:" <<UCP.h_x*/;
     cout <<endl;
   }
-  cout <<std::setprecision(6) <<"\nf(x)=" <<lag.get_costs() <<"\nx_opt=" <<x <<"\nlambda=" <<lag.lambda <<endl;
+  cout <<std::setprecision(6) <<"\nf(x):" <<sum(err) <<"\nx_opt:" <<x <<"\nlambda:" <<lag->lambda <<endl;
 
   rai::system("mv z.opt_all z.opt");
   if(x.N==2) gnuplot("load 'plt'", false, true);

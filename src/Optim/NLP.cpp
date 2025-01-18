@@ -28,22 +28,6 @@ template <class T> rai::Array<rai::Enum<T>> EnumArr(const rai::Array<T>& x) {
 
 //===========================================================================
 
-arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
-  arr err = zeros(3);
-  CHECK_EQ(phi.N, tt.N, "");
-  for(uint i=0; i<phi.N; i++) {
-    double phii = phi.p[i];
-    ObjectiveType ot = tt.p[i];
-    if(ot==OT_f) err(0) += phii;
-    if(ot==OT_sos) err(0) += rai::sqr(phii);
-    if((ot==OT_ineq || ot==OT_ineqB) && phii>0.) err(1) += phii;
-    if(ot==OT_eq) err(2) += fabs(phii);
-  }
-  return err;
-}
-
-//===========================================================================
-
 arr NLP::getInitializationSample() {
   if(!bounds.N) return 2.*rand(dimension)-1.;
   return getUniformSample();
@@ -139,6 +123,21 @@ bool NLP::checkHessian(const arr& x, double tolerance) {
   return ::checkHessian(F, x, tolerance);
 }
 
+bool NLP::checkBounds(bool strictlyLarger){
+  if(!bounds.N) return false;
+  CHECK_EQ(bounds.d0, 2, "");
+  CHECK_EQ(bounds.d1, dimension, "");
+  bool good=true;
+  for(uint i=0; i<dimension; i++) {
+    if(bounds(1,i) < bounds(0,i)
+        || (strictlyLarger && bounds(1,i) <= bounds(0,i))){
+      LOG(-1) <<"bound inconsistent: " <<i <<": " <<bounds(0,i) <<" > " <<bounds(0,i) <<endl;
+      good=false;
+    }
+  }
+  return good;
+}
+
 rai::String NLP::reportSignature(){
   rai::String s;
   s <<"NLP<" <<rai::niceTypeidName(typeid(*this)) <<"> dimension:" <<dimension;
@@ -153,6 +152,23 @@ rai::String NLP::reportSignature(){
   s <<" bounds: [" <<bounds.elem(0) <<" .. " <<bounds.elem(-1) <<']';
   return s;
 }
+
+arr NLP::summarizeErrors(const arr& phi) {
+  arr err = zeros(4);
+  CHECK_EQ(phi.N, featureTypes.N, "");
+  for(uint i=0; i<phi.N; i++) {
+    double phii = phi.p[i];
+    ObjectiveType type = featureTypes.p[i];
+    if(type==OT_f) err.elem(OT_f) += phii;
+    else if(type==OT_sos) err.elem(OT_sos) += rai::sqr(phii);
+    else if(type==OT_ineq && phii>0.) err.elem(OT_ineq) += phii;
+    else if(type==OT_eq) err.elem(OT_eq) += fabs(phii);
+    else if(type==OT_ineqB && phii>0.) err.elem(OT_ineq) += phii;
+    else if(type==OT_ineqP && phii>0.) err.elem(OT_ineq) += phii;
+  }
+  return err;
+}
+
 
 //===========================================================================
 
@@ -357,7 +373,7 @@ void NLP_Traced::evaluate(arr& phi, arr& J, const arr& x) {
   evals++;
   P->evaluate(phi, J, x);
   if(trace_x) { xTrace.append(x); xTrace.reshape(-1, x.N); }
-  if(trace_costs) { costTrace.append(summarizeErrors(phi, featureTypes)); costTrace.reshape(-1, 3);  }
+  if(trace_costs) { costTrace.append(summarizeErrors(phi)); costTrace.reshape(-1, 4);  }
   if(trace_phi && !!phi) { phiTrace.append(phi);  phiTrace.reshape(-1, phi.N); }
   if(trace_J && !!J) { JTrace.append(J);  JTrace.reshape(-1, phi.N, x.N); }
 }
@@ -380,24 +396,24 @@ void NLP_Viewer::display(double mu, double muLB) {
   Y.resize(X.d0);
 
   //-- transform constrained problem to AugLag scalar function
-  P->evaluate(phi, NoArr, X[0]);
-  std::shared_ptr<LagrangianProblem> lag;
-  std::shared_ptr<NLP> nlp_save;
-  if(phi.N>1) {
-    lag = make_shared<LagrangianProblem>(P);
+  uint n_con = P->get_numOfType(OT_ineq) + P->get_numOfType(OT_eq);
+  shared_ptr<ScalarFunction> f;
+  std::shared_ptr<LagrangianProblem> lag = dynamic_pointer_cast<LagrangianProblem>(P);
+  if(lag){ //all done
+    f = lag;
+  }else if(!n_con){
+    f = make_shared<Conv_NLP_ScalarProblem>(P);
+  }else{
+    lag = make_shared<LagrangianProblem>(P, DEFAULT_OPTIONS);
     lag->mu = mu;
     lag->muLB = muLB;
     if(muLB>0.) lag->useLB = true;
-    nlp_save = P;
-    P.reset();
-    P = make_shared<Conv_ScalarProblem_NLP>(*lag, d);
+    f = lag;
   }
 
   //-- evaluate over the grid
   for(uint i=0; i<X.d0; i++) {
-    P->evaluate(phi, NoArr, X[i]);
-    CHECK_EQ(phi.N, 1, "only 1 feature for now");
-    double fx=phi.scalar();
+    double fx = (*f)(NoArr, NoArr, X[i]);
     Y(i) = ((fx==fx && fx<10.)? fx : 10.);
   }
   Y.reshape(101, 101);
@@ -435,7 +451,7 @@ void NLP_Viewer::plotCostTrace() {
   FILE("z.trace") <<T->costTrace.modRaw();
   rai::String cmd;
   cmd <<"reset; set xlabel 'evals'; set ylabel 'objectives'; set style data lines;";
-  cmd <<"plot 'z.trace' us ($0+1):1 t 'f+sos', '' us ($0+1):2 t 'ineq', '' us ($0+1):3 t 'eq';";
+  cmd <<"plot 'z.trace' us ($0+1):1 t 'f', '' us ($0+1):2 t 'sos', '' us ($0+1):3 t 'ineq', '' us ($0+1):4 t 'eq';";
   gnuplot(cmd);
 }
 

@@ -12,7 +12,7 @@
 #include "options.h"
 #include "../Core/graph.h"
 
-struct OptConstrained;
+struct ConstrainedSolver;
 
 enum NLP_SolverID { NLPS_none=-1,
                     NLPS_gradientDescent, NLPS_rprop, NLPS_LBFGS, NLPS_newton,
@@ -36,10 +36,10 @@ enum NLopt_SolverOption { _NLopt_LD_SLSQP,
 /** User Interface: Meta class to call several different solvers in a unified manner. */
 struct NLP_Solver : NonCopyable {
   NLP_SolverID solverID=NLPS_augmentedLag;
-  arr x, dual;
-  rai::OptOptions opt;
+  arr x, dual; //owner of decision variables, which are passed by reference to lower level solvers
+  rai::OptOptions opt; //owner of options, which are passed by reference to lower level solvers
   std::shared_ptr<SolverReturn> ret;
-  std::shared_ptr<OptConstrained> optCon;
+  std::shared_ptr<ConstrainedSolver> optCon;
   std::shared_ptr<NLP_Traced> P;
 
   NLP_Solver();
@@ -54,7 +54,7 @@ struct NLP_Solver : NonCopyable {
   NLP_Solver& clear() { P.reset(); optCon.reset(); ret.reset(); x.clear(); dual.clear(); return *this; }
 
   std::shared_ptr<SolverReturn> solve(int resampleInitialization=-1, int verbose=-100); ///< -1: only when not already yet set
-  std::shared_ptr<SolverReturn> solveStepping(int resampleInitialization=-1); ///< -1: only when not already yet set
+  std::shared_ptr<SolverReturn> solveStepping(int resampleInitialization=-1, int verbose=-100); ///< -1: only when not already yet set
   bool step();
 
   std::shared_ptr<NLP> getProblem(){ return P->P; }

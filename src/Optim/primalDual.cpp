@@ -10,16 +10,16 @@
 
 #include <math.h>
 
-PrimalDualProblem::PrimalDualProblem(const arr& x, const shared_ptr<NLP>& P, rai::OptOptions opt, arr& lambdaInit)
-  : L(P, opt, lambdaInit), mu(opt.muLBInit) {
+PrimalDualProblem::PrimalDualProblem(const arr& x, const shared_ptr<NLP>& P, const rai::OptOptions& opt)
+  : L(P, opt), mu(opt.muLBInit) {
 
   L.mu = L.muLB = 0.;
 
   L.lagrangian(NoArr, NoArr, x);
 //  cout <<"x=" <<x <<endl <<"L=" <<Lval <<endl;
 
-  n_ineq=L.get_dimOfType(OT_ineq);
-  n_eq=L.get_dimOfType(OT_eq);
+  n_ineq=P->get_numOfType(OT_ineq);
+  n_eq=P->get_numOfType(OT_eq);
   x_lambda = x;
   if(n_eq) x_lambda.append(zeros(n_eq));
   x_lambda.append(ones(n_ineq));
@@ -207,11 +207,12 @@ void PrimalDualProblem::updateMu() {
 
 //==============================================================================
 
-OptPrimalDual::OptPrimalDual(arr& x, arr& dual, const shared_ptr<NLP>& P, int verbose, rai::OptOptions opt)
-  : x(x), PD(x, P, opt, dual), newton(PD.x_lambda, PD, opt), opt(opt) {
+OptPrimalDual::OptPrimalDual(arr& x, arr& dual, const shared_ptr<NLP>& P, const rai::OptOptions& opt)
+  : x(x), PD(x, P, opt), newton(PD.x_lambda, PD, opt), opt(opt) {
 
-  if(verbose>=0) opt.verbose=verbose;
-  newton.options.verbose = rai::MAX(opt.verbose-1, 0);
+  if(!!dual && dual.N) PD.L.lambda = dual;
+
+  newton.opt.verbose = rai::MAX(opt.verbose-1, 0);
 
   newton.rootFinding = true;
   newton.bounds.resize(2, newton.x.N).setZero();
@@ -222,17 +223,14 @@ OptPrimalDual::OptPrimalDual(arr& x, arr& dual, const shared_ptr<NLP>& P, int ve
 }
 
 uint OptPrimalDual::run(uint maxIt) {
-  if(fil)(*fil) <<"constr " <<its <<' ' <<newton.evals <<' ' <<PD.L.get_costs() <<' ' <<PD.L.get_sumOfGviolations() <<' ' <<PD.L.get_sumOfHviolations() <<endl;
-  newton.logFile = fil;
-
   //newton loop (cp newton.run() )
   newton.numTinyFSteps=0;
   for(uint i=0; i<maxIt; i++) {
     newton.step();
 
+    arr err = PD.L.P->summarizeErrors(PD.L.phi_x);
     if(PD.primalFeasible) {
-      if(opt.stopGTolerance<0.
-          || PD.L.get_sumOfGviolations() + PD.L.get_sumOfHviolations() < opt.stopGTolerance) {
+      if(opt.stopGTolerance<0. || err(OT_ineq) + err(OT_eq) < opt.stopGTolerance) {
         if(newton.stopCriterion==newton.stopStepFailed) continue;
         if(newton.stopCriterion>=newton.stopDeltaConverge) break;
       }
@@ -248,9 +246,9 @@ uint OptPrimalDual::run(uint maxIt) {
       cout <<"** optPrimalDual it=" <<its
            <<' ' <<newton.evals
            <<" mu=" <<PD.mu
-           <<" f(x)=" <<PD.L.get_costs()
-           <<" \tg_compl=" <<PD.L.get_sumOfGviolations()
-           <<" \th_compl=" <<PD.L.get_sumOfHviolations();
+           <<" f: " <<err(OT_f)+err(OT_sos)
+           <<" g: " <<err(OT_ineq)
+           <<" h: " <<err(OT_eq);
       if(x.N<5) cout <<" \tx=" <<x;
       cout <<endl;
     }

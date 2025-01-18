@@ -13,11 +13,9 @@
 //===========================================================================
 
 /// symbols to declare of which type an objective feature is
-enum ObjectiveType : int { OT_none=0, OT_f, OT_sos, OT_ineq, OT_eq, OT_ineqB, OT_ineqP };
+enum ObjectiveType : int { OT_f=0, OT_sos, OT_ineq, OT_eq, OT_ineqB, OT_ineqP, OT_none };
 typedef rai::Array<ObjectiveType> ObjectiveTypeA;
 extern ObjectiveTypeA& NoObjectiveTypeA;
-
-arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt);
 
 //===========================================================================
 
@@ -67,8 +65,15 @@ struct NLP : NonCopyable {
   double eval_scalar(arr& g, arr& H, const arr& x);
   bool checkJacobian(const arr& x, double tolerance, const StringA& featureNames= {});
   bool checkHessian(const arr& x, double tolerance);
+  bool checkBounds(bool strictlyLarger);
   arr getUniformSample() { return bounds[0] + rand(dimension) % (bounds[1] - bounds[0]); }
   rai::String reportSignature();
+  uint get_numOfType(const ObjectiveType& ot) {
+    uint d=0;
+    for(uint i=0; i<featureTypes.N; i++) if(featureTypes(i)==ot) d++;
+    return d;
+  }
+  arr summarizeErrors(const arr& phi);
 };
 
 //===========================================================================

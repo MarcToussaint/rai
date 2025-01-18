@@ -24,17 +24,15 @@ void updateBoundActive(intA& boundActive, const arr& x, const arr& bound_lo, con
  * to increase performance) and the evaluation of the returned x is also returned */
 int optNewton(arr& x, const ScalarFunction& f, rai::OptOptions o) {
   OptNewton opt(x, f, o);
-  ofstream fil("z.opt");
-  opt.simpleLog = &fil;
   return opt.run();
 }
 
 //===========================================================================
 
-OptNewton::OptNewton(arr& _x, const ScalarFunction& _f, rai::OptOptions _o, ostream* _logFile):
-  x(_x), f(_f), options(_o), logFile(_logFile) {
-  alpha = options.initStep;
-  beta = options.damping;
+OptNewton::OptNewton(arr& _x, const ScalarFunction& _f, const rai::OptOptions& _opt):
+  f(_f), x(_x), opt(_opt) {
+  alpha = opt.initStep;
+  beta = opt.damping;
 //  if(f) reinit(_x);
 }
 
@@ -52,18 +50,8 @@ void OptNewton::reinit(const arr& _x) {
   timeEval += rai::cpuTime();
 
   //startup verbose
-  if(options.verbose>1) cout <<"----newton---- initial point f(x):" <<fx <<" alpha:" <<alpha <<" beta:" <<beta <<endl;
-  if(options.verbose>3) { if(x.N<5) cout <<"x:" <<x <<endl; }
-  if(logFile) {
-    (*logFile) <<"{ newton: " <<its <<", evaluations: " <<evals <<", f_x: " <<fx <<", alpha: " <<alpha;
-    if(options.verbose>3)(*logFile) <<", x: " <<x;
-    (*logFile) <<" }," <<endl;
-  }
-  if(simpleLog) {
-    (*simpleLog) <<its <<' ' <<evals <<' ' <<fx <<' ' <<alpha;
-    if(x.N<=5)(*simpleLog) <<x.modRaw();
-    (*simpleLog) <<endl;
-  }
+  if(opt.verbose>1) cout <<"----newton---- initial point f(x):" <<fx <<" alpha:" <<alpha <<" beta:" <<beta <<endl;
+  if(opt.verbose>3) { if(x.N<5) cout <<"x:" <<x <<endl; }
 }
 
 //===========================================================================
@@ -80,8 +68,8 @@ OptNewton::StopCriterion OptNewton::step() {
   timeEval += rai::cpuTime();
 #endif
 
-  its++;
-  if(options.verbose>1) cout <<"--newton-- it:" <<std::setw(4) <<its <<std::flush;
+  inner_iters++;
+  if(opt.verbose>1) cout <<"--newton-- it:" <<std::setw(4) <<inner_iters <<std::flush;
 
   if(!(fx==fx)) HALT("you're calling a newton step with initial function value = NAN");
 
@@ -119,7 +107,7 @@ OptNewton::StopCriterion OptNewton::step() {
           }
         }
       } else NIY;
-      if(options.verbose>5) cout <<"  boundActive:" <<boundActive;
+      if(opt.verbose>5) cout <<"  boundActive:" <<boundActive;
     }
   }
 #endif
@@ -166,27 +154,27 @@ OptNewton::StopCriterion OptNewton::step() {
       return stopCriterion=stopNone;
 #endif
       //use gradient
-      if(options.verbose>0) {
+      if(opt.verbose>0) {
         cout <<"** hessian inversion failed ... using gradient descent direction" <<endl;
       }
-      Delta = gx * (-options.maxStep/length(gx));
+      Delta = gx * (-opt.maxStep/length(gx));
     }
   }
 
   //restrict stepsize
   double maxDelta = absMax(Delta);
-  if(options.maxStep>0. && maxDelta>options.maxStep) {
-    Delta *= options.maxStep/maxDelta;
-    maxDelta = options.maxStep;
+  if(opt.maxStep>0. && maxDelta>opt.maxStep) {
+    Delta *= opt.maxStep/maxDelta;
+    maxDelta = opt.maxStep;
   }
-  double alphaHiLimit = options.maxStep/maxDelta;
+  double alphaHiLimit = opt.maxStep/maxDelta;
   //double alphaLoLimit = 1e-1*options.stopTolerance/maxDelta;
 
-  if(options.verbose>1) cout <<"  |Delta|:" <<std::setw(11) <<maxDelta;
+  if(opt.verbose>1) cout <<"  |Delta|:" <<std::setw(11) <<maxDelta;
 
   //lazy stopping criterion: stop without any update
-  if(absMax(Delta)<1e-1*options.stopTolerance) {
-    if(options.verbose>1) cout <<" \t -- absMax(Delta)<1e-1*o.stopTolerance -- NO UPDATE" <<endl;
+  if(absMax(Delta)<1e-1*opt.stopTolerance) {
+    if(opt.verbose>1) cout <<" \t -- absMax(Delta)<1e-1*o.stopTolerance -- NO UPDATE" <<endl;
     return stopCriterion=stopDeltaConverge;
   }
 
@@ -197,9 +185,9 @@ OptNewton::StopCriterion OptNewton::step() {
   for(;; lineSearchSteps++) {
     if(alpha>1.) alpha=1.;
     if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit;
-    if(options.verbose>1) cout <<"  alpha:" <<std::setw(11) <<alpha <<std::flush;
+    if(opt.verbose>1) cout <<"  alpha:" <<std::setw(11) <<alpha <<std::flush;
     y = x + alpha*Delta;
-    if(options.verbose>5) cout <<"  y:" <<y;
+    if(opt.verbose>5) cout <<"  y:" <<y;
     boundClip(y, bounds);
     timeEval -= rai::cpuTime();
 #ifdef NewtonLazyLineSearchMode
@@ -208,23 +196,15 @@ OptNewton::StopCriterion OptNewton::step() {
     fy = f(gy, Hy, y);  evals++;
 #endif
     timeEval += rai::cpuTime();
-    if(options.verbose>1) cout <<"  evals:" <<std::setw(4) <<evals <<"  f(y):" <<std::setw(11) <<fy <<std::flush;
-    if(simpleLog) {
-      (*simpleLog) <<its <<' ' <<evals <<' ' <<fy <<' ' <<alpha;
-      if(y.N<=5)(*simpleLog) <<y.modRaw();
-      (*simpleLog) <<endl;
-    }
+    if(opt.verbose>1) cout <<"  evals:" <<std::setw(4) <<evals <<"  f(y):" <<std::setw(11) <<fy <<std::flush;
 
-    bool wolfe = (fy <= fx + options.wolfe*scalarProduct(y-x, gx));
+    bool wolfe = (fy <= fx + opt.wolfe*scalarProduct(y-x, gx));
     if(rootFinding) wolfe=true;
     if(fy==fy && wolfe) { //fy==fy is for !NAN
       //== accept new point
-      if(options.verbose>1) cout <<"  ACCEPT" <<endl;
-      if(logFile) {
-        (*logFile) <<"{ lineSearch: " <<lineSearchSteps <<", alpha: " <<alpha <<", beta: " <<beta <<", f_x: " <<fx <<", f_y: " <<fy <<", wolfe: " <<wolfe <<", accept: True }," <<endl;
-      }
-      if(options.stopFTolerance<0. && fx-fy<options.stopFTolerance) numTinyFSteps++; else numTinyFSteps=0;
-      if(absMax(y-x)<1e-2*options.stopTolerance) numTinyXSteps++; else numTinyXSteps=0;
+      if(opt.verbose>1) cout <<"  ACCEPT" <<endl;
+      if(opt.stopFTolerance<0. && fx-fy<opt.stopFTolerance) numTinyFSteps++; else numTinyFSteps=0;
+      if(absMax(y-x)<1e-2*opt.stopTolerance) numTinyXSteps++; else numTinyXSteps=0;
       x = y;
       fx = fy;
 #ifdef NewtonLazyLineSearchMode
@@ -232,46 +212,37 @@ OptNewton::StopCriterion OptNewton::step() {
       gx = gy;
       Hx = Hy;
 #endif
-      alpha *= options.stepInc;
+      alpha *= opt.stepInc;
       break; //end line search
     } else {
       //== reject new point
-      if(options.verbose>1) cout <<"  reject (lineSearch:" <<lineSearchSteps <<")";
-      if(logFile) {
-        (*logFile) <<"{ lineSearch: " <<lineSearchSteps <<", alpha: " <<alpha <<", beta: " <<beta <<", f_x: " <<fx <<", f_y: " <<fy <<", wolfe: " <<wolfe <<", accept: False }," <<endl;
-      }
-      if(evals>options.stopEvals) {
-        if(options.verbose>1) cout <<" (evals>stopEvals)" <<endl;
+      if(opt.verbose>1) cout <<"  reject (lineSearch:" <<lineSearchSteps <<")";
+      if(evals>opt.stopEvals) {
+        if(opt.verbose>1) cout <<" (evals>stopEvals)" <<endl;
         numTinyXSteps++;
         break; //end line search
       }
       if(lineSearchSteps>10) {
-        if(options.verbose>1) cout <<" (lineSearchSteps>10)" <<endl;
+        if(opt.verbose>1) cout <<" (lineSearchSteps>10)" <<endl;
         numTinyXSteps++;
         break; //end line search
       }
-      if(options.verbose>1) cout <<"\n                    (line search)      ";
-      alpha *= options.stepDec;
+      if(opt.verbose>1) cout <<"\n                    (line search)      ";
+      alpha *= opt.stepDec;
 //      if(alpha<alphaLoLimit) endLineSearch=true;
     }
   }
 
-  if(logFile) {
-    (*logFile) <<"{ newton: " <<its <<", evaluations: " <<evals <<", f_x: " <<fx <<", alpha: " <<alpha;
-    if(options.verbose>2)(*logFile) <<", Delta: " <<Delta;
-    (*logFile) <<" }," <<endl;
-  }
-
   //stopping criteria
 
-#define STOPIF(expr, code, ret) if(expr){ if(options.verbose>1) cout <<"--newton-- stopping: '" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
+#define STOPIF(expr, code, ret) if(expr){ if(opt.verbose>1) cout <<"--newton-- stopping: '" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
 
-  STOPIF(absMax(Delta)<options.stopTolerance,, stopDeltaConverge);
+  STOPIF(absMax(Delta)<opt.stopTolerance,, stopDeltaConverge);
   STOPIF(numTinyFSteps>4, numTinyFSteps=0, stopTinyFSteps);
   STOPIF(numTinyXSteps>4, numTinyXSteps=0, stopTinyXSteps);
 //  STOPIF(alpha*absMax(Delta)<1e-3*o.stopTolerance, stopCrit2);
-  STOPIF(evals>=options.stopEvals,, stopCritEvals);
-  STOPIF(its>=options.stopInners,, stopCritEvals);
+  STOPIF(evals>=opt.stopEvals,, stopCritEvals);
+  STOPIF(inner_iters>=opt.stopInners,, stopCritEvals);
   STOPIF(lineSearchSteps>10,, stopLineSearchSteps);
 
 #undef STOPIF
@@ -283,7 +254,7 @@ OptNewton::~OptNewton() {
 #ifndef RAI_MSVC
 //  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
 #endif
-  if(options.verbose>1) cout <<"----newton---- final f(x):" <<fx <<endl;
+  if(opt.verbose>1) cout <<"----newton---- final f(x):" <<fx <<endl;
 }
 
 OptNewton& OptNewton::setBounds(const arr& _bounds) {

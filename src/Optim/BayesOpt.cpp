@@ -11,12 +11,12 @@
 //#include "../Gui/plot.h"
 //#include "../Algo/MLcourse.h"
 
-BayesOpt::BayesOpt(const ScalarFunction& _f, const arr& _bounds, double init_lengthScale, double prior_var, rai::OptOptions o)
+BayesOpt::BayesOpt(const ScalarFunction& _f, const arr& _bounds, rai::OptOptions& opt, double init_lengthScale, double prior_var)
   : f(_f),
     bounds(_bounds),
     f_now(nullptr), f_smaller(nullptr),
-    alphaMinima_now(ScalarFunction(), _bounds),
-    alphaMinima_smaller(ScalarFunction(), _bounds) {
+    alphaMinima_now(ScalarFunction(), _bounds, opt),
+    alphaMinima_smaller(ScalarFunction(), _bounds, opt) {
 
   init_lengthScale *= sum(bounds[1] - bounds[0])/bounds.d1;
 
@@ -37,7 +37,6 @@ BayesOpt::~BayesOpt() {
   delete kernel_smaller;
   delete f_now;
   delete f_smaller;
-
 }
 
 void BayesOpt::step() {
