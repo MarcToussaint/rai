@@ -110,7 +110,7 @@ void testShader(){
   for(uint i=0;i<density.d0;i++) for(uint j=0;j<density.d1;j++) for(uint k=0;k<density.d2;k++){
         data(k,j,i) = (double(density(i,j,k)) - threshold) / scale;
       }
-  arr size = .001*convert<double>(data.dim()) % arr{pixdim(2), pixdim(1), pixdim(0)};
+  arr size = .001*rai::convert<double>(data.dim()) % arr{pixdim(2), pixdim(1), pixdim(0)};
   LOG(0) <<"data size: " <<data.dim() <<" max: " <<max(data) <<" min: " <<min(data) <<" pixdim: " <<pixdim <<" size: " <<size;
   // arr size=arr{160, 160, 160} / pixdim;
   // data = data.sub(0,size(2)-1, 0, size(1)-1, 0, size(0)-1);

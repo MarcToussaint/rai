@@ -1240,16 +1240,17 @@ PhysXInterface::~PhysXInterface() { NICO }
 void PhysXInterface::step(double tau) { NICO }
 void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& frameVelocities, bool onlyKinematic) { NICO }
 void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& vels) { NICO }
-void PhysXInterface::pushMotorStates(const rai::Configuration& C, bool setInstantly, const arr& qDot) { NICO }
+void PhysXInterface::pushMotorTargets(const rai::Configuration& C, const arr& qDot_ref, bool setStatesInstantly) { NICO }
 void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot) { NICO }
 void PhysXInterface::postAddObject(rai::Frame* f) { NICO }
 
-void PhysXInterface::disableGravity(rai::Frame* f, bool disable) { NICO }
 void PhysXInterface::changeObjectType(rai::Frame* f, int _type) { NICO }
 void PhysXInterface::addJoint(rai::Joint* j) { NICO }
 void PhysXInterface::removeJoint(rai::Joint* j) { NICO }
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) { NICO }
-void PhysXInterface::watch(bool pause, const char* txt) { NICO }
+void PhysXInterface::view(bool pause, const char* txt) { NICO }
+void PhysXInterface::setGravity(float grav) { NICO }
+void PhysXInterface::disableGravity(rai::Frame* f, bool disable) { NICO }
 void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b) { NICO }
 void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos) { NICO }
 

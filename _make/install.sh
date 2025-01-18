@@ -40,7 +40,23 @@ echo 'Installing' ${lib} ' -- sources:' ${git} ' -- prefix (compiled library):' 
 
 cd ${git}
 
+packages_rai="g++ clang make gnupg cmake git wget \
+        	liblapack-dev libf2c2-dev libqhull-dev libeigen3-dev \
+		libjsoncpp-dev libyaml-cpp-dev libhdf5-dev \
+        	libx11-dev libglu1-mesa-dev libglfw3-dev libglew-dev freeglut3-dev libglm-dev libfreetype-dev fonts-ubuntu \
+		libpng-dev libassimp-dev"
+packages_robotic="liblapack3 freeglut3 libglu1-mesa libfreetype6 fonts-ubuntu python3 python3-pip"
+packages_botop="libpoco-dev libboost-system-dev portaudio19-dev libusb-1.0-0-dev libhidapi-dev"
+
 case ${lib} in
+
+    ubuntu-rai)
+	sudo apt install --yes ${packages_rai}
+	;;
+
+    ubuntu-botop)
+	sudo apt install --yes ${packages_rai} ${packages_botop}
+	;;
 
     botop)
 	git clone --recurse-submodules https://github.com/MarcToussaint/botop.git
@@ -51,7 +67,7 @@ case ${lib} in
 
     rai)
 	git clone --single-branch -b marc https://github.com/MarcToussaint/rai.git
-	cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=${pre} ${lib} -B ${lib}/build
+	cmake -DCMAKE_INSTALL_PREFIX=${pre} -DUSE_PHYSX=OFF ${lib} -B ${lib}/build
 	make -C ${lib}/build install
 	;;
 
