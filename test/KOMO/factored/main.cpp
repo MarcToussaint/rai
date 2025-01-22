@@ -65,7 +65,7 @@ void testFactored(){
   komo.opt.verbose = 4;
   switch(2){
     case 0: { //old style
-      komo.optimize();
+      komo.solve();
     } break;
     case 1: { //generic solver with exact same transcription as old-style
       auto nlp = komo.nlp();

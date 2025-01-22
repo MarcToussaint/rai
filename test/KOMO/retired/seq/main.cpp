@@ -26,7 +26,7 @@ void TEST(KomoSequence){
   komo.setGrasp(1., 1.8, "humanL", "Long2");
   komo.setPlace(1.8, "humanL", "Long2", "tableR");
 
-  komo.optimize();
+  komo.solve();
 
   rai::Graph result = komo.report(false, true, true);
 

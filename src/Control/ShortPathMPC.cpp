@@ -84,7 +84,7 @@ std::shared_ptr<SolverReturn> ShortPathMPC::solve(bool alsoVels, int verbose) {
   komo.timeTotal=0.;
   komo.pathConfig.setJointStateCount=0;
 //  komo.initWithConstant(qHome);
-  auto ret = komo.optimize(0., -1, opt);
+  auto ret = komo.solve(0., -1, opt);
   //komo.checkGradients();
 
   //is feasible?

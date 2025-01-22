@@ -320,7 +320,7 @@ void LGP_Tool::solve_step(){
     //  ways->view(true, STRING("ways init" <<sub->action));
     ways->opt.verbose=0;
 #if 1
-    auto ret = ways->optimize();
+    auto ret = ways->solve();
 #else
     std::shared_ptr<SolverReturn> ret;
     str opt_or_sample="gauss";
@@ -444,7 +444,7 @@ PTR<KOMO> LGP_Tool::solveFullMotion(int _verbose){
   NLP_Solver sol;
   sol.setProblem(path->nlp());
   auto ret = sol.solve(0, 0);
-  //    auto ret = path->optimize();
+  //    auto ret = path->solve();
   //    path->view(true, "solved");
   if(_verbose>0) display(path, ret, _verbose>1);
   return path;

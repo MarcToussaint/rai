@@ -12,8 +12,17 @@
 
 //===========================================================================
 
+struct F_Zeros : Feature {
+  uint dim;
+  F_Zeros(uint dim):dim(dim) {}
+  virtual arr phi(const FrameL& F);
+  virtual uint dim_phi(const FrameL& F) { return dim; }
+};
+
+//===========================================================================
+
 struct F_Position : Feature {
-  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual arr phi(const FrameL& F);
   virtual uint dim_phi(const FrameL& F) { return 3; }
 };
 

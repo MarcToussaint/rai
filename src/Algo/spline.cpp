@@ -653,12 +653,12 @@ void CubicSplinePosVelAcc(arr& pos, arr& vel, arr& acc, double trel, const arr& 
 #endif
 }
 
-arr BSpline_path2ctrlPoints(const arr& path, uint numCtrlPoints, uint degree, bool flatEnds){
+arr BSpline_path2ctrlPoints(const arr& path, uint numCtrlPoints, uint degree, bool startDuplicates, bool endDuplicates){
   CHECK_EQ(path.nd, 2, "");
   CHECK(path.d0, "");
   BSpline S;
   S.setKnots(degree, ::range(0., 1., numCtrlPoints-1));
-  arr B = S.getBmatrix(::range(0., 1., path.d0-1), flatEnds, flatEnds);
+  arr B = S.getBmatrix(::range(0., 1., path.d0-1), startDuplicates, endDuplicates);
 
   arr Binv = pseudoInverse(B);
   arr ctrlPoints = Binv * path;

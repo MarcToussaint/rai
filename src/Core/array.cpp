@@ -2160,8 +2160,8 @@ double& SparseMatrix::addEntry(int i, int j) {
   uint k=Z.N;
   CHECK_EQ(elems.d0, k, "");
   elems.resizeCopy(k+1, 2);
-  elems(k, 0)=i;
-  elems(k, 1)=j;
+  elems.p[2*k]=i; // elems(k, 0)=i;
+  elems.p[2*k+1]=j; // elems(k, 1)=j;
   if(rows.nd) { rows.clear(); cols.clear(); }
   Z.resizeMEM(k+1, true);
   Z.elem(-1)=0.;

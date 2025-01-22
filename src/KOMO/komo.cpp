@@ -52,7 +52,7 @@ using namespace rai;
 //===========================================================================
 
 struct getQFramesAndScale_Return { uintA frames; arr scale; };
-getQFramesAndScale_Return getCtrlFramesAndScale(const rai::Configuration& C);
+getQFramesAndScale_Return getCtrlFramesAndScale(const rai::Configuration& C, bool jointPairs);
 
 Shape* getShape(const Configuration& K, const char* name) {
   Frame* f = K.getFrame(name);
@@ -747,11 +747,12 @@ void KOMO::addContact_elasticBounce(double time, const char* from, const char* t
 }
 
 shared_ptr<Objective> KOMO::addControlObjective(const arr& times, uint order, double scale, const arr& target, int deltaFromStep, int deltaToStep) {
-  auto F = getCtrlFramesAndScale(world);
+  arr Fscale;
+  uintA F = world.getCtrlFramesAndScale(Fscale, true);
   //F.scale *= sqrt(tau); NO!! The Feature::finiteDifference does this automatically, depending on the timeIntegral flag!
 
   CHECK_GE(k_order, order, "");
-  shared_ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F.frames, (order==0)), {}, OT_sos, scale*F.scale, target, order, deltaFromStep, deltaToStep);
+  shared_ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F, (order==0)), {}, OT_sos, scale*Fscale, target, order, deltaFromStep, deltaToStep);
   o->feat->timeIntegral=1;
   return o;
 }
@@ -780,9 +781,9 @@ void KOMO::setSlowAround(double time, double delta, double prec, bool hardConstr
 
 void KOMO::add_collision(bool hardConstraint, double margin, double prec) {
   if(hardConstraint) { //interpreted as hard constraint (default)
-    addObjective({}, make_shared<F_AccumulatedCollisions>(margin, true, false), {"ALL"}, OT_eq, {prec}, NoArr);
+    addObjective({}, make_shared<F_AccumulatedCollisions>(margin), {"ALL"}, OT_eq, {prec}, NoArr);
   } else { //cost term
-    addObjective({}, make_shared<F_AccumulatedCollisions>(margin, true, false), {"ALL"}, OT_sos, {prec}, NoArr);
+    addObjective({}, make_shared<F_AccumulatedCollisions>(margin), {"ALL"}, OT_sos, {prec}, NoArr);
   }
 }
 
@@ -1015,7 +1016,7 @@ uintA KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase,
   //-- interpolate w.r.t. non-switching frames within the intervals
   if(interpolate) {
 #if 1
-    auto F = getCtrlFramesAndScale(world);
+    auto F = getCtrlFramesAndScale(world, true);
     arr qHome = world.getDofHomeState(world.activeDofs);
     //F.frames.reshape(1,-1,2); F_qItself qfeat;
     arr signs;
@@ -1100,7 +1101,7 @@ void KOMO::initWithPath_qOrg(const arr& q) {
 }
 
 void KOMO::straightenCtrlFrames_mod2Pi() {
-  auto F = getCtrlFramesAndScale(world);
+  auto F = getCtrlFramesAndScale(world, true);
   arr signs;
   DofL dofs;
   for(uint t=0; t<T-1; t++) {
@@ -1186,7 +1187,7 @@ void KOMO::reset() {
   timeTotal=timeCollisions=timeKinematics=timeNewton=timeFeatures=0.;
 }
 
-std::shared_ptr<SolverReturn> KOMO::optimize(double addInitializationNoise, int splineKnots, const rai::OptOptions options) {
+std::shared_ptr<SolverReturn> KOMO::solve(double addInitializationNoise, int splineKnots, const OptOptions& options) {
   run_prepare(addInitializationNoise);
 
   if(opt.verbose>1) cout <<"===KOMO::optimize===\n" <<report(true, false, false) <<endl; //reportProblem();
@@ -1199,7 +1200,7 @@ std::shared_ptr<SolverReturn> KOMO::optimize(double addInitializationNoise, int 
     sol.setProblem(nlp());
     sol.setInitialization(x);
   }else{
-    sol.setProblem(nlp_spline(splineKnots));
+    sol.setProblem(nlp_spline(splineKnots, 3));
   }
   sol.setOptions(options);
   sol.opt.set_verbose(rai::MAX(opt.verbose-2, 0));

@@ -28,7 +28,7 @@ void TEST(Easy){
 
   cout <<komo.report(true) <<endl;
 
-  komo.optimize(0., 5); //2nd argument uses spline representation!!
+  komo.solve(0., 5); //2nd argument uses spline representation!!
 //  cout <<"TIME OPTIM: total=" <<sum(komo.getPath_times()) <<komo.getPath_times() <<endl;
 //  komo.plotTrajectory();
 //  komo.reportProxies();
@@ -73,7 +73,7 @@ void TEST(Align){
   komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e1}, {}, 1);
   komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
 
-  komo.optimize();
+  komo.solve();
 //  komo.checkGradients();
 
 //  komo.plotTrajectory();
@@ -86,36 +86,6 @@ void TEST(Align){
 }
 
 //===========================================================================
-
-struct MyFeature : Feature {
-  virtual void phi2(arr& y, arr& J, const FrameL& F){
-    CHECK_EQ(order, 1, "");
-
-    auto V = F_PositionDiff().setOrder(1).eval(F);
-
-    auto C = F_PairCollision(F_PairCollision::_normal, false)
-             .eval(F[1]);
-
-    auto D = F_PairCollision(F_PairCollision::_negScalar, false)
-             .eval(F[1]);
-
-    //penalizing velocity whenever close
-    double range=.2;
-    if(-D.scalar() > range){
-      y = zeros(3);
-      if(!!J) J = zeros(3, V.J().d1);
-      return;
-    }
-
-    arr weight = 1. + D/range;
-    double normalWeight = 1.;
-
-    y = weight * (V + C*normalWeight*(~C * V));
-    grabJ(y, J);
-  }
-
-  virtual uint dim_phi(const FrameL& F) {  return 3;  }
-};
 
 void TEST(Thin){
   rai::Configuration C(rai::raiPath("../rai-robotModels/tests/thin.g"));
@@ -133,15 +103,14 @@ void TEST(Thin){
   komo.addObjective({1.}, FS_positionDiff, {"ball", "target"}, OT_eq, {1e1});
   komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e1}, {}, 1);
   komo.addObjective({}, FS_distance, {"wall", "ball"}, OT_ineqB, {1.});
-  komo.addObjective({}, make_shared<MyFeature>(), {"ball", "wall"}, OT_sos, {1e1}, {}, 1);
+  komo.addObjective({}, make_shared<F_VelocityDistance>(.1), {"ball", "wall"}, OT_sos, {1e1}, {}, 1);
 
   cout <<komo.report(true) <<endl;
 
   komo.view(true, "init");
 
   komo.opt.animateOptimization=1;
-  //  komo.setSpline(5);
-  komo.optimize(1e-2);
+  komo.solve(1e-2, 5);
   komo.plotTrajectory();
 //  komo.reportProxies();
   komo.checkGradients();
@@ -174,8 +143,7 @@ void TEST(PR2){
   komo.addObjective({.98,1.}, FS_qItself, {}, OT_sos, {1e1}, {}, 1);
   komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e1});
 
-//  komo.setSpline(10);
-  komo.optimize();
+  komo.solve();
   komo.plotTrajectory();
 //  komo.checkGradients();
   komo.view(true, "result");
@@ -208,7 +176,7 @@ void TEST(Threading) {
     komo2.clone(komo); //each worker clones original problem
     for (uint i=0; i<nIters; i++) {
       komo2.pathConfig.setJointState(x0);
-      komo2.optimize();
+      komo2.solve();
     }
     return 0;
   };

@@ -185,7 +185,7 @@ void LGP_Node::optBound(BoundType bound, bool useBroadCollisions, int verbose) {
 
   //-- optimize
   try {
-    ret = komo->optimize(0.);
+    ret = komo->solve(0.);
 
 //    NLP_Solver sol;
 //    sol.setProblem(*problem(bound).nlp);

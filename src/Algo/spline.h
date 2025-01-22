@@ -64,7 +64,7 @@ struct BSpline {
 
 //==============================================================================
 
-arr BSpline_path2ctrlPoints(const arr& path, uint numCtrlPoints, uint degree=2, bool flatEnds=true);
+arr BSpline_path2ctrlPoints(const arr& path, uint numCtrlPoints, uint degree=2, bool startDuplicates=true, bool endDuplicates=true);
 
 //==============================================================================
 

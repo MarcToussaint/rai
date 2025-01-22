@@ -77,7 +77,7 @@ void testPickAndPlace(uint order){
   cout <<"REPORT\n" <<komo.report(false, true, true) <<endl;
   cout <<"GRADS\n" <<sol.reportLagrangeGradients(komo.featureNames) <<endl;
 
-  //komo.optimize();
+  //komo.solve();
   //komo.checkGradients();
 
   komo.view(true, "optimized motion");
@@ -150,7 +150,7 @@ void testHandover(uint order){
   komo.addObjective({}, FS_negDistance, {"r_palm", "l_palm"}, OT_ineq);
 
   komo.opt.verbose = 4;
-  komo.optimize();
+  komo.solve();
   //komo.checkGradients();
 
   komo.view(true, "optimized motion");
@@ -192,7 +192,7 @@ void testFloat(uint order){
   cout <<komo.report(true) <<endl;
 
   komo.opt.verbose = 4;
-  //komo.optimize();
+  //komo.solve();
   //komo.checkGradients();
 
   NLP_Solver sol;

@@ -196,7 +196,7 @@ intA Skeleton::getSwitches(const rai::Configuration& C) const {
 
 arr Skeleton::solve(const rai::Configuration& C, ArgWord sequenceOrPath, int verbose) {
   komoPath = getKomo_path(C, sequenceOrPath);
-  komoPath->optimize();
+  komoPath->solve();
   //  komo->checkGradients();
 
   if(verbose>0) komoPath->report(false, true, true);

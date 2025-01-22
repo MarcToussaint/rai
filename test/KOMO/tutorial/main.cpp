@@ -42,7 +42,7 @@ void tutorialBasics(){
   
   //-- call the optimizer
   //  komo.animateOptimization = 1; //activate this to see how optimization is incrementally improving the path
-  komo.optimize();
+  komo.solve();
   komo.checkGradients(); //this checks all gradients of the problem by finite difference
   komo.report(false, false, true); //true -> plot the cost curves
   komo.view(true, "solution"); //illustrate the solution as an overlayed path
@@ -93,7 +93,7 @@ void tutorialInverseKinematics(){
 
   //-- call the optimizer
   //  komo.animateOptimization = 1;
-  komo.optimize();
+  komo.solve();
   //  komo.checkGradients(); //this checks all gradients of the problem by finite difference
   komo.report(); //true -> plot the cost curves
   komo.view(true, "solution"); //illustrate the solution as an overlayed path

@@ -115,7 +115,7 @@ struct Configuration {
   uintA getDofIDs() const;
   StringA getJointNames() const;
   DofL getDofs(const FrameL& F, bool actives, bool inactives, bool mimics=false) const;
-  uintA getCtrlFramesAndScale(arr& scale=NoArr) const;
+  uintA getCtrlFramesAndScale(arr& scale=NoArr, bool jointPairs=true) const;
   FrameL getRoots() const;
   FrameL getParts() const;
   FrameL getLinks() const;

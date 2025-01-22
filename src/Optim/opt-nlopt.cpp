@@ -91,7 +91,7 @@ arr NLoptInterface::solve(const arr& x_init) {
   try {
     std::vector<double> x_vec = x.vec();
     //nlopt::result R =
-    opt.optimize(x_vec, fval);
+    opt.solve(x_vec, fval);
     x = x_vec;
   } catch(const std::runtime_error& err) {
     cout <<"NLOPT terminated with " <<err.what() <<endl;

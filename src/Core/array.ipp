@@ -288,7 +288,7 @@ template<class T> void Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
     if(Mold==0 && n>0) {
       Mnew=n;      //first time: exact allocation
     } else if(n>Mold || 10+2*n<Mold/4) {
-      Mnew=10+2*n; //big down-or-up-resize: allocate with some extra space
+      Mnew=20+2*n; //big down-or-up-resize: allocate with some extra space
     } else {
       Mnew=Mold;   //small down-size: don't really resize memory
     }

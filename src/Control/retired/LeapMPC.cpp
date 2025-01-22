@@ -62,7 +62,7 @@ void LeapMPC::solve() {
   opt.stopTolerance = 1e-4;
   opt.stopGTolerance = 1e-4;
   komo.opt.verbose=0;
-  komo.optimize(0., opt);
+  komo.solve(0., opt);
   //komo.checkGradients();
 
   //store as output result

@@ -201,7 +201,7 @@ void tutorialBasics(){
 #endif
 
   //-- call the optimizer
-  komo.optimize();
+  komo.solve();
   komo.report(false, false, true); //true -> plot the cost curves
   for(uint i=0;i<2;i++) komo.displayTrajectory(.1, true); //play the trajectory
 }

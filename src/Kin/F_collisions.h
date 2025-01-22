@@ -46,10 +46,17 @@ struct F_PairFunctional : Feature {
 
 struct F_AccumulatedCollisions : Feature {
   double margin;
-  bool selectAll=false;
-  bool selectXor=false;
-  F_AccumulatedCollisions(double _margin=.0, bool selAll=false, bool selXor=false) : margin(_margin), selectAll(selAll), selectXor(selXor) {}
+  F_AccumulatedCollisions(double _margin=.0) : margin(_margin) {}
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi(const FrameL& F) { return 1; }
+};
+
+//===========================================================================
+
+struct F_VelocityDistance : Feature {
+  double margin;
+  F_VelocityDistance(double margin=.05) : margin(margin) {}
+  virtual arr phi(const FrameL& F);
+  virtual uint dim_phi(const FrameL& F) {  return 3;  }
 };
 

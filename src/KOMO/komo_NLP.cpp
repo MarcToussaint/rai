@@ -538,14 +538,14 @@ void Conv_KOMO_FactoredNLP::reportDetails(std::ostream& os, int verbose, const c
 KOMO_Spline_NLP::KOMO_Spline_NLP(KOMO& _komo, uint splineT, uint degree){
   BSpline S;
   arr x = _komo.world.getJointState();
-  arr t = ::range(0., 1., splineT);
-  arr z = replicate(x, t.N);
-  S.set(degree, z, t);
+  arr times = ::range(0., 1., splineT);
+  S.setKnots(degree, times);
+
   CHECK_EQ(_komo.timeSlices.d0, _komo.k_order+_komo.T, "");
-  arr B = S.getBmatrix(::range(0., 1., _komo.T));
-  B.delRows(0, 1);
+  arr B = S.getBmatrix(::range(0., 1., _komo.T), false, false);
 
   { //prefix
+    B.delRows(0, 1);
     arr A = zeros(B.d1, 1);
     A(0,0) = A(1,0) = 1;
     x.reshape(1,-1);

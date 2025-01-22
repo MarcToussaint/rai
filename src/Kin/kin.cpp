@@ -537,16 +537,17 @@ StringA Configuration::getFrameNames() const {
 }
 
 /// get the (frame-ID, parent-ID) tuples and control scale for all active joints that represent controls
-uintA Configuration::getCtrlFramesAndScale(arr& scale) const {
+uintA Configuration::getCtrlFramesAndScale(arr& scale, bool jointPairs) const {
   uintA qFrames;
   for(rai::Frame* f : frames) {
     rai::Joint* j = f->joint;
     if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau && !j->isStable) {
-      qFrames.append(uintA{f->ID, f->parent->ID});
+      if(jointPairs) qFrames.append(uintA{f->ID, f->parent->ID});
+      else qFrames.append(f->ID);
       if(!!scale) scale.append(j->H, j->dim);
     }
   }
-  qFrames.reshape(-1, 2);
+  if(jointPairs) qFrames.reshape(-1, 2);
   return qFrames;
 }
 

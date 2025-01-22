@@ -39,7 +39,7 @@ void testPickAndPlace(rai::ArgWord pathOrSeq){
   };
   S.addObjectives(komo);
 
-  komo.optimize();
+  komo.solve();
 
   komo.report(false, false, true);
   komo.view(true, "optimized motion");
@@ -74,7 +74,7 @@ void testPickAndPush(rai::ArgWord pathOrSeq){
   };
   S.addObjectives(komo);
 
-  komo.optimize();
+  komo.solve();
 
   komo.report(false, false, true);
   komo.view(true, "optimized motion");
@@ -114,7 +114,7 @@ void testPickAndThrow(rai::ArgWord pathOrSeq){
   };
   S.addObjectives(komo);
 
-  komo.optimize();
+  komo.solve();
 
   komo.report(false, false, true);
   komo.view(true, "optimized motion");
@@ -139,7 +139,7 @@ void testTouchAndRoll(rai::ArgWord pathOrSeq){
   if(pathOrSeq==rai::_path) komo = S.getKomo_path(C);
   else komo=S.getKomo_waypoints(C);
 
-  komo->optimize();
+  komo->solve();
 
   komo->report(false, false, true);
   komo->view(true, "optimized motion");
@@ -185,7 +185,7 @@ void testWalkAndPick(rai::ArgWord pathOrSeq){
   };
   S.addObjectives(komo);
 
-  komo.optimize();
+  komo.solve();
 
   komo.report(false, false, true);
   komo.view(true, "optimized motion");
@@ -224,7 +224,7 @@ void testHandover(rai::ArgWord pathOrSeq){
   };
   S.addObjectives(komo);
 
-  komo.optimize();
+  komo.solve();
 
   komo.report(false, false, true);
   komo.view(true, "optimized motion");
@@ -306,7 +306,7 @@ void testStackAndBalance(rai::ArgWord pathOrSeq){
   };
   S.addObjectives(komo);
 
-  komo.optimize();
+  komo.solve();
 
   komo.report(false, false, true);
   komo.view(true, "optimized motion");
@@ -355,7 +355,7 @@ void testWalking(rai::ArgWord pathOrSeq){
   };
   S.addObjectives(komo);
 
-  komo.optimize();
+  komo.solve();
 
   komo.report(false, false, true);
   komo.view(true, "optimized motion");

@@ -30,7 +30,7 @@ void createPath(){
       .setProblem(komo.nlp())
       .solve();
   cout <<*ret <<endl;
-//  komo.optimize();
+//  komo.solve();
 
   komo.view(false, "result");
   komo.view_play(true);

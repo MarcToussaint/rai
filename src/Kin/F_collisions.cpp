@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "F_collisions.h"
+#include "F_pose.h"
 #include "proxy.h"
 #include "dof_forceExchange.h"
 
@@ -60,7 +61,7 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     if(!m2->V.N) m2 = &dot;
   }
 
-  //is this a point cloud collision? -> different method
+  //if this a point cloud collision? -> different method
   if((type==_negScalar || type==_vector) && m1->V.d0==1 && m2->V.d0>2 && !m2->T.N) {
     arr Jp1, Jp2, Jx1, Jx2;
     if(!!J) {
@@ -129,25 +130,59 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
+double fct_hinge(double x, double *dy=0){
+  if(x>0.){
+    if(dy) (*dy)=1.;
+    return x;
+  }
+  if(dy) (*dy)=0.;
+  return 0.;
+}
+
+double fct_huberHinge(double x, double delta, double *dy=0){
+  if(x>delta){
+    if(dy) (*dy) = 1.;
+    return x-0.5*delta;
+  }else if(x>0.){
+    if(dy) (*dy) = x/delta;
+    return 0.5*x*x/delta ;
+  }
+  if(dy) (*dy) = 0.;
+  return 0.;
+}
+
+double fct_expHinge(double x, double delta, double *dy=0){
+  if(x>0.){
+    double a = ::exp(-delta/x);
+    if(dy) (*dy) = a * (1.+delta/x);  //a + x*a*(delta/x^2)
+    return a*x;
+  }
+  if(dy) (*dy) = 0.;
+  return 0.;
+}
+
+double fct_sqrHinge(double x, double *dy=0){
+  if(x>0.){
+    if(dy) (*dy) = x;
+    return 0.5*x*x;
+  }
+  if(dy) (*dy) = 0.;
+  return 0.;
+}
+
+
 void F_AccumulatedCollisions::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Configuration& C = F.first()->C;
   C.kinematicsZero(y, J, 1);
+  uint firstID = F.elem(0)->ID, lastID = F.elem(-1)->ID;
   for(rai::Proxy& p: C.proxies) {
-    bool isSelected=false;
-    if(selectAll) {
-      //select based on indices, e.g. being in a single time slice of a path config
-      isSelected = (p.a->ID>=F.first()->ID && p.a->ID<=F.last()->ID)
-                   || (p.b->ID>=F.first()->ID && p.b->ID<=F.last()->ID);
-    } else {
-      //select by explicitly looking up in F
-      isSelected = (!selectXor && (F.contains(p.a) || F.contains(p.b)))
-                   || (selectXor && (F.contains(p.a) ^ F.contains(p.b)));
-    }
+    bool isSelected = (p.a->ID>=firstID && p.a->ID<=lastID)
+                   || (p.b->ID>=firstID && p.b->ID<=lastID);
     if(isSelected) {
       CHECK(p.a->shape, "");
       CHECK(p.b->shape, "");
 
-      //early check: if swift is way out of collision, don't bother computing it precisely
+      //early check: if broadphase is way out of collision, don't bother computing it precisely
       if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01 + margin) continue;
 
       if(!p.collision) p.calc_coll();
@@ -163,8 +198,12 @@ void F_AccumulatedCollisions::phi2(arr& y, arr& J, const FrameL& F) {
 
       if(y_dist.scalar()>margin) continue; //this is the hinge: proxies contribute only when below margin
 
-      y += margin-y_dist.scalar();
-      J -= J_dist;
+      double dy;
+      y += fct_hinge(margin-y_dist.scalar(), &dy);
+      // y += fct_huberHinge(margin-y_dist.scalar(), 1e-3, &dy);
+      // y += fct_expHinge(margin-y_dist.scalar(), .01, &dy);
+      // y += fct_sqrHinge(margin-y_dist.scalar(), &dy);
+      J += -dy * J_dist;
     }
   }
 }
@@ -352,3 +391,23 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F) {
   }
 }
 
+//===========================================================================
+
+arr F_VelocityDistance::phi(const FrameL& F){
+  CHECK_EQ(order, 1, "");
+
+  auto V = F_PositionDiff().setOrder(1).eval(F);
+  auto C = F_PairCollision(F_PairCollision::_normal, false).eval(F[1]);
+  auto D = F_PairCollision(F_PairCollision::_negScalar, false).eval(F[1]);
+
+  //penalizing velocity whenever close
+
+  if(-D.scalar() > margin){ //outside the margin
+    return F_Zeros(3).eval(F);
+  }
+
+  arr weight = 1. + D/margin;
+  double normalWeight = 1.;
+
+  return weight * (V + C*normalWeight*(~C * V));
+}

@@ -44,7 +44,7 @@ std::shared_ptr<SolverReturn> WaypointMPC::solve(int verbose) {
 //  cout <<komo.report(true, false) <<endl;
 //  komo.initWithConstant(qHome);
 //  komo.opt.animateOptimization=2;
-  auto ret = komo.optimize(.0, -1, opt);
+  auto ret = komo.solve(.0, -1, opt);
 //  komo.checkGradients();
 //  cout <<komo.report() <<endl;
 

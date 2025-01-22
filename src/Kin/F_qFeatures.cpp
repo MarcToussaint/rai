@@ -17,38 +17,46 @@
 
 //===========================================================================
 
-F_qItself::F_qItself(bool relative_q0) : relative_q0(relative_q0) {}
+// F_qItself::F_qItself(bool relative_q0) : relative_q0(relative_q0) {}
 
-F_qItself::F_qItself(PickMode pickMode, const StringA& picks, const rai::Configuration& C, bool relative_q0)
-  : relative_q0(relative_q0) {
-  if(pickMode==allActiveJoints) {
-    for(rai::Frame* f: C.frames) if(f->joint && f->parent && f->joint->active && f->joint->dim!=0) {
-        frameIDs.append(f->ID);
-        frameIDs.append(f->parent->ID);
-      }
-    frameIDs.reshape(-1, 2);
-  } else if(pickMode==byJointNames) {
-    for(rai::String s:picks) {
-      if(s(-2)==':') s.resize(s.N-2, true);
-      rai::Frame* f = C.getFrame(s);
-      if(!f) HALT("pick '" <<s <<"' not found");
-      if(!f->joint) HALT("pick '" <<s <<"' is not a joint");
-      frameIDs.setAppend(f->ID);
-    }
-  } else if(pickMode==byExcludeJointNames) {
-    for(rai::Dof* j: C.activeDofs) {
-      if(picks.contains(j->frame->name)) continue;
-      frameIDs.setAppend(j->frame->ID);
-    }
-  } else {
-    NIY
-  }
-}
+// F_qItself::F_qItself(PickMode pickMode, const StringA& picks, const rai::Configuration& C, bool relative_q0)
+//   : relative_q0(relative_q0) {
+//   if(pickMode==allActiveJoints) {
+//     for(rai::Frame* f: C.frames) if(f->joint && f->parent && f->joint->active && f->joint->dim!=0) {
+//         frameIDs.append(f->ID);
+//         frameIDs.append(f->parent->ID);
+//       }
+//     frameIDs.reshape(-1, 2);
+//   } else if(pickMode==byJointNames) {
+//     for(rai::String s:picks) {
+//       if(s(-2)==':') s.resize(s.N-2, true);
+//       rai::Frame* f = C.getFrame(s);
+//       if(!f) HALT("pick '" <<s <<"' not found");
+//       if(!f->joint) HALT("pick '" <<s <<"' is not a joint");
+//       frameIDs.setAppend(f->ID);
+//     }
+//   } else if(pickMode==byExcludeJointNames) {
+//     for(rai::Dof* j: C.activeDofs) {
+//       if(picks.contains(j->frame->name)) continue;
+//       frameIDs.setAppend(j->frame->ID);
+//     }
+//   } else {
+//     NIY
+//   }
+// }
 
 F_qItself::F_qItself(const uintA& _selectedFrames, bool relative_q0)
   : relative_q0(relative_q0) {
   frameIDs = _selectedFrames;
   fs = FS_qItself;
+}
+
+void F_qItself::selectActiveJointPairs(const FrameL& F){
+    for(rai::Frame* f: F) if(f->joint && f->parent && f->joint->active && f->joint->dim!=0) {
+        frameIDs.append(f->ID);
+        frameIDs.append(f->parent->ID);
+      }
+    frameIDs.reshape(-1, 2);
 }
 
 #if 0
@@ -102,16 +110,14 @@ void F_qItself::phi(arr& q, arr& J, const rai::Configuration& C) {
 }
 #endif
 
-void F_qItself::phi2(arr& q, arr& J, const FrameL& F) {
-  if(order!=0) {
-    Feature::phi2(q, J, F);
-    return;
-  }
+arr F_qItself::phi(const FrameL& F) {
+  if(order!=0) return phi_finiteDifferenceReduce(F);
   uint n=dim_phi(F);
-  if(!n) { q.clear(); J.clear(); return; }
+  if(!n) return arr{};
   rai::Configuration& C = F.last()->C;
   CHECK(C._state_q_isGood, "");
-  C.kinematicsZero(q, J, n);
+  arr q;
+  C.kinematicsZero(q, q.J(), n);
   uint m=0;
   CHECK(F.d0==1, "");
   FrameL FF = F[0];
@@ -130,49 +136,51 @@ void F_qItself::phi2(arr& q, arr& J, const FrameL& F) {
       if(a->parent==b) j=a->joint;
       else if(b->parent==a) { j=b->joint; flipSign=true; }
       else HALT("a and b are not linked");
-      CHECK(j, "");
+      CHECK(j, "selected frame " <<FF(i,0) <<" ('" <<a->name <<"') is not a joint or pathDof");
     }
     for(uint k=0; k<j->dim; k++) {
       if(j->active) {
-        q.elem(m) = C.q.elem(j->qIndex+k);
+        q.p[m] = C.q.p[j->qIndex+k];
       } else {
-        q.elem(m) = C.qInactive.elem(j->qIndex+k);
+        q.p[m] = C.qInactive.p[j->qIndex+k];
       }
       if(flipSign) q.elem(m) *= -1.;
       if(relative_q0 && j->q0.N) q.elem(m) -= j->q0(k);
-      if(!!J && j->active) {
-        if(flipSign) J.elem(m, j->qIndex+k) = -1.;
-        else J.elem(m, j->qIndex+k) = 1.;
+      // if(!!J && j->active) {
+      if(j->active){
+        if(flipSign) q.J().elem(m, j->qIndex+k) = -1.;
+        else q.J().elem(m, j->qIndex+k) = 1.;
       }
       m++;
     }
   }
   CHECK_EQ(n, m, "");
+  return q;
 }
 
-uint F_qItself::dim_phi(const rai::Configuration& C) {
-  if(frameIDs.nd) {
-    uint n=0;
-    for(uint i=0; i<frameIDs.d0; i++) {
-      rai::Joint* j=0;
-      if(frameIDs.nd==1) {
-        rai::Frame* f = C.frames.elem(frameIDs.elem(i));
-        j = f->joint;
-        CHECK(j, "selected frame " <<frameIDs.elem(i) <<" ('" <<f->name <<"') is not a joint");
-      } else {
-        rai::Frame* a = C.frames.elem(frameIDs(i, 0));
-        rai::Frame* b = C.frames.elem(frameIDs(i, 1));
-        if(a->parent==b) j=a->joint;
-        else if(b->parent==a) j=b->joint;
-        else HALT("a (" <<a->name <<") and b (" <<b->name <<") are not linked");
-        CHECK(j, "");
-      }
-      n += j->dim;
-    }
-    return n;
-  }
-  return C.getJointStateDimension();
-}
+// uint F_qItself::dim_phi(const rai::Configuration& C) {
+//   if(frameIDs.nd) {
+//     uint n=0;
+//     for(uint i=0; i<frameIDs.d0; i++) {
+//       rai::Joint* j=0;
+//       if(frameIDs.nd==1) {
+//         rai::Frame* f = C.frames.elem(frameIDs.elem(i));
+//         j = f->joint;
+//         CHECK(j, "selected frame " <<frameIDs.elem(i) <<" ('" <<f->name <<"') is not a joint");
+//       } else {
+//         rai::Frame* a = C.frames.elem(frameIDs(i, 0));
+//         rai::Frame* b = C.frames.elem(frameIDs(i, 1));
+//         if(a->parent==b) j=a->joint;
+//         else if(b->parent==a) j=b->joint;
+//         else HALT("a (" <<a->name <<") and b (" <<b->name <<") are not linked");
+//         CHECK(j, "");
+//       }
+//       n += j->dim;
+//     }
+//     return n;
+//   }
+//   return C.getJointStateDimension();
+// }
 
 uint F_qItself::dim_phi(const FrameL& F) {
   uint m=0;

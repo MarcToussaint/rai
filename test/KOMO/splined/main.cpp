@@ -44,7 +44,7 @@ void createPath(){
       .solve();
   cout <<*ret <<endl;
   skomo->checkJacobian(ret->x, 1e-4, komo.featureNames);
-//  komo.optimize();
+//  komo.solve();
 
   komo.view(true, "result");
   komo.view_play(true);

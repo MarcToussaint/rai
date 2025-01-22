@@ -76,9 +76,9 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
 };
 
 //fwd declarations
-auto getCtrlFramesAndScale(const rai::Configuration& C) {
+auto getCtrlFramesAndScale(const rai::Configuration& C, bool jointPairs) {
   struct Return { uintA frames; arr scale; } R;
-  R.frames = C.getCtrlFramesAndScale(R.scale);
+  R.frames = C.getCtrlFramesAndScale(R.scale, jointPairs);
   return R;
 }
 
@@ -189,16 +189,21 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
   else if(feat==FS_angularVel) { f=make_shared<F_AngVel>(); }
 
   else if(feat==FS_accumulatedCollisions) {
-    f=make_shared<F_AccumulatedCollisions>(0., true, false);
+    f=make_shared<F_AccumulatedCollisions>(0.);
     if(!frames.N) f->frameIDs = framesToIndices(C.frames);
-  } else if(feat==FS_jointLimits) {
+  }
+
+  else if(feat==FS_jointLimits) {
     f=make_shared<F_qLimits>();
     if(!frames.N) f->frameIDs = framesToIndices(C.frames);
   }
 
   else if(feat==FS_qItself) {
-    if(!frames.N) f=make_shared<F_qItself>(F_qItself::allActiveJoints, frames, C);
-    else f=make_shared<F_qItself>();
+    if(!frames.N){
+      auto ff=make_shared<F_qItself>();
+      // ff->selectActiveJointPairs(C.frames);
+      f = ff;
+    }else f=make_shared<F_qItself>();
   }
 
   else if(feat==FS_qControl) {

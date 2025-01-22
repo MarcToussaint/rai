@@ -97,7 +97,7 @@ void chooseBoxGrasp(rai::Configuration& K, const char* endeff, const char* objec
   //  komo.addObjective(0.,0., FS_qItself, {"r_gripper_l_finger_joint"}, OT_sos, 1e1, {.8} );
 
   addBoxGrasp(komo, object, endeff, 0);
-  komo.optimize();
+  komo.solve();
   //  komo.getConfiguration(0);
   auto q1 = komo.x;
   double score1 = 10.*komo.getConstraintViolations() + komo.getCosts();
@@ -108,7 +108,7 @@ void chooseBoxGrasp(rai::Configuration& K, const char* endeff, const char* objec
   komo.clearObjectives();
   komo.setIKOpt();
   addBoxGrasp(komo, object, endeff, 1);
-  komo.optimize();
+  komo.solve();
   //  komo.getConfiguration(0);
   auto q2 = komo.x;//K.getJointState();
   double score2 = 10.*komo.getConstraintViolations() + komo.getCosts();
@@ -150,7 +150,7 @@ void findOpposingGrasp(rai::Configuration& K, const char* fingerL, const char* f
 //    //vertical
 //    komo.addObjective({}, FS_vectorZ, {endeff}, OT_sos, {3e0}, {0.,0.,1.} );
 
-  komo.optimize();
+  komo.solve();
 
   K.setJointState(komo.x);
 }

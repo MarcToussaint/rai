@@ -161,9 +161,9 @@ struct KOMO : NonCopyable {
   void updateRootObjects(const rai::Configuration& C);
   void updateAndShiftPrefix(const rai::Configuration& C);
 
-  //-- optimization
-  std::shared_ptr<SolverReturn> optimize(double addInitializationNoise=.01, int splineKnots=-1, const rai::OptOptions options=DEFAULT_OPTIONS);  ///< run the solver (same as run_prepare(); run(); )
-  void reset();                                      ///< reset the dual variables and feature value buffers (always needed when adding/changing objectives before continuing an optimization)
+  //-- calling a solver
+  std::shared_ptr<SolverReturn> solve(double addInitializationNoise=.01, int splineKnots=-1, const rai::OptOptions& options=DEFAULT_OPTIONS);  ///< run the solver (same as run_prepare(); run(); )
+  void reset();                          ///< reset the dual variables and feature value buffers (always needed when adding/changing objectives before continuing an optimization)
 
   //advanced
   void run_prepare(double addInitializationNoise);   ///< ensure the configurations are setup, decision variable is initialized, and noise added (if >0)
@@ -228,7 +228,7 @@ public:
   //
 
   std::shared_ptr<NLP> nlp();
-  std::shared_ptr<NLP> nlp_spline(uint numCtrlPoints=10, uint degree=2);
+  std::shared_ptr<NLP> nlp_spline(uint numCtrlPoints=10, uint degree=3);
   std::shared_ptr<NLP> nlp_sub(const rai::Array<GroundedObjective*>& objs, const DofL& dofs);
   std::shared_ptr<NLP_Factored> nlp_FactoredTime();
   std::shared_ptr<NLP_Factored> nlp_FactoredParts();

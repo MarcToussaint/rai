@@ -133,7 +133,7 @@ arr CtrlSolver::solve() {
   opt.damping = 1e-2;
   komo.opt.verbose=0;
   komo.opt.animateOptimization=animate;
-  komo.optimize(0., -1, opt);
+  komo.solve(0., -1, opt);
   optReport = komo.report().get<rai::Graph>("totals");
   if(optReport.get<double>("sos")>1.1
       || optReport.get<double>("eq")>.1

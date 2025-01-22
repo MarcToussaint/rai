@@ -48,7 +48,7 @@ void plan(){
 
   cout <<komo.report(true, false) <<endl;
   komo.verbose=2;
-  komo.optimize();
+  komo.solve();
   komo.report(false, false, true);
   komo.checkGradients();
 

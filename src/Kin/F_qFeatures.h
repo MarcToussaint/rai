@@ -13,16 +13,12 @@
 //===========================================================================
 
 struct F_qItself : Feature {
-  enum PickMode { byJointNames, byFrameNames, byExcludeJointNames, allActiveJoints };
-
   bool relative_q0; ///< if true, absolute values are given relative to Joint::q0
 
-  F_qItself(bool relative_q0=false);
-  F_qItself(PickMode pickMode, const StringA& picks, const rai::Configuration& C, bool relative_q0=false);
-  F_qItself(const uintA& _selectedFrames, bool relative_q0=false);
+  F_qItself(const uintA& _selectedFrames={}, bool relative_q0=false);
+  void selectActiveJointPairs(const FrameL& F);
 
-  virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi(const rai::Configuration& C);
+  virtual arr phi(const FrameL& F);
   virtual uint dim_phi(const FrameL& F);
  private:
   std::map<rai::Configuration*, uint> dimPhi;

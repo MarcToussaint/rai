@@ -137,7 +137,7 @@ std::pair<arr, arr> getStartGoalPath_obsolete(const rai::Configuration& C, const
   komo.setSlow(1., 1., 1e2, true);
 
   komo.opt.verbose=1;
-  komo.optimize();
+  komo.solve();
 
   arr path = komo.getPath_qOrg();
   path[path.d0-1] = target_q; //overwrite last config
@@ -232,8 +232,8 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
     if(trial%2) komo.initWithConstant(qTarget);
     else komo.initWithConstant(q0);
 
-    //optimize
-    auto ret = komo.optimize(.01*trial, -1, rai::OptOptions().set_stopTolerance(1e-3)); //trial=0 -> no noise!
+    //solve
+    auto ret = komo.solve(.01*trial, -1, rai::OptOptions().set_stopTolerance(1e-3)); //trial=0 -> no noise!
 
     //is feasible?
     feasible=ret->sos<50. && ret->ineq<.1 && ret->eq<.1;
@@ -371,7 +371,7 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
         komo.addObjective({}, FS_distance, framesToNames(collisionPairs), OT_ineq, {1e2}, {-.001});
 
         komo.opt.verbose=0;
-        komo.optimize(0., OptOptions().set_verbose(0).set_stopTolerance(1e-3));
+        komo.solve(0., OptOptions().set_verbose(0).set_stopTolerance(1e-3));
 
         if(komo.ineq>1e-1) {
           LOG(-1) <<"solveForFeasible failed!" <<komo.report();
@@ -468,7 +468,7 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
   }
 
   // komo.opt.verbose=0;
-  // auto ret = komo.optimize(0., -1, rai::OptOptions().set_verbose(0).set_stopTolerance(1e-3));
+  // auto ret = komo.solve(0., -1, rai::OptOptions().set_verbose(0).set_stopTolerance(1e-3));
   // komo.opt.animateOptimization = 2;
   NLP_Solver sol(komo.nlp(), 0);
   std::shared_ptr<SolverReturn> ret = sol.solve();
