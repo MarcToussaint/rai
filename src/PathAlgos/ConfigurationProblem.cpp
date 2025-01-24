@@ -21,6 +21,14 @@ ConfigurationProblem::ConfigurationProblem(const rai::Configuration& _C, bool _u
 
   limits = C.getJointLimits();
 
+  C.ensure_q();
+  for(rai::Dof* dof:C.activeDofs) if(dof->joint()){
+    if(dof->joint()->type==rai::JT_circleZ || dof->joint()->type==rai::JT_quatBall){
+      sphericalCoordinates.append(uintA{dof->qIndex, dof->dim});
+    }
+  }
+  sphericalCoordinates.reshape(-1,2);
+
   // C.fcl(verbose-1)->mode = rai::FclInterface::_binaryCollisionAll;
 }
 

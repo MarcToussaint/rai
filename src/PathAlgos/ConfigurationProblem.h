@@ -33,6 +33,7 @@ stdOutPipe(QueryResult)
 struct ConfigurationProblem {
   rai::Configuration C;
   arr limits;
+  uintA sphericalCoordinates;
 
   //what collisions are evaluated?
   bool useBroadCollisions;

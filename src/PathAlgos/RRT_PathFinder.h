@@ -86,7 +86,7 @@ struct RRT_PathFinder : NonCopyable {
   shared_ptr<SolverReturn> solve();
 
   //output
-  void view(bool pause, const char* txt=0);
+  void view(bool pause, const char* txt=0, bool play=false);
   void report();
   arr get_resampledPath(uint T);
 

@@ -146,6 +146,22 @@ bool RRT_PathFinder::growTreeTowardsRandom(RRT_SingleTree& rrt) {
   return false;
 }
 
+void normalizeSphericalCoordinates(arr& x, const uintA& idx){
+  arr xsub = x({idx(0), idx(0)+idx(1)-1});
+  op_normalize(xsub);
+}
+
+void randomSphericalCoordinates(arr& x, const uintA& idx){
+  arr xsub = x({idx(0), idx(0)+idx(1)-1});
+  xsub = randn(xsub.N);
+  op_normalize(xsub);
+}
+
+void flipSphericalCoordinates(arr& x, const uintA& idx){
+  arr xsub = x({idx(0), idx(0)+idx(1)-1});
+  xsub *= -1.;
+}
+
 bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B) {
   //decide on a target: forward or random
   arr t;
@@ -158,10 +174,12 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
       CHECK_GE(up-lo, 1e-3, "limits are null interval: " <<i <<' ' <<P->C.getJointNames());
       t.elem(i) = lo + rnd.uni()*(up-lo);
     }
+    for(uint i=0;i<P->sphericalCoordinates.d0;i++) randomSphericalCoordinates(t, P->sphericalCoordinates[i]);
   }
 
   //sample configuration towards target, possibly sideStepping
   arr q = rrt_A.getNewSample(t, opt.stepsize);
+  for(uint i=0;i<P->sphericalCoordinates.d0;i++) normalizeSphericalCoordinates(t, P->sphericalCoordinates[i]);
   uint parentID = rrt_A.nearestID;
 
   //special rule: if parent is already in collision, isFeasible = smaller collisions
@@ -183,6 +201,15 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
   //finally adding the new node to the tree
   if(qr->isFeasible){
     rrt_A.add(q, parentID, qr);
+    if(P->sphericalCoordinates.N){
+      CHECK_LE(P->sphericalCoordinates.d0, 1, "");
+      arr q_org = q;
+      for(uint i=0;i<P->sphericalCoordinates.d0;i++) {
+        flipSphericalCoordinates(q, P->sphericalCoordinates[i]);
+        rrt_A.add(q, parentID, qr);
+      }
+      q = q_org;
+    }
     double dist = rrt_B.getNearest(q);
     if(opt.subsamples>0) { if(dist<opt.stepsize/opt.subsamples) return true; }
     else { if(dist<opt.stepsize) return true; }
@@ -355,10 +382,11 @@ void revertPath(arr& path) {
   }
 }
 
-void RRT_PathFinder::view(bool pause, const char* txt){
+void RRT_PathFinder::view(bool pause, const char* txt, bool play){
   ensure_DISP();
   DISP.get_viewer() -> updateConfiguration(DISP);
-  DISP.get_viewer() -> setMotion(DISP, path);
+  if(path.N) DISP.get_viewer() -> setMotion(DISP, path);
+  // if(play) DISP.get_viewer() -> playVideo();
   DISP.get_viewer() -> view(pause, txt);
 }
 

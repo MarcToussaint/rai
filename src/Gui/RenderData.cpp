@@ -218,11 +218,13 @@ void RenderData::ensureInitialized(OpenGL &gl){
     // Depth texture. Slower than a depth buffer, but you can sample it later in your shader
     glGenTextures(1, &id.shadowTexture);
     glBindTexture(GL_TEXTURE_2D, id.shadowTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH_COMPONENT16, bufW, bufH, 0,GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, bufW, bufH, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    static GLfloat borderColor [4] = {1., 1., 1., 1.};
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC_ARB, GL_LEQUAL);
@@ -865,7 +867,7 @@ void RenderData::addQuad(const byteA& img, float x, float y, float w, float h){
 }
 
 RenderData& RenderData::addStandardScene(){
-  double shadowHeight = 5.;
+  double shadowHeight = 8.;
   arr floorColor = opt.floorColor;
   if(!floorColor.N) floorColor = arr{.4, .45, .5};
   if(!lights.N){

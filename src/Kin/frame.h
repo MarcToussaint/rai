@@ -30,7 +30,7 @@ struct ForceExchangeDof;
 struct ParticleDofs;
 struct PathDof;
 struct DirectionDof;
-enum JointType : int { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_transYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_generic, JT_tau, JT_path, JT_direction };
+enum JointType : int { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_circleZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_transYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_generic, JT_tau, JT_path, JT_direction };
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static, BT_soft };
 }
 

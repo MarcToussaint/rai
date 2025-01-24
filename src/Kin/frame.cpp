@@ -19,7 +19,7 @@
 //===========================================================================
 
 template<> const char* rai::Enum<rai::JointType>::names []= {
-  "none", "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "transYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "generic", "tau", "path", "direction", nullptr
+  "none", "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "circleZ", "transXY", "trans3", "transXYPhi", "transYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "generic", "tau", "path", "direction", nullptr
 };
 
 template<> const char* rai::Enum<rai::BodyType>::names []= {
@@ -104,7 +104,7 @@ void rai::Frame::calc_X_from_parent() {
     Joint* j = joint;
     if(j->type==JT_hingeX || j->type==JT_transX || j->type==JT_XBall)  j->axis = from.rot.getX();
     if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = from.rot.getY();
-    if(j->type==JT_hingeZ || j->type==JT_transZ)  j->axis = from.rot.getZ();
+    if(j->type==JT_hingeZ || j->type==JT_transZ || j->type==JT_circleZ)  j->axis = from.rot.getZ();
     if(j->type==JT_transXYPhi || j->type==JT_transYPhi)  j->axis = from.rot.getZ();
     if(j->type==JT_phiTransXY)  j->axis = from.rot.getZ();
   }
@@ -812,6 +812,8 @@ void rai::Frame::setAutoLimits() {
     //        f->joint->q0.clear(); // = zeros(7); f->joint->q0(3)=1.; //.clear();
   } else if(jointType==JT_quatBall){
     joint->limits = {-1.1, -1.1, -1.1, -1.1,  1.1,  1.1,  1.1,  1.1};
+  } else if(jointType==JT_circleZ){
+    joint->limits = {-1.1, -1.1, 1.1, 1.1};
   } else if(jointType==JT_transXY || jointType==JT_transXYPhi) {
     CHECK_EQ(from->type(), rai::ST_ssBox, "");
     joint->limits = { -.5*from->size(0), -.5*from->size(1),
@@ -1000,9 +1002,14 @@ void rai::Dof::setRandom(uint timeSlices_d1, int verbose) {
     }
     arr q = calcDofsFromConfig();
 
-    if(joint() && joint()->type==rai::JT_quatBall && limits(0)<=-1. && limits(1)>=1.) { //special case handler for quaternions
+    if(joint() && joint()->type==rai::JT_quatBall && limits(0)<=-1. && limits(-1)>=1.) { //special case handler for quaternions
       CHECK_EQ(q.N, 4, "");
       q = randn(4);
+      q /= length(q);
+      if(q0.N) q0=q;
+    }else if(joint() && joint()->type==rai::JT_circleZ && limits(0)<=-1. && limits(-1)>=1.) { //special case handler for quaternions
+      CHECK_EQ(q.N, 2, "");
+      q = randn(2);
       q /= length(q);
       if(q0.N) q0=q;
     } else {
@@ -1193,6 +1200,16 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
         Q.rot = rot1*rot2;
       } break;
 
+      case JT_circleZ: {
+        Q.rot.set(qp[0], 0., 0., qp[1]);
+        {
+          double n=Q.rot.sqrNorm();
+          if(!rai_Kin_frame_ignoreQuatNormalizationWarning) if(n<.1 || n>10.) LOG(-1) <<"circleZ normalization is extreme: " <<n;
+        }
+        Q.rot.normalize();
+        Q.rot.isZero=false; //WHY? (gradient check fails without!)
+      } break;
+
       case JT_quatBall: {
         Q.rot.set(qp);
         {
@@ -1366,6 +1383,12 @@ arr rai::Joint::calcDofsFromConfig() const {
         q(0) = RAI_PI;
         q(1) = RAI_PI;
       }
+    } break;
+
+    case JT_circleZ: {
+      q.resize(2);
+      q(0)=Q.rot.w;
+      q(1)=Q.rot.z;
     } break;
 
     case JT_quatBall: {
@@ -1548,6 +1571,9 @@ arr rai::Joint::getScrewMatrix() {
     arr R = X().rot.getMatrix();
     S[1] = R;
   }
+  if(type==JT_circleZ) {
+    NIY;
+  }
   if(type==JT_quatBall || type==JT_free) {
     uint offset=0;
     if(type==JT_free) offset=3;
@@ -1569,6 +1595,7 @@ uint rai::Joint::getDimFromType() const {
   if(type==JT_phiTransXY) return 3;
   if(type==JT_trans3) return 3;
   if(type==JT_universal) return 2;
+  if(type==JT_circleZ) return 2;
   if(type==JT_quatBall) return 4;
   if(type==JT_free) return 7;
   if(type==JT_rigid || type==JT_none) return 0;
@@ -1616,7 +1643,7 @@ void rai::Joint::setType(rai::JointType _type) {
     dim = getDimFromType();
     frame->C.reset_q();
     q0 = calcDofsFromConfig();
-    isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_trans3) || type==JT_quatBall);
+    isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_trans3) || type==JT_circleZ || type==JT_quatBall);
   }
 }
 
@@ -1695,7 +1722,7 @@ void rai::Joint::read(const Graph& ats) {
   else type=JT_rigid;
 
   dim = getDimFromType();
-  isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_trans3) || type==JT_quatBall);
+  isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_trans3) || type==JT_circleZ || type==JT_quatBall);
 
   if(ats.get(d, "q")) {
     if(!dim) { //HACK convention

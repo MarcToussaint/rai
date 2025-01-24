@@ -1235,6 +1235,7 @@ bool Configuration::checkConsistency() const {
           tmpq.referToRange(qInactive, j->qIndex, j->qIndex+j->dim-1);
           //for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - qInactive.elem(j->qIndex+i), RAI_2PI), 2e-5, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
         }
+        if(j->type==JT_circleZ) { op_normalize(tmpq); }
         if(j->type==JT_quatBall) { op_normalize(tmpq); }
         if(j->type==JT_free) { op_normalize(tmpq({3, 6}).noconst()); }
         //for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - tmpq.elem(i), RAI_2PI), 2e-5, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
@@ -1702,6 +1703,13 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           R *= j->scale;
           J.setMatrixBlock(R, 0, j_idx);
         }
+        if(j->type==JT_circleZ) {
+          arr Jrot = j->X().rot.getMatrix() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
+          Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*a->Q.pos)));  //cross-product of all 4 w-vectors with lever
+          Jrot /= sqrt(sumOfSqr(q({j->qIndex, j->qIndex+1})));   //account for the potential non-normalization of q
+          Jrot *= j->scale;
+          J.setMatrixBlock(Jrot, 0, j_idx);
+        }
         if(j->type==JT_quatBall || j->type==JT_free || j->type==JT_XBall) {
           uint offset = 0;
           if(j->type==JT_XBall) offset=1;
@@ -1756,6 +1764,12 @@ void Configuration::jacobian_angular(arr& J, Frame* a) const {
           J.elem(0, j_idx) += j->scale * j->axis.x;
           J.elem(1, j_idx) += j->scale * j->axis.y;
           J.elem(2, j_idx) += j->scale * j->axis.z;
+        }
+        if(j->type==JT_circleZ) {
+          arr Jrot = j->X().rot.getMatrix() * a->get_Q().rot.getJacobian(); //transform w-vectors into world coordinate
+          Jrot /= sqrt(sumOfSqr(q({j->qIndex, j->qIndex+1}))); //account for the potential non-normalization of q
+          Jrot *= j->scale;
+          J.setMatrixBlock(Jrot, 0, j_idx);
         }
         if(j->type==JT_quatBall || j->type==JT_free || j->type==JT_XBall) {
           uint offset = 0;

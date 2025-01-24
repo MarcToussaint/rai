@@ -22,7 +22,7 @@ void run_rrt(rai::Configuration& C, const arr& q0, const arr& q1) {
 
   cout <<"rrt time: " <<time <<"sec or " <<1000.*time/double(rrt.iters) <<"msec/iter (tree sizes: " <<rrt.rrt0->getNumberNodes() <<' ' <<rrt.rrtT->getNumberNodes() <<")" <<endl;
   if(rrt.opt.verbose>0){
-    rrt.view(true, STRING(*rrt.ret));
+    rrt.view(true, STRING(*rrt.ret), true);
   }
 }
 
@@ -81,6 +81,21 @@ void TEST(RRT){
 
 // =============================================================================
 
+void TEST(Mobile){
+  rai::Configuration C;
+  C.addFile("mobile.g");
+
+  arr q0 = C.getJointState();
+  C["ranger_trans"]->setPosition(C["goal"]->getPosition());
+  C["ranger_rot"]->setPose(C["goal"]->getPose());
+  arr q1 = C.getJointState();
+  C.setJointState(q0);
+
+  run_rrt(C, q0, q1);
+}
+
+// =============================================================================
+
 void testKinematics(bool withCollisions, uint N=100000){
   rai::Configuration C;
   C.addFile("scene.g");
@@ -130,6 +145,8 @@ int MAIN(int argc,char **argv){
 
   cout <<"=== kinematics+FCL test" <<endl;
   testKinematics(true, 10000);
+
+  testMobile();
 
   int verbose = rai::getParameter<int>("rrt/verbose", 3);
   if(verbose>2){
