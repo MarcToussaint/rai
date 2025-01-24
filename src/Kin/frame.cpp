@@ -287,7 +287,7 @@ void rai::Frame::prefixSubtree(const char* prefix) {
   for(auto* f:F) f->name.prepend(prefix);
 }
 
-void rai::Frame::computeCompoundInertia(bool clearChildInertias) {
+rai::Frame& rai::Frame::computeCompoundInertia(bool clearChildInertias) {
   FrameL all = {};
   getRigidSubFrames(all, false);
   Inertia* I = inertia;
@@ -296,9 +296,10 @@ void rai::Frame::computeCompoundInertia(bool clearChildInertias) {
       I->add(*f->inertia, f->ensure_X() / ensure_X());
       if(clearChildInertias) delete f->inertia;
     }
+  return *this;
 }
 
-void rai::Frame::convertDecomposedShapeToChildFrames() {
+rai::Frame& rai::Frame::convertDecomposedShapeToChildFrames() {
   CHECK(shape && shape->type()==ST_mesh, "");
   Mesh& m = shape->mesh();
   CHECK(m.cvxParts.N, "");
@@ -318,9 +319,10 @@ void rai::Frame::convertDecomposedShapeToChildFrames() {
     }
   }
   delete shape;
+  return *this;
 }
 
-void rai::Frame::transformToDiagInertia() {
+rai::Frame& rai::Frame::transformToDiagInertia() {
   CHECK(inertia, "");
   CHECK(!shape || shape->type()==rai::ST_marker, "can't translate this frame if it has a shape attached");
   CHECK(!joint || joint->type==rai::JT_rigid || joint->type==rai::JT_free, "can't translate this frame if it has a joint attached");
@@ -343,6 +345,7 @@ void rai::Frame::transformToDiagInertia() {
     set_X()->appendTransformation(t);
     for(rai::Frame* ch:children) ch->set_Q() = -t * ch->get_Q();
   }
+  return *this;
 }
 
 void rai::Frame::_state_setXBadinBranch() {

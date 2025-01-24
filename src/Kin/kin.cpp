@@ -3643,8 +3643,7 @@ void Configuration::watchFile(const char* filename) {
         cout <<"joints: " <<getJointNames() <<endl;
         gl().camera.report(cout);
       } else if(key=='c') { //compute collisions
-        ensure_proxies();
-        double p = getTotalPenetration();
+        ensure_proxies(true);
         double eps=.1;
         V->text.clear();
         reportProxies(V->text, eps, true);

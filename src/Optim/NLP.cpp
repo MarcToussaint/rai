@@ -398,7 +398,7 @@ void NLP_Viewer::display(double mu, double muLB) {
   //-- transform constrained problem to AugLag scalar function
   uint n_con = P->get_numOfType(OT_ineq) + P->get_numOfType(OT_eq);
   shared_ptr<ScalarFunction> f;
-  std::shared_ptr<LagrangianProblem> lag = dynamic_pointer_cast<LagrangianProblem>(P);
+  std::shared_ptr<LagrangianProblem> lag = std::dynamic_pointer_cast<LagrangianProblem>(P);
   if(lag){ //all done
     f = lag;
   }else if(!n_con){

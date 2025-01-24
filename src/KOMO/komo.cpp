@@ -1569,7 +1569,7 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
 
   // decide on a relative pose
   rai::Transformation rel = 0;
-  if(initName){
+  if(initName && initName[0]){
     CHECK(!initFrame, "can't specify both, initName and initFrame!");
     initFrame = world.getFrame(initName, true);
   }

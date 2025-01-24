@@ -201,7 +201,7 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
   else if(feat==FS_qItself) {
     if(!frames.N){
       auto ff=make_shared<F_qItself>();
-      // ff->selectActiveJointPairs(C.frames);
+      ff->selectActiveJointPairs(C.frames);
       f = ff;
     }else f=make_shared<F_qItself>();
   }

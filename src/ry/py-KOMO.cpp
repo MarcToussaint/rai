@@ -84,7 +84,7 @@ void init_KOMO(pybind11::module& m) {
   .def("addRigidSwitch", &KOMO::addRigidSwitch, "", pybind11::arg("times"), pybind11::arg("frames"), pybind11::arg("noJumpStart")=true)
   .def("addModeSwitch", &KOMO::addModeSwitch, "", pybind11::arg("times"), pybind11::arg("newMode"), pybind11::arg("frames"), pybind11::arg("firstSwitch")=true)
 
-  .def("addStableFrame", [](shared_ptr<KOMO>& self, const char* name, const char* parent, rai::JointType jointType, bool stable, const char* initName, rai::Frame* initFrame) {
+  .def("addFrameDof", [](shared_ptr<KOMO>& self, const char* name, const char* parent, rai::JointType jointType, bool stable, const char* initName, rai::Frame* initFrame) {
     rai::Frame* f = self->addFrameDof(name, parent, jointType, stable, initName, initFrame);
     return shared_ptr<rai::Frame>(f, &null_deleter); //giving it a non-sense deleter!
   }, "complicated...",
