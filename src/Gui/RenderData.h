@@ -126,7 +126,7 @@ struct RenderData {
   RenderData();
 
   RenderAsset& add(const rai::Transformation& _X=0, RenderType _type=_solid);
-  RenderAsset& addShared(std::shared_ptr<RenderItem>& _item, const rai::Transformation& _X=0, RenderType _type=_solid);
+  RenderAsset& addShared(std::shared_ptr<RenderItem> _item, const rai::Transformation& _X=0, RenderType _type=_solid);
 
   void addLight(const arr& pos, const arr& focus, double heightAbs=5.);
   void addAxes(double scale, const rai::Transformation& _X);

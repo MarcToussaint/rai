@@ -37,7 +37,7 @@ RenderAsset& RenderData::add(const Transformation& _X, RenderType _type){
   return *(obj->asset);
 }
 
-RenderAsset& RenderData::addShared(std::shared_ptr<RenderItem>& _item, const rai::Transformation& _X, RenderType _type){
+RenderAsset& RenderData::addShared(std::shared_ptr<RenderItem> _item, const rai::Transformation& _X, RenderType _type){
   std::shared_ptr<RenderItem> item = make_shared<RenderItem>(_X, _type);
   items.append(item);
   item->asset = _item->asset;

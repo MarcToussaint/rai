@@ -57,15 +57,15 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
     shared_ptr<Mesh> mesh = f->shape->_mesh;
     if(mesh && mesh->V.N){
       //find mimic?
-      rai::Frame *f_mimic=0;
+      rai::Frame *f_sharedMesh=0;
       for(rai::Frame* fm:frames) if(fm->shape && fm->shape->_mesh.get()==mesh.get()){
-        if(fm!=f) f_mimic=fm;
+        if(fm!=f) f_sharedMesh=fm;
         break;
       }
 //      f_mimic=0;
       frame2itemID(f->ID) = items.N;
-      if(f_mimic){
-        std::shared_ptr<RenderItem>& o_mimic = items(frame2itemID(f_mimic->ID));
+      if(f_sharedMesh){
+        std::shared_ptr<RenderItem>& o_mimic = items(frame2itemID(f_sharedMesh->ID));
         addShared(o_mimic, f->ensure_X(), o_mimic->type);
       }else if(f->shape->type()==ST_pointCloud){
         add(f->ensure_X(), _marker).pointCloud(mesh->V, mesh->C);
