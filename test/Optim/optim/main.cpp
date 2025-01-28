@@ -1,7 +1,8 @@
 #include <Optim/benchmarks.h>
 #include <functional>
 #include <Optim/NLP_Solver.h>
-#include <Optim/NLP_Sampler.h>
+// #include <Optim/NLP_Sampler.h>
+#include <Optim/SlackGaussNewton.h>
 #include <Optim/lagrangian.h>
 #include <Optim/constrained.h>
 #include <Core/arrayDouble.h>
@@ -215,9 +216,9 @@ void testSpherePacking(){
   std::cout <<P->reportSignature() <<std::endl;
 
   //-- sample a feasible (=no collision) solution
-  NLP_Sampler sam(P);
-  sam.opt.set_downhillMaxSteps(100) .set_margin(1e-2) .set_tolerance(1e-4);
-  auto retSam = sam.sample();
+  rai::SlackGaussNewton sam(P);
+  sam.opt.set_maxEvals(100) .set_margin(1e-2) .set_tolerance(1e-4);
+  auto retSam = sam.solve();
   cout <<*retSam <<endl;
   // P->report(std::cout, 10);
 
