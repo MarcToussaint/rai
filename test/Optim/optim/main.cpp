@@ -99,6 +99,9 @@ struct SpherePacking : NLP{
       featureTypes.append(OT_eq);
     }
     featureTypes.append(rai::consts<ObjectiveType>(OT_f, n));
+
+    //bounds as constraints
+    // featureTypes.append(rai::consts<ObjectiveType>(OT_ineq, 2*dimension));
   }
 
   void ineqAccumulation(uint phiIdx, arr& phi, arr& J, arr& g, const arr& Jg){
@@ -137,13 +140,13 @@ struct SpherePacking : NLP{
   }
 
   void evaluate(arr& phi, arr& J, const arr &_x){
-    x.referTo(_x);
+    x = _x;
     x.reshape(n,3);
 
     uint dimphi = featureTypes.N;
     phi.resize(dimphi).setZero();
     // J.resize(dimphi, dimension).setZero();
-    J.sparse().resize(dimphi, dimension, 0);
+    if(!!J) J.sparse().resize(dimphi, dimension, 0);
 
     uint m=0;
 
@@ -155,7 +158,7 @@ struct SpherePacking : NLP{
       for(uint i=0;i<n;i++) for(uint j=i+1;j<n;j++){
           arr diff = x[i]-x[j];
           double dist = length(diff);
-          if(dist<2.*rad+.2){
+          if(true || dist<2.*rad+.2){ //ipopt needs constant J_structure
             collPhi(m) = (-dist + 2.*rad); //ineq
             if(!!J){
               for(uint k=0;k<3;k++){
@@ -173,7 +176,7 @@ struct SpherePacking : NLP{
     if(!ineqAccum){
       CHECK_EQ(collPhi.N, m, "");
       phi.setVectorBlock(collPhi, 0);
-      J.sparse().add(collJ, 0, 0);
+      if(!!J) J.sparse().add(collJ, 0, 0);
     }else{
       collJ.sparse().setupRowsCols();
       ineqAccumulation(0, phi, J, collPhi, collJ);
@@ -183,11 +186,19 @@ struct SpherePacking : NLP{
     //costs: z coordinates
     for(uint i=0;i<n;i++){
       phi(m) = x(i,2); //f
-      if(!!J){
-        J.elem(m,3*i+2) = 1.;
-      }
+      if(!!J) J.elem(m,3*i+2) = 1.;
       m++;
     }
+
+    //bounds as constraints
+    // for(uint i=0;i<dimension;i++){
+    //   phi(m) = bounds(0,i) - x.elem(i);
+    //   if(!!J) J.elem(m, i) = -1.;
+    //   m++;
+    //   phi(m) = x.elem(i) - bounds(1,i);
+    //   if(!!J) J.elem(m, i) = +1.;
+    //   m++;
+    // }
 
     // report(cout, 10, "inner");
     CHECK_EQ(m, dimphi, "");
@@ -222,18 +233,14 @@ void testSpherePacking(){
   cout <<*retSam <<endl;
   // P->report(std::cout, 10);
 
-#if 0
-  IpoptInterface ipo(P);
-  ipo.solve(retSam->x);
-  P->report(std::cout, 10);
-#endif
 
   //-- optimize
   NLP_Solver S;
   S.setProblem(P);
   S.setInitialization(retSam->x);
   // S.getProblem()->checkJacobian(S.x, 1e-6);
-  S.setSolver(NLPS_logBarrier);
+  S.setSolver(NLPS_Ipopt);
+  // S.setSolver(NLPS_logBarrier);
   // S.setSolver(NLPS_augmentedLag);
   S.opt.set_muMax(1e6) .set_stopEvals(5000) .set_muLBInit(1e-3) .set_muInit(1e3);
   auto ret = S.solve(-1, 2);

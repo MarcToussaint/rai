@@ -91,7 +91,8 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     x = nlo.solve(x);
   } else if(solverID==NLPS_Ipopt) {
     IpoptInterface ipo(P);
-    x = ipo.solve(x);
+    ret = ipo.solve(x);
+    x = ret->x;
   } else if(solverID==NLPS_Ceres) {
     auto P1 = make_shared<Conv_NLP_TrivialFactoreded>(P);
     CeresInterface ceres(P1);

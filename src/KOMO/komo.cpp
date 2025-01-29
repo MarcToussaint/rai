@@ -1203,6 +1203,7 @@ std::shared_ptr<SolverReturn> KOMO::solve(double addInitializationNoise, int spl
     sol.setProblem(nlp_spline(splineKnots, 3));
   }
   sol.setOptions(options);
+  // sol.setSolver(NLPS_Ipopt);
   sol.opt.set_verbose(rai::MAX(opt.verbose-2, 0));
 
   timeTotal -= rai::cpuTime();
@@ -1213,10 +1214,9 @@ std::shared_ptr<SolverReturn> KOMO::solve(double addInitializationNoise, int spl
     cout <<"=== KOMO optimization time:" <<timeTotal
          <<" (kin:" <<timeKinematics <<" coll:" <<timeCollisions <<" feat:" <<timeFeatures <<" newton: " <<timeNewton <<")"
          <<" setJointStateCount:" <<Configuration::setJointStateCount
-         <<"\n  sos:" <<ret->sos <<" ineq:" <<ret->ineq <<" eq:" <<ret->eq
          <<"\n  solver return: " <<*ret <<endl;
   }
-  if(opt.verbose>1) cout <<report(false, opt.verbose>2) <<endl;
+  if(opt.verbose>1) cout <<report(false, opt.verbose>2, opt.verbose>2) <<endl;
   return ret;
 #endif
 }

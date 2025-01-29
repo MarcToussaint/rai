@@ -17,7 +17,7 @@
 //===========================================================================
 
 template<> const char* rai::Enum<ObjectiveType>::names []= {
-  "none", "f", "sos", "ineq", "eq", "ineqB", "ineqP", nullptr
+  "f", "sos", "ineq", "eq", "ineqB", "ineqP", "none", nullptr
 };
 
 template <class T> rai::Array<rai::Enum<T>> EnumArr(const rai::Array<T>& x) {

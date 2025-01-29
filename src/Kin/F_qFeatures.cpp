@@ -370,8 +370,9 @@ void F_qQuaternionNorms::phi2(arr& y, arr& J, const FrameL& F) {
   for(const rai::Frame* f:F) {
     {
       rai::Joint* j = f->joint;
-      if(j && j->active && (j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall)) {
+      if(j && j->active && (j->type==rai::JT_circleZ || j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall)) {
         arr q;
+        if(j->type==rai::JT_circleZ)  q.referToRange(C.q, j->qIndex+0, j->qIndex+1);
         if(j->type==rai::JT_quatBall) q.referToRange(C.q, j->qIndex+0, j->qIndex+3);
         if(j->type==rai::JT_XBall)    q.referToRange(C.q, j->qIndex+1, j->qIndex+4);
         if(j->type==rai::JT_free)     q.referToRange(C.q, j->qIndex+3, j->qIndex+6);
@@ -379,6 +380,7 @@ void F_qQuaternionNorms::phi2(arr& y, arr& J, const FrameL& F) {
         y(i) = norm - 1.;
 
 	if(!!J) {
+	  if(j->type==rai::JT_circleZ)  for(uint k=0; k<2; k++) J.elem(i, j->qIndex+0+k) = 2.*q.elem(k);
 	  if(j->type==rai::JT_quatBall) for(uint k=0; k<4; k++) J.elem(i, j->qIndex+0+k) = 2.*q.elem(k);
 	  if(j->type==rai::JT_XBall)    for(uint k=0; k<4; k++) J.elem(i, j->qIndex+1+k) = 2.*q.elem(k);
 	  if(j->type==rai::JT_free)     for(uint k=0; k<4; k++) J.elem(i, j->qIndex+3+k) = 2.*q.elem(k);
@@ -407,7 +409,7 @@ uint F_qQuaternionNorms::dim_phi(const FrameL& F) {
   uint n=0;
   for(const rai::Frame* f:F) {
     rai::Joint* j = f->joint;
-    if(j && j->active && (j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall)) n++;
+    if(j && j->active && (j->type==rai::JT_circleZ || j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall)) n++;
 
     rai::DirectionDof* dof = f->dirDof;
     if(dof && dof->active) n++;
@@ -421,7 +423,7 @@ void F_qQuaternionNorms::setAllActiveQuats(const rai::Configuration& C) {
     const rai::Joint* j = dof->joint();
     const rai::DirectionDof* dir = dof->frame->dirDof;
 
-    if((j && (j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall)) || (dir)) frameIDs.append(j->frame->ID);
+    if((j && (j->type==rai::JT_circleZ || j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall)) || (dir)) frameIDs.append(j->frame->ID);
   }
 }
 

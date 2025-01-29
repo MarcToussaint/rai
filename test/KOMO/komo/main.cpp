@@ -3,6 +3,7 @@
 #include <Kin/viewer.h>
 #include <Kin/F_pose.h>
 #include <Optim/NLP_Solver.h>
+#include <PathAlgos/RRT_PathFinder.h>
 
 #include <thread>
 
@@ -16,7 +17,7 @@ void TEST(Easy){
   komo.setConfig(C);
   komo.setTiming(1., 100, 5., 2);
   komo.addControlObjective({}, 2, 1.);
-  komo.addQuaternionNorms({}, 1., false);
+  komo.addQuaternionNorms({}, 1e1, false);
 
   //-- set a time optim objective
 //  komo.addObjective({}, make_shared<TM_Time>(), OT_sos, {1e2}, {}, 1); //smooth time evolution
@@ -61,8 +62,6 @@ void TEST(Align){
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
 
   KOMO komo;
-//  komo.solver = rai::KS_sparseStructured; //set via rai.cfg!!
-//  komo.verbose=1; //set via rai.cfg!!
   komo.setConfig(C);
   komo.setTiming(1., 100, 5., 2);
 
@@ -133,9 +132,6 @@ void TEST(PR2){
   }
 
   KOMO komo;
-//  komo.logFile = new ofstream("z.dat");
-//  komo.denseOptimization=true;
-//  komo.sparseOptimization=true;
   komo.setConfig(C);
   komo.setTiming(1., 30, 10., 2);
   komo.addControlObjective({}, 2, 1.);
@@ -194,6 +190,47 @@ void TEST(Threading) {
 
 //===========================================================================
 
+void TEST(Mobile){
+  rai::Configuration C;
+  C.addFile("../../Algo/rrt/mobile.g");
+
+  arr q0 = C.getJointState();
+  C["ranger_trans"]->setPosition(C["goal"]->getPosition());
+  C["ranger_rot"]->setPose(C["goal"]->getPose());
+  arr q1 = C.getJointState();
+  C.setJointState(q0);
+
+  rai::RRT_PathFinder rrt;
+  rrt.opt.set_maxIters(500000). set_verbose(2). set_stepsize(.2) .set_subsamples(0);
+  rrt.setProblem(C);
+  rrt.setStartGoal(q0, q1);
+  rrt.solve();
+  rrt.view(false, STRING(*rrt.ret));
+
+  uint T=100;
+  T = rrt.path.d0;
+  KOMO komo;
+  komo.setConfig(C);
+  komo.setTiming(1, T, 1., 2);
+  komo.addControlObjective({}, 1, 1e-2);
+  komo.addControlObjective({}, 2, 1e-1);
+  komo.addQuaternionNorms({}, 1e2, false);
+  komo.add_collision(true, .0, 1e1);
+  komo.addObjective({1.}, FS_poseDiff, {"goal", "ranger_rot"}, OT_eq, {1e1}, {});
+  komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e1}, {}, 1);
+  komo.initWithPath_qOrg(rrt.path);
+  // komo.checkGradients();
+  NLP_Solver sol;
+  sol.setProblem(komo.nlp());
+  sol.opt.set_verbose(2);
+  sol.solve();
+  cout <<komo.report(false, true, true) <<endl;
+  komo.view(true);
+  komo.view_play(true, 0, 5.);
+}
+
+//===========================================================================
+
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
@@ -204,6 +241,7 @@ int MAIN(int argc,char** argv){
   testThin();
   testPR2();
   testThreading();
+  testMobile();
 
   return 0;
 }

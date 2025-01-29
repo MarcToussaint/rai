@@ -17,12 +17,12 @@
 
 struct Conv_MP_Ipopt : Ipopt::TNLP {
   shared_ptr<NLP> P;
-  arr x_init;
   arr x, phi_x, J_x;
+  intA J_structure;
 
   //-- buffers to avoid recomputing gradients
 
-  Conv_MP_Ipopt(const shared_ptr<NLP>& P);
+  Conv_MP_Ipopt(const shared_ptr<NLP>& P, const arr& x_init);
 
   virtual ~Conv_MP_Ipopt();
 
@@ -60,40 +60,44 @@ struct Conv_MP_Ipopt : Ipopt::TNLP {
                                  Ipopt::IpoptCalculatedQuantities* ip_cq);
 };
 
-Conv_MP_Ipopt::Conv_MP_Ipopt(const shared_ptr<NLP>& P) : P(P) {
+Conv_MP_Ipopt::Conv_MP_Ipopt(const shared_ptr<NLP>& P, const arr& x_init) : P(P), x(x_init) {
   if(!P->checkBounds(true)) HALT("IPopt needs strict > bounds");
+
+  x = x_init;
+  P->evaluate(phi_x, J_x, x);
+  CHECK(rai::isSparseMatrix(J_x), "");
+  J_structure = J_x.sparse().elems;
 }
 
 Conv_MP_Ipopt::~Conv_MP_Ipopt() {}
 
-arr IpoptInterface::solve(const arr& x_init) {
+shared_ptr<SolverReturn> IpoptInterface::solve(const arr& x_init) {
   Ipopt::IpoptApplication opt;
 
   //-- set options
-  bool ret=true;
-  ret &= opt.Options()->SetStringValue("output_file", "z.ipopt.out");
+  bool ok=true;
+  ok &= opt.Options()->SetStringValue("output_file", "z.ipopt.out");
 
-  ret &= opt.Options()->SetNumericValue("tol", 1e-3);
-  ret &= opt.Options()->SetNumericValue("constr_viol_tol", 1e-3);
-  ret &= opt.Options()->SetNumericValue("compl_inf_tol", 1e-3);
+  ok &= opt.Options()->SetNumericValue("tol", 1e-3);
+  ok &= opt.Options()->SetNumericValue("constr_viol_tol", 1e-3);
+  ok &= opt.Options()->SetNumericValue("compl_inf_tol", 1e-3);
 
-  ret &= opt.Options()->SetIntegerValue("max_iter", 10000);
-  ret &= opt.Options()->SetStringValue("nlp_scaling_method", "none");
+  ok &= opt.Options()->SetIntegerValue("max_iter", 10000);
+  // ok &= opt.Options()->SetStringValue("nlp_scaling_method", "none");
 
-  //  opt.Options()->SetStringValue("mu_strategy", "adaptive");
-  ret &= opt.Options()->SetNumericValue("mu_init", 1e-3);
-  //  opt.Options()->SetStringValue("hessian_approximation", "limited-memory");
-  //  opt.Options()->SetStringValue("linear_solver", "ma27");
+  ok &= opt.Options()->SetStringValue("mu_strategy", "adaptive");
+  ok &= opt.Options()->SetNumericValue("mu_init", 1e-3);
+   // opt.Options()->SetStringValue("hessian_approximation", "limited-memory");
+   // opt.Options()->SetStringValue("linear_solver", "ma27");
 
-  //  opt.Options()->SetStringValue("derivative_test", "first-order");
-  //  opt.Options()->SetNumericValue("derivative_test_perturbation", 1e-8);
+   // opt.Options()->SetStringValue("derivative_test", "first-order");
+   // opt.Options()->SetNumericValue("derivative_test_perturbation", 1e-8);
   //  opt.Options()->SetNumericValue("derivative_test_tol", 1e-4);
-  CHECK(ret, "some option could not be set");
+  CHECK(ok, "some option could not be set");
 
   //-- create template NLP structure and set x_init
-  Conv_MP_Ipopt* conv = new Conv_MP_Ipopt(P);
+  Conv_MP_Ipopt* conv = new Conv_MP_Ipopt(P, x_init);
   Ipopt::SmartPtr<Ipopt::TNLP> mynlp(conv);
-  if(!!x_init) conv->x_init = x_init;
 
   //-- initialize IPopt
   Ipopt::ApplicationReturnStatus status;
@@ -109,7 +113,15 @@ arr IpoptInterface::solve(const arr& x_init) {
     printf("\n\n*** The problem FAILED!\n");
   }
 
-  return conv->x;
+  arr err = P->summarizeErrors(conv->phi_x);
+  shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
+  ret->ineq = err(OT_ineq);
+  ret->eq = err(OT_eq);
+  ret->sos = err(OT_sos);
+  ret->f = err(OT_f);
+  ret->feasible = (ret->ineq<.1) && (ret->eq<.1);
+
+  return ret;
 }
 
 bool Conv_MP_Ipopt::get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g, Ipopt::Index& nnz_h_lag, Ipopt::TNLP::IndexStyleEnum& index_style) {
@@ -125,12 +137,14 @@ bool Conv_MP_Ipopt::get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index&
   index_style = TNLP::C_STYLE;
 
   CHECK(n>0, "");
-  CHECK(m>0, "");
+  CHECK_GE(m, 0, "");
 
   return true;
 }
 
 bool Conv_MP_Ipopt::get_bounds_info(Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u, Ipopt::Index m, Ipopt::Number* g_l, Ipopt::Number* g_u) {
+  CHECK_EQ(n, (int)P->dimension, "");
+
   for(int i=0; i<n; i++) {
     x_l[i] = P->bounds(0,i);
     x_u[i] = P->bounds(1,i);
@@ -138,26 +152,21 @@ bool Conv_MP_Ipopt::get_bounds_info(Ipopt::Index n, Ipopt::Number* x_l, Ipopt::N
 
   uint j=0;
   for(auto t:P->featureTypes) {
-    if(t==OT_ineq) { g_l[j]=-2e19; g_u[j]=0.; j++; }
+    if(t==OT_ineq) { g_l[j]=-1e19; g_u[j]=0.; j++; }
     if(t==OT_eq) { g_l[j]=g_u[j]=0.; j++; }
   }
+  CHECK_EQ(j, m, "");
 
   return true;
 }
 
-bool Conv_MP_Ipopt::get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Number* x, bool init_z, Ipopt::Number* z_L, Ipopt::Number* z_U, Ipopt::Index m, bool init_lambda, Ipopt::Number* lambda) {
+bool Conv_MP_Ipopt::get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Number* _x, bool init_z, Ipopt::Number* z_L, Ipopt::Number* z_U, Ipopt::Index m, bool init_lambda, Ipopt::Number* lambda) {
   CHECK_EQ(init_x, true, "");
   CHECK_EQ(init_z, false, "");
   CHECK_EQ(init_lambda, false, "");
 
-  if(x_init.N) {
-    CHECK_EQ((int)x_init.N, n, "");
-    for(int i=0; i<n; i++) x[i] = x_init.elem(i);
-  } else {
-    arr x0 = P->getInitializationSample();
-    CHECK_EQ((int)x0.N, n, "");
-    for(int i=0; i<n; i++) x[i] = x0.elem(i);
-  }
+  CHECK_EQ((int)x.N, n, "");
+  for(int i=0; i<n; i++) _x[i] = x.elem(i);
 
   return true;
 }
@@ -181,6 +190,7 @@ bool Conv_MP_Ipopt::eval_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, 
 
 bool Conv_MP_Ipopt::eval_grad_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number* grad_f) {
   if(new_x) {
+    CHECK(_x, "");
     x.setCarray(_x, n);
     P->evaluate(phi_x, J_x, x);
   }
@@ -204,6 +214,7 @@ bool Conv_MP_Ipopt::eval_grad_f(Ipopt::Index n, const Ipopt::Number* _x, bool ne
 
 bool Conv_MP_Ipopt::eval_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Index m, Ipopt::Number* _g) {
   if(new_x) {
+    CHECK(_x, "");
     x.setCarray(_x, n);
     P->evaluate(phi_x, J_x, x);
   }
@@ -220,14 +231,15 @@ bool Conv_MP_Ipopt::eval_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, 
 }
 
 bool Conv_MP_Ipopt::eval_jac_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Index m, Ipopt::Index nele_jac, Ipopt::Index* iRow, Ipopt::Index* jCol, Ipopt::Number* values) {
-  if(!_x) {
-    x = P->getInitializationSample();
-    P->evaluate(phi_x, J_x, x);
-  }
   if(new_x) {
+    CHECK(_x, "");
     x.setCarray(_x, n);
     P->evaluate(phi_x, J_x, x);
   }
+
+  CHECK_EQ(phi_x.N, P->featureTypes.N, ""); //was evaluated
+  CHECK(rai::isSparseMatrix(J_x), "");
+  CHECK_EQ(J_structure, J_x.sparse().elems, "BUMMER! IPopt requires the sparse structure of J to be always the same!!");
 
   //construct trivial (sparse linear identity) mapping from all features to selection
   arr M;
@@ -239,9 +251,11 @@ bool Conv_MP_Ipopt::eval_jac_g(Ipopt::Index n, const Ipopt::Number* _x, bool new
       j++;
     }
   }
+  CHECK_EQ((int)j, m, "");
 
   arr J = M * J_x;
   CHECK(rai::isSparseMatrix(J), "");
+  CHECK_EQ((int)J.d0, m, "");
   rai::SparseMatrix& J_ = J.sparse();
 
   if(values) {
@@ -266,6 +280,11 @@ bool Conv_MP_Ipopt::eval_jac_g(Ipopt::Index n, const Ipopt::Number* _x, bool new
 }
 
 bool Conv_MP_Ipopt::eval_h(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number obj_factor, Ipopt::Index m, const Ipopt::Number* lambda, bool new_lambda, Ipopt::Index nele_hess, Ipopt::Index* iRow, Ipopt::Index* jCol, Ipopt::Number* values) {
+  CHECK(!new_x, "");
+
+  CHECK_EQ(phi_x.N, P->featureTypes.N, ""); //was evaluated
+  CHECK(rai::isSparseMatrix(J_x), "");
+  CHECK_EQ(J_structure, J_x.sparse().elems, "BUMMER! IPopt requires the sparse structure of J to be always the same!!");
 
   arr coeff=zeros(phi_x.N);
   bool hasFterms=false;

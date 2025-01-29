@@ -1705,6 +1705,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
         }
         if(j->type==JT_circleZ) {
           arr Jrot = j->X().rot.getMatrix() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
+          Jrot.delColumns(1,2);
           Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*a->Q.pos)));  //cross-product of all 4 w-vectors with lever
           Jrot /= sqrt(sumOfSqr(q({j->qIndex, j->qIndex+1})));   //account for the potential non-normalization of q
           Jrot *= j->scale;
@@ -1767,6 +1768,7 @@ void Configuration::jacobian_angular(arr& J, Frame* a) const {
         }
         if(j->type==JT_circleZ) {
           arr Jrot = j->X().rot.getMatrix() * a->get_Q().rot.getJacobian(); //transform w-vectors into world coordinate
+          Jrot.delColumns(1,2);
           Jrot /= sqrt(sumOfSqr(q({j->qIndex, j->qIndex+1}))); //account for the potential non-normalization of q
           Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx);

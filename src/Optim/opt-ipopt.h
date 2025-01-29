@@ -15,6 +15,6 @@ struct IpoptInterface {
 
   IpoptInterface(const shared_ptr<NLP>& P) : P(P) {}
 
-  arr solve(const arr& x_init=NoArr);
+  shared_ptr<SolverReturn> solve(const arr& x_init=NoArr);
 };
 
