@@ -188,7 +188,6 @@ arr operator*(double y, const arr& z);
 arr operator/(int mustBeOne, const arr& z_tobeinverted);
 arr operator/(const arr& y, double z);
 arr operator/(const arr& y, const arr& z); //element-wise devision
-arr operator, (const arr& y, const arr& z); //concat
 
 arr& operator<<(arr& x, const double& y); //append
 arr& operator<<(arr& x, const arr& y); //append
@@ -469,8 +468,6 @@ inline arr diag(const arr& x) {  arr y;  y.setDiag(x);  return y;  }
 arr skew(const arr& x);
 arr inverse2d(const arr& A);
 arr replicate(const arr& A, uint d0);
-arr integral(const arr& x);
-arr differencing(const arr& x, uint width=1);
 
 void checkNan(const arr& x);
 

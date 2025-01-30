@@ -14,11 +14,11 @@
 void init_LGP(pybind11::module& m) {
 
   pybind11::class_<rai::TAMP_Provider, shared_ptr<rai::TAMP_Provider>>(m, "TAMP_Provider", "TAMP_Provider");
-  pybind11::class_<rai::Logic2KOMO_Translator, shared_ptr<rai::Logic2KOMO_Translator>>(m, "Logic2KOMO_Translator", "Logic2KOMO_Translator");
+  pybind11::class_<rai::Actions2KOMO_Translator, shared_ptr<rai::Actions2KOMO_Translator>>(m, "Actions2KOMO_Translator", "Actions2KOMO_Translator");
 
   pybind11::class_<rai::LGP_Tool, shared_ptr<rai::LGP_Tool>>(m, "LGP_Tool", "Tools to compute things (and solve) a Task-and-Motion Planning problem formulated as Logic-Geometric Program")
 
-      .def(pybind11::init<rai::Configuration&, rai::TAMP_Provider&, rai::Logic2KOMO_Translator&>(), "initialization")
+      .def(pybind11::init<rai::Configuration&, rai::TAMP_Provider&, rai::Actions2KOMO_Translator&>(), "initialization")
 
       .def("solve", &rai::LGP_Tool::solve, "compute new solution", pybind11::arg("verbose")=1)
       .def("getSolvedPlan", &rai::LGP_Tool::getSolvedPlan, "return list of discrete decisions of current solution")
@@ -37,7 +37,7 @@ void init_LGP(pybind11::module& m) {
   ;
 
   m.def("default_TAMP_Provider", &rai::default_TAMP_Provider, "", pybind11::arg("C"), pybind11::arg("lgp_config_file"));
-  m.def("default_Logic2KOMO_Translator", &rai::default_Logic2KOMO_Translator, "");
+  m.def("default_Actions2KOMO_Translator", &rai::default_Actions2KOMO_Translator, "");
 
 }
 
@@ -51,10 +51,10 @@ void init_LGP(pybind11::module& m) {
 };*/
 
 
-/*struct PyLogic2KOMO_Translator : rai::Logic2KOMO_Translator {
+/*struct PyActions2KOMO_Translator : rai::Actions2KOMO_Translator {
   pybind11::object py_obj; //the python object implementing the class
 
-  PyLogic2KOMO_Translator(pybind11::object py_obj) : py_obj(py_obj){
+  PyActions2KOMO_Translator(pybind11::object py_obj) : py_obj(py_obj){
     dimension = py_obj.attr("getDimension")().cast<int>();
     featureTypes = rai::convert<ObjectiveType>( list2arr<int>(py_obj.attr("getFeatureTypes")()) );
     bounds = numpy2arr<double>(py_obj.attr("getBounds")());

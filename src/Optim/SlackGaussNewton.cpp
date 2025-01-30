@@ -38,7 +38,7 @@ void SlackGaussNewton::step() {
   ev.eval(x, *this);
 
   if(opt.verbose>1) {
-    cout <<"--resolve-- it:" <<std::setw(4) <<iters;
+    cout <<"--slack-- it:" <<std::setw(4) <<iters;
     cout <<"  |Delta|:" <<std::setw(11) <<maxDelta;
     cout <<"  evals:" <<std::setw(4) <<evals;
     cout <<"  s:" <<std::setw(11) <<::sum(ev.s);
@@ -55,12 +55,14 @@ std::shared_ptr<SolverReturn> SlackGaussNewton::solve(){
 
   ret->time = -rai::cpuTime();
   {
-    x = nlp->getInitializationSample();
+    if(!x.N){
+      x = nlp->getInitializationSample();
+    }
     boundClip(x, nlp->bounds);
     ev.eval(x, *this);
 
     if(opt.verbose>0) {
-      cout <<"==resolve== initialization ";
+      cout <<"==slack== initialization ";
       cout <<"  s:" <<std::setw(11) <<::sum(ev.s);
       cout <<"  h:" <<std::setw(11) <<ev.err(OT_eq);
       cout <<"  g:" <<std::setw(11) <<ev.err(OT_ineq);
@@ -79,7 +81,7 @@ std::shared_ptr<SolverReturn> SlackGaussNewton::solve(){
     }
 
     if(opt.verbose>0) {
-      cout <<"==resolve== done ";
+      cout <<"==slack== done ";
       cout <<"  s:" <<std::setw(11) <<::sum(ev.s);
       cout <<"  h:" <<std::setw(11) <<ev.err(OT_eq);
       cout <<"  g:" <<std::setw(11) <<ev.err(OT_ineq);

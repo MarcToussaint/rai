@@ -291,7 +291,7 @@ template<class T> struct Array {
 
 //===========================================================================
 /// @}
-/// @name basic Array operators
+/// @name Array operators
 /// @{
 
 template<class T> Array<T> operator, (const Array<T>& y, const Array<T>& z); //concat
@@ -668,8 +668,8 @@ uint product(const uintA& x);
 uint max(const uintA& x);
 uint sum(const uintA& x);
 float sum(const floatA& x);
-uintA integral(const uintA& x);
-uintA differencing(const uintA& x, uint width=1);
+template<class T> Array<T> integral(const Array<T>& x);
+template<class T> Array<T> differencing(const Array<T>& x, uint width=1);
 
 template<class T>
 void tensorPermutation(Array<T>& Y, const Array<T>& X, const uintA& Yid);

@@ -52,7 +52,13 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
 
   addStandardScene();
 
-  frame2itemID.resize(frames.N) = -1;
+  uint maxID = 0;
+  if(frames.N){
+    maxID = frames(-1)->ID;
+    for(rai::Frame* f:frames) if(f->ID>maxID) maxID = f->ID;
+  }
+
+  frame2itemID.resize(maxID+1) = -1;
   for(rai::Frame* f:frames) if(f->shape) {
     shared_ptr<Mesh> mesh = f->shape->_mesh;
     if(mesh && mesh->V.N){

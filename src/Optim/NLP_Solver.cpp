@@ -16,6 +16,7 @@
 #include "NLP.h"
 #include "constrained.h"
 #include "utils.h"
+#include "SlackGaussNewton.h"
 
 template<> const char* rai::Enum<NLP_SolverID>::names []= {
   "gradientDescent", "rprop", "LBFGS", "newton",
@@ -68,6 +69,10 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     OptNewton newton(x, P1, opt);
     newton.run();
     ret->f = newton.fx;
+  } else if(solverID==NLPS_slackGN) {
+    rai::SlackGaussNewton sgn(P, x);
+    ret = sgn.solve();
+    x = ret->x;
   } else if(solverID==NLPS_gradientDescent) {
     Conv_NLP_ScalarProblem P1(P);
     OptGrad(x, P1).run();

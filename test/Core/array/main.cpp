@@ -499,10 +499,10 @@ void TEST(Integral){
 //  arr x = arr{{1,0,0,0,1,0,0,0,1}};
 //  arr x = arr{{3,3}, {1,0,0,0,1,0,0,0,1}};
   arr x = arr{{3,3,3}, {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1}};
-  arr y = ::integral(x);
+  arr y = rai::integral(x);
   cout <<"x:\n" <<x <<"\nintegral:\n" <<y <<endl;
   for(uint w=1;w<=5;w++){
-    arr z = differencing(y,w);
+    arr z = rai::differencing(y,w);
     cout <<"diff w=" <<w <<":\n" <<z <<endl;
     if(w==1){
       CHECK_ZERO(maxDiff(x, z), 1e-10, "not equal!");

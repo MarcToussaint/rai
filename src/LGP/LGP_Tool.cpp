@@ -27,7 +27,7 @@ ActionNode::~ActionNode(){
   }
 }
 
-PTR<KOMO>& ActionNode::get_ways(Configuration& C, Logic2KOMO_Translator& trans, const StringA& explicitCollisions){
+PTR<KOMO>& ActionNode::get_ways(Configuration& C, Actions2KOMO_Translator& trans, const StringA& explicitCollisions){
   if(!ways){
     ActionNodeL path = getTreePath();
     //      str planString;
@@ -172,7 +172,7 @@ str Job::niceMsg(){
 
 //===========================================================================
 
-LGP_Tool::LGP_Tool(Configuration& _C, TAMP_Provider& _tamp, Logic2KOMO_Translator& _trans)
+LGP_Tool::LGP_Tool(Configuration& _C, TAMP_Provider& _tamp, Actions2KOMO_Translator& _trans)
   : C(_C), tamp(_tamp), trans(_trans) {
   actionTreeRoot = new ActionNode(0, {});
 
@@ -556,9 +556,9 @@ MotifL analyzeMotifs(KOMO& komo, int verbose){
 
 //===========================================================================
 
-struct Default_KOMO_Translator : Logic2KOMO_Translator{
+struct Default_Actions2KOMO_Translator : Actions2KOMO_Translator{
 
-  ~Default_KOMO_Translator() {}
+  ~Default_Actions2KOMO_Translator() {}
 
   virtual std::shared_ptr<KOMO> setup_sequence(Configuration& C, uint K){
     ManipulationModelling manip;
@@ -706,7 +706,7 @@ struct Default_TAMP_Provider : TAMP_Provider{
 //===========================================================================
 
 std::shared_ptr<TAMP_Provider> default_TAMP_Provider(rai::Configuration& C, const char* lgp_configfile){ return make_shared<Default_TAMP_Provider>(C, lgp_configfile); }
-std::shared_ptr<Logic2KOMO_Translator> default_Logic2KOMO_Translator(){ return make_shared<Default_KOMO_Translator>(); }
+std::shared_ptr<Actions2KOMO_Translator> default_Actions2KOMO_Translator(){ return make_shared<Default_Actions2KOMO_Translator>(); }
 
 }//namespace
 

@@ -1408,9 +1408,10 @@ void Mesh::write(std::ostream& os) const {
   os <<"Mesh: " <<V.d0 <<" vertices, " <<T.d0 <<" triangles" <<endl;
 }
 
-void Mesh::readFile(const char* filename) {
+Mesh& Mesh::readFile(const char* filename) {
   const char* fileExtension = filename+(strlen(filename)-3);
   read(FILE(filename).getIs(), fileExtension, filename);
+  return *this;
 }
 
 void Mesh::read(std::istream& is, const char* fileExtension, const char* filename) {

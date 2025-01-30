@@ -2785,27 +2785,95 @@ uint max(const uintA& x) {
   return x.p[m];
 }
 
-uintA integral(const uintA& x) {
+/// return the integral image, or vector
+template<class T> Array<T> integral(const Array<T>& x) {
   if(x.nd==1) {
-    uint s(0);
-    uintA y(x.N);
+    double s(0);
+    Array<T> y(x.N);
     for(uint i=0; i<x.N; i++) { s+=x.elem(i); y.elem(i)=s; }
     return y;
   }
-  NIY;
-  return uintA();
-}
-
-uintA differencing(const uintA& x, uint w) {
-  if(x.nd==1) {
-    uintA y(x.N);
-    if(x.N) y.elem(0) = x.elem(0);
-    for(uint i=1; i<x.N; i++) { y.elem(i)=x.elem(i)-x.elem(i-1); }
+  if(x.nd==2) {
+    Array<T> y = x;
+    //first pass: sum rows
+    for(uint i=0; i<y.d0; i++) for(uint j=1; j<y.d1; j++) y(i, j) += y(i, j-1);
+    //first pass: sum columns
+    for(uint j=0; j<y.d1; j++) for(uint i=1; i<y.d0; i++) y(i, j) += y(i-1, j);
+    return y;
+  }
+  if(x.nd==3) {
+    Array<T> y = x;
+    for(uint i=1; i<y.d0; i++) for(uint j=0; j<y.d1; j++) for(uint k=0; k<y.d2; k++) y(i, j, k) += y(i-1, j, k);
+    for(uint i=0; i<y.d0; i++) for(uint j=1; j<y.d1; j++) for(uint k=0; k<y.d2; k++) y(i, j, k) += y(i, j-1, k);
+    for(uint i=0; i<y.d0; i++) for(uint j=0; j<y.d1; j++) for(uint k=1; k<y.d2; k++) y(i, j, k) += y(i, j, k-1);
     return y;
   }
   NIY;
-  return uintA();
+  return Array<T>();
 }
+
+template Array<double> integral(const Array<double>&);
+template Array<uint> integral(const Array<uint>&);
+
+
+/// return the integral image, or vector
+template<class T> Array<T> differencing(const Array<T>& x, uint w) {
+#define CLIP0(i) (i>=h0?i-h0:-1)
+#define CLIP1(i, d) (i+h1>d-1?d-1:i+h1)
+  uint h1=w/2, h0=w-h1; //central diff: h0=steps to left; h1=steps to right
+  Array<T> y;
+  y.resizeAs(x);
+  if(x.nd==1) {
+    for(uint i=0; i<y.d0; i++) {
+      T& v = y.elem(i);
+      int i0=CLIP0(i), i1=CLIP1(i, y.d0);
+      v = x.elem(i1);
+      if(i0>=0) v -= x.elem(i0);
+      v /= (T)(i1-i0);
+    }
+    return y;
+  }
+  if(x.nd==2) {
+    for(uint i=y.d0; i--;) for(uint j=y.d1; j--;) {
+        T& v = y(i, j);
+        int i0=CLIP0(i), i1=CLIP1(i, y.d0);
+        int j0=CLIP0(j), j1=CLIP1(j, y.d1);
+        v = x(i1, j1);
+        if(i0>=0) v -= x(i0, j1);
+        if(j0>=0) v -= x(i1, j0);
+        if(i0>=0 && j0>=0) v += x(i0, j0);
+        v /= (T)((i1-i0)*(j1-j0));
+      }
+    return y;
+  }
+  if(x.nd==3) {
+    Array<T> y = x;
+    for(uint i=y.d0; i--;) for(uint j=y.d1; j--;) for(uint k=y.d2; k--;) {
+          T& v = y(i, j, k);
+          int i0=CLIP0(i), i1=CLIP1(i, y.d0);
+          int j0=CLIP0(j), j1=CLIP1(j, y.d1);
+          int k0=CLIP0(k), k1=CLIP1(k, y.d2);
+          v = x.p[(i1*x.d1+j1)*x.d2+k1]; //x(i1,j1,k1);
+          if(i0>=0) v -= x.p[(i0*x.d1+j1)*x.d2+k1]; //x(i0,j1,k1);
+          if(j0>=0) v -= x.p[(i1*x.d1+j0)*x.d2+k1]; //x(i1,j0,k1);
+          if(k0>=0) v -= x.p[(i1*x.d1+j1)*x.d2+k0]; //x(i1,j1,k0);
+          if(i0>=0 && j0>=0) v += x.p[(i0*x.d1+j0)*x.d2+k1]; //x(i0,j0,k1);
+          if(i0>=0 && k0>=0) v += x.p[(i0*x.d1+j1)*x.d2+k0]; //x(i0,j1,k0);
+          if(j0>=0 && k0>=0) v += x.p[(i1*x.d1+j0)*x.d2+k0]; //x(i1,j0,k0);
+          if(i0>=0 && j0>=0 && k0>=0) v -= x.p[(i0*x.d1+j0)*x.d2+k0]; //x(i0,j0,k0);
+          v /= (T)((i1-i0)*(j1-j0)*(k1-k0));
+        }
+    return y;
+  }
+  NIY;
+  return Array<T>();
+#undef CLIP0
+#undef CLIP1
+}
+
+template Array<double> differencing(const Array<double>& x, uint w);
+template Array<uint> differencing(const Array<uint>& x, uint w);
+
 
 /** \f$Y_{i_Yid(0), i_Yid(1)} = \sum_{i_1} X_{i_0, i_1, i_2}\f$. Get the marginal Y
   from X, where Y will share the slots `Yid' with X */

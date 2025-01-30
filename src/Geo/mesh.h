@@ -139,7 +139,7 @@ struct Mesh {
   /// @name IO
   void write(std::ostream&) const; ///< only writes generic info
   void read(std::istream&, const char* fileExtension, const char* filename=nullptr);
-  void readFile(const char* filename);
+  Mesh& readFile(const char* filename);
   void readTriFile(std::istream& is);
   void readOffFile(std::istream& is);
   void readPlyFile(std::istream& is);

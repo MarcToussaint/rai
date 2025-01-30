@@ -14,7 +14,7 @@ int main(int argc,char** argv){
 
   rai::Configuration C;
   C.addFile(problem+".g");
-  auto trans = rai::default_Logic2KOMO_Translator();
+  auto trans = rai::default_Actions2KOMO_Translator();
   auto tamp = rai::default_TAMP_Provider(C, problem+".lgp");
 
   rai::LGP_Tool lgp(tamp->getConfig(), *tamp, *trans);

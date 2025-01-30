@@ -257,11 +257,15 @@ arr ShapenetGrasps::evaluateGrasp(){
       rai::clip(q_ref(3), q_real(3)-.01, q_real(3)+.01);
 
       //step simulation
-      // C.setJointState(q_ref);
+      C.setJointState(q_ref);
       //physx.pushKinematicStates(C); //not necessary, no kinematic robot involved
-      physx.pushMotorTargets(C, q_ref);
+      physx.pushMotorTargets(C);
       physx.step(opt.simTau);
       physx.pullDynamicStates(C);
+      physx.pullMotorStates(C, NoArr);
+      if(physx.opt().verbose>3){
+        physx.view(false, STRING("Simulation physx debug time: " <<t));
+      }
       q_real = C.getJointState();
 
       //measure in hand motion

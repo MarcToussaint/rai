@@ -376,87 +376,6 @@ arr replicate(const arr& A, uint d0) {
   return x;
 }
 
-/// return the integral image, or vector
-arr integral(const arr& x) {
-  if(x.nd==1) {
-    double s(0);
-    arr y(x.N);
-    for(uint i=0; i<x.N; i++) { s+=x.elem(i); y.elem(i)=s; }
-    return y;
-  }
-  if(x.nd==2) {
-    arr y = x;
-    //first pass: sum rows
-    for(uint i=0; i<y.d0; i++) for(uint j=1; j<y.d1; j++) y(i, j) += y(i, j-1);
-    //first pass: sum columns
-    for(uint j=0; j<y.d1; j++) for(uint i=1; i<y.d0; i++) y(i, j) += y(i-1, j);
-    return y;
-  }
-  if(x.nd==3) {
-    arr y = x;
-    for(uint i=1; i<y.d0; i++) for(uint j=0; j<y.d1; j++) for(uint k=0; k<y.d2; k++) y(i, j, k) += y(i-1, j, k);
-    for(uint i=0; i<y.d0; i++) for(uint j=1; j<y.d1; j++) for(uint k=0; k<y.d2; k++) y(i, j, k) += y(i, j-1, k);
-    for(uint i=0; i<y.d0; i++) for(uint j=0; j<y.d1; j++) for(uint k=1; k<y.d2; k++) y(i, j, k) += y(i, j, k-1);
-    return y;
-  }
-  NIY;
-  return arr();
-}
-
-/// return the integral image, or vector
-arr differencing(const arr& x, uint w) {
-#define CLIP0(i) (i>=h0?i-h0:-1)
-#define CLIP1(i, d) (i+h1>d-1?d-1:i+h1)
-  uint h1=w/2, h0=w-h1; //central diff: h0=steps to left; h1=steps to right
-  arr y;
-  y.resizeAs(x);
-  if(x.nd==1) {
-    for(uint i=0; i<y.d0; i++) {
-      double& v = y.elem(i);
-      int i0=CLIP0(i), i1=CLIP1(i, y.d0);
-      v = x.elem(i1);
-      if(i0>=0) v -= x.elem(i0);
-      v /= (double)(i1-i0);
-    }
-    return y;
-  }
-  if(x.nd==2) {
-    for(uint i=y.d0; i--;) for(uint j=y.d1; j--;) {
-        double& v = y(i, j);
-        int i0=CLIP0(i), i1=CLIP1(i, y.d0);
-        int j0=CLIP0(j), j1=CLIP1(j, y.d1);
-        v = x(i1, j1);
-        if(i0>=0) v -= x(i0, j1);
-        if(j0>=0) v -= x(i1, j0);
-        if(i0>=0 && j0>=0) v += x(i0, j0);
-        v /= (double)((i1-i0)*(j1-j0));
-      }
-    return y;
-  }
-  if(x.nd==3) {
-    arr y = x;
-    for(uint i=y.d0; i--;) for(uint j=y.d1; j--;) for(uint k=y.d2; k--;) {
-          double& v = y(i, j, k);
-          int i0=CLIP0(i), i1=CLIP1(i, y.d0);
-          int j0=CLIP0(j), j1=CLIP1(j, y.d1);
-          int k0=CLIP0(k), k1=CLIP1(k, y.d2);
-          v = x.p[(i1*x.d1+j1)*x.d2+k1]; //x(i1,j1,k1);
-          if(i0>=0) v -= x.p[(i0*x.d1+j1)*x.d2+k1]; //x(i0,j1,k1);
-          if(j0>=0) v -= x.p[(i1*x.d1+j0)*x.d2+k1]; //x(i1,j0,k1);
-          if(k0>=0) v -= x.p[(i1*x.d1+j1)*x.d2+k0]; //x(i1,j1,k0);
-          if(i0>=0 && j0>=0) v += x.p[(i0*x.d1+j0)*x.d2+k1]; //x(i0,j0,k1);
-          if(i0>=0 && k0>=0) v += x.p[(i0*x.d1+j1)*x.d2+k0]; //x(i0,j1,k0);
-          if(j0>=0 && k0>=0) v += x.p[(i1*x.d1+j0)*x.d2+k0]; //x(i1,j0,k0);
-          if(i0>=0 && j0>=0 && k0>=0) v -= x.p[(i0*x.d1+j0)*x.d2+k0]; //x(i0,j0,k0);
-          v /= (double)((i1-i0)*(j1-j0)*(k1-k0));
-        }
-    return y;
-  }
-  NIY;
-  return arr();
-#undef CLIP0
-#undef CLIP1
-}
 
 #ifdef RAI_CLANG
 #  pragma clang diagnostic pop
@@ -1831,9 +1750,6 @@ arr operator/(int y, const arr& z) {  CHECK_EQ(y, 1, ""); arr x; x = inverse(z);
 arr operator/(const arr& y, double z) {             arr x(y); x/=z; return x; }
 /// element-wise division
 arr operator/(const arr& y, const arr& z) { arr x(y); x/=z; return x; }
-
-/// contatenation of two arrays
-arr operator, (const arr& y, const arr& z) { arr x(y); x.append(z); return x; }
 
 /// x.append(y)
 arr& operator<<(arr& x, const double& y) { x.append(y); return x; }

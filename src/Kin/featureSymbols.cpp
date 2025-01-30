@@ -70,8 +70,8 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
   "transVelocities",
 
   "qQuaternionNorms",
-  "FS_opposeCentral",
-  "FS_jointState",
+  "opposeCentral",
+  "linangVel",
   nullptr
 };
 
@@ -187,6 +187,7 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
   }
 
   else if(feat==FS_angularVel) { f=make_shared<F_AngVel>(); }
+  else if(feat==FS_linangVel) { f=make_shared<F_LinAngVel>(); }
 
   else if(feat==FS_accumulatedCollisions) {
     f=make_shared<F_AccumulatedCollisions>(0.);

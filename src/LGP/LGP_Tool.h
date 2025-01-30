@@ -9,8 +9,8 @@ namespace rai {
 
 //===========================================================================
 
-struct Logic2KOMO_Translator {
-  virtual ~Logic2KOMO_Translator() {}
+struct Actions2KOMO_Translator {
+  virtual ~Actions2KOMO_Translator() {}
   virtual std::shared_ptr<KOMO> setup_sequence(Configuration& C, uint K) = 0;
   virtual void add_action_constraints(std::shared_ptr<KOMO>& komo, double time, const StringA& action) = 0;
   virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, double time, const StringA& prev_action, const StringA& action, uint actionPhase) = 0;
@@ -74,7 +74,7 @@ struct ActionNode{
   ActionNode(ActionNode* _parent, StringA _action);
   ~ActionNode();
 
-  PTR<KOMO>& get_ways(Configuration& C, Logic2KOMO_Translator& trans, const StringA& explicitCollisions);
+  PTR<KOMO>& get_ways(Configuration& C, Actions2KOMO_Translator& trans, const StringA& explicitCollisions);
   Array<PTR<KOMO_Motif>>& getWayMotifs();
 
 
@@ -99,7 +99,7 @@ struct LGP_Tool{
   //problem interface
   Configuration& C;
   TAMP_Provider& tamp;
-  Logic2KOMO_Translator& trans;
+  Actions2KOMO_Translator& trans;
   int verbose=1;
 
   //internal data structures for action search and job management
@@ -113,7 +113,7 @@ struct LGP_Tool{
   uint step_count=0;
 
   LGP_Tool(const char* lgp_configfile);
-  LGP_Tool(Configuration& _C, TAMP_Provider& _tamp, Logic2KOMO_Translator& _trans);
+  LGP_Tool(Configuration& _C, TAMP_Provider& _tamp, Actions2KOMO_Translator& _trans);
   ~LGP_Tool();
 
   void solve_step();
@@ -144,6 +144,6 @@ private:
 
 MotifL analyzeMotifs(KOMO& komo, int verbose=0);
 PTR<TAMP_Provider> default_TAMP_Provider(rai::Configuration &C, const char* lgp_configfile);
-PTR<Logic2KOMO_Translator> default_Logic2KOMO_Translator();
+PTR<Actions2KOMO_Translator> default_Actions2KOMO_Translator();
 
 } //namespace

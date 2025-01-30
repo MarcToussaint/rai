@@ -57,7 +57,7 @@ void testPickAndPlace(){
 
     {
       auto rrt1 = seq.sub_rrt(1);
-      rrt1->solve(1);
+      rrt1->solve();
       if(!rrt1->ret->feasible) continue;
     }
 
@@ -110,7 +110,7 @@ void testPush(){
 
 #if 0
     seq.komo->addModeSwitch({1., -1.}, rai::SY_stable, {gripper, obj}, true); //a temporary stable free joint gripper->obj
-#elif 1
+#elif 0
     seq.komo->addFrameDof("obj_grasp", gripper, rai::JT_free, true, obj); //a permanent stable free gripper->grasp joint; and a snap grasp->object
     seq.komo->addRigidSwitch(1., {"obj_grasp", obj});
 #else
@@ -122,7 +122,9 @@ void testPush(){
     seq.komo->addObjective({2.}, FS_poseRel, {gripper, obj}, OT_eq, {1e1}, {}, 1); //constant relative pose! (redundant for first switch option)
     //random target position
     seq.komo->addObjective({2.}, FS_position, {obj}, OT_eq, 1e1*arr{{2,3}, {1,0,0,0,1,0}}, .4*rand(3) - .2+arr{.0,.3,.0});
+
     seq.solve(2);
+    // seq.komo->view(true);
     if(!seq.ret->feasible) continue;
 
     auto move0 = seq.sub_motion(0);
@@ -158,48 +160,54 @@ void testPivot(){
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
   C.delSubtree("cameraWrist");
 
-  C.addFrame("hinge", "table") ->setJoint(rai::JT_rigid) .setRelativePosition({.3, .2, .15});
-  C.addFrame("door", "hinge") ->setRelativePosition({.1, .0, .0}) .setShape(rai::ST_ssBox, {.2, .04, .2, .005}). setContact(1);
-  C.addFrame("handle", "door") ->setRelativePosition({.08, -.02, .0}) .setShape(rai::ST_marker, {.1});
+  C.addFrame("hinge_origin", "table") ->setRelativePosition({.3, .2, .15});
+  C.addFrame("hinge_joint", "hinge_origin") ->setJoint(rai::JT_hingeZ);
+  C.addFrame("door", "hinge_joint") ->setRelativePosition({.1, .0, .0}) .setShape(rai::ST_ssBox, {.2, .04, .2, .005}). setContact(1);
+  C.addFrame("handle", "door") ->setRelativePosition({.08, -.04, .0}) .setShape(rai::ST_cylinder, {.1, .01});
 
   rai::Joint *j = C["l_panda_finger_joint1"]->joint;
-  j->setDofs(arr{.0});
+  j->setDofs(arr{.01});
 
   auto gripper = "l_gripper";
-//  auto palm = "l_palm";
+ auto palm = "l_palm";
   auto obj = "door";
 //  auto table = "table";
   auto qHome = C.getJointState();
+
 
   for(uint i=0;i<20;i++){
     str info = STRING("pivot");
     ManipulationModelling seq(info);
     seq.setup_sequence(C, 3, 1e-2, 1e-1, false);
 
-    seq.komo->addFrameDof("hinge_joint", "table", rai::JT_hingeZ, false, "hinge"); //a permanent moving(!) hinge joint table->hinge_joint, and a snap hinge_joint->hinge
-    seq.komo->addRigidSwitch(1., {"hinge_joint", "hinge"});
+    //desired motion of the door
+    seq.freeze_joint({1.}, {"hinge_joint"});
+    seq.komo->addObjective({2.,3.}, FS_qItself, {"hinge_joint"}, OT_eq, {1e1}, 2.*rand(1)-1.);
 
-    seq.komo->addFrameDof("placement", "table", rai::JT_transXYPhi, true, "hinge"); //a permanent stable joint table->placement, and a snap placement->hinge
-    seq.komo->addRigidSwitch(2., {"placement", "hinge"});
+    // seq.komo->addFrameDof("hinge_joint", "table", rai::JT_hingeZ, false, "hinge"); //a permanent moving(!) hinge joint table->hinge_joint, and a snap hinge_joint->hinge
+    // seq.komo->addRigidSwitch(1., {"hinge_joint", "hinge"});
+
+    // seq.komo->addFrameDof("placement", "table", rai::JT_transXYPhi, true, "hinge"); //a permanent stable joint table->placement, and a snap placement->hinge
+    // seq.komo->addRigidSwitch(2., {"placement", "hinge"});
 
     //geometric constraints: gripper at handle position, z-vector backward, no palm collision
-    //seq.komo->addObjective({1., 2.}, FS_negDistance, {gripper, obj}, OT_eq, {1e1}); //touch
-    seq.komo->addObjective({1., 2.}, FS_positionDiff, {gripper, "handle"}, OT_eq, {1e1});
-    seq.komo->addObjective({1., 2.}, FS_vectorZRel, {gripper, "door"}, OT_sos, {1e-1}, {0, -1., 0});
+    // seq.komo->addObjective({1., 2.}, FS_negDistance, {gripper, obj}, OT_eq, {1e1}); //touch
+    // seq.komo->addObjective({1., 2.}, FS_positionDiff, {gripper, "handle"}, OT_eq, {1e1});
+    // seq.komo->addObjective({1., 2.}, FS_vectorZRel, {gripper, "door"}, OT_sos, {1e-1}, {0, -1., 0});
+    seq.grasp_cylinder(1., gripper, "handle", palm);
     seq.no_collision({1.,2.}, {"l_palm", "door"});
 
     //ready relative pose (we could relax that)
-    seq.komo->addObjective({2.}, FS_poseRel, {gripper, "door"}, OT_eq, {1e1}, {}, 1); //constant relative pose!
-
-    //random target pose for the door
-    seq.komo->addObjective({2.}, FS_qItself, {"hinge_joint"}, OT_eq, {1e1}, 2.*rand(1)-1.);
+    seq.freeze_relativePose({2.}, gripper, "door");
 
     // just to have a 3 phase, ensuring the the door remains placed
     seq.bias(3., qHome);
     seq.solve();
     if(!seq.ret->feasible) continue;
 
+
     auto move0 = seq.sub_motion(0);
+    move0->freeze_joint({}, {"hinge_joint"});
     move0->approach({.8, 1.}, gripper, .1);
     move0->no_collision({.15,.85}, {obj, "l_finger1",
                                     obj, "l_finger2",
@@ -208,11 +216,12 @@ void testPivot(){
     if(!move0->ret->feasible) continue;
 
     auto move1 = seq.sub_motion(1);
-    move1->komo->addObjective({}, FS_poseRel, {gripper, "door"}, OT_eq, {1e1}, {}, 1); //constant relative pose!
+    move1->freeze_relativePose({}, gripper, "door");
     move1->solve();
     if(!move1->ret->feasible) continue;
 
     auto move2 = seq.sub_motion(2);
+    move2->freeze_joint({}, {"hinge_joint"});
     move2->retract({.0, .15}, gripper);
     move2->no_collision({.15,.85}, {obj, "l_finger1",
                                     obj, "l_finger2",
@@ -233,8 +242,8 @@ int main(int argc,char** argv){
 
   //  rnd.clockSeed();
 
-  testPickAndPlace();
-  testPush();
+  // testPickAndPlace();
+  // testPush();
   testPivot();
 
   return 0;

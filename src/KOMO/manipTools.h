@@ -14,17 +14,17 @@
 //===========================================================================
 
 struct ManipulationModelling {
-  str info;
-  //created on setup (or given):
   std::shared_ptr<KOMO> komo;
+  str info;
 
   //solver buffers:
-  std::shared_ptr<rai::RRT_PathFinder> rrt;
   std::shared_ptr<SolverReturn> ret;
   arr path;
 
   ManipulationModelling(const str& _info={});
-  ManipulationModelling(const std::shared_ptr<KOMO>& _komo);
+  ManipulationModelling(const std::shared_ptr<KOMO>& _komo, const str& _info);
+
+  KOMO& k() { return *komo; }
 
   void setup_inverse_kinematics(rai::Configuration& C, double homing_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true);
   void setup_sequence(rai::Configuration& C, uint K, double homing_scale=1e-2, double velocity_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true);
@@ -43,6 +43,8 @@ struct ManipulationModelling {
   void straight_push(arr times, str obj, str gripper, str table);
 
   void no_collision(const arr& time_interval, const StringA& pairs, double margin=.001);
+  void freeze_joint(const arr& time_interval, const StringA& joints);
+  void freeze_relativePose(const arr& time_interval, str to, str from);
 
   void switch_pick();
   void switch_place();
@@ -62,7 +64,7 @@ struct ManipulationModelling {
   void debug(bool listObjectives=true, bool plotOverTime=false);
 
   std::shared_ptr<ManipulationModelling> sub_motion(uint phase, bool fixEnd=true, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
-  std::shared_ptr<ManipulationModelling> sub_rrt(uint phase, const StringA& explicitCollisionPairs= {}, const StringA& activeDofs={});
+  std::shared_ptr<rai::RRT_PathFinder> sub_rrt(uint phase, const StringA& explicitCollisionPairs= {}, const StringA& activeDofs={});
 
   void play(rai::Configuration& C, double duration=1.);
 

@@ -17,6 +17,7 @@ struct ConstrainedSolver;
 enum NLP_SolverID { NLPS_none=-1,
                     NLPS_gradientDescent, NLPS_rprop, NLPS_LBFGS, NLPS_newton,
                     NLPS_augmentedLag, NLPS_squaredPenalty, NLPS_logBarrier, NLPS_singleSquaredPenalty,
+                    NLPS_slackGN,
                     NLPS_NLopt, NLPS_Ipopt, NLPS_Ceres
                   };
 

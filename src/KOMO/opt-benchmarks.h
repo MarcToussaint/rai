@@ -10,8 +10,38 @@
 
 #include "komo.h"
 #include "skeleton.h"
+#include "manipTools.h"
 
 #include "../Optim/NLP.h"
+
+struct Problem{
+  rai::Configuration C;
+  std::shared_ptr<ManipulationModelling> manip;
+  std::shared_ptr<KOMO> komo;
+  std::shared_ptr<NLP> nlp;
+
+  void load(str problem);
+};
+
+
+//===========================================================================
+
+struct BoxNLP : NLP {
+  BoxNLP();
+  void evaluate(arr& phi, arr& J, const arr& x);
+};
+
+//===========================================================================
+
+struct ModesNLP : NLP {
+  arr cen;
+  arr radii;
+
+  ModesNLP();
+  void evaluate(arr& phi, arr& J, const arr& x);
+};
+
+//===========================================================================
 
 struct OptBench_InvKin_Simple {
   OptBench_InvKin_Simple();

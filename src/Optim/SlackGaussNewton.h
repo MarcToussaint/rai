@@ -29,7 +29,7 @@ struct SlackGaussNewton {
   SlackGaussNewton_Options opt;
   std::shared_ptr<NLP> nlp;
 
-  SlackGaussNewton(const shared_ptr<NLP>& _nlp) : nlp(_nlp) {}
+  SlackGaussNewton(const shared_ptr<NLP>& _nlp, const arr& x_init={}) : nlp(_nlp), x(x_init) {}
   SlackGaussNewton& setOptions(const SlackGaussNewton_Options& _opt) { opt = _opt; return *this; }
   std::shared_ptr<SolverReturn> solve();
 
