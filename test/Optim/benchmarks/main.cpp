@@ -1,6 +1,7 @@
 #include <KOMO/opt-benchmarks.h>
 #include <Optim/NLP_Solver.h>
 #include <KOMO/komo.h>
+#include <Kin/viewer.h>
 
 //===========================================================================
 
@@ -44,24 +45,33 @@ void TEST(Skeleton_Handover) {
 //===========================================================================
 
 void test(str problemName){
+  uint s=0;
+  for(uint k=0;k<20;k++){
   Problem P;
   P.load(problemName);
 
   NLP_Solver S;
   S.setProblem(P.nlp);
   S.setSolver(NLPS_slackGN);
-  for(uint k=0;k<10;k++){
+#if 0
     S.setInitialization(P.nlp->getUniformSample());
     P.komo->pathConfig.setJointState(S.x);
-    // P.komo->initRandom(5);
-    P.komo->view(true);
-    // S.setInitialization(P.nlp->getInitializationSample());
+#else
+    P.komo->initRandom();
+    S.setInitialization(P.nlp->getInitializationSample());
+#endif
+    // P.komo->view(true);
     auto ret = S.solve();
     cout <<*ret <<endl;
-    P.komo->view(true);
+    //cout <<P.komo->report() <<endl;
+    P.komo->view(ret->feasible);
+    if(ret->feasible){
+      P.komo->get_viewer()->visualsOnly();
+      P.komo->view_play(false, 0, .2, STRING("z."<<s++<<".vid/"));
+    }
   }
   // P.nlp->report(cout, 10);
-  S.gnuplot_costs();
+  // S.gnuplot_costs();
 }
 
 //===========================================================================
@@ -75,7 +85,9 @@ int MAIN(int argc,char** argv){
   // testKOMO_IK();
   // testSkeleton_Handover();
 
-  test("push");
+  // test("IK-obstacle");
+  // test("push");
+  test("stableSphere");
 
   return 0;
 }

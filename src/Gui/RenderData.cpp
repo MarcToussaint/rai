@@ -463,7 +463,7 @@ void RenderData::glDraw(OpenGL& gl){
     renderObjects(id.prog_ModelT_WM, sorting, _transparent);
   }
 
-  /*if(dontRender>_text)*/ {
+  if(renderUntil>=_text) {
 
     glUseProgram(id.progText);
     glUniform1i(id.progText_useTexColor, 0);

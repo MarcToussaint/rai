@@ -500,9 +500,9 @@ void LGP_Node::displayBound(ConfigurationViewer& V, BoundType bound) {
     V.updateConfiguration(tree.kin, problem(bound).komo->timeSlices).view(false, s);
 //    V.setMotion(range(), problem(bound).komo->getPath_X(), s, true);
     if(bound>=BD_path) {
-      while(V.playVideo(true, 1.*problem(bound).komo->T/problem(bound).komo->stepsPerPhase));
+      while(V.view_play(true, 1.*problem(bound).komo->T/problem(bound).komo->stepsPerPhase));
     } else {
-      while(V.playVideo(true, 1.*problem(bound).komo->T));
+      while(V.view_play(true, 1.*problem(bound).komo->T));
     }
   }
 }

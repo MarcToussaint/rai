@@ -321,12 +321,13 @@ void ManipulationModelling::straight_push(arr time_interval, str obj, str grippe
   //gripper start orientation
   k().addObjective({time_interval(0)}, FS_scalarProductYY, {gripper, helperStart}, OT_ineq, {-1e0}, {.2});
   k().addObjective({time_interval(0)}, FS_scalarProductYZ, {gripper, helperStart}, OT_ineq, {-1e0}, {.2});
-  k().addObjective({time_interval(0)}, FS_vectorXDiff, {gripper, helperStart}, OT_sos, {1e0});
+  k().addObjective({time_interval(0)}, FS_vectorXDiff, {gripper, helperStart}, OT_eq, {1e0});
 
   //obj end position
   // k().addObjective({time_interval(1)}, FS_positionDiff, {obj, helperEnd}, OT_eq, {1e1});
   //obj end orientation: unchanged
   // k().addObjective({time_interval(1)}, FS_quaternion, {obj}, OT_eq, {1e1}, {}, 1); //qobjPose.rot.getArr4d());
+  freeze_relativePose({time_interval(1)}, gripper, obj);
 }
 
 void ManipulationModelling::no_collision(const arr& time_interval, const StringA& pairs, double margin) {

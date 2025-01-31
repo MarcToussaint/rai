@@ -662,10 +662,15 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
     FrameL tmp = {link};
     link->getRigidSubFrames(tmp, false);
     for(rai::Frame* p: tmp) {
-      if(p->shape
-          && p->getShape().type()!=rai::ST_marker
-          && p->getShape().type()!=rai::ST_camera
-          && p->getShape().alpha()==1.) shapes.append(p->shape); //exclude transparent objects!!
+      if(p->shape && p->getShape().type()!=rai::ST_marker
+          && p->getShape().type()!=rai::ST_camera){ //is a candidate
+        if(p->ats && p->ats->find<bool>("simulate")){
+          if(p->ats->get<bool>("simulate")) shapes.append(p->shape);
+        }else{
+          if(p->getShape().alpha()==1.) shapes.append(p->shape);
+          else{}//transparent and no simulate flag
+        }
+      }
     }
   }
 

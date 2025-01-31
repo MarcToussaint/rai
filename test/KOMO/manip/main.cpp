@@ -119,7 +119,7 @@ void testPush(){
 #endif
 
     seq.straight_push({1.,2.}, obj, gripper, table);
-    seq.komo->addObjective({2.}, FS_poseRel, {gripper, obj}, OT_eq, {1e1}, {}, 1); //constant relative pose! (redundant for first switch option)
+    //seq.komo->addObjective({2.}, FS_poseRel, {gripper, obj}, OT_eq, {1e1}, {}, 1); //constant relative pose! (redundant for first switch option)
     //random target position
     seq.komo->addObjective({2.}, FS_position, {obj}, OT_eq, 1e1*arr{{2,3}, {1,0,0,0,1,0}}, .4*rand(3) - .2+arr{.0,.3,.0});
 
@@ -240,10 +240,10 @@ void testPivot(){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  //  rnd.clockSeed();
+  rnd.clockSeed();
 
-  // testPickAndPlace();
-  // testPush();
+  testPickAndPlace();
+  testPush();
   testPivot();
 
   return 0;

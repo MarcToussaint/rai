@@ -292,11 +292,11 @@ int rai::ConfigurationViewer::view(bool watch, const char* _text) {
   return update(watch);
 }
 
-int rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* saveVideoPath) {
+int rai::ConfigurationViewer::view_play(bool watch, double delay, str saveVideoPath) {
   if(rai::getDisableGui()) return false;
 
   if(saveVideoPath) {
-    rai::system(STRING("mkdir -p " <<saveVideoPath));
+    if(saveVideoPath(-1)=='/') rai::system(STRING("mkdir -p " <<saveVideoPath));
     rai::system(STRING("rm -f " <<saveVideoPath <<"*.png"));
   }
 
@@ -312,6 +312,8 @@ int rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* sa
   Metronome tic(delay / motion.d0);
 
   int key=0;
+  bool _nonThreaded = nonThreaded;
+  nonThreaded = true;
   for(uint t=0; t<motion.d0; t++) {
     if(t && delay>0.) tic.waitForTic(); //rai::wait(delay / F.d0);
 
@@ -321,6 +323,7 @@ int rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* sa
 
     if(saveVideoPath) savePng(saveVideoPath);
   }
+  nonThreaded = _nonThreaded;
   key = update(watch);
 //  drawText = tag;
   return key;

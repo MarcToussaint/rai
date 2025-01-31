@@ -427,7 +427,34 @@ void testCompound(){
   }
 
   rai::wait();
+}
 
+//===========================================================================
+
+void testComplexObjects(){
+  StringA files = fromFile<StringA>(rai::raiPath("../rai-robotModels/shapenet/models/files"));
+
+  rai::Configuration C;
+
+  for(uint k=0;k<10;k++){
+    str file = rai::raiPath("../rai-robotModels/shapenet/models/") + files(3+rnd(10));
+    rai::Frame *obj = C.addH5Object(STRING("obj"<<k), file, 1);
+    obj->set_X()->setRandom();
+    obj->set_X()->pos.z += 1.;
+  }
+
+  rai::Simulation S(C, S._physx, 2);
+
+  double tau=.01;
+  Metronome tic(tau);
+
+  for(uint t=0;t<4./tau;t++){
+    tic.waitForTic();
+
+    S.step({}, tau, S._none);
+  }
+
+  C.view(true);
 }
 
 //===========================================================================
@@ -498,6 +525,10 @@ void testPassive(const char* filename){
 //    rai::wait(1.);
 
     S.step({}, tau, S._none);
+
+    arr V;
+    S.getState(NoArr, NoArr, V, NoArr);
+    cout <<S.get_q() <<' ' <<S.get_qDot() <<' ' <<S.get_frameVelocities()[-1] <<V[-1] <<endl;
 
 //    C.view(true, STRING("time:" <<t));
   }
@@ -575,6 +606,7 @@ int MAIN(int argc,char **argv){
   testMotors();
   testPassive("../../../../playground/24-humanoid/scene.g");
   testPassive("../../../../rai-robotModels/scenarios/pendulum.g");
+  testComplexObjects();
   testRndScene();
   testConstructor();
   testPcl();

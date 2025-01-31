@@ -62,6 +62,7 @@ void init_Simulation(pybind11::module& m) {
       .def("get_q", &rai::Simulation::get_q)
 
       .def("get_qDot", &rai::Simulation::get_qDot)
+      .def("get_frameVelocities", &rai::Simulation::get_frameVelocities)
 
       .def("openGripper", &rai::Simulation::moveGripper,
            "",

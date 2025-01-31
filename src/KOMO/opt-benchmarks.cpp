@@ -10,11 +10,12 @@
 #include "../Optim/utils.h"
 #include "../Optim/benchmarks.h"
 #include "../Kin/frame.h"
+#include "../Kin/F_forces.h"
 #include "../KOMO/komo.h"
 #include "../Kin/F_geometrics.h"
 
 void Problem::load(str problem){
-  std::shared_ptr<Problem> P = make_shared<Problem>();
+  if(komo) komo.reset();
 
   if(problem == "box"){
     nlp = make_shared<BoxNLP>();
@@ -112,17 +113,22 @@ void Problem::load(str problem){
     manip->komo->addQuaternionNorms();
 
     //1,2: push
-    manip->komo->addModeSwitch({1., 2.}, rai::SY_stable, {gripper, obj}, true);
-    manip->komo->addModeSwitch({2., -1.}, rai::SY_stableOn, {table, obj}, false);
+    // manip->komo->addModeSwitch({1., 2.}, rai::SY_stable, {gripper, obj}, true);
+    // manip->komo->addModeSwitch({2., -1.}, rai::SY_stableOn, {table, obj}, false);
+    auto helper_frame = manip->komo->addFrameDof("obj_trans", table, rai::JT_transXY, false, obj); //a permanent moving(!) transXY joint table->trans, and a snap trans->obj
+    // helper_frame->setAutoLimits();
+    // helper_frame->joint->sampleUniform=1.;
+    manip->komo->addRigidSwitch(1., {"obj_trans", obj});
     manip->straight_push({1.,2.}, obj, gripper, table);
     manip->no_collision({2.}, {stick, obj}, .02);
+    manip->freeze_joint({3., -1.}, {"obj_trans"});
 
     //3: pick
     manip->grasp_cylinder(3., gripper, stick, palm);
-    manip->no_collision({3.}, {"l_panda_coll5", obj,
-                                  "l_panda_coll6", obj,
-                                  "l_panda_coll7", obj,
-                                  "l_palm", obj}, .02);
+    manip->no_collision({2.,3.}, {"l_panda_coll5", obj,
+                               "l_panda_coll6", obj,
+                               "l_panda_coll7", obj,
+                               "l_palm", obj}, .02);
 
     //3,4: carry
     manip->komo->addModeSwitch({3., -1.}, rai::SY_stable, {gripper, stick}, true);
@@ -133,6 +139,52 @@ void Problem::load(str problem){
                                   palm, table}, .01);
 
     komo = manip->komo;
+    nlp = komo->nlp();
+  }
+
+  if(problem == "stableSphere"){
+    C.addFile(rai::raiPath("../rai-robotModels/scenarios/ballFinger.g"), "l_");
+    C.addFile(rai::raiPath("../rai-robotModels/scenarios/ballFinger.g"), "r_");
+    C.addFrame("world");
+    C.addFrame("table", "world", "Q:[0 0 .1], shape: ssBox, size: [1 1 .1 .01], color: [.8], contact: 1" );
+    C.addFrame("wall", "table", "Q:[-.45 0 .3], shape: ssBox, size: [.1 1 .5 .01], color: [.8], contact: 1" );
+    C.addFrame("box", "table", "Q:[.05 -.35 .25], shape: ssBox, size: [.9 .3 .4 .01], color: [.8], contact: 1" );
+    C.addFrame("obj", "world", "joint:trans3, limits:[-.5,.5,-.5,.5,0,1], Q:[0 0 .3], shape: sphere, size: [.1], color: [1 .5 .0 .5], mass: .2, sampleUniform: 1., contact: 1" );
+
+    C["l_finger"]->setShape(rai::ST_sphere, {.05});
+    C["l_jointX"]->joint->limits = {-.5,.5};
+    C["l_jointY"]->joint->limits = {-.5,.5};
+    C["l_jointZ"]->joint->limits = {-.5,.5};
+    C["r_finger"]->setShape(rai::ST_sphere, {.05});
+    C["r_jointX"]->joint->limits = {-.5,.5};
+    C["r_jointY"]->joint->limits = {-.5,.5};
+    C["r_jointZ"]->joint->limits = {-.5,.5};
+
+    StringA supports = { "box", "wall", "l_finger", "r_finger" };
+
+    komo = make_shared<KOMO>();
+    komo->setConfig(C);
+    komo->setTiming(1,1,1,0);
+    komo->addControlObjective({}, 0, 1e-1);
+
+    komo->addObjective({}, make_shared<F_TotalForce>(), {"obj"}, OT_eq, {1e1} );
+    komo->addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e1} );
+
+    // if(opt.verbose>0) komo->set_viewer(C.get_viewer());
+
+    double frictionCone_mu = rai::getParameter<double>("RndStableConfigs/frictionCone_mu", .8);
+
+    //-- discrete decisions:
+    str supp="supports:";
+    for(const str& thing:supports){
+      if(rnd.uni()<.5){
+        supp <<' ' <<thing;
+        komo->addContact_stick(0.,-1., "obj", thing, frictionCone_mu);
+      }
+    }
+    // if(opt.verbose>0){
+    LOG(0) <<"\n======================\n" <<supp;
+
     nlp = komo->nlp();
   }
 

@@ -322,7 +322,7 @@ rai::Frame& rai::Frame::convertDecomposedShapeToChildFrames() {
   return *this;
 }
 
-rai::Frame& rai::Frame::transformToDiagInertia() {
+rai::Transformation rai::Frame::transformToDiagInertia() {
   CHECK(inertia, "");
   CHECK(!shape || shape->type()==rai::ST_marker, "can't translate this frame if it has a shape attached");
   CHECK(!joint || joint->type==rai::JT_rigid || joint->type==rai::JT_free, "can't translate this frame if it has a joint attached");
@@ -345,7 +345,8 @@ rai::Frame& rai::Frame::transformToDiagInertia() {
     set_X()->appendTransformation(t);
     for(rai::Frame* ch:children) ch->set_Q() = -t * ch->get_Q();
   }
-  return *this;
+
+  return t;
 }
 
 void rai::Frame::_state_setXBadinBranch() {
@@ -537,7 +538,7 @@ rai::Frame& rai::Frame::setMesh(const arr& verts, const uintA& tris, const byteA
   mesh.T = tris;
   if(mesh.T.nd==1) mesh.T.reshape(-1, 3);
   if(colors.N) {
-    mesh.C = convert<double>(colors).reshape(-1, 3);
+    mesh.C = convert<double>(colors); //.reshape(-1, 3);
     mesh.C /= 255.;
     if(mesh.C.N <= 4) { mesh.C.reshape(-1); }
   }

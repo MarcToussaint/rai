@@ -21,7 +21,7 @@ struct Render_Options {
   RAI_PARAM("Render/", arr, lights, {})
 };
 
-enum RenderType { _solid, _shadow, _tensor, _marker, _transparent, _text, _all };
+enum RenderType { _solid, _shadow, _tensor, _text, _marker, _transparent, _all };
 
 struct RenderAsset{
   floatA vertices, colors, normals, texture;
@@ -142,6 +142,7 @@ struct RenderData {
   void ensureInitialized(OpenGL &gl);
   virtual void glDraw(OpenGL &gl);
   void glDeinitialize(OpenGL &gl);
+  void visualsOnly(bool _visualsOnly=true){ if(_visualsOnly) renderUntil=_tensor; else renderUntil=_all; }
 
 //private:
   void renderObjects(GLuint idT_WM, const uintA& sortedObjIDs, RenderType type, GLint idFlatColor=-1, GLint idScale=-1);

@@ -1471,7 +1471,7 @@ int KOMO::view_play(bool pause, const char* txt, double delay, const char* saveV
   str text = txt;
   if(pause) text <<"\n[use SHIFT+scroll or arror keys to browse; press key to continue]";
   view(false, text);
-  return pathConfig.get_viewer()->playVideo(pause, delay*tau*T, saveVideoPath);
+  return pathConfig.get_viewer()->view_play(pause, delay*tau*T, saveVideoPath);
 }
 
 int KOMO::view_slice(uint t, bool pause){

@@ -76,7 +76,7 @@ std::shared_ptr<SolverReturn> SlackGaussNewton::solve(){
       step();
       // good = (::sum(ev.s)<=opt.tolerance);
       good = ev.err(OT_ineq)<=opt.tolerance && ev.err(OT_eq)<1e-10;
-      if(good || evals>=opt.maxEvals) break;
+      if(good || evals>=opt.maxEvals || iters>=opt.maxEvals) break;
       iters++;
     }
 

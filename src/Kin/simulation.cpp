@@ -523,6 +523,10 @@ const arr& Simulation::get_qDot() {
   return self->qDot;
 }
 
+const arr& Simulation::get_frameVelocities(){
+  return self->frameVelocities;
+}
+
 double Simulation::getTimeToSplineEnd() {
   return self->ref.getEndTime()-time;
 }

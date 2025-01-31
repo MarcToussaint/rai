@@ -73,7 +73,8 @@ void init_Frame(pybind11::module& m) {
     return graph2dict(*self->ats);
   }, "get frame attributes")
 
-  .def_readwrite("name", &rai::Frame::name)
+  .def_readonly("ID", &rai::Frame::ID, "the unique ID of the frame, which is also its index in lists/arrays (e.g. when the frameState is returned as matrix) (readonly)")
+  .def_readwrite("name", &rai::Frame::name, "the name of the frame (editable)")
 
   .def("getParent", [](shared_ptr<rai::Frame>& self) { return shared_ptr<rai::Frame>(self->parent, &null_deleter); }, "")
   .def("getPose", &rai::Frame::getPose, "")

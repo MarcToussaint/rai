@@ -28,6 +28,7 @@
 #include "../Gui/opengl.h"
 #include "../Algo/rungeKutta.h"
 #include "../Algo/spline.h"
+#include "../Core/h5.h"
 #include <iomanip>
 #include <algorithm>
 #include <sstream>
@@ -280,6 +281,86 @@ Frame* Configuration::addAssimp(const char* filename) {
     }
   }
   return frames(Nold+0); //root frame
+}
+
+Frame* Configuration::addH5Object(const char* framename, const char* filename, int verbose){
+  if(verbose>0) LOG(0) <<"loading h5 object file " <<filename;
+  H5_Reader H(filename);
+
+  rai::Frame *obj = addFrame(framename);
+  if(verbose>0) LOG(0) <<"added baseframe '" <<framename <<"'";
+
+  if(H.exists("mesh/")){
+    arr pts = H.read<double>("mesh/vertices");
+    uintA faces = H.read<uint>("mesh/faces");
+
+    rai::Frame *objMesh = addFrame(STRING(framename<<"_mesh"));
+    objMesh->setParent(obj);
+    objMesh->setMesh(pts, faces);
+
+    if(H.exists("decomp/")){
+      objMesh->getAts().add<bool>("simulate", false);
+    }
+
+    if(verbose>0) LOG(0) <<"added mesh with " <<pts.d0 <<" vertices in subframe";
+  }
+
+  if(H.exists("points/")){
+    arr pts = H.read<double>("points/vertices");
+    arr normals = H.read<double>("points/normals");
+
+    rai::Frame *objPts = addFrame(STRING(framename<<"_pts"));
+    objPts->setParent(obj);
+    objPts->setPointCloud(pts, {}, normals);
+    //    objPts->setMesh(pts);
+    objPts->setContact(0);
+    objPts->setColor({1., 0., 0., .9});
+
+    if(verbose>0) LOG(0) <<"added " <<pts.d0 <<" points in subframe";
+  }
+
+  if(H.exists("decomp/")){
+    arr pts = H.read<double>("decomp/vertices");
+    uintA faces = H.read<uint>("decomp/faces");
+    byteA colors = H.read<byte>("decomp/colors");
+    uintA parts = H.read<uint>("decomp/parts");
+
+    rai::Frame *objDeomp = addFrame(STRING(framename<<"_decomp"));
+    objDeomp->setParent(obj);
+    objDeomp->setMesh(pts, faces, byteA{128, 128}, parts);
+    objDeomp->setContact(1);
+
+    objDeomp->getAts().add<bool>("simulate", true);
+
+    // objMeshes->setMass(.1);
+    // obj->computeCompoundInertia();
+    // obj->transformToDiagInertia();
+
+    // objMeshes->convertDecomposedShapeToChildFrames();
+
+    if(verbose>0) LOG(0) <<"added " <<parts.N <<" convex-decomposed shapes in subframes";
+  }
+
+  if(H.exists("inertia/")){
+    arr com = H.read<double>("inertia/com");
+    arr mass = H.read<double>("inertia/mass");
+    arr tensor = H.read<double>("inertia/tensor");
+    obj->getInertia().mass = mass.elem();
+    obj->getInertia().com = com;
+    obj->getInertia().matrix = tensor;
+
+    if(verbose>0) LOG(0) <<"added inertia of mass " <<mass.elem() <<" to base frame";
+
+    Transformation t = obj->transformToDiagInertia();
+
+    if(verbose>0) LOG(0) <<"transformed baseframe by " <<t <<" to make inertia centered and diagonal";
+
+    try{ obj->get_X().checkNan(); } catch(...) {
+      HALT("transform lead to NAN - failed");
+    }
+  }
+
+  return obj;
 }
 
 #if 0
