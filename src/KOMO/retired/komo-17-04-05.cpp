@@ -45,7 +45,7 @@ arr moveTo(rai::Configuration& world,
     if(colPrec<0) {
 //      optConstrained(x, NoArr, Convert(MP), OPT(verbose=2)); //parameters are set in cfg!!
       optConstrained(x, NoArr, Convert(MP.komo_problem)); //parameters are set in cfg!!
-      //verbose=1, stopIters=100, maxStep=.5, stepInc=2./*, nonStrictSteps=(!k?15:5)*/));
+      //verbose=1, stopIters=100, stepMax=.5, stepInc=2./*, nonStrictSteps=(!k?15:5)*/));
     } else {
       optNewton(x, Convert(MP.komo_problem));
     }

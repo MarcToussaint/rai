@@ -431,7 +431,7 @@ arr ManipulationModelling::solve(int verbose) {
   if(komo) {
     NLP_Solver sol;
     sol.setProblem(k().nlp());
-    sol.opt.set_damping(1e-1). set_verbose(verbose-1). set_stopTolerance(1e-3). set_maxLambda(100.). set_stopInners(20). set_stopEvals(200);
+    sol.opt.set_damping(1e-1). set_verbose(verbose-1). set_stopTolerance(1e-3). set_lambdaMax(100.). set_stopInners(20). set_stopEvals(200);
     ret = sol.solve();
     if(ret->feasible) {
       path = k().getPath_qOrg();

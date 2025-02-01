@@ -17,7 +17,7 @@ uint eval_count=0;
 
 OptGrad::OptGrad(arr& _x, const ScalarFunction& _f, rai::OptOptions _o):
   x(_x), f(_f), o(_o), it(0), evals(0), numTinySteps(0) {
-  alpha = o.initStep;
+  alpha = o.stepInit;
 //  if(f) reinit();
 }
 
@@ -142,12 +142,12 @@ Rprop::Rprop() {
 Rprop::~Rprop() {
 }
 
-void Rprop::init(double initialStepSize, double minStepSize, double maxStepSize) {
+void Rprop::init(double initialStepSize, double minStepSize, double stepMaxSize) {
   self->stepSize.resize(0);
   self->lastGrad.resize(0);
   self->delta0 = initialStepSize;
   self->dMin = minStepSize;
-  self->dMax = maxStepSize;
+  self->dMax = stepMaxSize;
 }
 
 bool sRprop::step(arr& w, const arr& grad, uint* singleI) {

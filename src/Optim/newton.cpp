@@ -31,7 +31,7 @@ int optNewton(arr& x, const ScalarFunction& f, rai::OptOptions o) {
 
 OptNewton::OptNewton(arr& _x, const ScalarFunction& _f, const rai::OptOptions& _opt):
   f(_f), x(_x), opt(_opt) {
-  alpha = opt.initStep;
+  alpha = opt.stepInit;
   beta = opt.damping;
 //  if(f) reinit(_x);
 }
@@ -157,17 +157,17 @@ OptNewton::StopCriterion OptNewton::step() {
       if(opt.verbose>0) {
         cout <<"** hessian inversion failed ... using gradient descent direction" <<endl;
       }
-      Delta = gx * (-opt.maxStep/length(gx));
+      Delta = gx * (-opt.stepMax/length(gx));
     }
   }
 
   //restrict stepsize
   double maxDelta = absMax(Delta);
-  if(opt.maxStep>0. && maxDelta>opt.maxStep) {
-    Delta *= opt.maxStep/maxDelta;
-    maxDelta = opt.maxStep;
+  if(opt.stepMax>0. && maxDelta>opt.stepMax) {
+    Delta *= opt.stepMax/maxDelta;
+    maxDelta = opt.stepMax;
   }
-  double alphaHiLimit = opt.maxStep/maxDelta;
+  double alphaHiLimit = opt.stepMax/maxDelta;
   //double alphaLoLimit = 1e-1*options.stopTolerance/maxDelta;
 
   if(opt.verbose>1) cout <<"  |Delta|:" <<std::setw(11) <<maxDelta;

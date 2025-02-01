@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include "../Optim/NLP.h"
+#include "options.h"
+#include "NLP.h"
 #include "../Core/util.h"
 
 //===========================================================================
@@ -21,23 +22,23 @@ struct SlackGaussNewton_Options {
   RAI_PARAM("sam/", int, verbose, 2)
 
   RAI_PARAM("sam/", int, maxEvals, 50)
-  RAI_PARAM("sam/", double, maxStep, .1)
+  RAI_PARAM("sam/", double, stepMax, .1)
   RAI_PARAM("sam/", double, damping, 1e-2)
 };
 
 struct SlackGaussNewton {
-  SlackGaussNewton_Options opt;
+  OptOptions opt;
   std::shared_ptr<NLP> nlp;
 
-  SlackGaussNewton(const shared_ptr<NLP>& _nlp, const arr& x_init={}) : nlp(_nlp), x(x_init) {}
-  SlackGaussNewton& setOptions(const SlackGaussNewton_Options& _opt) { opt = _opt; return *this; }
+  SlackGaussNewton(const shared_ptr<NLP>& _nlp, const arr& x_init={});
+  SlackGaussNewton& setOptions(const OptOptions& _opt) { opt = _opt; return *this; }
   std::shared_ptr<SolverReturn> solve();
 
 private:
   arr x;
   uint evals=0;
   uint iters=0;
-  void step();
+  double step();
 
   struct Eval {
     arr x;

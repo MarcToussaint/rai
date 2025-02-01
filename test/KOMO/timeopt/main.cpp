@@ -238,7 +238,7 @@ void timeOpt(){
 //  checkJacobianCP(nlp, tau.sub(k,-1), 1e-6);
 //  rai::wait();
 
-  rai::setParameter<double>("opt/maxStep", 1e-1);
+  rai::setParameter<double>("opt/stepMax", 1e-1);
   rai::setParameter<double>("opt/stopTolerance", 1e-6);
   rai::setParameter<double>("opt/damping", 1e-2);
 

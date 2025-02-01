@@ -466,7 +466,7 @@ double keyframeOptimizer(arr& x, KOMO& MP, bool x_is_initialized, uint verbose) 
   double cost;
 
   NIY;
-//  optNewton(x, Convert(MF), OPT(fmin_return=&cost, verbose=verbose, stopIters=200, damping=1e-0, maxStep=.5, stopTolerance=1e-2));
+//  optNewton(x, Convert(MF), OPT(fmin_return=&cost, verbose=verbose, stopIters=200, damping=1e-0, stepMax=.5, stopTolerance=1e-2));
 
   return cost;
 }

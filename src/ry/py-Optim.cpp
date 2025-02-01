@@ -176,7 +176,7 @@ void init_Optim(pybind11::module& m) {
       MEMBER(int, stopEvals, 1000)
       MEMBER(int, stopInners, 1000)
       MEMBER(int, stopOuters, 1000)
-      MEMBER(double, maxStep, .2)
+      MEMBER(double, stepMax, .2)
       MEMBER(double, damping, 1.)
       MEMBER(double, stepInc, 1.5)
       MEMBER(double, stepDec, .5)
@@ -186,7 +186,7 @@ void init_Optim(pybind11::module& m) {
       MEMBER(double, muMax, 1e4)
       MEMBER(double, muLBInit, .1)
       MEMBER(double, muLBDec, .2)
-      MEMBER(double, maxLambda, -1.)
+      MEMBER(double, lambdaMax, -1.)
 #undef MEMBER
 
   .def("dict", [](std::shared_ptr<rai::OptOptions>& self) {
@@ -199,7 +199,7 @@ void init_Optim(pybind11::module& m) {
       MEMBER(int, stopEvals, 1000)
       MEMBER(int, stopInners, 1000)
       MEMBER(int, stopOuters, 1000)
-      MEMBER(double, maxStep, .2)
+      MEMBER(double, stepMax, .2)
       MEMBER(double, damping, 1.)
       MEMBER(double, stepInc, 1.5)
       MEMBER(double, stepDec, .5)
@@ -209,7 +209,7 @@ void init_Optim(pybind11::module& m) {
       MEMBER(double, muMax, 1e4)
       MEMBER(double, muLBInit, .1)
       MEMBER(double, muLBDec, .2)
-      MEMBER(double, maxLambda, -1.)
+      MEMBER(double, lambdaMax, -1.)
 #undef MEMBER
     });
 
@@ -356,7 +356,7 @@ void init_Optim(pybind11::module& m) {
                         MEMBER(int, stopEvals, 1000)
                         MEMBER(int, stopInners, 1000)
                         MEMBER(int, stopOuters, 1000)
-                        MEMBER(double, maxStep, .2)
+                        MEMBER(double, stepMax, .2)
                         MEMBER(double, damping, 1.)
                         MEMBER(double, stepInc, 1.5)
                         MEMBER(double, stepDec, .5)
@@ -366,7 +366,7 @@ void init_Optim(pybind11::module& m) {
                         MEMBER(double, muMax, 1e4)
                         MEMBER(double, muLBInit, .1)
                         MEMBER(double, muLBDec, .2)
-                        MEMBER(double, maxLambda, -1.)
+                        MEMBER(double, lambdaMax, -1.)
 #undef MEMBER
   ) {
     self->opt
@@ -378,7 +378,7 @@ void init_Optim(pybind11::module& m) {
     MEMBER(int, stopEvals, 1000)
     MEMBER(int, stopInners, 1000)
     MEMBER(int, stopOuters, 1000)
-    MEMBER(double, maxStep, .2)
+    MEMBER(double, stepMax, .2)
     MEMBER(double, damping, 1.)
     MEMBER(double, stepInc, 1.5)
     MEMBER(double, stepDec, .5)
@@ -388,7 +388,7 @@ void init_Optim(pybind11::module& m) {
     MEMBER(double, muMax, 1e4)
     MEMBER(double, muLBInit, .1)
     MEMBER(double, muLBDec, .2)
-    MEMBER(double, maxLambda, -1.)
+    MEMBER(double, lambdaMax, -1.)
 #undef MEMBER
     ;
     return self;
@@ -401,7 +401,7 @@ void init_Optim(pybind11::module& m) {
   MEMBER(int, stopEvals, 1000)
   MEMBER(int, stopInners, 1000)
   MEMBER(int, stopOuters, 1000)
-  MEMBER(double, maxStep, .2)
+  MEMBER(double, stepMax, .2)
   MEMBER(double, damping, 1.)
   MEMBER(double, stepInc, 1.5)
   MEMBER(double, stepDec, .5)
@@ -411,7 +411,7 @@ void init_Optim(pybind11::module& m) {
   MEMBER(double, muMax, 1e4)
   MEMBER(double, muLBInit, .1)
   MEMBER(double, muLBDec, .2)
-  MEMBER(double, maxLambda, -1.)
+  MEMBER(double, lambdaMax, -1.)
 #undef MEMBER
       )
 

@@ -129,7 +129,7 @@ arr CtrlSolver::solve() {
   opt.stopGTolerance = 1e-4;
   opt.stopInners = 20;
 //  opt.nonStrictSteps=-1;
-  opt.maxStep = .1; //*tau; //maxVel*tau;
+  opt.stepMax = .1; //*tau; //maxVel*tau;
   opt.damping = 1e-2;
   komo.opt.verbose=0;
   komo.opt.animateOptimization=animate;

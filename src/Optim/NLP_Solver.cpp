@@ -78,7 +78,7 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     OptGrad(x, P1).run();
   } else if(solverID==NLPS_rprop) {
     Conv_NLP_ScalarProblem P1(P);
-    Rprop().loop(x, P1, opt.stopTolerance, opt.initStep, opt.stopEvals, opt.verbose);
+    Rprop().loop(x, P1, opt.stopTolerance, opt.stepInit, opt.stopEvals, opt.verbose);
   } else if(solverID==NLPS_augmentedLag) {
     opt.set_constrainedMethod(rai::augmentedLag);
     optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);

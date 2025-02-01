@@ -167,7 +167,7 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
   if(o.verbose>1) cout <<"optNodewise initial cost " <<fx <<endl;
 
   OptOptions op;
-  op.stopTolerance=o.stopTolerance, op.stopEvals=10, op.maxStep=o.maxStep, op.verbose=0;
+  op.stopTolerance=o.stopTolerance, op.stopEvals=10, op.stepMax=o.stepMax, op.verbose=0;
 
   uint k;
   for(k=0; k<o.stopIters; k++) {
@@ -249,14 +249,14 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
 //      cbar  = fi(0).c + V(0).c + damping*sumOfSqr(x[0]);
 //      inverse_SymPosDef(Bbarinv0, Bbar);
 //      step = Bbarinv0*bbar0 - y[0];
-//      if(o.maxStep>0. && length(step)>o.maxStep)  step *= o.maxStep/length(step);
+//      if(o.stepMax>0. && length(step)>o.stepMax)  step *= o.stepMax/length(step);
 //      y[0]() += step;
 //      //y[0] = Bbarinv0*bbar0;
 //      fy_from_V0 = cbar - scalarProduct(bbar0, Bbarinv0 * bbar0);
 //    }
 //    for(uint t=0; t<T; t++) {
 //      step = Bbarinv[t]*(bbar[t] - (~fij(t).C)*y[t]) - y[t+1];
-//      if(o.maxStep>0. && length(step)>o.maxStep)  step *= o.maxStep/length(step);
+//      if(o.stepMax>0. && length(step)>o.stepMax)  step *= o.stepMax/length(step);
 //      y[t+1]() += step;
 //      //y[t+1] = Bbarinv[t]*(bbar[t] - (~fij(t).C)*y[t]);
 //    }
@@ -421,7 +421,7 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
 //      f_loc.x = x[t];
 //      f_loc.updateR=false;
 //      OptOptions op;
-//      op.stopTolerance=o.stopTolerance, op.stopEvals=10, op.maxStep=o.maxStep, op.verbose=0;
+//      op.stopTolerance=o.stopTolerance, op.stopEvals=10, op.stepMax=o.stepMax, op.verbose=0;
 //      NIY//optNewton(y[t](), f_loc, op);
 
 //      sanityCheckUptodatePotentials(Ry, f, y);

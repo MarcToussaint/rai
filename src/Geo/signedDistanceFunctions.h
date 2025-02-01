@@ -34,7 +34,7 @@ struct SDF : ScalarFunction {
   void animateSlices(const arr& lo, const arr& hi, double wait=0.);
   void view(double wait=0.);
 
-  arr projectNewton(const arr& x0, double maxStep=.1, double regularization=1e-1);
+  arr projectNewton(const arr& x0, double stepMax=.1, double regularization=1e-1);
 
   virtual void write(std::ostream& os) const { NIY; }
   virtual void read(std::istream& is) { NIY; }

@@ -125,10 +125,13 @@ void Problem::load(str problem){
 
     //3: pick
     manip->grasp_cylinder(3., gripper, stick, palm);
-    manip->no_collision({2.,3.}, {"l_panda_coll5", obj,
-                               "l_panda_coll6", obj,
-                               "l_panda_coll7", obj,
-                               "l_palm", obj}, .02);
+    manip->no_collision({2.,4.}, {"l_panda_coll2", obj,
+                                   "l_panda_coll3", obj,
+                                   "l_panda_coll4", obj,
+                                   "l_panda_coll5", obj,
+                                   "l_panda_coll6", obj,
+                                   "l_panda_coll7", obj,
+                                   "l_palm", obj}, .02);
 
     //3,4: carry
     manip->komo->addModeSwitch({3., -1.}, rai::SY_stable, {gripper, stick}, true);

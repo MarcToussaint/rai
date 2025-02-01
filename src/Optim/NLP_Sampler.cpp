@@ -102,7 +102,7 @@ bool NLP_Sampler::step_hit_and_run() {
 }
 
 /*
-bool NLP_Sampler::step_hit_and_run_old(double maxStep) {
+bool NLP_Sampler::step_hit_and_run_old(double stepMax) {
   ensure_eval();
   Eval ev0 = ev;
 
@@ -113,7 +113,7 @@ bool NLP_Sampler::step_hit_and_run_old(double maxStep) {
 
   boundClip(x, nlp->bounds);
 
-  LineSampler LS(2.*maxStep);
+  LineSampler LS(2.*stepMax);
   LS.clip_beta(nlp->bounds[0] - x, -dir); //cut with lower bound
   LS.clip_beta(x - nlp->bounds[1], dir); //cut with upper bound
   LS.add_constraints(a*ev.g + ev.Jg*(x-a*ev.x), ev.Jg*dir);
@@ -174,7 +174,7 @@ bool NLP_Sampler::step_hit_and_run_old(double maxStep) {
 }
 */
 
-bool NLP_Sampler::step_GaussNewton(bool slackMode, double penaltyMu, double alpha, double maxStep, double lambda) {
+bool NLP_Sampler::step_GaussNewton(bool slackMode, double penaltyMu, double alpha, double stepMax, double lambda) {
   ensure_eval();
   store_eval();
 
@@ -199,10 +199,10 @@ bool NLP_Sampler::step_GaussNewton(bool slackMode, double penaltyMu, double alph
 
   //adapt step size
   if(alpha<0.) alpha = opt.slackStepAlpha;
-  if(maxStep<0.) maxStep = opt.slackMaxStep;
+  if(stepMax<0.) stepMax = opt.slackMaxStep;
   delta *= alpha;
   double l = length(delta);
-  if(l>maxStep) delta *= maxStep/l;
+  if(l>stepMax) delta *= stepMax/l;
 
   //apply
   x += delta;
@@ -211,7 +211,7 @@ bool NLP_Sampler::step_GaussNewton(bool slackMode, double penaltyMu, double alph
   return true;
 }
 
-void NLP_Sampler::step_PlainGrad(bool slackMode, double penaltyMu, double alpha, double maxStep) {
+void NLP_Sampler::step_PlainGrad(bool slackMode, double penaltyMu, double alpha, double stepMax) {
   ensure_eval();
   store_eval();
 
@@ -225,10 +225,10 @@ void NLP_Sampler::step_PlainGrad(bool slackMode, double penaltyMu, double alpha,
 
   //adapt step size
   if(alpha<0.) alpha = opt.slackStepAlpha;
-  if(maxStep<0.) maxStep = opt.slackMaxStep;
+  if(stepMax<0.) stepMax = opt.slackMaxStep;
   delta *= alpha;
   double l = length(delta);
-  if(l>maxStep) delta *= maxStep/l;
+  if(l>stepMax) delta *= stepMax/l;
 
   //apply
   x += delta;

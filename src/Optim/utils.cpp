@@ -102,9 +102,9 @@ void NLP_LinTransformed::evaluate(arr& phi, arr& J, const arr& x) {
 //  WRT(stopTolerance);
 //  WRT(stopEvals);
 //  WRT(stopIters);
-//  WRT(initStep);
+//  WRT(stepInit);
 //  WRT(minStep);
-//  WRT(maxStep);
+//  WRT(stepMax);
 //  WRT(damping);
 //  WRT(stepInc);
 //  WRT(stepDec);
@@ -143,7 +143,7 @@ uint optGradDescent(arr& x, const ScalarFunction& f, rai::OptOptions o) {
   uint evals=0;
   arr y, grad_x, grad_y;
   double fx, fy;
-  double a=o.initStep;
+  double a=o.stepInit;
 
   fx = f(grad_x, NoArr, x);  evals++;
   if(o.verbose>1) cout <<"*** optGradDescent: starting point x=" <<(x.N<20?x:arr()) <<" f(x)=" <<fx <<" a=" <<a <<endl;
@@ -166,7 +166,7 @@ uint optGradDescent(arr& x, const ScalarFunction& f, rai::OptOptions o) {
       fx = fy;
       grad_x = grad_y/length(grad_y);
       a *= 1.2;
-      if(o.maxStep>0. && a>o.maxStep) a = o.maxStep;
+      if(o.stepMax>0. && a>o.stepMax) a = o.stepMax;
       if(o.verbose>0) fil <<evals <<' ' <<eval_count <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;
       if(step<o.stopTolerance) break;
     } else {

@@ -219,7 +219,7 @@ PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const a
   OptNewton newton(x, f, rai::OptOptions()
                    .set_verbose(0)
                    .set_stopTolerance(1e-4)
-                   .set_maxStep(1.)
+                   .set_stepMax(1.)
                    .set_damping(1e-10));
   newton.run();
 

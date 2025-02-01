@@ -10,7 +10,7 @@
 
 LocalModelBasedOptim::LocalModelBasedOptim(arr& _x, const ScalarFunction& _f,  OptOptions _o)
   : x_init(_x), f(_f), best(nullptr), o(_o), it(0), evals(0), numTinySteps(0) {
-  alpha = o.initStep;
+  alpha = o.stepInit;
 }
 
 LocalModelBasedOptim::~LocalModelBasedOptim() {

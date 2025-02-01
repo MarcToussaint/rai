@@ -277,7 +277,7 @@ void MNode::solvePathProblem(uint microSteps, int verbose) {
   Convert cvt(*pathProblem);
 
   if(!pathProblem->dim_g_h()) {
-//    optNewton(path, cvt, OPT(verbose=2, stopIters=100, maxStep=.1, stepInc=1.1, stepDec=0.7 , damping=1., allowOverstep=true));
+//    optNewton(path, cvt, OPT(verbose=2, stopIters=100, stepMax=.1, stepInc=1.1, stepDec=0.7 , damping=1., allowOverstep=true));
     OptNewton opt(path, cvt, OPT(verbose=2));
     opt.run();
     pathCost = opt.fx;

@@ -59,7 +59,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr* addRegularizer, do
     } else {
       Delta = lapack_Ainv_b_sym(R, -gx);
     }
-    if(o.maxStep>0. && absMax(Delta)>o.maxStep)  Delta *= o.maxStep/absMax(Delta);
+    if(o.stepMax>0. && absMax(Delta)>o.stepMax)  Delta *= o.stepMax/absMax(Delta);
     if(o.verbose>1) cout <<" \t|Delta|=" <<absMax(Delta) <<flush;
 
     //lazy stopping criterion: stop without any update

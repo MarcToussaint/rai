@@ -305,7 +305,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F) {
     OptNewton newton(x, f, rai::OptOptions()
                      .set_verbose(0)
                      .set_stopTolerance(1e-5)
-                     .set_maxStep(1.)
+                     .set_stepMax(1.)
                      .set_damping(1e-10));
     newton.setBounds(arr{{2,4}, {0., 0., 0., 0., -1., -1., -1., 1}});
     newton.run();
@@ -367,7 +367,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F) {
     OptNewton newton(x, f, rai::OptOptions()
                      .set_verbose(0)
                      .set_stopTolerance(1e-5)
-                     .set_maxStep(1.)
+                     .set_stepMax(1.)
                      .set_damping(1e-10));
     newton.run();
 

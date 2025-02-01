@@ -111,7 +111,7 @@ std::shared_ptr<SolverReturn> ShortPathMPC::solve(bool alsoVels, int verbose) {
       .setSolver(NLPS_newton);
       solver.opt
       .set_stopTolerance(1e-4)
-      .set_maxStep(1e0)
+      .set_stepMax(1e0)
       .set_damping(1e-2);
       auto ret = solver.solve();
       timingProblem.getVels(vels);

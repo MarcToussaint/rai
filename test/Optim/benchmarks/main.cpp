@@ -44,30 +44,33 @@ void TEST(Skeleton_Handover) {
 
 //===========================================================================
 
-void test(str problemName){
+void test(str problemName, bool fullyUniform=false){
   uint s=0;
-  for(uint k=0;k<20;k++){
-  Problem P;
-  P.load(problemName);
+  for(uint k=0;k<1;k++){
+    Problem P;
+    P.load(problemName);
 
-  NLP_Solver S;
-  S.setProblem(P.nlp);
-  S.setSolver(NLPS_slackGN);
-#if 0
-    S.setInitialization(P.nlp->getUniformSample());
-    P.komo->pathConfig.setJointState(S.x);
-#else
-    P.komo->initRandom();
-    S.setInitialization(P.nlp->getInitializationSample());
-#endif
-    // P.komo->view(true);
-    auto ret = S.solve();
-    cout <<*ret <<endl;
-    //cout <<P.komo->report() <<endl;
-    P.komo->view(ret->feasible);
-    if(ret->feasible){
-      P.komo->get_viewer()->visualsOnly();
-      P.komo->view_play(false, 0, .2, STRING("z."<<s++<<".vid/"));
+    for(uint i=0;i<20;i++){
+      NLP_Solver S;
+      S.setProblem(P.nlp);
+      S.setSolver(NLPS_slackGN);
+      if(fullyUniform){
+        S.setInitialization(P.nlp->getUniformSample());
+        P.komo->pathConfig.setJointState(S.x);
+      }else{
+        P.komo->initRandom();
+        S.setInitialization(P.nlp->getInitializationSample());
+      }
+
+      // P.komo->view(true);
+      auto ret = S.solve();
+      cout <<*ret <<endl;
+      //cout <<P.komo->report() <<endl;
+      P.komo->view(ret->feasible);
+      if(ret->feasible){
+        P.komo->get_viewer()->visualsOnly();
+        P.komo->view_play(false, 0, .2, STRING("z."<<s++<<".vid/"));
+      }
     }
   }
   // P.nlp->report(cout, 10);
@@ -85,9 +88,9 @@ int MAIN(int argc,char** argv){
   // testKOMO_IK();
   // testSkeleton_Handover();
 
-  // test("IK-obstacle");
-  // test("push");
-  test("stableSphere");
+  // test("IK-obstacle", true);
+  test("push");
+  // test("stableSphere");
 
   return 0;
 }

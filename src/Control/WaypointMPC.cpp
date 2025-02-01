@@ -35,7 +35,7 @@ std::shared_ptr<SolverReturn> WaypointMPC::solve(int verbose) {
   opt
   .set_verbose(0)
   .set_damping(1e1)
-  .set_maxStep(0.1)
+  .set_stepMax(0.1)
   .set_stopTolerance(1e-3)
   .set_stopEvals(200);
   komo.opt.verbose=0;

@@ -81,7 +81,7 @@ ActStatus CtrlTarget_MaxCarrot::step(double tau, CtrlObjective* o, const arr& y_
 //===========================================================================
 
 CtrlTarget_PathCarrot::CtrlTarget_PathCarrot(const arr& path, double maxDistance, double _endTime)
-  : maxStep(maxDistance), endTime(_endTime), time(0.) {
+  : stepMax(maxDistance), endTime(_endTime), time(0.) {
   CHECK_EQ(path.nd, 2, "need a properly shaped path!");
   arr times(path.d0);
   for(uint i=0; i<path.d0; i++) times.elem(i) = endTime*double(i)/double(times.N-1);
@@ -89,7 +89,7 @@ CtrlTarget_PathCarrot::CtrlTarget_PathCarrot(const arr& path, double maxDistance
 }
 
 CtrlTarget_PathCarrot::CtrlTarget_PathCarrot(const arr& path, double maxDistance, const arr& times)
-  : maxStep(maxDistance), endTime(times.last()), time(0.) {
+  : stepMax(maxDistance), endTime(times.last()), time(0.) {
   spline.set(2, path, times);
 }
 
@@ -103,15 +103,15 @@ ActStatus CtrlTarget_PathCarrot::step(double tau, CtrlObjective* o, const arr& y
   double d1 = length(y_raw-ref);
   double d2 = length(ref-goal);
 
-  if(d1 > maxStep) {
+  if(d1 > stepMax) {
     //don't move foreward at all!
     goal = ref;
     tau = 0.;
     isTransient=true;
     countInRange=0;
     countBlocked++;
-  } else if(d1+d2 > maxStep) {
-    double factor = (maxStep-d1)/d2;
+  } else if(d1+d2 > stepMax) {
+    double factor = (stepMax-d1)/d2;
     tau *= factor;
     goal = spline.eval(time + tau);
     isTransient=true;

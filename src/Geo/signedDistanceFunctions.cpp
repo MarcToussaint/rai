@@ -67,7 +67,7 @@ void SDF::animateSlices(const arr& lo, const arr& hi, double wait) {
   }
 }
 
-arr SDF::projectNewton(const arr& x0, double maxStep, double regularization) {
+arr SDF::projectNewton(const arr& x0, double stepMax, double regularization) {
   ScalarFunction distSqr = [this, &x0, regularization](arr& g, arr& H, const arr& x) {
     double d = f(g, H, x);
     if(!!H) H *= 2.*d;
@@ -90,7 +90,7 @@ arr SDF::projectNewton(const arr& x0, double maxStep, double regularization) {
 
   OptNewton newton(y, distSqr, rai::OptOptions()
                    .set_verbose(0)
-                   .set_maxStep(maxStep)
+                   .set_stepMax(stepMax)
                    .set_damping(1e-10));
   newton.run();
 

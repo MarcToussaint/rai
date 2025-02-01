@@ -16,7 +16,7 @@
 
 namespace rai {
 
-void SlackGaussNewton::step() {
+double SlackGaussNewton::step() {
   ev.eval(x, *this);
 
   //compute delta
@@ -27,9 +27,9 @@ void SlackGaussNewton::step() {
 
   //restrict stepsize
   double maxDelta = absMax(delta);
-  if(opt.maxStep>0. && maxDelta>opt.maxStep) {
-    delta *= opt.maxStep/maxDelta;
-    maxDelta = opt.maxStep;
+  if(opt.stepMax>0. && maxDelta>opt.stepMax) {
+    delta *= opt.stepMax/maxDelta;
+    maxDelta = opt.stepMax;
   }
 
   //apply
@@ -48,6 +48,12 @@ void SlackGaussNewton::step() {
     // nlp->report(cout, opt.verbose, STRING("phase1 iter: " <<iters <<" err: " <<::sum(ev.s)));
     // rai::wait(.1);
   }
+
+  return maxDelta;
+}
+
+SlackGaussNewton::SlackGaussNewton(const shared_ptr<NLP>& _nlp, const arr& x_init) : nlp(_nlp), x(x_init) {
+  if(opt.stopGTolerance<0.) opt.stopGTolerance=1e-3;
 }
 
 std::shared_ptr<SolverReturn> SlackGaussNewton::solve(){
@@ -72,11 +78,24 @@ std::shared_ptr<SolverReturn> SlackGaussNewton::solve(){
     }
 
     bool good;
+    uint numTinyXSteps=0, numTinyGSteps=0;
     for(;;) {
-      step();
-      // good = (::sum(ev.s)<=opt.tolerance);
-      good = ev.err(OT_ineq)<=opt.tolerance && ev.err(OT_eq)<1e-10;
-      if(good || evals>=opt.maxEvals || iters>=opt.maxEvals) break;
+      double errBefore = ::sum(ev.s);
+      double deltaX = step();
+      double errAfter = ::sum(ev.s);
+      if(errAfter>errBefore-opt.stopGTolerance) numTinyGSteps++; else numTinyGSteps=0;
+      if(deltaX<1e-2*opt.stopTolerance) numTinyXSteps++; else numTinyXSteps=0;
+
+      good = ev.err(OT_ineq)<=opt.stopGTolerance && ev.err(OT_eq)<=opt.stopGTolerance;
+
+#define STOPIF(expr) if(expr){ if(opt.verbose>1) cout <<"--slack-- stopping: '" <<#expr <<"'" <<endl; break; }
+      STOPIF(good)
+      //STOPIF(numTinyGSteps>(uint)opt.stopTinySteps)
+      //STOPIF(numTinyXSteps>(uint)opt.stopTinySteps)
+      STOPIF(evals>=(uint)opt.stopEvals)
+      STOPIF(iters>=(uint)opt.stopInners)
+#undef STOPIF
+
       iters++;
     }
 
@@ -85,7 +104,6 @@ std::shared_ptr<SolverReturn> SlackGaussNewton::solve(){
       cout <<"  s:" <<std::setw(11) <<::sum(ev.s);
       cout <<"  h:" <<std::setw(11) <<ev.err(OT_eq);
       cout <<"  g:" <<std::setw(11) <<ev.err(OT_ineq);
-      if(!good) cout <<" [exceeded maxEvals]";
       cout <<endl;
       // nlp->report(cout, 2+opt.verbose, STRING("sampling INIT, err: " <<::sum(ev.s)));
       // rai::wait(.1);
@@ -132,7 +150,7 @@ void SlackGaussNewton::Eval::eval(const arr& _x, SlackGaussNewton& walker) {
 
   // make positive errors
   for(uint i=0; i<s.N; i++){
-    if(ft(idx(i))==OT_ineq) s(i) += walker.opt.margin;
+    if(ft(idx(i))==OT_ineq) s(i) += walker.opt.interiorPadding;
     if(s(i)<0.) {
       if(ft(idx(i))==OT_ineq) {//ReLu for g
         s(i)=0.;

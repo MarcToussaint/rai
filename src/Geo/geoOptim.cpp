@@ -96,7 +96,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
                      .set_stopTolerance(1e-4)
                      .set_stopFTolerance(1e-3)
                      .set_damping(1)
-                     .set_maxStep(-1)
+                     .set_stepMax(-1)
                      .set_constrainedMethod(rai::augmentedLag)
                      .set_muInc(1.1)
                     );
@@ -261,7 +261,7 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
                      .set_stopTolerance(1e-4)
                      .set_stopFTolerance(1e-3)
                      .set_damping(1.)
-                     .set_maxStep(.1)
+                     .set_stepMax(.1)
                      .set_constrainedMethod(rai::augmentedLag)
                      .set_muInc(1.1)
                      .set_verbose(3)
@@ -589,7 +589,7 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
                      .set_stopTolerance(1e-4)
                      .set_stopFTolerance(1e-3)
                      .set_damping(1)
-                     .set_maxStep(-1)
+                     .set_stepMax(-1)
                      .set_constrainedMethod(rai::augmentedLag)
                      .set_muInc(1.1)
                     );
@@ -598,7 +598,7 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
                     .set_stopTolerance(1e-5)
                     .set_stopFTolerance(1e-5)
                     .set_damping(1e-0)
-                    .set_maxStep(-1)
+                    .set_stepMax(-1)
                     .set_muLBInit(1e1)
                    );
 #endif

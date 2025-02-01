@@ -18,7 +18,7 @@ TimingMPC::TimingMPC(const arr& _waypoints, double _timeCost, double _ctrlCost)
   tau = 10.*ones(waypoints.d0);
 
   opt .set_verbose(0)
-  .set_maxStep(1e0)
+  .set_stepMax(1e0)
   .set_stopTolerance(1e-4)
   .set_damping(1e-2);
 }

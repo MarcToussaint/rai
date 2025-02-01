@@ -218,7 +218,7 @@ double PathProblem::optimize(arr& x) {
 //  rndGauss(x,.01,true); //don't initialize at a singular config
 
   Conv_KOMO_ConstrainedProblem CP(MP.komo_problem);
-  OptConstrained opt(x, NoArr, CP, OPT(verbose=2, damping = 1e-1, stopTolerance=1e-2, maxStep=.5));
+  OptConstrained opt(x, NoArr, CP, OPT(verbose=2, damping = 1e-1, stopTolerance=1e-2, stepMax=.5));
   opt.run();
   cout <<MP.report();
 //  for(;;)

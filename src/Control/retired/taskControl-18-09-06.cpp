@@ -404,7 +404,7 @@ if(true || cost>10.) { //calling an optimizer!
     return c;
   };
   q_model = q_base;
-  optNewton(q_model, f, OPT(stopTolerance=1e-8, maxStep=1e-1, damping=1e1));
+  optNewton(q_model, f, OPT(stopTolerance=1e-8, stepMax=1e-1, damping=1e1));
 //    checkGradient(f, q_base, 1e-4);
   modelWorld().setJointState(q_model, qdot_model);
   modelWorld().stepSwift();

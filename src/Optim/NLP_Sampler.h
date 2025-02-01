@@ -94,8 +94,8 @@ private:
   void ensure_eval() { ev.eval(x, *this); }
   void store_eval() { ensure_eval(); ev_stored = ev; }
 
-  bool step_GaussNewton(bool slackStep, double penaltyMu=1., double alpha=-1., double maxStep=-1., double lambda=1e-2);
-  void step_PlainGrad(bool slackMode, double penaltyMu=1., double alpha=-1., double maxStep=-1.);
+  bool step_GaussNewton(bool slackStep, double penaltyMu=1., double alpha=-1., double stepMax=-1., double lambda=1e-2);
+  void step_PlainGrad(bool slackMode, double penaltyMu=1., double alpha=-1., double stepMax=-1.);
   bool step_hit_and_run();
   bool step_noise(double sig);
   bool step_noise_covariant(double sig, double penaltyMu=1., double lambda=1e0);
@@ -133,9 +133,9 @@ struct LineSampler {
   double beta_lo=-1e6, beta_up=1e6;
   double p_beta;
 
-  LineSampler(double maxStep=-1.) { if(maxStep>0.) init(maxStep); }
+  LineSampler(double stepMax=-1.) { if(stepMax>0.) init(stepMax); }
 
-  void init(double maxStep) { beta_lo=-maxStep; beta_up=maxStep; }
+  void init(double stepMax) { beta_lo=-stepMax; beta_up=stepMax; }
 
   double eval_beta(double beta);
 
