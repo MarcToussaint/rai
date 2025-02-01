@@ -1,4 +1,4 @@
-#include <KOMO/opt-benchmarks.h>
+#include <KOMO/testProblems_KOMO.h>
 #include <Optim/NLP_Solver.h>
 #include <KOMO/komo.h>
 #include <Kin/viewer.h>
@@ -50,7 +50,7 @@ void test(str problemName, bool fullyUniform=false){
     Problem P;
     P.load(problemName);
 
-    for(uint i=0;i<20;i++){
+    for(uint i=0;i<50;i++){
       NLP_Solver S;
       S.setProblem(P.nlp);
       S.setSolver(NLPS_slackGN);
@@ -88,9 +88,11 @@ int MAIN(int argc,char** argv){
   // testKOMO_IK();
   // testSkeleton_Handover();
 
-  // test("IK-obstacle", true);
-  test("push");
-  // test("stableSphere");
+  // test("IK", true);
+  test("IKobstacle", true);
+  // test("IKtorus", true);
+  // test("PushToReach");
+  // test("StableSphere");
 
   return 0;
 }

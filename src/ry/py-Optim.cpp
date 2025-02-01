@@ -12,7 +12,7 @@
 #include "../Optim/NLP_Factory.h"
 #include "../Optim/NLP_Solver.h"
 #include "../Optim/NLP_Sampler.h"
-#include "../KOMO/opt-benchmarks.h"
+#include "../KOMO/testProblems_KOMO.h"
 #include <pybind11/functional.h>
 #include <pybind11/iostream.h>
 

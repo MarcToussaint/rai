@@ -153,6 +153,7 @@ int ccdMPRPenetrationRai(const void *obj1, const void *obj2, const ccd_t *ccd,
     }
 
     if(simplex){
+      for(unsigned int i=0;i<8;i++) for(unsigned int j=0;j<3;j++) simplex[i].v[j]=0;
       for(unsigned int i=0;i<4;i++){
         simplex[0+i] = portal.ps[i].v1;
         simplex[4+i] = portal.ps[i].v2;

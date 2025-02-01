@@ -83,24 +83,19 @@ struct NLP_RandomLP : NLP {
 
 //===========================================================================
 
-struct ChoiceConstraintFunction : NLP {
-  enum WhichConstraint { none=0, wedge2D=1, halfcircle2D, randomLinear, circleLine2D, boundConstrained, boundConstrainedIneq } which;
-  uint n;
-  arr randomG;
-  ChoiceConstraintFunction();
-
+struct BoxNLP : NLP {
+  BoxNLP();
   void evaluate(arr& phi, arr& J, const arr& x);
-  void getFHessian(arr& H, const arr& x);
-//  virtual uint dim_g(){
-//    if(which==randomLinear) return ;
-//    if(which==wedge2D) return n;
-//    if(which==circleLine2D) return 1;
-//    return 2;
-//  }
-//  virtual uint dim_h(){
-//    if(which==circleLine2D) return 1;
-//    return 0;
-//  }
+};
+
+//===========================================================================
+
+struct ModesNLP : NLP {
+  arr cen;
+  arr radii;
+
+  ModesNLP();
+  void evaluate(arr& phi, arr& J, const arr& x);
 };
 
 //===========================================================================
@@ -208,5 +203,27 @@ struct NLP_CircleLine : NLP {
     phi.append(x(0));             if(!!J) { J.append(zeros(x.N)); J.elem(-x.N) = 1.; }
 //    phi.append(0.);             if(!!J) { J.append(zeros(x.N)); }
   }
+};
+
+//===========================================================================
+
+struct ChoiceConstraintFunction : NLP {
+  enum WhichConstraint { none=0, wedge2D=1, halfcircle2D, randomLinear, circleLine2D, boundConstrained, boundConstrainedIneq } which;
+  uint n;
+  arr randomG;
+  ChoiceConstraintFunction();
+
+  void evaluate(arr& phi, arr& J, const arr& x);
+  void getFHessian(arr& H, const arr& x);
+  //  virtual uint dim_g(){
+  //    if(which==randomLinear) return ;
+  //    if(which==wedge2D) return n;
+  //    if(which==circleLine2D) return 1;
+  //    return 2;
+  //  }
+  //  virtual uint dim_h(){
+  //    if(which==circleLine2D) return 1;
+  //    return 0;
+  //  }
 };
 

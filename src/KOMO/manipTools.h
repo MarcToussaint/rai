@@ -22,7 +22,7 @@ struct ManipulationModelling {
   arr path;
 
   ManipulationModelling(const str& _info={});
-  ManipulationModelling(const std::shared_ptr<KOMO>& _komo, const str& _info);
+  ManipulationModelling(const std::shared_ptr<KOMO>& _komo, const str& _info = str{});
 
   KOMO& k() { return *komo; }
 
@@ -42,7 +42,7 @@ struct ManipulationModelling {
 
   void straight_push(arr times, str obj, str gripper, str table);
 
-  void no_collision(const arr& time_interval, const StringA& pairs, double margin=.001);
+  void no_collision(const arr& time_interval, const StringA& pairs, double margin=.001, double scale=1e1);
   void freeze_joint(const arr& time_interval, const StringA& joints);
   void freeze_relativePose(const arr& time_interval, str to, str from);
 

@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "geoOptim.h"
+#include "testProblems_Geo.h"
 #include "../Optim/constrained.h"
 #include "../Optim/utils.h"
 #include "../Geo/qhull.h"

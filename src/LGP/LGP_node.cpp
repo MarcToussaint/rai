@@ -9,7 +9,7 @@
 #include "LGP_node.h"
 #include "LGP_tree.h"
 
-#include "../MCTS/solver_PlainMC.h"
+//#include "../MCTS/solver_PlainMC.h"
 #include "../KOMO/komo.h"
 #include "../KOMO/switch.h"
 #include "../Gui/opengl.h"
@@ -155,8 +155,8 @@ void LGP_Node::optBound(BoundType bound, bool useBroadCollisions, int verbose) {
   CHECK(comp, "no compute object returned");
 #endif
 
-  shared_ptr<KOMO>& komo = problem(bound).komo;
-  shared_ptr<SolverReturn>& ret = problem(bound).ret;
+  shared_ptr<KOMO> komo = problem(bound).komo;
+  shared_ptr<SolverReturn> ret = problem(bound).ret;
   komo->opt.verbose = rai::MAX(verbose, 0);
 
   //-- verbosity...

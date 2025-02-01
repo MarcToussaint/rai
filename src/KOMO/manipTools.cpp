@@ -330,12 +330,12 @@ void ManipulationModelling::straight_push(arr time_interval, str obj, str grippe
   freeze_relativePose({time_interval(1)}, gripper, obj);
 }
 
-void ManipulationModelling::no_collision(const arr& time_interval, const StringA& pairs, double margin) {
+void ManipulationModelling::no_collision(const arr& time_interval, const StringA& pairs, double margin, double scale) {
   /* inequality on distance between two objects */
   StringA _pairs = pairs.ref();
   _pairs.reshape(-1,2);
   for(uint i=0;i<_pairs.d0;i++){
-    k().addObjective(time_interval, FS_negDistance, _pairs[i], OT_ineq, {1e1}, {-margin});
+    k().addObjective(time_interval, FS_negDistance, _pairs[i], OT_ineq, {scale}, {-margin});
   }
 }
 

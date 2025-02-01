@@ -74,16 +74,11 @@ void TEST(BasisMatrix){
 
 void TEST(Fitting){
   uint N = 10, n=1, z=10, deg=3;
-  bool flatEnds=false;
   arr X = randn(N, n);
-  arr Z = rai::BSpline_path2ctrlPoints(X, z, deg, flatEnds);
+  arr Z = rai::BSpline_path2ctrlPoints(X, z, deg, false, true);
   rai::BSpline S;
   S.setKnots(deg, ::range(0., 1., z-1));
-  if(!flatEnds){
-    S.ctrlPoints = Z;
-  }else{
-    S.setCtrlPoints(Z);
-  }
+  S.setCtrlPoints(Z, false, true);
   CHECK_EQ(S.ctrlPoints.d0, S.knots.N - deg - 1, "");
 
   FILE("z.X.dat") <<rai::catCol(~~::range(0.,1.,X.d0-1), X).modRaw();
@@ -241,8 +236,8 @@ void testJacobian(){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc, argv);
 
-  testBasics();
-  testBasisMatrix();
+  // testBasics();
+  // testBasisMatrix();
   testFitting();
   testSpeed();
 

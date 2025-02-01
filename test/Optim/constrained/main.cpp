@@ -1,6 +1,6 @@
 //#include <Gui/opengl.h>
 
-#include <Optim/benchmarks.h>
+#include <Optim/testProblems_Opt.h>
 #include "problems.h"
 #include <Optim/constrained.h>
 #include <Optim/utils.h>

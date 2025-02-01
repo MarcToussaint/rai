@@ -14,31 +14,37 @@
 
 #include "../Optim/NLP.h"
 
+shared_ptr<KOMO> problem_IK();
+shared_ptr<KOMO> problem_IKobstacle();
+shared_ptr<KOMO> problem_IKtorus();
+shared_ptr<KOMO> problem_PushToReach();
+shared_ptr<KOMO> problem_StableSphere();
+
+//===========================================================================
+
 struct Problem{
-  rai::Configuration C;
-  std::shared_ptr<ManipulationModelling> manip;
   std::shared_ptr<KOMO> komo;
   std::shared_ptr<NLP> nlp;
 
   void load(str problem);
 };
 
-
 //===========================================================================
 
-struct BoxNLP : NLP {
-  BoxNLP();
-  void evaluate(arr& phi, arr& J, const arr& x);
-};
+//a set of spheres, confined in a box, and no collision, minimizing their height..
+struct SpherePacking : NLP{
+  arr x; //position of spheres
+  uint n;
+  double rad;
+  bool ineqAccum;
 
-//===========================================================================
+  rai::Configuration disp; //for reporting/display only
 
-struct ModesNLP : NLP {
-  arr cen;
-  arr radii;
+  SpherePacking(uint _n, double _rad, bool _ineqAccum=false);
 
-  ModesNLP();
-  void evaluate(arr& phi, arr& J, const arr& x);
+  void ineqAccumulation(uint phiIdx, arr& phi, arr& J, arr& g, const arr& Jg);
+  void evaluate(arr& phi, arr& J, const arr &_x);
+  void report(ostream &os, int verbose, const char *msg=0);
 };
 
 //===========================================================================

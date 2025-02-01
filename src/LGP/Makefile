@@ -2,7 +2,7 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-DEPEND = Logic KOMO MCTS PathAlgos Search
+DEPEND = Logic KOMO PathAlgos Search
 
 LAPACK = 1
 GL = 1

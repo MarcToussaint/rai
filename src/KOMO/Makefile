@@ -4,6 +4,7 @@ OUTPUT = lib$(NAME).so
 
 #OPTIM = debug
 
+#CXXFLAGS += -fno-stack-protector
 DEPEND = Core Geo Kin Optim PathAlgos Logic
 
 GL = 1

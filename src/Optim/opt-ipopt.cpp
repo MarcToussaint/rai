@@ -23,8 +23,9 @@ struct Conv_MP_Ipopt : Ipopt::TNLP {
   //-- buffers to avoid recomputing gradients
 
   Conv_MP_Ipopt(const shared_ptr<NLP>& P, const arr& x_init);
-
   virtual ~Conv_MP_Ipopt();
+
+  void ensure_eval(uint n, const double* _x, bool new_x);
 
   virtual bool get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g,
                             Ipopt::Index& nnz_h_lag, IndexStyleEnum& index_style);
@@ -63,13 +64,24 @@ struct Conv_MP_Ipopt : Ipopt::TNLP {
 Conv_MP_Ipopt::Conv_MP_Ipopt(const shared_ptr<NLP>& P, const arr& x_init) : P(P), x(x_init) {
   if(!P->checkBounds(true)) HALT("IPopt needs strict > bounds");
 
-  x = x_init;
-  P->evaluate(phi_x, J_x, x);
+  ensure_eval(x_init.N, x_init.p, true);
+  // x = x_init;
+  // P->evaluate(phi_x, J_x, x);
   CHECK(rai::isSparseMatrix(J_x), "");
   J_structure = J_x.sparse().elems;
 }
 
 Conv_MP_Ipopt::~Conv_MP_Ipopt() {}
+
+void Conv_MP_Ipopt::ensure_eval(uint n, const double* _x, bool new_x){
+  if(new_x) {
+    CHECK(_x, "");
+    CHECK_EQ(x.N, n, "");
+    x.setCarray(_x, n);
+    P->evaluate(phi_x, J_x, x);
+    if(!rai::isSparseMatrix(J_x)) J_x.sparse();
+  }
+}
 
 shared_ptr<SolverReturn> IpoptInterface::solve(const arr& x_init) {
   Ipopt::IpoptApplication opt;
@@ -172,10 +184,6 @@ bool Conv_MP_Ipopt::get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Numbe
 }
 
 bool Conv_MP_Ipopt::eval_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number& obj_value) {
-  if(new_x) {
-    x.setCarray(_x, n);
-    P->evaluate(phi_x, J_x, x);
-  }
 
   double f=0.;
   for(uint i=0; i<phi_x.N; i++) {
@@ -189,11 +197,7 @@ bool Conv_MP_Ipopt::eval_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, 
 }
 
 bool Conv_MP_Ipopt::eval_grad_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number* grad_f) {
-  if(new_x) {
-    CHECK(_x, "");
-    x.setCarray(_x, n);
-    P->evaluate(phi_x, J_x, x);
-  }
+  ensure_eval(n, _x, new_x);
 
   arr coeff=zeros(phi_x.N);
   for(uint i=0; i<phi_x.N; i++) {
@@ -213,11 +217,7 @@ bool Conv_MP_Ipopt::eval_grad_f(Ipopt::Index n, const Ipopt::Number* _x, bool ne
 }
 
 bool Conv_MP_Ipopt::eval_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Index m, Ipopt::Number* _g) {
-  if(new_x) {
-    CHECK(_x, "");
-    x.setCarray(_x, n);
-    P->evaluate(phi_x, J_x, x);
-  }
+  ensure_eval(n, _x, new_x);
 
   arr g;
   g.referTo(_g, m);
@@ -231,11 +231,7 @@ bool Conv_MP_Ipopt::eval_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, 
 }
 
 bool Conv_MP_Ipopt::eval_jac_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Index m, Ipopt::Index nele_jac, Ipopt::Index* iRow, Ipopt::Index* jCol, Ipopt::Number* values) {
-  if(new_x) {
-    CHECK(_x, "");
-    x.setCarray(_x, n);
-    P->evaluate(phi_x, J_x, x);
-  }
+  ensure_eval(n, _x, new_x);
 
   CHECK_EQ(phi_x.N, P->featureTypes.N, ""); //was evaluated
   CHECK(rai::isSparseMatrix(J_x), "");

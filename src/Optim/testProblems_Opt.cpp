@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "benchmarks.h"
+#include "testProblems_Opt.h"
 #include "lagrangian.h"
 
 #include <math.h>
@@ -226,6 +226,89 @@ NLP_Squared::NLP_Squared(uint _n, double condition, bool random) : n(_n) {
 //    C(0,1) = C(0,0);
 //    C(1,0) = -C(1,1);
   }
+}
+
+//===========================================================================
+
+BoxNLP::BoxNLP(){
+  dimension = rai::getParameter<uint>("problem/dim", 2);
+  featureTypes.resize(2*dimension);
+  featureTypes = OT_ineq;
+  bounds.resize(2, dimension);
+  bounds[0] = -2.;
+  bounds[1] = +2.;
+  if(rai::getParameter<bool>("problem/costs", false)){
+    featureTypes.append(rai::consts<ObjectiveType>(OT_sos,dimension));
+  }
+}
+
+void BoxNLP::evaluate(arr& phi, arr& J, const arr& x){
+  phi.resize(2*dimension);
+  phi({0,dimension-1}) = -(x + 1.);
+  phi({dimension,-1}) = x - 1.;
+
+  J.resize(phi.N, x.N).setZero();
+  for(uint i=0;i<dimension;i++){
+    J(i,i) = -1.;
+    J(dimension+i,i) = 1.;
+  }
+
+  if(featureTypes.N>2*dimension){
+    arr d = x;
+    //    if(d(0)>0.) d(0) -= 1.; else d(0) += 1.;
+    d -= ones(d.N);
+    double w = 2.;
+    phi.append(w*d);
+    J.append(w*eye(dimension));
+  }
+}
+
+//===========================================================================
+
+ModesNLP::ModesNLP(){
+  dimension = rai::getParameter<uint>("problem/dim", 2);
+  uint k = rai::getParameter<uint>("problem/modes", 5);
+  cen = randn(k, dimension);
+  cen.reshape(k, dimension);
+  radii = .2 +10*rand(k);
+
+#if 1
+  k = 1+(uint(1)<<dimension);
+  cen = randn(k, dimension);
+  radii = consts(.1, k);
+  cen[-1] = 0.;
+  radii(-1) = .5;
+  for(uint i=0;i<k-1;i++){
+    for(uint d=0;d<dimension;d++){
+      cen(i,d) = (i&(1<<d))? -1.: 1.;
+    }
+  }
+#endif
+
+  cen.reshape(-1, dimension);
+  featureTypes.resize(1);
+  featureTypes = OT_ineq;
+  bounds.resize(2,dimension);
+  bounds[0] = -1.2;
+  bounds[1] = +1.2;
+}
+
+void ModesNLP::evaluate(arr& phi, arr& J, const arr& x){
+  arr _x = x;
+  _x.J_setId();
+
+  uint k = cen.d0;
+  arrA y(k);
+  arr yval(k);
+  for(uint i=0;i<k;i++){
+    arr d = cen[i]-_x;
+    double s = 1./(radii(i)*radii(i));
+    y(i) = s * ~d*d - 1.;
+    yval(i) = y(i).scalar();
+  }
+
+  phi = y(argmin(yval));
+  J = phi.J_reset();
 }
 
 //===========================================================================
