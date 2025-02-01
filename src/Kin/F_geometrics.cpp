@@ -36,6 +36,18 @@ void F_AboveBox::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
+arr F_AlignWithDiff::phi(const FrameL& F){
+  CHECK_EQ(order, 1, "");
+  CHECK_EQ(F.N, 4, "");
+  arr v = F_Vector(ref).eval({F(0,0)});
+  arr d = F_Position().eval({F(1,1)}) - F_Position().eval({F(0,1)});
+  op_normalize(d, 1e-4);
+  arr y = d - v; //*(~v*d);
+  return y;
+}
+
+//===========================================================================
+
 void F_InsideBox::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.N, 2, "");
 

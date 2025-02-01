@@ -12,6 +12,7 @@
 #include "../Kin/frame.h"
 #include "../Kin/feature.h"
 #include "../Kin/F_pose.h"
+#include "../Kin/F_geometrics.h"
 
 #include "../Optim/NLP_Solver.h"
 #include "../Optim/NLP_Sampler.h"
@@ -58,7 +59,7 @@ void ManipulationModelling::setup_sequence(rai::Configuration& C, uint K, double
 
 void ManipulationModelling::setup_motion(rai::Configuration& C, uint K, uint steps_per_phase, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms){
   k().setTiming(double(K), steps_per_phase, 1., 2);
-  k().setConfig(C, accumulated_collisions);
+  k().setConfig(C, true); //accumulated_collisions);
   if(homing_scale>0.) k().addControlObjective({}, 0, homing_scale);
   k().addControlObjective({}, 2, acceleration_scale);
   if(accumulated_collisions) {
@@ -87,10 +88,11 @@ void ManipulationModelling::setup_pick_and_place_waypoints(rai::Configuration& C
 void ManipulationModelling::setup_point_to_point_motion(rai::Configuration& C, const arr& q1, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
   /* setup a 1 phase fine-grained motion problem with 2nd order (acceleration) control costs */
   CHECK(!komo->T, "komo already previously setup");
-  setup_motion(C, 1, 32, homing_scale, acceleration_scale, accumulated_collisions, joint_limits, quaternion_norms);
+  setup_motion(C, 1, 50, homing_scale, acceleration_scale, accumulated_collisions, joint_limits, quaternion_norms);
 
   if(q1.N){
-    k().initWithWaypoints({q1}, 1, true, .5, 0);
+    qTarget = q1;
+    k().initWithWaypoints({q1}, 1, true, (homing_scale>1e-2?.2:0.), 0);
     k().addObjective({1.}, FS_qItself, {}, OT_eq, {1e0}, q1);
   }
 }
@@ -267,23 +269,6 @@ void ManipulationModelling::place_box(double time, const char* obj, const char* 
   if(palm) k().addObjective({time-.3, time}, FS_distance, {palm, table}, OT_ineq, {1e1}, {-.001});
 }
 
-struct AlignWithDiff : Feature {
-  rai::Vector ref;
-  AlignWithDiff(const rai::Vector& _ref=Vector_x) : ref(_ref) { setOrder(1); }
-  virtual arr phi(const FrameL& F){
-    CHECK_EQ(order, 1, "");
-    CHECK_EQ(F.N, 4, "");
-    arr v = F_Vector(ref).eval({F(0,0)});
-    arr d = F_Position().eval({F(1,1)}) - F_Position().eval({F(0,1)});
-    op_normalize(d, 1e-4);
-    arr y = d - v; //*(~v*d);
-    return y;
-  }
-  virtual uint dim_phi(const FrameL& F) {
-    return 3;
-  }
-};
-
 void ManipulationModelling::straight_push(arr time_interval, str obj, str gripper, str table) {
   //start & end helper frames
   str helperStart = STRING("_straight_pushStart_" <<gripper <<"_" <<obj <<'_' <<time_interval(0));
@@ -310,7 +295,7 @@ void ManipulationModelling::straight_push(arr time_interval, str obj, str grippe
 #else
 
   //x-axis of A aligns with diff-pos of B AT END TIME! (always backward diff)
-  k().addObjective({time_interval(1)}, make_shared<AlignWithDiff>(Vector_y), {helperStart, obj}, OT_eq, {1e0}, {}, 1);
+  k().addObjective({time_interval(1)}, make_shared<F_AlignWithDiff>(Vector_y), {helperStart, obj}, OT_eq, {1e0}, {}, 1);
 #endif
 
   //gripper touch
@@ -561,10 +546,19 @@ void ManipulationModelling::play(rai::Configuration& C, double duration) {
   }
 }
 
-std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_motion(uint phase, bool fixEnd, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
+std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_motion(uint phase, bool fixEnd, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms, const StringA& activeDofs) {
   rai::Configuration C;
   arr q0, q1;
   k().getSubProblem(phase, C, q0, q1);
+
+  if(activeDofs.N){
+    DofL orgDofs = C.activeDofs;
+    C.selectJointsByName(activeDofs);
+    C.setDofState(q1, orgDofs);
+    q1 = C.getJointState();
+    C.setDofState(q0, orgDofs);
+    q0 = C.getJointState();
+  }
 
   if(!fixEnd) q1.clear();
 
