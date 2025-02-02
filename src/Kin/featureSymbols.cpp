@@ -189,6 +189,9 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
   else if(feat==FS_angularVel) { f=make_shared<F_AngVel>(); }
   else if(feat==FS_linangVel) { f=make_shared<F_LinAngVel>(); }
 
+  else if(feat==FS_AlignXWithDiff) { f=make_shared<F_AlignWithDiff>(Vector_x); }
+  else if(feat==FS_AlignYWithDiff) { f=make_shared<F_AlignWithDiff>(Vector_y); }
+
   else if(feat==FS_accumulatedCollisions) {
     f=make_shared<F_AccumulatedCollisions>(0.);
     if(!frames.N) f->frameIDs = framesToIndices(C.frames);

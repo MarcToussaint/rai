@@ -130,10 +130,10 @@ void testPush(){
     auto move0 = seq.sub_motion(0);
     move0->retractPush({.0, .15}, gripper, .03);
     move0->approachPush({.85, 1.}, gripper, .03);
-    move0->no_collision({.15,.85}, {obj, "l_finger1",
+    move0->no_collisions({.15,.85}, {obj, "l_finger1",
                                  obj, "l_finger2",
                                  obj, "l_palm"}, .02);
-    move0->no_collision({}, {table, "l_finger1",
+    move0->no_collisions({}, {table, "l_finger1",
                           table, "l_finger2"}, .0);
     move0->solve(2);
     if(!move0->ret->feasible) continue;

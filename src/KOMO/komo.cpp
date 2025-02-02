@@ -824,7 +824,7 @@ arr KOMO::getConfiguration_qAll(int t) {
 }
 
 arr KOMO::getConfiguration_qOrg(int t) {
-  return pathConfig.getDofState(pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t, 0)->ID), true, true)); //also inactive ones, as the orgJointIndices are explicit
+  return getConfiguration_dofs(t, orgJointIndices);
 }
 
 void KOMO::setConfiguration_qOrg(int t, const arr& q) {
@@ -877,6 +877,16 @@ arr KOMO::getPath_qOrg() {
   q.resizeCopy(T, q.N);
   for(uint t=1; t<T; t++) {
     q[t] = getConfiguration_qOrg(t);
+  }
+  return q;
+}
+
+arr KOMO::getPath(uintA dofIndices){
+  if(!dofIndices.N) dofIndices = orgJointIndices;
+  arr q = getConfiguration_dofs(0, dofIndices);
+  q.resizeCopy(T, q.N);
+  for(uint t=1; t<T; t++) {
+    q[t] = getConfiguration_dofs(t, dofIndices);
   }
   return q;
 }

@@ -103,12 +103,13 @@ void init_KOMO(pybind11::module& m) {
   .def("nlp", &KOMO::nlp, "return the problem NLP")
 
   //-- read out
-  .def("getT", [](std::shared_ptr<KOMO>& self) { return self->T; })
-  .def("getFrameState", &KOMO::getConfiguration_X)
-  .def("getPath", &KOMO::getPath_qOrg)
-  .def("getPath_qAll",  &KOMO::getPath_qAll)
-  .def("getPathFrames", &KOMO::getPath_X)
-  .def("getPathTau", &KOMO::getPath_tau)
+  .def("getT", [](std::shared_ptr<KOMO>& self) { return self->T; }, "")
+  .def("getFrameState", &KOMO::getConfiguration_X, "")
+  .def("getPath", &KOMO::getPath, "get path for selected dofs (default: all original config dofs)", pybind11::arg("dofIndices")=uintA{})
+  // .def("getPath", &KOMO::getPath_qOrg, "")
+  .def("getPath_qAll",  &KOMO::getPath_qAll, "")
+  .def("getPathFrames", &KOMO::getPath_X, "")
+  .def("getPathTau", &KOMO::getPath_tau, "")
   .def("getForceInteractions", [](std::shared_ptr<KOMO>& self) {
     rai::Graph G = self->pathConfig.reportForces();
     return graph2list(G);

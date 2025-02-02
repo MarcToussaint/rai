@@ -12,6 +12,7 @@
 #include "../Kin/frame.h"
 #include "../Kin/feature.h"
 #include "../Kin/F_pose.h"
+#include "../Kin/F_geometrics.h"
 
 #include "../Optim/NLP_Solver.h"
 #include "../Optim/NLP_Sampler.h"
@@ -58,8 +59,10 @@ void ManipulationModelling::setup_sequence(rai::Configuration& C, uint K, double
 
 void ManipulationModelling::setup_motion(rai::Configuration& C, uint K, uint steps_per_phase, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms){
   k().setTiming(double(K), steps_per_phase, 1., 2);
-  k().setConfig(C, accumulated_collisions);
-  if(homing_scale>0.) k().addControlObjective({}, 0, homing_scale);
+  k().setConfig(C, true); //accumulated_collisions);
+  if(homing_scale>0.){
+    k().addControlObjective({}, 0, homing_scale);
+  }
   k().addControlObjective({}, 2, acceleration_scale);
   if(accumulated_collisions) {
     k().addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e0});
@@ -87,15 +90,16 @@ void ManipulationModelling::setup_pick_and_place_waypoints(rai::Configuration& C
 void ManipulationModelling::setup_point_to_point_motion(rai::Configuration& C, const arr& q1, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
   /* setup a 1 phase fine-grained motion problem with 2nd order (acceleration) control costs */
   CHECK(!komo->T, "komo already previously setup");
-  setup_motion(C, 1, 32, homing_scale, acceleration_scale, accumulated_collisions, joint_limits, quaternion_norms);
+  setup_motion(C, 1, 50, homing_scale, acceleration_scale, accumulated_collisions, joint_limits, quaternion_norms);
 
   if(q1.N){
-    k().initWithWaypoints({q1}, 1, true, .5, 0);
+    qTarget = q1;
+    k().initWithWaypoints({q1}, 1, true, (homing_scale>1e-2?.2:0.), 0);
     k().addObjective({1.}, FS_qItself, {}, OT_eq, {1e0}, q1);
   }
 }
 
-void ManipulationModelling::add_helper_frame(rai::JointType type, const char* parent, const char* name, const char* initName, rai::Frame* initFrame, double markerSize) {
+void ManipulationModelling::add_stable_frame(rai::JointType type, const char* parent, const char* name, const char* initName, rai::Frame* initFrame, double markerSize) {
   rai::Frame* f = k().addFrameDof(name, parent, type, true, initName, initFrame);
   if(markerSize>0.){
     f->setShape(rai::ST_marker, {.1});
@@ -204,7 +208,7 @@ void ManipulationModelling::grasp_cylinder(double time, const char* gripper, con
 //  k().addObjective({time-.3,time}, FS_negDistance, {palm, obj}, OT_ineq, {1e1}, {-.001});
 //}
 
-//void ManipulationModelling::no_collision(const arr& times, const char* obj1, const char* obj2, double margin){
+//void ManipulationModelling::no_collisions(const arr& times, const char* obj1, const char* obj2, double margin){
 //  k().addObjective(times, FS_negDistance, {obj1, obj2}, OT_ineq, {1e1}, {-margin});
 //}
 
@@ -267,51 +271,18 @@ void ManipulationModelling::place_box(double time, const char* obj, const char* 
   if(palm) k().addObjective({time-.3, time}, FS_distance, {palm, table}, OT_ineq, {1e1}, {-.001});
 }
 
-struct AlignWithDiff : Feature {
-  rai::Vector ref;
-  AlignWithDiff(const rai::Vector& _ref=Vector_x) : ref(_ref) { setOrder(1); }
-  virtual arr phi(const FrameL& F){
-    CHECK_EQ(order, 1, "");
-    CHECK_EQ(F.N, 4, "");
-    arr v = F_Vector(ref).eval({F(0,0)});
-    arr d = F_Position().eval({F(1,1)}) - F_Position().eval({F(0,1)});
-    op_normalize(d, 1e-4);
-    arr y = d - v; //*(~v*d);
-    return y;
-  }
-  virtual uint dim_phi(const FrameL& F) {
-    return 3;
-  }
-};
-
 void ManipulationModelling::straight_push(arr time_interval, str obj, str gripper, str table) {
   //start & end helper frames
   str helperStart = STRING("_straight_pushStart_" <<gripper <<"_" <<obj <<'_' <<time_interval(0));
-  str helperEnd = STRING("_straight_pushEnd_" <<gripper <<"_" <<obj <<'_' <<time_interval(1));
   if(!k().world.getFrame(helperStart, false)){
     // add_helper_frame(rai::JT_hingeZ, table, helperStart, obj, 0, .3);
     rai::Frame* helper_frame = komo->addFrameDof(helperStart, obj, rai::JT_hingeZ, true);
     helper_frame->setAutoLimits();
     helper_frame->joint->sampleUniform=1.;
   }
-  // if(!k().world.getFrame(helperEnd, false))
-    // add_helper_frame(rai::JT_transXYPhi, table, helperEnd, obj, 0, .3);
-
-#if 0
-  //-- couple both frames symmetricaly
-  //aligned orientation
-  k().addObjective({time_interval(0)}, FS_vectorYDiff, {helperStart, helperEnd}, OT_eq, {1e1});
-  //aligned position
-  k().addObjective({time_interval(0)}, FS_positionRel, {helperEnd, helperStart}, OT_eq, 1e1*arr{{2, 3}, {1., 0., 0., 0., 0., 1.}});
-  k().addObjective({time_interval(0)}, FS_positionRel, {helperStart, helperEnd}, OT_eq, 1e1*arr{{2, 3}, {1., 0., 0., 0., 0., 1.}});
-  //at least 2cm appart, in positive!!! direction
-  k().addObjective({time_interval(0)}, FS_positionRel, {helperEnd, helperStart}, OT_ineq, -1e2*arr{{1, 3}, {0., 1., 0.}}, {.0, .02, .0});
-  k().addObjective({time_interval(0)}, FS_positionRel, {helperStart, helperEnd}, OT_ineq, 1e2*arr{{1, 3}, {0., 1., 0.}}, {.0, -.02, .0});
-#else
 
   //x-axis of A aligns with diff-pos of B AT END TIME! (always backward diff)
-  k().addObjective({time_interval(1)}, make_shared<AlignWithDiff>(Vector_y), {helperStart, obj}, OT_eq, {1e0}, {}, 1);
-#endif
+  k().addObjective({time_interval(1)}, make_shared<F_AlignWithDiff>(Vector_y), {helperStart, obj}, OT_eq, {1e0}, {}, 1);
 
   //gripper touch
   k().addObjective({time_interval(0)}, FS_negDistance, {gripper, obj}, OT_eq, {1e0}, {-.025});
@@ -323,15 +294,11 @@ void ManipulationModelling::straight_push(arr time_interval, str obj, str grippe
   k().addObjective({time_interval(0)}, FS_scalarProductYZ, {gripper, helperStart}, OT_ineq, {-1e0}, {.2});
   k().addObjective({time_interval(0)}, FS_vectorXDiff, {gripper, helperStart}, OT_eq, {1e0});
 
-  //obj end position
-  // k().addObjective({time_interval(1)}, FS_positionDiff, {obj, helperEnd}, OT_eq, {1e1});
-  //obj end orientation: unchanged
-  // k().addObjective({time_interval(1)}, FS_quaternion, {obj}, OT_eq, {1e1}, {}, 1); //qobjPose.rot.getArr4d());
   freeze_relativePose({time_interval(1)}, gripper, obj);
 }
 
-void ManipulationModelling::no_collision(const arr& time_interval, const StringA& pairs, double margin, double scale) {
-  /* inequality on distance between two objects */
+void ManipulationModelling::no_collisions(const arr& time_interval, const StringA& pairs, double margin, double scale) {
+  /* inequality on distance between pairs of objects */
   StringA _pairs = pairs.ref();
   _pairs.reshape(-1,2);
   for(uint i=0;i<_pairs.d0;i++){
@@ -347,18 +314,10 @@ void ManipulationModelling::freeze_relativePose(const arr& time_interval, str to
   komo->addObjective(time_interval, FS_poseRel, {to, from}, OT_eq, {1e1}, {}, 1);
 }
 
-void ManipulationModelling::switch_pick() {
-  /* a kinematic mode switch, where obj becomes attached to gripper, with freely parameterized but stable (=constant) relative pose */
-}
-
-void ManipulationModelling::switch_place() {
-  /* a kinematic mode switch, where obj becomes attached to table, with a 3D parameterized (XYPhi) stable relative pose
-     this requires obj and table to be boxes and assumes default placement alone z-axis
-     more general placements have to be modelled with switch_pick (table picking the object) and additinal user-defined geometric constraints */
-}
-
-void ManipulationModelling::target_position() {
-  /* impose a specific 3D target position on some object */
+void ManipulationModelling::snap_switch(double time, str parent, str obj){
+  /* a kinematic mode switch, where at given time the obj becomes attached to parent with zero relative transform
+     the parent is typically a stable_frame (i.e. a frame that has parameterized but stable (i.e. constant) relative transform) */
+  komo->addRigidSwitch(time, {parent, obj});
 }
 
 void ManipulationModelling::target_relative_xy_position(double time, const char* obj, const char* relativeTo, arr pos) {
@@ -382,7 +341,7 @@ void ManipulationModelling::retract(const arr& time_interval, const char* grippe
   auto helper = STRING("_" <<gripper <<"_retract_" <<time_interval(0));
   int t = conv_time2step(time_interval(0), k().stepsPerPhase);
   rai::Frame *f = k().timeSlices(k().k_order+t, k().world[gripper]->ID);
-  add_helper_frame(rai::JT_none, 0, helper, 0, f);
+  add_stable_frame(rai::JT_none, 0, helper, 0, f);
 //  k().view(true, helper);
 
   k().addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1, 3}, {1, 0, 0}});
@@ -394,7 +353,7 @@ void ManipulationModelling::approach(const arr& time_interval, const char* gripp
   auto helper = STRING("_" <<gripper <<"_approach_" <<time_interval(1));
   int t = conv_time2step(time_interval(1), k().stepsPerPhase);
   rai::Frame *f = k().timeSlices(k().k_order+t, k().world[gripper]->ID);
-  add_helper_frame(rai::JT_none, 0, helper, 0, f);
+  add_stable_frame(rai::JT_none, 0, helper, 0, f);
 //  k().view(true, helper);
 
   k().addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1, 3}, {1, 0, 0}});
@@ -406,7 +365,7 @@ void ManipulationModelling::retractPush(const arr& time_interval, const char* gr
   auto helper = STRING("_" <<gripper <<"_retractPush_"  <<time_interval(0));
   int t = conv_time2step(time_interval(0), k().stepsPerPhase);
   rai::Frame *f = k().timeSlices(k().k_order+t, k().world[gripper]->ID);
-  add_helper_frame(rai::JT_none, 0, helper, 0, f);
+  add_stable_frame(rai::JT_none, 0, helper, 0, f);
 //  k().addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1,3},{1,0,0}});
 //  k().addObjective(time_interval, FS_quaternionDiff, {gripper, helper}, OT_eq, {1e2});
   k().addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1, 3}, {1, 0, 0}});
@@ -421,52 +380,48 @@ void ManipulationModelling::approachPush(const arr& time_interval, const char* g
   auto helper = STRING("_" <<gripper <<"_approachPush_" <<time_interval(1));
   int t = conv_time2step(time_interval(1), k().stepsPerPhase);
   rai::Frame *f = k().timeSlices(k().k_order+t, k().world[gripper]->ID);
-  add_helper_frame(rai::JT_none, 0, helper, 0, f);
+  add_stable_frame(rai::JT_none, 0, helper, 0, f);
   k().addObjective(time_interval, FS_positionRel, {gripper, helper}, OT_eq, 1e2 * arr{{1, 3}, {1, 0, 0}});
   k().addObjective({time_interval(0)}, FS_positionRel, {gripper, helper}, OT_ineq, 1e2 * arr{{1, 3}, {0, 1, 0}}, {0., -dist, 0.});
   k().addObjective({time_interval(0)}, FS_positionRel, {gripper, helper}, OT_ineq, -1e2 * arr{{1, 3}, {0, 0, 1}}, {0., 0., dist});
 }
 
 arr ManipulationModelling::solve(int verbose) {
-  if(komo) {
-    NLP_Solver sol;
-    sol.setProblem(k().nlp());
-    sol.opt.set_damping(1e-1). set_verbose(verbose-1). set_stopTolerance(1e-3). set_lambdaMax(100.). set_stopInners(20). set_stopEvals(200);
-    ret = sol.solve();
-    if(ret->feasible) {
-      path = k().getPath_qOrg();
+  CHECK(komo, "komo is not setup");
+  NLP_Solver sol;
+  sol.setProblem(k().nlp());
+  sol.opt.set_damping(1e-1). set_verbose(verbose-1). set_stopTolerance(1e-3). set_lambdaMax(100.). set_stopInners(20). set_stopEvals(200);
+  ret = sol.solve();
+  if(ret->feasible) {
+    path = k().getPath_qOrg();
+  } else {
+    path.clear();
+  }
+  if(verbose>0) {
+    if(!ret->feasible) {
+      cout <<"  -- infeasible: " <<info <<"\n     " <<*ret <<endl;
+      cout <<k().report(false, true, verbose>1) <<endl;
+      cout <<"  --" <<endl;
+      if(verbose>1) {
+        cout <<sol.reportLagrangeGradients(k().featureNames) <<endl;
+      }
+      k().view(true, STRING("infeasible: " <<info <<"\n" <<*ret));
+      if(verbose>2) {
+        k().view_play(true, 0, 1.);
+      }
     } else {
-      path.clear();
-    }
-    if(verbose>0) {
-      if(!ret->feasible) {
-        cout <<"  -- infeasible: " <<info <<"\n     " <<*ret <<endl;
-        cout <<k().report(false, true, verbose>1) <<endl;
+      cout <<"  -- feasible: " <<info <<"\n     " <<*ret <<endl;
+      if(verbose>2) {
+        cout <<sol.reportLagrangeGradients(k().featureNames) <<endl;
+        cout <<k().report(false, true, verbose>2) <<endl;
+        rai::wait(.5);
         cout <<"  --" <<endl;
-        if(verbose>1) {
-          cout <<sol.reportLagrangeGradients(k().featureNames) <<endl;
-        }
-        k().view(true, STRING("infeasible: " <<info <<"\n" <<*ret));
-        if(verbose>2) {
+        k().view(true, STRING("feasible: " <<info <<"\n" <<*ret));
+        if(verbose>3) {
           k().view_play(true, 0, 1.);
-        }
-      } else {
-        cout <<"  -- feasible: " <<info <<"\n     " <<*ret <<endl;
-        if(verbose>2) {
-          cout <<sol.reportLagrangeGradients(k().featureNames) <<endl;
-          cout <<k().report(false, true, verbose>2) <<endl;
-          rai::wait(.5);
-          cout <<"  --" <<endl;
-          k().view(true, STRING("feasible: " <<info <<"\n" <<*ret));
-          if(verbose>3) {
-            k().view_play(true, 0, 1.);
-          }
         }
       }
     }
-
-  } else {
-    NIY
   }
   return path;
 }
@@ -561,10 +516,19 @@ void ManipulationModelling::play(rai::Configuration& C, double duration) {
   }
 }
 
-std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_motion(uint phase, bool fixEnd, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
+std::shared_ptr<ManipulationModelling> ManipulationModelling::sub_motion(uint phase, bool fixEnd, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms, const StringA& activeDofs) {
   rai::Configuration C;
   arr q0, q1;
   k().getSubProblem(phase, C, q0, q1);
+
+  if(activeDofs.N){
+    DofL orgDofs = C.activeDofs;
+    C.selectJointsByName(activeDofs);
+    C.setDofState(q1, orgDofs);
+    q1 = C.getJointState();
+    C.setDofState(q0, orgDofs);
+    q0 = C.getJointState();
+  }
 
   if(!fixEnd) q1.clear();
 

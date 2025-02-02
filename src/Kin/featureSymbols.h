@@ -70,6 +70,8 @@ enum FeatureSymbol : int {
   FS_qQuaternionNorms,
   FS_opposeCentral,
   FS_linangVel,
+  FS_AlignXWithDiff,
+  FS_AlignYWithDiff,
 
   FS_jointState = FS_qItself,
   FS_negDistance = FS_distance,

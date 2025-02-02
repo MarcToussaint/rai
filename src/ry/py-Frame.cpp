@@ -221,6 +221,14 @@ void init_enums(pybind11::module& m) {
 
   ENUMVAL(FS, transAccelerations)
   ENUMVAL(FS, transVelocities)
+
+  ENUMVAL(FS, qQuaternionNorms)
+  ENUMVAL(FS, opposeCentral)
+  ENUMVAL(FS, linangVel)
+
+  ENUMVAL(FS, AlignXWithDiff)
+  ENUMVAL(FS, AlignYWithDiff)
+
   ;
 
   pybind11::enum_<rai::SkeletonSymbol>(m, "SY")

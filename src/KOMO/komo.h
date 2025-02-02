@@ -177,6 +177,7 @@ struct KOMO : NonCopyable {
 
   arrA getPath_qAll();                            ///< get the DOFs (of potentially varying dimensionality) for each configuration
   arr getPath_qOrg();      ///< get joint path, optionally for selected joints
+  arr getPath(uintA dofIndices={});
   arr getPath_X();     ///< get frame path, optionally for selected frames
 
   arr getPath_tau();

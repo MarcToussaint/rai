@@ -111,6 +111,7 @@ void init_Config(pybind11::module& m) {
       )
 
   .def("getJointNames", &rai::Configuration::getJointNames, "get the list of joint names")
+  .def("getJointIDs", &rai::Configuration::getDofIDs, "get indeces (which are the indices of their frames) of all joints")
   .def("getJointDimension", &rai::Configuration::getJointStateDimension, "get the total number of degrees of freedom")
   .def("getJointState", [](shared_ptr<rai::Configuration>& self) {
     return self->getJointState();

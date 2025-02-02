@@ -19,6 +19,7 @@ struct ManipulationModelling {
 
   //solver buffers:
   std::shared_ptr<SolverReturn> ret;
+  arr qTarget;
   arr path;
 
   ManipulationModelling(const str& _info={});
@@ -33,7 +34,7 @@ struct ManipulationModelling {
   void setup_point_to_point_motion(rai::Configuration& C, const arr& q1, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true);
   void setup_point_to_point_rrt(rai::Configuration& C, const arr& q0, const arr& q1, const StringA& explicitCollisionPairs);
 
-  void add_helper_frame(rai::JointType type, const char* parent, const char* name, const char* initName=0, rai::Frame* initFrame=0, double markerSize=-1.);
+  void add_stable_frame(rai::JointType type, const char* parent, const char* name, const char* initName=0, rai::Frame* initFrame=0, double markerSize=-1.);
 
   void grasp_top_box(double time, const char* gripper, const char* obj, str grasp_direction="xz");
   void grasp_box(double time, const char* gripper, const char* obj, const char* palm, str grasp_direction="x", double margin=.02);
@@ -42,12 +43,11 @@ struct ManipulationModelling {
 
   void straight_push(arr times, str obj, str gripper, str table);
 
-  void no_collision(const arr& time_interval, const StringA& pairs, double margin=.001, double scale=1e1);
+  void no_collisions(const arr& time_interval, const StringA& pairs, double margin=.001, double scale=1e1);
   void freeze_joint(const arr& time_interval, const StringA& joints);
   void freeze_relativePose(const arr& time_interval, str to, str from);
 
-  void switch_pick();
-  void switch_place();
+  void snap_switch(double time, str parent, str obj);
 
   void target_position();
   void target_relative_xy_position(double time, const char* obj, const char* relativeTo, arr pos);
@@ -63,7 +63,7 @@ struct ManipulationModelling {
   arr sample(const char* sampleMethod=0, int verbose=1);
   void debug(bool listObjectives=true, bool plotOverTime=false);
 
-  std::shared_ptr<ManipulationModelling> sub_motion(uint phase, bool fixEnd=true, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false);
+  std::shared_ptr<ManipulationModelling> sub_motion(uint phase, bool fixEnd=true, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false, const StringA& activeDofs={});
   std::shared_ptr<rai::RRT_PathFinder> sub_rrt(uint phase, const StringA& explicitCollisionPairs= {}, const StringA& activeDofs={});
 
   void play(rai::Configuration& C, double duration=1.);

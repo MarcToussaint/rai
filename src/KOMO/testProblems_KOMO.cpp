@@ -43,9 +43,9 @@ shared_ptr<KOMO> problem_IKobstacle(){
   //    manip.grasp_cylinder(1., "l_gripper", "cylinder", "l_palm");
   manip->komo->addObjective({}, FS_positionDiff, {"l_gripper", "dot"}, OT_eq, {1e1});
   for(uint coll=3;coll<=7;coll++){
-    manip->no_collision({1.}, {STRING("l_panda_coll"<<coll), "obstacle"});
+    manip->no_collisions({1.}, {STRING("l_panda_coll"<<coll), "obstacle"});
   }
-  manip->no_collision({1.}, {"l_palm", "obstacle"});
+  manip->no_collisions({1.}, {"l_palm", "obstacle"});
 
   return manip->komo;
 }
@@ -72,7 +72,7 @@ shared_ptr<KOMO> problem_IKtorus(){
   // komo->addObjective({}, FS_negDistance, {"l_palm", "coll_torus"}, OT_ineq, {1e1});
 
   auto manip = make_shared<ManipulationModelling>(komo);
-  manip->no_collision({}, {"l_panda_coll1", "table",
+  manip->no_collisions({}, {"l_panda_coll1", "table",
                            "l_panda_coll2", "table",
                            "l_panda_coll3", "table",
                            "l_panda_coll4", "table",
@@ -120,12 +120,12 @@ shared_ptr<KOMO> problem_PushToReach(){
   // helper_frame->joint->sampleUniform=1.;
   manip->komo->addRigidSwitch(1., {"obj_trans", obj});
   manip->straight_push({1.,2.}, obj, gripper, table);
-  manip->no_collision({2.}, {stick, obj}, .02);
+  manip->no_collisions({2.}, {stick, obj}, .02);
   manip->freeze_joint({3., -1.}, {"obj_trans"});
 
   //3: pick
   manip->grasp_cylinder(3., gripper, stick, palm);
-  manip->no_collision({2.,4.}, {"l_panda_coll1", obj,
+  manip->no_collisions({2.,4.}, {"l_panda_coll1", obj,
                                  "l_panda_coll2", obj,
                                  "l_panda_coll3", obj,
                                  "l_panda_coll4", obj,
@@ -139,7 +139,7 @@ shared_ptr<KOMO> problem_PushToReach(){
 
   //4: touch
   manip->komo->addObjective({4.}, FS_negDistance, {stick, "dot"}, OT_eq, {1e1});
-  manip->no_collision({4.}, {stick, table,
+  manip->no_collisions({4.}, {stick, table,
                              palm, table}, .01);
 
   return manip->komo;
