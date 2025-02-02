@@ -329,7 +329,7 @@ void Conv_MP_Ipopt::finalize_solution(Ipopt::SolverReturn status, Ipopt::Index n
 
 #else
 
-arr IpoptInterface::solve(const arr& x_init) {
+shared_ptr<SolverReturn> IpoptInterface::solve(const arr& x_init) {
   NICO
 }
 
