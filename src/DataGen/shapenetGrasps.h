@@ -43,3 +43,5 @@ private:
   void addSceneGripper();
   bool addSceneObject(const char* file, int idx, bool rndPose=true, bool visual=false);
 };
+
+arr sampleGraspCandidate(rai::Configuration& C, const char *ptsFrame, const char* refFrame, double pregraspNormalSdv=.2, int verbose=1);

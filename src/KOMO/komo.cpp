@@ -1547,7 +1547,12 @@ void KOMO::plotPhaseTrajectory() {
 void KOMO::getSubProblem(uint phase, Configuration& C, arr& q0, arr& q1) {
   CHECK_EQ(stepsPerPhase, 1, "");
   getConfiguration_full(C, phase-1, 0);
-  if(!phase) C.selectJoints(DofL{}, true);
+  if(!phase){
+    // C.selectJoints(DofL{}, true);
+    DofL orgActives;
+    for(uint id:orgJointIndices) orgActives.append(C.frames(id)->joint);
+    C.selectJoints(orgActives);
+  }
   C.ensure_indexedJoints();
   DofL acts = C.activeDofs;
   for(rai::Dof* d:acts) {

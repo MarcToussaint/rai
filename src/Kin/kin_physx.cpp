@@ -1023,7 +1023,7 @@ void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& frameVelociti
 
     if(self->actorTypes(f->ID) == rai::BT_dynamic) {
       f->set_X() = conv_PxTrans2Transformation(a->getGlobalPose());
-      if(!!frameVelocities && a->getType() == PxActorType::eRIGID_DYNAMIC) {
+      if(!!frameVelocities && (a->getType() == PxActorType::eRIGID_DYNAMIC || PxActorType::eARTICULATION_LINK)) {
         PxRigidBody* px_body = (PxRigidBody*) a;
         frameVelocities(f->ID, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());
         frameVelocities(f->ID, 1, {}) = conv_PxVec3_arr(px_body->getAngularVelocity());

@@ -194,7 +194,7 @@ bool Configuration::operator!() const { return this==&NoConfiguration; }
 Frame* Configuration::addFrame(const char* name, const char* parent, const char* args, bool warnDuplicateName) {
   if(name && warnDuplicateName) { //check name duplication
     Frame* exists = getFrame(name, false);
-    if(exists) { LOG(-1) <<"frame already exists! returning existing without modifications!"; return exists; }
+    if(exists) { LOG(-1) <<"frame '" <<name <<"' already exists! returning existing without modifications!"; return exists; }
   }
 
   Frame* f = new Frame(*this);
@@ -297,6 +297,7 @@ Frame* Configuration::addH5Object(const char* framename, const char* filename, i
     rai::Frame *objMesh = addFrame(STRING(framename<<"_mesh"));
     objMesh->setParent(obj);
     objMesh->setMesh(pts, faces);
+    objMesh->setContact(0);
 
     if(H.exists("decomp/")){
       objMesh->getAts().add<bool>("simulate", false);
@@ -336,7 +337,7 @@ Frame* Configuration::addH5Object(const char* framename, const char* filename, i
     // obj->computeCompoundInertia();
     // obj->transformToDiagInertia();
 
-    // objMeshes->convertDecomposedShapeToChildFrames();
+    objDeomp->convertDecomposedShapeToChildFrames();
 
     if(verbose>0) LOG(0) <<"added " <<parts.N <<" convex-decomposed shapes in subframes";
   }

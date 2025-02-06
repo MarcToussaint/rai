@@ -84,7 +84,7 @@ FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _exclu
           model->addTriangle(Vec3f(&mesh.V(mesh.T(i, 0), 0)), Vec3f(&mesh.V(mesh.T(i, 1), 0)), Vec3f(&mesh.V(mesh.T(i, 2), 0)));
         model->endModel();
 #elif 1
-        CHECK(!mesh.cvxParts.N, "NIY")
+        CHECK(!mesh.cvxParts.N, "mesh '" <<shape->frame.name <<"' has convex decomposition - not implemented yet in FCL! -- please separate in separate frames")
         //rai::Mesh mesh;
         //mesh.V = mesh_org.V;
         //mesh.makeConvexHull();

@@ -90,13 +90,17 @@ bool ShapenetGrasps::addSceneObject(const char* file, int idx, bool rndPose, boo
 }
 
 arr ShapenetGrasps::sampleGraspPose(){
+    ::sampleGraspCandidate(C, "objPts0", "ref", opt.pregraspNormalSdv, opt.verbose);
+}
 
-  rai::Frame *objPts = C["objPts0"];
-  rai::Frame *ref = C["ref"];
+arr sampleGraspCandidate(rai::Configuration& C, const char *ptsFrame, const char* refFrame, double pregraspNormalSdv, int verbose){
+
+  rai::Frame *objPts = C[ptsFrame];
+  rai::Frame *ref = C[refFrame];
 
   for(uint s=0;;s++){
     if(s>100){ //repeated fail
-      if(opt.verbose>0){
+      if(verbose>0){
         LOG(0) <<" FAILED creating candidate";
       }
       return arr{};
@@ -115,11 +119,11 @@ arr ShapenetGrasps::sampleGraspPose(){
     rai::Quaternion rel;
     rel.setDiff(X.rot.getX(), n);
     rai::Quaternion noise;
-    noise.setVector(opt.pregraspNormalSdv*randn(3));
+    noise.setVector(pregraspNormalSdv*randn(3));
     X.rot = rel * X.rot * noise;
     ref->setRelativePose(X);
 
-    if(opt.verbose>0) C.view(opt.verbose>2, "random pick point");
+    if(verbose>0) C.view(verbose>2, "random pick point");
 
     //-- move the gripper to the ref pose, aligning poses, open gripper to .05
     rai::Transformation pose=ref->ensure_X();
@@ -134,12 +138,12 @@ arr ShapenetGrasps::sampleGraspPose(){
     C.ensure_proxies(true);
     double collisions = C.getTotalPenetration();
 
-    if(opt.verbose>0){
-      if(opt.verbose>2){
+    if(verbose>0){
+      if(verbose>2){
         C.reportProxies(cout, .0, false);
       }
-      C.view(opt.verbose>2, STRING("random pick pose " <<s <<" collisions: " <<collisions <<" bounds: " <<inBounds));
-      if(opt.verbose>1) rai::wait(.1);
+      C.view(verbose>2, STRING("random pick pose " <<s <<" collisions: " <<collisions <<" bounds: " <<inBounds));
+      if(verbose>1) rai::wait(.1);
     }
 
     //-- reject if too much collision
@@ -157,25 +161,25 @@ arr ShapenetGrasps::sampleGraspPose(){
     q.append(q(-1)); //for the mimic joint..
     komo.addObjective({}, FS_qItself, {}, OT_sos, {1e0}, q);
     komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e2});
-    komo.addObjective({}, FS_oppose, {"dotA", "dotB", "objPts0"}, OT_sos, {1e1});
+    komo.addObjective({}, FS_oppose, {"dotA", "dotB", ptsFrame}, OT_sos, {1e1});
     //      komo.addObjective({}, FS_distance, {"dotA", "objPts"}, OT_sos, {1e2}, {-.01});
     //      komo.addObjective({}, FS_distance, {"dotB", "objPts"}, OT_sos, {1e2}, {-.01});
 
     //komo.view(true, "init");
     //-- solve and display
-    auto ret = NLP_Solver(komo.nlp(), opt.optVerbose).setInitialization(C.getJointState()) .solve();
+    auto ret = NLP_Solver(komo.nlp(), verbose).setInitialization(C.getJointState()) .solve();
     //komo.nlp()->checkJacobian(ret->x, 1e-4, komo.featureNames);
     C.setJointState(komo.getConfiguration_qOrg(0));
 
-    if(opt.verbose>0){
+    if(verbose>0){
       cout <<"  refinement: " <<*ret <<endl;
-      if(opt.verbose>2){
+      if(verbose>2){
         cout <<komo.report() <<endl;
         cout <<komo.pathConfig.reportForces() <<endl;
         //    komo.view(true);
       }
-      C.view(opt.verbose>2, "fine tuned pregrasp");
-      if(opt.verbose>1) rai::wait(.1);
+      C.view(verbose>2, "fine tuned pregrasp");
+      if(verbose>1) rai::wait(.1);
     }
 
     //-- reject if not precise
@@ -186,15 +190,15 @@ arr ShapenetGrasps::sampleGraspPose(){
     break;
   }
 
-  if(opt.verbose>0){
-    if(opt.verbose>2){
+  if(verbose>0){
+    if(verbose>2){
       C.ensure_proxies(true);
       C.reportProxies(std::cout, .01);
     }
-    C.view(opt.verbose>1, STRING("proposed grasp"));
+    C.view(verbose>1, STRING("proposed grasp"));
   }
 
-  rai::Transformation relGripperPose = C["gripper"]->ensure_X()/C["objPts0"]->ensure_X();
+  rai::Transformation relGripperPose = C["gripper"]->ensure_X()/C[ptsFrame]->ensure_X();
   return relGripperPose.getArr7d();
 }
 

@@ -19,6 +19,15 @@ void init_DataGen(pybind11::module& m) {
 
   pybind11::module_ mod = m.def_submodule("DataGen", "rai data generators");
 
+  mod.def("sampleGraspCandidate", &::sampleGraspCandidate, "sample random grasp candidates on an object represented as points",
+          pybind11::arg("C"),
+          pybind11::arg("ptsFrame"),
+          pybind11::arg("refFrame"),
+          pybind11::arg("pregraspNormalSdv")=.2,
+          pybind11::arg("verbose")=1);
+
+  //===========================================================================
+
   pybind11::class_<ShapenetGrasps, std::shared_ptr<ShapenetGrasps>>(mod, "ShapenetGrasps", "A generator of random grasps on random shapenet objects")
 
       .def(pybind11::init<>())

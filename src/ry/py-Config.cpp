@@ -59,6 +59,16 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("namePrefix") = nullptr
       )
 
+  .def("addH5Object", [](shared_ptr<rai::Configuration>& self, const char* framename, const char* filename, int verbose) {
+        rai::Frame* f = self->addH5Object(framename, filename, verbose);
+        return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!
+      },
+           "add the contents of the file to C",
+           pybind11::arg("framename"),
+           pybind11::arg("filename"),
+           pybind11::arg("verbose") = 0
+           )
+
   .def("addFrame", [](shared_ptr<rai::Configuration>& self, const std::string& name, const std::string& parent, const std::string& args) {
     rai::Frame* f = self->addFrame(name.c_str(), parent.c_str(), args.c_str());
     return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!
@@ -398,7 +408,11 @@ reloads, displays and animates the configuration whenever the file is changed"
 
 //===========================================================================
 
-  pybind11::class_<rai::ConfigurationViewer, shared_ptr<rai::ConfigurationViewer>>(m, "ConfigurationViewer", "internal viewer handle (gl window)");
+  pybind11::class_<rai::ConfigurationViewer, shared_ptr<rai::ConfigurationViewer>>(m, "ConfigurationViewer", "internal viewer handle (gl window)")
+
+    .def("visualsOnly", &rai::ConfigurationViewer::visualsOnly, "display only visuals (no markers/transparent/text)", pybind11::arg("_visualsOnly")=true)
+    .def("savePng", &rai::ConfigurationViewer::savePng, "save enumerated pngs in a path - for video making", pybind11::arg("saveVideoPath")="z.vid/", pybind11::arg("count")=-1)
+  ;
 
 }
 
