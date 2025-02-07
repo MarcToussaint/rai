@@ -12,6 +12,8 @@
 
 #include <H5Cpp.h>
 
+namespace rai {
+
 //===========================================================================
 
 template<class T> H5::DataType get_h5type();
@@ -45,6 +47,7 @@ template<class T> void H5_Writer::add(const char* name, const rai::Array<T>& x) 
 //===========================================================================
 
 H5_Reader::H5_Reader(const char* filename) {
+  CHECK(FileToken(filename).exists(), "file '" <<filename <<"' does not exist");
   file = make_shared<H5::H5File>(filename, H5F_ACC_RDONLY);
 }
 
@@ -142,3 +145,5 @@ template rai::Array<int16_t> H5_Reader::read<int16_t>(const char* name, bool ifE
 template rai::Array<uint16_t> H5_Reader::read<uint16_t>(const char* name, bool ifExists);
 template rai::Array<char> H5_Reader::read<char>(const char* name, bool ifExists);
 template rai::Array<byte> H5_Reader::read<byte>(const char* name, bool ifExists);
+
+}//namespace

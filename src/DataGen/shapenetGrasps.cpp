@@ -23,30 +23,33 @@ void ShapenetGrasps::clearScene(){
   ref->setColor({1.,1.,0.});
 }
 
-void ShapenetGrasps::addSceneGripper(){
-  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaFloatingGripper.g"));
+void ShapenetGrasps::resetObjectPose(int idx, bool rndOrientation){
+  rai::Frame *obj = C.getFrame(STRING("obj"<<idx));
+  if(rndOrientation) obj->set_X()->rot.setRandom();
+  obj->setPosition({double(idx),0.,1.});
 }
 
-bool ShapenetGrasps::addSceneObject(const char* file, int idx, bool rndPose, bool visual){
+bool ShapenetGrasps::addSceneObject(const char* file, int idx, bool rndOri, bool visual){
   LOG(0) <<"loading shapenet object " <<file;
-  H5_Reader H(file);
+#if 1
+  rai::Frame *obj = C.addH5Object(STRING("obj"<<idx), file, 2);
+  if(!obj) return false;
+  obj->inertia->scaleTo(.1);
+#else
+  rai::H5_Reader H(file);
 
-  rai::Frame *ref = C.getFrame("ref");
   rai::Frame *obj = C.addFrame(STRING("obj"<<idx));
 
   {
     arr pts = H.read<double>("points/vertices");
     arr normals = H.read<double>("points/normals");
 
-    rai::Frame *objPts = C.addFrame(STRING("objPts"<<idx));
+    rai::Frame *objPts = C.addFrame(obj->name+"_pts");
     objPts->setParent(obj);
     objPts->setPointCloud(pts, {}, normals);
 //    objPts->setMesh(pts);
     objPts->setContact(0);
     objPts->setColor({1., 0., 0., .9});
-
-    if(ref->parent) ref->unLink();
-    ref->setParent(objPts, false);
   }
 
   if(!visual){
@@ -55,17 +58,17 @@ bool ShapenetGrasps::addSceneObject(const char* file, int idx, bool rndPose, boo
     byteA colors = H.read<byte>("decomp/colors");
     uintA parts = H.read<uint>("decomp/parts");
 
-    rai::Frame *objMeshes = C.addFrame(STRING("objMeshes"<<idx));
-    objMeshes->setParent(obj);
-    objMeshes->setMesh(pts, faces, colors, parts);
-    objMeshes->setContact(1);
-    objMeshes->setMass(.1);
+    rai::Frame *objDecomp = C.addFrame(obj->name+"_decomp");
+    objDecomp ->setParent(obj);
+    objDecomp ->setMesh(pts, faces, colors, parts);
+    objDecomp ->setContact(1);
+    objDecomp ->setMass(.1);
 
     obj->computeCompoundInertia();
     obj->transformToDiagInertia();
 
-    objMeshes->convertDecomposedShapeToChildFrames();
-    if(!objMeshes->children.N){
+    objDecomp ->convertDecomposedShapeToChildFrames();
+    if(!objDecomp ->children.N){
       //there are no collision shapes
       return false;
     }
@@ -73,7 +76,7 @@ bool ShapenetGrasps::addSceneObject(const char* file, int idx, bool rndPose, boo
     arr pts = H.read<double>("mesh/vertices");
     uintA faces = H.read<uint>("mesh/faces");
 
-    rai::Frame *objMesh = C.addFrame(STRING("objMesh"<<idx));
+    rai::Frame *objMesh = C.addFrame(obj->name+"_mesh");
     objMesh->setParent(obj);
     objMesh->setMesh(pts, faces);
   }
@@ -82,15 +85,17 @@ bool ShapenetGrasps::addSceneObject(const char* file, int idx, bool rndPose, boo
     //obj transform is buggy (typically singular inertia)
     return false;
   }
+#endif
 
-  if(rndPose) obj->set_X()->setRandom();
-  obj->setPosition({double(idx),0.,1.});
+  // obj->setShape(rai::ST_marker, {.5});
+  resetObjectPose(idx, rndOri);
+  cout <<"loaded object inertia: " <<*obj->inertia <<endl;
 
   return true;
 }
 
 arr ShapenetGrasps::sampleGraspPose(){
-    ::sampleGraspCandidate(C, "objPts0", "ref", opt.pregraspNormalSdv, opt.verbose);
+    return ::sampleGraspCandidate(C, "obj0_pts", "ref", opt.pregraspNormalSdv, opt.verbose);
 }
 
 arr sampleGraspCandidate(rai::Configuration& C, const char *ptsFrame, const char* refFrame, double pregraspNormalSdv, int verbose){
@@ -178,7 +183,9 @@ arr sampleGraspCandidate(rai::Configuration& C, const char *ptsFrame, const char
         cout <<komo.pathConfig.reportForces() <<endl;
         //    komo.view(true);
       }
+      //C.get_viewer()->nonThreaded=true;
       C.view(verbose>2, "fine tuned pregrasp");
+      //C.get_viewer()->savePng();
       if(verbose>1) rai::wait(.1);
     }
 
@@ -281,7 +288,11 @@ arr ShapenetGrasps::evaluateGrasp(){
       //display
       if(opt.verbose>0){
         if(opt.verbose>1) rai::wait(opt.simTau);
-        if(!(t%10)) C.view(false, STRING("phase: " <<phase <<" t: " <<opt.simTau*t));
+        if(!(t%1)){
+          //C.get_viewer()->nonThreaded=true;
+          C.view(false, STRING("phase: " <<phase <<" t: " <<opt.simTau*t));
+          //C.get_viewer()->savePng();
+        }
       }
     }
 
@@ -299,28 +310,38 @@ arr ShapenetGrasps::evaluateGrasp(){
     C.view(opt.verbose>1, STRING("evaluation: " <<(succ?"success":"failure") <<" scores:\n" <<scores));
   }
 
+  C["floatBall"]->setJoint(rai::JT_quatBall);
+
   return scores;
 }
 
-bool ShapenetGrasps::loadObject(uint shape, bool rndPose){
+bool ShapenetGrasps::loadObject(uint shape, bool rndOrientation){
   clearScene();
   str file = opt.filesPrefix + files(shape);
-  bool succ = addSceneObject(file, 0, rndPose);
-  if(!succ) LOG(0) <<"loading object " <<shape <<" '" <<file <<"' failed";
-  addSceneGripper();
-  return succ;
+  bool succ = addSceneObject(file, 0, rndOrientation);
+  if(!succ){
+    LOG(0) <<"loading object " <<shape <<" '" <<file <<"' failed";
+    return false;
+  }
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaFloatingGripper.g"));
+
+  rai::Frame *ref = C.getFrame("ref");
+  if(ref->parent) ref->unLink();
+  ref->setParent(C.getFrame("obj0_pts"), false);
+
+  return true;
 }
 
 arr ShapenetGrasps::getPointCloud(){
-  rai::Frame * objPts = C["objPts0"];
+  rai::Frame * objPts = C["obj0_pts"];
   return objPts->getMeshPoints();
 }
 
 void ShapenetGrasps::getSamples(arr& X, uintA& shapes, arr& Scores, uint N){
-  if(opt.numShapes<0) opt.numShapes = files.N - opt.startShape;
+  if(opt.endShape<0) opt.endShape = files.N;
 
   for(uint n=0;n<N;){
-    uint shape = opt.startShape + rnd(opt.numShapes);
+    uint shape = opt.startShape + rnd(opt.endShape-opt.startShape);
     if(opt.verbose>0){
       cout <<"sample " <<n <<", shape " <<shape <<" (" <<files(shape) <<")" <<endl;
     }
@@ -329,6 +350,7 @@ void ShapenetGrasps::getSamples(arr& X, uintA& shapes, arr& Scores, uint N){
     bool succ = loadObject(shape, true);
     if(!succ) continue;
     if(opt.verbose>0) C.view(opt.verbose>2, STRING(shape <<"\nrandom obj pose"));
+    //if(!n) C.view(true);
 
     //== SAMPLE A RANDOM+REJECT+REFINE GRASP POSE
     arr relGripperPose = sampleGraspPose();
@@ -390,7 +412,7 @@ void ShapenetGrasps::displaySamples(const arr& X, const uintA& shapes, const arr
     uint idx=0;
     if(shape2place.find(shape) == shape2place.end()){
       idx = shape2place.size();
-      bool succ = addSceneObject(opt.filesPrefix+files(shape), idx, false, true);
+      bool succ = addSceneObject(opt.filesPrefix+files(shape), idx, false, false);
       CHECK(succ, "");
       shape2place[shape] = idx;
     }else{
@@ -399,11 +421,13 @@ void ShapenetGrasps::displaySamples(const arr& X, const uintA& shapes, const arr
 
     //add gripper relative to objPts-idx
     C.addCopy(Cgripper.frames, {});
-    setGraspPose(pose, STRING("objPts"<<idx));
+    setGraspPose(pose, STRING("obj"<<idx<<"_pts"));
 
     if(opt.verbose>0){
+      //C.get_viewer()->nonThreaded=true;
       if(Scores.N) C.view(opt.verbose>1, STRING("sample #" <<i << " score:\n" <<Scores[i]));
       else C.view(opt.verbose>1, STRING("sample #" <<i));
+      //for(uint k=0;k<20;k++) C.get_viewer()->savePng();
     }
   }
   C.view(true, STRING("display n:" <<N));

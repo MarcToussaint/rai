@@ -775,6 +775,12 @@ void rai::String::replace(uint i, uint n, const char* xp, uint xN) {
   }
 }
 
+void rai::String::removePostfix(const char* postfix){
+  uint n = strlen(postfix);
+  CHECK(!strcmp(p+N-n, postfix), "no match between postfix '" <<postfix <<"' and end '" <<p+N-n <<"'");
+  resize(N-n, true);
+}
+
 rai::String& rai::String::setRandom() {
   resize(rnd(2, 6), false);
   for(uint i=0; i<N; i++) operator()(i)=rnd('a', 'z');

@@ -51,7 +51,7 @@ arr DirectionDof::calcDofsFromConfig() const {
 void DirectionDof::read(const Graph& ats){
 }
 
-void DirectionDof::write(Graph& ats){
+void DirectionDof::write(Graph& ats) const{
   ats.add<String>("joint", "direction");
 }
 

@@ -13,6 +13,8 @@
 
 namespace H5 { class H5File; }
 
+namespace rai {
+
 //===========================================================================
 
 struct H5_Writer {
@@ -37,3 +39,4 @@ struct H5_Reader {
   bool exists(const char* name);
 };
 
+} //namespace

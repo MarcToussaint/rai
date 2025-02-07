@@ -68,7 +68,7 @@ void testPickAndPlace(){
     if(!move0->ret->feasible) continue;
 
     auto move1 = seq.sub_motion(1);
-    move1->no_collision({}, {table, obj,
+    move1->no_collisions({}, {table, obj,
                           obj, "obstacle"});
     //move1.bias(.5, qHome, 1e0);
     move1->solve();
@@ -195,7 +195,7 @@ void testPivot(){
     // seq.komo->addObjective({1., 2.}, FS_positionDiff, {gripper, "handle"}, OT_eq, {1e1});
     // seq.komo->addObjective({1., 2.}, FS_vectorZRel, {gripper, "door"}, OT_sos, {1e-1}, {0, -1., 0});
     seq.grasp_cylinder(1., gripper, "handle", palm);
-    seq.no_collision({1.,2.}, {"l_palm", "door"});
+    seq.no_collisions({1.,2.}, {"l_palm", "door"});
 
     //ready relative pose (we could relax that)
     seq.freeze_relativePose({2.}, gripper, "door");
@@ -209,7 +209,7 @@ void testPivot(){
     auto move0 = seq.sub_motion(0);
     move0->freeze_joint({}, {"hinge_joint"});
     move0->approach({.8, 1.}, gripper, .1);
-    move0->no_collision({.15,.85}, {obj, "l_finger1",
+    move0->no_collisions({.15,.85}, {obj, "l_finger1",
                                     obj, "l_finger2",
                                     obj, "l_palm"}, .02);
     move0->solve();
@@ -223,7 +223,7 @@ void testPivot(){
     auto move2 = seq.sub_motion(2);
     move2->freeze_joint({}, {"hinge_joint"});
     move2->retract({.0, .15}, gripper);
-    move2->no_collision({.15,.85}, {obj, "l_finger1",
+    move2->no_collisions({.15,.85}, {obj, "l_finger1",
                                     obj, "l_finger2",
                                     obj, "l_palm"}, .05);
     move2->solve();

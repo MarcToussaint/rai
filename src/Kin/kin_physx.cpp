@@ -1023,8 +1023,8 @@ void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& frameVelociti
 
     if(self->actorTypes(f->ID) == rai::BT_dynamic) {
       f->set_X() = conv_PxTrans2Transformation(a->getGlobalPose());
-      if(!!frameVelocities && (a->getType() == PxActorType::eRIGID_DYNAMIC || PxActorType::eARTICULATION_LINK)) {
-        PxRigidBody* px_body = (PxRigidBody*) a;
+      if(!!frameVelocities && (a->getType() == PxActorType::eRIGID_DYNAMIC || a->getType() == PxActorType::eARTICULATION_LINK)) {
+        PxRigidBody* px_body = (PxRigidBody*)(a);
         frameVelocities(f->ID, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());
         frameVelocities(f->ID, 1, {}) = conv_PxVec3_arr(px_body->getAngularVelocity());
       }
@@ -1170,8 +1170,8 @@ void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& fra
     } else if(!onlyKinematic) {
       a->setGlobalPose(conv_Transformation2PxTrans(f->ensure_X()));
 
-      if(self->actorTypes(f->ID)==rai::BT_dynamic && a->getType() == PxActorType::eRIGID_DYNAMIC) {
-        PxRigidDynamic* px_body = (PxRigidDynamic*) a;
+      if(self->actorTypes(f->ID)==rai::BT_dynamic && (a->getType() == PxActorType::eRIGID_DYNAMIC)) {
+        PxRigidDynamic* px_body = (PxRigidDynamic*)(a);
         if(!!frameVelocities && frameVelocities.N) {
           px_body->setLinearVelocity(PxVec3(frameVelocities(f->ID, 0, 0), frameVelocities(f->ID, 0, 1), frameVelocities(f->ID, 0, 2)));
           px_body->setAngularVelocity(PxVec3(frameVelocities(f->ID, 1, 0), frameVelocities(f->ID, 1, 1), frameVelocities(f->ID, 1, 2)));

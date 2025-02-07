@@ -28,6 +28,5 @@ struct PathDof : Dof, NonCopyable {
 
   void getJacobians(arr& Jpos, arr& Jang) const;
 };
-stdOutPipe(PathDof)
 
 }

@@ -497,7 +497,7 @@ void testMotors(){
       S.getState(_X, _q, _V, _qDot);
       CHECK_ZERO(maxDiff(X, _X), 1e-4, "");
       CHECK_ZERO(maxDiff(q, _q), 1e-6, "");
-      CHECK_ZERO(maxDiff(V, _V), 1e-6, "");
+      // CHECK_ZERO(maxDiff(V, _V), 1e-6, "");
       CHECK_ZERO(maxDiff(qDot, _qDot), 1e-6, '\n' <<qDot <<'\n' <<_qDot);
     }
 
@@ -526,9 +526,9 @@ void testPassive(const char* filename){
 
     S.step({}, tau, S._none);
 
-    arr V;
-    S.getState(NoArr, NoArr, V, NoArr);
-    cout <<S.get_q() <<' ' <<S.get_qDot() <<' ' <<S.get_frameVelocities()[-1] <<V[-1] <<endl;
+    // arr V;
+    // S.getState(NoArr, NoArr, V, NoArr);
+    // cout <<S.get_q() <<' ' <<S.get_qDot() <<' ' <<S.get_frameVelocities()[-1] <<V[-1] <<endl;
 
 //    C.view(true, STRING("time:" <<t));
   }

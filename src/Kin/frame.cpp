@@ -401,7 +401,7 @@ void rai::Frame::read(const Graph& ats) {
   if(ats["mass"]) { inertia = new Inertia(*this); inertia->read(ats); }
 }
 
-void rai::Frame::write(Graph& G) {
+void rai::Frame::write(Graph& G) const {
   //if(parent) G.add<rai::String>("parent", parent->name);
 
   if(parent) {
@@ -429,38 +429,38 @@ void rai::Frame::write(Graph& G) {
     }
 }
 
-void rai::Frame::write(std::ostream& os) const {
-  os <<name;
+// void rai::Frame::write(std::ostream& os) const {
+//   os <<name;
 
-  if(parent) os <<" (" <<parent->name <<')';
+//   if(parent) os <<" (" <<parent->name <<')';
 
-  os <<": { ";
+//   os <<": { ";
 
-  if(parent) {
-    if(!Q.isZero()) os <<" rel: " <<Q;
-  } else {
-    if(!X.isZero()) os <<" pose: " <<X;
-  }
+//   if(parent) {
+//     if(!Q.isZero()) os <<" rel: " <<Q;
+//   } else {
+//     if(!X.isZero()) os <<" pose: " <<X;
+//   }
 
-  if(joint) joint->write(os);
-  if(shape) shape->write(os);
-  if(inertia) inertia->write(os);
+//   if(joint) joint->write(os);
+//   if(shape) shape->write(os);
+//   if(inertia) inertia->write(os);
 
-  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "joint_scale", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
-  if(ats) for(Node* n : *ats) {
-      if(!n->key.startsWith("%") && !avoid.contains(n->key)) {
-        os <<", ";
-        n->write(os, -1, true);
-      }
-    }
+//   StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "joint_scale", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
+//   if(ats) for(Node* n : *ats) {
+//       if(!n->key.startsWith("%") && !avoid.contains(n->key)) {
+//         os <<", ";
+//         n->write(os, -1, true);
+//       }
+//     }
 
-  os <<" }\n";
-  //  if(mass) os <<"mass:" <<mass <<' ';
-  //  if(type!=BT_dynamic) os <<"dyntype:" <<(int)type <<' ';
-  //  uint i; Node *a;
-  //  for(Type *  a:  ats)
-  //      if(a->keys(0)!="X" && a->keys(0)!="pose") os <<*a <<' ';
-}
+//   os <<" }\n";
+//   //  if(mass) os <<"mass:" <<mass <<' ';
+//   //  if(type!=BT_dynamic) os <<"dyntype:" <<(int)type <<' ';
+//   //  uint i; Node *a;
+//   //  for(Type *  a:  ats)
+//   //      if(a->keys(0)!="X" && a->keys(0)!="pose") os <<*a <<' ';
+// }
 
 /************* USER INTERFACE **************/
 
@@ -1097,8 +1097,8 @@ const rai::Joint* rai::Dof::joint() const { return dynamic_cast<const Joint*>(th
 
 const rai::ForceExchangeDof* rai::Dof::fex() const { return dynamic_cast<const ForceExchangeDof*>(this); }
 
-void rai::Dof::write(std::ostream& os) const {
-  os <<"DOF of frame '" <<frame->name <<"'";
+void rai::Dof::write(Graph& ats) const {
+  ats.add<bool>(STRING("DOF_"<<frame->name));
 }
 
 //===========================================================================
@@ -1775,23 +1775,23 @@ void rai::Joint::read(const Graph& ats) {
   }
 }
 
-void rai::Joint::write(Graph& g) {
-  g.add<Enum<JointType>>("joint", type);
-  if(H!=1.) g.add<double>("ctrl_H", H);
-  if(scale!=1.) g.add<double>("joint_scale", scale);
-  if(limits.N) g.add<arr>("limits", limits);
-  if(mimic) g.add<rai::String>("mimic", mimic->frame->name);
+void rai::Joint::write(Graph& ats) const {
+  ats.add<Enum<JointType>>("joint", type);
+  if(H!=1.) ats.add<double>("ctrl_H", H);
+  if(scale!=1.) ats.add<double>("joint_scale", scale);
+  if(limits.N) ats.add<arr>("limits", limits);
+  if(mimic) ats.add<rai::String>("mimic", mimic->frame->name);
 }
 
-void rai::Joint::write(std::ostream& os) const {
-  os <<", joint: " <<type;
-  if(H!=1.) os <<", ctrl_H: " <<H;
-  if(scale!=1.) os <<", joint_scale: " <<scale;
-  if(limits.N) os <<", limits: " <<limits;
-  if(mimic) {
-    os <<", mimic: " <<mimic->frame->name;
-  }
-}
+// void rai::Joint::write(std::ostream& os) const {
+//   os <<", joint: " <<type;
+//   if(H!=1.) os <<", ctrl_H: " <<H;
+//   if(scale!=1.) os <<", joint_scale: " <<scale;
+//   if(limits.N) os <<", limits: " <<limits;
+//   if(mimic) {
+//     os <<", mimic: " <<mimic->frame->name;
+//   }
+// }
 
 //===========================================================================
 //

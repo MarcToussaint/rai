@@ -326,20 +326,27 @@ Frame* Configuration::addH5Object(const char* framename, const char* filename, i
     byteA colors = H.read<byte>("decomp/colors");
     uintA parts = H.read<uint>("decomp/parts");
 
-    rai::Frame *objDeomp = addFrame(STRING(framename<<"_decomp"));
-    objDeomp->setParent(obj);
-    objDeomp->setMesh(pts, faces, byteA{128, 128}, parts);
-    objDeomp->setContact(1);
+    rai::Frame *objDecomp = addFrame(STRING(framename<<"_decomp"));
+    objDecomp->setParent(obj);
+    objDecomp->setMesh(pts, faces, byteA{128, 128}, parts);
+    objDecomp->setContact(1);
 
-    objDeomp->getAts().add<bool>("simulate", true);
+    objDecomp->getAts().add<bool>("simulate", true);
 
     // objMeshes->setMass(.1);
     // obj->computeCompoundInertia();
     // obj->transformToDiagInertia();
 
-    objDeomp->convertDecomposedShapeToChildFrames();
+    objDecomp->convertDecomposedShapeToChildFrames();
 
-    if(verbose>0) LOG(0) <<"added " <<parts.N <<" convex-decomposed shapes in subframes";
+    // CHECK_EQ(parts.N, objDecomp->children.N, "couldn't create parts");
+
+    if(verbose>0) LOG(0) <<"added " <<objDecomp->children.N <<" convex-decomposed shapes in subframes";
+
+    if(!objDecomp->children.N){
+      LOG(-1) <<"adding parts failed";
+      return 0;
+    }
   }
 
   if(H.exists("inertia/")){
@@ -357,7 +364,8 @@ Frame* Configuration::addH5Object(const char* framename, const char* filename, i
     if(verbose>0) LOG(0) <<"transformed baseframe by " <<t <<" to make inertia centered and diagonal";
 
     try{ obj->get_X().checkNan(); } catch(...) {
-      HALT("transform lead to NAN - failed");
+      LOG(-1) <<"inertia transform lead to NAN - failed";
+      return 0;
     }
   }
 
@@ -570,7 +578,7 @@ uintA Configuration::getDofIDs() const {
   uintA dofIDs(activeDofs.N);
   uint i=0;
   for(Dof* d:activeDofs) {
-    CHECK(d->frame, "dof " <<*d <<" does not have frame!");
+    CHECK(d->frame, "dof " <<d <<" does not have frame!");
     dofIDs.elem(i++) = d->frame->ID;
   }
   return dofIDs;
@@ -2880,7 +2888,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
         CHECK(mimicFrame, "the argument to 'mimic', '" <<jointName <<"' is not a frame name");
         j->mimic=0; //UNDO the =(Joint*)1
         j->setMimic(mimicFrame->joint);
-        if(!j->mimic) HALT("The joint '" <<*j <<"' is declared mimicking '" <<jointName <<"' -- but that doesn't exist!");
+        if(!j->mimic) HALT("The joint '" <<j->frame->name <<"' is declared mimicking '" <<jointName <<"' -- but that doesn't exist!");
         j->type = mimicFrame->joint->type;
         j->q0 = j->mimic->q0;
         j->active = j->mimic->active;

@@ -151,8 +151,8 @@ struct Frame : NonCopyable {
 
   //I/O
   void read(const Graph& ats);
-  void write(Graph& G);
-  void write(std::ostream& os) const;
+  void write(Graph& G) const;
+  void write(std::ostream& os) const { Graph G; write(G); G.write(os); }
 
   //-- HIGHER LEVEL USER INTERFACE
   Frame& setShape(rai::ShapeType shape, const arr& size);
@@ -246,9 +246,8 @@ struct Dof {
   const Joint* joint() const;
   const ForceExchangeDof* fex() const;
 
-  virtual void write(std::ostream& os) const;
+  virtual void write(Graph& ats) const;
 };
-stdOutPipe(Dof)
 
 //===========================================================================
 
@@ -294,10 +293,8 @@ struct Joint : Dof, NonCopyable {
   void flip();
 
   void read(const Graph& ats);
-  void write(Graph& g);
-  void write(std::ostream& os) const;
+  void write(Graph& ats) const;
 };
-stdOutPipe(Joint)
 
 //===========================================================================
 
@@ -315,6 +312,7 @@ struct Inertia : NonCopyable {
   void setZero() { mass=0; com=0; matrix=0; }
   void add(const Inertia& I, const rai::Transformation& rel);
   void defaultInertiaByShape();
+  void scaleTo(double _mass){ matrix*=_mass/mass; mass=_mass; }
 
   rai::Transformation getDiagTransform(arr& diag);
 

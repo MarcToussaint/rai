@@ -200,7 +200,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
     for(rai::Frame* f:frames) if(f->dirDof){
         arr p = f->getPosition();
         arr v = (f->get_X().rot * f->dirDof->vec).getArr();
-        LOG(0) <<*f->dirDof <<' ' <<v <<' ' <<p;
+        // LOG(0) <<*f->dirDof <<' ' <<v <<' ' <<p;
         int s=-1;
         if(timeSlices.N) s = f->ID/timeSlices.d1;
         addDistMarker(p, p+.2*v, s, .025);

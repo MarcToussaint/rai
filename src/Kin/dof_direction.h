@@ -24,7 +24,7 @@ struct DirectionDof : Dof, NonCopyable {
   virtual void setDofs(const arr& q_full, uint qIndex=0);
   virtual arr calcDofsFromConfig() const;
   void read(const Graph& ats);
-  void write(Graph& ats);
+  void write(Graph& ats) const;
 
   void kinVec(arr& y, arr& J) const;
 
