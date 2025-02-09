@@ -163,7 +163,7 @@ arr sampleGraspCandidate(rai::Configuration& C, const char *ptsFrame, const char
     komo.setConfig(C, true);
     komo.setTiming(1,1,1,0);
     //    komo.addControlObjective({}, 0, 1e-1);
-    q.append(q(-1)); //for the mimic joint..
+    q.append(double(q(-1))); //for the mimic joint..
     komo.addObjective({}, FS_qItself, {}, OT_sos, {1e0}, q);
     komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e2});
     komo.addObjective({}, FS_oppose, {"dotA", "dotB", ptsFrame}, OT_sos, {1e1});

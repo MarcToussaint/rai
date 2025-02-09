@@ -114,47 +114,44 @@ PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, con
 
 //===========================================================================
 
-struct PhysXInterface_self {
-  struct Engine {
-    PxFoundation* mFoundation = nullptr;
-    PxPhysics* mPhysics = nullptr;
-    PxCooking* mCooking = nullptr;
-    PxDefaultErrorCallback gDefaultErrorCallback;
-    PxDefaultAllocator gDefaultAllocatorCallback;
-    PxSimulationFilterShader gDefaultFilterShader=PxDefaultSimulationFilterShader;
-  };
 
-  static Engine* core;
+struct PhysXInterface_Engine {
+  PxFoundation* mFoundation = nullptr;
+  PxPhysics* mPhysics = nullptr;
+  PxCooking* mCooking = nullptr;
+  PxDefaultErrorCallback gDefaultErrorCallback;
+  PxDefaultAllocator gDefaultAllocatorCallback;
+  PxSimulationFilterShader gDefaultFilterShader=PxDefaultSimulationFilterShader;
 
-  ~PhysXInterface_self() {
-    //  self->mMaterial
-    //  self->plane
-    //  self->planeShape
-    for(PxRigidActor* a: actors) if(a) {
-        PxArticulationLink* actor = a->is<PxArticulationLink>();
-        if(actor) continue; //don't remove articulation links
-        gScene->removeActor(*a);
-        a->release();
-      }
-    for(PxGeometry* geom: geometries) if(geom){
-      delete geom;
-    }
-    if(gScene) {
-      gScene->release();
-      gScene = nullptr;
-    }
-    if(defaultCpuDispatcher){
-      defaultCpuDispatcher->release();
-    }
-//    if(mPhysics) {
-//      mCooking->release();
-//      mPhysics->release();
-//    }
-    //  mFoundation->release();
+  PhysXInterface_Engine(){
+    mFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gDefaultAllocatorCallback, gDefaultErrorCallback);
+    PxTolerancesScale scale;
+    mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, scale);
+    PxCookingParams cookParams(mPhysics->getTolerancesScale());
+    //    cookParams.skinWidth = .001f;
+    mCooking = PxCreateCooking(PX_PHYSICS_VERSION, *mFoundation, cookParams);
+    if(!mCooking) HALT("PxCreateCooking failed!");
+    if(!mPhysics) HALT("Error creating PhysX3 device.");
+    //if(!PxInitExtensions(*mPhysics)) HALT("PxInitExtensions failed!");
   }
 
+  ~PhysXInterface_Engine() {
+    mPhysics->release();
+    mCooking->release();
+    mFoundation->release();
+  }
+};
+
+PhysXInterface_Engine* core() {
+  static PhysXInterface_Engine singleton;
+  return &singleton;
+}
+
+struct PhysXInterface_self {
+  ~PhysXInterface_self();
+
   PxScene* gScene = nullptr;
-  rai::Array<PxGeometry*> geometries;
+  rai::Array<PxConvexMesh*> meshes;
   rai::Array<PxRigidActor*> actors;
   rai::Array<rai::BodyType> actorTypes;
   rai::Array<PxArticulationAxis::Enum> jointAxis;
@@ -164,6 +161,7 @@ struct PhysXInterface_self {
 
   uint stepCount=0;
 
+  PxRigidStatic* plane = nullptr;
   PxMaterial* defaultMaterial = nullptr;
   PxDefaultCpuDispatcher* defaultCpuDispatcher = nullptr;
 
@@ -185,27 +183,53 @@ struct PhysXInterface_self {
   void syncDebugConfig();
 };
 
-PhysXInterface_self::Engine* PhysXInterface_self::core = 0;
-
 //===========================================================================
 
-void PhysXInterface_self::initPhysics() {
-  if(!core) {
-    core = new Engine;
+PhysXInterface_self::~PhysXInterface_self() {
+  //destroy actors in reverse order, including plane
+  actors.reverse();
+  actors.append(plane);
+  for(PxRigidActor* a:  actors) if(a) {
+      rai::Array<PxShape*> shapes(a->getNbShapes());
+      shapes.setZero();
+      a->getShapes(shapes.p, shapes.N);
+      for(PxShape* s:shapes){ a->detachShape(*s); s->release(); }
 
-    core->mFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, core->gDefaultAllocatorCallback, core->gDefaultErrorCallback);
-    PxTolerancesScale scale;
-    core->mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *core->mFoundation, scale);
-    PxCookingParams cookParams(core->mPhysics->getTolerancesScale());
-//    cookParams.skinWidth = .001f;
-    core->mCooking = PxCreateCooking(PX_PHYSICS_VERSION, *core->mFoundation, cookParams);
-    if(!core->mCooking) HALT("PxCreateCooking failed!");
-    if(!core->mPhysics) HALT("Error creating PhysX3 device.");
-    //if(!PxInitExtensions(*mPhysics)) HALT("PxInitExtensions failed!");
+      PxArticulationLink* actor = a->is<PxArticulationLink>();
+      if(actor){
+        if(actor->getLinkIndex()==0){ //root of an articulation
+          PxArticulationReducedCoordinate* art = &actor->getArticulation();
+          gScene->removeArticulation(*art);
+          art->release();
+        }
+      }else{
+        gScene->removeActor(*a);
+        a->release();
+      }
+    }
+  //destropy remaining materials
+  {
+    rai::Array<PxMaterial*> materials(core()->mPhysics->getNbMaterials());
+    materials.setZero();
+    core()->mPhysics->getMaterials(materials.p, materials.N);
+    for(PxMaterial* m:materials) m->release();
   }
+  for(PxConvexMesh* m: meshes){ m->release(); }
+  if(gScene) gScene->release();
+  if(defaultCpuDispatcher) defaultCpuDispatcher->release();
+  //check everything is cleaned
+  // LOG(0)
+  //     <<core()->mPhysics->getNbConvexMeshes() <<' '
+  //     <<core()->mPhysics->getNbTriangleMeshes() <<' '
+  //     <<core()->mPhysics->getNbConvexMeshes() <<' '
+  //     <<core()->mPhysics->getNbMaterials() <<' '
+  //     <<core()->mPhysics->getNbScenes() <<' '
+  //     <<core()->mPhysics->getNbShapes() <<' ';
+}
 
+void PhysXInterface_self::initPhysics() {
   //-- Create the scene
-  PxSceneDesc sceneDesc(core->mPhysics->getTolerancesScale());
+  PxSceneDesc sceneDesc(core()->mPhysics->getTolerancesScale());
   sceneDesc.gravity = PxVec3(0.f, 0.f, px_gravity);
 //  sceneDesc.bounceThresholdVelocity = 2.;
   //sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
@@ -222,10 +246,10 @@ void PhysXInterface_self::initPhysics() {
     sceneDesc.cpuDispatcher = defaultCpuDispatcher;
   }
   if(!sceneDesc.filterShader) {
-    sceneDesc.filterShader  = core->gDefaultFilterShader;
+    sceneDesc.filterShader  = core()->gDefaultFilterShader;
   }
 
-  gScene = core->mPhysics->createScene(sceneDesc);
+  gScene = core()->mPhysics->createScene(sceneDesc);
   if(!gScene) {
     cerr << "createScene failed!" << endl;
   }
@@ -234,16 +258,16 @@ void PhysXInterface_self::initPhysics() {
   gScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
 
   //-- Create objects
-  defaultMaterial = core->mPhysics->createMaterial(opt.defaultFriction, opt.defaultFriction, opt.defaultRestitution);
+  defaultMaterial = core()->mPhysics->createMaterial(opt.defaultFriction, opt.defaultFriction, opt.defaultRestitution);
 }
 
 void PhysXInterface_self::addGround() {
   PxTransform pose = PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
 
-  PxRigidStatic* plane = core->mPhysics->createRigidStatic(pose);
+  plane = core()->mPhysics->createRigidStatic(pose);
   CHECK(plane, "create plane failed!");
 
-  PxShape* planeShape = core->mPhysics->createShape(PxPlaneGeometry(), *defaultMaterial);
+  PxShape* planeShape = core()->mPhysics->createShape(PxPlaneGeometry(), *defaultMaterial);
   plane->attachShape(*planeShape);
   CHECK(planeShape, "create shape failed!");
   gScene->addActor(*plane);
@@ -273,11 +297,11 @@ void PhysXInterface_self::addLink(rai::Frame* f) {
   //-- create a PhysX actor
   PxRigidDynamic* actor=nullptr;
   if(type==rai::BT_static) {
-    actor = (PxRigidDynamic*) core->mPhysics->createRigidStatic(conv_Transformation2PxTrans(f->ensure_X()));
+    actor = (PxRigidDynamic*) core()->mPhysics->createRigidStatic(conv_Transformation2PxTrans(f->ensure_X()));
   } else if(type==rai::BT_dynamic) {
-    actor = core->mPhysics->createRigidDynamic(conv_Transformation2PxTrans(f->ensure_X()));
+    actor = core()->mPhysics->createRigidDynamic(conv_Transformation2PxTrans(f->ensure_X()));
   } else if(type==rai::BT_kinematic) {
-    actor = core->mPhysics->createRigidDynamic(conv_Transformation2PxTrans(f->ensure_X()));
+    actor = core()->mPhysics->createRigidDynamic(conv_Transformation2PxTrans(f->ensure_X()));
     actor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
   } else NIY;
   CHECK(actor, "create actor failed!");
@@ -324,8 +348,8 @@ void PhysXInterface_self::addJoint(const rai::Joint* jj) {
     case rai::JT_hingeY:
     case rai::JT_hingeZ: {
 
-      //PxD6Joint* desc = PxD6JointCreate(*core->mPhysics, actors(from->ID), A, actors(to->ID), B.getInverse());
-      PxRevoluteJoint* joint = PxRevoluteJointCreate(*core->mPhysics, actors(from->ID), A, actors(to->ID), B.getInverse());
+      //PxD6Joint* desc = PxD6JointCreate(*core()->mPhysics, actors(from->ID), A, actors(to->ID), B.getInverse());
+      PxRevoluteJoint* joint = PxRevoluteJointCreate(*core()->mPhysics, actors(from->ID), A, actors(to->ID), B.getInverse());
       joint->setRevoluteJointFlag(PxRevoluteJointFlag::eDRIVE_ENABLED, true);
       joint->setDriveForceLimit(1e1);
 //      cout <<joint->getDriveVelocity() <<endl;
@@ -369,7 +393,7 @@ void PhysXInterface_self::addJoint(const rai::Joint* jj) {
     break;
     case rai::JT_rigid: {
       PxTransform A = conv_Transformation2PxTrans(rel * to->get_Q()); //add the current relative transform!
-      PxFixedJoint* joint = PxFixedJointCreate(*core->mPhysics, actors(from->ID), A, actors(to->ID), B.getInverse());
+      PxFixedJoint* joint = PxFixedJointCreate(*core()->mPhysics, actors(from->ID), A, actors(to->ID), B.getInverse());
       // desc->setProjectionLinearTolerance(1e10);
       // desc->setProjectionAngularTolerance(3.14);
       joints(to->ID) = joint;
@@ -380,7 +404,7 @@ void PhysXInterface_self::addJoint(const rai::Joint* jj) {
     }
     case rai::JT_transXYPhi: {
 #if 0
-      PxD6Joint* desc = PxD6JointCreate(*core->mPhysics, actors(jj->from()->ID), A, actors(to->ID), B.getInverse());
+      PxD6Joint* desc = PxD6JointCreate(*core()->mPhysics, actors(jj->from()->ID), A, actors(to->ID), B.getInverse());
       CHECK(desc, "PhysX joint creation failed.");
 
       desc->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
@@ -395,7 +419,7 @@ void PhysXInterface_self::addJoint(const rai::Joint* jj) {
     case rai::JT_transY:
     case rai::JT_transZ: {
 #if 0
-      PxD6Joint* desc = PxD6JointCreate(*core->mPhysics, actors(jj->from()->ID), A, actors(to->ID), B.getInverse());
+      PxD6Joint* desc = PxD6JointCreate(*core()->mPhysics, actors(jj->from()->ID), A, actors(to->ID), B.getInverse());
       CHECK(desc, "PhysX joint creation failed.");
 
       if(to->ats && to->ats->find<arr>("drive")) {
@@ -408,7 +432,7 @@ void PhysXInterface_self::addJoint(const rai::Joint* jj) {
         desc->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
 
         arr limits = to->ats->get<arr>("limit");
-        PxJointLinearLimit limit(core->mPhysics->getTolerancesScale(), limits(0), 0.1f);
+        PxJointLinearLimit limit(core()->mPhysics->getTolerancesScale(), limits(0), 0.1f);
         limit.restitution = limits(2);
         //if(limits(3)>0) {
         //limit.spring = limits(3);
@@ -487,7 +511,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
     LOG(0) <<"adding multibody with base '" <<base->name <<"':";
   }
 
-  PxArticulationReducedCoordinate* articulation = core->mPhysics->createArticulationReducedCoordinate();
+  PxArticulationReducedCoordinate* articulation = core()->mPhysics->createArticulationReducedCoordinate();
   articulation->setArticulationFlag(PxArticulationFlag::eFIX_BASE, multibody_fixedBase);
   articulation->setArticulationFlag(PxArticulationFlag::eDISABLE_SELF_COLLISION, true);
   //articulation->setSolverIterationCounts(minPositionIterations, minVelocityIterations);
@@ -645,9 +669,9 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
     }
   }
 
-    articulation->updateKinematic(PxArticulationKinematicFlag::ePOSITION);
-
   gScene->addArticulation(*articulation);
+
+  //articulation->updateKinematic(PxArticulationKinematicFlag::ePOSITION);
 
   if(opt.verbose>0) {
     LOG(0) <<"... done with multibody with base '" <<base->name <<"'";
@@ -693,20 +717,20 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
 }
 
 void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai::Shape* s) {
-  PxGeometry* geometry;
+  std::shared_ptr<PxGeometry> geometry;
   switch(s->type()) {
     case rai::ST_box: {
-      geometry = new PxBoxGeometry(.5*s->size(0), .5*s->size(1), .5*s->size(2));
+      geometry = make_shared<PxBoxGeometry>(.5*s->size(0), .5*s->size(1), .5*s->size(2));
       if(opt.verbose>0) LOG(0) <<"  adding shape box '" <<s->frame.name <<"' (" <<s->type() <<")";
     }
     break;
     case rai::ST_sphere: {
-      geometry = new PxSphereGeometry(s->size(-1));
+      geometry = make_shared<PxSphereGeometry>(s->size(-1));
       if(opt.verbose>0) LOG(0) <<"  adding shape sphere '" <<s->frame.name <<"' (" <<s->type() <<")";
     }
     break;
     //      case rai::ST_capsule: {
-    //        geometry = new PxCapsuleGeometry(s->size(-1), .5*s->size(-2));
+    //        geometry = make_shared<PxCapsuleGeometry(s->size(-1), .5*s->size(-2));
     //      }
     //      break;
     case rai::ST_capsule:
@@ -716,9 +740,9 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     case rai::ST_ssCvx: {
       floatA Vfloat = rai::convert<float>(s->mesh().V);
       PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
-                                     *core->mPhysics, *core->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
+                                     *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
                                      PxConvexFlag::eCOMPUTE_CONVEX);
-      geometry = new PxConvexMeshGeometry(triangleMesh);
+      geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
       if(opt.verbose>0) LOG(0) <<"  adding shape cvx mesh '" <<s->frame.name <<"' (" <<s->type() <<")";
     } break;
     case rai::ST_sdf:
@@ -726,10 +750,10 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
 #if 0
       floatA Vfloat = rai::convert<float>(s->mesh().V);
       uintA& T = s->mesh().T;
-      PxTriangleMesh* triangleMesh =  PxToolkit::createTriangleMesh32(*core->mPhysics, *core->mCooking,
+      PxTriangleMesh* triangleMesh =  PxToolkit::createTriangleMesh32(*core()->mPhysics, *core()->mCooking,
                                       (PxVec3*)Vfloat.p, Vfloat.d0,
                                       T.p, T.d0);
-      geometry = new PxTriangleMeshGeometry(triangleMesh);
+      geometry = make_shared<PxTriangleMeshGeometry>(triangleMesh);
 #else
       rai::Mesh& M = s->mesh();
       if(opt.verbose>0) LOG(0) <<"  adding shape mesh '" <<s->frame.name <<"' (" <<s->type() <<")";
@@ -745,11 +769,11 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
           int end = i+1<M.cvxParts.N ? M.cvxParts(i+1)-1 : -1;
           copy(Vfloat, M.V({start, end}));
           PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
-                                         *core->mPhysics, *core->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
+                                         *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
                                          PxConvexFlag::eCOMPUTE_CONVEX);
-          geometry = new PxConvexMeshGeometry(triangleMesh);
-          geometries.append(geometry);
-          PxShape* shape = core->mPhysics->createShape(*geometry, *defaultMaterial);
+          meshes.append(triangleMesh);
+          geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
+          PxShape* shape = core()->mPhysics->createShape(*geometry, *defaultMaterial);
           actor->attachShape(*shape);
           if(&s->frame!=f) {
             if(s->frame.parent==f) {
@@ -760,14 +784,15 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
             }
           }
         }
-        geometry=0;
+        geometry.reset();
       } else {
-        if(opt.verbose>0) LOG(0) <<"  using cvx hull of mesh as no decomposition (M.cvsParts) is available";
+        if(opt.verbose>0) LOG(0) <<"  using cvx hull of mesh as no decomposition (M.cvxParts) is available";
         floatA Vfloat = rai::convert<float>(s->mesh().V);
         PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
-                                       *core->mPhysics, *core->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
+                                       *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
                                        PxConvexFlag::eCOMPUTE_CONVEX);
-        geometry = new PxConvexMeshGeometry(triangleMesh);
+        meshes.append(triangleMesh);
+        geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
       }
 #endif
     } break;
@@ -790,10 +815,10 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       double fric=s->frame.ats->get<double>("friction", opt.defaultFriction);
       double rest=s->frame.ats->get<double>("restitution", opt.defaultRestitution);
       //LOG(0) <<" shape " <<s->frame.name <<" friction: " <<fric <<" restitution: " <<rest;
-      mMaterial = core->mPhysics->createMaterial(fric, fric, rest);
+      mMaterial = core()->mPhysics->createMaterial(fric, fric, rest);
     }
 
-    PxShape* shape = core->mPhysics->createShape(*geometry, *mMaterial);
+    PxShape* shape = core()->mPhysics->createShape(*geometry, *mMaterial);
     actor->attachShape(*shape);
     if(&s->frame!=f) {
       if(s->frame.parent==f) {
@@ -804,8 +829,6 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       }
     }
     CHECK(shape, "create shape failed!");
-
-    geometries.append(geometry);
   }
 }
 
@@ -1267,6 +1290,9 @@ rai::PhysX_Options& PhysXInterface::opt() { NICO }
 
 #ifdef RAI_PHYSX
 RUN_ON_INIT_BEGIN(kin_physx)
+rai::Array<PxGeometry*>::memMove=true;
+rai::Array<PxShape*>::memMove=true;
+rai::Array<PxMaterial*>::memMove=true;
 rai::Array<PxRigidActor*>::memMove=true;
 rai::Array<PxD6Joint*>::memMove=true;
 rai::Array<rai::BodyType>::memMove=true;

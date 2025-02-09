@@ -108,8 +108,8 @@ int main(int argc,char** argv){
 
   // testLowLevel();
   // testBatchGeneration();
-  generateGraspsFiles(3);
-  // displayGraspsFiles();
+  // generateGraspsFiles(100);
+  displayGraspsFiles();
 
   return 0;
 }

@@ -485,7 +485,7 @@ CXXFLAGS += -DRAI_PHYSX -D_DEBUG -DPX_DISABLE_FLUIDS -DCORELIB -DPX32 -DLINUX
 CPATH := $(CPATH):$(USER_LIB)/include
 LPATHS += $(USER_LIB)/lib/PhysX
 LIBS += -lpthread -lrt\
--lPhysXExtensions_static_64 -lPhysX_static_64 -lPhysXCooking_static_64 -lPhysXCommon_static_64 -lPhysXFoundation_static_64
+-lPhysXExtensions_static_64 -lPhysX_static_64 -lPhysXPvdSDK_static_64 -lPhysX_static_64 -lPhysXCooking_static_64 -lPhysXCommon_static_64 -lPhysXFoundation_static_64
 
 #Physx-3.3:
 #-lLowLevel \

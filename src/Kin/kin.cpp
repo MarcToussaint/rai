@@ -2218,8 +2218,8 @@ std::shared_ptr<SwiftInterface> Configuration::swift() {
 
 std::shared_ptr<FclInterface> Configuration::fcl(int verbose) {
   if(!self->fcl) {
-    Array<Shape*> geometries(frames.N);
     Array<Shape*>::memMove=1;
+    Array<Shape*> geometries(frames.N);
     geometries.setZero();
     for(Frame* f:frames) {
       if(f->shape && f->shape->cont) {
