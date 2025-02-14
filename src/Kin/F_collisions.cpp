@@ -130,6 +130,18 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
+arr F_PairNormalAlign::phi(const FrameL& F){
+  CHECK_EQ(F.N, 2, "");
+
+  arr normal = F_PairCollision(F_PairCollision::_normal, true) .eval(F);
+
+  arr vec = F_Vector(Vector_z) .eval({F.elem(0)});
+
+  return normal + dir*vec;
+}
+
+//===========================================================================
+
 double fct_hinge(double x, double *dy=0){
   if(x>0.){
     if(dy) (*dy)=1.;

@@ -233,7 +233,7 @@ struct Dof {
   arr getDofState();
   virtual String name() const = 0;
 
-  void copyParameters(Dof* copy) {
+  void copyParameters(const Dof* copy) {
     qIndex=copy->qIndex; dim=copy->dim;
     limits=copy->limits; q0=copy->q0;
     active=copy->active;

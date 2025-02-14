@@ -22,8 +22,7 @@ rai::ForceExchangeDof::ForceExchangeDof(rai::Frame& a, rai::Frame& b, ForceExcha
   a.C.otherDofs.append(this);
   setZero();
   if(copy) {
-    qIndex=copy->qIndex; dim=copy->dim; limits=copy->limits; active=copy->active;
-    sampleUniform=copy->sampleUniform;  sampleSdv=copy->sampleSdv;
+    copyParameters(copy);
     if(copy->mimic) NIY;
 
     scale=copy->scale;
