@@ -40,6 +40,8 @@ int main(int argc,char **argv){
         <<"\n  #colors: " <<mesh.C.d0 << " max color: " <<(mesh.C.N?max(mesh.C):0.)
         <<"\n  #Vnormals: " <<mesh.Vn.d0
         <<"\n  #Tnormals: " <<mesh.Tn.d0
+        <<"\n  #texUV: " <<mesh.texCoords.d0
+        <<"\n  #texImage: " <<mesh.texImg.dim()
        <<"\n  bounds: " <<mesh.getBounds()
       <<"\n  center: " <<mesh.getMean()
      <<"\n  area: " <<(mesh.T.N?mesh.getArea():0)
@@ -53,7 +55,7 @@ int main(int argc,char **argv){
     gl->camera.focus(0., 0., 0., true);
     gl->clearColor = {.7f, .7f, .7f};
     gl->text = "before operations";
-    gl->data().addStandardScene().add().mesh(mesh);
+    gl->data().addStandardScene(false).add().mesh(mesh);
     gl->update(true);
   }
 

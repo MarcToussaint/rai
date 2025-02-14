@@ -78,7 +78,7 @@ void testConfig(){
 #endif
 }
 
-void testShader(){
+void testTensor(){
 
   rai::RenderData scene;
 
@@ -100,7 +100,7 @@ void testShader(){
     data = differencing(data, 3);
   }
 #else
-  H5_Reader h5("/home/mtoussai/git/repair/bone.h5");
+  rai::H5_Reader h5("/home/mtoussai/git/repair/bone.h5");
   rai::Array<int16_t> density = h5.read<int16_t>("density_org");
   arr pixdim = h5.read<double>("pixdim");
 
@@ -143,7 +143,7 @@ int main(int argc, char **argv){
   rai::initCmdLine(argc, argv);
 
   testConfig();
-  // testShader();
+  testTensor();
 
   return 0;
 }

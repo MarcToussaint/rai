@@ -24,9 +24,10 @@ struct Render_Options {
 enum RenderType { _solid, _shadow, _tensor, _text, _marker, _transparent, _all };
 
 struct RenderAsset{
-  floatA vertices, colors, normals, texture;
+  floatA vertices, colors, normals, texture; //for 2D textures: colors are vertex texture UV coordinates
   GLuint vao, vertexBuffer, colorBuffer, normalBuffer, textureBuffer;
   GLenum mode=GL_TRIANGLES;
+  uint textureDim=0;
   bool initialized=false;
   bool isTransparent=false;
   int version=-1;
@@ -38,8 +39,8 @@ struct RenderAsset{
   void tensor(const floatA& vol, const arr& size={1.,1.,1.});
 
   //engine specific -> should be refactored
-  void glRender();
   void glInitialize();
+  void glRender();
 };
 
 //an asset can be drawn multiple times in a scene, with different poses -> each time it is drawn is a RenderItem
@@ -83,8 +84,8 @@ struct RenderQuad {
 
   ~RenderQuad();
   //engine specific -> should be refactored
-  void glRender();
   void glInitialize();
+  void glRender();
 };
 
 struct DistMarkers {
@@ -115,7 +116,7 @@ struct RenderData {
   struct ContextIDs{
     bool initialized=false;
     GLuint shadowFramebuffer, shadowTexture;
-    GLuint prog_ID, prog_Projection_W, prog_ModelT_WM, prog_eyePosition_W, prog_ShadowProjection_W, prog_useShadow, prog_shadowMap, prog_numLights, prog_lightDirection_W, prog_FlatColor;
+    GLuint prog_ID, prog_Projection_W, prog_ModelT_WM, prog_eyePosition_W, prog_ShadowProjection_W, prog_useShadow, prog_shadowMap, prog_numLights, prog_lightDirection_W, prog_FlatColor, prog_textureDim, prog_textureImage;
     GLuint progShadow, progShadow_ShadowProjection_W, progShadow_ModelT_WM;
     GLuint progTensor, progTensor_Projection_W, progTensor_ModelT_WM, progTensor_ModelScale, progTensor_eyePosition_W, progTensor_tensorTexture;
     GLuint progMarker, progMarker_Projection_W, progMarker_ModelT_WM;
@@ -135,7 +136,7 @@ struct RenderData {
   void setText(const char* text);
   void addQuad(const byteA& img, float x, float y, float w, float h);
 
-  RenderData& addStandardScene();
+  RenderData& addStandardScene(bool addFloor=true);
   RenderData& clear();
 
   //engine specific -> should be refactored
@@ -145,7 +146,7 @@ struct RenderData {
   void visualsOnly(bool _visualsOnly=true){ if(_visualsOnly) renderUntil=_tensor; else renderUntil=_all; }
 
 //private:
-  void renderObjects(GLuint idT_WM, const uintA& sortedObjIDs, RenderType type, GLint idFlatColor=-1, GLint idScale=-1);
+  void renderObjects(GLuint idT_WM, const uintA& sortedObjIDs, RenderType type, GLint idFlatColor=-1, GLint idScale=-1, GLint idTextureDim=-1);
 
   void report(std::ostream& os);
 };

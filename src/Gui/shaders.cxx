@@ -51,6 +51,8 @@ uniform vec3 lightDirection_W[2];
 uniform int numLights;
 uniform int useShadow;
 uniform sampler2DShadow shadowMap;
+uniform int textureDim;
+uniform sampler2D textureImage;
 uniform vec4 flatColor;
 
 vec2 poissonDisk[16] = vec2[]( 
@@ -85,9 +87,11 @@ void main() {
     return;
   }
 
-  //vec3 objColor = texture( myTextureSampler, UV ).rgb;
-
   vec3 objRgb = objColor.rgb;
+
+  if(textureDim>0){
+    objRgb = texture( textureImage, objColor.xy ).rgb;
+  }
 
   vec3 rgb = AmbientPower * objRgb;
 

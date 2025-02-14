@@ -23,8 +23,8 @@
 
 bool loadTextures = true;
 
-AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ, bool relativeMeshPoses) {
-  verbose = 0; //rai::getParameter<double>("Assimp/verbose", 0);
+AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ, bool relativeMeshPoses, int _verbose)
+    :verbose(_verbose){
 
   Assimp::Importer importer;
   const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
@@ -62,7 +62,6 @@ rai::Mesh AssimpLoader::getSingleMesh() {
   for(auto& _meshes: meshes) for(auto& mesh:_meshes) {
       M.addMesh(mesh);
     }
-  if(!M.tex.N) M.Tt.clear();
   return M;
 }
 
@@ -131,16 +130,19 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
     LOG(0) <<"loading mesh: #V=" <<mesh->mNumVertices;
   }
   rai::Mesh M;
+
+  //-- vertices (and textureCoords)
   M.V.resize(mesh->mNumVertices, 3);
   if(mesh->mNormals) M.Vn.resize(mesh->mNumVertices, 3);
-  if(loadTextures && mesh->mTextureCoords[0]) M.tex.resize(mesh->mNumVertices, 2);
+  if(loadTextures && mesh->mTextureCoords[0]) M.texCoords.resize(mesh->mNumVertices, 2);
 
   for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
     M.V[i] = arr{mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z};
     if(mesh->mNormals) M.Vn[i] = arr{mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z};
-    if(loadTextures && mesh->mTextureCoords[0]) M.tex[i] = arr{mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y};
+    if(loadTextures && mesh->mTextureCoords[0]) M.texCoords[i] = arr{mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y};
   }
 
+  //-- triangles
   M.T.resize(mesh->mNumFaces, 3);
   M.T.setZero();
   for(unsigned int i = 0; i < mesh->mNumFaces; i++) {
@@ -151,10 +153,9 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
   }
   //cout <<"mean of loaded mesh=" <<M.getCenter() <<endl;
 
-  if(loadTextures && mesh->mTextureCoords[0]) M.Tt = M.T;
-
   aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
+  //-- single color?
   for(uint i=0; i<material->mNumProperties; i++) {
     aiMaterialProperty* m = material->mProperties[i];
     //        cout <<  m->mKey.C_Str() <<endl;
@@ -166,43 +167,38 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
     }
   }
 
-  uint nTex = material->GetTextureCount(aiTextureType_DIFFUSE);
-  if(verbose>0) {
-    cout <<"material: #textures=" <<nTex <<endl;
-  }
-  if(loadTextures && nTex) {
-    CHECK_EQ(nTex, 1, "");
-    aiString str;
-    material->GetTexture(aiTextureType_DIFFUSE, 0, &str);
-
+  for(int type = aiTextureType_NONE; type<aiTextureType_UNKNOWN; type++){
+    uint nTex = material->GetTextureCount(aiTextureType(type));
     if(verbose>0) {
-      cout <<"texture=" <<str.C_Str() <<endl;
+      cout <<"material: #textures=" <<nTex <<endl;
     }
+    if(loadTextures && nTex) {
+      CHECK_EQ(nTex, 1, "");
+      aiString str;
+      material->GetTexture(aiTextureType(type), 0, &str);
 
-//    std::string filename = this->directory + '/' + std::string(str.C_Str());
-    std::string filename = std::string(str.C_Str());
+      if(verbose>0) {
+        cout <<"loading texture image: " <<str.C_Str() <<endl;
+      }
 
-    int width, height, nrComponents;
-    unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
-    if(data) {
-      M.texImg.resize(height, width, nrComponents);
-      memmove(M.texImg.p, data, M.texImg.N);
-      M.C = {1., 1., 1.};
-    } else {
-      LOG(-1) << "Texture failed to load at path: " <<filename;
-    }
-    stbi_image_free(data);
+      std::string filename = this->directory + '/' + std::string(str.C_Str());
+      // std::string filename = std::string(str.C_Str());
 
-    if(!M.Tt.d0) {
-      M.Tt.clear();
-      M.tex.clear();
-      M.texImg.clear();
-    } else {
-      CHECK_EQ(M.Tt.d0, M.T.d0, "");
-      CHECK_EQ(M.tex.d0, M.V.d0, "");
-      CHECK_EQ(M.texImg.nd, 3, "");
+      int width, height, nrComponents;
+      unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
+      if(data) {
+        M.texImg.resize(height, width, nrComponents);
+        memmove(M.texImg.p, data, M.texImg.N);
+      } else {
+        LOG(-1) << "Texture failed to load at path: " <<filename;
+      }
+      stbi_image_free(data);
+
+      break;
     }
   }
+
+  CHECK_EQ(M.texImg.nd, 3, "no texture image could be loaded");
 
   return M;
 }

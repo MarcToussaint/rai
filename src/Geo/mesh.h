@@ -32,10 +32,8 @@ struct Mesh {
   uintA T;              ///< triangles (faces, empty -> point cloud)
   arr   Tn;             ///< triangle normals (optional)
 
-  uintA Tt;             ///< triangle texture indices (pointing into coordinates)
-  arr tex;              ///< texture coordinates
+  arr texCoords;            ///< texture coordinates for each vertex, dimensionality (V.d0, 2)
   byteA texImg;         ///< texture image
-  int texture=-1;       ///< GL texture name created with glBindTexture
 
   uintA cvxParts;
   uintAA graph;         ///< for every vertex, the set of neighboring vertices
@@ -134,7 +132,6 @@ struct Mesh {
 
   //[preliminary]]
   void skin(uint i);
-  void deleteGlTexture();
 
   /// @name IO
   void write(std::ostream&) const; ///< only writes generic info

@@ -84,7 +84,7 @@ void displayGraspsFiles(uint N=10) {
   uintA shapes;
 
   for(uint shape=SG.opt.startShape;shape<(uint)SG.opt.endShape;shape++){
-    str filename = "z/" + SG.files(shape);
+    str filename = "shapenet/grasps/" + SG.files(shape);
     filename.removePostfix(".shape.h5");
     filename <<".grasps.h5";
 

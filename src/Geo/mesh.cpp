@@ -23,11 +23,6 @@
 #  include "ply/ply.h"
 #endif
 
-#ifdef RAI_GL
-#  include <GL/glew.h>
-#  include <GL/gl.h>
-#endif
-
 #ifdef RAI_VHACD
 #  define ENABLE_VHACD_IMPLEMENTATION 1
 #  include "vhacd/VHACD.h"
@@ -37,8 +32,6 @@
 #  include "Lewiner/MarchingCubes.h"
 #endif
 
-void glColorId(uint id) { NIY; }
-void glColor(float r, float g, float b, float alpha, GLboolean lightingEnabled) { NIY; }
 extern arr id2color(uint id);
 
 namespace rai {
@@ -149,13 +142,12 @@ void Mesh::setQuad(double x_width, double y_width, const byteA& _texImg, bool fl
       texImg = _texImg;
     }
 //    C = {1.,1.,1.}; //bright color
-    Tt = T;
     if(!flipY) {
-      tex = {0., 1.,  1., 1.,  1., 0.,  0., 0.};
+      texCoords = {0., 1.,  1., 1.,  1., 0.,  0., 0.};
     } else {
-      tex = {0., 0.,  1., 0.,  1., 1.,  0., 1.};
+      texCoords = {0., 0.,  1., 0.,  1., 1.,  0., 1.};
     }
-    tex.reshape(V.d0, 2);
+    texCoords.reshape(V.d0, 2);
   }
 }
 
@@ -502,8 +494,8 @@ void Mesh::box() {
 }
 
 void Mesh::addMesh(const Mesh& mesh2, const Transformation& X) {
-  uint n=V.d0, tn=tex.d0, t=T.d0, tt=Tt.d0;
-  if(V.d0==C.d0) {
+  uint n=V.d0, tn=texCoords.d0, t=T.d0;
+  if(V.d0==C.d0 && (C.N || mesh2.C.N)) {
     if(mesh2.V.d0==mesh2.C.d0) C.append(mesh2.C);
     else if(mesh2.C.N==3) C.append(replicate(mesh2.C, mesh2.V.d0));
     else if(mesh2.C.N==4) C.append(replicate(mesh2.C({0, 2}), mesh2.V.d0));
@@ -515,12 +507,8 @@ void Mesh::addMesh(const Mesh& mesh2, const Transformation& X) {
   T.append(mesh2.T);
   for(; t<T.d0; t++) {  T(t, 0)+=n;  T(t, 1)+=n;  T(t, 2)+=n;  }
 
-  if(mesh2.Tt.N) {
-    tex.append(mesh2.tex);
-    Tt.append(mesh2.Tt);
-    for(; tt<Tt.d0; tt++) {  Tt(tt, 0)+=tn;  Tt(tt, 1)+=tn;  Tt(tt, 2)+=tn;  }
-  } else if(Tt.N) {
-    Tt.append(consts<uint>(0, mesh2.T.d0, 3));
+  if(mesh2.texCoords.N) {
+    texCoords.append(mesh2.texCoords);
   }
   if(mesh2.texImg.N) {
 //    CHECK(!texImg.N, "can't append texture images");
@@ -546,8 +534,7 @@ void Mesh::makeConvexHull() {
   cvxParts.clear();
   Vn.clear();
   Tn.clear();
-  Tt.clear();
-  tex.clear();
+  texCoords.clear();
   texImg.clear();
 #else
   uintA H = getHullIndices(V, T);
@@ -596,16 +583,19 @@ void Mesh::makeArrayFormatted(double avgNormalsThreshold){
     return;
   }
   computeTriNormals();
-  C = reshapeColor(C, V.d0);
+  if(C.N) C = reshapeColor(C, V.d0);
   arr vertices(T.d0*3, 3);
-  arr colors(vertices.d0, 4);
-  arr normals(vertices);
+  arr colors  (T.d0*3, 4);
+  arr normals (T.d0*3, 3);
+  arr _texUV   (T.d0*3, 2);
   for(uint i=0;i<T.d0;i++){
     for(uint j=0;j<3;j++){
       uint v = T(i,j);
-      for(uint k=0;k<3;k++) vertices.p[3*(3*i+j) + k] = V.p[3*v + k]; //vertices(3*i+j, k) = V(v, k);
-      for(uint k=0;k<4;k++) colors.p[4*(3*i+j) + k] = C.p[4*v + k];
-      for(uint k=0;k<3;k++) normals.p[3*(3*i+j) + k] = Tn.p[3*i + k];
+      uint l = (3*i+j);
+      for(uint k=0;k<3;k++) vertices.p[3*l + k] = V.p[3*v + k]; //vertices(l, k) = V(T(i,j), k);
+      if(C.N) for(uint k=0;k<4;k++) colors.p[4*l + k] = C.p[4*v + k];
+      for(uint k=0;k<3;k++) normals.p[3*l + k] = Tn.p[3*i + k];
+      if(texCoords.N) for(uint k=0;k<2;k++) _texUV.p[2*l + k] = texCoords.p[2*v + k]; //texUV(l,k) = tex(T(i,j), k);
     }
   }
 
@@ -651,10 +641,11 @@ void Mesh::makeArrayFormatted(double avgNormalsThreshold){
 
   V = vertices;
   Vn = normals;
-  C = colors;
+  if(C.N) C = colors;
   T.setStraightPerm(V.d0);
   T.reshape(-1, 3);
   Tn.clear();
+  if(texCoords.N) texCoords = _texUV;
   isArrayFormatted=true;
 }
 
@@ -974,8 +965,7 @@ void Mesh::fuseNearVertices(double tol) {
 
 //  cout <<"#V=" <<V.d0 <<", done" <<endl;
 
-  Tt.clear();
-  tex.clear();
+  texCoords.clear();
   texImg.clear();
 }
 
@@ -1155,8 +1145,7 @@ void Mesh::clean() {
     deleteUnusedVertices();
   }
 
-  Tt.clear();
-  tex.clear();
+  texCoords.clear();
   texImg.clear();
 //  computeNormals();
 }
@@ -1274,14 +1263,6 @@ void Mesh::skin(uint start) {
   }
   T=Tnew;
   cout <<T <<endl;
-}
-
-void Mesh::deleteGlTexture() {
-  if(texture!=-1) {
-    GLuint texName = texture;
-    glDeleteTextures(1, &texName);
-  }
-  texture=-1;
 }
 
 arr Mesh::getMean() const {
@@ -1426,9 +1407,9 @@ void Mesh::read(std::istream& is, const char* fileExtension, const char* filenam
   else if(!strcmp(fileExtension, "ply")) { readPLY(filename); }
   else if(!strcmp(fileExtension, "tri")) { readTriFile(is); }
   //  else if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { readStlFile(is); }
-  else if(!strcmp(fileExtension, "dae")) { *this = AssimpLoader(filename, true).getSingleMesh(); }
+  else if(!strcmp(fileExtension, "dae")) { *this = AssimpLoader(filename, true, false, 0).getSingleMesh(); }
   else {
-    *this = AssimpLoader(filename, false).getSingleMesh();
+    *this = AssimpLoader(filename, false, false, 0).getSingleMesh();
   }
 }
 
@@ -1723,8 +1704,8 @@ void Mesh::writeArr(std::ostream& os) {
   if(V.d0<65535) G.add("T", convert<uint16_t>(T)); else G.add("T", T);
   if(C.N) G.add("C", convert<byte>(C*255.f));
   if(cvxParts.N) G.add("cvxParts", cvxParts);
-  if(tex.N) G.add("tex", tex);
-  if(texImg.N) G.add("texImg", texImg);
+  if(texCoords.N) G.add("textureCoords", texCoords);
+  if(texImg.N) G.add("textureImg", texImg);
   G.write(os, ",\n", "{\n\n}", -1, false, true);
 }
 
@@ -1735,8 +1716,8 @@ void Mesh::writeH5(const char* filename, const str& group) {
   if(V.d0<65535) H.add(group+"/faces", convert<uint16_t>(T)); else H.add(group+"/faces", T);
   if(C.N) H.add(group+"/colors", convert<byte>(C*255.));
   if(cvxParts.N) H.add(group+"/parts", cvxParts);
-  if(tex.N) H.add(group+"/tex", tex);
-  if(texImg.N) H.add(group+"/texImg", texImg);
+  if(texCoords.N) H.add(group+"/textureCoords", texCoords);
+  if(texImg.N) H.add(group+"/textureImg", texImg);
 }
 
 void Mesh::readH5(const char* filename, const str& group) {
@@ -1746,8 +1727,8 @@ void Mesh::readH5(const char* filename, const str& group) {
   T = H.read<uint>(group+"/faces", true);
   C = convert<double>(H.read<byte>(group+"/colors", true))/255.;
   cvxParts = H.read<uint>(group+"/parts", true);
-  tex = H.read<double>(group+"/tex", true);
-  texImg = H.read<byte>(group+"/texImg", true);
+  texCoords = H.read<double>(group+"/textureCoords", true);
+  texImg = H.read<byte>(group+"/textureImg", true);
 }
 
 #if 1
@@ -1759,16 +1740,16 @@ void Mesh::readArr(std::istream& is) {
   n=G["T"]; if(n) { if(n->is<uintA>()) T = n->as<uintA>(); else { if(n->is<Array<int16_t>>()) T = convert<uint>(n->as<Array<int16_t>>()); else T = convert<uint>(n->as<uint16A>()); } }
   n=G["C"]; if(n) { if(n->is<arr>()) C = n->as<arr>(); else { if(n->is<byteA>()) C = convert<double>(n->as<byteA>())/255.; else C = convert<double>(n->as<floatA>()); } }
   G.get(cvxParts, "cvxParts");
-  G.get(tex, "tex");
-  G.get(texImg, "texImg");
+  G.get(texCoords, "textureCoords");
+  G.get(texImg, "textureImg");
 }
 #else //old version...
 void rai::Mesh::readArr(std::istream& is){
   V.readTagged(is, "V");
   T.readTagged(is, "T");
   C.readTagged(is, "C");
-  tex.readTagged(is, "tex");
-  texImg.readTagged(is, "texImg");
+  tex.readTagged(is, "textureCoords");
+  texImg.readTagged(is, "textureImg");
 }
 #endif
 

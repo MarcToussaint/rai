@@ -554,7 +554,8 @@ DensityDisplayData::DensityDisplayData(TensorShape& sdf) {
       volumeZ(i).translate(0, 0, totalSize(2)*(double(i)/double(volumeZ.N-1)-.5));
     }
   } else {
-    for(uint i=0; i<volumeZ.N; i++) volumeZ(i).deleteGlTexture();
+    NIY;
+    // for(uint i=0; i<volumeZ.N; i++) volumeZ(i).deleteGlTexture();
   }
   if(!volumeY.N) { //yzx
     volumeY.resize(volumeImgY.d0);
@@ -567,7 +568,8 @@ DensityDisplayData::DensityDisplayData(TensorShape& sdf) {
       volumeY(i).translate(0, totalSize(1)*(double(i)/double(volumeY.N-1)-.5), 0);
     }
   } else {
-    for(uint i=0; i<volumeY.N; i++) volumeY(i).deleteGlTexture();
+    NIY;
+    // for(uint i=0; i<volumeY.N; i++) volumeY(i).deleteGlTexture();
   }
   if(!volumeX.N) { //xyz
     volumeX.resize(volumeImgX.d0);
@@ -580,7 +582,8 @@ DensityDisplayData::DensityDisplayData(TensorShape& sdf) {
       volumeX(i).translate(totalSize(0)*(double(i)/double(volumeX.N-1)-.5), 0, 0);
     }
   } else {
-    for(uint i=0; i<volumeX.N; i++) volumeX(i).deleteGlTexture();
+    NIY;
+    // for(uint i=0; i<volumeX.N; i++) volumeX(i).deleteGlTexture();
   }
 }
 

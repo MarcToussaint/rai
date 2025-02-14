@@ -187,6 +187,8 @@ void RenderData::ensureInitialized(OpenGL &gl){
   id.prog_numLights = glGetUniformLocation(id.prog_ID, "numLights");
   id.prog_lightDirection_W = glGetUniformLocation(id.prog_ID, "lightDirection_W");
   id.prog_FlatColor = glGetUniformLocation(id.prog_ID, "flatColor");
+  id.prog_textureDim = glGetUniformLocation(id.prog_ID, "textureDim");
+  id.prog_textureImage = glGetUniformLocation(id.prog_ID, "textureImage");
 
   if(opt.userShaderFiles){
     id.progTensor = LoadShadersFile("shaderTensor.vs", "shaderTensor.fs");
@@ -254,7 +256,7 @@ void RenderData::ensureInitialized(OpenGL &gl){
   id.initialized=true;
 }
 
-void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs, RenderType type, GLint idFlatColor, GLint idScale){
+void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs, RenderType type, GLint idFlatColor, GLint idScale, GLint idTextureDim){
   arr ModelT_WM = eye(4);
 
   CHECK_EQ(sortedObjIDs.N, items.N, "");
@@ -283,6 +285,9 @@ void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs,
       glUniform4f(idFlatColor, rgb[0]/255.f, rgb[1]/255.f, rgb[2]/255.f, 1.);
     }else{
       glUniform4f(idFlatColor, 0.f, 0.f, 0.f, 0.f);
+      if(idTextureDim>=0){
+        glUniform1i(idTextureDim, obj->asset->textureDim);
+      }
     }
 
     obj->asset->glRender();
@@ -436,7 +441,9 @@ void RenderData::glDraw(OpenGL& gl){
       glUniform1i(id.prog_useShadow, 0);
     }
 
-    renderObjects(id.prog_ModelT_WM, sorting, _solid, id.prog_FlatColor);
+    glUniform1i(id.prog_textureImage, 0);
+
+    renderObjects(id.prog_ModelT_WM, sorting, _solid, id.prog_FlatColor, -1, id.prog_textureDim);
 //    renderObjects(id.prog_ModelT_WM, sorting, _marker);
 
     if(renderUntil>=_shadow && opt.useShadow) glBindTexture(GL_TEXTURE_2D, 0);
@@ -504,78 +511,30 @@ void RenderAsset::mesh(rai::Mesh& mesh, double avgNormalsThreshold){
 
   if(!mesh.isArrayFormatted) mesh.makeArrayFormatted(avgNormalsThreshold);
 
-  if(mesh.isArrayFormatted){
-    CHECK_EQ(mesh.V.d0, mesh.T.d0*3, "");
-    CHECK_EQ(mesh.V.d0, mesh.Vn.d0, "");
-    CHECK_EQ(mesh.V.d0, mesh.C.d0, "");
-    CHECK_EQ(mesh.C.d1, 4, "");
-    vertices = rai::convert<float>(mesh.V);
-    colors = rai::convert<float>(mesh.C);
-    normals = rai::convert<float>(mesh.Vn);
+  CHECK_EQ(mesh.V.d0, mesh.T.d0*3, "");
+  CHECK_EQ(mesh.V.d0, mesh.Vn.d0, "");
+  vertices = rai::convert<float>(mesh.V);
+  normals = rai::convert<float>(mesh.Vn);
+  if(!mesh.texCoords.N){
+    if(mesh.C.N){
+      CHECK_EQ(mesh.V.d0, mesh.C.d0, "");
+      CHECK_EQ(mesh.C.d1, 4, "");
+      colors = rai::convert<float>(mesh.C);
+    }else{
+      colors.resize(mesh.V.d0, 4);
+      colors=1.;
+    }
   }else{
-    mesh.computeTriNormals();
-    vertices.resize(mesh.T.d0*3, 3);
-    colors.resize(vertices.d0, 4);
-    normals.resizeAs(vertices);
-#if 1
-    arr c = reshapeColor(mesh.C);
-#else
-    arr c;
-    if(!mesh.C.N) c = arr{.8,.8,.8};
-    if(mesh.C.nd==1) c = mesh.C;
-    if(c.N==1){ double g=c.elem(); c = arr{g,g,g}; }
-    if(c.N==2){ double g=c.elem(0); c.prepend(g); c.prepend(g); }
-#endif
-    for(uint i=0;i<mesh.T.d0;i++){
-      for(uint j=0;j<3;j++){
-        if(mesh.C.nd==2) c.referToDim(mesh.C, mesh.T(i,j));
-        for(uint k=0;k<3;k++) vertices(3*i+j,k) = mesh.V(mesh.T(i,j), k);
-        for(uint k=0;k<3;k++) colors(3*i+j,k) = c(k); //m.C(m.T(i,j), k);
-        if(c.N==4) colors(3*i+j, 3)=c(3); else colors(3*i+j, 3)=1.;
-        for(uint k=0;k<3;k++) normals(3*i+j, k) = mesh.Tn(i,k);
-      }
-    }
-
-    //-- normal smoothing
-    if(false && avgNormalsThreshold<1.){
-      //go through all vertices and check whether to average normals for smoothing
-      uintAA sameVertices(mesh.V.d0);
-      for(uint i=0;i<mesh.T.d0;i++){
-        for(uint j=0;j<3;j++) sameVertices(mesh.T(i,j)).append(3*i+j);
-      }
-
-      for(uint i=0;i<sameVertices.N;i++){
-        uintA& verts = sameVertices(i);
-        uint n = verts.N;
-        if(n<2) continue;
-        //copy to arr
-        arr ns(n, 3);
-        for(uint j=0;j<n;j++) ns[j] = rai::convert<double>(normals[verts(j)]);
-        //check if we can average all of them (all pairwise scalar products > threshold)
-        bool avg = true;
-        for(uint j=0;j<n;j++) for(uint k=j+1;k<n;k++){
-          if(scalarProduct(ns[j], ns[k])<avgNormalsThreshold){ avg=false; break; }
-        }
-        if(avg){
-          arr na = ::sum(ns, 0);
-          na /= length(na);
-          floatA naf = rai::convert<float>(na);
-          for(uint j=0;j<n;j++) normals[verts(j)] = naf;
-        }else{
-          //average them pair-wise
-          for(uint j=0;j<n;j++) for(uint k=0;k<n;k++){
-            arr nj=ns[j], nk=ns[k];
-            if(scalarProduct(nj, nk)>avgNormalsThreshold){
-              arr na = nj+nk;
-              na /= length(na);
-              nj = na;
-              nk = na;
-            }
-          }
-          for(uint j=0;j<n;j++) normals[verts(j)] = rai::convert<float>(ns[j]);
-        }
-      }
-    }
+    CHECK_EQ(mesh.C.N, 0,"no vertex colors allowed for textured meshes");
+    CHECK_EQ(mesh.V.d0, mesh.texCoords.d0,"");
+    CHECK_EQ(mesh.texCoords.d1, 2, "");
+    CHECK_EQ(mesh.texImg.d2, 3, "");
+    colors = rai::convert<float>(mesh.texCoords);
+    colors.insColumns(-1, 2);
+    for(uint i=0;i<colors.d0;i++) colors(i,2) = colors(i,3) = 1.;
+    texture = rai::convert<float>(mesh.texImg);
+    for(float& f:texture) f /= 255.f;
+    textureDim = 2;
   }
 }
 
@@ -617,17 +576,18 @@ void RenderAsset::tensor(const floatA& vol, const arr& size){
   mesh.scale(size);
   mesh.makeArrayFormatted();
   vertices = rai::convert<float>(mesh.V);
-  colors = rai::convert<float>(mesh.C);
+  colors.clear();
   normals = rai::convert<float>(mesh.Vn);
+  textureDim = 3;
 }
 
 
 void RenderAsset::glRender(){
   CHECK(initialized, "");
 
-  if(texture.nd) glActiveTexture(GL_TEXTURE0);
-  if(texture.nd==2) glBindTexture(GL_TEXTURE_2D, textureBuffer);
-  if(texture.nd==3) glBindTexture(GL_TEXTURE_3D, textureBuffer);
+  if(textureDim) glActiveTexture(GL_TEXTURE0);
+  if(textureDim==2) glBindTexture(GL_TEXTURE_2D, textureBuffer);
+  if(textureDim==3) glBindTexture(GL_TEXTURE_3D, textureBuffer);
 
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
@@ -641,8 +601,8 @@ void RenderAsset::glRender(){
   glDisableVertexAttribArray(1);
   glDisableVertexAttribArray(2);
 
-  if(texture.nd==2) glBindTexture(GL_TEXTURE_2D, 0);
-  if(texture.nd==3) glBindTexture(GL_TEXTURE_3D, 0);
+  if(textureDim==2) glBindTexture(GL_TEXTURE_2D, 0);
+  if(textureDim==3) glBindTexture(GL_TEXTURE_3D, 0);
 }
 
 void RenderAsset::glInitialize(){
@@ -673,23 +633,25 @@ void RenderAsset::glInitialize(){
   glBindVertexArray(0);
 
   //generate texture
-  if(texture.nd){
+  if(textureDim){
+    CHECK_EQ(texture.nd, 3, "");
     glGenTextures(1, &textureBuffer);
     glActiveTexture(GL_TEXTURE0);
-    if(texture.nd==2){
+    if(textureDim==2){ //this is texture image and colors are texture coordinates
       glBindTexture(GL_TEXTURE_2D, textureBuffer);
       glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      if(texture.d2==1) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, texture.d1, texture.d0, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, texture.p);
-      else if(texture.d2==2) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, texture.d1, texture.d0, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, texture.p);
-      else if(texture.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.d1, texture.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, texture.p);
-      else if(texture.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.d1, texture.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture.p);
+      if(texture.d2==1) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, texture.d1, texture.d0, 0, GL_LUMINANCE, GL_FLOAT, texture.p);
+      else if(texture.d2==2) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, texture.d1, texture.d0, 0, GL_LUMINANCE_ALPHA, GL_FLOAT, texture.p);
+      else if(texture.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.d1, texture.d0, 0, GL_RGB, GL_FLOAT, texture.p);
+      else if(texture.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.d1, texture.d0, 0, GL_RGBA, GL_FLOAT, texture.p);
+      else NIY;
       glBindTexture(GL_TEXTURE_2D, 0);
     }
-    if(texture.nd==3){
+    else if(textureDim==3){
       glEnable(GL_TEXTURE_3D);
       glBindTexture(GL_TEXTURE_3D, textureBuffer);
       glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
@@ -702,6 +664,7 @@ void RenderAsset::glInitialize(){
       glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, texture.d2, texture.d1, texture.d0, 0, GL_RED, GL_FLOAT, texture.p);
       glBindTexture(GL_TEXTURE_3D, 0);
     }
+    else NIY;
   }
 
   initialized=true;
@@ -866,7 +829,7 @@ void RenderData::addQuad(const byteA& img, float x, float y, float w, float h){
 
 }
 
-RenderData& RenderData::addStandardScene(){
+RenderData& RenderData::addStandardScene(bool addFloor){
   double shadowHeight = 8.;
   arr floorColor = opt.floorColor;
   if(!floorColor.N) floorColor = arr{.4, .45, .5};
@@ -879,7 +842,7 @@ RenderData& RenderData::addStandardScene(){
 //      addLight({3.,0.,4.}, {0.,0.,1.});
     }
   }
-  if(floorColor.N==3){ // floor
+  if(addFloor && floorColor.N==3){ // floor
     rai::Mesh m;
     m.setQuad();
     m.scale(10., 10., 0.);
