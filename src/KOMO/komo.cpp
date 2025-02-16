@@ -1575,48 +1575,50 @@ void KOMO::getSubProblem(uint phase, Configuration& C, arr& q0, arr& q1) {
 //===========================================================================
 
 rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
-                              JointType jointType, bool stable,
-                              const char* initName, rai::Frame* initFrame) {
+			      JointType jointType, bool stable,
+			      const char* originFrameName, rai::Frame* originFrame, const Transformation& relOrigin) {
   Frame* p0 = 0;
   if(parent && parent[0]) p0 = world[parent];
 
   //-- IN WORLD, NOT PATHCONFIG!
 
   // decide on a relative pose
-  rai::Transformation rel = 0;
-  if(initName && initName[0]){
-    CHECK(!initFrame, "can't specify both, initName and initFrame!");
-    initFrame = world.getFrame(initName, true);
+  rai::Transformation originRel = 0;
+  if(originFrameName && originFrameName[0]){
+    CHECK(!originFrame, "can't specify both, initName and initFrame!");
+    originFrame = world.getFrame(originFrameName, true);
   }
-  if(initFrame) {
+  if(originFrame) {
     if(p0){
-      rel = initFrame->ensure_X()/p0->ensure_X();
+      originRel = originFrame->ensure_X()/p0->ensure_X();
     }else{
-      rel = initFrame->ensure_X();
+      originRel = originFrame->ensure_X();
     }
+  }else if(!relOrigin.isZero()){
+    originRel = relOrigin;
   }
 
   // link to parent, potentially via inbetween frame
   {
     Frame* f = world.addFrame(name);
-    if(rel.isZero()) {
+    if(originRel.isZero()) {
       if(p0) f->setParent(p0, false);
     } else {
       if(jointType!=JT_none && jointType!=JT_rigid){
-        Frame* r = world.addFrame(STRING(name<<"_origin"));
+        Frame* ori = world.addFrame(STRING(name<<"_origin"));
         if(p0){
-          r->setParent(p0, false);
-          r->setRelativePose(rel);
+          ori->setParent(p0, false);
+          ori->setRelativePose(originRel);
         }else{
-          r->setPose(rel);
+          ori->setPose(originRel);
         }
-        f->setParent(r, false);
+        f->setParent(ori, false);
       }else{
         if(p0){
           f->setParent(p0, false);
-          f->setRelativePose(rel);
+          f->setRelativePose(originRel);
         }else{
-          f->setPose(rel);
+          f->setPose(originRel);
         }
       }
     }
@@ -1624,7 +1626,7 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
 
   //-- IN PATHCONFIG
 
-  FrameL F, R;
+  FrameL F, O;
   Frame* f0=0;
   for(uint s=0; s<timeSlices.d0; s++) { //apply switch on all configurations!
     Frame* f = pathConfig.addFrame(name, 0, 0, false);
@@ -1633,29 +1635,29 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
       p=timeSlices(s, p0->ID);
       CHECK_EQ(p->name, parent, "");
     }
-    if(rel.isZero()) {
+    if(originRel.isZero()) {
       if(p) f->setParent(p, false);
     } else {
       if(jointType!=JT_none && jointType!=JT_rigid){
-        Frame* r = pathConfig.addFrame(STRING(name<<"_origin"), 0, 0, false);
+        Frame* ori = pathConfig.addFrame(STRING(name<<"_origin"), 0, 0, false);
         if(p){
-          r->setParent(p, false);
-          r->setRelativePose(rel);
+          ori->setParent(p, false);
+          ori->setRelativePose(originRel);
         }else{
-          r->setPose(rel);
+          ori->setPose(originRel);
         }
-        f->setParent(r, false);
-        R.append(r);
+        f->setParent(ori, false);
+        O.append(ori);
       }else{
         if(p){
           f->setParent(p, false);
-          f->setRelativePose(rel);
+          f->setRelativePose(originRel);
         }else{
-          f->setPose(rel);
+          f->setPose(originRel);
         }
       }
     }
-    if(initFrame) f->setPose(initFrame->getPose());
+    //if(initFrame) f->setPose(initFrame->getPose());
     if(jointType!=JT_none) {
       f->setJoint(jointType);
       f->joint->isPartBreak=false;
@@ -1672,14 +1674,15 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
     F.append(f);
   }
 
+  //-- UPDATE THE timeSlices: add columns for the frame, or frame and origin frames
   CHECK_EQ(F.N, timeSlices.d0, "");
-  if(rel.isZero() || jointType==JT_none || jointType==JT_rigid) {
+  if(originRel.isZero() || jointType==JT_none || jointType==JT_rigid) {
     timeSlices.insColumns(-1);
     for(uint s=0; s<timeSlices.d0; s++) timeSlices(s, -1) = F(s);
   } else {
-    CHECK_EQ(R.N, timeSlices.d0, "");
+    CHECK_EQ(O.N, timeSlices.d0, "");
     timeSlices.insColumns(-1, 2);
-    for(uint s=0; s<timeSlices.d0; s++) { timeSlices(s, -2) = F(s);  timeSlices(s, -1) = R(s); }
+    for(uint s=0; s<timeSlices.d0; s++) { timeSlices(s, -2) = F(s);  timeSlices(s, -1) = O(s); }
   }
   CHECK_EQ(timeSlices.d1, world.frames.N, "");
   if(timeSlices.N==pathConfig.frames.N) {
@@ -1688,6 +1691,23 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
     for(Frame* f: pathConfig.frames) f->ID = i++;
   }
   return f0;
+}
+
+void KOMO::addForceExchangeDofs(const arr& times, const char* onto, const char* from, rai::ForceExchangeType type, const arr& initPoa, const arr& initForce){
+  //skip doing it in world at all...
+  uint ontoId = world.getFrame(onto, true)->ID;
+  uint fromId = world.getFrame(from, true)->ID;
+  int sStart, sEnd;
+  conv_times2steps(sStart, sEnd, times, stepsPerPhase, T, 0, 0);
+  for(int s=sStart; s<=sEnd; s++) {
+    rai::Frame *a = timeSlices(k_order+s, ontoId);
+    rai::Frame *b = timeSlices(k_order+s, fromId);
+    rai::ForceExchangeDof* ex = new ForceExchangeDof(*a, *b, type);
+    if(initPoa.N) ex->poa = initPoa;
+    if(initForce.N) ex->force = initForce;
+    ex->q0 = ex->calcDofsFromConfig();
+  }
+
 }
 
 rai::Frame* KOMO::applySwitch(const KinematicSwitch& sw) {

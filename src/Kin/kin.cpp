@@ -1084,8 +1084,8 @@ Graph Configuration::reportForces() {
     const ForceExchangeDof* ex = dof->fex();
     if(ex) {
       Graph& g = G.addSubgraph();
-      g.add<String>("from", ex->a.name);
-      g.add<String>("to", ex->b.name);
+      g.add<String>("onto", STRING(ex->a.name <<'_' <<ex->a.ID));
+      g.add<String>("from", STRING(ex->b.name <<'_' <<ex->b.ID));
       g.add<arr>("force", ex->force);
       g.add<arr>("torque", ex->torque);
       g.add<arr>("poa", ex->poa);

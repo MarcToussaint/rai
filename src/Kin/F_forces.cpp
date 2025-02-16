@@ -466,7 +466,6 @@ FrameL getShapesAbove(rai::Frame* a) {
 
 arr F_fex_POAAtFrame::phi(const FrameL& F){
   CHECK_GE(F.N, 3, "");
-  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1), true);
 
   arr poa = F_fex_POA() .eval({F.elem(0), F.elem(1)});
 
@@ -477,10 +476,9 @@ arr F_fex_POAAtFrame::phi(const FrameL& F){
 
 arr F_fex_ForceInFrameCone::phi(const FrameL& F) {
   CHECK_GE(F.N, 3, "");
-  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1), true);
 
   arr force = F_fex_Force() .eval({F.elem(0), F.elem(1)});
-  op_normalize(force); //optional
+  op_normalize(force);
 
   arr normal = F_Vector(Vector_z) .eval({F.elem(2)});
   op_normalize(normal);

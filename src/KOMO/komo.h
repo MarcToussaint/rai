@@ -19,6 +19,7 @@ struct FclInterface;
 enum SwitchInitializationType : int;
 enum SkeletonSymbol : int;
 enum JointType : int;
+enum ForceExchangeType : int;
 }
 typedef rai::Array<ObjectiveType> ObjectiveTypeA;
 struct SolverReturn;
@@ -214,7 +215,8 @@ struct KOMO : NonCopyable {
   // internal (kind of private)
   //
 
-  rai::Frame* addFrameDof(const char* name, const char* parent, rai::JointType jointType, bool stable, const char* initName=0, rai::Frame* initFrame=0);
+  rai::Frame* addFrameDof(const char* name, const char* parent, rai::JointType jointType, bool stable, const char* originFrameName=0, rai::Frame* originFrame=0, const rai::Transformation& relOrigin=0);
+  void addForceExchangeDofs(const arr& times, const char* onto, const char* from,  rai::ForceExchangeType _type, const arr& initPoa={}, const arr& initForce={});
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly= {});           ///< set the state trajectory of all configurations
 private:
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);
