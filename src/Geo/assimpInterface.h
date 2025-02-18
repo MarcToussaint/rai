@@ -19,7 +19,7 @@ struct AssimpLoader {
   std::string directory;
   int verbose=0;
 
-  AssimpLoader(std::string const& path, bool flipYZ=true, bool relativeMeshPoses=false, int _verbose=0);
+  AssimpLoader(const std::string& path, bool flipYZ=true, bool relativeMeshPoses=false, int _verbose=0);
   AssimpLoader(const struct aiScene* scene);
 
   rai::Mesh getSingleMesh();

@@ -45,9 +45,8 @@ void main(){
   float density = 0.;
   vec3 normal = vec3(0,0,0);
   for(int i=0;i<=1000;i++){
-    step_pos += step_delta;
     vec3 tensor_coord = step_pos/ModelScale;
-    if(tensor_coord.x>-.5 && tensor_coord.x<.5 && tensor_coord.y>-.5 && tensor_coord.y<.5 && tensor_coord.z>-.5 && tensor_coord.z<.5){
+    if(tensor_coord.x>=-.5 && tensor_coord.x<=.5 && tensor_coord.y>=-.5 && tensor_coord.y<=.5 && tensor_coord.z>=-.5 && tensor_coord.z<=.5){
       float d = texture(tensorTexture, tensor_coord+.5).r;
       vec3 n = calculate_normal(tensor_coord+.5);
       if(d<0.) d=0;
@@ -57,8 +56,9 @@ void main(){
       normal += d * n;
       if(density>=1.) break;
     }else{
-      break;
+      if(i>10) break; //might need several steps to be inside
     }
+    step_pos += step_delta;
   }
 
   //vec3 eyeDirection_M = normalize(eyePosition_M - surfacePoint_M);

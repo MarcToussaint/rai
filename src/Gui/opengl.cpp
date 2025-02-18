@@ -710,14 +710,13 @@ void OpenGL::project(double& x, double& y, double& z, bool resetCamera, int subV
 // callbacks
 //
 
-void getSphereVector(rai::Vector& vec, double x, double y, int le, int ri, int bo, int to) {
+rai::Vector getMouseVector(double x, double y, int le, int ri, int bo, int to) {
   int w=ri-le, h=to-bo;
   int minwh = w<h?w:h;
   x=x-le-.5*w;  x*= 2./minwh;
   y=y-bo-.5*h;  y*= -2./minwh;
-  vec.set(x, y, .5-(x*x+y*y));
-  if(vec.z<0.) vec.z=0.;
-  vec.isZero=false;
+  rai::Vector vec(x, y, .5-(x*x+y*y));
+  return vec;
 }
 
 bool OpenGL::modifiersNone() { return _NONE(modifiers); }
@@ -812,14 +811,14 @@ void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
   for(mouseView=views.N; mouseView--;) {
     v=&views(mouseView);
     if(_x<v->ri*w && _x>v->le*w && _y<v->to*h && _y>v->bo*h) {
-      getSphereVector(vec, _x, _y, v->le*w, v->ri*w, v->bo*h, v->to*h);
+      vec = getMouseVector(_x, _y, v->le*w, v->ri*w, v->bo*h, v->to*h);
       cam=&views(mouseView).camera;
       break;
     }
   }
 
   if(mouseView==-1) {
-    getSphereVector(vec, _x, _y, 0, w, 0, h);
+    vec = getMouseVector(_x, _y, 0, w, 0, h);
     v=0;
   }
   CALLBACK_DEBUG(this, "associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
@@ -831,6 +830,12 @@ void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
   } else {
     if(!mouseIsDown) return; //the button is already up (another button was pressed...)
     //CHECK(mouseIsDown, "mouse-up event although the mouse is not down???");
+    if(downVec.z<=.0 && mouse_button==-2 && _NONE(downModifiers) && !downVec.isZero) {
+      rai::Vector cz = -cam->X.rot.getY();
+      if(fabs(cz.x)>fabs(cz.y) && fabs(cz.x)>fabs(cz.z)) cam->upright(rai::sign(cz.x)*Vector_x);
+      if(fabs(cz.y)>fabs(cz.x) && fabs(cz.y)>fabs(cz.z)) cam->upright(rai::sign(cz.y)*Vector_y);
+      if(fabs(cz.z)>fabs(cz.x) && fabs(cz.z)>fabs(cz.y)) cam->upright(rai::sign(cz.z)*Vector_z);
+    }
     mouseIsDown=false;
     needsUpdate=true;
   }
@@ -962,10 +967,10 @@ void OpenGL::MouseMotion(double _x, double _y) {
   rai::Vector vec;
   if(mouseView==-1) {
     cam=&camera;
-    getSphereVector(vec, _x, _y, 0, w, 0, h);
+    vec = getMouseVector(_x, _y, 0, w, 0, h);
   } else {
     cam=&views(mouseView).camera;
-    getSphereVector(vec, _x, _y, views(mouseView).le*w, views(mouseView).ri*w, views(mouseView).bo*h, views(mouseView).to*h);
+    vec = getMouseVector(_x, _y, views(mouseView).le*w, views(mouseView).ri*w, views(mouseView).bo*h, views(mouseView).to*h);
   }
   CALLBACK_DEBUG(this, "associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
 
@@ -974,11 +979,11 @@ void OpenGL::MouseMotion(double _x, double _y) {
   //-- LEFT -> rotation
   if(mouse_button==1 && _NONE(downModifiers) && !downVec.isZero) {
     rai::Quaternion rot;
-    if(downVec.z<.01) {
+    if(downVec.z<=.0) {
       //at the margin:
       downVec.z=0; downVec.normalize();
       vec.z = 0.; vec.normalize();
-      rot.setDiff(vec, downVec);  //consider imagined sphere rotation of mouse-move
+      rot.setDiff(vec, downVec);
     } else {
       //not at margin: use starndard xy to rotate
       rai::Vector diff = vec - downVec;

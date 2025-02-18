@@ -322,9 +322,9 @@ rai::Frame& rai::Frame::convertDecomposedShapeToChildFrames() {
   return *this;
 }
 
-rai::Transformation rai::Frame::transformToDiagInertia() {
+rai::Transformation rai::Frame::transformToDiagInertia(bool transformMesh) {
   CHECK(inertia, "");
-  CHECK(!shape || shape->type()==rai::ST_marker, "can't translate this frame if it has a shape attached");
+  CHECK(!shape || shape->type()==rai::ST_marker || transformMesh, "can't translate this frame if it has a shape attached");
   CHECK(!joint || joint->type==rai::JT_rigid || joint->type==rai::JT_free, "can't translate this frame if it has a joint attached");
   //LOG(0) <<"translating frame '" <<name <<"' to accomodate for centered compound inertia";
   rai::Transformation t=0;
@@ -333,6 +333,7 @@ rai::Transformation rai::Frame::transformToDiagInertia() {
     t.pos = inertia->com;
     inertia->com.setZero();
   }
+
   if(!inertia->matrix.isDiagonal()) {
     arr I = inertia->matrix.getArr();
     arr U, d, V;
@@ -343,6 +344,10 @@ rai::Transformation rai::Frame::transformToDiagInertia() {
 
   if(!t.isZero()) {
     set_X()->appendTransformation(t);
+    if(shape && transformMesh){
+      CHECK_EQ(shape->type(), ST_mesh, "");
+      shape->mesh().transform(-t);
+    }
     for(rai::Frame* ch:children) ch->set_Q() = -t * ch->get_Q();
   }
 
@@ -720,7 +725,7 @@ rai::Frame& rai::Frame::setContact(int cont) {
 }
 
 rai::Frame& rai::Frame::setMass(double mass) {
-  if(mass<0.) {
+  if(mass==0.) {
     if(inertia) delete inertia;
   } else {
     getInertia().mass = mass;
@@ -2149,14 +2154,14 @@ void rai::Inertia::defaultInertiaByShape() {
 
   //add inertia to the body
   switch(frame.shape->type()) {
-    case ST_sphere:   inertiaSphere(matrix.p(), mass, (mass>0.?0.:1000.), frame.shape->radius());  break;
+    case ST_sphere:   inertiaSphere(matrix.p(), mass, (mass>0.?0.:100.), frame.shape->radius());  break;
     case ST_ssBox:
-    case ST_box:      inertiaBox(matrix.p(), mass, (mass>0.?0.:1000.), frame.shape->size(0), frame.shape->size(1), frame.shape->size(2));  break;
+    case ST_box:      inertiaBox(matrix.p(), mass, (mass>0.?0.:100.), frame.shape->size(0), frame.shape->size(1), frame.shape->size(2));  break;
     case ST_capsule:
     case ST_cylinder:
-    case ST_ssCylinder: inertiaCylinder(matrix.p(), mass, (mass>0.?0.:1000.), frame.shape->size(0), frame.shape->size(1));  break;
+    case ST_ssCylinder: inertiaCylinder(matrix.p(), mass, (mass>0.?0.:100.), frame.shape->size(0), frame.shape->size(1));  break;
     case ST_ssCvx:
-    case ST_mesh: inertiaMesh(matrix.p(), mass, (mass>0.?0.:1000.), frame.shape->mesh()); break;
+    case ST_mesh: inertiaMesh(matrix.p(), mass, (mass>0.?0.:100.), frame.shape->mesh()); break;
     default: HALT("not implemented for this shape type");
   }
 }

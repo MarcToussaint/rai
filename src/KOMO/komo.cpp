@@ -1703,6 +1703,7 @@ void KOMO::addForceExchangeDofs(const arr& times, const char* onto, const char* 
     rai::Frame *a = timeSlices(k_order+s, ontoId);
     rai::Frame *b = timeSlices(k_order+s, fromId);
     rai::ForceExchangeDof* ex = new ForceExchangeDof(*a, *b, type);
+    // ex->scale=2.;
     if(initPoa.N) ex->poa = initPoa;
     if(initForce.N) ex->force = initForce;
     ex->q0 = ex->calcDofsFromConfig();

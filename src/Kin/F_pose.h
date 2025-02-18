@@ -22,6 +22,8 @@ struct F_Zeros : Feature {
 //===========================================================================
 
 struct F_Position : Feature {
+  rai::Vector relPos;
+  F_Position(const rai::Vector& _relPos=0) : relPos(_relPos) {}
   virtual arr phi(const FrameL& F);
   virtual uint dim_phi(const FrameL& F) { return 3; }
 };

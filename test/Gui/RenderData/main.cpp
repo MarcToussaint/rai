@@ -91,14 +91,11 @@ void testTensor(){
 
 
 #if 0
-  uint d=15;
-  arr data = zeros(d,d,d);
-  data.setZero();
-  data(d/3,d/3,d/3)=20.;
-  for(uint i=0; i<2; i++) {
-    data = integral(data);
-    data = differencing(data, 3);
-  }
+  uint d=5;
+  arr data = rand({d,d,d});
+  arr size = {.3, .2, .5};
+  data *= .01;
+  cout <<data <<endl;
 #else
   rai::H5_Reader h5("/home/mtoussai/git/repair/bone.h5");
   rai::Array<int16_t> density = h5.read<int16_t>("density_org");

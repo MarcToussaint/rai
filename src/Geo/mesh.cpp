@@ -494,7 +494,7 @@ void Mesh::box() {
 }
 
 void Mesh::addMesh(const Mesh& mesh2, const Transformation& X) {
-  uint n=V.d0, tn=texCoords.d0, t=T.d0;
+  uint n=V.d0, t=T.d0;
   if(V.d0==C.d0 && (C.N || mesh2.C.N)) {
     if(mesh2.V.d0==mesh2.C.d0) C.append(mesh2.C);
     else if(mesh2.C.N==3) C.append(replicate(mesh2.C, mesh2.V.d0));

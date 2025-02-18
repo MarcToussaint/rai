@@ -218,7 +218,7 @@ struct String : public std::iostream {
 };
 stdPipes(String)
 
-inline String operator+(const String& a, const char* b) { String s=a; s <<b; return s; }
+template<class T> String operator+(const String& a, const T& b) { String s=a; s <<b; return s; }
 
 } //namespace
 

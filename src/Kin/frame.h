@@ -145,7 +145,7 @@ struct Frame : NonCopyable {
   void prefixSubtree(const char* prefix);
 
   //composed object manipulation
-  Transformation transformToDiagInertia();
+  Transformation transformToDiagInertia(bool transformOwnMesh=false);
   Frame& computeCompoundInertia(bool clearChildInertias=true);
   Frame& convertDecomposedShapeToChildFrames();
 

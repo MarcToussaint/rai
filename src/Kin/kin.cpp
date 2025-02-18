@@ -1711,13 +1711,14 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
   while(a) { //loop backward down the kinematic tree
     if(!a->parent) break; //frame has no inlink -> done
     Joint* j=a->joint;
+    rai::Vector j_pos = a->ensure_X().pos;
     if(j && j->active) {
       uint j_idx=j->qIndex;
       CHECK_LE(j_idx, q.N, "");
       if(j_idx>=N) if(j->active) CHECK_EQ(j->type, JT_rigid, "");
       if(j_idx<N) {
         if(j->type==JT_hingeX || j->type==JT_hingeY || j->type==JT_hingeZ) {
-          Vector tmp = j->axis ^ (pos_world-j->X()*j->Q().pos);
+          Vector tmp = j->axis ^ (pos_world-j_pos); //j->X()*j->Q().pos);
           tmp *= j->scale;
           J.elem(0, j_idx) += tmp.x;
           J.elem(1, j_idx) += tmp.y;
@@ -1734,7 +1735,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           arr R = j->X().rot.getMatrix();
           R *= j->scale;
           J.setMatrixBlock(R.sub(0, -1, 0, 1), 0, j_idx);
-          Vector tmp = j->axis ^ (pos_world-(j->X().pos + j->X().rot*a->Q.pos));
+          Vector tmp = j->axis ^ (pos_world-j_pos); //(j->X().pos + j->X().rot*a->Q.pos));
           tmp *= j->scale;
           J.elem(0, j_idx+2) += tmp.x;
           J.elem(1, j_idx+2) += tmp.y;
@@ -1753,7 +1754,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           arr R = j->frame->parent->get_X().rot.getMatrix();
           R *= j->scale;
           arr Rt =~R;
-          Vector d = (pos_world-j->X()*j->Q().pos);
+          Vector d = (pos_world-j_pos); //j->X()*j->Q().pos);
           arr D = skew(d.getArr());
 
           for(uint i=0; i<j->code.N; i++) {
@@ -1796,7 +1797,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
         if(j->type==JT_circleZ) {
           arr Jrot = j->X().rot.getMatrix() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot.delColumns(1,2);
-          Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*a->Q.pos)));  //cross-product of all 4 w-vectors with lever
+          Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-j_pos)); //(j->X().pos+j->X().rot*a->Q.pos)));  //cross-product of all 4 w-vectors with lever
           Jrot /= sqrt(sumOfSqr(q({j->qIndex, j->qIndex+1})));   //account for the potential non-normalization of q
           Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx);
@@ -1806,7 +1807,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           if(j->type==JT_XBall) offset=1;
           if(j->type==JT_free) offset=3;
           arr Jrot = j->X().rot.getMatrix() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
-          Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*a->Q.pos)));  //cross-product of all 4 w-vectors with lever
+          Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-j_pos)); //(j->X().pos+j->X().rot*a->Q.pos)));  //cross-product of all 4 w-vectors with lever
           Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3})));   //account for the potential non-normalization of q
           //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J.elem(k,j_idx+offset+i) += Jrot(k,i);
           Jrot *= j->scale;
@@ -1820,7 +1821,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
       arr Jpos, Jang;
       d->getJacobians(Jpos, Jang);
       if(Jang.N) { //angular part: cross-product of rows with lever
-        Jang = crossProduct(Jang, conv_vec2arr(pos_world-a->getPosition()));
+        Jang = crossProduct(Jang, conv_vec2arr(pos_world-j_pos)); //a->getPosition()));
         J.setMatrixBlock(Jang, 0, d->qIndex);
       }
       if(Jpos.N) { //translational part: direct

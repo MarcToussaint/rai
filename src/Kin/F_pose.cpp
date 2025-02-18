@@ -25,7 +25,7 @@ arr F_Position::phi(const FrameL& F) {
   CHECK_EQ(F.N, 1, "Position feature only takes one frame argument");
   rai::Frame* f = F.elem(0);
   arr y;
-  f->C.kinematicsPos(y, y.J(), f);
+  f->C.kinematicsPos(y, y.J(), f, relPos);
   return y;
 }
 

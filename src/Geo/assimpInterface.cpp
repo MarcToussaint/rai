@@ -24,7 +24,7 @@
 bool loadTextures = true;
 
 AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ, bool relativeMeshPoses, int _verbose)
-    :verbose(_verbose){
+    : verbose(_verbose){
 
   Assimp::Importer importer;
   const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
@@ -33,7 +33,12 @@ AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ, bool relativeMe
     HALT("ERROR::ASSIMP:: " <<importer.GetErrorString());
   }
 
-  directory = path.substr(0, path.find_last_of('/'));
+  size_t slash = path.find_last_of('/');
+  if(slash<std::string::npos){
+    directory = path.substr(0, slash);
+  }else{
+    directory = ".";
+  }
 
   if(verbose>0) {
     LOG(0) <<"loading " <<path <<" from directory " <<directory;
@@ -82,7 +87,7 @@ void AssimpLoader::loadNode(const aiNode* node, const aiScene* scene, arr T, boo
   X.rot.setMatrix((R%scales).p);
 
   if(verbose>0) {
-    LOG(0) <<" loading node '" <<node->mName.C_Str() <<"' of parent '" <<(node->mParent?node->mParent->mName.C_Str():"<nil>");
+    LOG(0) <<" loading node '" <<node->mName.C_Str() <<"' of parent '" <<(node->mParent?node->mParent->mName.C_Str():"<nil>") <<"'";
 
     cout <<"Transform: T=\n" <<T <<"\n<" <<X <<'>' <<endl;
     cout <<"Trans scaling: " <<scales <<"ortho: ";
@@ -170,19 +175,18 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
   for(int type = aiTextureType_NONE; type<aiTextureType_UNKNOWN; type++){
     uint nTex = material->GetTextureCount(aiTextureType(type));
     if(verbose>0) {
-      cout <<"material: #textures=" <<nTex <<endl;
+      cout <<"material: texture-type: " <<type <<" #textures: " <<nTex <<endl;
     }
     if(loadTextures && nTex) {
       CHECK_EQ(nTex, 1, "");
       aiString str;
       material->GetTexture(aiTextureType(type), 0, &str);
 
-      if(verbose>0) {
-        cout <<"loading texture image: " <<str.C_Str() <<endl;
-      }
-
       std::string filename = this->directory + '/' + std::string(str.C_Str());
-      // std::string filename = std::string(str.C_Str());
+
+      if(verbose>0) {
+        cout <<"loading texture image: " <<filename <<endl;
+      }
 
       int width, height, nrComponents;
       unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
@@ -198,7 +202,7 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
     }
   }
 
-  CHECK_EQ(M.texImg.nd, 3, "no texture image could be loaded");
+  CHECK_EQ(M.texImg.nd, 3, "no texture could be loaded");
 
   return M;
 }

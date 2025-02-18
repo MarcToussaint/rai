@@ -88,7 +88,7 @@ void init_KOMO(pybind11::module& m) {
     rai::Frame* f = self->addFrameDof(name, parent, jointType, stable, initName, initFrame);
     return shared_ptr<rai::Frame>(f, &null_deleter); //giving it a non-sense deleter!
   }, "complicated...",
-  pybind11::arg("name"), pybind11::arg("parent"), pybind11::arg("jointType"), pybind11::arg("stable"), pybind11::arg("initName")=nullptr, pybind11::arg("initFrame")=nullptr)
+  pybind11::arg("name"), pybind11::arg("parent"), pybind11::arg("jointType"), pybind11::arg("stable"), pybind11::arg("originFrameName")=nullptr, pybind11::arg("originFrame")=nullptr)
 
   //-- initialize (=set state)
   .def("initOrg", &KOMO::initOrg, "")
