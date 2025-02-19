@@ -12,6 +12,7 @@
 
 #include "../Core/array.h"
 #include "../Core/graph.h"
+#include "../Geo/geo.h"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -88,6 +89,17 @@ template<class T> rai::Array<T> arr2list(const rai::Array<T>& X) {
   pybind11::list Y(X.N);
   for(uint i=0; i<X.N; i++) Y[i] = X.elem(i);
   return Y;
+}
+
+template<class T> rai::Vector numpy2Vector(const pybind11::array_t<T>& X) {
+  CHECK_EQ(X.ndim(), 1, "");
+  CHECK_EQ(X.shape()[0], 3, "");
+  auto ref = X.unchecked();
+  return rai::Vector(ref(0), ref(1), ref(2));
+}
+
+inline pybind11::array_t<double> Vector2numpy(const rai::Vector v) {
+  return pybind11::array_t<double>({3}, &v.x);
 }
 
 inline StringA strvec2StringA(const std::vector<std::string>& x) {
@@ -265,6 +277,23 @@ template <class T> struct type_caster<rai::Array<T>> {
 
   static handle cast(const rai::Array<T>& src, return_value_policy, handle) {
     pybind11::array_t<T> ret = Array2numpy<T>(src);
+    return ret.release();
+  }
+};
+
+//== Vector -- numpy
+template <> struct type_caster<rai::Vector> {
+  PYBIND11_TYPE_CASTER(rai::Vector, _("Vector"));
+
+  bool load(pybind11::handle src, bool) {
+    auto buf = pybind11::array_t<double>::ensure(src);
+    if(!buf) return false;
+    value = numpy2Vector<double>(buf);
+    return !PyErr_Occurred();
+  }
+
+  static handle cast(const rai::Vector& src, return_value_policy, handle) {
+    pybind11::array_t<double> ret = Vector2numpy(src);
     return ret.release();
   }
 };

@@ -166,6 +166,7 @@ struct Frame : NonCopyable {
   Frame& setRelativeRotationMatrix(const arr& R);
   Frame& setMesh2(const rai::Mesh& m);
   Frame& setMesh(const arr& verts, const uintA& tris, const byteA& colors={}, const uintA& cvxParts={});
+  Frame& setMeshFile(str file);
   Frame& setLines(const arr& verts, const byteA& colors={});
   Frame& setPointCloud(const arr& points, const byteA& colors= {}, const arr& normals= {});
   Frame& setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
@@ -184,11 +185,11 @@ struct Frame : NonCopyable {
 
   arr getPose() { return ensure_X().getArr7d(); }
   arr getPosition() { return ensure_X().pos.getArr(); }
-  arr getQuaternion() { return ensure_X().rot.getArr4d(); }
+  arr getQuaternion() { return ensure_X().rot.getArr(); }
   arr getTransform() { return ensure_X().getMatrix(); }
   arr getRelativePose() const { return get_Q().getArr7d(); }
   arr getRelativePosition() const { return get_Q().pos.getArr(); }
-  arr getRelativeQuaternion() const { return get_Q().rot.getArr4d(); }
+  arr getRelativeQuaternion() const { return get_Q().rot.getArr(); }
   arr getRelativeTransform() { return get_Q().getMatrix(); }
   arr getSize() const ;
   ShapeType getShapeType() const;

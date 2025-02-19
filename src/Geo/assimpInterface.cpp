@@ -193,6 +193,13 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
       if(data) {
         M.texImg.resize(height, width, nrComponents);
         memmove(M.texImg.p, data, M.texImg.N);
+        if(nrComponents==1){
+          make_RGB(M.texImg);
+        }else if(nrComponents==4){
+          M.texImg.reshape(height*width,4);
+          M.texImg.delColumns(-1);
+          M.texImg.reshape(height,width,3);
+        }
       } else {
         LOG(-1) << "Texture failed to load at path: " <<filename;
       }
@@ -202,7 +209,11 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
     }
   }
 
-  CHECK_EQ(M.texImg.nd, 3, "no texture could be loaded");
+  if(M.texImg.nd!=3){
+    LOG(-1) << "no texture could be loaded";
+    M.texImg.clear();
+    M.texCoords.clear();
+  }
 
   return M;
 }

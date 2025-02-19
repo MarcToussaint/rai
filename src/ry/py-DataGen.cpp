@@ -71,7 +71,7 @@ void init_DataGen(pybind11::module& m) {
 #define OPT(type, name, x) ,type name
                         OPT(int, verbose, 1)
                         OPT(rai::String, filesPrefix, "shapenet/models/")
-                        OPT(int, numShapes, -1)
+                        OPT(int, endShape, -1)
                         OPT(int, startShape, 0)
                         OPT(int, simVerbose, 0)
                         OPT(int, optVerbose, 0)
@@ -85,7 +85,7 @@ void init_DataGen(pybind11::module& m) {
 #define OPT(type, name, x) .set_##name(name)
     OPT(int, verbose, 1)
     OPT(rai::String, filesPrefix, "shapenet/models/")
-    OPT(int, numShapes, -1)
+    OPT(int, endShape, -1)
     OPT(int, startShape, 0)
     OPT(int, simVerbose, 0)
     OPT(int, optVerbose, 0)
@@ -100,7 +100,7 @@ void init_DataGen(pybind11::module& m) {
 #define OPT(type, name, x) , pybind11::arg(#name) = x
   OPT(int, verbose, 1)
   OPT(rai::String, filesPrefix, "shapenet/models/")
-  OPT(int, numShapes, -1)
+  OPT(int, endShape, -1)
   OPT(int, startShape, 0)
   OPT(int, simVerbose, 0)
   OPT(int, optVerbose, 0)

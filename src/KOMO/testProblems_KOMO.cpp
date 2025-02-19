@@ -115,7 +115,8 @@ shared_ptr<KOMO> problem_PushToReach(){
   //1,2: push
   // manip->komo->addModeSwitch({1., 2.}, rai::SY_stable, {gripper, obj}, true);
   // manip->komo->addModeSwitch({2., -1.}, rai::SY_stableOn, {table, obj}, false);
-  auto helper_frame = manip->komo->addFrameDof("obj_trans", table, rai::JT_transXY, false, obj); //a permanent moving(!) transXY joint table->trans, and a snap trans->obj
+  // auto helper_frame =
+  manip->komo->addFrameDof("obj_trans", table, rai::JT_transXY, false, obj); //a permanent moving(!) transXY joint table->trans, and a snap trans->obj
   // helper_frame->setAutoLimits();
   // helper_frame->joint->sampleUniform=1.;
   manip->komo->addRigidSwitch(1., {"obj_trans", obj});

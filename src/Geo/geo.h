@@ -111,27 +111,26 @@ struct Quaternion {
   double* p() { return &w; }
 
   double& operator()(uint i) { CHECK(i<4, "out of range"); return (&w)[i]; }
-  void set(double w, double x, double y, double z);
-  void set(const arr& q);
-  void set(const std::vector<double>& x) { CHECK_EQ(x.size(), 4, "");  set(x.data()); }
-  void set(const double* p);
-  void setZero();
-  void setRandom();
-  void setExp(const Vector& w);
-  void setDeg(double degree, double axis0, double axis1, double axis2);
-  void setDeg(double degree, const Vector& axis);
-  void setRad(double radians, double axis0, double axis1, double axis2);
-  void setRad(double radians, const Vector& axis);
-  void setRadX(double radians);
-  void setRadY(double radians);
-  void setRadZ(double radians);
-  void setRollPitchYaw(double roll, double pitch, double yaw);
-  void setVector(const Vector& w){ setExp(w); }
-  void setMatrix(double* m);
-  void setMatrix(const arr& R) { CHECK_EQ(R.N, 9, ""); setMatrix(R.p); }
-  void setDiff(const Vector& from, const Vector& to);
-  void setInterpolateEmbedded(double t, const Quaternion& from, const Quaternion to);
-  void setInterpolateProper(double t, const Quaternion& from, const Quaternion to);
+  Quaternion& set(double w, double x, double y, double z);
+  Quaternion& set(const arr& q);
+  Quaternion& set(const std::vector<double>& x) { CHECK_EQ(x.size(), 4, "");  return set(x.data()); }
+  Quaternion& set(const double* p);
+  Quaternion& setZero();
+  Quaternion& setRandom();
+  Quaternion& setExp(const Vector& w);
+  Quaternion& setRad(double radians, double axis0, double axis1, double axis2);
+  Quaternion& setRad(double radians, const Vector& axis);
+  Quaternion& setDeg(double degree, double axis0, double axis1, double axis2){ return setRad(degree*RAI_PI/180., axis0, axis1, axis2); }
+  Quaternion& setRadX(double radians);
+  Quaternion& setRadY(double radians);
+  Quaternion& setRadZ(double radians);
+  Quaternion& setRollPitchYaw(const Vector& rpy);
+  Quaternion& setVector(const Vector& w){ return setExp(w); }
+  Quaternion& setMatrix(double* m);
+  Quaternion& setMatrix(const arr& R) { CHECK_EQ(R.N, 9, ""); return setMatrix(R.p); }
+  Quaternion& setDiff(const Vector& from, const Vector& to);
+  Quaternion& setInterpolateEmbedded(double t, const Quaternion& from, const Quaternion to);
+  Quaternion& setInterpolateProper(double t, const Quaternion& from, const Quaternion to);
   void invert();
   void flipSign();
   void uniqueSign();
@@ -150,15 +149,14 @@ struct Quaternion {
   bool isNormalized() const;
   Vector getLog() const;
   Vector getVector() const { return getLog(); }
-  double getDeg() const;
   double getRad() const;
-  void getDeg(double& degree, Vector& axis) const;
+  double getDeg() const{ return 180./RAI_PI*getRad(); }
   void getRad(double& angle, Vector& axis) const;
   Vector getX() const;
   Vector getY() const;
   Vector getZ() const;
   arr    getMatrix() const;
-  arr    getArr4d() const { return arr(&w, 4, false); }
+  arr    getArr() const { return arr(&w, 4, false); }
   double* getMatrix(double* m) const;
   double* getMatrixOde(double* m) const; //in Ode foramt: 3x4 memory storae
   double* getMatrixGL(double* m) const;  //in OpenGL format: transposed 4x4 memory storage

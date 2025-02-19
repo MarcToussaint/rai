@@ -15,6 +15,7 @@
 #include "py-LGP.h"
 #include "py-Simulation.h"
 #include "py-Spline.h"
+#include "py-Quaternion.h"
 //#include "py-Camera.h"
 //#include "py-LGP_Tree.h"
 //#include "py-Operate.h"
@@ -75,6 +76,7 @@ PYBIND11_MODULE(_robotic, m) {
   init_Skeleton(m);
   init_PathAlgos(m);
   init_Spline(m);
+  init_Quaternion(m);
 //  init_LGP_Tree(m);
 //  init_Operate(m);
 //  init_Camera(m);

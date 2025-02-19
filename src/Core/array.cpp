@@ -798,13 +798,14 @@ void make_grey(byteA& img) {
 
 /// make a grey image and RGA image
 void make_RGB(byteA& img) {
-  CHECK_EQ(img.nd, 2, "make_RGB requires grey image as input");
+  if(img.nd==2) img.reshape(img.d0, img.d1, 1);
+  CHECK_EQ(img.d2, 1, "make_RGB requires grey image as input");
   byteA tmp;
   tmp.resize(img.d0, img.d1, 3);
   for(uint i=0; i<img.d0; i++) for(uint j=0; j<img.d1; j++) {
-      tmp(i, j, 0) = img(i, j);
-      tmp(i, j, 1) = img(i, j);
-      tmp(i, j, 2) = img(i, j);
+      tmp(i, j, 0) = img(i, j, 0);
+      tmp(i, j, 1) = img(i, j, 0);
+      tmp(i, j, 2) = img(i, j, 0);
     }
   img=tmp;
 }

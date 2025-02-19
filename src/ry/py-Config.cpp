@@ -97,13 +97,12 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("warnIfNotExist")=true
       )
 
-  .def("frame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName, bool warnIfNotExist) {
-    rai::Frame* f = self->getFrame(frameName.c_str(), warnIfNotExist);
+  .def("frame", [](shared_ptr<rai::Configuration>& self, uint ID) {
+      rai::Frame* f = self->frames.elem(ID);
     return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!
   },
-  "get access to a frame by name; use the Frame methods to set/get frame properties",
-  pybind11::arg("frameName"),
-  pybind11::arg("warnIfNotExist")=true
+  "get access to a frame by index (< getFrameDimension)",
+  pybind11::arg("frameID")
       )
 
   .def("getFrames", [](shared_ptr<rai::Configuration>& self) {

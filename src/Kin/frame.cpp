@@ -555,6 +555,14 @@ rai::Frame& rai::Frame::setMesh(const arr& verts, const uintA& tris, const byteA
   return *this;
 }
 
+rai::Frame& rai::Frame::setMeshFile(str file){
+  C.view_lock(RAI_HERE);
+  getShape().type() = ST_mesh;
+  rai::Mesh& mesh = getShape().mesh();
+  mesh.read(FILE(file), file.getLastN(3).p, file);
+  return *this;
+}
+
 rai::Frame& rai::Frame::setLines(const arr& verts, const byteA& colors){
   C.view_lock(RAI_HERE);
   getShape().type() = ST_lines;
@@ -728,8 +736,12 @@ rai::Frame& rai::Frame::setMass(double mass) {
   if(mass==0.) {
     if(inertia) delete inertia;
   } else {
-    getInertia().mass = mass;
-    getInertia().defaultInertiaByShape();
+    if(getInertia().mass){
+      getInertia().scaleTo(mass);
+    }else{
+      getInertia().mass = mass;
+      getInertia().defaultInertiaByShape();
+    }
   }
   return *this;
 }

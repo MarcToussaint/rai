@@ -1998,7 +1998,7 @@ void Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO: all
   CHECK_EQ(&a->C, this, "");
 
   const Quaternion& rot_a = a->ensure_X().rot;
-  if(!!y) y = rot_a.getArr4d();
+  if(!!y) y = rot_a.getArr();
   arr ROT_A = rot_a.getQuaternionMultiplicationMatrix();
 
   arr A;

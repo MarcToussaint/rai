@@ -9,8 +9,6 @@
 #ifdef RAI_PYBIND
 
 #include "types.h"
-#include "../Geo/mesh.h"
-#include "../Kin/frame.h"
 
 pybind11::dict graph2dict(const rai::Graph& G) {
   pybind11::dict dict;

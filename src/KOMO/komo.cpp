@@ -1149,7 +1149,7 @@ void KOMO::addWaypointsInterpolationObjectives(const arrA& waypoints, uint waypo
           }
           {
             std::shared_ptr<Feature> feat = make_shared<F_Quaternion>();
-            feat->setFrameIDs({i}) .setTarget(X.rot.getArr4d());
+            feat->setFrameIDs({i}) .setTarget(X.rot.getArr());
             shared_ptr<struct Objective>  tmp = addObjective({0.}, feat, {}, OT_sos, NoArr, NoArr, -1, t, t);
           }
         }
