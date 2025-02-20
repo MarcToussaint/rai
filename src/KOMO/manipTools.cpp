@@ -386,7 +386,7 @@ void ManipulationModelling::approachPush(const arr& time_interval, const char* g
   k().addObjective({time_interval(0)}, FS_positionRel, {gripper, helper}, OT_ineq, -1e2 * arr{{1, 3}, {0, 0, 1}}, {0., 0., dist});
 }
 
-arr ManipulationModelling::solve(int verbose) {
+std::shared_ptr<SolverReturn> ManipulationModelling::solve(int verbose) {
   CHECK(komo, "komo is not setup");
   NLP_Solver sol;
   sol.setProblem(k().nlp());
@@ -423,7 +423,7 @@ arr ManipulationModelling::solve(int verbose) {
       }
     }
   }
-  return path;
+  return ret;
 }
 
 arr ManipulationModelling::sample(const char* sampleMethod, int verbose) {

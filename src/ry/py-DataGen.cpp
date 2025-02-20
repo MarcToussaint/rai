@@ -120,8 +120,6 @@ void init_DataGen(pybind11::module& m) {
                              OPT(double, defaultRestitution, .1) //restitution=1 should be elastic...
                              OPT(double, motorKp, 1000.)
                              OPT(double, motorKd, 100.)
-                             OPT(double, gripperKp, 10000.)
-                             OPT(double, gripperKd, 100.)
 #undef OPT
   ) {
     self->physxOpt
@@ -133,8 +131,6 @@ void init_DataGen(pybind11::module& m) {
     OPT(double, defaultRestitution, .1) //restitution=1 should be elastic...
     OPT(double, motorKp, 1000.)
     OPT(double, motorKd, 100.)
-    OPT(double, gripperKp, 10000.)
-    OPT(double, gripperKd, 100.)
 #undef OPT
     ;
     return self;
@@ -147,8 +143,6 @@ void init_DataGen(pybind11::module& m) {
   OPT(double, defaultRestitution, .1) //restitution=1 should be elastic...
   OPT(double, motorKp, 1000.)
   OPT(double, motorKd, 100.)
-  OPT(double, gripperKp, 10000.)
-  OPT(double, gripperKd, 100.)
 #undef OPT
       )
 

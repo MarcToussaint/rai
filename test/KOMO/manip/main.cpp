@@ -6,6 +6,7 @@
 #include <KOMO/switch.h>
 #include <Kin/viewer.h>
 #include <KOMO/manipTools.h>
+#include <Kin/simulation.h>
 
 using namespace std;
 
@@ -237,6 +238,83 @@ void testPivot(){
 
 //===========================================================================
 
+void testMobileGrasp(){
+
+  rai::Configuration C;
+  // C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/panda_ranger.g"));
+  rai::Frame *obj = C.addFrame("obj");
+  obj->setPosition({-.25,.1,.7})
+      .setShape(rai::ST_ssBox, {.04,.2,.1,.005})
+      .setColor({1,.5,0})
+      .setMass(.1)
+      .setContact(true);
+
+  for(uint k=0;k<10;k++){
+    //rnd object pose
+    obj->setPosition(rand({-.5,0.,.05}, {.5,.5,.05}));
+    obj->setQuaternion(rand({-1.,0.,0.,-1.}, {1.,0.,0.,1.}));
+    C.view();
+
+    //plan
+    ManipulationModelling ways;
+    ways.setup_sequence(C, 2, 1e-2, 1e-1, false, false, false);
+    ways.grasp_box(1., "l_gripper", "obj", "l_palm", "x", .02); // otherwise impose more general box grasp constraints
+    ways.komo->addObjective({2.}, FS_position, {"l_gripper"}, OT_eq, {0,0,1e0}, {0,0,1}); // impose "some" constaint also on the 2nd frame, here just lift, later, place with other orientation
+    auto ret = ways.solve(0);
+    cout <<"grasp costs/feasibilities:" <<*ret <<endl; //this provides a metric for how good/feasible the grasp is kinematically; can be use to reject the grasp
+    if(!ret->feasible) continue;
+
+    auto motion1 = ways.sub_motion(0);
+    motion1->approach({.8,1.}, "l_gripper"); //this generates the motion to the first waypoint, with the last 20% constrained to be an "approach" to the grasp
+    ret = motion1->solve(0);
+    if(!ret->feasible) continue;
+
+    auto motion2 = ways.sub_motion(1);
+    ret = motion2->solve(0);  //no additional constraints at all on the motion between 1st and 2nd waypoint; later: up and down motion
+    if(!ret->feasible) continue;
+
+    // execute in sim
+    double tau=.01;
+    Metronome met(tau);
+    rai::Simulation sim(C, rai::Simulation::_physx, 0);
+    sim.setSplineRef(motion1->path, {1.}, false);
+
+    for(;;){
+      met.waitForTic();
+      sim.step({}, tau);
+      C.view();
+      if(sim.getTimeToSplineEnd()<-.1) break;
+    }
+
+    sim.moveGripper("l_gripper", .0, 1.5);
+    for(;;){
+      met.waitForTic();
+      sim.step({}, tau);
+      C.view();
+      if(sim.gripperIsDone("l_gripper")) break;
+    }
+
+    sim.setSplineRef(motion2->path, {.3}, true);
+    for(;;){
+      met.waitForTic();
+      sim.step({}, tau);
+      C.view();
+      if(sim.getTimeToSplineEnd()<-.1) break;
+    }
+
+    sim.moveGripper("l_gripper", 1., .5);
+    for(;;){
+      met.waitForTic();
+      sim.step({}, tau);
+      C.view();
+      if(sim.gripperIsDone("l_gripper")) break;
+    }
+  }
+}
+
+//===========================================================================
+
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
@@ -245,6 +323,7 @@ int main(int argc,char** argv){
   testPickAndPlace();
   testPush();
   testPivot();
+  testMobileGrasp();
 
   return 0;
 }

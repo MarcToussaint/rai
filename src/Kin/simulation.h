@@ -35,7 +35,7 @@ struct Simulation {
   FrameL grasps;
   std::shared_ptr<TeleopCallbacks> teleopCallbacks;
 
-  Simulation(Configuration& _C, Engine _engine, int _verbose=2);
+  Simulation(Configuration& _C, Engine _engine=_physx, int _verbose=2);
   ~Simulation();
 
   //== controller interface

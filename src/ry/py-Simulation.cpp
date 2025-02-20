@@ -64,30 +64,9 @@ void init_Simulation(pybind11::module& m) {
       .def("get_qDot", &rai::Simulation::get_qDot)
       .def("get_frameVelocities", &rai::Simulation::get_frameVelocities)
 
-      .def("openGripper", &rai::Simulation::moveGripper,
-           "",
-           pybind11::arg("gripperFrameName"),
-           pybind11::arg("width") = .075,
-           pybind11::arg("speed") = .3
-          )
-
-      .def("closeGripper", &rai::Simulation::closeGripper,
-           "",
-           pybind11::arg("gripperFrameName"),
-           pybind11::arg("width") = .05,
-           pybind11::arg("speed") = .3,
-           pybind11::arg("force") = 20.
-          )
-
-      .def("getGripperWidth", &rai::Simulation::getGripperWidth,
-           "",
-           pybind11::arg("gripperFrameName")
-          )
-
-      .def("getGripperIsGrasping", &rai::Simulation::getGripperIsGrasping,
-           "",
-           pybind11::arg("gripperFrameName")
-          )
+      .def("moveGripper", &rai::Simulation::moveGripper, "", pybind11::arg("gripperFrameName"), pybind11::arg("width"), pybind11::arg("speed") = .3)
+      .def("gripperIsDone", &rai::Simulation::gripperIsDone, "", pybind11::arg("gripperFrameName"))
+      .def("getGripperWidth", &rai::Simulation::getGripperWidth, "", pybind11::arg("gripperFrameName"))
 
   .def("getImageAndDepth", [](std::shared_ptr<rai::Simulation>& self) {
     byteA rgb;

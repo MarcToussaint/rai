@@ -1009,7 +1009,7 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose, const r
     FrameL sub = f->getSubtree();
     for(rai::Frame* a:sub) if(a->joint) { asMultiBody=true; break; }
 #else
-    if(f->ats && f->ats->findNode("multibody")) asMultiBody=true;
+    if(f->ats && f->ats->get<bool>("multibody", false)) asMultiBody=true;
 #endif
     if(asMultiBody) {
       self->addMultiBody(f);

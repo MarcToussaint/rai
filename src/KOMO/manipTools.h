@@ -59,7 +59,7 @@ struct ManipulationModelling {
   void retractPush(const arr& time_interval, const char* gripper, double dist=.02);
   void approachPush(const arr& time_interval, const char* gripper, double dist=.05, str helper= {});
 
-  arr solve(int verbose=1);
+  std::shared_ptr<SolverReturn> solve(int verbose=1);
   arr sample(const char* sampleMethod=0, int verbose=1);
   void debug(bool listObjectives=true, bool plotOverTime=false);
 

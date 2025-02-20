@@ -19,8 +19,6 @@ struct PhysX_Options {
   RAI_PARAM("physx/", double, defaultRestitution, .1) //restitution=1 should be elastic...
   RAI_PARAM("physx/", double, motorKp, 1000.)
   RAI_PARAM("physx/", double, motorKd, 100.)
-  RAI_PARAM("physx/", double, gripperKp, 10000.)
-  RAI_PARAM("physx/", double, gripperKd, 100.)
 };
 }//namespace
 

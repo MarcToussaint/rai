@@ -3,7 +3,7 @@
 int read(const char* filename)
 {
   double time = -rai::clockTime();
-  H5_Reader L(filename);
+  rai::H5_Reader L(filename);
   time += rai::clockTime();
   cout <<time <<"sec" <<endl;
   cout <<L.G <<endl;
@@ -12,7 +12,7 @@ int read(const char* filename)
 
 void write(const char* filename){
 
-  H5_Writer H(filename);
+  rai::H5_Writer H(filename);
 
   {
     intA x(3,2);
