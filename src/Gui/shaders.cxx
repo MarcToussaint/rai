@@ -32,12 +32,12 @@ void main() {
 const std::string objFS = R"(
 #version 330 core
 
-const float AmbientPower = .5f;
-const float LightPower = .4f;
+const float AmbientPower = .3f;
+const float LightPower = .6f;
 const vec3 LightColor = vec3(1, 1., 1.);
-const float SpecularPower = .2f;
+const float SpecularPower = .4f;
 const vec3 SpecularColor = vec3(1, 1, 1);
-const float SpecularNarrow = 20.f;
+const float SpecularNarrow = 50.f;
 
 in vec4 objColor;
 in vec3 objNormal_W;

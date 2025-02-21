@@ -35,7 +35,7 @@ void testPickAndPlace(){
     auto info = STRING("placement " <<i <<": grasp " <<graspDirection <<" place " <<placeDirection <<" place_pos " <<place_position <<" place_ori " <<place_orientation);
     cout <<"===" <<info <<endl;
 
-    ManipulationModelling seq(info);
+    ManipulationHelper seq(info);
 //    M1.setup_pick_and_place_waypoints(gripper, box);
     seq.setup_sequence(C, 2.);
     //three totally different ways to model the gripper->object switch:
@@ -106,7 +106,7 @@ void testPush(){
     arr qStart = C.getJointState();
 
     str info = STRING("push_" <<i);
-    ManipulationModelling seq(info);
+    ManipulationHelper seq(info);
     seq.setup_sequence(C, 2, 1e-1);
 
 #if 0
@@ -178,7 +178,7 @@ void testPivot(){
 
   for(uint i=0;i<20;i++){
     str info = STRING("pivot");
-    ManipulationModelling seq(info);
+    ManipulationHelper seq(info);
     seq.setup_sequence(C, 3, 1e-2, 1e-1, false);
 
     //desired motion of the door
@@ -257,7 +257,7 @@ void testMobileGrasp(){
     C.view();
 
     //plan
-    ManipulationModelling ways;
+    ManipulationHelper ways;
     ways.setup_sequence(C, 2, 1e-2, 1e-1, false, false, false);
     ways.grasp_box(1., "l_gripper", "obj", "l_palm", "x", .02); // otherwise impose more general box grasp constraints
     ways.komo->addObjective({2.}, FS_position, {"l_gripper"}, OT_eq, {0,0,1e0}, {0,0,1}); // impose "some" constaint also on the 2nd frame, here just lift, later, place with other orientation

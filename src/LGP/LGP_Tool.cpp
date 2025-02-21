@@ -455,7 +455,7 @@ std::shared_ptr<KOMO> LGP_Tool::get_piecewiseMotionProblem(uint phase, bool fixE
   StringA action = plan(phase);
   StringA prev_action = (phase>0?plan(phase-1):StringA());
 
-  ManipulationModelling manip(getSolvedKOMO());
+  ManipulationHelper manip(getSolvedKOMO());
   auto komo = manip.sub_motion(phase, fixEnd)->komo;
   if(!fixEnd) trans.add_action_constraints(komo, 1., action);
   trans.add_action_constraints_motion(komo, 1., prev_action, action, phase);
@@ -465,7 +465,7 @@ std::shared_ptr<KOMO> LGP_Tool::get_piecewiseMotionProblem(uint phase, bool fixE
 std::shared_ptr<KOMO> LGP_Tool::get_fullMotionProblem(bool initWithWaypoints){
   StringAA path =  getSolvedPlan();
 
-  ManipulationModelling manip;
+  ManipulationHelper manip;
   manip.setup_motion(C, path.N, 16, -1.);
 
   for(uint t=0;t<path.N;t++){
@@ -561,7 +561,7 @@ struct Default_Actions2KOMO_Translator : Actions2KOMO_Translator{
   ~Default_Actions2KOMO_Translator() {}
 
   virtual std::shared_ptr<KOMO> setup_sequence(Configuration& C, uint K){
-    ManipulationModelling manip;
+    ManipulationHelper manip;
     manip.setup_sequence(C, K);
     return manip.komo;
   }
@@ -569,7 +569,7 @@ struct Default_Actions2KOMO_Translator : Actions2KOMO_Translator{
   virtual void add_action_constraints(std::shared_ptr<KOMO>& komo, double time, const StringA& action){
     if(!action.N) return;
 
-    ManipulationModelling manip(komo);
+    ManipulationHelper manip(komo);
 
     if(action(0)=="pick" || action(0)=="handover"){
       str& obj = action(1);
@@ -644,7 +644,7 @@ struct Default_Actions2KOMO_Translator : Actions2KOMO_Translator{
   virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, double time, const StringA& prev_action, const StringA& action, uint actionPhase){
     if(!action.N) return;
 
-    ManipulationModelling manip(komo);
+    ManipulationHelper manip(komo);
 
     if(action(0)=="pick" || action(0)=="handover"){
       str& gripper = action(3);

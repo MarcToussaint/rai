@@ -37,9 +37,8 @@ struct ConfigurationViewer : RenderData {
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   byteA getRgb();
   floatA getDepth();
-  void savePng(const char* saveVideoPath="z.vid/", int count=-1);
+  void savePng(str saveVideoPath="z.vid/", int count=-1);
 
-  int update(bool watch=false);
   void raiseWindow();
   void glDraw(OpenGL&);
   void setCamera(rai::Frame* cam);

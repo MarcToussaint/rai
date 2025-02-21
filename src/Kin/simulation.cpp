@@ -41,6 +41,7 @@ struct Simulation_self {
   std::shared_ptr<OpenGL> glDebug;
 
   BSplineCtrlReference ref;
+  arr a_ref; //admittance ref
 
   struct PositionRef{ rai::Dof* dof; arr q_ref; double cap=-1.; double err=0.; uint stall_counter=0; };
   rai::Array<PositionRef> positionRefs;
@@ -49,6 +50,9 @@ struct Simulation_self {
     if(create){ positionRefs.append().dof=dof; return &positionRefs(-1); }
     return nullptr;
   }
+
+  struct ForceRef{ arr f_ref; arr Jf; double kf=0.; double cap=-1.; };
+  ForceRef forceRef;
 
   void updateDisplayData(double _time, const Configuration& _C);
   void updateDisplayData(const byteA& _image, const floatA& _depth);
@@ -173,62 +177,78 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     }
 
   //-- bring C in reference state depending on control mode (size zero means no reference)
+  arr q_real = C.getJointState();
   arr q_ref, qDot_ref;
   time += tau;
   if(u_mode==_none) {
   } else if(u_mode==_position) {
     q_ref = ucontrol;
   } else if(u_mode==_velocity) {
-    arr q = C.getJointState();
     self->qDot = ucontrol;
-    q += tau * self->qDot;
-    q_ref = q;
+    q_ref = q_real;
+    q_ref += tau * self->qDot;
     qDot_ref = ucontrol;
   } else if(u_mode==_posVel) {
     ucontrol.reshape(2, -1);
     q_ref = ucontrol[0];
     qDot_ref = ucontrol[1];
   } else if(u_mode==_acceleration) {
-    arr q = C.getJointState();
-    if(!self->qDot.N) self->qDot = zeros(q.N);
-    q += .5 * tau * self->qDot;
+    if(!self->qDot.N) self->qDot = zeros(q_ref.N);
+    q_ref = q_real;
+    q_ref += .5 * tau * self->qDot;
     self->qDot += tau * ucontrol;
-    q += .5 * tau * self->qDot;
-    q_ref = q;
+    q_ref += .5 * tau * self->qDot;
     qDot_ref = self->qDot;
   } else if(u_mode==_spline) {
-    arr q = C.getJointState();
-    if(!self->qDot.N) self->qDot = zeros(q.N);
-    self->ref.getReference(q_ref, qDot_ref, NoArr, q, self->qDot, time);
+    if(!self->qDot.N) self->qDot = zeros(q_real.N);
+    self->ref.getReference(q_ref, qDot_ref, NoArr, q_real, self->qDot, time);
 
     //-- cap the reference difference
     if(false){
-      double err = length(q_ref - q);
+      double err = length(q_ref - q_real);
       if(err>.02){ //if(err>.02){ //stall!
         // time -= tau;
-        cout <<"STALLING - ctrlTime: " <<time <<" err: " <<err << " q: " <<q <<" q_ref: " <<q_ref <<endl;
+        cout <<"STALLING - ctrlTime: " <<time <<" err: " <<err << " q: " <<q_real <<" q_ref: " <<q_ref <<endl;
       }
     }
 
   } else NIY;
   if(q_ref.N) C.setJointState(q_ref);
-  //more refs:
-  for(Simulation_self::PositionRef& ref:self->positionRefs){
-    CHECK_EQ(&ref.dof->frame->C, &C, "this is not a dof of this configuration!");
-    if(ref.cap<0.){
-      ref.dof->setDofs(ref.q_ref);
+
+  //additional position refs:
+  for(Simulation_self::PositionRef& P:self->positionRefs){
+    CHECK_EQ(&P.dof->frame->C, &C, "this is not a dof of this configuration!");
+    if(P.cap<0.){
+      P.dof->setDofs(P.q_ref);
     }else{
-      arr q = ref.dof->getDofState();
-      double err = euclideanDistance(q, ref.q_ref);
-      if(err<ref.cap) ref.dof->setDofs(ref.q_ref);
-      else ref.dof->setDofs(q + (ref.cap/err)*(ref.q_ref-q));
+      arr q = P.dof->getDofState();
+      double err = euclideanDistance(q, P.q_ref);
+      if(err<P.cap) P.dof->setDofs(P.q_ref);
+      else P.dof->setDofs(q + (P.cap/err)*(P.q_ref-q));
       {
-        if(err>ref.err-1e-8) ref.stall_counter++; //else ref.stall_counter=0.;
-        ref.err = err;
+        if(err>P.err-1e-8) P.stall_counter++; //else ref.stall_counter=0.;
+        P.err = err;
       }
     }
   }
   q_ref = C.getJointState();
+
+  //additional force refs:
+  if(self->forceRef.f_ref.N){
+    if(!self->a_ref.N) self->a_ref = zeros(q_ref.N);
+
+    Simulation_self::ForceRef& F = self->forceRef;
+    arr err_ref = ~F.Jf * F.f_ref;
+    arr err_real = (q_ref + self->a_ref - q_real);
+    arr err = err_ref-err_real;
+    if(F.cap>0.){ double l = length(err);  if(l>F.cap) err *= F.cap/l; }
+    arr a_gain = F.kf * err;
+    self->a_ref += a_gain;
+    // LOG(0) <<"err_ref: " <<err_ref <<" err: " <<err <<" a_ref: " <<self->a_ref;
+
+    q_ref += self->a_ref;
+    if(q_ref.N) C.setJointState(q_ref);
+  }
 
   //-- imps before physics
   for(shared_ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_beforePhysics) {
@@ -271,6 +291,9 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     if(!dataFile.is_open()) dataFile.open(STRING("z.sim.dat"));
     dataFile <<time <<' '; //single number
     dataFile <<C.getJointState().modRaw() <<' ' <<q_ref.modRaw() <<' ';
+    if(self->a_ref.N){
+      dataFile <<self->a_ref.modRaw() <<' ' <<(q_ref-self->a_ref).modRaw() <<' ';
+    }
     //self->qDot, qDot_ref
     dataFile <<endl;
   }
@@ -302,6 +325,13 @@ void Simulation::setPositionRef(Dof* dof, const arr& q_ref, double cap){
   ref->q_ref = q_ref;
   ref->cap = cap;
   ref->stall_counter = 0;
+}
+
+void Simulation::setForceRef(const arr& f_ref, const arr& Jf, double kf, double cap){
+  self->forceRef.f_ref = f_ref;
+  self->forceRef.Jf = Jf;
+  self->forceRef.kf = kf;
+  self->forceRef.cap = cap;
 }
 
 void Simulation::resetSplineRef() {

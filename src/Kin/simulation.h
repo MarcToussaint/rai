@@ -46,6 +46,7 @@ struct Simulation {
   //-- adapt the spline reference to genreate motion (default way)
   void setSplineRef(const arr& _q, const arr& _times, bool append=true);
   void setPositionRef(rai::Dof* dof, const arr&q_ref, double cap=-1.);
+  void setForceRef(const arr& f_ref, const arr& Jf, double kf, double cap);
   void resetSplineRef();
 
   //-- send a gripper command

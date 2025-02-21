@@ -126,6 +126,8 @@ struct PhysXInterface_Engine {
   PhysXInterface_Engine(){
     mFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gDefaultAllocatorCallback, gDefaultErrorCallback);
     PxTolerancesScale scale;
+    // scale.length = .1;
+    // scale.speed = .1;
     mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, scale);
     PxCookingParams cookParams(mPhysics->getTolerancesScale());
     //    cookParams.skinWidth = .001f;
@@ -231,12 +233,14 @@ void PhysXInterface_self::initPhysics() {
   //-- Create the scene
   PxSceneDesc sceneDesc(core()->mPhysics->getTolerancesScale());
   sceneDesc.gravity = PxVec3(0.f, 0.f, px_gravity);
-//  sceneDesc.bounceThresholdVelocity = 2.;
+  // sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
+  sceneDesc.solverType = PxSolverType::eTGS;
+  // sceneDesc.bounceThresholdVelocity = 2.;
   //sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
   sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
+  // sceneDesc.flags |= PxSceneFlag::eENABLE_CCD; //continuous collision detection (requires more enables for each body.. https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/guide/Manual/AdvancedCollisionDetection.html )
   //sceneDesc.broadPhaseType = PxBroadPhaseType::eGPU;
   sceneDesc.gpuMaxNumPartitions = 8;
-  sceneDesc.solverType = PxSolverType::eTGS;
 
   if(!sceneDesc.cpuDispatcher) {
     defaultCpuDispatcher = PxDefaultCpuDispatcherCreate(1);
@@ -718,31 +722,38 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
 
 void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai::Shape* s) {
   std::shared_ptr<PxGeometry> geometry;
+  double paddingRadius=0.;
+
   switch(s->type()) {
     case rai::ST_box: {
       geometry = make_shared<PxBoxGeometry>(.5*s->size(0), .5*s->size(1), .5*s->size(2));
       if(opt.verbose>0) LOG(0) <<"  adding shape box '" <<s->frame.name <<"' (" <<s->type() <<")";
-    }
-    break;
+    } break;
+    case rai::ST_ssBox: {
+      double r = s->radius();
+      geometry = make_shared<PxBoxGeometry>(.5*s->size(0)-r, .5*s->size(1)-r, .5*s->size(2)-r);
+      paddingRadius = r;
+      if(opt.verbose>0) LOG(0) <<"  adding shape ssBox '" <<s->frame.name <<"' (" <<s->type() <<")";
+    } break;
     case rai::ST_sphere: {
       geometry = make_shared<PxSphereGeometry>(s->size(-1));
       if(opt.verbose>0) LOG(0) <<"  adding shape sphere '" <<s->frame.name <<"' (" <<s->type() <<")";
-    }
-    break;
-    //      case rai::ST_capsule: {
-    //        geometry = make_shared<PxCapsuleGeometry(s->size(-1), .5*s->size(-2));
-    //      }
-    //      break;
-    case rai::ST_capsule:
-    case rai::ST_cylinder:
+    } break;
+    case rai::ST_capsule: {
+      geometry = make_shared<PxCapsuleGeometry>(s->size(-1), .5*s->size(-2));
+    } break;
+    // case rai::ST_capsule:
+    case rai::ST_cylinder:{
+      NIY;
+    } break;
     case rai::ST_ssCylinder:
-    case rai::ST_ssBox:
     case rai::ST_ssCvx: {
-      floatA Vfloat = rai::convert<float>(s->mesh().V);
+      floatA Vfloat = rai::convert<float>(s->sscCore().V);
       PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
                                      *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
                                      PxConvexFlag::eCOMPUTE_CONVEX);
       geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
+      paddingRadius = s->radius();
       if(opt.verbose>0) LOG(0) <<"  adding shape cvx mesh '" <<s->frame.name <<"' (" <<s->type() <<")";
     } break;
     case rai::ST_sdf:
@@ -808,7 +819,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
   }
 
   if(geometry) {
-    //-- decide/create a specific material
+    //decide/create a specific material
     PxMaterial* mMaterial = defaultMaterial;
     if(s->frame.ats &&
         (s->frame.ats->find<double>("friction") || s->frame.ats->find<double>("restitution"))) {
@@ -818,7 +829,11 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       mMaterial = core()->mPhysics->createMaterial(fric, fric, rest);
     }
 
+    //create the shape
     PxShape* shape = core()->mPhysics->createShape(*geometry, *mMaterial);
+    CHECK(shape, "create shape failed!");
+
+    //attach to actor
     actor->attachShape(*shape);
     if(&s->frame!=f) {
       if(s->frame.parent==f) {
@@ -828,7 +843,13 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
         shape->setLocalPose(conv_Transformation2PxTrans(rel));
       }
     }
-    CHECK(shape, "create shape failed!");
+
+    //set contact parameters
+    //double contactOffset = shape->getContactOffset();
+    //double restOffset = shape->getRestOffset();
+    //LOG(0) <<"contact params: " <<contactOffset <<' ' <<restOffset;
+    shape->setContactOffset(paddingRadius+.02);
+    shape->setRestOffset(paddingRadius);
   }
 }
 

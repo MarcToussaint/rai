@@ -26,12 +26,7 @@ bool loadTextures = true;
 AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ, bool relativeMeshPoses, int _verbose)
     : verbose(_verbose){
 
-  Assimp::Importer importer;
-  const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-  if(!scene || !scene->mRootNode || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
-    cout <<"current dir: " <<rai::getcwd_string() <<endl;
-    HALT("ERROR::ASSIMP:: " <<importer.GetErrorString());
-  }
+  //verbose=2;
 
   size_t slash = path.find_last_of('/');
   if(slash<std::string::npos){
@@ -42,6 +37,17 @@ AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ, bool relativeMe
 
   if(verbose>0) {
     LOG(0) <<"loading " <<path <<" from directory " <<directory;
+  }
+
+  Assimp::Importer importer;
+  const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+  if(!scene || !scene->mRootNode || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
+    cout <<"current dir: " <<rai::getcwd_string() <<endl;
+    HALT("ERROR::ASSIMP:: " <<importer.GetErrorString());
+  }
+
+  if(verbose>0){
+    LOG(0) <<"scene properties: #meshes: " <<scene->mNumMeshes <<" #materials: " <<scene->mNumMaterials <<" #textures: " <<scene->mNumTextures <<" #animations: " <<scene->mNumAnimations;
   }
 
   arr T = eye(4);
@@ -182,30 +188,44 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
       aiString str;
       material->GetTexture(aiTextureType(type), 0, &str);
 
-      std::string filename = this->directory + '/' + std::string(str.C_Str());
+      const aiTexture *tex = scene->GetEmbeddedTexture(str.C_Str());
 
-      if(verbose>0) {
-        cout <<"loading texture image: " <<filename <<endl;
-      }
+      if(tex){ //is embedded
+        M.texImg.resize(tex->mHeight, tex->mWidth, 4);
+        memmove(M.texImg.p, &tex->pcData->b, M.texImg.N);
+        M.texImg.reshape(tex->mHeight*tex->mWidth, 4);
+        M.texImg.delColumns(-1);
+        M.texImg.reshape(tex->mHeight, tex->mWidth, 3);
+      }else{ //to be loaded from file
+        std::string filename = this->directory + '/' + std::string(str.C_Str());
 
-      int width, height, nrComponents;
-      unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
-      if(data) {
-        M.texImg.resize(height, width, nrComponents);
-        memmove(M.texImg.p, data, M.texImg.N);
-        if(nrComponents==1){
-          make_RGB(M.texImg);
-        }
-      } else {
-        LOG(-1) << "Texture failed to load at path: " <<filename;
+	if(verbose>0) {
+	  cout <<"loading texture image: " <<filename <<endl;
+	}
+
+	int width, height, nrComponents;
+	unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
+	if(data) {
+	  M.texImg.resize(height, width, nrComponents);
+	  memmove(M.texImg.p, data, M.texImg.N);
+	  if(nrComponents==1){
+	    make_RGB(M.texImg);
+	  }else if(nrComponents==4){
+	    M.texImg.reshape(height*width, 4);
+	    M.texImg.delColumns(-1);
+	    M.texImg.reshape(height, width, 3);
+	  }
+	} else {
+	  LOG(-1) << "Texture failed to load at path: " <<filename;
+	}
+	stbi_image_free(data);
       }
-      stbi_image_free(data);
 
       break;
     }
   }
 
-  if(M.texImg.nd!=3){
+  if(M.texImg.d2!=3){
     LOG(-1) << "no texture could be loaded";
     M.texImg.clear();
     M.texCoords.clear();

@@ -13,7 +13,7 @@
 
 //===========================================================================
 
-struct ManipulationModelling {
+struct ManipulationHelper {
   std::shared_ptr<KOMO> komo;
   str info;
 
@@ -22,8 +22,8 @@ struct ManipulationModelling {
   arr qTarget;
   arr path;
 
-  ManipulationModelling(const str& _info={});
-  ManipulationModelling(const std::shared_ptr<KOMO>& _komo, const str& _info = str{});
+  ManipulationHelper(const str& _info={});
+  ManipulationHelper(const std::shared_ptr<KOMO>& _komo, const str& _info = str{});
 
   KOMO& k() { return *komo; }
 
@@ -63,7 +63,7 @@ struct ManipulationModelling {
   arr sample(const char* sampleMethod=0, int verbose=1);
   void debug(bool listObjectives=true, bool plotOverTime=false);
 
-  std::shared_ptr<ManipulationModelling> sub_motion(uint phase, bool fixEnd=true, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false, const StringA& activeDofs={});
+  std::shared_ptr<ManipulationHelper> sub_motion(uint phase, bool fixEnd=true, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false, const StringA& activeDofs={});
   std::shared_ptr<rai::RRT_PathFinder> sub_rrt(uint phase, const StringA& explicitCollisionPairs= {}, const StringA& activeDofs={});
 
   void play(rai::Configuration& C, double duration=1.);

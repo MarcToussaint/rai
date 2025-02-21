@@ -274,12 +274,6 @@ void rai::ConfigurationViewer::_resetPressedKey() {
   gl->pressedkey=0;
 }
 
-int rai::ConfigurationViewer::update(bool watch) {
-  ensure_gl();
-  if(watch) gl->raiseWindow();
-  return gl->update(watch, nonThreaded);
-}
-
 void rai::ConfigurationViewer::raiseWindow() {
   ensure_gl();
   gl->raiseWindow();
@@ -289,7 +283,9 @@ int rai::ConfigurationViewer::view(bool watch, const char* _text) {
   if(_text) text = _text;
   if(watch && (!text.N || text(-1)!=']')) text <<"\n[press key to continue]";
 
-  return update(watch);
+  ensure_gl();
+  if(watch) gl->raiseWindow();
+  return gl->update(watch, nonThreaded);
 }
 
 int rai::ConfigurationViewer::view_play(bool watch, double delay, str saveVideoPath) {
@@ -324,7 +320,7 @@ int rai::ConfigurationViewer::view_play(bool watch, double delay, str saveVideoP
     if(saveVideoPath) savePng(saveVideoPath);
   }
   nonThreaded = _nonThreaded;
-  key = update(watch);
+  key = view(watch);
 //  drawText = tag;
   return key;
 }
@@ -335,10 +331,16 @@ int rai::ConfigurationViewer::view_slice(uint t, bool watch){
     drawSlice = t;
   }
 
-  return update(watch);
+  return view(watch);
 }
 
-void rai::ConfigurationViewer::savePng(const char* saveVideoPath, int count) {
+void rai::ConfigurationViewer::savePng(str saveVideoPath, int count) {
+  if(saveVideoPath && saveVideoPath(-1)=='/'){
+    if(!FileToken(saveVideoPath).exists()){
+      rai::system(STRING("mkdir -p " <<saveVideoPath));
+    }
+  }
+
   auto lock = gl->dataLock(RAI_HERE);
   if(count>=0) pngCount=count;
   write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"), true);

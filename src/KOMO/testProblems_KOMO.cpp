@@ -38,7 +38,7 @@ shared_ptr<KOMO> problem_IKobstacle(){
   C.addFrame("dot", "table", " {Q:\"t(.2 .5 .3)\", shape:sphere, size:[.02]" );
   C.addFrame("obstacle", "table", "Q:[.1 .2 .5], shape: capsule, size:[1. .1], color: [.2] " );
 
-  auto manip = make_shared<ManipulationModelling>();
+  auto manip = make_shared<ManipulationHelper>();
   manip->setup_inverse_kinematics(C, 1e-1, false);
   //    manip.grasp_cylinder(1., "l_gripper", "cylinder", "l_palm");
   manip->komo->addObjective({}, FS_positionDiff, {"l_gripper", "dot"}, OT_eq, {1e1});
@@ -71,7 +71,7 @@ shared_ptr<KOMO> problem_IKtorus(){
   komo->addObjective({}, make_shared<F_TorusGraspEq>(.2, .02), {"l_gripper", "torus"}, OT_eq, {1e1});
   // komo->addObjective({}, FS_negDistance, {"l_palm", "coll_torus"}, OT_ineq, {1e1});
 
-  auto manip = make_shared<ManipulationModelling>(komo);
+  auto manip = make_shared<ManipulationHelper>(komo);
   manip->no_collisions({}, {"l_panda_coll1", "table",
                            "l_panda_coll2", "table",
                            "l_panda_coll3", "table",
@@ -107,7 +107,7 @@ shared_ptr<KOMO> problem_PushToReach(){
   auto obj = "box";
   auto table = "table";
 
-  auto manip = make_shared<ManipulationModelling>(str{"push"});
+  auto manip = make_shared<ManipulationHelper>(str{"push"});
 
   manip->setup_sequence(C, 4, 1e-1, 1e-1, false);
   manip->komo->addQuaternionNorms();
