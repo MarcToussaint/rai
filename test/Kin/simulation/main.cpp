@@ -512,7 +512,7 @@ void testMotors(){
 void testPassive(const char* filename){
   rai::Configuration C;
   C.addFile(filename);
-//  C.optimizeTree(true);
+//  C.simplify(true);
 
   rai::Simulation S(C, S._physx, 3);
 //  rai::wait();

@@ -88,6 +88,9 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("tau")=1.
       )
 
+  .def("simplify", &rai::Configuration::simplify, "structurally simplify the Configuration (deleting frames, relinking to minimal tree)",
+           pybind11::arg("pruneNamed"), pybind11::arg("pruneNonContactNonMarker"), pybind11::arg("pruneTransparent") )
+
   .def("getFrame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName, bool warnIfNotExist) {
     rai::Frame* f = self->getFrame(frameName.c_str(), warnIfNotExist);
     return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!

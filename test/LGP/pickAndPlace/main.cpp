@@ -15,7 +15,7 @@ void generateProblem(rai::Configuration& C){
     C.addFile("../../../../rai-robotModels/pr2/pr2.g");
     C.selectJointsByAtt({"base","armL","armR"});
     C.pruneInactiveJoints();
-    C.optimizeTree();
+    C.simplify();
     C["pr2L"]->ats->add<rai::Graph>({"logical"}, {{"gripper", true}});
     C["pr2R"]->ats->add<rai::Graph>({"logical"}, {{"gripper", true}});
     C["worldTranslationRotation"]->joint->H = 1e-0;
@@ -56,7 +56,7 @@ void solve(){
   generateProblem(C);
   //  K.addFile("model2.g");
   C.selectJointsByAtt({"base","armL","armR"});
-  C.optimizeTree();
+  C.simplify();
   //  C.sortFrames(); FILE("z.g") <<C;
 
   rai::LGP_Tree lgp(C, "fol-pnp-switch.g");

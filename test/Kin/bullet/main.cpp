@@ -52,7 +52,7 @@ void simGfile(){
     //-- load configuration
     rai::Configuration C;
     C.addFile(file);
-    C.optimizeTree();
+    C.simplify();
     C.ensure_q();
 
 #if 0

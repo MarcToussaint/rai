@@ -29,7 +29,7 @@ void KOMO::init(const Graph& specs) {
   }
 
   if(glob["meldFixedJoints"]) {
-    world.optimizeTree();
+    world.simplify();
   }
 
   if(glob["makeConvexHulls"])

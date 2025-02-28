@@ -168,7 +168,7 @@ void TEST(Graph){
     rai::wait(.5);
   }
 
-  K.optimizeTree();
+  K.simplify();
   {
     rai::Graph G = K.getGraph();
     G.displayDot();
@@ -303,7 +303,7 @@ void TEST(KinematicSpeed){
 //  rai::Configuration K("kinematicTests.g");
   if(!rai::FileToken("../../../../rai-robotModels/pr2/pr2.g", false).exists()) return;
   rai::Configuration K("../../../../rai-robotModels/pr2/pr2.g");
-  K.optimizeTree();
+  K.simplify();
   uint n=K.getJointStateDimension();
   arr x(n);
   rai::timerStart();
@@ -524,7 +524,7 @@ void TEST(FollowRedundantSequence){
 //---------- test standard dynamic control
 void TEST(Dynamics){
   rai::Configuration C("arm7.g");
-  C.optimizeTree();
+  C.simplify();
   C.sortFrames();
   cout <<C <<endl;
 

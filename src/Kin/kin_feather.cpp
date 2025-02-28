@@ -286,7 +286,7 @@ void FeatherstoneInterface::setGravity(double g) {
 
 void FeatherstoneInterface::update() {
   if(tree.N != C.frames.N) { //new instance -> create the tree
-    CHECK_EQ(C.frames, sortedFrames, "Featherstone requires a sorted optimized frame tree (call optimizeTree and fwdIndexIDs)");
+    CHECK_EQ(C.frames, sortedFrames, "Featherstone requires a sorted optimized frame tree (call simplify and fwdIndexIDs)");
     tree.clear();
     tree.resize(C.frames.N);
 

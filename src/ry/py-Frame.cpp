@@ -50,7 +50,8 @@ void init_Frame(pybind11::module& m) {
        pybind11::arg("vertices"), pybind11::arg("triangles"), pybind11::arg("colors")=byteA{}, pybind11::arg("cvxParts")=uintA{})
   .def("setMeshFile", &rai::Frame::setMeshFile,
            "attach a mesh shape from a file",
-           pybind11::arg("filename"))
+           pybind11::arg("filename"),
+           pybind11::arg("scale")=1.)
   .def("setPointCloud", &rai::Frame::setPointCloud,
        "attach a point cloud shape",
        pybind11::arg("points"), pybind11::arg("colors") = byteA{}, pybind11::arg("normals")=arr{})

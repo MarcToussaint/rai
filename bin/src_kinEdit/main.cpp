@@ -49,7 +49,7 @@ int main(int argc,char **argv){
     //-- some optional manipulations
     if(rai::checkParameter<bool>("prune")){
       LOG(0) <<"PRUNING STRUCTURE";
-      C.optimizeTree(true, true, false);
+      C.simplify(true, true, false);
     }
 
     //-- sort frames
@@ -58,7 +58,7 @@ int main(int argc,char **argv){
     C.sortFrames();
     //  }
 
-    //    C.optimizeTree(false, false, false);
+    //    C.simplify(false, false, false);
     C.ensure_q();
     C.checkConsistency();
     C.checkUniqueNames(true);

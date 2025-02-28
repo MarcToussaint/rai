@@ -710,9 +710,9 @@ Quaternion& Quaternion::setRadZ(double radians) {
 
 Quaternion& Quaternion::setRollPitchYaw(const Vector& rpy) {
   setZero();
-  appendZ(rpy.z); //yaw
-  appendY(rpy.y); //pitch
   appendX(rpy.x); //roll
+  appendY(rpy.y); //pitch
+  appendZ(rpy.z); //yaw
   return *this;
 }
 

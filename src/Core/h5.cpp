@@ -38,6 +38,7 @@ void H5_Writer::addGroup(const char* group) {
 
 template<class T> void H5_Writer::add(const char* name, const rai::Array<T>& x) {
   rai::Array<hsize_t> dim = rai::convert<hsize_t>(x.dim());
+  if(!dim.N) dim = {0};
   H5::DataSpace dataspace(dim.N, dim.p);
   H5::DataType h5type = get_h5type<T>();
   H5::DataSet dataset = file->createDataSet(name, h5type, dataspace);

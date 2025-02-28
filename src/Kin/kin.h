@@ -95,6 +95,7 @@ struct Configuration {
   /// @name initializations, building configurations
   Frame* addFrame(const char* name, const char* parent=nullptr, const char* args=nullptr, bool warnDuplicateName=true);
   Frame* addFile(const char* filename, const char* namePrefix=0);
+  Frame& addDict(const Graph& G);
   Frame* addAssimp(const char* filename);
   Frame* addH5Object(const char* framename, const char* filename, int verbose);
   Frame* addCopy(const FrameL& F, const DofL& _dofs, const str& prefix= {});
@@ -177,10 +178,11 @@ struct Configuration {
   void flipFrames(Frame* a, Frame* b);
   void pruneRigidJoints();        ///< delete rigid joints -> they become just links
   void pruneInactiveJoints();        ///< delete rigid joints -> they become just links
+  void pruneEmptyShapes();
   void reconnectShapesToParents();
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
-  void pruneUselessFrames(bool pruneNamed=false, bool pruneNonContactNonMarker=false, bool pruneNonVisible=false);  ///< delete frames that have no name, joint, and shape
-  void optimizeTree(bool _pruneRigidJoints=false, bool pruneNamed=false, bool pruneNonContactNonMarker=false, bool pruneNonVisible=false);        ///< call the three above methods in this order
+  void pruneUselessFrames(bool pruneNamed=false, bool pruneNonContactNonMarker=false, bool pruneTransparent=false);  ///< delete frames that have no name, joint, and shape
+  void simplify(bool pruneNamed=false, bool pruneNonContactNonMarker=false, bool pruneTransparent=false);        ///< call the three above methods in this order
   void sortFrames();
   void makeObjectsFree(const StringA& objects, double H_cost=0.);
   void addTauJoint();
@@ -285,7 +287,7 @@ public:
   void write(Graph& G) const;
   void writeURDF(std::ostream& os, const char* robotName="myrobot") const;
   void writeCollada(const char* filename, const char* format="collada") const;
-  void writeMeshes(const char* pathPrefix="meshes/") const;
+  void writeMeshes(str pathPrefix="meshes/") const;
   void writeMesh(const char* filename="z.ply") const;
   void read(std::istream& is);
   Graph getGraph() const;
@@ -301,7 +303,6 @@ public:
   void reportLimits(std::ostream& os=cout) const;
 
  private:
-  void readFromGraph(const Graph& G, bool addInsteadOfClear=false);
   friend struct KinematicSwitch;
 };
 

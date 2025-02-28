@@ -232,7 +232,7 @@ Frame* Configuration::addFile(const char* filename, const char* namePrefix) {
       if(tmp) tmp->prepend(namePrefix);
     }
   }
-  readFromGraph(G, true);
+  addDict(G);
   file.cd_start();
   if(frames.N==n) return 0; //no frames added
   return frames.elem(n); //returns 1st frame of added file
@@ -1199,6 +1199,16 @@ void Configuration::pruneInactiveJoints() {
   }
 }
 
+void Configuration::pruneEmptyShapes() {
+  for(Frame* f:frames) if(f->shape) {
+      if(f->shape->type()==ST_mesh && !f->shape->mesh().V.N){
+        delete f->shape;
+      }else if(f->shape->type()==ST_ssCvx && !f->shape->sscCore().V.N){
+        delete f->shape;
+      }
+    }
+}
+
 void Configuration::reconnectShapesToParents() {
   reset_q();
   for(Frame* f:frames) if(f->parent && !f->joint && f->shape) {
@@ -1233,7 +1243,7 @@ void Configuration::reconnectLinksToClosestJoints() {
     }
 }
 
-void Configuration::pruneUselessFrames(bool pruneNamed, bool pruneNonContactNonMarker, bool pruneNonVisible) {
+void Configuration::pruneUselessFrames(bool pruneNamed, bool pruneNonContactNonMarker, bool pruneTransparent) {
   for(uint i=frames.N; i--;) {
     Frame* f=frames.elem(i);
     if(f->children.N || f->joint || f->dirDof || f->inertia) continue;
@@ -1243,17 +1253,17 @@ void Configuration::pruneUselessFrames(bool pruneNamed, bool pruneNonContactNonM
       delete f; //that's all there is to do
     }else if(pruneNonContactNonMarker && !f->shape->cont && f->shape->type()!=ST_marker){
       delete f;
-    }else if(pruneNonVisible && f->shape->alpha()<1.){
+    }else if(pruneTransparent && f->shape->alpha()<1.){
       delete f;
     }
   }
 }
 
-void Configuration::optimizeTree(bool _pruneRigidJoints, bool pruneNamed, bool pruneNonContactNonMarker, bool pruneNonVisible) {
-  if(_pruneRigidJoints) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
+void Configuration::simplify(bool pruneNamed, bool pruneNonContactNonMarker, bool pruneTransparent) {
+  pruneEmptyShapes();
   reconnectLinksToClosestJoints();
   reconnectShapesToParents();
-  pruneUselessFrames(pruneNamed, pruneNonContactNonMarker, pruneNonVisible);
+  pruneUselessFrames(pruneNamed, pruneNonContactNonMarker, pruneTransparent);
   ensure_indexedJoints();
   checkConsistency();
 }
@@ -2683,17 +2693,25 @@ void Configuration::writeCollada(const char* filename, const char* format) const
 #endif //ASSIMP
 
 /// write meshes into an own binary array file format
-void Configuration::writeMeshes(const char* pathPrefix) const {
+void Configuration::writeMeshes(str pathPrefix) const {
+  if(pathPrefix && pathPrefix(-1)=='/'){
+    if(!FileToken(pathPrefix).exists()){
+      rai::system(STRING("mkdir -p " <<pathPrefix));
+    }
+  }
   for(Frame* f:frames) {
     if(f->shape &&
         (f->shape->type()==ST_mesh || f->shape->type()==ST_ssCvx || f->shape->type()==ST_sdf)) {
-      String filename = pathPrefix;
+      String filename;
+      filename <<pathPrefix;
       if(!f->ats) f->ats = make_shared<Graph>();
       filename <<f->name <<".h5";
       f->ats->getNew<FileToken>("mesh").name = filename;
-      if(f->shape->type()==ST_mesh || f->shape->type()==ST_sdf) f->shape->mesh().writeH5(filename, "mesh");
-      else if(f->shape->type()==ST_ssCvx) f->shape->sscCore().writeH5(filename, "mesh");
-      else if(f->shape->_sdf) {
+      if(f->shape->type()==ST_mesh || f->shape->type()==ST_sdf){
+        f->shape->mesh().writeH5(filename, "mesh");
+      }else if(f->shape->type()==ST_ssCvx){
+        f->shape->sscCore().writeH5(filename, "mesh");
+      }else if(f->shape->_sdf) {
         filename.clear() <<pathPrefix <<f->name <<".vol";
         f->ats->getNew<FileToken>("sdf").name = filename;
         f->shape->_sdf->write(FILE(filename));
@@ -2720,7 +2738,8 @@ void Configuration::read(std::istream& is) {
   G.checkConsistency();
   //  cout <<"***KVG:\n" <<G <<endl;
   //  FILE("z.G") <<G;
-  readFromGraph(G);
+  clear();
+  addDict(G);
 }
 
 Graph Configuration::getGraph() const {
@@ -2822,8 +2841,8 @@ void Configuration::report(std::ostream& os) const {
   //  os <<" joints=" <<getJointNames() <<endl;
 }
 
-void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
-  if(!addInsteadOfClear) clear();
+Frame& Configuration::addDict(const Graph& G) {
+  uint n_prev = frames.N;
 
   FrameL node2frame(G.N);
   node2frame.setZero();
@@ -2924,6 +2943,8 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
   }
 
   checkConsistency();
+
+  return *frames.elem(n_prev);
 }
 
 /// dump the list of current proximities on the screen
@@ -3671,7 +3692,7 @@ void Configuration::watchFile(const char* filename) {
       if(succ) {
         try {
           Configuration C_tmp;
-          C_tmp.readFromGraph(G);
+          C_tmp.addDict(G);
           {
             V->ensure_gl().dataLock(RAI_HERE);
             copy(C_tmp, false);

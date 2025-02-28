@@ -53,7 +53,7 @@ void test_minimalistic(){
 void TEST(RRT){
   rai::Configuration C;
   C.addFile("scene.g");
-  C.optimizeTree();
+  C.simplify();
 
   arr q0,q1;
 
@@ -99,7 +99,7 @@ void TEST(Mobile){
 void testKinematics(bool withCollisions, uint N=100000){
   rai::Configuration C;
   C.addFile("scene.g");
-  C.optimizeTree();
+  C.simplify();
 
   arr q = C.getJointState();
 

@@ -122,7 +122,7 @@ void TEST(Thin){
 
 void TEST(PR2){
   rai::Configuration C(rai::raiPath("../rai-robotModels/tests/pr2Shelf.g"));
-  C.optimizeTree(true);
+  C.simplify(true);
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
   double rand = rai::getParameter<double>("KOMO/moveTo/randomizeInitialPose", .0);
   if(rand){

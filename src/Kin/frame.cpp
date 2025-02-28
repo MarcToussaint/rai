@@ -555,11 +555,12 @@ rai::Frame& rai::Frame::setMesh(const arr& verts, const uintA& tris, const byteA
   return *this;
 }
 
-rai::Frame& rai::Frame::setMeshFile(str file){
+rai::Frame& rai::Frame::setMeshFile(str file, double scale){
   C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
   rai::Mesh& mesh = getShape().mesh();
   mesh.read(FILE(file), file.getLastN(3).p, file);
+  if(scale!=1.) mesh.scale(scale);
   return *this;
 }
 

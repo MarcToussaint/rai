@@ -24,7 +24,7 @@
 void TEST(Dynamics){
   rai::Configuration C("arm7.g");
 //  rai::Configuration C("mypr2.g");
-  C.optimizeTree(true);
+  C.simplify(true);
   C.sortFrames();
 
   arr u;

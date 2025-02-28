@@ -10,7 +10,7 @@ using namespace std;
 void TEST(KomoSequence){
 
   rai::Configuration K("model.g");
-  K.optimizeTree(false);
+  K.simplify(false);
   makeConvexHulls(K.frames);
 
   KOMO_ext komo;

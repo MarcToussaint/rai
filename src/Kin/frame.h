@@ -166,7 +166,7 @@ struct Frame : NonCopyable {
   Frame& setRelativeRotationMatrix(const arr& R);
   Frame& setMesh2(const rai::Mesh& m);
   Frame& setMesh(const arr& verts, const uintA& tris, const byteA& colors={}, const uintA& cvxParts={});
-  Frame& setMeshFile(str file);
+  Frame& setMeshFile(str file, double scale=1.);
   Frame& setLines(const arr& verts, const byteA& colors={});
   Frame& setPointCloud(const arr& points, const byteA& colors= {}, const arr& normals= {});
   Frame& setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
