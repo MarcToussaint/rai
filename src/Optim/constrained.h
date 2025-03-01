@@ -11,6 +11,8 @@
 #include "lagrangian.h"
 #include "newton.h"
 
+namespace rai {
+
 extern const char* MethodName[];
 
 //==============================================================================
@@ -56,3 +58,4 @@ struct PhaseOneProblem : NLP {
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 };
 
+} //namespace

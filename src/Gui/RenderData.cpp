@@ -17,6 +17,7 @@ struct OpenGL2Context {
 Singleton<OpenGL2Context> contextIDs;
 
 uint bufW=2048, bufH=2048;
+double shadowHeight = 2.;
 
 GLuint LoadShadersFile(const char * vertex_file_path,const char * fragment_file_path);
 GLuint LoadShaders(const std::string& VertexShaderCode, const std::string& FragmentShaderCode);
@@ -842,7 +843,6 @@ void RenderData::addQuad(const byteA& img, float x, float y, float w, float h){
 }
 
 RenderData& RenderData::addStandardScene(bool addFloor){
-  double shadowHeight = 8.;
   arr floorColor = opt.floorColor;
   if(!floorColor.N) floorColor = arr{.4, .45, .5};
   if(!lights.N){

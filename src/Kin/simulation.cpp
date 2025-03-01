@@ -134,7 +134,6 @@ struct Imp_NoPenetrations : SimulationImp {
 Simulation::Simulation(Configuration& _C, Engine _engine, int _verbose)
   : self(make_unique<Simulation_self>()),
     C(_C),
-    time(0.),
     engine(_engine),
     verbose(_verbose) {
   C.ensure_q();
@@ -180,6 +179,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   arr q_real = C.getJointState();
   arr q_ref, qDot_ref;
   time += tau;
+  stepCount ++;
   if(u_mode==_none) {
   } else if(u_mode==_position) {
     q_ref = ucontrol;

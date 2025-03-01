@@ -425,7 +425,7 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
       else if(bs==BS_RandomSquared) org = make_shared<NLP_Squared>(dim, condition, true);
       else if(bs==BS_RastriginSOS) org = make_shared<NLP_RastriginSOS>();
       if(org) {
-        auto lag = make_shared<LagrangianProblem>(org, DEFAULT_OPTIONS); //convert to scalar
+        auto lag = make_shared<rai::LagrangianProblem>(org, DEFAULT_OPTIONS); //convert to scalar
         nlp = make_shared<ScalarUnconstrainedProgram>(lag, dim);
       }
     }

@@ -92,12 +92,12 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
     F.checkHessian(x, 1e-4);
   }
 
-  ConstrainedSolver opt(x, NoArr, F.ptr(), rai::OptOptions()
+  rai::ConstrainedSolver opt(x, NoArr, F.ptr(), rai::OptOptions()
                      .set_stopTolerance(1e-4)
                      .set_stopFTolerance(1e-3)
                      .set_damping(1)
                      .set_stepMax(-1)
-                     .set_constrainedMethod(rai::augmentedLag)
+                     .set_method(rai::M_augmentedLag)
                      .set_muInc(1.1)
                     );
   opt.run();
@@ -257,12 +257,12 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
     P.checkHessian(x, 1e-4);
   }
 
-  ConstrainedSolver opt(x, NoArr, P.ptr(), rai::OptOptions()
+  rai::ConstrainedSolver opt(x, NoArr, P.ptr(), rai::OptOptions()
                      .set_stopTolerance(1e-4)
                      .set_stopFTolerance(1e-3)
                      .set_damping(1.)
                      .set_stepMax(.1)
-                     .set_constrainedMethod(rai::augmentedLag)
+                     .set_method(rai::M_augmentedLag)
                      .set_muInc(1.1)
                      .set_verbose(3)
                     );
@@ -440,7 +440,7 @@ double sphereReduceConvex(rai::Mesh& M, double radius, int verbose) {
     arr x = M.V[i];
     arr c = -M.Vn[i];
     LinearProgram LP(c, G, g);
-    ConstrainedSolver opt(x, NoArr, LP.ptr(), rai::OptOptions().set_stopTolerance(1e-4).set_stopGTolerance(1e-4));
+    rai::ConstrainedSolver opt(x, NoArr, LP.ptr(), rai::OptOptions().set_stopTolerance(1e-4).set_stopGTolerance(1e-4));
     opt.run();
   }
 
@@ -585,12 +585,12 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
   }
 
 #if 1
-  ConstrainedSolver opt(x, NoArr, F, rai::OptOptions()
+  rai::ConstrainedSolver opt(x, NoArr, F, rai::OptOptions()
                      .set_stopTolerance(1e-4)
                      .set_stopFTolerance(1e-3)
                      .set_damping(1)
                      .set_stepMax(-1)
-                     .set_constrainedMethod(rai::augmentedLag)
+                     .set_method(rai::M_augmentedLag)
                      .set_muInc(1.1)
                     );
 #else

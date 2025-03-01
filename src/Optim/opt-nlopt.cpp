@@ -14,6 +14,34 @@
 
 #include <nlopt.hpp>
 
+enum NLopt_SolverOption { _NLopt_LD_SLSQP,
+			  _NLopt_LD_MMA,
+			  _NLopt_LN_COBYLA,
+			  _NLopt_LD_AUGLAG,
+			  _NLopt_LD_AUGLAG_EQ,
+			  _NLopt_LN_NELDERMEAD,
+			  _NLopt_LD_LBFGS,
+			  _NLopt_LD_TNEWTON,
+			  _NLopt_LD_TNEWTON_RESTART,
+			  _NLopt_LD_TNEWTON_PRECOND,
+			  _NLopt_LD_TNEWTON_PRECOND_RESTART,
+			  };
+
+template<> const char* Enum<NLopt_SolverOption>::names []= {
+    "LD_SLSQP",
+    "LD_MMA",
+    "LN_COBYLA",
+    "LD_AUGLAG",
+    "LD_AUGLAG_EQ",
+    "LN_NELDERMEAD",
+    "LD_LBFGS",
+    "LD_TNEWTON",
+    "LD_TNEWTON_RESTART",
+    "LD_TNEWTON_PRECOND",
+    "LD_TNEWTON_PRECOND_RESTART", nullptr
+};
+
+
 struct FuncCallData {
   NLoptInterface* I=0;
   uint feature=0;

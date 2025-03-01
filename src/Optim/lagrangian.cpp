@@ -11,6 +11,8 @@
 
 #include <math.h>
 
+namespace rai {
+
 //==============================================================================
 //
 // LagrangianProblem
@@ -23,7 +25,7 @@ double I_lambda_x(uint i, arr& lambda, arr& g) {
 
 //==============================================================================
 
-LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOptions& opt)
+LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, const OptOptions& opt)
   : P(P), muLB(0.), mu(0.), useLB(false) {
 
   CHECK(P, "null problem given");
@@ -32,7 +34,7 @@ LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOpt
     return this->lagrangian(dL, HL, x);
   });
 
-  if(opt.constrainedMethod==rai::logBarrier) useLB=true;
+  if(opt.method==M_logBarrier) useLB=true;
 
   //switch on penalty terms
   mu=opt.muInit;
@@ -128,8 +130,8 @@ void LagrangianProblem::getFHessian(arr& H, const arr& x) {
 
   for(uint i=0; i<phi_x.N; i++) {
 //    if(muLB     && P->featureTypes.p[i]==OT_ineq) NIY; //add something to the Hessian
-//    if(useLB    && ot==OT_ineq) coeff.p[i] += (muLB/rai::sqr(phi_x.p[i]));                  //log barrier, check feasibility
-//    if(            ot==OT_ineqB) coeff.p[i] += (muLB/rai::sqr(phi_x.p[i]));                 //log barrier, check feasibility
+//    if(useLB    && ot==OT_ineq) coeff.p[i] += (muLB/sqr(phi_x.p[i]));                  //log barrier, check feasibility
+//    if(            ot==OT_ineqB) coeff.p[i] += (muLB/sqr(phi_x.p[i]));                 //log barrier, check feasibility
   }
 
 }
@@ -164,7 +166,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
   for(uint i=0; i<phi_x.N; i++) {
     ObjectiveType ot = P->featureTypes.p[i];
     if(ot==OT_f) L += phi_x.p[i];                                                  // direct cost term
-    if(ot==OT_sos) L += rai::sqr(phi_x.p[i]);                                      // sumOfSqr term
+    if(ot==OT_sos) L += sqr(phi_x.p[i]);                                      // sumOfSqr term
     if(useLB    && ot==OT_ineq) { if(phi_x.p[i]>0.) return NAN;  L -= muLB * ::log(-phi_x.p[i]); }  //log barrier, check feasibility
     if(!useLB   && ot==OT_ineq && I_lambda_x.p[i]) L += gpenalty(phi_x.p[i]);      //g-penalty
     if(ot==OT_ineqP && phi_x.p[i]>0.) L += gpenalty(phi_x.p[i]);                  //g-penalty
@@ -200,10 +202,10 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
       ObjectiveType ot = P->featureTypes.p[i];
       //if(ot==OT_f) { if(fterm!=-1) HALT("There must only be 1 f-term (in the current implementation)");  fterm=i; }
       if(ot==OT_sos) coeff.p[i] += 2.;                                                        // sumOfSqr terms
-      if(useLB    && ot==OT_ineq) coeff.p[i] += (muLB/rai::sqr(phi_x.p[i]));                  //log barrier, check feasibility
+      if(useLB    && ot==OT_ineq) coeff.p[i] += (muLB/sqr(phi_x.p[i]));                  //log barrier, check feasibility
       if(!useLB   && ot==OT_ineq && I_lambda_x.p[i]) coeff.p[i] += gpenalty_dd(phi_x.p[i]);   //g-penalty
       if(ot==OT_ineqP && phi_x.p[i]>0.) coeff.p[i] += gpenalty_dd(phi_x.p[i]);                //g-penalty
-      if(ot==OT_ineqB) coeff.p[i] += (muLB/rai::sqr(phi_x.p[i]));                             //log barrier, check feasibility
+      if(ot==OT_ineqB) coeff.p[i] += (muLB/sqr(phi_x.p[i]));                             //log barrier, check feasibility
       if(ot==OT_eq) coeff.p[i] += hpenalty_dd(phi_x.p[i]);                                    //h-penalty
     }
     arr tmp = J_x;
@@ -229,17 +231,17 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
 #endif
 }
 
-rai::Graph LagrangianProblem::reportGradients(const StringA& featureNames) {
+Graph LagrangianProblem::reportGradients(const StringA& featureNames) {
   //-- build feature -> entry map based on names
-  struct Entry { rai::String name; double grad=0.; double err=0.; ObjectiveType ot=OT_none; };
+  struct Entry { String name; double grad=0.; double err=0.; ObjectiveType ot=OT_none; };
   intA idx2Entry(phi_x.N);
-  rai::Array<Entry> entries;
+  Array<Entry> entries;
   if(featureNames.N) {
     CHECK_EQ(featureNames.N, phi_x.N, "");
     idx2Entry = -1;
 
     for(uint i=0; i<featureNames.N; i++) {
-      rai::String& s = featureNames.elem(i);
+      String& s = featureNames.elem(i);
       if(!s.N) continue;
       for(uint j=0; j<entries.N; j++) {
         if(entries(j).name == s) {
@@ -255,7 +257,7 @@ rai::Graph LagrangianProblem::reportGradients(const StringA& featureNames) {
   } else {
     idx2Entry.setStraightPerm(phi_x.N);
     entries.resize(phi_x.N);
-    for(uint i=0; i<phi_x.N; i++) entries(i) = { STRING("phi" <<i <<"_" <<rai::Enum<ObjectiveType>(P->featureTypes(i))), 0., 0.};
+    for(uint i=0; i<phi_x.N; i++) entries(i) = { STRING("phi" <<i <<"_" <<Enum<ObjectiveType>(P->featureTypes(i))), 0., 0.};
   }
 
   //-- collect all gradients
@@ -296,13 +298,13 @@ rai::Graph LagrangianProblem::reportGradients(const StringA& featureNames) {
 
   entries.sort([](const Entry& a, const Entry& b) -> bool{ return a.grad > b.grad; });
 
-  rai::Graph G;
+  Graph G;
   for(Entry& e: entries) {
     if(!e.err) continue;
-    rai::Graph& g = G.addSubgraph(e.name);
+    Graph& g = G.addSubgraph(e.name);
     g.add<double>("err", e.err);
     g.add<double>("grad", e.grad);
-    g.add<rai::String>("type", rai::Enum<ObjectiveType>(e.ot).name());
+    g.add<String>("type", Enum<ObjectiveType>(e.ot).name());
   }
   return G;
 }
@@ -314,7 +316,7 @@ void LagrangianProblem::reportMatrix(std::ostream& os) {
 //  cout <<"SVD: U=" <<U <<"s=" <<s <<"V=" <<V <<endl;
   arr sig = sqrt(getDiag(C));
   struct Entry { uint i, j; double c=0.; };
-  rai::Array<Entry> entries;
+  Array<Entry> entries;
   for(uint i=0; i<C.d0; i++) for(uint j=i+1; j<C.d1; j++) {
       C(i, j) /= (sig(i) *sig(j));
       if(P->featureTypes.p[i]>OT_sos && P->featureTypes.p[j]>OT_sos && C(i, j)<0.) {
@@ -331,7 +333,7 @@ void LagrangianProblem::reportMatrix(std::ostream& os) {
 
 }
 
-void LagrangianProblem::aulaUpdate(const rai::OptOptions& opt, bool anyTimeVariant, double lambdaStepsize, double* L_x, arr& dL_x, arr& HL_x) {
+void LagrangianProblem::aulaUpdate(const OptOptions& opt, bool anyTimeVariant, double lambdaStepsize, double* L_x, arr& dL_x, arr& HL_x) {
   if(!lambda.N) lambda=zeros(phi_x.N);
 
   //-- lambda update
@@ -347,7 +349,7 @@ void LagrangianProblem::aulaUpdate(const rai::OptOptions& opt, bool anyTimeVaria
   if(anyTimeVariant) {
     //collect gradients of active constraints
     arr A;
-    rai::RowShifted* Aaux=nullptr, *Jaux=nullptr;
+    RowShifted* Aaux=nullptr, *Jaux=nullptr;
     if(isRowShifted(J_x)) {
       Aaux = &A.rowShifted(); Aaux->resize(0, x.N, J_x.d1);
       Jaux = &J_x.rowShifted();
@@ -404,7 +406,7 @@ void LagrangianProblem::aulaUpdate(const rai::OptOptions& opt, bool anyTimeVaria
   if(opt.muLBDec>0. && muLB>1e-8) muLB *= opt.muLBDec;
 
   if(opt.lambdaMax>0.) {
-    clip(lambda, -opt.lambdaMax, opt.lambdaMax);
+    ::clip(lambda, -opt.lambdaMax, opt.lambdaMax);
   }
 
   //-- recompute the Lagrangian with the new parameters (its current value, gradient & hessian)
@@ -414,15 +416,16 @@ void LagrangianProblem::aulaUpdate(const rai::OptOptions& opt, bool anyTimeVaria
   }
 }
 
-void LagrangianProblem::autoUpdate(const rai::OptOptions& opt, double* L_x, arr& dL_x, arr& HL_x) {
-  switch(opt.constrainedMethod) {
+void LagrangianProblem::autoUpdate(const OptOptions& opt, double* L_x, arr& dL_x, arr& HL_x) {
+  switch(opt.method) {
 //  case squaredPenalty: UCP.mu *= opt.muInc;  break;
-    case rai::squaredPenalty: aulaUpdate(opt, false, -1., L_x, dL_x, HL_x);  break;
-    case rai::augmentedLag:   aulaUpdate(opt, false, 1., L_x, dL_x, HL_x);  break;
-    case rai::anyTimeAula:    aulaUpdate(opt, true,  1., L_x, dL_x, HL_x);  break;
-    case rai::logBarrier:     aulaUpdate(opt, false, -1., L_x, dL_x, HL_x);  break;
-    case rai::squaredPenaltyFixed: HALT("you should not be here"); break;
-    case rai::noMethod: HALT("need to set method before");  break;
+    case M_squaredPenalty: aulaUpdate(opt, false, -1., L_x, dL_x, HL_x);  break;
+    case M_augmentedLag:   aulaUpdate(opt, false, 1., L_x, dL_x, HL_x);  break;
+    // case M_anyTimeAula:    aulaUpdate(opt, true,  1., L_x, dL_x, HL_x);  break;
+    case M_logBarrier:     aulaUpdate(opt, false, -1., L_x, dL_x, HL_x);  break;
+    case M_singleSquaredPenalty: HALT("you should not be here"); break;
+    case M_none: HALT("need to set method before");  break;
+    default: HALT("unknown method: " <<rai::Enum<rai::OptMethod>(opt.method));
   }
 }
 
@@ -446,3 +449,4 @@ double LagrangianProblem::hpenalty_d(double h) { h*=nu; return nu*(2.*h + 3.*fab
 double LagrangianProblem::hpenalty_dd(double h) { h*=nu; return nu*nu*(2. + 6.*fabs(h));  }
 #endif
 
+} //namespace

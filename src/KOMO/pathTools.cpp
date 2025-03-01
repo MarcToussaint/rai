@@ -470,7 +470,7 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
   // komo.opt.verbose=0;
   // auto ret = komo.solve(0., -1, rai::OptOptions().set_verbose(0).set_stopTolerance(1e-3));
   // komo.opt.animateOptimization = 2;
-  NLP_Solver sol(komo.nlp(), 0);
+  rai::NLP_Solver sol(komo.nlp(), 0);
   std::shared_ptr<SolverReturn> ret = sol.solve();
 
   if(ret->ineq>1e-1) {

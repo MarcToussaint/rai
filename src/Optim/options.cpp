@@ -15,8 +15,9 @@ OptOptions& globalOptOptions() {
   return opt;
 }
 
-template<> const char* Enum<ConstrainedMethodType>::names []= {
-  "noMethod", "squaredPenalty", "augmentedLag", "logBarrier", "anyTimeAula", "squaredPenaltyFixed", nullptr
+template<> const char* Enum<OptMethod>::names []= {
+  // "noMethod", "squaredPenalty", "augmentedLag", "logBarrier", "anyTimeAula", "squaredPenaltyFixed", nullptr
+  "noMethod", "gradientDescent", "rprop", "LBFGS", "newton", "augmentedLag", "squaredPenalty", "logBarrier", "singleSquaredPenalty", "slackGN", "NLopt", "Ipopt", "Ceres", nullptr
 };
 
 }

@@ -2171,19 +2171,51 @@ void inertiaCylinder(double* I, double& mass, double density, double height, dou
   I[8]=mass/2.*r2;
 }
 
-void inertiaMesh(double* I, double& mass, double density, const rai::Mesh& m) {
-  double area = m.getArea();
-  if(density) mass = density*m.getVolume();
-  //assume mass distributed on surface
-  arr vertexMass = zeros(m.V.d0);
+void inertiaSphereSurface(double& mass, double* I, double radius, double density) {
+  double area = 4.*RAI_PI*radius;
+  if(density>0.) mass = density * area;
+  I[1]=I[2]=I[3]=I[5]=I[6]=I[7]=0.;
+  double r2=radius*radius;
+  I[0]=mass*r2;
+  I[4]=mass*r2;
+  I[8]=mass*r2;
+}
+
+void inertiaBoxSurface(double& mass, double* I, double dx, double dy, double dz, double density) {
+  double area = 2.*(dx*dy+dy*dz+dx*dz);
+  if(density>0.) mass = density * area;
+  I[1]=I[2]=I[3]=I[5]=I[6]=I[7]=0.;
+  double x2=dx*dx, y2=dy*dy, z2=dz*dz;
+  I[0]=mass*(y2+z2);
+  I[4]=mass*(x2+z2);
+  I[8]=mass*(x2+y2);
+}
+
+void inertiaMeshSurface(double& mass, double* com, double* I, const rai::Mesh& m, double density) {
+  //get total area and assign to vertices
+  double area=0.;
+  arr vertexArea = zeros(m.V.d0);
   for(uint i=0; i<m.T.d0; i++) {
-    double mi = mass * m.getArea(i)/area;
-    for(uint v=0; v<3; v++) vertexMass(m.T(i, v)) += mi/3.; //area per vertex
+    double ai = m.getArea(i);
+    area += ai;
+    for(uint v=0; v<3; v++) vertexArea(m.T(i, v)) += ai/3.; //area per vertex
   }
-  //cout <<::sum(vertexMass) <<' ' <<mass <<endl;
+  //assign mass via density-per-area
+  if(density>0.){
+    mass = density*area; //m.getVolume();
+  }else{
+    density = mass/area;
+  }
+
+  //sum up com and inertia tensor
+  for(uint i=0;i<3;i++) com[i]=0.;
+  for(uint i=0;i<9;i++) I[i]=0.;
   for(uint i=0; i<m.V.d0; i++) {
-    double mi = vertexMass(i);
+    double mi = density * vertexArea(i);
     double x=m.V(i, 0), y=m.V(i, 1), z=m.V(i, 2);
+    com[0] += mi*x;
+    com[1] += mi*y;
+    com[2] += mi*z;
     I[0] += mi*(y*y+z*z);
     I[4] += mi*(x*x+z*z);
     I[8] += mi*(x*x+y*y);
@@ -2191,4 +2223,5 @@ void inertiaMesh(double* I, double& mass, double density, const rai::Mesh& m) {
     I[2] -= mi*x*z;  I[6] -= mi*x*z;
     I[5] -= mi*y*z;  I[7] -= mi*y*z;
   }
+  for(uint i=0;i<3;i++) com[i] /= mass;
 }
