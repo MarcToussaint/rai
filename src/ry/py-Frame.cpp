@@ -52,6 +52,10 @@ void init_Frame(pybind11::module& m) {
            "attach a mesh shape from a file",
            pybind11::arg("filename"),
            pybind11::arg("scale")=1.)
+  .def("setTextureFile", &rai::Frame::setTextureFile,
+           "set the texture of the mesh of a shape",
+           pybind11::arg("image_filename"),
+           pybind11::arg("texCoords")=arr{})
   .def("setPointCloud", &rai::Frame::setPointCloud,
        "attach a point cloud shape",
        pybind11::arg("points"), pybind11::arg("colors") = byteA{}, pybind11::arg("normals")=arr{})
@@ -82,7 +86,12 @@ void init_Frame(pybind11::module& m) {
   .def_readonly("ID", &rai::Frame::ID, "the unique ID of the frame, which is also its index in lists/arrays (e.g. when the frameState is returned as matrix) (readonly)")
   .def_readwrite("name", &rai::Frame::name, "the name of the frame (editable)")
 
-  .def("getParent", [](shared_ptr<rai::Frame>& self) { return shared_ptr<rai::Frame>(self->parent, &null_deleter); }, "")
+  .def("getParent", [](shared_ptr<rai::Frame>& self) { if(self->parent) return shared_ptr<rai::Frame>(self->parent, &null_deleter);  return shared_ptr<rai::Frame>(); }, "")
+  .def("getChildren", [](shared_ptr<rai::Frame>& self) {
+    std::vector<shared_ptr<rai::Frame>> F;
+    for(rai::Frame* f:self->children) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-sense deleter!
+    return F;
+  })
   .def("getPose", &rai::Frame::getPose, "")
   .def("getPosition", &rai::Frame::getPosition, "")
   .def("getQuaternion", &rai::Frame::getQuaternion, "")
@@ -92,6 +101,7 @@ void init_Frame(pybind11::module& m) {
   .def("getRelativePosition", &rai::Frame::getRelativePosition, "")
   .def("getRelativeQuaternion", &rai::Frame::getRelativeQuaternion, "")
   .def("getRelativeTransform", &rai::Frame::getRelativeTransform, "")
+  .def("getJointType", &rai::Frame::getJointType, "")
   .def("getJointState", &rai::Frame::getJointState, "")
   .def("getSize", &rai::Frame::getSize, "")
   .def("getShapeType", &rai::Frame::getShapeType, "")
@@ -104,14 +114,7 @@ void init_Frame(pybind11::module& m) {
                                   Array2numpy<byte>(self->getMeshColors()) );
   }, "")
 
-  .def("info", [](shared_ptr<rai::Frame>& self) {
-    rai::Graph G;
-    G.add<str>("name", self->name);
-    G.add<int>("ID", self->ID);
-    self->write(G);
-    if(!G["X"]) G.add<arr>("X", self->ensure_X().getArr7d());
-    return graph2dict(G);
-  }, "")
+  .def("asDict", [](shared_ptr<rai::Frame>& self) {  rai::Graph G;  self->write(G);  return graph2dict(G); }, "")
 
   .def("setMeshAsLines", [](shared_ptr<rai::Frame>& self, const std::vector<double>& lines) {
     //    CHECK(self.frame, "this is not a valid frame");

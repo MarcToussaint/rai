@@ -711,7 +711,7 @@ uint Configuration::getJointStateDimension() const {
 
 /// get the q-vector, including DOFs of joints and forces
 const arr& Configuration::getJointState() const {
-  if(!_state_q_isGood)((Configuration*)this)->ensure_q();
+  ((Configuration*)this)->ensure_q();
   return q;
 }
 

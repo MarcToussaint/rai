@@ -7,14 +7,10 @@
     --------------------------------------------------------------  */
 
 #include "assimpInterface.h"
+#include "stbImage.h"
 #include "../Core/util.h"
 
 #ifdef RAI_ASSIMP
-
-#ifndef RAI_NO_STB_IMPL
-#  define STB_IMAGE_IMPLEMENTATION
-#endif
-#include "stb_image.h"
 
 #include <assimp/scene.h>
 #include <assimp/Importer.hpp>
@@ -203,22 +199,7 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
 	  cout <<"loading texture image: " <<filename <<endl;
 	}
 
-	int width, height, nrComponents;
-	unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
-	if(data) {
-	  M.texImg.resize(height, width, nrComponents);
-	  memmove(M.texImg.p, data, M.texImg.N);
-	  if(nrComponents==1){
-	    make_RGB(M.texImg);
-	  }else if(nrComponents==4){
-	    M.texImg.reshape(height*width, 4);
-	    M.texImg.delColumns(-1);
-	    M.texImg.reshape(height, width, 3);
-	  }
-	} else {
-	  LOG(-1) << "Texture failed to load at path: " <<filename;
-	}
-	stbi_image_free(data);
+        M.texImg = rai::loadImage(filename.c_str());
       }
 
       break;

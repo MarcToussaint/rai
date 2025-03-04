@@ -19,7 +19,13 @@ pybind11::dict graph2dict(const rai::Graph& G) {
 
     //-- write value
     if(n->is<rai::Graph>()) {
-      dict[key.p] = graph2dict(n->as<rai::Graph>());
+      pybind11::dict sub = graph2dict(n->as<rai::Graph>());
+      if(n->parents.N==1){
+        sub["parent"] = n->parents.elem()->key;
+      }else if(n->parents.N>1){
+        NIY;
+      }
+      dict[key.p] = sub;
     } else if(n->is<double>()) {
       dict[key.p] = n->as<double>();
     } else if(n->is<int>()) {

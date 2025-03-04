@@ -1435,7 +1435,7 @@ str KOMO::info_sliceCollisions(uint t, double belowMargin){
       uint tb=p.b->ID / nFrames;
       CHECK_EQ(ta, tb, "collisions across time slices??");
       if(ta==t+k_order || tb==t+k_order){
-        collisions <<p.a->name <<'-' <<p.b->name <<": " <<p.d <<' ' <<ta <<' ' <<tb <<'\n';
+        collisions <<p.a->name <<'-' <<p.b->name <<": " <<p.d <<'\n';
       }
     }
   }
@@ -1468,7 +1468,7 @@ int KOMO::view(bool pause, const char* txt) {
     arr err = info_objectiveErrorTraces();
     for(uint t=0;t<T;t++){
       pathConfig.get_viewer()->sliceTexts(t+k_order) = info_sliceErrors(t, err);
-      pathConfig.get_viewer()->sliceTexts(t+k_order) <<info_sliceCollisions(t);
+      pathConfig.get_viewer()->sliceTexts(t+k_order) <<info_sliceCollisions(t, .0);
     }
   }
   pathConfig.get_viewer()->ensure_gl().setTitle("KOMO Viewer");

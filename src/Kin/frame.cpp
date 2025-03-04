@@ -13,6 +13,7 @@
 #include "dof_path.h"
 #include "dof_direction.h"
 #include "../Geo/signedDistanceFunctions.h"
+#include "../Geo/stbImage.h"
 
 #include <climits>
 
@@ -564,6 +565,22 @@ rai::Frame& rai::Frame::setMeshFile(str file, double scale){
   return *this;
 }
 
+rai::Frame& rai::Frame::setTextureFile(str imgFile, const arr& texCoords){
+  C.view_lock(RAI_HERE);
+  CHECK(shape, "frame needs a shape");
+  if(!shape->_mesh) shape->createMeshes();
+  CHECK(shape->_mesh, "mesh needs to be created before");
+  rai::Mesh& mesh = getShape().mesh();
+  CHECK_EQ(texCoords.d1, 2, "needs texCoordinates of dimension (#vertices, 2)");
+  CHECK_EQ(texCoords.d0, mesh.V.d0, "needs texCoordinates of dimension (#vertices, 2)");
+  byteA img = rai::loadImage(imgFile);
+  mesh.texImg = img;
+  mesh.texCoords = texCoords;
+  mesh.version++; //if(shape->glListId>0) shape->glListId *= -1;
+  C.view_unlock();
+  return *this;
+}
+
 rai::Frame& rai::Frame::setLines(const arr& verts, const byteA& colors){
   C.view_lock(RAI_HERE);
   getShape().type() = ST_lines;
@@ -849,6 +866,11 @@ void rai::Frame::setAutoLimits() {
   }
   //sample heuristic
   joint->q0 = joint->calcDofsFromConfig();
+}
+
+rai::JointType rai::Frame::getJointType() const {
+  if(!joint) return JT_none;
+  return joint->type.x;
 }
 
 arr rai::Frame::getSize() const {

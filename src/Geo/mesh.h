@@ -32,7 +32,7 @@ struct Mesh {
   uintA T;              ///< triangles (faces, empty -> point cloud)
   arr   Tn;             ///< triangle normals (optional)
 
-  arr texCoords;            ///< texture coordinates for each vertex, dimensionality (V.d0, 2)
+  arr texCoords;        ///< texture coordinates for each vertex, dimensionality (V.d0, 2)
   byteA texImg;         ///< texture image
 
   uintA cvxParts;

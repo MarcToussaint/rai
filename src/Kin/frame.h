@@ -167,6 +167,7 @@ struct Frame : NonCopyable {
   Frame& setMesh2(const rai::Mesh& m);
   Frame& setMesh(const arr& verts, const uintA& tris, const byteA& colors={}, const uintA& cvxParts={});
   Frame& setMeshFile(str file, double scale=1.);
+  Frame& setTextureFile(str imgFile, const arr& texCoords={});
   Frame& setLines(const arr& verts, const byteA& colors={});
   Frame& setPointCloud(const arr& points, const byteA& colors= {}, const arr& normals= {});
   Frame& setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
@@ -197,6 +198,7 @@ struct Frame : NonCopyable {
   uintA getMeshTriangles() const ;
   byteA getMeshColors() const ;
   arr getMeshCorePoints() const ;
+  rai::JointType getJointType() const;
   arr getJointState() const; ///< throws error if this frame is not also a joint
   Graph& getAts(){ if(!ats) ats=make_shared<Graph>(); return *ats; }
 
