@@ -708,6 +708,14 @@ Quaternion& Quaternion::setRadZ(double radians) {
   return *this;
 }
 
+Quaternion& Quaternion::setEuler(const Vector& zxz) {
+  setZero();
+  appendZ(zxz.x); //alpha
+  appendX(zxz.y); //beta
+  appendZ(zxz.z); //gamma
+  return *this;
+}
+
 Quaternion& Quaternion::setRollPitchYaw(const Vector& rpy) {
   setZero();
   appendX(rpy.x); //roll

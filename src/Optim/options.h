@@ -12,7 +12,12 @@
 
 namespace rai {
 
-enum ConstrainedMethodType { noMethod=0, squaredPenalty, augmentedLag, logBarrier, anyTimeAula, squaredPenaltyFixed };
+enum OptMethod { M_none=0,
+		 M_gradientDescent, M_rprop, M_LBFGS, M_newton,
+		 M_augmentedLag, M_squaredPenalty, M_logBarrier, M_singleSquaredPenalty,
+		 M_slackGN,
+		 M_NLopt, M_Ipopt, M_Ceres };
+
 
 struct OptOptions {
   RAI_PARAM("opt/", int, verbose, 1)
@@ -39,7 +44,7 @@ struct OptOptions {
   RAI_PARAM("opt/", double, lambdaMax, -1.)
   RAI_PARAM("opt/", double, interiorPadding, 1e-2)
   RAI_PARAM("opt/", bool,   boundedNewton, true)
-  RAI_PARAM_ENUM("opt/", ConstrainedMethodType, constrainedMethod, augmentedLag)
+  RAI_PARAM_ENUM("opt/", OptMethod, method, M_augmentedLag)
 //  void write(std::ostream& os) const;
 };
 //stdOutPipe(OptOptions)

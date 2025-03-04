@@ -174,5 +174,8 @@ arr MinkowskiSum(const arr& A, const arr& B);
 void inertiaSphere(double* Inertia, double& mass, double density, double radius);
 void inertiaBox(double* Inertia, double& mass, double density, double dx, double dy, double dz);
 void inertiaCylinder(double* Inertia, double& mass, double density, double height, double radius);
-void inertiaMesh(double* I, double& mass, double density, const rai::Mesh& m);
+
+void inertiaSphereSurface(double& mass, double* I, double radius, double density);
+void inertiaBoxSurface(double& mass, double* I, double dx, double dy, double dz, double density);
+void inertiaMeshSurface(double& mass, double* com, double* I, const rai::Mesh& m, double density);
 

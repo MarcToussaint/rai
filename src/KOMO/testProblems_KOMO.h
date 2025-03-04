@@ -26,7 +26,7 @@ struct Problem{
   std::shared_ptr<KOMO> komo;
   std::shared_ptr<NLP> nlp;
 
-  void load(str problem);
+  void load(str problem={});
 };
 
 //===========================================================================
@@ -40,10 +40,25 @@ struct SpherePacking : NLP{
 
   rai::Configuration disp; //for reporting/display only
 
-  SpherePacking(uint _n, double _rad, bool _ineqAccum=false);
+  SpherePacking(uint _n=50, double _rad=.21, bool _ineqAccum=false);
 
   void ineqAccumulation(uint phiIdx, arr& phi, arr& J, arr& g, const arr& Jg);
   void evaluate(arr& phi, arr& J, const arr &_x);
+  void report(ostream &os, int verbose, const char *msg=0);
+};
+
+//===========================================================================
+
+struct MinimalConvexCore : NLP {
+  double radius;
+  arr x, cen;
+
+  rai::Mesh M;
+  rai::Configuration disp; //for reporting/display only
+
+  MinimalConvexCore(const arr& X={}, double radius=.1);
+  arr getInitializationSample();
+  void evaluate(arr& phi, arr& J, const arr& _x);
   void report(ostream &os, int verbose, const char *msg=0);
 };
 

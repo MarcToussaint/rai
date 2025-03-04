@@ -328,6 +328,7 @@ rai::Transformation rai::Frame::transformToDiagInertia(bool transformMesh) {
   CHECK(!shape || shape->type()==rai::ST_marker || transformMesh, "can't translate this frame if it has a shape attached");
   CHECK(!joint || joint->type==rai::JT_rigid || joint->type==rai::JT_free, "can't translate this frame if it has a joint attached");
   //LOG(0) <<"translating frame '" <<name <<"' to accomodate for centered compound inertia";
+#if 0
   rai::Transformation t=0;
   //transform COM
   if(!inertia->com.isZero) {
@@ -342,7 +343,14 @@ rai::Transformation rai::Frame::transformToDiagInertia(bool transformMesh) {
     inertia->matrix.setDiag(d);
     t.rot.setMatrix(V);
   }
-
+#else
+  arr d;
+  rai::Transformation t = inertia->getDiagTransform(d);
+  if(!t.isZero()) {
+    inertia->com.setZero();
+    inertia->matrix.setDiag(d);
+  }
+#endif
   if(!t.isZero()) {
     set_X()->appendTransformation(t);
     if(shape && transformMesh){
@@ -2187,16 +2195,18 @@ void rai::Inertia::add(const rai::Inertia& I, const rai::Transformation& rel) {
 void rai::Inertia::defaultInertiaByShape() {
   CHECK(frame.shape, "");
 
+  com.setZero();
+  matrix.setZero();
   //add inertia to the body
   switch(frame.shape->type()) {
-    case ST_sphere:   inertiaSphere(matrix.p(), mass, (mass>0.?0.:100.), frame.shape->radius());  break;
+    case ST_sphere:   inertiaSphereSurface(mass, matrix.p(), frame.shape->radius(), (mass>0.?-1.:5.));  break;
     case ST_ssBox:
-    case ST_box:      inertiaBox(matrix.p(), mass, (mass>0.?0.:100.), frame.shape->size(0), frame.shape->size(1), frame.shape->size(2));  break;
+    case ST_box:      inertiaBoxSurface(mass, matrix.p(), frame.shape->size(0), frame.shape->size(1), frame.shape->size(2), (mass>0.?-1.:5.));  break;
     case ST_capsule:
     case ST_cylinder:
     case ST_ssCylinder: inertiaCylinder(matrix.p(), mass, (mass>0.?0.:100.), frame.shape->size(0), frame.shape->size(1));  break;
     case ST_ssCvx:
-    case ST_mesh: inertiaMesh(matrix.p(), mass, (mass>0.?0.:100.), frame.shape->mesh()); break;
+    case ST_mesh: inertiaMeshSurface(mass, com.p(), matrix.p(), frame.shape->mesh(), (mass>0.?-1.:5.)); break;
     default: HALT("not implemented for this shape type");
   }
 }
@@ -2245,9 +2255,9 @@ void rai::Inertia::write(Graph& g) {
 void rai::Inertia::read(const Graph& G) {
   double d;
   if(G.get(d, "mass")) {
-    mass=d;
-    matrix.setId();
-    matrix *= .2*d;
+    mass = d;
+    // matrix.setId();
+    // matrix *= .2*d;
     if(frame.shape && frame.shape->type()!=ST_marker) defaultInertiaByShape();
   }
   if(G["inertia"]) {
@@ -2256,12 +2266,6 @@ void rai::Inertia::read(const Graph& G) {
     else if(I.N==6) matrix.setSymmetric(I);
     else { CHECK_EQ(I.N, 9, "") matrix.set(I.p); }
   }
-  if(G["fixed"])       type=BT_static;
-  if(G["static"])      type=BT_static;
-  if(G["kinematic"])   type=BT_kinematic;
-  if(G["dynamic"])     type=BT_dynamic;
-  if(G["soft"])        type=BT_soft;
-  if(G.get(d, "dyntype")) type=(BodyType)d;
 }
 
 RUN_ON_INIT_BEGIN(frame)

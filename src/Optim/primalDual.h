@@ -13,7 +13,7 @@
 #include "lagrangian.h"
 
 struct PrimalDualProblem : ScalarFunction {
-  LagrangianProblem L;
+  rai::LagrangianProblem L;
 
   //duality gap parameter (log barrier parameter) of the primal dual equation system
   double mu;

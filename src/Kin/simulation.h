@@ -26,7 +26,8 @@ struct Simulation {
   std::unique_ptr<struct Simulation_self> self;
 
   Configuration& C;
-  double time;
+  double time=0.;
+  uint stepCount=0;
   Engine engine;
   Array<shared_ptr<SimulationImp>> imps; ///< list of (adversarial) imps doing things/perturbations/noise in addition to clean physics engine
   int verbose;

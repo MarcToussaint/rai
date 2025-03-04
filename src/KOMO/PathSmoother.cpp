@@ -62,7 +62,7 @@ arr ReceedingHorizonPathSmoother::run(int verbose) {
     // for velocity=0 at the end
     komo.addObjective({1}, FS_qItself, {}, OT_eq, {1e1}, NoArr, 1);
 
-    NLP_Solver sol;
+    rai::NLP_Solver sol;
     sol.setProblem(komo.nlp());
     sol.opt.set_stopInners(10);
     sol.solve();

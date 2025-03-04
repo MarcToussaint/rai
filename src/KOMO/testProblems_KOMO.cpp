@@ -196,16 +196,23 @@ shared_ptr<KOMO> problem_StableSphere(){
 //===========================================================================
 
 void Problem::load(str problem){
+  if(!problem.N) problem = rai::getParameter<str>("problem");
+
   if(komo) komo.reset();
 
   if(problem == "box") nlp = make_shared<BoxNLP>();
   else if(problem == "modes") nlp = make_shared<ModesNLP>();
   else if(problem == "linear-program") nlp = getBenchmarkFromCfg();
+
   else if(problem == "IK") komo = problem_IK();
   else if(problem == "IKobstacle") komo = problem_IKobstacle();
   else if(problem == "IKtorus") komo = problem_IKtorus();
   else if(problem == "PushToReach") komo = problem_PushToReach();
   else if(problem == "StableSphere") komo = problem_StableSphere();
+
+  else if(problem == "SpherePacking") nlp = make_shared<SpherePacking>();
+  else if(problem == "MinimalConvexCore") nlp = make_shared<MinimalConvexCore>();
+
   else HALT("can't create problem '" <<problem <<"'");
 
   if(komo && !nlp) nlp = komo->nlp();
@@ -356,6 +363,146 @@ void SpherePacking::report(std::ostream& os, int verbose, const char* msg){
   for(uint i=0;i<n;i++){
     disp.frames(i)->setPosition(x[i]);
   }
+  disp.view(verbose>5);
+}
+
+//===========================================================================
+
+MinimalConvexCore::MinimalConvexCore(const arr& X, double radius) : radius(radius) {
+  if(!X.N){
+    // rai::Configuration C;
+    // C.addFile(rai::raiPath("../rai-robotModels/panda/panda.g"));
+    // m0 = C["panda_link3_0"]->shape->mesh();
+    M.setSphere(1);
+    // M.setBox();
+    M.scale(.08,.2,.3);
+    M.translate(0.,0.,.5);
+  }else{
+    M.V = X;
+  }
+  M.V.reshape(-1,3);
+  M.makeConvexHull();
+  M.C = {.5, .3, .3, 1.};
+
+  cen = mean(M.V);
+
+  dimension = M.V.N;
+  featureTypes.resize(M.V.d0+1+M.V.N) = OT_ineq;
+  featureTypes(0) = OT_f;
+  for(uint i=0;i<M.V.N;i++) featureTypes(M.V.d0+1+i)= OT_sos;
+  // bounds.setBlockVector(min(m0.V,0), max(m0.V,0));
+  // bounds.reshape()
+}
+
+arr MinimalConvexCore::getInitializationSample(){
+  arr x = M.V;
+  x.reshape(-1);
+  x += .01 * randn(x.N);
+  return x;
+}
+
+double attractor(double x, double a, double& dydx_x){
+  CHECK_GE(x, 0., "")
+  double f = x/a;
+  double lof = log(1.+f);
+  double y = f/(1.+f) * lof;
+  dydx_x = (lof/f + (1.-lof)/(1.+f)) / (1.+f);
+  dydx_x /= a*a;
+  double scale= 1e0;
+  dydx_x *= scale;
+  return scale * y;
+}
+
+void MinimalConvexCore::evaluate(arr& phi, arr& J, const arr& _x) {
+  x = _x;
+  x.reshape(-1, 3);
+
+  uint n = x.d0;
+
+  phi.resize(n+1+x.N).setZero();
+  if(!!J) J.resize(n+1+x.N, x.N).setZero();
+
+  //-- accumulated cost
+  double cost = 0.;
+  double l_a=.01, dxdl_l;
+  arr Jcost = zeros(x.N);
+  for(uint i=0; i<M.T.d0; i++) {
+    int a=M.T(i, 0), b=M.T(i, 1), c=M.T(i, 2);
+    {
+      arr d = x[a]-x[b];
+      double l = length(d);
+      cost += attractor(l, l_a, dxdl_l);
+      Jcost({3*a, 3*a+2}) += d*dxdl_l;
+      Jcost({3*b, 3*b+2}) += -d*dxdl_l;
+      //            if(!!H){
+      //              for(uint k=0;k<3;k++) for(uint l=0;l<3;l++){
+      //                H(3*a+k,3*a+l) += d(k)*d(l)/(l*l);
+      //              }
+      //            }
+    }
+    {
+      arr d = x[c]-x[b];
+      double l = length(d);
+      cost += attractor(l, l_a, dxdl_l);
+      Jcost({3*c, 3*c+2}) += d*dxdl_l;
+      Jcost({3*b, 3*b+2}) += -d*dxdl_l;
+    }
+    {
+      arr d = x[a]-x[c];
+      double l = length(d);
+      cost += attractor(l, l_a, dxdl_l);
+      Jcost({3*a, 3*a+2}) += d*dxdl_l;
+      Jcost({3*c, 3*c+2}) += -d*dxdl_l;
+    }
+  }
+
+  phi(0) = cost;
+  if(!!J) J[0] = Jcost;
+
+  //-- radius inequalities
+  for(uint i=0; i<n; i++) {
+    arr d = M.V[i] - x[i];
+    double l = length(d);
+    phi(i+1) = l - radius;
+    if(l>1e-6) {
+      if(!!J) J(i+1, {3*i, 3*i+2}) += -d/l;
+    }
+  }
+
+  //-- center sos
+  for(uint i=0;i<x.d0;i++) x[i] -= cen;
+  x.reshape(-1);
+  double scale = 1e-1;
+  phi.setVectorBlock(scale*x, M.V.d0+1);
+  if(!!J) J.setMatrixBlock(scale*eye(x.N), M.V.d0+1, 0);
+
+  x.reshape(-1, 3);
+  for(uint i=0;i<x.d0;i++) x[i] += cen;
+}
+
+void MinimalConvexCore::report(ostream& os, int verbose, const char* msg){
+  // gl.dataLock.lock(RAI_HERE);
+  // m0.setSSCvx(_x, radius);
+  // gl.dataLock.unlock();
+  // gl.update();
+
+  // NLP::report(os, verbose, msg);
+  x.reshape(M.V.d0, 3);
+  os <<"MinimalConvexCore problem" <<endl;
+  disp.clear();
+  if(!disp.frames.N){
+    rai::Frame *pts = disp.addFrame("pts");
+    pts->setPointCloud(M.V);
+    rai::Frame *cvx = disp.addFrame("cvx");
+    cvx->setConvexMesh(x, {}, radius);
+    cvx->setColor({1., .2});
+    rai::Frame *core = disp.addFrame("core");
+    core->setPointCloud(x);
+    core->setColor({1,0,0});
+  }
+  // for(uint i=0;i<n;i++){
+  //   disp.frames(i)->setPosition(x[i]);
+  // }
   disp.view(verbose>5);
 }
 

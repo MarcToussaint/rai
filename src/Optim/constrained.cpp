@@ -11,6 +11,8 @@
 #include <iomanip>
 #include <math.h>
 
+namespace rai {
+
 //==============================================================================
 //
 // PhaseOneProblem
@@ -24,7 +26,7 @@ void PhaseOneProblem::initialize(arr& x) {
   for(uint i=0; i<phi.N; i++) {
     if(featureTypes.elem(i)==OT_ineq) {
       dim_ineq++;
-      gmax = rai::MAX(gmax, phi.elem(i));
+      gmax = MAX(gmax, phi.elem(i));
     }
     if(featureTypes.elem(i)==OT_eq) {
       dim_eq++;
@@ -60,11 +62,7 @@ void PhaseOneProblem::evaluate(arr& meta_phi, arr& meta_J, const arr& meta_x) {
 // Solvers
 //
 
-const char* MethodName[]= { "NoMethod", "SquaredPenalty", "AugmentedLagrangian", "LogBarrier", "AnyTimeAugmentedLagrangian", "SquaredPenaltyFixed"};
-
-//==============================================================================
-
-ConstrainedSolver::ConstrainedSolver(arr& _x, arr& _dual, const shared_ptr<NLP>& P, const rai::OptOptions& _opt)
+ConstrainedSolver::ConstrainedSolver(arr& _x, arr& _dual, const shared_ptr<NLP>& P, const OptOptions& _opt)
   : L(P, _opt), newton(_x, L, _opt), dual(_dual), opt(_opt) {
 
   if(!!_dual && _dual.N) L.lambda = _dual;
@@ -73,29 +71,29 @@ ConstrainedSolver::ConstrainedSolver(arr& _x, arr& _dual, const shared_ptr<NLP>&
     if(P->bounds.N) newton.setBounds(P->bounds);
   }
 
-  if(opt.constrainedMethod==rai::logBarrier) {
+  if(opt.method==M_logBarrier) {
     L.useLB=true;
   }
 
-  newton.opt.verbose = rai::MAX(opt.verbose-1, 0);
+  newton.opt.verbose = MAX(opt.verbose-1, 0);
 
   if(opt.verbose>0){
     cout <<"====nlp===="
         <<" problem-dim: " <<P->dimension <<'/' <<P->featureTypes.N
-       <<" method:" <<MethodName[opt.constrainedMethod]
+         <<" method:" <<Enum<OptMethod>(opt.method)
       <<" bounded: " <<(opt.boundedNewton?"yes":"no") <<endl;
   }
 
   //check for no constraints
   if(P->get_numOfType(OT_ineq)==0 && P->get_numOfType(OT_ineqB)==0 && P->get_numOfType(OT_eq)==0) {
     if(opt.verbose>0) cout <<"==nlp== NO CONSTRAINTS -> run just Newton once" <<endl;
-    opt.constrainedMethod=rai::squaredPenaltyFixed;
+    opt.method=M_singleSquaredPenalty;
   }
 
   //in first iteration, if not squaredPenaltyFixed, increase stop tolerance
   org_stopTol = opt.stopTolerance;
   org_stopGTol = opt.stopGTolerance;
-  if(!outer_iters && opt.constrainedMethod!=rai::squaredPenaltyFixed) {
+  if(!outer_iters && opt.method!=M_singleSquaredPenalty) {
     newton.opt.stopTolerance = 3.*org_stopTol;
     newton.opt.stopGTolerance = 3.*org_stopGTol;
   }
@@ -143,7 +141,7 @@ bool ConstrainedSolver::ministep() {
          <<"  g:" <<std::setw(11) <<err(OT_ineq)
          <<"  h:" <<std::setw(11) <<err(OT_eq)
          <<"  |x-x'|:" <<std::setw(11) <<step
-         <<" \tstop:" <<rai::Enum<OptNewton::StopCriterion>(newton.stopCriterion);
+         <<" \tstop:" <<Enum<OptNewton::StopCriterion>(newton.stopCriterion);
     if(numBadSteps) cout <<" (bad:" <<numBadSteps <<")";
     if(newton.x.N<5) cout <<" \tx:" <<newton.x;
     cout <<endl;
@@ -153,7 +151,7 @@ bool ConstrainedSolver::ministep() {
   //-- STOPPING CRITERIA
 
   //check for squaredPenaltyFixed method
-  if(opt.constrainedMethod==rai::squaredPenaltyFixed) {
+  if(opt.method==M_singleSquaredPenalty) {
     if(opt.verbose>0) cout <<"==nlp== squaredPenaltyFixed stops after one outer iteration" <<endl;
     return true;
   }
@@ -223,7 +221,7 @@ bool ConstrainedSolver::ministep() {
 
   //prepare next Newton loop
   x_beforeNewton = newton.x;
-  rai::clip(newton.alpha, 1e-2, 1.);
+  clip(newton.alpha, 1e-2, 1.);
 
   if(L.lambda.N) CHECK_EQ(L.lambda.N, L.phi_x.N, "");
 
@@ -232,3 +230,5 @@ bool ConstrainedSolver::ministep() {
 
   return false;
 }
+
+} //namespace

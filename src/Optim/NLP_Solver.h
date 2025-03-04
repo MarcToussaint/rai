@@ -12,31 +12,12 @@
 #include "options.h"
 #include "../Core/graph.h"
 
+namespace rai {
+
 struct ConstrainedSolver;
-
-enum NLP_SolverID { NLPS_none=-1,
-                    NLPS_gradientDescent, NLPS_rprop, NLPS_LBFGS, NLPS_newton,
-                    NLPS_augmentedLag, NLPS_squaredPenalty, NLPS_logBarrier, NLPS_singleSquaredPenalty,
-                    NLPS_slackGN,
-                    NLPS_NLopt, NLPS_Ipopt, NLPS_Ceres
-                  };
-
-enum NLopt_SolverOption { _NLopt_LD_SLSQP,
-                          _NLopt_LD_MMA,
-                          _NLopt_LN_COBYLA,
-                          _NLopt_LD_AUGLAG,
-                          _NLopt_LD_AUGLAG_EQ,
-                          _NLopt_LN_NELDERMEAD,
-                          _NLopt_LD_LBFGS,
-                          _NLopt_LD_TNEWTON,
-                          _NLopt_LD_TNEWTON_RESTART,
-                          _NLopt_LD_TNEWTON_PRECOND,
-                          _NLopt_LD_TNEWTON_PRECOND_RESTART,
-                        };
 
 /** User Interface: Meta class to call several different solvers in a unified manner. */
 struct NLP_Solver : NonCopyable {
-  NLP_SolverID solverID=NLPS_augmentedLag;
   arr x, dual; //owner of decision variables, which are passed by reference to lower level solvers
   rai::OptOptions opt; //owner of options, which are passed by reference to lower level solvers
   std::shared_ptr<SolverReturn> ret;
@@ -46,7 +27,7 @@ struct NLP_Solver : NonCopyable {
   NLP_Solver();
   NLP_Solver(const shared_ptr<NLP>& _P, int verbose=-100) { setProblem(_P); if(verbose>-100) opt.verbose=verbose; }
 
-  NLP_Solver& setSolver(NLP_SolverID _solverID) { solverID=_solverID; return *this; }
+  NLP_Solver& setSolver(OptMethod _method) { opt.method=_method; return *this; }
   NLP_Solver& setProblem(const shared_ptr<NLP>& _P);
   NLP_Solver& setOptions(const rai::OptOptions& _opt) { opt = _opt; return *this; }
   NLP_Solver& setInitialization(const arr& _x) { x=_x; return *this; }
@@ -68,6 +49,8 @@ struct NLP_Solver : NonCopyable {
   rai::Graph reportLagrangeGradients(const StringA& featureNames);
   void gnuplot_costs() {
     FILE("z.opt.trace") <<getTrace_costs();
-    gnuplot("plot 'z.opt.trace' us 0:1 t 'sos', '' us 0:2 t 'ineq', '' us 0:3 t 'eq'");
+    gnuplot("plot 'z.opt.trace' us 0:1 t 'f', '' us 0:2 t 'sos', '' us 0:3 t 'ineq', '' us 0:4 t 'eq'");
   }
 };
+
+} //namespace

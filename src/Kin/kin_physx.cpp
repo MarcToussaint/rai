@@ -711,7 +711,7 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
 //    f->transformToDiagInertia(); //the inertial needs to be at that link... not just a child...
   }
   if(f->inertia && !f->inertia->matrix.isDiagonal()) {
-    LOG(-1) <<"DON'T DO THAT! PhysX can only properly handle (compound) inertias if transformed to diagonal tensor\n frame:" <<*f;
+    LOG(-1) <<"DON'T DO THAT! PhysX can only properly handle (compound) inertias if transformed to diagonal tensor - frame:" <<f->name;
   }
 
   //-- decide on the type
@@ -874,6 +874,8 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes
       }
 //      //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
     } else {
+      LOG(-1) <<"DON'T DO THAT! PhysX can only properly handle when masses/inertia are pre-defined - frame:" <<f->name;
+
       PxRigidBodyExt::updateMassAndInertia(*actor, 1000.f);
       if(!f->inertia) new rai::Inertia(*f);
       f->inertia->mass = actor->getMass();

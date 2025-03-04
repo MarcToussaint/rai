@@ -11,7 +11,7 @@
 #include "NLP_Solver.h"
 
 struct NLP_GraphSolver : NonCopyable {
-  NLP_Solver subSolver;
+  rai::NLP_Solver subSolver;
   arr x, dual;
   std::shared_ptr<NLP_Factored> P;
   rai::OptOptions opt;

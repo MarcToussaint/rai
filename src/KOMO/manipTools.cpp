@@ -388,7 +388,7 @@ void ManipulationHelper::approachPush(const arr& time_interval, const char* grip
 
 std::shared_ptr<SolverReturn> ManipulationHelper::solve(int verbose) {
   CHECK(komo, "komo is not setup");
-  NLP_Solver sol;
+  rai::NLP_Solver sol;
   sol.setProblem(k().nlp());
   sol.opt/*.set_damping(1e-1) */.set_verbose(verbose-1) .set_stopTolerance(1e-3) .set_lambdaMax(100.) .set_stopInners(30) .set_stopEvals(200);
   ret = sol.solve();

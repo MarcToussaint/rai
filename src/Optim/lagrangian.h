@@ -11,6 +11,8 @@
 #include "NLP.h"
 #include "options.h"
 
+namespace rai {
+
 //==============================================================================
 //
 // LagrangianProblem
@@ -56,3 +58,4 @@ struct LagrangianProblem : ScalarFunction, NLP {
   double hpenalty_dd(double h);
 };
 
+} //namespace

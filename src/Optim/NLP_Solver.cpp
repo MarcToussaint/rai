@@ -18,25 +18,7 @@
 #include "utils.h"
 #include "SlackGaussNewton.h"
 
-template<> const char* rai::Enum<NLP_SolverID>::names []= {
-  "gradientDescent", "rprop", "LBFGS", "newton",
-  "augmentedLag", "squaredPenalty", "logBarrier", "singleSquaredPenalty",
-  "NLopt", "Ipopt", "Ceres", nullptr
-};
-
-template<> const char* rai::Enum<NLopt_SolverOption>::names []= {
-  "LD_SLSQP",
-  "LD_MMA",
-  "LN_COBYLA",
-  "LD_AUGLAG",
-  "LD_AUGLAG_EQ",
-  "LN_NELDERMEAD",
-  "LD_LBFGS",
-  "LD_TNEWTON",
-  "LD_TNEWTON_RESTART",
-  "LD_TNEWTON_PRECOND",
-  "LD_TNEWTON_PRECOND_RESTART", nullptr
-};
+namespace rai {
 
 NLP_Solver::NLP_Solver() {}
 
@@ -53,7 +35,7 @@ NLP_Solver& NLP_Solver::setProblem(const shared_ptr<NLP>& _P) {
 
 std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int verbose) {
   ret = make_shared<SolverReturn>();
-  double time = -rai::cpuTime();
+  double time = -cpuTime();
 
   if(resampleInitialization==1 || !x.N) {
     x = P->getInitializationSample();
@@ -64,45 +46,45 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
 
   if(verbose>-100) opt.verbose=verbose;
 
-  if(solverID==NLPS_newton) {
+  if(opt.method==M_newton) {
     Conv_NLP_ScalarProblem P1(P);
     OptNewton newton(x, P1, opt);
     newton.run();
     ret->f = newton.fx;
-  } else if(solverID==NLPS_slackGN) {
-    rai::SlackGaussNewton sgn(P, x);
+  } else if(opt.method==M_slackGN) {
+    SlackGaussNewton sgn(P, x);
     ret = sgn.solve();
     x = ret->x;
-  } else if(solverID==NLPS_gradientDescent) {
+  } else if(opt.method==M_gradientDescent) {
     Conv_NLP_ScalarProblem P1(P);
     OptGrad(x, P1).run();
-  } else if(solverID==NLPS_rprop) {
+  } else if(opt.method==M_rprop) {
     Conv_NLP_ScalarProblem P1(P);
     Rprop().loop(x, P1, opt.stopTolerance, opt.stepInit, opt.stopEvals, opt.verbose);
-  } else if(solverID==NLPS_augmentedLag) {
-    opt.set_constrainedMethod(rai::augmentedLag);
+  } else if(opt.method==M_augmentedLag) {
+    opt.set_method(M_augmentedLag);
     optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
     optCon->run();
-  } else if(solverID==NLPS_squaredPenalty) {
-    opt.set_constrainedMethod(rai::squaredPenalty);
+  } else if(opt.method==M_squaredPenalty) {
+    opt.set_method(M_squaredPenalty);
     optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
     optCon->run();
-  } else if(solverID==NLPS_logBarrier) {
-    opt.set_constrainedMethod(rai::logBarrier);
+  } else if(opt.method==M_logBarrier) {
+    opt.set_method(M_logBarrier);
     optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
     optCon->run();
-  } else if(solverID==NLPS_NLopt) {
+  } else if(opt.method==M_NLopt) {
     NLoptInterface nlo(P);
     x = nlo.solve(x);
-  } else if(solverID==NLPS_Ipopt) {
+  } else if(opt.method==M_Ipopt) {
     IpoptInterface ipo(P);
     ret = ipo.solve(x);
     x = ret->x;
-  } else if(solverID==NLPS_Ceres) {
+  } else if(opt.method==M_Ceres) {
     auto P1 = make_shared<Conv_NLP_TrivialFactoreded>(P);
     CeresInterface ceres(P1);
     x = ceres.solve();
-  } else HALT("solver wrapper not implemented yet for solver ID '" <<rai::Enum<NLP_SolverID>(solverID) <<"'");
+  } else HALT("solver wrapper not implemented yet for solver ID '" <<Enum<OptMethod>(opt.method) <<"'");
 
   if(optCon) {
     arr err = P->summarizeErrors(optCon->L.phi_x);
@@ -115,7 +97,7 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
 
   //checkJacobianCP(*P, x, 1e-4);
 
-  time += rai::cpuTime();
+  time += cpuTime();
   ret->x = x;
   ret->dual = dual;
   ret->evals = P->evals;
@@ -132,9 +114,9 @@ shared_ptr<SolverReturn> NLP_Solver::solveStepping(int resampleInitialization, i
 }
 
 bool NLP_Solver::step() {
-  CHECK(solverID==NLPS_augmentedLag
-        || solverID==NLPS_squaredPenalty
-        || solverID==NLPS_logBarrier, "stepping only implemented for these");
+  CHECK(opt.method==M_augmentedLag
+        || opt.method==M_squaredPenalty
+        || opt.method==M_logBarrier, "stepping only implemented for these");
 
   if(!optCon) { //first step -> initialize
     CHECK(!ret, "");
@@ -147,20 +129,20 @@ bool NLP_Solver::step() {
       CHECK(x.N, "x is of zero dimensionality - needs initialization");
     }
 
-    if(solverID==NLPS_augmentedLag) {
-      opt.set_constrainedMethod(rai::augmentedLag);
-    } else if(solverID==NLPS_squaredPenalty) {
-      opt.set_constrainedMethod(rai::squaredPenalty);
-    } else if(solverID==NLPS_logBarrier) {
-      opt.set_constrainedMethod(rai::logBarrier);
+    if(opt.method==M_augmentedLag) {
+      opt.set_method(M_augmentedLag);
+    } else if(opt.method==M_squaredPenalty) {
+      opt.set_method(M_squaredPenalty);
+    } else if(opt.method==M_logBarrier) {
+      opt.set_method(M_logBarrier);
     }
     optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
 
   }
 
-  ret->time -= rai::cpuTime();
+  ret->time -= cpuTime();
   ret->done = optCon->ministep();
-  ret->time += rai::cpuTime();
+  ret->time += cpuTime();
 
   ret->x = x;
   ret->dual = dual;
@@ -176,7 +158,9 @@ bool NLP_Solver::step() {
   return ret->done;
 }
 
-rai::Graph NLP_Solver::reportLagrangeGradients(const StringA& featureNames) {
+Graph NLP_Solver::reportLagrangeGradients(const StringA& featureNames) {
   CHECK(optCon, "");
   return optCon->L.reportGradients(featureNames);
 }
+
+}; //namespace
