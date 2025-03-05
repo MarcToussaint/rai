@@ -61,7 +61,7 @@ void TEST(RRT){
     KOMO komo(C, 1., 1, 0, false);
     komo.addControlObjective({}, 0, 1e-2);
     komo.addObjective({}, FS_positionDiff, {"l_gripper", "target1"}, OT_eq, {1e1});
-    auto ret = NLP_Solver(komo.nlp(), 0).solve();
+    auto ret = rai::NLP_Solver(komo.nlp(), 0).solve();
     q0 = ret->x;
     cout <<"start pose: " <<*ret <<endl;
   }
@@ -71,7 +71,7 @@ void TEST(RRT){
     komo.addControlObjective({}, 0, 1e-2);
     komo.add_collision(true);
     komo.addObjective({}, FS_positionDiff, {"l_gripper", "target2"}, OT_eq, {1e1});
-    auto ret = NLP_Solver(komo.nlp(), 0).solve();
+    auto ret = rai::NLP_Solver(komo.nlp(), 0).solve();
     q1 = ret->x;
     cout <<"start pose: " <<*ret <<endl;
   }

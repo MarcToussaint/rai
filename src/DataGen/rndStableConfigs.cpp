@@ -39,12 +39,12 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
     //komo.view(true, "init");
 
 #if 1
-    auto ret = NLP_Solver(komo.nlp())
+    auto ret = rai::NLP_Solver(komo.nlp())
                .setOptions(rai::OptOptions().set_stopEvals(100))
                .solve();
     //      komo.nlp()->checkJacobian(ret->x, 1e-4, komo.featureNames);
 #else
-    auto ret = NLP_Sampler(komo.nlp())
+    auto ret = rai::NLP_Sampler(komo.nlp())
                .setOptions(NLP_Sampler_Options().set_slackMaxStep(.2). set_downhillMaxSteps(100). set_slackRegLambda(.1) .set_tolerance(.01))
                .sample();
 #endif

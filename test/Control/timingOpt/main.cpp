@@ -104,11 +104,11 @@ void timeOpt(){
   }
   mp.smartInitVels();
 
-  rai::Enum<NLP_SolverID> sid (rai::getParameter<rai::String>("solver"));
+  rai::Enum<rai::OptMethod> sid (rai::getParameter<rai::String>("solver"));
 
   for(uint k=0;k<1;k++){
   {
-    NLP_Solver solver;
+      rai::NLP_Solver solver;
     solver
         .setProblem(mp.ptr())
         .setSolver(sid);

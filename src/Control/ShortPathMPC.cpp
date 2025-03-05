@@ -105,10 +105,10 @@ std::shared_ptr<SolverReturn> ShortPathMPC::solve(bool alsoVels, int verbose) {
     if(alsoVels) {
 //      arr tangents = getVelocities_centralDifference(path, tau(0));
       TimingProblem timingProblem(path, {}, x0, v0, 1., 1., true, true, {}, tau);
-      NLP_Solver solver;
+      rai::NLP_Solver solver;
       solver
       .setProblem(timingProblem.ptr())
-      .setSolver(NLPS_newton);
+      .setSolver(rai::M_newton);
       solver.opt
       .set_stopTolerance(1e-4)
       .set_stepMax(1e0)

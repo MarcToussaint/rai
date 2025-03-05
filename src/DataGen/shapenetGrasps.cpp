@@ -172,7 +172,7 @@ arr sampleGraspCandidate(rai::Configuration& C, const char *ptsFrame, const char
 
     //komo.view(true, "init");
     //-- solve and display
-    auto ret = NLP_Solver(komo.nlp(), verbose).setInitialization(C.getJointState()) .solve();
+    auto ret = rai::NLP_Solver(komo.nlp(), verbose).setInitialization(C.getJointState()) .solve();
     //komo.nlp()->checkJacobian(ret->x, 1e-4, komo.featureNames);
     C.setJointState(komo.getConfiguration_qOrg(0));
 

@@ -61,7 +61,7 @@ int main(int argc,char **argv){
 
   rai::Skeleton S;
   S.read(FILE(sktFile));
-  S.collisions = collisions;
+  S.useBroadCollisions = collisions;
   cout <<S <<endl;
 
   std::shared_ptr<KOMO> komo_way = S.getKomo_waypoints(C);
@@ -81,7 +81,7 @@ int main(int argc,char **argv){
       komo_final->pathConfig.gl().setTitle("FINAL");
       komo_final->view(true, STRING("random init sample " <<i));
       {
-        auto ret = NLP_Solver() .setProblem(komo_way->nlp()) .solve();
+        auto ret = rai::NLP_Solver() .setProblem(komo_way->nlp()) .solve();
         cout <<komo_final->report(false, true, true) <<endl;
         cout <<*ret <<endl;
 
@@ -99,7 +99,7 @@ int main(int argc,char **argv){
     if(!ways) continue;
     {
       komo_way->opt.animateOptimization=2;
-      NLP_Solver sol;
+      rai::NLP_Solver sol;
       sol.setProblem(komo_way->nlp());
       auto ret = sol.solve();
       cout <<komo_way->report(false, true, true) <<endl;
@@ -129,17 +129,21 @@ int main(int argc,char **argv){
         //cout <<C.getJointNames() <<endl;
         ConfigurationProblem cp(C, true, rrtTolerance);
         if(S.explicitCollisions.N) cp.setExplicitCollisionPairs(S.explicitCollisions);
-        cp.useBroadCollisions = S.collisions;
+        cp.useBroadCollisions = S.useBroadCollisions;
 
         for(rai::Frame *f:C.frames) f->ensure_X();
-        RRT_PathFinder rrt(cp, q0, qT, rrtStepsize);
-        if(S.verbose>1) rrt.verbose=S.verbose-2;
-        rrt.verbose=2;
-        rrt.maxIters=rrtStopEvals;
+	rai::RRT_PathFinder rrt;
+	rrt.setProblem(C);
+	rrt.opt.useBroadCollisions = S.useBroadCollisions;
+	rrt.setStartGoal(q0, qT);
+	rrt.opt.stepsize = rrtStepsize;
+        if(S.verbose>1) rrt.opt.verbose=S.verbose-2;
+        rrt.opt.verbose=2;
+        rrt.opt.maxIters=rrtStopEvals;
 
-        arr sol = rrt.planConnect();
-        if(sol.N){
-          sol = path_resampleLinear(sol, komo_path->stepsPerPhase);
+        auto ret = rrt.solve();
+        if(ret->feasible){
+          arr sol = path_resampleLinear(sol, komo_path->stepsPerPhase);
           komo_path->initPhaseWithDofsPath(t, C.getDofIDs(), sol, false);
           komo_path->view(false, STRING("rrt phase " <<t));
         }
@@ -149,7 +153,7 @@ int main(int argc,char **argv){
 
     //-- komo
     if(path){
-      NLP_Solver sol;
+      rai::NLP_Solver sol;
       sol.setProblem(komo_path->nlp());
       auto ret = sol.solve();
       cout <<komo_path->report(false, true, true) <<endl;

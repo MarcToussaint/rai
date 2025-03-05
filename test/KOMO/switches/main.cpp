@@ -70,7 +70,7 @@ void testPickAndPlace(uint order){
   komo.opt.verbose = 4;
 //  komo.opt.animateOptimization = 2;
 
-  NLP_Solver sol;
+  rai::NLP_Solver sol;
   auto ret = sol.setProblem(komo.nlp()) .solve();
   cout <<*ret <<endl;
 
@@ -195,7 +195,7 @@ void testFloat(uint order){
   //komo.solve();
   //komo.checkGradients();
 
-  NLP_Solver sol;
+  rai::NLP_Solver sol;
   auto ret = sol.setProblem(komo.nlp()) .solve();
   cout <<*ret <<endl;
 

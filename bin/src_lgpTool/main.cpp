@@ -18,7 +18,8 @@ const char *USAGE =
 void lgpTool(){
   rai::String problem = rai::getParameter<rai::String>("problem", STRING("none"));
 
-  rai::LGP_SkeletonTool lgp(problem);
+  rai::Configuration C; NIY; //initialize C!
+  rai::LGP_SkeletonTool lgp(C, problem);
 
 //  rai::LGP_Tool lgp(L, C,
 //                    lgpConfig.get<bool>("genericCollisions"),
@@ -56,7 +57,7 @@ void lgpTool(){
 
   if(rai::checkParameter<bool>("solveSkeleton")){
     rai::Skeleton S;
-    S.read(FILE(lgp.fileBase+".skt"));
+    S.read(FILE(problem+".skt"));
     lgp.solve_Skeleton(S);
   }
 
@@ -67,7 +68,7 @@ void lgpTool(){
 
   if(rai::checkParameter<bool>("solveDecisions")){
     rai::String decisions;
-    decisions.read(FILE(lgp.fileBase+".decisions"), "", "");
+    decisions.read(FILE(problem+".decisions"), "", "");
     lgp.solve_Decisions(decisions);
     return;
   }

@@ -26,7 +26,7 @@ void createPath(){
 
   cout <<komo.report(true, false) <<endl;
 
-  auto ret = NLP_Solver()
+  auto ret = rai::NLP_Solver()
       .setProblem(komo.nlp())
       .solve();
   cout <<*ret <<endl;
@@ -242,8 +242,8 @@ void timeOpt(){
   rai::setParameter<double>("opt/stopTolerance", 1e-6);
   rai::setParameter<double>("opt/damping", 1e-2);
 
-  rai::Enum<NLP_SolverID> sid (rai::getParameter<rai::String>("solver"));
-  NLP_Solver solver;
+  rai::Enum<rai::OptMethod> sid (rai::getParameter<rai::String>("solver"));
+  rai::NLP_Solver solver;
   solver
       .setProblem(nlp.ptr())
 //      .setTracing(true, true,true, false)

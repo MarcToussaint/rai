@@ -39,7 +39,7 @@ void createPath(){
 //  }
 //  return;
 
-  auto ret = NLP_Solver()
+  auto ret = rai::NLP_Solver()
       .setProblem(skomo)
       .solve();
   cout <<*ret <<endl;

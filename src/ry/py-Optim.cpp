@@ -308,7 +308,7 @@ void init_Optim(pybind11::module& m) {
       ;
   //===========================================================================
 
-  pybind11::class_<NLP_Solver, std::shared_ptr<NLP_Solver>>(m, "NLP_Solver", "An interface to portfolio of solvers")
+  pybind11::class_<rai::NLP_Solver, std::shared_ptr<rai::NLP_Solver>>(m, "NLP_Solver", "An interface to portfolio of solvers")
 
       .def(pybind11::init<>())
       .def(pybind11::init<const shared_ptr<NLP>&, int>(), "",
@@ -316,38 +316,38 @@ void init_Optim(pybind11::module& m) {
            pybind11::arg("verbose")=0
           )
 
-      .def_readwrite("x", &NLP_Solver::x)
-      .def_readwrite("dual", &NLP_Solver::dual)
+      .def_readwrite("x", &rai::NLP_Solver::x)
+      .def_readwrite("dual", &rai::NLP_Solver::dual)
 
-      .def("setSolver", &NLP_Solver::setSolver, "")
-      .def("setProblem", &NLP_Solver::setProblem, "")
-      .def("setInitialization", &NLP_Solver::setInitialization, "")
+      .def("setSolver", &rai::NLP_Solver::setSolver, "")
+      .def("setProblem", &rai::NLP_Solver::setProblem, "")
+      .def("setInitialization", &rai::NLP_Solver::setInitialization, "")
 
-      .def("setTracing", &NLP_Solver::setTracing, "")
-      .def("solve", &NLP_Solver::solve,
+      .def("setTracing", &rai::NLP_Solver::setTracing, "")
+      .def("solve", &rai::NLP_Solver::solve,
            "resampleInitialization=-1 means: only when not already solved",
            pybind11::arg("resampleInitialization")=-1, pybind11::arg("verbose")=-100)
 
-      .def("getProblem", &NLP_Solver::getProblem, "returns the NLP problem")
-      .def("getTrace_x", &NLP_Solver::getTrace_x, "returns steps-times-n array with queries points in each row")
-      .def("getTrace_costs", &NLP_Solver::getTrace_costs, "returns steps-times-3 array with rows (f+sos-costs, ineq, eq)")
-      .def("getTrace_phi", &NLP_Solver::getTrace_phi, "")
-      .def("getTrace_J", &NLP_Solver::getTrace_J, "")
+      .def("getProblem", &rai::NLP_Solver::getProblem, "returns the NLP problem")
+      .def("getTrace_x", &rai::NLP_Solver::getTrace_x, "returns steps-times-n array with queries points in each row")
+      .def("getTrace_costs", &rai::NLP_Solver::getTrace_costs, "returns steps-times-3 array with rows (f+sos-costs, ineq, eq)")
+      .def("getTrace_phi", &rai::NLP_Solver::getTrace_phi, "")
+      .def("getTrace_J", &rai::NLP_Solver::getTrace_J, "")
 
-  .def("reportLagrangeGradients", [](std::shared_ptr<NLP_Solver>& self, const StringA& featureNames) {
+  .def("reportLagrangeGradients", [](std::shared_ptr<rai::NLP_Solver>& self, const StringA& featureNames) {
     rai::Graph R = self->reportLagrangeGradients(featureNames);
     return graph2dict(R);
   },"return dictionary of Lagrange gradients per objective",
     pybind11::arg("featureNames")=StringA{}
   )
 
-  .def("setPyProblem", [](std::shared_ptr<NLP_Solver>& self, pybind11::object py_nlp){
+  .def("setPyProblem", [](std::shared_ptr<rai::NLP_Solver>& self, pybind11::object py_nlp){
     std::shared_ptr<NLP> nlp = std::dynamic_pointer_cast<NLP>( std::make_shared<PyNLP>(py_nlp) );
     self->setProblem(nlp);
   })
 
-  .def("getOptions", [](std::shared_ptr<NLP_Solver>& self) { return self->opt; })
-  .def("setOptions", [](std::shared_ptr<NLP_Solver>& self
+  .def("getOptions", [](std::shared_ptr<rai::NLP_Solver>& self) { return self->opt; })
+  .def("setOptions", [](std::shared_ptr<rai::NLP_Solver>& self
 #define MEMBER(type, name, x) ,type name
                         MEMBER(int, verbose, 1)
                         MEMBER(double, stopTolerance, 1e-2)
@@ -450,25 +450,20 @@ void init_Optim(pybind11::module& m) {
 
   //===========================================================================
 
+#define ENUMVAL(x) .value(#x, rai::M_##x)
+  pybind11::enum_<rai::OptMethod>(m, "OptMethod")
+      ENUMVAL(none)
+      ENUMVAL(gradientDescent) ENUMVAL(rprop) ENUMVAL(LBFGS) ENUMVAL(newton)
+      ENUMVAL(augmentedLag) ENUMVAL(squaredPenalty) ENUMVAL(logBarrier) ENUMVAL(singleSquaredPenalty)
+      ENUMVAL(slackGN)
+      ENUMVAL(NLopt) ENUMVAL(Ipopt) ENUMVAL(Ceres)
+  ;
 #undef ENUMVAL
-#define ENUMVAL(pre, x) .value(#x, pre##_##x)
 
-  pybind11::enum_<NLP_SolverID>(m, "NLP_SolverID")
-  ENUMVAL(NLPS, gradientDescent) ENUMVAL(NLPS, rprop) ENUMVAL(NLPS, LBFGS) ENUMVAL(NLPS, newton)
-  ENUMVAL(NLPS, augmentedLag) ENUMVAL(NLPS, squaredPenalty) ENUMVAL(NLPS, logBarrier) ENUMVAL(NLPS, singleSquaredPenalty)
-  ENUMVAL(NLPS, NLopt) ENUMVAL(NLPS, Ipopt) ENUMVAL(NLPS, Ceres)
-  ;
-
+#define ENUMVAL(x) .value(#x, OT_##x)
   pybind11::enum_<ObjectiveType>(m, "OT")
-  ENUMVAL(OT, none)
-  ENUMVAL(OT, f)
-  ENUMVAL(OT, sos)
-  ENUMVAL(OT, ineq)
-  ENUMVAL(OT, eq)
-  ENUMVAL(OT, ineqB)
-  ENUMVAL(OT, ineqP)
+      ENUMVAL(f) ENUMVAL(sos) ENUMVAL(ineq) ENUMVAL(eq) ENUMVAL(ineqB) ENUMVAL(ineqP) ENUMVAL(none)
   ;
-
 #undef ENUMVAL
 
 }

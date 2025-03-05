@@ -104,7 +104,7 @@ void testFactored(){
 
   nlp->checkJacobian(komo.x, 1e-6);
 
-  NLP_Solver()
+  rai::NLP_Solver()
       .setProblem(nlp)
       .solve();
 

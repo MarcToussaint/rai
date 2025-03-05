@@ -24,7 +24,7 @@ void TEST(NLOpt){
   traced->clear();
   {
     arr x = x_init;
-    ConstrainedSolver opt(x, NoArr, traced);
+    rai::ConstrainedSolver opt(x, NoArr, traced);
     opt.run();
   }
 

@@ -25,7 +25,7 @@ void generateProblem(rai::Configuration& C){
       f->setRelativePosition({rnd.uni(-.3, .3), rnd.uni(-1.,1.), .15});
       rai::Quaternion q(0);
       q.appendZ(rnd.uni(-RAI_PI,RAI_PI));
-      f->setRelativeQuaternion(q.getArr4d());
+      f->setRelativeQuaternion(q.getArr());
     }
     C.stepFcl();
     arr y, J;

@@ -19,7 +19,7 @@ void testConstraint2(NLP& p, arr& x_start=NoArr){
   arr x = p.getInitializationSample();
   if(!!x_start) x=x_start;
 
-  ConstrainedSolver(x, NoArr, p.ptr())
+  rai::ConstrainedSolver(x, NoArr, p.ptr())
       .run();
 
   if(!!x_start) x_start = x;
@@ -31,7 +31,7 @@ void testConstraint2(NLP& p, arr& x_start=NoArr){
 //
 
 void testPhaseOne(const shared_ptr<NLP>& f, uint dim_x){
-  auto metaF = make_shared<PhaseOneProblem>(f);
+  auto metaF = make_shared<rai::PhaseOneProblem>(f);
 
   arr x;
   x = {1., 1., 10.};
@@ -59,7 +59,7 @@ void TEST(CoveringSphere){
   cout <<"point = " <<x <<endl;
   cout <<"cr_init=" <<cr <<endl;
   F.checkJacobian(cr, 1e-4);
-  ConstrainedSolver(cr, NoArr, F.ptr())
+  rai::ConstrainedSolver(cr, NoArr, F.ptr())
       .run();
   cout <<"cr_opt=" <<cr <<endl;
 }
@@ -78,7 +78,7 @@ void TEST(NLP){
   //Conv_NLP_ConstrainedProblem F(P);
   P->checkJacobian(x, 1e-4);
 
-  ConstrainedSolver opt(x, NoArr, P, rai::OptOptions().set_verbose(6));
+  rai::ConstrainedSolver opt(x, NoArr, P, rai::OptOptions().set_verbose(6));
   opt.newton.bounds = P->bounds;
   opt.run();
 

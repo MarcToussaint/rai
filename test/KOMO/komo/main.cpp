@@ -220,7 +220,7 @@ void TEST(Mobile){
   komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e1}, {}, 1);
   komo.initWithPath_qOrg(rrt.path);
   // komo.checkGradients();
-  NLP_Solver sol;
+  rai::NLP_Solver sol;
   sol.setProblem(komo.nlp());
   sol.opt.set_verbose(2);
   sol.solve();

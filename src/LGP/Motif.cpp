@@ -100,7 +100,7 @@ std::shared_ptr<SolverReturn> KOMO_Motif::solve(KOMO& komo, str opt_or_sample, i
 
   std::shared_ptr<SolverReturn> ret;
   if(opt_or_sample=="opt"){
-    NLP_Solver sol;
+    rai::NLP_Solver sol;
     sol.setProblem(nlp);
     ret = sol.solve(0, verbose);
   }else{

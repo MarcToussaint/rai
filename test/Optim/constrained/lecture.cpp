@@ -14,17 +14,17 @@
 void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start, uint iters){
   rai::OptOptions opt;
   auto traced = make_shared<NLP_Traced>(P);
-  auto lag = make_shared<LagrangianProblem>(traced, opt);
+  auto lag = make_shared<rai::LagrangianProblem>(traced, opt);
 
   { //initial display
-    auto lag = make_shared<LagrangianProblem>(P, opt);
+    auto lag = make_shared<rai::LagrangianProblem>(P, opt);
     lag->useLB = false;
     lag->mu = 1e5;
     displayFunction(*lag);
     rai::wait();
   }
   { //initial display
-    auto lag = make_shared<LagrangianProblem>(P, opt);
+    auto lag = make_shared<rai::LagrangianProblem>(P, opt);
     displayFunction(*lag);
     rai::wait();
   }

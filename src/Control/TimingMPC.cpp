@@ -34,14 +34,14 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
                     true, false,
                     vels({phase, -1}), tau({phase, -1}));
 
-  NLP_Solver S;
+  rai::NLP_Solver S;
   if(warmstart_dual.N) {
 //    S.setWarmstart({}, warmstart_dual);
 //    opt.muInit = 25;
   }
   S.setOptions(opt)
   .setProblem(nlp.ptr())
-  .setSolver(NLPS_augmentedLag);
+  .setSolver(rai::M_augmentedLag);
 
   auto ret = S.solve();
 
