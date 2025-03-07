@@ -570,6 +570,9 @@ rai::Frame& rai::Frame::setMeshFile(str file, double scale){
   rai::Mesh& mesh = getShape().mesh();
   mesh.read(FILE(file), file.getLastN(3).p, file);
   if(scale!=1.) mesh.scale(scale);
+  getAts().set<str>("mesh", file);
+  if(scale!=1.) getAts().set<double>("meshscale", scale);
+  C.view_unlock();
   return *this;
 }
 
@@ -582,9 +585,10 @@ rai::Frame& rai::Frame::setTextureFile(str imgFile, const arr& texCoords){
   CHECK_EQ(texCoords.d1, 2, "needs texCoordinates of dimension (#vertices, 2)");
   CHECK_EQ(texCoords.d0, mesh.V.d0, "needs texCoordinates of dimension (#vertices, 2)");
   byteA img = rai::loadImage(imgFile);
-  mesh.texImg = img;
+  mesh.texImg(imgFile).img = img;
   mesh.texCoords = texCoords;
   mesh.version++; //if(shape->glListId>0) shape->glListId *= -1;
+  getAts().set<str>("texture", imgFile);
   C.view_unlock();
   return *this;
 }
@@ -773,12 +777,7 @@ rai::Frame& rai::Frame::setMass(double mass) {
 }
 
 rai::Frame& rai::Frame::setAttribute(const char* key, double value) {
-  if(!ats) ats = make_shared<Graph>();
-  if(ats->find<double>(key)) {
-    ats->get<double>(key) = value;
-  } else {
-    ats->add<double>(key, value);
-  }
+  getAts().set<double>(key, value);
   return *this;
 }
 
@@ -1909,7 +1908,8 @@ void rai::Shape::read(const Graph& ats) {
 
     if(ats.get(fil, "texture"))     {
       fil.cd_file();
-      read_ppm(mesh().texImg, fil.name, true);
+      mesh().texImg(fil.name).img = rai::loadImage(fil.name);
+      // read_ppm(mesh().texImg(fil.name).img, fil.name, true);
       fil.cd_start();
     }
     if(ats.get(fil, "core"))      {
@@ -2063,7 +2063,7 @@ void rai::Shape::createMeshes() {
       }
     } break;
     case rai::ST_quad: {
-      byteA tex = mesh().texImg;
+      byteA tex = mesh().texImg().img;
       mesh().setQuad(size(0), size(1), tex);
     } break;
     case rai::ST_ssCvx:

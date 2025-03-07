@@ -68,9 +68,9 @@ void FOL_World::init(const Graph& _KB) {
   Quit_keyword = KB["QUIT"];            if(!Quit_keyword) Quit_keyword = KB.add<bool>("QUIT");   CHECK(Quit_keyword, "You need to declare the QUIT keyword");
   Wait_keyword = KB["WAIT"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
   Subgoal_keyword = KB["SubgoalDone"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
-  Quit_literal = KB.add<bool>(0, true, {Quit_keyword});
+  Quit_literal = KB.add<bool>(0, true)->setParents({Quit_keyword});
   if(Subgoal_keyword) {
-    Subgoal_literal = KB.add<bool>("tmp", true, {Subgoal_keyword});
+    Subgoal_literal = KB.add<bool>("tmp", true)->setParents({Subgoal_keyword});
   }
 
   Graph* params = KB.find<Graph>("FOL_World");
@@ -583,7 +583,7 @@ void FOL_World::addFact(const StringA& symbols) {
     parents.append(sym);
     CHECK(parents.last(), "Node '" <<s <<"' was not declared");
   }
-  start_state->add<bool>(0, true, parents);
+  start_state->add<bool>(0, true)->setParents(parents);
 }
 
 void FOL_World::addAgent(const char* name) {
@@ -601,7 +601,7 @@ void FOL_World::addTerminalRule(const char* literals) {
   worldRules.append(rule.isNodeOfGraph);
   Graph& preconditions = rule.addSubgraph();
   Graph& effect = rule.addSubgraph();
-  effect.add<bool>(0, true, {Quit_keyword}); //adds the (QUIT) to the effect
+  effect.add<bool>(0, true)->setParents({Quit_keyword}); //adds the (QUIT) to the effect
 
   preconditions.read(STRING(literals));
 //  LOG(0) <<"CREATED TERMINATION RULE:" <<*rule.isNodeOfGraph;
@@ -613,12 +613,12 @@ void FOL_World::addTerminalRule(const StringAA& literals) {
   worldRules.append(rule.isNodeOfGraph);
   Graph& preconditions = rule.addSubgraph();
   Graph& effect = rule.addSubgraph();
-  effect.add<bool>(0, true, {Quit_keyword}); //adds the (QUIT) to the effect
+  effect.add<bool>(0, true)->setParents({Quit_keyword}); //adds the (QUIT) to the effect
 
   for(const StringA& lit:literals) {
     NodeL parents;
     for(const String& s:lit) parents.append(KB[s]);
-    preconditions.add<bool>(0, true, parents);
+    preconditions.add<bool>(0, true)->setParents(parents);
   }
 
   cout <<"CREATED RULE NODE:" <<*rule.isNodeOfGraph <<endl;

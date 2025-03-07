@@ -261,10 +261,9 @@ void init_enums(pybind11::module& m) {
   ENUMVAL(rai::SY, stableOnY)
   ENUMVAL(rai::SY, end)
   ;
-
 #undef ENUMVAL
-#define ENUMVAL(x) .value(#x, rai::Simulation::_##x)
 
+#define ENUMVAL(x) .value(#x, rai::Simulation::_##x)
   pybind11::enum_<rai::Simulation::Engine>(m, "SimulationEngine")
   ENUMVAL(physx)
   ENUMVAL(bullet)
@@ -278,6 +277,7 @@ void init_enums(pybind11::module& m) {
   ENUMVAL(acceleration)
   ENUMVAL(spline)
   ;
+#undef ENUMVAL
 
 }
 

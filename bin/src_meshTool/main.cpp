@@ -41,7 +41,7 @@ int main(int argc,char **argv){
         <<"\n  #Vnormals: " <<mesh.Vn.d0
         <<"\n  #Tnormals: " <<mesh.Tn.d0
         <<"\n  #texUV: " <<mesh.texCoords.d0
-        <<"\n  #texImage: " <<mesh.texImg.dim()
+         <<"\n  #texImage: " <<(mesh._texImg ? mesh.texImg().img.dim() : uintA{})
        <<"\n  bounds: " <<mesh.getBounds()
       <<"\n  center: " <<mesh.getMean()
      <<"\n  area: " <<(mesh.T.N?mesh.getArea():0)

@@ -285,7 +285,7 @@ void LGP_Node::labelInfeasible() {
   if(!branchNode->folAddToState) {
     branchNode->folAddToState = &fol.KB.addSubgraph("ADD", {branchNode->folState->isNodeOfGraph});
   }
-  branchNode->folAddToState->add<bool>(0, true, symbols);
+  branchNode->folAddToState->add<bool>(0, true)->setParents(symbols);
 
   //  MNode *root=getRoot();
   branchNode->recomputeAllFolStates();
@@ -456,7 +456,7 @@ void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
   if(!n) {
     n = G.add<bool>("a:<ROOT>", true);
   } else {
-    n = G.add<bool>({STRING("a:"<<*decision)}, true, {n});
+    n = G.add<bool>({STRING("a:"<<*decision)}, true)->setParents({n});
   }
 
   if(!brief) {

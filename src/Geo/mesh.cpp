@@ -47,6 +47,22 @@ template<> const char* Enum<ShapeType>::names []= {
 // Mesh code
 //
 
+SharedTextureImage& Mesh::texImg(const char* file){
+  if(!_texImg){
+    if(file){
+      auto p = params()->find<shared_ptr<SharedTextureImage>>(file);
+      if(p) _texImg = *p;
+      else{
+        _texImg = make_shared<SharedTextureImage>();
+        params()->add<shared_ptr<SharedTextureImage>>(file, _texImg);
+      }
+    }else{
+      _texImg = make_shared<SharedTextureImage>();
+    }
+  }
+  return *_texImg;
+}
+
 Mesh::Mesh()
   : glX(0)
     /*parsing_pos_start(0),
@@ -122,7 +138,7 @@ void Mesh::setLine(double l) {
   V(1, 2) = +.5*l;
 }
 
-void Mesh::setQuad(double x_width, double y_width, const byteA& _texImg, bool flipY, bool texByReference) {
+void Mesh::setQuad(double x_width, double y_width, const byteA& __texImg, bool flipY, bool texByReference) {
   clear();
   V = {
     -.5*x_width, -.5*y_width, 0,
@@ -135,11 +151,11 @@ void Mesh::setQuad(double x_width, double y_width, const byteA& _texImg, bool fl
   };
   V.reshape(4, 3);
   T.reshape(2, 3);
-  if(_texImg.N) {
+  if(__texImg.N) {
     if(texByReference) {
-      texImg.referTo(_texImg);
+      texImg().img.referTo(__texImg);
     } else {
-      texImg = _texImg;
+      texImg().img = __texImg;
     }
 //    C = {1.,1.,1.}; //bright color
     if(!flipY) {
@@ -510,9 +526,9 @@ void Mesh::addMesh(const Mesh& mesh2, const Transformation& X) {
   if(mesh2.texCoords.N) {
     texCoords.append(mesh2.texCoords);
   }
-  if(mesh2.texImg.N) {
+  if(mesh2._texImg) {
 //    CHECK(!texImg.N, "can't append texture images");
-    texImg = mesh2.texImg;
+    _texImg = mesh2._texImg;
   }
   if(!X.isZero()) {
     X.applyOnPointArray(V({n, -1}).noconst());
@@ -535,7 +551,7 @@ void Mesh::makeConvexHull() {
   Vn.clear();
   Tn.clear();
   texCoords.clear();
-  texImg.clear();
+  _texImg.reset();
 #else
   uintA H = getHullIndices(V, T);
   intA Hinv = consts<int>(-1, V.d0);
@@ -966,7 +982,7 @@ void Mesh::fuseNearVertices(double tol) {
 //  cout <<"#V=" <<V.d0 <<", done" <<endl;
 
   texCoords.clear();
-  texImg.clear();
+  _texImg.reset();
 }
 
 void Mesh::deleteVertices(uintA& delLabels) {
@@ -1146,7 +1162,7 @@ void Mesh::clean() {
   }
 
   texCoords.clear();
-  texImg.clear();
+  _texImg.reset();
 //  computeNormals();
 }
 
@@ -1705,7 +1721,7 @@ void Mesh::writeArr(std::ostream& os) {
   if(C.N) G.add("C", convert<byte>(C*255.f));
   if(cvxParts.N) G.add("cvxParts", cvxParts);
   if(texCoords.N) G.add("textureCoords", texCoords);
-  if(texImg.N) G.add("textureImg", texImg);
+  if(_texImg) G.add("textureImg", texImg().img);
   G.write(os, ",\n", "{\n\n}", -1, false, true);
 }
 
@@ -1717,7 +1733,7 @@ void Mesh::writeH5(const char* filename, const str& group) {
   if(C.N) H.add(group+"/colors", convert<byte>(C*255.));
   if(cvxParts.N) H.add(group+"/parts", cvxParts);
   if(texCoords.N) H.add(group+"/textureCoords", texCoords);
-  if(texImg.N) H.add(group+"/textureImg", texImg);
+  if(_texImg) H.add(group+"/textureImg", texImg().img);
 }
 
 void Mesh::readH5(const char* filename, const str& group) {
@@ -1728,7 +1744,8 @@ void Mesh::readH5(const char* filename, const str& group) {
   C = convert<double>(H.read<byte>(group+"/colors", true))/255.;
   cvxParts = H.read<uint>(group+"/parts", true);
   texCoords = H.read<double>(group+"/textureCoords", true);
-  texImg = H.read<byte>(group+"/textureImg", true);
+  byteA __texImg = H.read<byte>(group+"/textureImg", true);
+  if(__texImg.N) texImg().img = __texImg;
 }
 
 #if 1
@@ -1741,7 +1758,7 @@ void Mesh::readArr(std::istream& is) {
   n=G["C"]; if(n) { if(n->is<arr>()) C = n->as<arr>(); else { if(n->is<byteA>()) C = convert<double>(n->as<byteA>())/255.; else C = convert<double>(n->as<floatA>()); } }
   G.get(cvxParts, "cvxParts");
   G.get(texCoords, "textureCoords");
-  G.get(texImg, "textureImg");
+  n=G["textureImg"]; if(n) { if(n->is<byteA>()) texImg().img = n->as<byteA>(); }
 }
 #else //old version...
 void rai::Mesh::readArr(std::istream& is){
