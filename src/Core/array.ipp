@@ -777,6 +777,7 @@ template<class T> Array<T> Array<T>::operator()(std::pair<int, int> I) const {
 
 /// range reference access
 template<class T> Array<T> Array<T>::operator()(int i, std::pair<int, int> J) const {
+  if(i<0) i += d0;
   Array<T> z;
   z.referToRange(*this, i, J.first, J.second);
 //  if(J.size()==2)
@@ -788,6 +789,8 @@ template<class T> Array<T> Array<T>::operator()(int i, std::pair<int, int> J) co
 
 /// range reference access
 template<class T> Array<T> Array<T>::operator()(int i, int j, std::initializer_list<int> K) const {
+  if(i<0) i += d0;
+  if(j<0) j += d1;
   Array<T> z;
   if(K.size()==2) z.referToRange(*this, i, j, K.begin()[0], K.begin()[1]);
   else if(K.size()==0) z.referToDim(*this, i, j);

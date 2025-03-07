@@ -235,7 +235,7 @@ void PhysXInterface_self::initPhysics() {
   sceneDesc.gravity = PxVec3(0.f, 0.f, px_gravity);
   // sceneDesc.frictionType = PxFrictionType::eTWO_DIRECTIONAL;
   sceneDesc.solverType = PxSolverType::eTGS;
-  // sceneDesc.bounceThresholdVelocity = 2.;
+  sceneDesc.bounceThresholdVelocity = .1;
   //sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
   sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
   // sceneDesc.flags |= PxSceneFlag::eENABLE_CCD; //continuous collision detection (requires more enables for each body.. https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/guide/Manual/AdvancedCollisionDetection.html )

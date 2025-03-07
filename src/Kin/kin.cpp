@@ -2273,16 +2273,12 @@ bool Configuration::hasView() {
 }
 
 int Configuration::view(bool pause, const char* txt) {
-//  gl()->resetPressedKey();
   for(Frame* f:frames) f->ensure_X();
-  int key = get_viewer()->updateConfiguration(*this).view(pause, txt);
-//  if(pause) {
-//    if(!txt) txt="Config::watch";
-//    key = watch(true, txt);
-//  } else {
-//    key = watch(false, txt, true);
-//  }
-  return key;
+  return get_viewer()->updateConfiguration(*this).view(pause, txt);
+}
+
+void Configuration::view_savePng(str saveVideoPath, int count){
+  get_viewer()->savePng(saveVideoPath, count);
 }
 
 void Configuration::view_close() {
@@ -3737,18 +3733,19 @@ void Configuration::watchFile(const char* filename) {
         V->updateConfiguration(*this).view(false);
         cout <<V->text <<endl;
       } else if(key=='s') { //simulate
-        rai::Simulation S(*this, S._physx, 2);
-        S.loadTeleopCallbacks();
+        rai::Simulation S(*this, S._physx, 1);
+        // S.loadTeleopCallbacks();
 
         double tau=.01;
         Metronome tic(tau);
-        while(!S.teleopCallbacks->stop) {
+        for(;;){ //while(!S.teleopCallbacks->stop) {
           tic.waitForTic();
           S.step({}, tau, S._position);
           //C.ensure_proxies();
           //C.getTotalPenetration();
           //C.reportProxies();
-          //C.view();
+          int key = view(false, STRING("simulation time:" <<S.time <<" [hit 'q' to stop]"));
+          if(key=='q' || key==' ' || key==13 || key==27) break;
         }
         V->updateConfiguration(*this).view(false);
       } else if(key=='i') {

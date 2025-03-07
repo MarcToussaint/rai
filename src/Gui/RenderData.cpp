@@ -17,7 +17,7 @@ struct OpenGL2Context {
 Singleton<OpenGL2Context> contextIDs;
 
 uint bufW=2048, bufH=2048;
-double shadowHeight = 2.;
+double shadowHeight = 5.;
 
 GLuint LoadShadersFile(const char * vertex_file_path,const char * fragment_file_path);
 GLuint LoadShaders(const std::string& VertexShaderCode, const std::string& FragmentShaderCode);

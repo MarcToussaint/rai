@@ -688,11 +688,21 @@ void TEST(BlenderImport){
 }
 #endif
 
+void testTexture(){
+  rai::Configuration C;
+  rai::Frame *f = C.addFrame("box");
+  f->setShape(rai::ST_box, {.2, .2, .2});
+  f->setPosition({0, 0, 1});
+  f->setTextureFile("../../Gui/retired/opengl/box.png",  randn(8,2));
+  C.view(true);
+}
+
 // =============================================================================
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
+  testTexture(); return 0;
   testMini();
   testLoadSave();
   testCopy();

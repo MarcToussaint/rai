@@ -272,6 +272,7 @@ public:
   FeatherstoneInterface& fs();
   bool hasView();
   int view(bool pause=false, const char* txt=nullptr);
+  void view_savePng(str saveVideoPath="z.vid/", int count=-1);
   void saveVideoPic(uint& t, const char* pathPrefix="vid/");
   void glAdd(void (*call)(void*, OpenGL&), void* classP);
   int glAnimate();

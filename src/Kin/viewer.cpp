@@ -335,6 +335,7 @@ int rai::ConfigurationViewer::view_slice(uint t, bool watch){
 }
 
 void rai::ConfigurationViewer::savePng(str saveVideoPath, int count) {
+  nonThreaded=true;
   if(saveVideoPath && saveVideoPath(-1)=='/'){
     if(!FileToken(saveVideoPath).exists()){
       rai::system(STRING("mkdir -p " <<saveVideoPath));

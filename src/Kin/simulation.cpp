@@ -138,9 +138,9 @@ Simulation::Simulation(Configuration& _C, Engine _engine, int _verbose)
     verbose(_verbose) {
   C.ensure_q();
   if(engine==_physx) {
-    self->physx = make_shared<PhysXInterface>(C, verbose-1);
+    self->physx = make_shared<PhysXInterface>(C, verbose);
   } else if(engine==_bullet) {
-    self->bullet = make_shared<BulletInterface>(C, rai::Bullet_Options().set_verbose(verbose-1));
+    self->bullet = make_shared<BulletInterface>(C, rai::Bullet_Options().set_verbose(verbose));
 #ifdef BACK_BRIDGE
     self->bulletBridge = make_shared<BulletBridge>(self->bullet->getDynamicsWorld());
     self->bulletBridge->getConfiguration(self->bridgeC);
@@ -150,7 +150,7 @@ Simulation::Simulation(Configuration& _C, Engine _engine, int _verbose)
     //nothing
   } else NIY;
   self->ref.initialize(C.getJointState(), NoArr, time);
-  if(verbose>0) self->display = make_shared<Simulation_DisplayThread>(C, STRING(" ["<<rai::Enum<Engine>(engine)<<"]"));
+  if(verbose>1) self->display = make_shared<Simulation_DisplayThread>(C, STRING(" ["<<rai::Enum<Engine>(engine)<<"]"));
 }
 
 Simulation::~Simulation() {
@@ -298,9 +298,9 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     dataFile <<endl;
   }
 
-  if(verbose>0) self->updateDisplayData(time, C); //does not update with freq >20hz - see method
+  if(self->display) self->updateDisplayData(time, C); //does not update with freq >20hz - see method
 
-  if(engine==_physx && verbose>3){
+  if(engine==_physx && verbose>2){
     self->physx->view(false, STRING("Simulation physx debug time: " <<time));
   }
 }
@@ -388,10 +388,10 @@ void Simulation::moveGripper(const char* gripperFrameName, double width, double 
 
   //reattach object to world frame, and make it physical
   if(obj) {
-    if(verbose>1) LOG(1) <<"initiating opening gripper " <<gripper->name <<" and releasing obj " <<obj->name <<" width:" <<width <<" speed:" <<speed;
+    if(verbose>0) LOG(1) <<"initiating moving gripper " <<gripper->name <<" and releasing obj " <<obj->name <<" width:" <<width <<" speed:" <<speed;
     detach(obj);
   } else {
-    if(verbose>1) LOG(1) <<"initiating opening gripper " <<gripper->name <<" (without releasing obj)" <<" width:" <<width <<" speed:" <<speed;
+    if(verbose>0) LOG(1) <<"initiating moving gripper " <<gripper->name <<" (without releasing obj)" <<" width:" <<width <<" speed:" <<speed;
   }
 
 #if 0
@@ -449,7 +449,7 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
     }
   }
 
-  if(verbose>1) {
+  if(verbose>0) {
     if(obj) {
       LOG(1) <<"initiating grasp of object " <<obj->name <<" (auto detected; if this is not what you expect, did you setContact(1) for the object you want to grasp?)";
     } else {
@@ -472,7 +472,7 @@ void Simulation::closeGripperGrasp(const char* gripperFrameName, const char* obj
 
   rai::Frame* obj = 0;
   if(objectName) obj = C.getFrame(objectName);
-  if(verbose>1) LOG(1) <<"initiating grasp of object " <<(obj?obj->name:"--nil--") <<" (prefixed)";
+  if(verbose>0) LOG(1) <<"initiating grasp of object " <<(obj?obj->name:"--nil--") <<" (prefixed)";
 
   imps.append(make_shared<Imp_CloseGripper>(gripper, joint, fing1, fing2, obj, speed));
 }
@@ -537,7 +537,7 @@ void Simulation::pushConfigurationToSimulator(const arr& frameVelocities, const 
   } else if(engine==_bullet) {
     self->bullet->pushFullState(C, frameVelocities);
   } else NIY;
-  if(verbose>0) self->updateDisplayData(time, C);
+  if(self->display) self->updateDisplayData(time, C);
 }
 
 void Simulation::registerNewObjectWithEngine(Frame* f) {
@@ -643,7 +643,7 @@ void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
       imp->modImages(*this, image, depth);
     }
 
-  if(verbose>0) self->updateDisplayData(image, depth);
+  if(self->display) self->updateDisplayData(image, depth);
 }
 
 //===========================================================================
@@ -870,7 +870,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
 
   if((speed>0. && q>limits(1))
       || (speed<0. && q < limits(0))) { //stop grasp by joint limits -> unsuccessful
-    if(S.verbose>1) {
+    if(S.verbose>0) {
       LOG(1) <<"terminating closing gripper (limit) - nothing grasped";
     }
     killMe = true;
@@ -891,9 +891,9 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
         //allows the user to know that gripper grasps something
         S.grasps.append(gripper);
 
-        if(S.verbose>1) LOG(1) <<"terminating grasp of object " <<obj->name <<" - SUCCESS (distances d1:" <<d1 <<" d2:" <<d2 <<" oppose:" <<y.noJ() <<")";
+        if(S.verbose>0) LOG(1) <<"terminating grasp of object " <<obj->name <<" - SUCCESS (distances d1:" <<d1 <<" d2:" <<d2 <<" oppose:" <<y.noJ() <<")";
       } else { //unsuccessful
-        if(S.verbose>1) LOG(1) <<"terminating grasp of object " <<obj->name <<" - FAILURE (distances d1:" <<d1 <<" d2:" <<d2 <<" oppose:" <<y.noJ() <<")";
+        if(S.verbose>0) LOG(1) <<"terminating grasp of object " <<obj->name <<" - FAILURE (distances d1:" <<d1 <<" d2:" <<d2 <<" oppose:" <<y.noJ() <<")";
       }
       killMe = true;
     }
@@ -945,7 +945,7 @@ void Imp_GripperMove::modConfiguration(Simulation& S, double tau) {
 
   if((speed>0 && q>stop)
       || (speed<0 && q<stop)) { //stop opening
-    if(S.verbose>1) LOG(1) <<"terminating opening gripper " <<gripper->name <<" at width " <<q;
+    if(S.verbose>0) LOG(1) <<"terminating opening gripper " <<gripper->name <<" at width " <<q;
     killMe = true;
   }
 }
