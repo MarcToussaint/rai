@@ -187,11 +187,11 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
       const aiTexture *tex = scene->GetEmbeddedTexture(str.C_Str());
 
       if(tex){ //is embedded
-        M.texImg.resize(tex->mHeight, tex->mWidth, 4);
-        memmove(M.texImg.p, &tex->pcData->b, M.texImg.N);
-        M.texImg.reshape(tex->mHeight*tex->mWidth, 4);
-        M.texImg.delColumns(-1);
-        M.texImg.reshape(tex->mHeight, tex->mWidth, 3);
+        M.texImg().img.resize(tex->mHeight, tex->mWidth, 4);
+        memmove(M.texImg().img.p, &tex->pcData->b, M.texImg().img.N);
+        M.texImg().img.reshape(tex->mHeight*tex->mWidth, 4);
+        M.texImg().img.delColumns(-1);
+        M.texImg().img.reshape(tex->mHeight, tex->mWidth, 3);
       }else{ //to be loaded from file
         std::string filename = this->directory + '/' + std::string(str.C_Str());
 
@@ -199,16 +199,16 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
 	  cout <<"loading texture image: " <<filename <<endl;
 	}
 
-        M.texImg = rai::loadImage(filename.c_str());
+        M.texImg().img = rai::loadImage(filename.c_str());
       }
 
       break;
     }
   }
 
-  if(M.texImg.d2!=3){
+  if(M.texImg().img.d2!=3){
     LOG(-1) << "no texture could be loaded";
-    M.texImg.clear();
+    M.texImg().img.clear();
     M.texCoords.clear();
   }
 

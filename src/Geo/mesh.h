@@ -17,6 +17,7 @@ namespace rai { struct Mesh; }
 typedef rai::Array<rai::Mesh> MeshA;
 typedef rai::Array<rai::Mesh*> MeshL;
 struct ANN;
+struct SharedTextureImage{ byteA img; uint glBufferID=UINT32_MAX; };
 
 namespace rai {
 
@@ -33,7 +34,9 @@ struct Mesh {
   arr   Tn;             ///< triangle normals (optional)
 
   arr texCoords;        ///< texture coordinates for each vertex, dimensionality (V.d0, 2)
-  byteA texImg;         ///< texture image
+  // byteA texImg;         ///< texture image
+  shared_ptr<SharedTextureImage> _texImg;
+  SharedTextureImage& texImg(const char* file=0);
 
   uintA cvxParts;
   uintAA graph;         ///< for every vertex, the set of neighboring vertices

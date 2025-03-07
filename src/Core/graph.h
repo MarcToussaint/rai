@@ -120,7 +120,6 @@ struct Graph : NodeL {
   //-- adding nodes
   template<class T> Node_typed<T>* add(const char* key);
   template<class T> Node_typed<T>* add(const char* key, const T& x);
-  template<class T> Node_typed<T>* add(const char* key, const T& x, const NodeL& parents);
   template<class T> Node_typed<T&>* addRef(const char* key, const T& x);
 
   //Node_typed<int>* add(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
@@ -137,6 +136,9 @@ struct Graph : NodeL {
   Node* findNodeOfType(const std::type_info& type, const char* key, bool recurseUp=false, bool recurseDown=false) const;
   NodeL findNodesOfType(const std::type_info& type, const char* key, bool recurseUp=false, bool recurseDown=false) const;
   NodeL findGraphNodesWithTag(const char* tag) const;
+
+  //
+  template<class T> Node* set(const char* key, const T& x){ Node* n = findNodeOfType(typeid(T), key); if(n) n->as<T>()=x; else n=add<T>(key, x); return n; }
 
   //-- get nodes
   Node* operator[](const char* key) const { return findNode(key); } ///< returns nullptr if not found
@@ -369,12 +371,6 @@ struct Node_typed : Node {
     if(is<Graph>()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
   }
 
-  Node_typed(Graph& container, const char* key, const T& _value, const NodeL& parents)
-    : Node(typeid(T), container, key), value(_value) {
-    if(parents.N) setParents(parents);
-    if(is<Graph>()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
-  }
-
   virtual ~Node_typed() {
   }
 
@@ -409,7 +405,7 @@ struct Node_typed : Node {
       g.copy(graph());
       return g.isNodeOfGraph;
     }
-    return container.add<T>(key,  value, parents);
+    return container.add<T>(key,  value)->setParents(parents);
   }
 };
 } //namespace
@@ -534,10 +530,6 @@ template<class T> Node_typed<T>* Graph::add(const char* key) {
 
 template<class T> Node_typed<T>* Graph::add(const char* key, const T& x) {
   return new Node_typed<T>(*this, key, x);
-}
-
-template<class T> Node_typed<T>* Graph::add(const char* key, const T& x, const NodeL& parents) {
-  return new Node_typed<T>(*this, key, x, parents);
 }
 
 template<class T> Node_typed<T&>* Graph::addRef(const char* key, const T& x) {

@@ -25,8 +25,9 @@ enum RenderType { _solid, _shadow, _tensor, _text, _marker, _transparent, _all }
 
 struct RenderAsset{
   floatA vertices, colors, normals;  //for 2D textures: colors are vertex-wise texture coordinates
-  byteA texture;
-  GLuint vao, vertexBuffer, colorBuffer, normalBuffer, textureBuffer;
+  GLuint vao, vertexBuffer, colorBuffer, normalBuffer;
+  shared_ptr<SharedTextureImage> _texture;
+  SharedTextureImage& texture(){ if(!_texture) _texture=make_shared<SharedTextureImage>(); return *_texture; }
   GLenum mode=GL_TRIANGLES;
   uint textureDim=0;
   bool initialized=false;

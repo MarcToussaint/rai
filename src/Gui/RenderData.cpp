@@ -520,7 +520,7 @@ void RenderAsset::mesh(rai::Mesh& mesh, double avgNormalsThreshold){
   CHECK_EQ(mesh.V.d0, mesh.Vn.d0, "");
   vertices = rai::convert<float>(mesh.V);
   normals = rai::convert<float>(mesh.Vn);
-  if(!mesh.texCoords.N){
+  if(!mesh.texCoords.N || mesh.texCoords.d2!=3){
     if(mesh.C.N){
       CHECK_EQ(mesh.V.d0, mesh.C.d0, "");
       CHECK_EQ(mesh.C.d1, 4, "");
@@ -530,14 +530,15 @@ void RenderAsset::mesh(rai::Mesh& mesh, double avgNormalsThreshold){
       colors=1.;
     }
   }else{
-    CHECK_EQ(mesh.C.N, 0,"no vertex colors allowed for textured meshes");
+    // CHECK_EQ(mesh.C.N, 0,"no vertex colors allowed for textured meshes");
     CHECK_EQ(mesh.V.d0, mesh.texCoords.d0,"");
     CHECK_EQ(mesh.texCoords.d1, 2, "");
-    CHECK_EQ(mesh.texImg.d2, 3, "");
+    CHECK(mesh._texImg, "");
+    CHECK_EQ(mesh.texImg().img.d2, 3, "");
     colors = rai::convert<float>(mesh.texCoords);
     colors.insColumns(-1, 2);
     for(uint i=0;i<colors.d0;i++) colors(i,2) = colors(i,3) = 1.;
-    texture = mesh.texImg;
+    _texture = mesh._texImg; //().rgb;
     textureDim = 2;
   }
 }
@@ -579,10 +580,10 @@ void RenderAsset::lines(const arr& lines, const arr& color){
 
 void RenderAsset::tensor(const floatA& vol, const arr& size){
   CHECK_EQ(size.N, 3, "");
-  texture.resize(vol.d0, vol.d1, vol.d2);
+  texture().img.resize(vol.d0, vol.d1, vol.d2);
   for(uint i=0;i<vol.N;i++){
     float& f = vol.p[i];
-    texture.p[i] = (f<0.f? byte(0) : (f>1.f ? byte(255) : byte(f*255.f) ));
+    texture().img.p[i] = (f<0.f? byte(0) : (f>1.f ? byte(255) : byte(f*255.f) ));
   }
   rai::Mesh mesh;
   mesh.setBox();
@@ -598,9 +599,10 @@ void RenderAsset::tensor(const floatA& vol, const arr& size){
 void RenderAsset::glRender(){
   CHECK(initialized, "");
 
+  if(textureDim) CHECK(_texture, "");
   if(textureDim) glActiveTexture(GL_TEXTURE0);
-  if(textureDim==2) glBindTexture(GL_TEXTURE_2D, textureBuffer);
-  if(textureDim==3) glBindTexture(GL_TEXTURE_3D, textureBuffer);
+  if(textureDim==2) glBindTexture(GL_TEXTURE_2D, _texture->glBufferID);
+  if(textureDim==3) glBindTexture(GL_TEXTURE_3D, _texture->glBufferID);
 
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
@@ -647,37 +649,41 @@ void RenderAsset::glInitialize(){
 
   //generate texture
   if(textureDim){
-    CHECK_EQ(texture.nd, 3, "");
-    glGenTextures(1, &textureBuffer);
-    glActiveTexture(GL_TEXTURE0);
-    if(textureDim==2){ //this is texture image and colors are texture coordinates
-      glBindTexture(GL_TEXTURE_2D, textureBuffer);
-      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      if(texture.d2==1) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, texture.d1, texture.d0, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, texture.p);
-      else if(texture.d2==2) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, texture.d1, texture.d0, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, texture.p);
-      else if(texture.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.d1, texture.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, texture.p);
-      else if(texture.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.d1, texture.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture.p);
+    CHECK(_texture,"");
+    if(_texture->glBufferID==UINT32_MAX){
+      byteA& img = _texture->img;
+      CHECK_EQ(img.nd, 3, "");
+      glGenTextures(1, &_texture->glBufferID);
+      glActiveTexture(GL_TEXTURE0);
+      if(textureDim==2){ //this is texture image and colors are texture coordinates
+        glBindTexture(GL_TEXTURE_2D, _texture->glBufferID);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        if(img.d2==1) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, img.d1, img.d0, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img.p);
+        else if(img.d2==2) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, img.d1, img.d0, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, img.p);
+        else if(img.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.d1, img.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, img.p);
+        else if(img.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.d1, img.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.p);
+        else NIY;
+        glBindTexture(GL_TEXTURE_2D, 0);
+      }
+      else if(textureDim==3){
+        glEnable(GL_TEXTURE_3D);
+        glBindTexture(GL_TEXTURE_3D, _texture->glBufferID);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+        glTexImage3D(GL_TEXTURE_3D, 0, GL_R8, img.d2, img.d1, img.d0, 0, GL_RED, GL_UNSIGNED_BYTE, img.p);
+        glBindTexture(GL_TEXTURE_3D, 0);
+      }
       else NIY;
-      glBindTexture(GL_TEXTURE_2D, 0);
     }
-    else if(textureDim==3){
-      glEnable(GL_TEXTURE_3D);
-      glBindTexture(GL_TEXTURE_3D, textureBuffer);
-      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
-      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-      glTexImage3D(GL_TEXTURE_3D, 0, GL_R8, texture.d2, texture.d1, texture.d0, 0, GL_RED, GL_UNSIGNED_BYTE, texture.p);
-      glBindTexture(GL_TEXTURE_3D, 0);
-    }
-    else NIY;
   }
 
   initialized=true;
