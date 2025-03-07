@@ -685,7 +685,7 @@ struct Simulation_DisplayThread : Thread, ConfigurationViewer {
 
   Simulation_DisplayThread(const rai::Configuration& C, const char* _text) : Thread("Sim_DisplayThread", .05), text(_text) {
     updateConfiguration(C);
-    if(rai::getParameter<bool>("sim/displayVisualsOnly", true)) renderUntil=_shadow;
+    if(rai::getParameter<bool>("sim/displayVisualsOnly", true)) renderUntil=rai::_text;
     ensure_gl().setTitle("Simulation");
     ensure_gl().update(0, true); //waits for first draw
     threadLoop();
