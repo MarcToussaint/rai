@@ -2211,11 +2211,19 @@ void inertiaBoxSurface(double& mass, double* I, double dx, double dy, double dz,
 void inertiaMeshSurface(double& mass, double* com, double* I, const rai::Mesh& m, double density) {
   //get total area and assign to vertices
   double area=0.;
-  arr vertexArea = zeros(m.V.d0);
+  arr pts(m.T.d0, 3, 3);
+  arr weights(m.T.d0, 3);
+
   for(uint i=0; i<m.T.d0; i++) {
     double ai = m.getArea(i);
     area += ai;
-    for(uint v=0; v<3; v++) vertexArea(m.T(i, v)) += ai/3.; //area per vertex
+    rai::Vector a, b, c;
+    a.set(m.V.p+3*m.T.p[3*i+0]);
+    b.set(m.V.p+3*m.T.p[3*i+1]);
+    c.set(m.V.p+3*m.T.p[3*i+2]);
+    pts(i,0,{}) = (.5*(a+b)).getArr();  weights(i,0) = ai/3.;
+    pts(i,1,{}) = (.5*(a+c)).getArr();  weights(i,1) = ai/3.;
+    pts(i,2,{}) = (.5*(b+c)).getArr();  weights(i,2) = ai/3.;
   }
   //assign mass via density-per-area
   if(density>0.){
@@ -2223,22 +2231,34 @@ void inertiaMeshSurface(double& mass, double* com, double* I, const rai::Mesh& m
   }else{
     density = mass/area;
   }
+  weights *= density;
 
   //sum up com and inertia tensor
   for(uint i=0;i<3;i++) com[i]=0.;
   for(uint i=0;i<9;i++) I[i]=0.;
-  for(uint i=0; i<m.V.d0; i++) {
-    double mi = density * vertexArea(i);
-    double x=m.V(i, 0), y=m.V(i, 1), z=m.V(i, 2);
-    com[0] += mi*x;
-    com[1] += mi*y;
-    com[2] += mi*z;
-    I[0] += mi*(y*y+z*z);
-    I[4] += mi*(x*x+z*z);
-    I[8] += mi*(x*x+y*y);
-    I[1] -= mi*x*y;  I[3] -= mi*x*y;
-    I[2] -= mi*x*z;  I[6] -= mi*x*z;
-    I[5] -= mi*y*z;  I[7] -= mi*y*z;
+  pts.reshape(-1,3);
+  weights.reshape(pts.d0);
+  for(uint i=0; i<pts.d0; i++) {
+    double w = weights(i);
+    double x=pts(i,0), y=pts(i,1), z=pts(i,2);
+    com[0] += w*x;
+    com[1] += w*y;
+    com[2] += w*z;
+    I[0] += w*(y*y+z*z);
+    I[4] += w*(x*x+z*z);
+    I[8] += w*(x*x+y*y);
+    I[1] -= w*x*y;  I[3] -= w*x*y;
+    I[2] -= w*x*z;  I[6] -= w*x*z;
+    I[5] -= w*y*z;  I[7] -= w*y*z;
   }
   for(uint i=0;i<3;i++) com[i] /= mass;
+
+  double x=com[0], y=com[1], z=com[2];
+  double w=-mass;
+  I[0] += w*(y*y+z*z);
+  I[4] += w*(x*x+z*z);
+  I[8] += w*(x*x+y*y);
+  I[1] -= w*x*y;  I[3] -= w*x*y;
+  I[2] -= w*x*z;  I[6] -= w*x*z;
+  I[5] -= w*y*z;  I[7] -= w*y*z;
 }

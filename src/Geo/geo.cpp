@@ -397,6 +397,12 @@ double Matrix::diffZero() const {
   return d;
 }
 
+bool Matrix::isDiagonal() const {
+  double eps=1e-12;
+  return m01<eps && m02<eps && m10<eps && m12<eps && m20<eps && m21<eps
+   && m01>-eps && m02>-eps && m10>-eps && m12>-eps && m20>-eps && m21>-eps;
+}
+
 void Matrix::write(std::ostream& os) const {
   os <<"\n[" <<m00 <<", " <<m01 <<", " <<m02;
   os <<"\n " <<m10 <<", " <<m11 <<", " <<m12;

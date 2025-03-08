@@ -183,6 +183,7 @@ struct Configuration {
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
   void pruneUselessFrames(bool pruneNamed=false, bool pruneNonContactNonMarker=false, bool pruneTransparent=false);  ///< delete frames that have no name, joint, and shape
   void simplify(bool pruneNamed=false, bool pruneNonContactNonMarker=false, bool pruneTransparent=false);        ///< call the three above methods in this order
+  void standardizeInertias(bool addSeparateInertiaFrames=false);
   void sortFrames();
   void makeObjectsFree(const StringA& objects, double H_cost=0.);
   void addTauJoint();

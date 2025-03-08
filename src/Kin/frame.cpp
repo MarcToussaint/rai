@@ -291,12 +291,13 @@ void rai::Frame::prefixSubtree(const char* prefix) {
 rai::Frame& rai::Frame::computeCompoundInertia(bool clearChildInertias) {
   FrameL all = {};
   getRigidSubFrames(all, false);
-  Inertia* I = inertia;
-  if(!I){ I = new Inertia(*this);  I->setZero(); }
+  Inertia& I = getInertia();
   for(rai::Frame* f:all) if(f->inertia) {
-      I->add(*f->inertia, f->ensure_X() / ensure_X());
+      I.add(*f->inertia, f->ensure_X() / ensure_X());
       if(clearChildInertias) delete f->inertia;
     }
+  if(I.com.diffZero()<1e-12) I.com.setZero();
+  if(I.matrix.isDiagonal()) I.matrix.deleteOffDiagonal();
   return *this;
 }
 
@@ -321,6 +322,54 @@ rai::Frame& rai::Frame::convertDecomposedShapeToChildFrames() {
   }
   delete shape;
   return *this;
+}
+
+bool rai::Frame::standardizeInertias(bool _transformToDiagInertia){
+  //-- collect all link shapes
+  FrameL sub = {this};
+  getRigidSubFrames(sub, false);
+  //are there any masses on the link?
+  bool hasMass=false;
+  for(rai::Frame* ch: sub) if(ch->inertia){ hasMass=true; break; }
+
+  if(!hasMass && !joint) return false; //root links without mass: don't give them mass
+
+  //-- redo inertias of all shapes
+  for(rai::Frame* ch: sub){
+    bool needsInertia = ch->shape
+                        && ch->getShape().type()!=rai::ST_marker
+                        && ch->getShape().type()!=rai::ST_camera
+                        && ((ch->ats && ch->ats->get<bool>("simulate", false))
+                            || ch->getShape().alpha()==1.);
+    if(!needsInertia && ch->inertia) delete ch->inertia;
+    if(needsInertia){
+      if(!ch->shape->_mesh) ch->shape->createMeshes();
+      ch->getInertia().mass = -1.;
+      ch->getInertia().defaultInertiaByShape();
+    }
+  }
+
+  //-- collect inertias per link
+  computeCompoundInertia();
+
+  //-- attach to own frame?
+  if(_transformToDiagInertia){
+    if(!inertia->com.isZero || !inertia->matrix.isDiagonal()){
+#if 0
+        rai::Frame* m = addFrame(link->name+"_inertia");
+        m->setParent(link);
+        arr diag;
+        m->set_Q() = link->inertia->getDiagTransform(diag);
+        m->getInertia().mass = link->inertia->mass;
+        m->getInertia().com.setZero();
+        m->getInertia().matrix.setDiag(diag);
+        m->setShape(ST_marker, {1.});
+        delete link->inertia;
+#endif
+      transformToDiagInertia();
+    }
+  }
+  return true;
 }
 
 rai::Transformation rai::Frame::transformToDiagInertia(bool transformMesh) {
@@ -2161,13 +2210,12 @@ shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates) {
   }
 }
 
-rai::Inertia::Inertia(Frame& f, Inertia* copyInertia) : frame(f), type(BT_dynamic) {
+rai::Inertia::Inertia(Frame& f, Inertia* copyInertia) : frame(f) {
   CHECK(!frame.inertia, "this frame ('" <<frame.name <<"') already has inertia");
   frame.inertia = this;
   if(copyInertia) {
     mass = copyInertia->mass;
     matrix = copyInertia->matrix;
-    type = copyInertia->type;
     com = copyInertia->com;
   }
 }
@@ -2204,23 +2252,36 @@ void rai::Inertia::defaultInertiaByShape() {
     case ST_box:      inertiaBoxSurface(mass, matrix.p(), frame.shape->size(0), frame.shape->size(1), frame.shape->size(2), (mass>0.?-1.:5.));  break;
     case ST_capsule:
     case ST_cylinder:
-    case ST_ssCylinder: inertiaCylinder(matrix.p(), mass, (mass>0.?0.:100.), frame.shape->size(0), frame.shape->size(1));  break;
+    case ST_ssCylinder: //inertiaCylinder(matrix.p(), mass, (mass>0.?0.:100.), frame.shape->size(0), frame.shape->size(1));  break;
     case ST_ssCvx:
-    case ST_mesh: inertiaMeshSurface(mass, com.p(), matrix.p(), frame.shape->mesh(), (mass>0.?-1.:5.)); break;
+    case ST_mesh: {
+      CHECK(frame.shape->_mesh, "");
+      inertiaMeshSurface(mass, com.p(), matrix.p(), frame.shape->mesh(), (mass>0.?-1.:5.));
+    } break;
     default: HALT("not implemented for this shape type");
   }
+  CHECK_GE(mass, 1e-6, "not a good shape to compute default inertia");
+  CHECK_GE(matrix.m00, 1e-12, "not a good shape to compute default inertia");
+  CHECK_GE(matrix.m11, 1e-12, "not a good shape to compute default inertia");
+  CHECK_GE(matrix.m22, 1e-12, "not a good shape to compute default inertia");
+  if(com.diffZero()<1e-12) com.setZero();
+  if(matrix.isDiagonal()) matrix.deleteOffDiagonal();
 }
 
 rai::Transformation rai::Inertia::getDiagTransform(arr& diag){
   rai::Transformation t=0;
-  if(!com.isZero){
+  if(com.diffZero()>1e-12){
     t.pos = com;
+    // arr delta = com.getArr();
+    // I += mass*(sumOfSqr(delta) * eye(3) - (delta^delta));
   }
-  if(!matrix.isDiagonal()) {
+  if(!matrix.isDiagonal()) { //is non-diagonal
     arr I = matrix.getArr();
     arr U, d, V;
     svd(U, d, V, I, false);
+    if(trace(V)<0.){ V = V*(-eye(3)); U = (-eye(3))*U; }
     t.rot.setMatrix(V);
+    t.checkNan();
     if(!!diag) diag=d;
   }else{
     if(!!diag) diag = arr{matrix.m00, matrix.m11, matrix.m22};

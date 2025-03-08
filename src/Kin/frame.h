@@ -148,6 +148,7 @@ struct Frame : NonCopyable {
   Transformation transformToDiagInertia(bool transformOwnMesh=false);
   Frame& computeCompoundInertia(bool clearChildInertias=true);
   Frame& convertDecomposedShapeToChildFrames();
+  bool standardizeInertias(bool _transformToDiagInertia=false);
 
   //I/O
   void read(const Graph& ats);
@@ -306,7 +307,6 @@ struct Inertia : NonCopyable {
   Frame& frame;
   double mass=0.;
   Matrix matrix=0;
-  Enum<BodyType> type;
   Vector com=0;             ///< its center of mass
 
   Inertia(Frame& f, rai::Inertia* copyInertia=nullptr);

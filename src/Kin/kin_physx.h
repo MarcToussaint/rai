@@ -25,7 +25,7 @@ struct PhysX_Options {
 struct PhysXInterface {
   struct PhysXInterface_self* self=0;
 
-  PhysXInterface(const rai::Configuration& C, int verbose=1, const rai::PhysX_Options* _opt=0);
+  PhysXInterface(rai::Configuration& C, int verbose=1, const rai::PhysX_Options* _opt=0);
   ~PhysXInterface();
 
   void step(double tau=.01);
@@ -40,7 +40,6 @@ struct PhysXInterface {
   void addJoint(rai::Joint* j);
   void removeJoint(rai::Joint* j);
   void postAddObject(rai::Frame* f);
-  void setArticulatedBodiesKinematic(const rai::Configuration& C);
 
   void view(bool pause=false, const char* txt=nullptr);
 

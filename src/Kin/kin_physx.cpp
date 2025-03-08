@@ -178,7 +178,7 @@ struct PhysXInterface_self {
   void lockJoint(PxD6Joint* joint, rai::Joint* rai_joint);
   void unlockJoint(PxD6Joint* joint, rai::Joint* rai_joint);
 
-  void prepareLinkShapes(ShapeL& shapes, rai::BodyType& type, rai::Frame* f);
+  void prepareLinkShapes(ShapeL& shapes, rai::BodyType& type, rai::Frame* link);
   void addSingleShape(PxRigidActor* actor, rai::Frame* f, rai::Shape* s);
   void addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes, rai::BodyType type, rai::Frame* f);
 
@@ -682,20 +682,22 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
   }
 }
 
-void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type, rai::Frame* f) {
+void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type, rai::Frame* link) {
+  CHECK(!link->parent || link->joint, "this is not a link");
+
+  FrameL sub = {link};
+  link->getRigidSubFrames(sub, false);
+
   //-- collect all shapes of that link
   shapes.clear();
   {
-    rai::Frame* link=f->getUpwardLink();
-    FrameL tmp = {link};
-    link->getRigidSubFrames(tmp, false);
-    for(rai::Frame* p: tmp) {
-      if(p->shape && p->getShape().type()!=rai::ST_marker
-          && p->getShape().type()!=rai::ST_camera){ //is a candidate
-        if(p->ats && p->ats->find<bool>("simulate")){
-          if(p->ats->get<bool>("simulate")) shapes.append(p->shape);
+    for(rai::Frame* ch: sub) {
+      if(ch->shape && ch->getShape().type()!=rai::ST_marker
+          && ch->getShape().type()!=rai::ST_camera){ //is a candidate
+        if(ch->ats && ch->ats->find<bool>("simulate")){
+          if(ch->ats->get<bool>("simulate")) shapes.append(ch->shape);
         }else{
-          if(p->getShape().alpha()==1.) shapes.append(p->shape);
+          if(ch->getShape().alpha()==1.) shapes.append(ch->shape);
           else{}//transparent and no simulate flag
         }
       }
@@ -703,21 +705,31 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
   }
 
   //-- prepare inertia
-  bool shapesHaveInertia=false;
-  for(rai::Shape* s:shapes) if(s->frame.inertia) { shapesHaveInertia=true; break; }
-  if(shapesHaveInertia && !f->inertia) {
-    LOG(-1) <<"computing compound inertia for object frame '" <<f->name;
-    f->computeCompoundInertia();
-//    f->transformToDiagInertia(); //the inertial needs to be at that link... not just a child...
+  bool subHaveInertia=false;
+  for(rai::Frame* ch: sub) if(ch->inertia && ch!=link) { subHaveInertia=true; break; }
+  if(subHaveInertia) {
+    if(opt.verbose>0) LOG(0) <<"computing compound inertia for object frame '" <<link->name;
+    link->computeCompoundInertia();
   }
-  // if(f->inertia && !f->inertia->matrix.isDiagonal()) {
-  //   LOG(-1) <<"DON'T DO THAT! PhysX can only properly handle (compound) inertias if transformed to diagonal tensor - frame:" <<f->name;
-  // }
+  if(!link->inertia){
+    bool hasMass = link->standardizeInertias();
+    if(hasMass){
+      LOG(-1) <<"link '" <<link->name <<"' does not have proper inertia! I computed standard inertias (It's better if you define inertias for all links before starting physix)";
+    }else{
+      if(opt.verbose>0) LOG(0) <<"link '" <<link->name <<"' has no mases -> becomes static";
+    }
+    // PxRigidBodyExt::updateMassAndInertia(*actor, 1000.f);
+    // if(!f->inertia) new rai::Inertia(*f);
+    // f->inertia->mass = actor->getMass();
+    // f->inertia->matrix.setDiag(conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()));
+    // f->inertia->com = conv_PxVec3_arr(actor->getCMassLocalPose().p);
+    // //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
+  }
 
   //-- decide on the type
   type = rai::BT_static;
-  if(f->joint)   type = rai::BT_kinematic;
-  if(f->inertia) type = f->inertia->type;
+  if(link->joint)   type = rai::BT_kinematic;
+  if(link->inertia) type = rai::BT_dynamic;
 }
 
 void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai::Shape* s) {
@@ -736,13 +748,13 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       if(opt.verbose>0) LOG(0) <<"  adding shape ssBox '" <<s->frame.name <<"' (" <<s->type() <<")";
     } break;
     case rai::ST_sphere: {
-      geometry = make_shared<PxSphereGeometry>(s->size(-1));
+      geometry = make_shared<PxSphereGeometry>(s->size(0));
       if(opt.verbose>0) LOG(0) <<"  adding shape sphere '" <<s->frame.name <<"' (" <<s->type() <<")";
     } break;
-    case rai::ST_capsule: {
-      geometry = make_shared<PxCapsuleGeometry>(s->size(-1), .5*s->size(-2));
-    } break;
-    // case rai::ST_capsule:
+    // case rai::ST_capsule: {
+    //   geometry = make_shared<PxCapsuleGeometry>(s->size(1), .5*s->size(0));
+    //   if(opt.verbose>0) LOG(0) <<"  adding shape capsule '" <<s->frame.name <<"' (" <<s->type() <<")";
+    // } break;
     case rai::ST_cylinder:{
       NIY;
     } break;
@@ -757,7 +769,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       if(opt.verbose>0) LOG(0) <<"  adding shape cvx mesh '" <<s->frame.name <<"' (" <<s->type() <<")";
     } break;
     case rai::ST_sdf:
-    case rai::ST_mesh: {
+    default: {
 #if 0
       floatA Vfloat = rai::convert<float>(s->mesh().V);
       uintA& T = s->mesh().T;
@@ -767,7 +779,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       geometry = make_shared<PxTriangleMeshGeometry>(triangleMesh);
 #else
       rai::Mesh& M = s->mesh();
-      if(opt.verbose>0) LOG(0) <<"  adding shape mesh '" <<s->frame.name <<"' (" <<s->type() <<")";
+      if(opt.verbose>0) LOG(0) <<"  adding shape mesh '" <<s->frame.name <<"' (" <<s->type() <<") as mesh";
       if(!M.cvxParts.N) {
         M.getComponents();
       }
@@ -813,9 +825,9 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       if(opt.verbose>0) LOG(0) <<"  skipping shape '" <<s->frame.name <<"' (" <<s->type() <<")";
       geometry = nullptr;
     } break;
-    default:
-      LOG(0) <<"can't create shape of type:" <<s->type();
-      NIY;
+    // default:
+    //   LOG(0) <<"can't create shape of type:" <<s->type();
+    //   NIY;
   }
 
   if(geometry) {
@@ -859,30 +871,20 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes
 
   //-- set inertia
   if(type != rai::BT_static) {
-    if(f->inertia && f->inertia->mass>0.) {
-      //PxRigidBodyExt::updateMassAndInertia(*actor, f->inertia->mass);
-      actor->setMass(f->inertia->mass);
-      if(!f->inertia->com && f->inertia->matrix.isDiagonal()){
-        actor->setMassSpaceInertiaTensor({float(f->inertia->matrix.m00), float(f->inertia->matrix.m11), float(f->inertia->matrix.m22)});
-      }else{
-        arr I;
-        rai::Transformation t = f->inertia->getDiagTransform(I);
-        if(!t.pos.isZero || !t.rot.isZero){
-          actor->setCMassLocalPose(conv_Transformation2PxTrans(t));
-        }
-        actor->setMassSpaceInertiaTensor({float(I(0)), float(I(1)), float(I(2))});
+    CHECK(f->inertia, "dynamic links need inertia!");
+    CHECK(f->inertia->mass>0., "dynamic links need inertia!");
+    actor->setMass(f->inertia->mass);
+    if(f->inertia->com.isZero && f->inertia->matrix.isDiagonal()){
+      actor->setMassSpaceInertiaTensor({float(f->inertia->matrix.m00), float(f->inertia->matrix.m11), float(f->inertia->matrix.m22)});
+    }else{
+      arr I;
+      rai::Transformation t = f->inertia->getDiagTransform(I);
+      if(!t.pos.isZero || !t.rot.isZero){
+        actor->setCMassLocalPose(conv_Transformation2PxTrans(t));
       }
-//      //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
-    } else {
-      LOG(-1) <<"DON'T DO THAT! PhysX can only properly handle when masses/inertia are pre-defined - frame:" <<f->name;
-
-      PxRigidBodyExt::updateMassAndInertia(*actor, 1000.f);
-      if(!f->inertia) new rai::Inertia(*f);
-      f->inertia->mass = actor->getMass();
-      f->inertia->matrix.setDiag(conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()));
-      f->inertia->com = conv_PxVec3_arr(actor->getCMassLocalPose().p);
-      //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
+      actor->setMassSpaceInertiaTensor({float(I(0)), float(I(1)), float(I(2))});
     }
+    //      //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
   }
 }
 
@@ -942,7 +944,6 @@ void PhysXInterface_self::syncDebugConfig() {
 	      // glDrawCappedCylinder(g.radius, g.halfHeight*2);
 	      rai::Mesh m;
 	      m.setCapsule(g.radius, g.halfHeight*2.);
-	      m.scale(g.radius);
 	      if(!Q.isZero()) m.transform(Q);
 	      mesh.addMesh(m);
 	    } break;
@@ -1004,7 +1005,7 @@ void PhysXInterface_self::syncDebugConfig() {
 
 //===========================================================================
 
-PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose, const rai::PhysX_Options* _opt) {
+PhysXInterface::PhysXInterface(rai::Configuration& C, int verbose, const rai::PhysX_Options* _opt) {
   CHECK(C._state_q_isGood, "PhysX needs joint angles for initialization");
 
   self = new PhysXInterface_self;
@@ -1230,23 +1231,23 @@ void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& fra
   }
 }
 
-void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) {
-  HALT("NOT SURE IF THIS IS DESIRED");
-  for(rai::Dof* d:C.activeDofs) {
-    rai::Joint* j = dynamic_cast<rai::Joint*>(d);
-    if(!j) continue;
-    if(j->type!=rai::JT_free) {
-      if(j->from()->inertia && j->from()->inertia->type==rai::BT_dynamic) j->from()->inertia->type=rai::BT_kinematic;
-      if(j->frame->inertia   && j->frame->inertia->type==rai::BT_dynamic) j->frame->inertia->type=rai::BT_kinematic;
-    }
-  }
-  for(rai::Frame* b: C.frames) if(self->actors(b->ID) && b->inertia) {
-      if(b->inertia->type==rai::BT_kinematic)
-        ((PxRigidDynamic*)self->actors(b->ID))->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-      if(b->inertia->type==rai::BT_dynamic)
-        ((PxRigidDynamic*)self->actors(b->ID))->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
-    }
-}
+// void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) {
+//   HALT("NOT SURE IF THIS IS DESIRED");
+//   for(rai::Dof* d:C.activeDofs) {
+//     rai::Joint* j = dynamic_cast<rai::Joint*>(d);
+//     if(!j) continue;
+//     if(j->type!=rai::JT_free) {
+//       if(j->from()->inertia && j->from()->inertia->type==rai::BT_dynamic) j->from()->inertia->type=rai::BT_kinematic;
+//       if(j->frame->inertia   && j->frame->inertia->type==rai::BT_dynamic) j->frame->inertia->type=rai::BT_kinematic;
+//     }
+//   }
+//   for(rai::Frame* b: C.frames) if(self->actors(b->ID) && b->inertia) {
+//       if(b->inertia->type==rai::BT_kinematic)
+//         ((PxRigidDynamic*)self->actors(b->ID))->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+//       if(b->inertia->type==rai::BT_dynamic)
+//         ((PxRigidDynamic*)self->actors(b->ID))->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+//     }
+// }
 
 void PhysXInterface::view(bool pause, const char* txt) {
   self->syncDebugConfig();

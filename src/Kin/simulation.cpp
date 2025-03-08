@@ -1000,13 +1000,12 @@ void Imp_NoPenetrations::modConfiguration(Simulation& S, double tau) {
 
   uintA dynamicFrames;
   for(rai::Frame* f: S.C.getLinks()) {
-    if(f->inertia)
-      if(f->inertia->type == rai::BT_dynamic) {
-        FrameL parts = {f};
-        f->getRigidSubFrames(parts);
-        for(rai::Frame* p: parts) dynamicFrames.append(p->ID);
-//            cout << f->name.p << endl;
-      }
+    if(f->inertia){
+      FrameL parts = {f};
+      f->getRigidSubFrames(parts);
+      for(rai::Frame* p: parts) dynamicFrames.append(p->ID);
+      //            cout << f->name.p << endl;
+    }
   }
 
   for(uint t=0; t<100; t++) {

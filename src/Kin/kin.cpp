@@ -1268,6 +1268,11 @@ void Configuration::simplify(bool pruneNamed, bool pruneNonContactNonMarker, boo
   checkConsistency();
 }
 
+void Configuration::standardizeInertias(bool addSeparateInertiaFrames){
+  FrameL F = getLinks();
+  for(rai::Frame *link : F) link->standardizeInertias(addSeparateInertiaFrames);
+}
+
 void Configuration::sortFrames() {
   frames = calc_topSort();
   uint i=0;

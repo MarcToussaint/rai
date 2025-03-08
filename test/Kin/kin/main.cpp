@@ -688,6 +688,8 @@ void TEST(BlenderImport){
 }
 #endif
 
+// =============================================================================
+
 void testTexture(){
   rai::Configuration C;
   rai::Frame *f = C.addFrame("box");
@@ -699,10 +701,38 @@ void testTexture(){
 
 // =============================================================================
 
+void testInertias(){
+  rai::Configuration C;
+  C.addFile(rai::raiPath("../rai-robotModels/tests/compound.g"));
+  rai::Frame *obj1 = C.getFrame("obj");
+  rai::Frame *obj2 = C.addFrame("obj2");
+  rai::Frame *mesh = C.addFrame("mesh", "obj2");
+  rai::Mesh M;
+  M.setBox(); M.scale(.1, .2, .3);
+  // M.translate(1.,0,0); mesh->setRelativePosition({-1.,0,0});
+  mesh->setMesh2(M);
+  mesh->setMass(-1.);
+
+  cout <<obj1->getInertia() <<endl;
+  cout <<obj2->getInertia() <<endl;
+  obj1->computeCompoundInertia(true);
+  obj2->computeCompoundInertia(true);
+  cout <<obj1->getInertia() <<endl;
+  cout <<obj2->getInertia() <<endl;
+
+  C.standardizeInertias(true);
+  cout <<C <<endl;
+  cout <<obj1->getInertia() <<endl;
+  cout <<obj2->getInertia() <<endl;
+  C.view(true);
+}
+
+// =============================================================================
+
+
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  testTexture(); return 0;
   testMini();
   testLoadSave();
   testCopy();
@@ -718,6 +748,8 @@ int MAIN(int argc,char **argv){
   testDynamics();
   testContacts();
   testLimits();
+  testInertias();
+  testTexture();
 #ifdef RAI_ODE
 //  testMeshShapesInOde();
   testPlayTorqueSequenceInOde();
