@@ -1098,7 +1098,7 @@ rai::String rai::FileToken::relPath() const {
 
 rai::String rai::FileToken::fullPath() const {
   if(name[0]=='/') return name;
-  if(path.N && path[0]=='/') return path+'/'+name;
+  if(path.N && path[0]=='/') return STRING(path <<'/' <<name);
   rai::String str;
   str <<baseDir;
   if(path.N) str <<'/' <<path;

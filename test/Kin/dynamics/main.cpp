@@ -24,7 +24,7 @@
 void TEST(Dynamics){
   rai::Configuration C("arm7.g");
 //  rai::Configuration C("mypr2.g");
-  C.simplify(true);
+  C.processStructure(true);
   C.sortFrames();
 
   arr u;

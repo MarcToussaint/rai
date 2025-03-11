@@ -36,7 +36,7 @@ AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ, bool relativeMe
   }
 
   Assimp::Importer importer;
-  const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+  const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs); // | aiProcess_CalcTangentSpace);
   if(!scene || !scene->mRootNode || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
     cout <<"current dir: " <<rai::getcwd_string() <<endl;
     HALT("ERROR::ASSIMP:: " <<importer.GetErrorString());
@@ -199,7 +199,7 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
 	  cout <<"loading texture image: " <<filename <<endl;
 	}
 
-        M.texImg().img = rai::loadImage(filename.c_str());
+        M.texImg(filename.c_str());
       }
 
       break;

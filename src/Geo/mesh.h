@@ -17,7 +17,7 @@ namespace rai { struct Mesh; }
 typedef rai::Array<rai::Mesh> MeshA;
 typedef rai::Array<rai::Mesh*> MeshL;
 struct ANN;
-struct SharedTextureImage{ byteA img; uint glBufferID=UINT32_MAX; };
+struct SharedTextureImage{ byteA img; charA file; uint glBufferID=UINT32_MAX; };
 
 namespace rai {
 
@@ -45,8 +45,6 @@ struct Mesh {
   rai::Transformation glX; ///< transform (only used for drawing! Otherwise use applyOnPoints)  (optional)
 
   int version = 0;
-  long parsing_pos_start;
-  long parsing_pos_end;
 
   uint _support_vertex=0;
   bool isArrayFormatted=false;

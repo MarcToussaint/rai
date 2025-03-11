@@ -133,8 +133,8 @@ struct Graph : NodeL {
   //-- basic node retrieval -- users should use the higher-level wrappers below
   Node* findNode(const char* key, bool recurseUp=false, bool recurseDown=false) const;   ///< returns nullptr if not found
   NodeL findNodes(const char* key, bool recurseUp=false, bool recurseDown=false) const;
-  Node* findNodeOfType(const std::type_info& type, const char* key, bool recurseUp=false, bool recurseDown=false) const;
-  NodeL findNodesOfType(const std::type_info& type, const char* key, bool recurseUp=false, bool recurseDown=false) const;
+  Node* findNodeOfType(const std::type_info& type, const char* key=0, bool recurseUp=false, bool recurseDown=false) const;
+  NodeL findNodesOfType(const std::type_info& type, const char* key=0, bool recurseUp=false, bool recurseDown=false) const;
   NodeL findGraphNodesWithTag(const char* tag) const;
 
   //

@@ -708,13 +708,13 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
   bool subHaveInertia=false;
   for(rai::Frame* ch: sub) if(ch->inertia && ch!=link) { subHaveInertia=true; break; }
   if(subHaveInertia) {
-    if(opt.verbose>0) LOG(0) <<"computing compound inertia for object frame '" <<link->name;
+    if(opt.verbose>0) LOG(0) <<"computing compound inertia for link frame '" <<link->name;
     link->computeCompoundInertia();
   }
   if(!link->inertia){
+    LOG(-1) <<"link '" <<link->name <<"' does not have inertia! -> computing standard inertias (It's better if you define inertias for all links before starting physix)";
     bool hasMass = link->standardizeInertias();
     if(hasMass){
-      LOG(-1) <<"link '" <<link->name <<"' does not have proper inertia! I computed standard inertias (It's better if you define inertias for all links before starting physix)";
     }else{
       if(opt.verbose>0) LOG(0) <<"link '" <<link->name <<"' has no mases -> becomes static";
     }
@@ -724,6 +724,12 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
     // f->inertia->matrix.setDiag(conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()));
     // f->inertia->com = conv_PxVec3_arr(actor->getCMassLocalPose().p);
     // //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
+  }
+  if(link->inertia && link->inertia->mass<1e-12){
+    LOG(-1) <<"link '" <<link->name <<"' has zero mass -> making it minimally .001";
+    link->inertia->mass = .001;
+    link->inertia->com.setZero();
+    link->inertia->matrix.setDiag({.001,.001,.001});
   }
 
   //-- decide on the type
@@ -755,9 +761,9 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     //   geometry = make_shared<PxCapsuleGeometry>(s->size(1), .5*s->size(0));
     //   if(opt.verbose>0) LOG(0) <<"  adding shape capsule '" <<s->frame.name <<"' (" <<s->type() <<")";
     // } break;
-    case rai::ST_cylinder:{
-      NIY;
-    } break;
+    // case rai::ST_cylinder:{
+    //   NIY;
+    // } break;
     case rai::ST_ssCylinder:
     case rai::ST_ssCvx: {
       floatA Vfloat = rai::convert<float>(s->sscCore().V);
@@ -871,18 +877,18 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes
 
   //-- set inertia
   if(type != rai::BT_static) {
-    CHECK(f->inertia, "dynamic links need inertia!");
-    CHECK(f->inertia->mass>0., "dynamic links need inertia!");
+    CHECK(f->inertia, "dynamic links need inertia! (frame: " <<f->name <<")");
+    CHECK(f->inertia->mass>0., "dynamic links need inertia! (frame: " <<f->name <<")");
     actor->setMass(f->inertia->mass);
     if(f->inertia->com.isZero && f->inertia->matrix.isDiagonal()){
       actor->setMassSpaceInertiaTensor({float(f->inertia->matrix.m00), float(f->inertia->matrix.m11), float(f->inertia->matrix.m22)});
     }else{
-      arr I;
-      rai::Transformation t = f->inertia->getDiagTransform(I);
+      arr Idiag;
+      rai::Transformation t = f->inertia->getDiagTransform(Idiag);
       if(!t.pos.isZero || !t.rot.isZero){
         actor->setCMassLocalPose(conv_Transformation2PxTrans(t));
       }
-      actor->setMassSpaceInertiaTensor({float(I(0)), float(I(1)), float(I(2))});
+      actor->setMassSpaceInertiaTensor({float(Idiag(0)), float(Idiag(1)), float(Idiag(2))});
     }
     //      //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
   }

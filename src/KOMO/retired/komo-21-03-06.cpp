@@ -333,7 +333,7 @@ void KOMO::setState(const arr& x, const uintA& selectedVariablesOnly) {
 void KOMO_ext::useJointGroups(const StringA& groupNames, bool notThese) {
   world.selectJointsByGroup(groupNames, notThese);
 
-  world.simplify();
+  world.processStructure();
   world.getJointState();
 
 //  world.meldFixedJoints();
@@ -890,7 +890,7 @@ void KOMO_ext::setSquaredQAccVelHoming(double startTime, double endTime, double 
 
 void KOMO_ext::setConfigFromFile() {
   Configuration C(getParameter<String>("KOMO/modelfile"));
-//  K.simplify();
+//  K.processStructure();
   setConfig(
     C,
     getParameter<bool>("KOMO/useSwift", true)

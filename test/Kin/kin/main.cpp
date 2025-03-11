@@ -157,20 +157,20 @@ void TEST(Graph){
   
 //  rai::Configuration G("arm7.g");
 //  rai::Configuration K("kinematicTests.g");
-  rai::Configuration K("../../../../rai-robotModels/pr2/pr2.g");
+  rai::Configuration C("../../../../rai-robotModels/pr2/pr2.g");
 //  rai::Configuration G("../../../projects/17-LGP-push/quatJacTest.g");
 //  G.view(true);
 
-  K.prefixNames();
+  C.prefixNames();
   {
-    rai::Graph G = K.getGraph();
+    rai::Graph G = C.getGraph();
     G.displayDot();
     rai::wait(.5);
   }
 
-  K.simplify();
+  C.processStructure();
   {
-    rai::Graph G = K.getGraph();
+    rai::Graph G = C.getGraph();
     G.displayDot();
     rai::wait(.5);
   }
@@ -303,7 +303,7 @@ void TEST(KinematicSpeed){
 //  rai::Configuration K("kinematicTests.g");
   if(!rai::FileToken("../../../../rai-robotModels/pr2/pr2.g", false).exists()) return;
   rai::Configuration K("../../../../rai-robotModels/pr2/pr2.g");
-  K.simplify();
+  K.processStructure();
   uint n=K.getJointStateDimension();
   arr x(n);
   rai::timerStart();
@@ -524,7 +524,7 @@ void TEST(FollowRedundantSequence){
 //---------- test standard dynamic control
 void TEST(Dynamics){
   rai::Configuration C("arm7.g");
-  C.simplify();
+  C.processStructure();
   C.sortFrames();
   cout <<C <<endl;
 
@@ -691,12 +691,23 @@ void TEST(BlenderImport){
 // =============================================================================
 
 void testTexture(){
-  rai::Configuration C;
-  rai::Frame *f = C.addFrame("box");
-  f->setShape(rai::ST_box, {.2, .2, .2});
-  f->setPosition({0, 0, 1});
-  f->setTextureFile("../../Gui/retired/opengl/box.png",  randn(8,2));
-  C.view(true);
+  {
+    rai::Configuration C;
+    rai::Frame *f = C.addFrame("box");
+    f->setShape(rai::ST_box, {.2, .2, .2});
+    f->setPosition({0, 0, 1});
+    f->setTextureFile("../../Gui/retired/opengl/box.png",  randn(8,2));
+    C.view(true);
+  }
+  {
+    rai::Configuration C;
+    rai::Frame *f = C.addFrame("mesh");
+    // f->setMeshFile("/home/mtoussai/git/MuJoCo2Rai/fixtures/coffee_machines/nespresso/visuals/model_0.obj");
+    f->setMeshFile("/home/mtoussai/git/MuJoCo2Rai/MuJoCo2Rai/meshes/toaster_main_group_main_128_shape0.h5");
+    f->setPosition({0, 0, 1});
+    C.view(true);
+    C.writeMeshes("meshes/");
+  }
 }
 
 // =============================================================================
@@ -715,12 +726,12 @@ void testInertias(){
 
   cout <<obj1->getInertia() <<endl;
   cout <<obj2->getInertia() <<endl;
-  obj1->computeCompoundInertia(true);
-  obj2->computeCompoundInertia(true);
+  obj1->computeCompoundInertia();
+  obj2->computeCompoundInertia();
   cout <<obj1->getInertia() <<endl;
   cout <<obj2->getInertia() <<endl;
 
-  C.standardizeInertias(true);
+  C.processInertias(true);
   cout <<C <<endl;
   cout <<obj1->getInertia() <<endl;
   cout <<obj2->getInertia() <<endl;
@@ -732,6 +743,8 @@ void testInertias(){
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
+
+  testTexture(); return 0;
 
   testMini();
   testLoadSave();

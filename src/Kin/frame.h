@@ -146,9 +146,9 @@ struct Frame : NonCopyable {
 
   //composed object manipulation
   Transformation transformToDiagInertia(bool transformOwnMesh=false);
-  Frame& computeCompoundInertia(bool clearChildInertias=true);
+  Frame& computeCompoundInertia();
   Frame& convertDecomposedShapeToChildFrames();
-  bool standardizeInertias(bool _transformToDiagInertia=false);
+  bool standardizeInertias(bool recomputeInertias=true, bool _transformToDiagInertia=false);
 
   //I/O
   void read(const Graph& ats);

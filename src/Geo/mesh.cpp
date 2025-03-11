@@ -54,6 +54,8 @@ SharedTextureImage& Mesh::texImg(const char* file){
       if(p) _texImg = *p;
       else{
         _texImg = make_shared<SharedTextureImage>();
+        _texImg->img = rai::loadImage(file);
+        _texImg->file.setCarray(file, strlen(file)+1);
         params()->add<shared_ptr<SharedTextureImage>>(file, _texImg);
       }
     }else{
@@ -1732,8 +1734,11 @@ void Mesh::writeH5(const char* filename, const str& group) {
   if(V.d0<65535) H.add(group+"/faces", convert<uint16_t>(T)); else H.add(group+"/faces", T);
   if(C.N) H.add(group+"/colors", convert<byte>(C*255.));
   if(cvxParts.N) H.add(group+"/parts", cvxParts);
-  if(texCoords.N) H.add(group+"/textureCoords", texCoords);
-  if(_texImg) H.add(group+"/textureImg", texImg().img);
+  if(texCoords.N) H.add(group+"/textureCoords", convert<float>(texCoords));
+  if(_texImg){
+    if(_texImg->file.N) H.add<char>(group+"/textureFile", texImg().file);
+    else H.add<byte>(group+"/textureImg", texImg().img);
+  }
 }
 
 void Mesh::readH5(const char* filename, const str& group) {
@@ -1744,8 +1749,12 @@ void Mesh::readH5(const char* filename, const str& group) {
   C = convert<double>(H.read<byte>(group+"/colors", true))/255.;
   cvxParts = H.read<uint>(group+"/parts", true);
   texCoords = H.read<double>(group+"/textureCoords", true);
-  byteA __texImg = H.read<byte>(group+"/textureImg", true);
-  if(__texImg.N) texImg().img = __texImg;
+  charA __texFile = H.read<char>(group+"/textureFile", true);
+  if(__texFile.N) texImg(__texFile.p);
+  else{
+    byteA __texImg = H.read<byte>(group+"/textureImg", true);
+    if(__texImg.N) texImg().img = __texImg;
+  }
 }
 
 #if 1

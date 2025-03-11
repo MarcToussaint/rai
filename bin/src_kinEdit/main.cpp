@@ -23,7 +23,7 @@ int main(int argc,char **argv){
 
   rai::String file=rai::getParameter<rai::String>("file",STRING("none"));
   if(rai::argc>=2 && rai::argv[1][0]!='-') file=rai::argv[1];
-  LOG(0) <<"== opening file `" <<file <<"'" <<endl;
+  LOG(0) <<"== file: '" <<file <<"'";
 
   if(file=="none") return 0;
 
@@ -48,8 +48,8 @@ int main(int argc,char **argv){
 
     //-- some optional manipulations
     if(rai::checkParameter<bool>("prune")){
-      LOG(0) <<"PRUNING STRUCTURE";
-      C.simplify(true, true, false);
+      LOG(0) <<"PROCESSING STRUCTURE";
+      C.processStructure(true, true, false);
     }
 
     //-- sort frames
@@ -58,7 +58,7 @@ int main(int argc,char **argv){
     C.sortFrames();
     //  }
 
-    //    C.simplify(false, false, false);
+    //    C.processStructure(false, false, false);
     C.ensure_q();
     C.checkConsistency();
     C.checkUniqueNames(true);

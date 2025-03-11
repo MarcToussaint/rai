@@ -42,7 +42,7 @@ SplinedKOMO::SplinedKOMO(uint degree, uint numCtrlPoints, KOMO& _komo)
   C.copy(komo.world, true);
   C.pruneInactiveJoints();
   C.pruneRigidJoints();
-  C.simplify();
+  C.processStructure();
   C.sortFrames();
   LOG(0) <<"DOFS:" <<C.getJointNames();
   LOG(0) <<"vel limits:" <<C.getTorqueLimits(C.activeDofs, 2);

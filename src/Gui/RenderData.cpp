@@ -520,7 +520,7 @@ void RenderAsset::mesh(rai::Mesh& mesh, double avgNormalsThreshold){
   CHECK_EQ(mesh.V.d0, mesh.Vn.d0, "");
   vertices = rai::convert<float>(mesh.V);
   normals = rai::convert<float>(mesh.Vn);
-  if(!mesh._texImg){
+  if(!mesh._texImg || !mesh._texImg->img.N || !mesh.texCoords.N){
     if(mesh.C.N){
       CHECK_EQ(mesh.V.d0, mesh.C.d0, "");
       CHECK_EQ(mesh.C.d1, 4, "");

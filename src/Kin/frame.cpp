@@ -288,13 +288,13 @@ void rai::Frame::prefixSubtree(const char* prefix) {
   for(auto* f:F) f->name.prepend(prefix);
 }
 
-rai::Frame& rai::Frame::computeCompoundInertia(bool clearChildInertias) {
+rai::Frame& rai::Frame::computeCompoundInertia() {
   FrameL all = {};
   getRigidSubFrames(all, false);
   Inertia& I = getInertia();
   for(rai::Frame* f:all) if(f->inertia) {
       I.add(*f->inertia, f->ensure_X() / ensure_X());
-      if(clearChildInertias) delete f->inertia;
+      delete f->inertia;
     }
   if(I.com.diffZero()<1e-12) I.com.setZero();
   if(I.matrix.isDiagonal()) I.matrix.deleteOffDiagonal();
@@ -324,7 +324,7 @@ rai::Frame& rai::Frame::convertDecomposedShapeToChildFrames() {
   return *this;
 }
 
-bool rai::Frame::standardizeInertias(bool _transformToDiagInertia){
+bool rai::Frame::standardizeInertias(bool recomputeInertias, bool _transformToDiagInertia){
   //-- collect all link shapes
   FrameL sub = {this};
   getRigidSubFrames(sub, false);
@@ -335,17 +335,19 @@ bool rai::Frame::standardizeInertias(bool _transformToDiagInertia){
   if(!hasMass && !joint) return false; //root links without mass: don't give them mass
 
   //-- redo inertias of all shapes
-  for(rai::Frame* ch: sub){
-    bool needsInertia = ch->shape
-                        && ch->getShape().type()!=rai::ST_marker
-                        && ch->getShape().type()!=rai::ST_camera
-                        && ((ch->ats && ch->ats->get<bool>("simulate", false))
-                            || ch->getShape().alpha()==1.);
-    if(!needsInertia && ch->inertia) delete ch->inertia;
-    if(needsInertia){
-      if(!ch->shape->_mesh) ch->shape->createMeshes();
-      ch->getInertia().mass = -1.;
-      ch->getInertia().defaultInertiaByShape();
+  if(recomputeInertias){
+    for(rai::Frame* ch: sub){
+      bool needsInertia = ch->shape
+                          && ch->getShape().type()!=rai::ST_marker
+                          && ch->getShape().type()!=rai::ST_camera
+                          && ((ch->ats && ch->ats->get<bool>("simulate", false))
+                              || ch->getShape().alpha()==1.);
+      if(!needsInertia && ch->inertia) delete ch->inertia;
+      if(needsInertia){
+        if(!ch->shape->_mesh) ch->shape->createMeshes();
+        ch->getInertia().mass = -1.;
+        ch->getInertia().defaultInertiaByShape();
+      }
     }
   }
 
@@ -608,7 +610,7 @@ rai::Frame& rai::Frame::setMesh(const arr& verts, const uintA& tris, const byteA
   if(cvxParts.N) {
     mesh.cvxParts = cvxParts;
   }
-  mesh.version++; //if(shape->glListId>0) shape->glListId *= -1;
+  mesh.version++;
   C.view_unlock();
   return *this;
 }
@@ -617,9 +619,12 @@ rai::Frame& rai::Frame::setMeshFile(str file, double scale){
   C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
   rai::Mesh& mesh = getShape().mesh();
-  mesh.read(FILE(file), file.getLastN(3).p, file);
+  FileToken fil(file);
+  // fil.cd_file();
+  mesh.read(fil, file.getLastN(3).p, fil.name.p);
+  // fil.cd_start();
   if(scale!=1.) mesh.scale(scale);
-  getAts().set<str>("mesh", file);
+  getAts().set<FileToken>("mesh", FileToken(file));
   if(scale!=1.) getAts().set<double>("meshscale", scale);
   C.view_unlock();
   return *this;
@@ -631,13 +636,30 @@ rai::Frame& rai::Frame::setTextureFile(str imgFile, const arr& texCoords){
   if(!shape->_mesh) shape->createMeshes();
   CHECK(shape->_mesh, "mesh needs to be created before");
   rai::Mesh& mesh = getShape().mesh();
-  CHECK_EQ(texCoords.d1, 2, "needs texCoordinates of dimension (#vertices, 2)");
-  CHECK_EQ(texCoords.d0, mesh.V.d0, "needs texCoordinates of dimension (#vertices, 2)");
-  byteA img = rai::loadImage(imgFile);
-  mesh.texImg(imgFile).img = img;
-  mesh.texCoords = texCoords;
-  mesh.version++; //if(shape->glListId>0) shape->glListId *= -1;
-  getAts().set<str>("texture", imgFile);
+
+  if(!texCoords.N){ //try to set them automatically?
+    if(mesh.texCoords.N){ //just updating the texImg
+      CHECK_EQ(mesh.texCoords.d1, 2, "needs texCoordinates of dimension (#vertices, 2)");
+      CHECK_EQ(mesh.texCoords.d0, mesh.V.d0, "needs texCoordinates of dimension (#vertices, 2)");
+    }else{
+      if(shape->_type==ST_box){
+        mesh.texCoords = {0, 0, 1, 0, 1, 1, 0, 1,
+                          0, 0, 1, 0, 1, 1, 0, 1};
+      }else{
+        LOG(-1) <<"using random texture coords for frame '" <<name <<"'";
+        mesh.texCoords = rand({mesh.V.d0, 2});
+      }
+      mesh.texCoords.reshape(mesh.V.d0, 2);
+    }
+  }else{
+    CHECK_EQ(texCoords.d1, 2, "needs texCoordinates of dimension (#vertices, 2)");
+    CHECK_EQ(texCoords.d0, mesh.V.d0, "needs texCoordinates of dimension (#vertices, 2)");
+    mesh.texCoords = texCoords;
+  }
+
+  mesh.texImg(imgFile);
+  mesh.version++;
+  getAts().set<FileToken>("texture", rai::FileToken(imgFile));
   C.view_unlock();
   return *this;
 }
@@ -654,7 +676,7 @@ rai::Frame& rai::Frame::setLines(const arr& verts, const byteA& colors){
     mesh.C /= 255.;
     if(mesh.C.N <= 4) { mesh.C.reshape(-1); }
   }
-  mesh.version++; //if(shape->glListId>0) shape->glListId *= -1;
+  mesh.version++;
   C.view_unlock();
   return *this;
 }
@@ -679,7 +701,7 @@ rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors, co
     mesh.Vn = normals;
     mesh.Vn.reshape(-1, 3);
   }
-  mesh.version++; //if(shape->glListId>0) shape->glListId *= -1;
+  mesh.version++;
   C.view_unlock();
   return *this;
 }
@@ -709,7 +731,7 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
   if(colors.N) {
     mesh.C = reshapeColor(convert<double>(colors) /= 255.);
   }
-  mesh.version++; //if(shape->glListId>0) shape->glListId *= -1;
+  mesh.version++;
   C.view_unlock();
   return *this;
 }
@@ -1955,11 +1977,13 @@ void rai::Shape::read(const Graph& ats) {
 
     if(type()==rai::ST_mesh && !mesh().T.N) type()=rai::ST_pointCloud;
 
-    if(ats.get(fil, "texture"))     {
-      fil.cd_file();
-      mesh().texImg(fil.name).img = rai::loadImage(fil.name);
+    if(ats.get(str, "texture"))     { frame.setTextureFile(str); }
+    else if(ats.get(fil, "texture"))     {
+      // fil.cd_file();
+      frame.setTextureFile(fil.name);
+      // mesh().texImg(fil.name).img = rai::loadImage(fil.name);
       // read_ppm(mesh().texImg(fil.name).img, fil.name, true);
-      fil.cd_start();
+      // fil.cd_start();
     }
     if(ats.get(fil, "core"))      {
       fil.cd_file();
@@ -2290,6 +2314,7 @@ rai::Transformation rai::Inertia::getDiagTransform(arr& diag){
 }
 
 void rai::Inertia::write(std::ostream& os) const {
+  if(mass<=1e-12) return;
   os <<", mass: " <<mass;
   if(!com.isZero) {
     os <<", com: " <<com;
@@ -2302,6 +2327,7 @@ void rai::Inertia::write(std::ostream& os) const {
 }
 
 void rai::Inertia::write(Graph& g) {
+  if(mass<=1e-12) return;
   g.add<double>("mass", mass);
   if(!com.isZero) {
     g.add<arr>("com", com.getArr());

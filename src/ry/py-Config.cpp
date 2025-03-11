@@ -88,8 +88,10 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("tau")=1.
       )
 
-  .def("simplify", &rai::Configuration::simplify, "structurally simplify the Configuration (deleting frames, relinking to minimal tree)",
+  .def("processStructure", &rai::Configuration::processStructure, "structurally simplify the Configuration (deleting frames, relinking to minimal tree)",
            pybind11::arg("pruneNamed"), pybind11::arg("pruneNonContactNonMarker"), pybind11::arg("pruneTransparent") )
+  .def("processInertias", &rai::Configuration::processInertias, "collect all inertia at root frame of links, optionally reestimate all inertias based on standard surface density, optionally relocate the link frame to the COM with diagonalized I)",
+           pybind11::arg("recomputeInertias")=true, pybind11::arg("transformToDiagInertia")=false)
 
   .def("getFrame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName, bool warnIfNotExist) {
     rai::Frame* f = self->getFrame(frameName.c_str(), warnIfNotExist);
@@ -367,7 +369,7 @@ reloads, displays and animates the configuration whenever the file is changed"
 
   .def("writeMeshes", &rai::Configuration::writeMeshes,
        "write all object meshes in a directory",
-       pybind11::arg("pathPrefix"))
+       pybind11::arg("pathPrefix"), pybind11::arg("copyTextures"))
 
   .def("writeURDF", [](shared_ptr<rai::Configuration>& self) { str s; self->writeURDF(s);  return pybind11::str(s.p, s.N); },
   "write the full configuration as URDF in a string, e.g. for file export")

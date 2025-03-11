@@ -9,7 +9,7 @@ void TEST(CameraView){
   rai::Configuration C;
   C.addFile("../../../../rai-robotModels/pr2/pr2.g");
   C.addFile("../../../../rai-robotModels/objects/kitchen.g");
-  C.simplify();
+  C.processStructure();
   C.view();
 
   rai::CameraView V(C, true);

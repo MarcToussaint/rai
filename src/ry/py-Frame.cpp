@@ -69,7 +69,7 @@ void init_Frame(pybind11::module& m) {
   .def("unLink", &rai::Frame::unLink, "")
   .def("makeRoot", &rai::Frame::makeRoot, "", pybind11::arg("untilPartBreak"))
   .def("transformToDiagInertia", &rai::Frame::transformToDiagInertia, "")
-  .def("computeCompoundInertia", &rai::Frame::computeCompoundInertia, "", pybind11::arg("clearChildInertias")=true)
+  .def("computeCompoundInertia", &rai::Frame::computeCompoundInertia, "")
   .def("convertDecomposedShapeToChildFrames", &rai::Frame::convertDecomposedShapeToChildFrames, "")
 
   .def("setAttribute", &rai::Frame::setAttribute, "")

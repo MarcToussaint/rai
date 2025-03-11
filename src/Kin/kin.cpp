@@ -1259,7 +1259,7 @@ void Configuration::pruneUselessFrames(bool pruneNamed, bool pruneNonContactNonM
   }
 }
 
-void Configuration::simplify(bool pruneNamed, bool pruneNonContactNonMarker, bool pruneTransparent) {
+void Configuration::processStructure(bool pruneNamed, bool pruneNonContactNonMarker, bool pruneTransparent) {
   pruneEmptyShapes();
   reconnectLinksToClosestJoints();
   reconnectShapesToParents();
@@ -1268,9 +1268,9 @@ void Configuration::simplify(bool pruneNamed, bool pruneNonContactNonMarker, boo
   checkConsistency();
 }
 
-void Configuration::standardizeInertias(bool addSeparateInertiaFrames){
+void Configuration::processInertias(bool recomputeInertias, bool transformToDiagInertia){
   FrameL F = getLinks();
-  for(rai::Frame *link : F) link->standardizeInertias(addSeparateInertiaFrames);
+  for(rai::Frame *link : F) link->standardizeInertias(recomputeInertias, transformToDiagInertia);
 }
 
 void Configuration::sortFrames() {
@@ -2694,28 +2694,54 @@ void Configuration::writeCollada(const char* filename, const char* format) const
 #endif //ASSIMP
 
 /// write meshes into an own binary array file format
-void Configuration::writeMeshes(str pathPrefix) const {
+void Configuration::writeMeshes(str pathPrefix, bool copyTextures) const {
   if(pathPrefix && pathPrefix(-1)=='/'){
     if(!FileToken(pathPrefix).exists()){
       rai::system(STRING("mkdir -p " <<pathPrefix));
     }
   }
+  if(copyTextures){
+    auto P =params();
+    NodeL texs = P->findNodesOfType(typeid(shared_ptr<SharedTextureImage>));
+    uint texCount=0;
+    for(Node* n:texs) {
+      shared_ptr<SharedTextureImage> t = n->as<shared_ptr<SharedTextureImage>>();
+      rai::FileToken fil(t->file.p);
+      fil.decomposeFilename();
+      str newfilename = STRING(texCount++ <<'_' <<fil.name);
+      if(!FileToken(newfilename).exists()){
+        str cmd = STRING("cp " <<fil.fullPath() <<' ' <<pathPrefix <<newfilename);
+        rai::system(cmd);
+      }
+      t->file.setCarray(newfilename.p, newfilename.N+1);
+      for(Frame* f:frames){
+        if(f->shape && f->shape->_mesh && f->shape->_mesh->_texImg){
+          if(f->shape->_mesh->_texImg.get() == t.get()){
+            Node *n = f->ats->findNode("texture"); if(n) delete n;
+            f->ats->getNew<FileToken>("texture").name <<pathPrefix <<newfilename;
+          }
+        }
+      }
+    }
+  }
   for(Frame* f:frames) {
     if(f->shape &&
         (f->shape->type()==ST_mesh || f->shape->type()==ST_ssCvx || f->shape->type()==ST_sdf)) {
-      String filename;
-      filename <<pathPrefix;
+      String newfilename;
+      newfilename <<pathPrefix <<f->name <<".h5";
       if(!f->ats) f->ats = make_shared<Graph>();
-      filename <<f->name <<".h5";
-      f->ats->getNew<FileToken>("mesh").name = filename;
+      Node *n;
+      n = f->ats->findNode("mesh"); if(n) delete n;
+      n = f->ats->findNode("meshscale"); if(n) delete n;
+      f->ats->getNew<FileToken>("mesh").name = newfilename;
       if(f->shape->type()==ST_mesh || f->shape->type()==ST_sdf){
-        f->shape->mesh().writeH5(filename, "mesh");
+        f->shape->mesh().writeH5(newfilename, "mesh");
       }else if(f->shape->type()==ST_ssCvx){
-        f->shape->sscCore().writeH5(filename, "mesh");
+        f->shape->sscCore().writeH5(newfilename, "mesh");
       }else if(f->shape->_sdf) {
-        filename.clear() <<pathPrefix <<f->name <<".vol";
-        f->ats->getNew<FileToken>("sdf").name = filename;
-        f->shape->_sdf->write(FILE(filename));
+        newfilename.clear() <<pathPrefix <<f->name <<".vol";
+        f->ats->getNew<FileToken>("sdf").name = newfilename;
+        f->shape->_sdf->write(FILE(newfilename));
       }
     }
   }
@@ -2824,15 +2850,13 @@ void Configuration::displayDot() {
 }
 
 void Configuration::report(std::ostream& os) const {
-  uint nShapes=0, nUc=0;
+  uint nShapes=0;
   for(Frame* f:frames) if(f->shape) nShapes++;
-//  for(Dof* j:activeJoints) if(j->uncertainty) nUc++;
 
   os <<"Configuration: q.N=" <<getJointStateDimension()
      <<" #frames=" <<frames.N
      <<" #dofs=" <<activeDofs.N
      <<" #shapes=" <<nShapes
-     <<" #ucertainties=" <<nUc
      <<" #proxies=" <<proxies.N
      <<" #forces=" <<otherDofs.N
      <<" #evals=" <<setJointStateCount
@@ -3676,7 +3700,7 @@ void Configuration::watchFile(const char* filename) {
   Inotify ino(filename);
   for(;;) {
     //-- LOADING
-    LOG(0) <<"reloading `" <<filename <<"' ... ";
+    LOG(0) <<"loading `" <<filename <<"' ... ";
     {
       bool succ=true;
       FileToken file(filename, true);
@@ -3801,7 +3825,7 @@ void Configuration::watchFile(const char* filename) {
           gl.camera.unproject_fromPixelsAndGLDepth(x, gl.width, gl.height);
         }
         cout <<"SELECTION id: " <<id <<" world coords:" <<x <<endl;
-        if(id<frames.N) cout <<*frames.elem(id) <<endl;
+        if(id<frames.N) cout <<frames.elem(id)->name <<": {" <<*frames.elem(id) <<"}" <<endl;
       } else if(key=='r') { //random sample
         LOG(0) <<"setting random config";
         for(rai::Dof* d:activeDofs) d->sampleUniform=1.;
