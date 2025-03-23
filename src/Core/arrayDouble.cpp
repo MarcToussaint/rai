@@ -1086,8 +1086,8 @@ void op_crossProduct(arr& x, const arr& y, const arr& z) {
     x.p[1]=y.p[2]*z.p[0]-y.p[0]*z.p[2];
     x.p[2]=y.p[0]*z.p[1]-y.p[1]*z.p[0];
     if(y.jac || z.jac) {
-      if(!y.jac && z.jac) x.J() = skew(y) * (*z.jac);
-      else if(y.jac && !z.jac) x.J() = -skew(z) * (*y.jac);
+      if(!y.jac && z.jac) x.J() = skew(y.noJ()) * (*z.jac);
+      else if(y.jac && !z.jac) x.J() = -skew(z.noJ()) * (*y.jac);
       else x.J() = skew(y.noJ()) * (*z.jac) - skew(z.noJ()) * (*y.jac);
     }
     return;

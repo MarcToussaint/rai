@@ -691,12 +691,22 @@ void TEST(BlenderImport){
 // =============================================================================
 
 void testTexture(){
-  rai::Configuration C;
-  rai::Frame *f = C.addFrame("box");
-  f->setShape(rai::ST_box, {.2, .2, .2});
-  f->setPosition({0, 0, 1});
-  f->setTextureFile("../../Gui/retired/opengl/box.png",  randn(8,2));
-  C.view(true);
+  {
+    rai::Configuration C;
+    rai::Frame *f = C.addFrame("box");
+    f->setShape(rai::ST_box, {.2, .2, .2});
+    f->setPosition({0, 0, 1});
+    f->setTextureFile("../../Gui/retired/opengl/box.png",  randn(8,2));
+    C.view(true);
+  }
+  {
+    rai::Configuration C;
+    rai::Frame *f = C.addFrame("mesh");
+    f->setMeshFile("/home/mtoussai/git/MuJoCo2Rai/fixtures/coffee_machines/nespresso/visuals/model_0.obj");
+    f->setPosition({0, 0, 1});
+    C.view(true);
+    C.writeMeshes("meshes/");
+  }
 }
 
 // =============================================================================

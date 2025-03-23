@@ -119,14 +119,13 @@ case ${lib} in
 
     libpng)
 	git clone --single-branch -b libpng16 https://github.com/glennrp/libpng.git
-	cd libpng; ./configure --prefix=${pre} CFLAGS='-fPIC'
+	cd ${lib}; ./configure --prefix=${pre} CFLAGS='-fPIC'
 	make install
 	;;
 
     hdf5)
 	git clone --single-branch -b hdf5-1_10_4 https://github.com/HDFGroup/hdf5.git
-	cd hdf5
-	env CFLAGS="-fPIC" CXXFLAGS="-fPIC" ./configure --prefix=${pre} --enable-cxx --disable-tests --disable-tools --disable-shared
+	cd ${lib}; env CFLAGS="-fPIC" CXXFLAGS="-fPIC" ./configure --prefix=${pre} --enable-cxx --disable-tests --disable-tools --disable-shared
 	make install
 	;;
 
@@ -154,6 +153,12 @@ case ${lib} in
     glew)
 	wget https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0.tgz; tar xvzf glew-2.2.0.tgz
 	env GLEW_DEST=${pre} make -C glew-2.2.0 install
+	;;
+
+    freeglut)
+	git clone --single-branch -b v3.6.0 https://github.com/freeglut/freeglut.git
+	env CFLAGS="-fPIC" cmake -DCMAKE_INSTALL_PREFIX=${pre} ${lib} -B ${lib}/build
+	make -C ${lib}/build install
 	;;
 
     glfw)

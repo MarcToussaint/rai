@@ -1823,7 +1823,8 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           if(j->type==JT_free) offset=3;
           arr Jrot = j->X().rot.getMatrix() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-j_pos)); //(j->X().pos+j->X().rot*a->Q.pos)));  //cross-product of all 4 w-vectors with lever
-          Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3})));   //account for the potential non-normalization of q
+          double qnorm = sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3})));   //account for the potential non-normalization of q
+          Jrot /= qnorm; //+1e-4;
           //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J.elem(k,j_idx+offset+i) += Jrot(k,i);
           Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx+offset);
@@ -1884,7 +1885,8 @@ void Configuration::jacobian_angular(arr& J, Frame* a) const {
           if(j->type==JT_XBall) offset=1;
           if(j->type==JT_free) offset=3;
           arr Jrot = j->X().rot.getMatrix() * a->get_Q().rot.getJacobian(); //transform w-vectors into world coordinate
-          Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3}))); //account for the potential non-normalization of q
+          double qnorm = sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3}))); //account for the potential non-normalization of q
+          Jrot /= qnorm; //+1e-4;
           //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J.elem(k,j_idx+offset+i) += Jrot(k,i);
           Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx+offset);
