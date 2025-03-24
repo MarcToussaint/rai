@@ -192,11 +192,13 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
         M.texImg().img.reshape(tex->mHeight*tex->mWidth, 4);
         M.texImg().img.delColumns(-1);
         M.texImg().img.reshape(tex->mHeight, tex->mWidth, 3);
+        if(verbose>0) {
+          cout <<"embedded texture size: " <<M.texImg().img.dim() <<endl;
+        }
       }else{ //to be loaded from file
         std::string filename = this->directory + '/' + std::string(str.C_Str());
-
 	if(verbose>0) {
-	  cout <<"loading texture image: " <<filename <<endl;
+	  cout <<"loading external texture image: " <<filename <<endl;
 	}
 
         M.texImg(filename.c_str());

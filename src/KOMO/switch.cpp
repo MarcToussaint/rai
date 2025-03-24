@@ -142,6 +142,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
     CHECK_EQ(to, 0, "");
     CHECK(from->inertia, "can only make frames with intertia dynamic");
 
+    NIY
     // from->inertia->type=BT_dynamic;
     if(from->joint) {
       from->joint->H = 1e-1;
@@ -154,6 +155,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
     CHECK_EQ(to, 0, "");
     CHECK(from->inertia, "can only make frames with intertia kinematic");
 
+    NIY
     // from->inertia->type=BT_kinematic;
 //    if(from->joint){
 //      from->joint->constrainToZeroVel=false;
