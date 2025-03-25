@@ -89,7 +89,7 @@ void init_Config(pybind11::module& m) {
       )
 
   .def("processStructure", &rai::Configuration::processStructure, "structurally simplify the Configuration (deleting frames, relinking to minimal tree)",
-           pybind11::arg("pruneNamed"), pybind11::arg("pruneNonContactNonMarker"), pybind11::arg("pruneTransparent") )
+           pybind11::arg("pruneRigidJoints")=false, pybind11::arg("reconnectToLinks")=true, pybind11::arg("pruneNonContactShapes")=false, pybind11::arg("pruneTransparent")=false )
   .def("processInertias", &rai::Configuration::processInertias, "collect all inertia at root frame of links, optionally reestimate all inertias based on standard surface density, optionally relocate the link frame to the COM with diagonalized I)",
            pybind11::arg("recomputeInertias")=true, pybind11::arg("transformToDiagInertia")=false)
 
@@ -360,8 +360,8 @@ reloads, displays and animates the configuration whenever the file is changed"
   .def("asDict", [](shared_ptr<rai::Configuration>& self) { rai::Graph G; self->write(G);  return graph2dict(G); },
     "return the configuration description as a dict, e.g. for file export")
 
-  .def("write", [](shared_ptr<rai::Configuration>& self) { rai::String str; rai::Graph G; self->write(G); str <<G; return str; },
-       "return the configuration description as a str (similar to YAML), e.g. for file export")
+  .def("write", [](shared_ptr<rai::Configuration>& self) { rai::String str; rai::Graph G; self->sortFrames(); self->write(G); str <<G; return str; },
+     "return the configuration description as a str (similar to YAML), e.g. for file export")
 
   .def("writeMesh", &rai::Configuration::writeMesh,
        "write the full configuration in a ply mesh file",

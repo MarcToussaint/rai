@@ -176,9 +176,9 @@ struct Frame : NonCopyable {
   Frame& setTensorShape(const floatA& data, const arr& size);
   Frame& setImplicitSurface(const floatA& data, const arr& size, uint blur, double resample);
   Frame& setColor(const arr& color);
-  Frame& setJoint(rai::JointType jointType, const arr& limits= {});
+  Frame& setJoint(rai::JointType jointType, const arr& limits={}, double scale=1., Frame* mimic=0);
   Frame& setContact(int cont);
-  Frame& setMass(double mass);
+  Frame& setMass(double mass, const arr& inertiaMatrix={});
   Frame& setAttribute(const char* key, double value);
   Frame& setJointState(const arr& q); ///< throws error if this frame is not also a joint, and if q.size() != joint->dim
 

@@ -349,6 +349,11 @@ void Matrix::setId() {
   m01=m02=m10=m12=m20=m21=0.;
 }
 
+void Matrix::set(const arr& X){
+  CHECK_EQ(X.N, 9, "");
+  set(X.p);
+}
+
 void Matrix::setDiag(const arr& diag) {
   CHECK_EQ(diag.N, 3, "");
   setZero();

@@ -181,8 +181,8 @@ struct Configuration {
   void pruneEmptyShapes();
   void reconnectShapesToParents();
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
-  void pruneUselessFrames(bool pruneNamed=false, bool pruneNonContactNonMarker=false, bool pruneTransparent=false);  ///< delete frames that have no name, joint, and shape
-  void processStructure(bool pruneNamed=false, bool pruneNonContactNonMarker=false, bool pruneTransparent=false);        ///< call the three above methods in this order
+  void pruneUselessFrames(bool pruneNamed=false, bool pruneNonContactShapes=false, bool pruneTransparent=false);  ///< delete frames that have no name, joint, and shape
+  void processStructure(bool _pruneRigidJoints=false, bool reconnectToLinks=true, bool pruneNonContactShapes=false, bool pruneTransparent=false);        ///< call the three above methods in this order
   void processInertias(bool recomputeInertias=true, bool transformToDiagInertia=false);
   void sortFrames();
   void makeObjectsFree(const StringA& objects, double H_cost=0.);

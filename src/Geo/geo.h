@@ -74,7 +74,7 @@ struct Matrix {
 
   Matrix() {}
   Matrix(int zero) { CHECK_EQ(zero, 0, "this is only for initialization with zero"); setZero(); }
-  Matrix(const arr& m) { CHECK_EQ(m.N, 9, "");  set(m.p); }
+  Matrix(const arr& m) { set(m); }
   Matrix(const Matrix& m) : m00(m.m00), m01(m.m01), m02(m.m02), m10(m.m10), m11(m.m11), m12(m.m12), m20(m.m20), m21(m.m21), m22(m.m22) {}
   double* p() { return &m00; }
   arr getArr() const { return arr(&m00, 9, true).reshape(3, 3); }
@@ -84,6 +84,7 @@ struct Matrix {
   void setZero();
   void setRandom(double range=1.);
   void setId();
+  void set(const arr& X);
   void setDiag(const arr& diag);
   void setSymmetric(const arr& entries6);
   void setSkew(const Vector&);

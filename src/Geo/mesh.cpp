@@ -1425,9 +1425,10 @@ void Mesh::read(std::istream& is, const char* fileExtension, const char* filenam
   else if(!strcmp(fileExtension, "ply")) { readPLY(filename); }
   else if(!strcmp(fileExtension, "tri")) { readTriFile(is); }
   //  else if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { readStlFile(is); }
-  else if(!strcmp(fileExtension, "dae")) { *this = AssimpLoader(filename, true, false, 0).getSingleMesh(); }
-  else {
-    *this = AssimpLoader(filename, false, false, 0).getSingleMesh();
+  else{
+    bool flipYZ = false;
+    if(!strcmp(fileExtension, "dae")) flipYZ = rai::getParameter("assimp/daeFlipYZ", true);
+    *this = AssimpLoader(filename, flipYZ, false, 0).getSingleMesh();
   }
 }
 

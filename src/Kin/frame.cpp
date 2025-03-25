@@ -815,7 +815,7 @@ rai::Frame& rai::Frame::setColor(const arr& color) {
   return *this;
 }
 
-rai::Frame& rai::Frame::setJoint(rai::JointType jointType, const arr& limits) {
+rai::Frame& rai::Frame::setJoint(rai::JointType jointType, const arr& limits, double scale, Frame* mimic) {
   CHECK(parent, "a frame needs a parent to have a joint");
   if(joint) { delete joint; joint=nullptr; }
   if(jointType != JT_none) {
@@ -824,7 +824,12 @@ rai::Frame& rai::Frame::setJoint(rai::JointType jointType, const arr& limits) {
   if(limits.N) {
     joint->limits = limits;
   }
-//  if(jointType == JT_free) { joint->limits = {-10.,10,-10,10,-10,10, -1.,1,-1,1,-1,1,-1,1}; } //WTF!
+  if(scale!=1.) {
+    joint->scale = scale;
+  }
+  if(mimic) {
+    joint->setMimic(mimic->joint);
+  }
   return *this;
 }
 
@@ -833,7 +838,7 @@ rai::Frame& rai::Frame::setContact(int cont) {
   return *this;
 }
 
-rai::Frame& rai::Frame::setMass(double mass) {
+rai::Frame& rai::Frame::setMass(double mass, const arr& inertiaMatrix) {
   if(mass==0.) {
     if(inertia) delete inertia;
   } else {
@@ -841,7 +846,13 @@ rai::Frame& rai::Frame::setMass(double mass) {
       getInertia().scaleTo(mass);
     }else{
       getInertia().mass = mass;
-      getInertia().defaultInertiaByShape();
+
+      const arr &I=inertiaMatrix;
+      if(!I.N) getInertia().defaultInertiaByShape();
+      else if(I.N==3) getInertia().matrix.setDiag(I);
+      else if(I.N==6) getInertia().matrix.setSymmetric(I);
+      else if(I.N==9) getInertia().matrix.set(I);
+      else { HALT("given inertia matrix needs to have 3, 6, or 9 elements"); }
     }
   }
   return *this;
@@ -1201,13 +1212,15 @@ void rai::Dof::setMimic(Dof* m, bool unsetPreviousMimic) {
       mimic->mimicers.removeValue(this);
       mimic=0;
     }
+    CHECK(!mimic, "");
     if(joint()){
       CHECK(m->joint(), "");
       CHECK_EQ(m->joint()->type, joint()->type, "can't mimic joints of different type [could be generalized to dim]:" <<*this->frame <<" -- " <<*m->frame);
     }
-    CHECK(!mimic, "");
     mimic=m;
     mimic->mimicers.append(this);
+
+    active = mimic->active;
   }
 }
 

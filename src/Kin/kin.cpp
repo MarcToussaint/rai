@@ -1216,7 +1216,7 @@ void Configuration::reconnectShapesToParents() {
       new Shape(*f->parent, f->shape);
       if(f->ats){
         FileToken *fil=f->ats->find<FileToken>("mesh");
-        if(fil) f->parent->ats->add("mesh", *fil);
+        if(fil) f->parent->getAts().add("mesh", *fil);
       }
       delete f->shape;
       f->shape=0;
@@ -1228,22 +1228,20 @@ void Configuration::reconnectLinksToClosestJoints() {
   reset_q();
   for(Frame* f:frames) if(f->parent) {
       Transformation Q;
-      Frame* link = f->getUpwardLink(Q);
+      Frame* link = f->parent->getUpwardLink(Q);
       Q.rot.normalize();
 
-      if(f->joint && !Q.rot.isZero) continue; //only when rot is zero you can subsume the Q transformation into the Q of the joint
-      if(link!=f) { //there is a link's root
-        if(link!=f->parent) { //we can rewire to the link's root
-          f->parent->children.removeValue(f);
-          link->children.append(f);
-          f->parent = link;
-          f->set_Q() = Q;
-        }
+      if(f->joint && !Q.isZero()) continue; //only when rot is zero you can subsume the Q transformation into the Q of the joint
+      if(link!=f->parent) { //we can rewire to the link's root
+        f->parent->children.removeValue(f);
+        link->children.append(f);
+        f->parent = link;
+        f->set_Q() = Q*f->Q;
       }
     }
 }
 
-void Configuration::pruneUselessFrames(bool pruneNamed, bool pruneNonContactNonMarker, bool pruneTransparent) {
+void Configuration::pruneUselessFrames(bool pruneNamed, bool pruneNonContactShapes, bool pruneTransparent) {
   for(uint i=frames.N; i--;) {
     Frame* f=frames.elem(i);
     if(f->children.N || f->joint || f->dirDof || f->inertia) continue;
@@ -1251,7 +1249,7 @@ void Configuration::pruneUselessFrames(bool pruneNamed, bool pruneNonContactNonM
     //prune with shape?
     if(!f->shape){
       delete f; //that's all there is to do
-    }else if(pruneNonContactNonMarker && !f->shape->cont && f->shape->type()!=ST_marker){
+    }else if(pruneNonContactShapes && !f->shape->cont && f->shape->type()!=ST_marker){
       delete f;
     }else if(pruneTransparent && f->shape->alpha()<1.){
       delete f;
@@ -1259,11 +1257,15 @@ void Configuration::pruneUselessFrames(bool pruneNamed, bool pruneNonContactNonM
   }
 }
 
-void Configuration::processStructure(bool pruneNamed, bool pruneNonContactNonMarker, bool pruneTransparent) {
+void Configuration::processStructure(bool _pruneRigidJoints, bool reconnectToLinks, bool pruneNonContactShapes, bool pruneTransparent) {
+  sortFrames();
+  if(_pruneRigidJoints) pruneRigidJoints();
   pruneEmptyShapes();
-  reconnectLinksToClosestJoints();
-  reconnectShapesToParents();
-  pruneUselessFrames(pruneNamed, pruneNonContactNonMarker, pruneTransparent);
+  if(reconnectToLinks){
+    reconnectLinksToClosestJoints();
+    reconnectShapesToParents();
+  }
+  pruneUselessFrames(true, pruneNonContactShapes, pruneTransparent);
   ensure_indexedJoints();
   checkConsistency();
 }
