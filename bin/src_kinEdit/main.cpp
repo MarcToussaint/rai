@@ -49,7 +49,7 @@ int main(int argc,char **argv){
     //-- some optional manipulations
     if(rai::checkParameter<bool>("prune")){
       LOG(0) <<"PROCESSING STRUCTURE";
-      C.processStructure(true, true, false);
+      C.processStructure();
     }
 
     //-- sort frames

@@ -83,7 +83,7 @@ rai::NodeL rndParents(const rai::Graph& G){
 void rndModify(rai::Graph& G){
   switch(rnd(4)){
     case 0://add bool item
-      G.add<bool>(rai::String().setRandom(), true, rndParents(G));
+      G.add<bool>(rai::String().setRandom(), true) ->setParents(rndParents(G));
       break;
     case 1://add Subgraph item
       G.addSubgraph(rai::String().setRandom(), rndParents(G));

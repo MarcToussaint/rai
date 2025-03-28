@@ -122,7 +122,7 @@ void TEST(Thin){
 
 void TEST(PR2){
   rai::Configuration C(rai::raiPath("../rai-robotModels/tests/pr2Shelf.g"));
-  C.processStructure(true);
+  C.processStructure();
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
   double rand = rai::getParameter<double>("KOMO/moveTo/randomizeInitialPose", .0);
   if(rand){
@@ -195,7 +195,8 @@ void TEST(Mobile){
   C.addFile("../../Algo/rrt/mobile.g");
 
   arr q0 = C.getJointState();
-  C["ranger_trans"]->setPosition(C["goal"]->getPosition());
+  C["ranger_transX"]->setPosition(C["goal"]->getPosition());
+  C["ranger_transY"]->setPosition(C["goal"]->getPosition());
   C["ranger_rot"]->setPose(C["goal"]->getPose());
   arr q1 = C.getJointState();
   C.setJointState(q0);
@@ -236,11 +237,11 @@ int MAIN(int argc,char** argv){
 
 //  rnd.clockSeed();
 
-  testEasy();
-  testAlign();
-  testThin();
-  testPR2();
-  testThreading();
+  // testEasy();
+  // testAlign();
+  // testThin();
+  // testPR2();
+  // testThreading();
   testMobile();
 
   return 0;

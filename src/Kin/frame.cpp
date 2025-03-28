@@ -618,12 +618,19 @@ rai::Frame& rai::Frame::setMesh(const arr& verts, const uintA& tris, const byteA
 rai::Frame& rai::Frame::setMeshFile(str file, double scale){
   C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
-  rai::Mesh& mesh = getShape().mesh();
+
   FileToken fil(file);
+  auto p = params()->find<shared_ptr<rai::Mesh>>(file);
+  if(p){
+    getShape()._mesh = *p;
+  }else{
+    rai::Mesh& mesh = getShape().mesh();
+    params()->add<shared_ptr<rai::Mesh>>(file, getShape()._mesh);
   // fil.cd_file();
   mesh.read(fil, file.getLastN(3).p, fil.name.p);
   // fil.cd_start();
   if(scale!=1.) mesh.scale(scale);
+  }
   getAts().set<FileToken>("mesh", FileToken(file));
   if(scale!=1.) getAts().set<double>("meshscale", scale);
   C.view_unlock();
@@ -1975,12 +1982,12 @@ void rai::Shape::read(const Graph& ats) {
     else if(ats.get(d, "type"))    { type()=(ShapeType)(int)d;}
     else if(ats.get(str, "type"))  { str>> type(); }
 
-    if(ats.get(str, "mesh"))     { mesh().read(FILE(str), str.getLastN(3).p, str); }
-    else if(ats.get(fil, "mesh"))     {
-      fil.cd_file();
-      mesh().read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
-      fil.cd_start();
-    }
+    if(ats.get(str, "mesh"))     { frame.setMeshFile(str); } //mesh().read(FILE(str), str.getLastN(3).p, str); }
+    else if(ats.get(fil, "mesh"))     { frame.setMeshFile(fil.fullPath()); }
+      // fil.cd_file();
+      // mesh().read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
+      // fil.cd_start();
+    // }
 
     if(ats.get(str, "mesh_decomp")) { mesh().readH5(str, "decomp"); }
     else if(ats.get(fil, "mesh_decomp")) { fil.cd_file(); mesh().readH5(fil.name, "decomp"); fil.cd_start(); }

@@ -522,9 +522,13 @@ void RenderAsset::mesh(rai::Mesh& mesh, double avgNormalsThreshold){
   normals = rai::convert<float>(mesh.Vn);
   if(!mesh._texImg || !mesh._texImg->img.N || !mesh.texCoords.N){
     if(mesh.C.N){
-      CHECK_EQ(mesh.V.d0, mesh.C.d0, "");
-      CHECK_EQ(mesh.C.d1, 4, "");
-      colors = rai::convert<float>(mesh.C);
+      if(mesh.C.d0!=mesh.V.d0){
+        colors = rai::convert<float>(reshapeColor(mesh.C, mesh.V.d0));
+      }else{
+        CHECK_EQ(mesh.V.d0, mesh.C.d0, "");
+        CHECK_EQ(mesh.C.d1, 4, "");
+        colors = rai::convert<float>(mesh.C);
+      }
     }else{
       colors.resize(mesh.V.d0, 4);
       colors=1.;

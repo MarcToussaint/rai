@@ -406,9 +406,6 @@ std::shared_ptr<SolverReturn> ManipulationHelper::solve(int verbose) {
         cout <<sol.reportLagrangeGradients(k().featureNames) <<endl;
       }
       k().view(true, STRING("infeasible: " <<info <<"\n" <<*ret));
-      if(verbose>2) {
-        k().view_play(true, 0, 1.);
-      }
     } else {
       cout <<"  -- feasible: " <<info <<"\n     " <<*ret <<endl;
       if(verbose>2) {
@@ -417,9 +414,6 @@ std::shared_ptr<SolverReturn> ManipulationHelper::solve(int verbose) {
         rai::wait(.5);
         cout <<"  --" <<endl;
         k().view(true, STRING("feasible: " <<info <<"\n" <<*ret));
-        if(verbose>3) {
-          k().view_play(true, 0, 1.);
-        }
       }
     }
   }
@@ -475,9 +469,6 @@ arr ManipulationHelper::sample(const char* sampleMethod, int verbose) {
         cout <<"  --" <<endl;
       }
       k().view(true, STRING("infeasible: " <<info <<"\n" <<*ret));
-      if(verbose>2) {
-        k().view_play(true, 0, 1.);
-      }
     }
   } else {
     if(verbose>0) {
@@ -486,9 +477,6 @@ arr ManipulationHelper::sample(const char* sampleMethod, int verbose) {
         cout <<k().report(false, true, verbose>2) <<endl;
         cout <<"  --" <<endl;
         k().view(true, STRING("feasible: " <<info <<"\n" <<*ret));
-        if(verbose>3) {
-          k().view_play(true, 0, 1.);
-        }
       }
     }
   }

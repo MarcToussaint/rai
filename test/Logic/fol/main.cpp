@@ -32,9 +32,9 @@ void testFolLoadFile(){
   G.checkConsistency();
   rai::Graph& sub = G.addSubgraph();
   G.checkConsistency();
-  sub.add<bool>(0, true, {s, consts(0)});
+  sub.add<bool>(0, true) ->setParents({s, consts(0)});
   G.checkConsistency();
-  sub.add<bool>(0, true, {s, consts(2)});
+  sub.add<bool>(0, true) ->setParents({s, consts(2)});
   G.checkConsistency();
 }
 

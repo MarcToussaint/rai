@@ -514,14 +514,27 @@ void Mesh::box() {
 
 void Mesh::addMesh(const Mesh& mesh2, const Transformation& X) {
   uint n=V.d0, t=T.d0;
-  if(V.d0==C.d0 && (C.N || mesh2.C.N)) {
-    if(mesh2.V.d0==mesh2.C.d0) C.append(mesh2.C);
-    else if(mesh2.C.N==3) C.append(replicate(mesh2.C, mesh2.V.d0));
-    else if(mesh2.C.N==4) C.append(replicate(mesh2.C({0, 2}), mesh2.V.d0));
-    else if(!mesh2.C.N) C.append(replicate(arr{.8, .8, .8}, mesh2.V.d0));
+  if(!V.N){
+    C = mesh2.C;
   } else {
-    if(C.nd==2) C.clear();
+    if(!C.N && !mesh2.C.N){ //no color
+      //do nothing
+    }else if(C.nd==1 && mesh2.C==C){ //exact same color
+      //do nothing
+    }else{
+      C = reshapeColor(C,V.d0);
+      C.append(reshapeColor(mesh2.C, mesh2.V.d0));
+      CHECK(C.nd==2 && C.d0==V.d0+mesh2.V.d0, "colors misshaped")
   }
+  }
+  // if(V.d0==C.d0 && (C.N || mesh2.C.N)) {
+  //   if(mesh2.V.d0==mesh2.C.d0) C.append(mesh2.C);
+  //   else if(mesh2.C.N==3) C.append(replicate(mesh2.C, mesh2.V.d0));
+  //   else if(mesh2.C.N==4) C.append(replicate(mesh2.C({0, 2}), mesh2.V.d0));
+  //   else if(!mesh2.C.N) C.append(replicate(arr{.8, .8, .8}, mesh2.V.d0));
+  // } else {
+  //   if(C.nd==2) C.clear();
+  // }
   V.append(mesh2.V);
   T.append(mesh2.T);
   for(; t<T.d0; t++) {  T(t, 0)+=n;  T(t, 1)+=n;  T(t, 2)+=n;  }

@@ -86,7 +86,8 @@ void TEST(Mobile){
   C.addFile("mobile.g");
 
   arr q0 = C.getJointState();
-  C["ranger_trans"]->setPosition(C["goal"]->getPosition());
+  C["ranger_transX"]->setPosition(C["goal"]->getPosition());
+  C["ranger_transY"]->setPosition(C["goal"]->getPosition());
   C["ranger_rot"]->setPose(C["goal"]->getPose());
   arr q1 = C.getJointState();
   C.setJointState(q0);

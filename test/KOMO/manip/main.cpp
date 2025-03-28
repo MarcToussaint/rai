@@ -84,7 +84,7 @@ void testPickAndPlace(){
 
 //===========================================================================
 
-void testPush(){
+void testPushIntoTable(){
   rai::Configuration C;
   C.addFile("scene.g");
   C.delFrame("obstacle");
@@ -321,7 +321,7 @@ int main(int argc,char** argv){
   rnd.clockSeed();
 
   // testPickAndPlace();
-  testPush();
+  testPushIntoTable();
   // testPivot();
   // testMobileGrasp();
 

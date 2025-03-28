@@ -2698,7 +2698,7 @@ void Configuration::writeCollada(const char* filename, const char* format) const
 #endif //ASSIMP
 
 /// write meshes into an own binary array file format
-void Configuration::writeMeshes(str pathPrefix, bool copyTextures) const {
+void Configuration::writeMeshes(str pathPrefix, bool copyTextures, bool enumerateTextures) const {
   if(pathPrefix && pathPrefix(-1)=='/'){
     if(!FileToken(pathPrefix).exists()){
       rai::system(STRING("mkdir -p " <<pathPrefix));
@@ -2712,7 +2712,9 @@ void Configuration::writeMeshes(str pathPrefix, bool copyTextures) const {
       shared_ptr<SharedTextureImage> t = n->as<shared_ptr<SharedTextureImage>>();
       rai::FileToken fil(t->file.p);
       fil.decomposeFilename();
-      str newfilename = STRING(texCount++ <<'_' <<fil.name);
+      str newfilename;
+      if(enumerateTextures) newfilename <<texCount++ <<'_' <<fil.name;
+      else newfilename = fil.name;
       if(!FileToken(newfilename).exists()){
         str cmd = STRING("cp " <<fil.fullPath() <<' ' <<pathPrefix <<newfilename);
         rai::system(cmd);
@@ -2728,27 +2730,52 @@ void Configuration::writeMeshes(str pathPrefix, bool copyTextures) const {
       }
     }
   }
+  if(true){
+    auto P =params();
+    NodeL meshes = P->findNodesOfType(typeid(shared_ptr<rai::Mesh>));
+    uint meshCount=0;
+    for(Node* n:meshes) {
+      shared_ptr<rai::Mesh> m = n->as<shared_ptr<rai::Mesh>>();
+      rai::FileToken fil(n->key);
+      fil.name.resize(fil.name.find('.',true), true);
+      fil.decomposeFilename();
+      str newfilename = STRING(pathPrefix <<fil.name <<".h5");
+      if(!FileToken(newfilename).exists()){
+        if(m->C.d0==m->V.d0 && m->_texImg && m->texCoords.N){ m->C.clear(); }
+        m->writeH5(newfilename, "mesh");
+      }
   for(Frame* f:frames) {
-    if(f->shape &&
-        (f->shape->type()==ST_mesh || f->shape->type()==ST_ssCvx || f->shape->type()==ST_sdf)) {
-      String newfilename;
-      newfilename <<pathPrefix <<f->name <<".h5";
-      if(!f->ats) f->ats = make_shared<Graph>();
+        if(f->shape && f->shape->_mesh && f->shape->_mesh.get() == m.get()){
       Node *n;
       n = f->ats->findNode("mesh"); if(n) delete n;
+          n = f->ats->findNode("texture"); if(n) delete n;
       n = f->ats->findNode("meshscale"); if(n) delete n;
       f->ats->getNew<FileToken>("mesh").name = newfilename;
-      if(f->shape->type()==ST_mesh || f->shape->type()==ST_sdf){
-        f->shape->mesh().writeH5(newfilename, "mesh");
-      }else if(f->shape->type()==ST_ssCvx){
-        f->shape->sscCore().writeH5(newfilename, "mesh");
-      }else if(f->shape->_sdf) {
-        newfilename.clear() <<pathPrefix <<f->name <<".vol";
-        f->ats->getNew<FileToken>("sdf").name = newfilename;
-        f->shape->_sdf->write(FILE(newfilename));
       }
     }
   }
+  }
+  // for(Frame* f:frames) {
+  //   if(f->shape &&
+  //       (f->shape->type()==ST_mesh || f->shape->type()==ST_ssCvx || f->shape->type()==ST_sdf)) {
+  //     String newfilename;
+  //     newfilename <<pathPrefix <<f->name <<".h5";
+  //     if(!f->ats) f->ats = make_shared<Graph>();
+  //     Node *n;
+  //     n = f->ats->findNode("mesh"); if(n) delete n;
+  //     n = f->ats->findNode("meshscale"); if(n) delete n;
+  //     f->ats->getNew<FileToken>("mesh").name = newfilename;
+  //     if(f->shape->type()==ST_mesh || f->shape->type()==ST_sdf){
+  //       f->shape->mesh().writeH5(newfilename, "mesh");
+  //     }else if(f->shape->type()==ST_ssCvx){
+  //       f->shape->sscCore().writeH5(newfilename, "mesh");
+  //     }else if(f->shape->_sdf) {
+  //       newfilename.clear() <<pathPrefix <<f->name <<".vol";
+  //       f->ats->getNew<FileToken>("sdf").name = newfilename;
+  //       f->shape->_sdf->write(FILE(newfilename));
+  //     }
+  //   }
+  // }
 }
 
 /// write meshes into a single ply file

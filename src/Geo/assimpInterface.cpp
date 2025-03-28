@@ -90,10 +90,11 @@ void AssimpLoader::loadNode(const aiNode* node, const aiScene* scene, arr T, boo
 
   if(verbose>0) {
     LOG(0) <<" loading node '" <<node->mName.C_Str() <<"' of parent '" <<(node->mParent?node->mParent->mName.C_Str():"<nil>") <<"'";
-
+    if(verbose>1) {
     cout <<"Transform: T=\n" <<T <<"\n<" <<X <<'>' <<endl;
     cout <<"Trans scaling: " <<scales <<"ortho: ";
     cout <<scalarProduct(Rt[0], Rt[1]) <<' '<<scalarProduct(Rt[0], Rt[2]) <<' '<<scalarProduct(Rt[1], Rt[2]) <<endl;
+    }
   }
 
   names.append(node->mName.C_Str());
@@ -176,7 +177,7 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
 
   for(int type = aiTextureType_NONE; type<aiTextureType_UNKNOWN; type++){
     uint nTex = material->GetTextureCount(aiTextureType(type));
-    if(verbose>0) {
+    if(verbose>1) {
       cout <<"material: texture-type: " <<type <<" #textures: " <<nTex <<endl;
     }
     if(loadTextures && nTex) {
@@ -193,12 +194,12 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
         M.texImg().img.delColumns(-1);
         M.texImg().img.reshape(tex->mHeight, tex->mWidth, 3);
         if(verbose>0) {
-          cout <<"embedded texture size: " <<M.texImg().img.dim() <<endl;
+          LOG(0) <<"embedded texture size: " <<M.texImg().img.dim();
         }
       }else{ //to be loaded from file
         std::string filename = this->directory + '/' + std::string(str.C_Str());
 	if(verbose>0) {
-	  cout <<"loading external texture image: " <<filename <<endl;
+	  LOG(0) <<"loading external texture image: " <<filename;
 	}
 
         M.texImg(filename.c_str());
@@ -208,9 +209,9 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
     }
   }
 
-  if(M.texImg().img.d2!=3){
-    LOG(-1) << "no texture could be loaded";
-    M.texImg().img.clear();
+  if(M._texImg && M._texImg->img.d2!=3){
+    LOG(-1) << "loaded texture is improper - deleting it";
+    M._texImg.reset();
     M.texCoords.clear();
   }
 
