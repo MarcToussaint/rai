@@ -9,6 +9,7 @@
 #include "mesh.h"
 #include "qhull.h"
 #include "assimpInterface.h"
+#include "stbImage.h"
 
 #include "../Algo/ann.h"
 #include "../Optim/newton.h"

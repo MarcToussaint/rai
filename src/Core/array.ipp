@@ -78,7 +78,8 @@ template<class T> Array<T>::Array(Array<T>&& a)
     M(a.M),
     special(a.special) {
   //if(a.jac) jac = std::move(a.jac);
-  CHECK_EQ(a.d, &a.d0, "");
+  // CHECK_EQ(a.d, &a.d0, "NIY for larger tensors");
+  if(a.d!=&a.d0) { d=a.d; a.d=&a.d0; }
   a.p=NULL;
   a.N=a.nd=a.d0=a.d1=a.d2=0;
   a.isReference=false;
@@ -105,6 +106,7 @@ template<class T> Array<T>::~Array() {
   clear();
 #else //faster (leaves members non-zeroed..)
   if(special) { delete special; special=NULL; }
+  if(d!=&d0) { delete[] d; }
   if(M) {
     globalMemoryTotal -= M*sizeT;
     if(memMove==1) free(p); else delete[] p;
