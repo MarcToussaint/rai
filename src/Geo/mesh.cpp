@@ -82,7 +82,7 @@ void Mesh::clear() {
   graph.clear();
 }
 
-void Mesh::setBox(bool edgesOnly) {
+Mesh& Mesh::setBox(bool edgesOnly) {
   clear();
   double verts[24] = {
     -.5, -.5, -.5,
@@ -120,6 +120,7 @@ void Mesh::setBox(bool edgesOnly) {
   Vn.clear(); Tn.clear();
   graph.clear();
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
+  return *this;
 }
 
 void Mesh::setBox(const arr& lo, const arr& up, bool edgesOnly) {
@@ -461,15 +462,17 @@ void Mesh::subDivide(uint i) {
   T(t, 0)=v+2; T(t, 1)=v+1; T(t, 2)=c;   t++;
 }
 
-void Mesh::scale(double s) { V *= s; }
+Mesh& Mesh::scale(double s) { V *= s;  return *this; }
 
-void Mesh::scale(double sx, double sy, double sz) {
+Mesh& Mesh::scale(double sx, double sy, double sz) {
   uint i;
   for(i=0; i<V.d0; i++) {  V(i, 0)*=sx;  V(i, 1)*=sy;  V(i, 2)*=sz;  }
+  return *this;
 }
 
-void Mesh::scale(const arr& s) {
+Mesh& Mesh::scale(const arr& s) {
   scale(s.elem(0), s.elem(1), s.elem(2));
+  return *this;
 }
 
 void Mesh::translate(double dx, double dy, double dz) {
@@ -594,6 +597,17 @@ void Mesh::makeLines() {
   for(uint i=1; i<V.d0; i++) {
     T[i-1] = {i-1, i};
   }
+}
+
+void Mesh::makeLinesArrayFormatted() {
+  CHECK_EQ(T.d1, 2, "");
+  arr v(2*T.d0, 3);
+  for(uint i=0;i<T.d0;i++){
+    v[2*i] = V[T(i,0)];  T(i,0)=2*i;
+    v[2*i+1] = V[T(i,1)];  T(i,1)=2*i+1;
+  }
+  V = v;
+  isArrayFormatted=true;
 }
 
 void Mesh::makeArrayFormatted(double avgNormalsThreshold){

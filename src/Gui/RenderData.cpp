@@ -201,6 +201,7 @@ void RenderData::ensureInitialized(OpenGL &gl){
   id.progTensor_ModelT_WM = glGetUniformLocation(id.progTensor, "ModelT_WM");
   id.progTensor_ModelScale = glGetUniformLocation(id.progTensor, "ModelScale");
   id.progTensor_eyePosition_W = glGetUniformLocation(id.progTensor, "eyePosition_W");
+  id.progTensor_FlatColor = glGetUniformLocation(id.progTensor, "flatColor");
   id.progTensor_tensorTexture = glGetUniformLocation(id.progTensor, "tensorTexture");
 
   {
@@ -283,7 +284,7 @@ void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs,
       glUniform3f(idScale, obj->scale(0), obj->scale(1), obj->scale(2));
     }
 
-    if(renderFlatColors && idFlatColor>=0 && obj->flatColor.N){
+    if((renderFlatColors || type==_tensor) && idFlatColor>=0 && obj->flatColor.N){
       CHECK_EQ(obj->flatColor.N, 3, "");
       byte *rgb = obj->flatColor.p;
       glUniform4f(idFlatColor, rgb[0]/255.f, rgb[1]/255.f, rgb[2]/255.f, 1.);
@@ -454,15 +455,15 @@ void RenderData::glDraw(OpenGL& gl){
     if(renderUntil>=_shadow && opt.useShadow) glBindTexture(GL_TEXTURE_2D, 0);
   }
 
-  // glDisable(GL_DEPTH_TEST);
+  glDisable(GL_DEPTH_TEST);
   if(renderUntil>=_tensor) {
     glUseProgram(id.progTensor);
     glUniformMatrix4fv(id.progTensor_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
     glUniform3f(id.progTensor_eyePosition_W, camera.X.pos.x, camera.X.pos.y, camera.X.pos.z);
     glUniform1i(id.progTensor_tensorTexture, 0);
-    renderObjects(id.progTensor_ModelT_WM, sorting, _tensor, -1, id.progTensor_ModelScale);
+    renderObjects(id.progTensor_ModelT_WM, sorting, _tensor, id.progTensor_FlatColor, id.progTensor_ModelScale);
   }
-  // glEnable(GL_DEPTH_TEST);
+  glEnable(GL_DEPTH_TEST);
 
   if(renderUntil>=_marker) {
     glUseProgram(id.progMarker);

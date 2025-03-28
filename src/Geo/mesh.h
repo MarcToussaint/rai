@@ -54,7 +54,7 @@ struct Mesh {
 
   /// @name set or create
   void clear();
-  void setBox(bool edgesOnly=false);
+  Mesh& setBox(bool edgesOnly=false);
   void setBox(const arr& lo, const arr& up, bool edgesOnly=false);
   Mesh& setDot(); ///< an awkward mesh: just a single dot, not tris (e.g. cvx core of a sphere...)
   void setLine(double l); ///< an awkward mesh: just a single line, not tris (e.g. cvx core of a sphere...)
@@ -81,9 +81,9 @@ struct Mesh {
   /// @name transform and modify
   void subDivide();
   void subDivide(uint tri);
-  void scale(double s);
-  void scale(double sx, double sy, double sz);
-  void scale(const arr& s);
+  Mesh& scale(double s);
+  Mesh& scale(double sx, double sy, double sz);
+  Mesh& scale(const arr& s);
   void translate(double dx, double dy, double dz);
   void translate(const arr& d);
   void transform(const Transformation& t);
@@ -95,6 +95,8 @@ struct Mesh {
   void makeTriangleFan();
   void makeLines();
   void makeArrayFormatted(double avgNormalsThreshold=.9);
+  void makeLinesArrayFormatted();
+
 
   /// @name convex decomposition
   rai::Mesh decompose();
