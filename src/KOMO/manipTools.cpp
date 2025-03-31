@@ -59,7 +59,7 @@ void ManipulationHelper::setup_sequence(rai::Configuration& C, uint K, double ho
 
 void ManipulationHelper::setup_motion(rai::Configuration& C, uint K, uint steps_per_phase, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms){
   k().setTiming(double(K), steps_per_phase, 1., 2);
-  k().setConfig(C, true); //accumulated_collisions);
+  k().setConfig(C, accumulated_collisions);
   if(homing_scale>0.){
     k().addControlObjective({}, 0, homing_scale);
   }
@@ -390,7 +390,7 @@ std::shared_ptr<SolverReturn> ManipulationHelper::solve(int verbose) {
   CHECK(komo, "komo is not setup");
   rai::NLP_Solver sol;
   sol.setProblem(k().nlp());
-  sol.opt/*.set_damping(1e-1) */.set_verbose(verbose-1) .set_stopTolerance(1e-3) .set_lambdaMax(100.) .set_stopInners(30) .set_stopEvals(200);
+  sol.opt/*.set_damping(1e-1) */.set_verbose(verbose-1) .set_stopTolerance(1e-3) .set_lambdaMax(100.) .set_stopInners(30) .set_stopEvals(500);
   ret = sol.solve();
   if(ret->feasible) {
     path = k().getPath_qOrg();
