@@ -472,7 +472,7 @@ void RenderData::glDraw(OpenGL& gl){
 
   if(renderUntil>=_transparent) {
     glUseProgram(id.prog_ID);
-    renderObjects(id.prog_ModelT_WM, sorting, _transparent);
+    renderObjects(id.prog_ModelT_WM, sorting, _transparent, id.prog_FlatColor, -1, id.prog_textureDim);
   }
 
   if(renderUntil>=_text) {

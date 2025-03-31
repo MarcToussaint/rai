@@ -264,7 +264,7 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
 arr getStartGoalPath_new(rai::Configuration& C, const arr& qTarget, const arr& qHome, const rai::Array<Avoid>& avoids, StringA endeffectors, bool endeffApproach, bool endeffRetract) {
   auto info = STRING("end to end motion");
   ManipulationHelper M(info);
-  M.setup_point_to_point_motion(C, qTarget);
+  M.setup_point_to_point_motion(C, qTarget, 50);
   for(auto& gripper:endeffectors) {
     if(endeffRetract) M.retract({.0, .2}, gripper);
     if(endeffApproach) M.approach({.8, 1.}, gripper);

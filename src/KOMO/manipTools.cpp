@@ -87,10 +87,10 @@ void ManipulationHelper::setup_pick_and_place_waypoints(rai::Configuration& C, c
   k().addModeSwitch({1., -1.}, rai::SY_stable, {gripper, obj}, true);
 }
 
-void ManipulationHelper::setup_point_to_point_motion(rai::Configuration& C, const arr& q1, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
+void ManipulationHelper::setup_point_to_point_motion(rai::Configuration& C, const arr& q1, uint steps_per_phase, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
   /* setup a 1 phase fine-grained motion problem with 2nd order (acceleration) control costs */
   CHECK(!komo->T, "komo already previously setup");
-  setup_motion(C, 1, 50, homing_scale, acceleration_scale, accumulated_collisions, joint_limits, quaternion_norms);
+  setup_motion(C, 1, steps_per_phase, homing_scale, acceleration_scale, accumulated_collisions, joint_limits, quaternion_norms);
 
   if(q1.N){
     qTarget = q1;
@@ -504,7 +504,7 @@ void ManipulationHelper::play(rai::Configuration& C, double duration) {
   }
 }
 
-std::shared_ptr<ManipulationHelper> ManipulationHelper::sub_motion(uint phase, bool fixEnd, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms, const StringA& activeDofs) {
+std::shared_ptr<ManipulationHelper> ManipulationHelper::sub_motion(uint phase, uint steps_per_phase, bool fixEnd, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms, const StringA& activeDofs) {
   rai::Configuration C;
   arr q0, q1;
   k().getSubProblem(phase, C, q0, q1);
@@ -521,7 +521,7 @@ std::shared_ptr<ManipulationHelper> ManipulationHelper::sub_motion(uint phase, b
   if(!fixEnd) q1.clear();
 
   std::shared_ptr<ManipulationHelper> manip = make_shared<ManipulationHelper>(STRING("sub_motion"<<phase));
-  manip->setup_point_to_point_motion(C, q1, homing_scale, acceleration_scale, accumulated_collisions, joint_limits, quaternion_norms);
+  manip->setup_point_to_point_motion(C, q1, steps_per_phase, homing_scale, acceleration_scale, accumulated_collisions, joint_limits, quaternion_norms);
   return manip;
 }
 

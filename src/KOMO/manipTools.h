@@ -31,7 +31,7 @@ struct ManipulationHelper {
   void setup_sequence(rai::Configuration& C, uint K, double homing_scale=1e-2, double velocity_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true);
   void setup_motion(rai::Configuration& C, uint K, uint steps_per_phase, double homing_scale=0., double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true);
   void setup_pick_and_place_waypoints(rai::Configuration& C, const char* gripper, const char* obj, double homing_scale=1e-2, double velocity_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true);
-  void setup_point_to_point_motion(rai::Configuration& C, const arr& q1, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true);
+  void setup_point_to_point_motion(rai::Configuration& C, const arr& q1, uint steps_per_phase, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true);
   void setup_point_to_point_rrt(rai::Configuration& C, const arr& q0, const arr& q1, const StringA& explicitCollisionPairs);
 
   void add_stable_frame(rai::JointType type, const char* parent, const char* name, const char* initName=0, rai::Frame* initFrame=0, double markerSize=-1.);
@@ -63,7 +63,7 @@ struct ManipulationHelper {
   arr sample(const char* sampleMethod=0, int verbose=1);
   void debug(bool listObjectives=true, bool plotOverTime=false);
 
-  std::shared_ptr<ManipulationHelper> sub_motion(uint phase, bool fixEnd=true, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=false, const StringA& activeDofs={});
+  std::shared_ptr<ManipulationHelper> sub_motion(uint phase, uint steps_per_phase, bool fixEnd=true, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true, const StringA& activeDofs={});
   std::shared_ptr<rai::RRT_PathFinder> sub_rrt(uint phase, const StringA& explicitCollisionPairs= {}, const StringA& activeDofs={});
 
   void play(rai::Configuration& C, double duration=1.);
