@@ -1372,6 +1372,38 @@ uintA Mesh::getVertexDegrees() const {
   return deg;
 }
 
+void Mesh::samplePoints(arr& pts, arr& normals, uint n){
+  //-- random triangle selections
+  arr A(T.d0);
+  for(uint i=0; i<T.d0; i++) A(i) = getArea(i);
+  A = integral(A);
+  A *= double(n)/A(-1);
+  double off=rnd.uni();
+  uintA sel(n);
+  for(uint i=0,t=0; i<n; i++){
+    while(A(t)-off<i) t++;
+    sel(i)=t;
+  }
+  //-- random bc coordinates
+  arr T = sqrt(rand({n}));
+  arr S = rand({n});
+  arr B(3,n);
+  B[0] = 1.-T;
+  B[1] = (1.-S) % T;
+  B[2] = S % T;
+  B = (~B).reshape(n*3);
+  //-- apply bc to selected vertices and normals
+  CHECK(isArrayFormatted, "");
+  V.reshape(V.d0/3, 3, 3);
+  Vn.reshape(Vn.d0/3, 3, 3);
+  arr Vsel = B % V.sub(sel).reshape(n*3,3);
+  arr Nsel = B % Vn.sub(sel).reshape(n*3,3);
+  pts = ::sum(Vsel.reshape(n,3,3), 1u);
+  normals = ::sum(Nsel.reshape(n,3,3), 1u);
+  V.reshape(V.d0*3, 3);
+  Vn.reshape(Vn.d0*3, 3);
+}
+
 ANN& Mesh::ensure_ann() {
   if(!ann) ann = make_shared<ANN>();
   if(ann->X.d0 != V.d0) ann->setX(V);

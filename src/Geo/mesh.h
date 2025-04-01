@@ -127,6 +127,7 @@ struct Mesh {
   double getCircum(uint tri) const;
   double getVolume() const;
   uintA getVertexDegrees() const;
+  void samplePoints(arr& pts, arr& normals, uint n);
 
   ANN& ensure_ann();
 
