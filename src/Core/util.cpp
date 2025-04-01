@@ -1007,10 +1007,9 @@ rai::FileToken::FileToken() {
   baseDir = getcwd_string();
 }
 
-rai::FileToken::FileToken(const char* filename, bool change_dir) {
+rai::FileToken::FileToken(const char* filename) {
   baseDir = getcwd_string();
   name = filename;
-  if(change_dir) cd_file();
 //  if(!exists()) HALT("file '" <<filename <<"' does not exist");
 }
 
@@ -1037,14 +1036,15 @@ void rai::FileToken::decomposeFilename() {
   }
 }
 
-void rai::FileToken::cd_start() {
+void rai::FileToken::cd_base() {
   LOG(3) <<"entering path '" <<baseDir<<"'";
   if(chdir(baseDir)) HALT("couldn't change to directory '" <<baseDir <<"'");
 }
 
 void rai::FileToken::cd_file() {
-  cd_start();
-  if(!path.N) decomposeFilename();
+  name = fullPath();
+  baseDir = getcwd_string();
+  decomposeFilename();
   if(path!=".") {
     LOG(3) <<"entering path '" <<path<<"' from '" <<baseDir <<"'";
     if(chdir(path)) HALT("couldn't change to directory '" <<path <<"' from '" <<baseDir <<"'");
@@ -1057,10 +1057,9 @@ bool rai::FileToken::exists() {
   return r==0;
 }
 
-std::ostream& rai::FileToken::getOs(bool change_dir) {
+std::ostream& rai::FileToken::getOs() {
   CHECK(!is, "don't use a FileToken both as input and output");
   if(!os) {
-    if(change_dir) cd_file();
     os = std::make_unique<std::ofstream>();
     os->open(name);
     LOG(3) <<"opening output file '" <<name <<"'";
@@ -1069,15 +1068,13 @@ std::ostream& rai::FileToken::getOs(bool change_dir) {
   return *os;
 }
 
-std::istream& rai::FileToken::getIs(bool change_dir) {
+std::istream& rai::FileToken::getIs() {
   CHECK(!os, "don't use a FileToken both as input and output");
   if(!is) {
-    if(change_dir) cd_file();
     is = std::make_unique<std::ifstream>();
     is->open(name);
     LOG(3) <<"opening input file '" <<name <<"'";
     if(!is->good()){
-      if(change_dir) cd_start();
       THROW("could not open file '" <<name <<"' for input from '" <<baseDir <<" / " <<path <<"'");
     }
   }
@@ -1199,7 +1196,7 @@ uint rndInt(uint up) { return rnd.num(up); }
 Inotify::Inotify(const char* filename): fd(0), wd(0) {
   fd = inotify_init();
   if(fd<0) HALT("Couldn't initialize inotify");
-  fil = new rai::FileToken(filename, false);
+  fil = new rai::FileToken(filename);
   fil->decomposeFilename();
   wd = inotify_add_watch(fd, fil->path,
                          IN_MODIFY | IN_CREATE | IN_DELETE);

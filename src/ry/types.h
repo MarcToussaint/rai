@@ -17,8 +17,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
+#include <pybind11/pytypes.h>
 
-pybind11::dict graph2dict(const rai::Graph& G);
+pybind11::dict graph2dict(const rai::Graph& G, const rai::NodeL& parents={}, bool parentsInKeys=true);
 rai::Graph dict2graph(const pybind11::dict& dict);
 
 pybind11::list graph2list(const rai::Graph& G);
@@ -308,7 +309,7 @@ template <> struct type_caster<rai::Graph> {
   }
 
   static handle cast(const rai::Graph& G, return_value_policy, handle) {
-    return graph2dict(G).release();
+    return graph2dict(G, rai::NodeL{}).release();
   }
 };
 

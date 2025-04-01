@@ -51,9 +51,10 @@ FOL_World::FOL_World(const char* filename) : FOL_World() {
 }
 
 void FOL_World::init(const char* filename) {
-  FileToken file(filename, true);
+  FileToken file(filename);
+  file.cd_file();
   init(Graph(file));
-  file.cd_start();
+  file.cd_base();
 }
 
 void FOL_World::init(const Graph& _KB) {

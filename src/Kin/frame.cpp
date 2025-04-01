@@ -435,9 +435,10 @@ void rai::Frame::read(const Graph& ats) {
   //interpret some of the attributes
   Transformation tmp;
   if(transFromAts(tmp, ats, "X")) set_X() = tmp;
-  if(transFromAts(tmp, ats, "pose")) set_X() = tmp;
   if(transFromAts(tmp, ats, "Q")) set_Q() = tmp;
-  if(transFromAts(tmp, ats, "rel")) set_Q() = tmp;
+  if(transFromAts(tmp, ats, "pose")){
+    if(!parent) set_X() = tmp; else set_Q() = tmp;
+  }
 
   if(ats["type"]) ats["type"]->key = "shape"; //compatibility with old convention: 'body { type... }' generates shape
 
@@ -471,13 +472,15 @@ void rai::Frame::write(Graph& G) const {
 
   if(parent) {
     if(!Q.isZero()){
-      if(Q.rot.isZero) G.add<arr>("Q", Q.pos.getArr());
-      else G.add<arr>("Q", Q.getArr7d());
+      if(Q.rot.isZero) G.add<arr>("pose", Q.pos.getArr());
+      else if(Q.pos.isZero) G.add<arr>("pose", Q.rot.getArr());
+      else G.add<arr>("pose", Q.getArr7d());
     }
   } else {
     if(!X.isZero()){
-      if(X.rot.isZero) G.add<arr>("X", X.pos.getArr());
-      else G.add<arr>("X", X.getArr7d());
+      if(X.rot.isZero) G.add<arr>("pose", X.pos.getArr());
+      else if(X.pos.isZero) G.add<arr>("pose", X.rot.getArr());
+      else G.add<arr>("pose", X.getArr7d());
     }
   }
 
@@ -626,9 +629,9 @@ rai::Frame& rai::Frame::setMeshFile(str file, double scale){
   }else{
     rai::Mesh& mesh = getShape().mesh();
     params()->add<shared_ptr<rai::Mesh>>(file, getShape()._mesh);
-  // fil.cd_file();
+  fil.cd_file();
   mesh.read(fil, file.getLastN(3).p, fil.name.p);
-  // fil.cd_start();
+  fil.cd_base();
   if(scale!=1.) mesh.scale(scale);
   }
   getAts().set<FileToken>("mesh", FileToken(file));
@@ -1990,10 +1993,10 @@ void rai::Shape::read(const Graph& ats) {
     // }
 
     if(ats.get(str, "mesh_decomp")) { mesh().readH5(str, "decomp"); }
-    else if(ats.get(fil, "mesh_decomp")) { fil.cd_file(); mesh().readH5(fil.name, "decomp"); fil.cd_start(); }
+    else if(ats.get(fil, "mesh_decomp")) { fil.cd_file(); mesh().readH5(fil.name, "decomp"); fil.cd_base(); }
 
     if(ats.get(str, "mesh_points")) { mesh().readH5(str, "points"); }
-    else if(ats.get(fil, "mesh_points")) { fil.cd_file(); mesh().readH5(fil.name, "points"); fil.cd_start(); }
+    else if(ats.get(fil, "mesh_points")) { fil.cd_file(); mesh().readH5(fil.name, "points"); fil.cd_base(); }
 
     if(type()==rai::ST_mesh && !mesh().T.N) type()=rai::ST_pointCloud;
 
@@ -2008,7 +2011,7 @@ void rai::Shape::read(const Graph& ats) {
     if(ats.get(fil, "core"))      {
       fil.cd_file();
       sscCore().read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
-      fil.cd_start();
+      fil.cd_base();
     }
     if(ats.get(x, "core")) {
       x.reshape(-1, 3);

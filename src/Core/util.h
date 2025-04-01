@@ -372,17 +372,17 @@ struct FileToken {
   std::shared_ptr<std::ifstream> is;
 
   FileToken();
-  FileToken(const char* _filename, bool change_dir=false);
+  FileToken(const char* _filename);
   FileToken(const FileToken& ft);
   ~FileToken();
   FileToken& operator()() { return *this; }
 
   void decomposeFilename();
-  void cd_start();
+  void cd_base();
   void cd_file();
   bool exists();
-  std::ostream& getOs(bool change_dir=false);
-  std::istream& getIs(bool change_dir=false);
+  std::ostream& getOs();
+  std::istream& getIs();
   operator std::istream& () { return getIs(); }
   operator std::ostream& () { return getOs(); }
 
@@ -397,7 +397,7 @@ template<class T> FileToken& operator<<(T& x, FileToken& fil) { fil.getIs() >>x;
 template<class T> void operator>>(const T& x, FileToken& fil) { fil.getOs() <<x; }
 inline bool operator==(const FileToken&, const FileToken&) { return false; }
 }
-#define FILE(filename) (rai::FileToken(filename, false)()) //it needs to return a REFERENCE to a local scope object
+#define FILE(filename) (rai::FileToken(filename)()) //it needs to return a REFERENCE to a local scope object
 
 //===========================================================================
 //
@@ -606,10 +606,11 @@ inline bool operator==(Type& t1, Type& t2) { return t1.typeId() == t2.typeId(); 
 //
 
  template<class T> T fromFile(const char* filename) {
-   rai::FileToken file(filename, true);
+   rai::FileToken file(filename);
    T x;
+   file.cd_file();
    x.read(file.getIs());
-   file.cd_start();
+   file.cd_base();
    return x;
  }
 

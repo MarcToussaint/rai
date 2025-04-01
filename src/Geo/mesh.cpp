@@ -516,7 +516,7 @@ void Mesh::addMesh(const Mesh& mesh2, const Transformation& X) {
   uint n=V.d0, t=T.d0;
   if(!V.N){
     C = mesh2.C;
-  } else {
+  }else{
     if(!C.N && !mesh2.C.N){ //no color
       //do nothing
     }else if(C.nd==1 && mesh2.C==C){ //exact same color
@@ -525,7 +525,7 @@ void Mesh::addMesh(const Mesh& mesh2, const Transformation& X) {
       C = reshapeColor(C,V.d0);
       C.append(reshapeColor(mesh2.C, mesh2.V.d0));
       CHECK(C.nd==2 && C.d0==V.d0+mesh2.V.d0, "colors misshaped")
-  }
+    }
   }
   // if(V.d0==C.d0 && (C.N || mesh2.C.N)) {
   //   if(mesh2.V.d0==mesh2.C.d0) C.append(mesh2.C);

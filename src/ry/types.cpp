@@ -10,8 +10,17 @@
 
 #include "types.h"
 
-pybind11::dict graph2dict(const rai::Graph& G) {
+pybind11::dict graph2dict(const rai::Graph& G, const rai::NodeL& parents, bool parentsInKeys) {
   pybind11::dict dict;
+
+  if(!parentsInKeys){
+    if(parents.N==1){
+      dict["Parent"] = STRING("(" <<parents.elem()->key <<")");
+    }else if(parents.N>1){
+      NIY;
+    }
+  }
+
   for(rai::Node* n:G) {
     str key;
     if(n->key.N) key=n->key;
@@ -19,11 +28,11 @@ pybind11::dict graph2dict(const rai::Graph& G) {
 
     //-- write value
     if(n->is<rai::Graph>()) {
-      pybind11::dict sub = graph2dict(n->as<rai::Graph>());
-      if(n->parents.N==1){
-        sub["parent"] = n->parents.elem()->key;
-      }else if(n->parents.N>1){
-        NIY;
+      pybind11::dict sub = graph2dict(n->as<rai::Graph>(), n->parents, parentsInKeys);
+      if(parentsInKeys && n->parents.N){
+        key <<" (";
+        for(rai::Node* p:n->parents) key <<p->key <<' ';
+        key(-1) = ')';
       }
       dict[key.p] = sub;
     } else if(n->is<double>()) {
@@ -37,7 +46,7 @@ pybind11::dict graph2dict(const rai::Graph& G) {
     } else if(n->is<str>()) {
       dict[key.p] = n->as<str>().p;
     } else if(n->is<rai::FileToken>()) {
-      dict[key.p] = n->as<rai::FileToken>().autoPath().p;
+      dict[key.p] = STRING("<" <<n->as<rai::FileToken>().autoPath().p <<">");
     } else if(n->is<arr>()) {
       dict[key.p] = n->as<arr>().vec();
     } else if(n->is<arrA>()) {

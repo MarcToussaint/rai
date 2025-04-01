@@ -222,7 +222,8 @@ Frame* Configuration::addFrame(const char* name, const char* parent, const char*
 
 Frame* Configuration::addFile(const char* filename, const char* namePrefix) {
   uint n=frames.N;
-  FileToken file(filename, true);
+  FileToken file(filename);
+  file.cd_file();
   Graph G(file);
   if(namePrefix && namePrefix[0]) {
     for(Node* n:G) {
@@ -233,7 +234,7 @@ Frame* Configuration::addFile(const char* filename, const char* namePrefix) {
     }
   }
   addDict(G);
-  file.cd_start();
+  file.cd_base();
   if(frames.N==n) return 0; //no frames added
   return frames.elem(n); //returns 1st frame of added file
 }
@@ -3734,7 +3735,8 @@ void Configuration::watchFile(const char* filename) {
     LOG(0) <<"loading `" <<filename <<"' ... ";
     {
       bool succ=true;
-      FileToken file(filename, true);
+      FileToken file(filename);
+      file.cd_file();
       Graph G;
       try {
         lineCount=1;
@@ -3759,7 +3761,7 @@ void Configuration::watchFile(const char* filename) {
           succ=false;
         }
       }
-      file.cd_start(); //important: also on crash - cd back to original
+      file.cd_base(); //important: also on crash - cd back to original
 
       if(!succ) LOG(0) <<"file loading failed -- please check the file and re-save";
     }

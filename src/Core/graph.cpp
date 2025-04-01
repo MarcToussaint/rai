@@ -251,10 +251,11 @@ Graph::Graph() : isNodeOfGraph(nullptr), pi(nullptr), ri(nullptr) {
 }
 
 Graph::Graph(const char* filename, bool parseInfo): Graph() {
-  FileToken file(filename, true);
+  FileToken file(filename);
   rai::lineCount=1;
+  file.cd_file();
   read(file, parseInfo);
-  file.cd_start();
+  file.cd_base();
 }
 
 Graph::Graph(istream& is) : Graph() {
@@ -642,7 +643,8 @@ void Graph::read(std::istream& is, bool parseInfo) {
 
     } else if(n->key=="Include") {
       uint Nbefore = N;
-      read(n->as<FileToken>().getIs(true), parseInfo);
+      n->as<FileToken>().cd_file();
+      read(n->as<FileToken>().getIs(), parseInfo);
       if(namePrefix.N) { //prepend a naming prefix to all nodes just read
         for(uint i=Nbefore; i<N; i++) {
           elem(i)->key.prepend(namePrefix);
@@ -652,7 +654,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
         }
         namePrefix.clear();
       }
-      n->as<FileToken>().cd_start();
+      n->as<FileToken>().cd_base();
       delete n; n=nullptr;
 
     } else if(n->key=="Prefix") {
@@ -764,7 +766,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
   for(uint i=N; i--;) {
     Node* n=elem(i);
     if(n->key=="ChDir") {
-      n->as<FileToken>().cd_start();
+      n->as<FileToken>().cd_base();
       delete n; n=nullptr;
     }
   }
@@ -918,7 +920,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo) {
         case '<': { //FileToken
           str.read(is, "", ">", true);
           try {
-            node = add<FileToken>(key, FileToken(str, false));
+            node = add<FileToken>(key, FileToken(str));
 //          node->get<FileToken>().getIs();  //creates the ifstream and might throw an error
           } catch(...) {
             delete node; node=nullptr;

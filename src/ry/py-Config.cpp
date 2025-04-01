@@ -357,8 +357,9 @@ reloads, displays and animates the configuration whenever the file is changed"
     return pybind11::str(s.p, s.N);
   }, "return a string with basic info (#frames, etc)")
 
-  .def("asDict", [](shared_ptr<rai::Configuration>& self) { rai::Graph G; self->write(G);  return graph2dict(G); },
-    "return the configuration description as a dict, e.g. for file export")
+  .def("asDict", [](shared_ptr<rai::Configuration>& self, bool parentsInKeys) { rai::Graph G; self->write(G);  return graph2dict(G, rai::NodeL{}, parentsInKeys); },
+    "return the configuration description as a dict, e.g. for file export",
+       pybind11::arg("parentsInKeys")=true)
 
   .def("write", [](shared_ptr<rai::Configuration>& self) { rai::String str; rai::Graph G; self->sortFrames(); self->write(G); str <<G; return str; },
      "return the configuration description as a str (similar to YAML), e.g. for file export")
