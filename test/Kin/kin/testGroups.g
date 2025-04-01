@@ -9,7 +9,7 @@ arm5 { shape:capsule mass=.1 size=[0.1 0.1 .4 .1] contact }
 arm6 { shape:capsule mass=.1 size=[0.1 0.1 .4 .1] contact }
 arm7 { shape:capsule mass=.1 size=[0.1 0.1 .4 .1] contact }
 
-endeff(arm7){ shape:marker rel: "t(0 0 .3)" size=[.1 0 0 0] }
+endeff(arm7){ shape:marker pose: "t(0 0 .3)" size=[.1 0 0 0] }
 
 #fileshape { X: "t(-0.25 -3 1.8)"  shape:mesh mass=.1 size=[.3 .3 .3 .1] color=[1 0 0] shapefile='c:/home/3dmodel/benchmark/offs/m494.off' swiftfile='c:/home/3dmodel/benchmark/offs/m494.dcp' contact, }
 #ball  { X: "t(.0 -1.0 2.1)"  shape:sphere mass=.1 size=[.3 .3 .3 .1] color=[1 0 0] contact }

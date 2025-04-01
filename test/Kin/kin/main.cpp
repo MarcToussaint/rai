@@ -153,7 +153,7 @@ void TEST(Kinematics){
 //
 
 void TEST(Graph){
-  if(!rai::FileToken("../../../../rai-robotModels/pr2/pr2.g", false).exists()) return;
+  if(!rai::FileToken("../../../../rai-robotModels/pr2/pr2.g").exists()) return;
   
 //  rai::Configuration G("arm7.g");
 //  rai::Configuration K("kinematicTests.g");
@@ -301,7 +301,7 @@ void TEST(KinematicSpeed){
 #define NUM 100000
 #if 1
 //  rai::Configuration K("kinematicTests.g");
-  if(!rai::FileToken("../../../../rai-robotModels/pr2/pr2.g", false).exists()) return;
+  if(!rai::FileToken("../../../../rai-robotModels/pr2/pr2.g").exists()) return;
   rai::Configuration K("../../../../rai-robotModels/pr2/pr2.g");
   K.processStructure();
   uint n=K.getJointStateDimension();
@@ -743,8 +743,6 @@ void testInertias(){
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
-
-  testTexture(); return 0;
 
   testMini();
   testLoadSave();

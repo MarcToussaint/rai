@@ -63,7 +63,7 @@ struct ManipulationHelper {
   arr sample(const char* sampleMethod=0, int verbose=1);
   void debug(bool listObjectives=true, bool plotOverTime=false);
 
-  std::shared_ptr<ManipulationHelper> sub_motion(uint phase, uint steps_per_phase, bool fixEnd=true, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true, const StringA& activeDofs={});
+  std::shared_ptr<ManipulationHelper> sub_motion(uint phase, uint steps_per_phase=50, bool fixEnd=true, double homing_scale=1e-2, double acceleration_scale=1e-1, bool accumulated_collisions=true, bool joint_limits=true, bool quaternion_norms=true, const StringA& activeDofs={});
   std::shared_ptr<rai::RRT_PathFinder> sub_rrt(uint phase, const StringA& explicitCollisionPairs= {}, const StringA& activeDofs={});
 
   void play(rai::Configuration& C, double duration=1.);

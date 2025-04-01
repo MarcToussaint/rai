@@ -9,6 +9,7 @@
 #ifdef RAI_PYBIND
 
 #include "types.h"
+#include "../Kin/frame.h"
 
 pybind11::dict graph2dict(const rai::Graph& G, const rai::NodeL& parents, bool parentsInKeys) {
   pybind11::dict dict;

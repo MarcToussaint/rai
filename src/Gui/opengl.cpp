@@ -107,26 +107,6 @@ struct GlfwSingleton : Thread {
   }
   void close() {}
 
-  void addGL(OpenGL* gl) {
-    mutex.lock(RAI_HERE);
-    glwins.append(gl);
-#if 1
-    gl->needsRedraw = true;
-#else
-    glfwMakeContextCurrent(gl->window);
-    gl->Draw(gl->width, gl->height);
-    glfwSwapBuffers(gl->window);
-    glfwMakeContextCurrent(nullptr);
-#endif
-    mutex.unlock();
-  }
-
-  void delGL(OpenGL* gl) {
-    auto _mux = mutex(RAI_HERE);
-    gl->needsRedraw = false;
-    glwins.removeValue(gl);
-  }
-
   static void error_callback(int error, const char* description) {
     HALT("GLFW error " <<error <<": " <<description);
   }
@@ -219,13 +199,15 @@ void OpenGL::openWindow() {
       glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
     }
     if(!title.N) title="GLFW window";
+    GLFWwindow* share=nullptr;
+    if(_glfw->glwins.N) share = _glfw->glwins.elem(0)->window;
     if(fullscreen) {
       GLFWmonitor* monitor = glfwGetPrimaryMonitor();
       const GLFWvidmode* mode = glfwGetVideoMode(monitor);
       //glfwSetWindowMonitor( _wnd, _monitor, 0, 0, mode->width, mode->height, 0 );
-      window = glfwCreateWindow(mode->width, mode->height, title.p, monitor, nullptr);
+      window = glfwCreateWindow(mode->width, mode->height, title.p, monitor, share);
     } else {
-      window = glfwCreateWindow(width, height, title.p, nullptr, nullptr);
+      window = glfwCreateWindow(width, height, title.p, nullptr, share);
       if(_glfw->newWinX<0){
         _glfw->newWinX += glfwGetVideoMode( glfwGetPrimaryMonitor() )->width - width;
       }
@@ -256,9 +238,9 @@ void OpenGL::openWindow() {
     glfwGetCursorPos(window, &mouseposx, &mouseposy);
     mouseposy = height-mouseposy;
 
+    _glfw->glwins.append(this);
+    needsRedraw = true;
     _glfw->mutex.unlock();
-
-    _glfw->addGL(this);
   } else {
     auto _glfw = glfwSingleton();
     auto lock = _glfw->mutex(RAI_HERE);
@@ -273,8 +255,9 @@ void OpenGL::closeWindow() {
     auto _glfw = glfwSingleton();
 //    isUpdating.setStatus(0);
 //    watching.setStatus(0);
-    _glfw->delGL(this);
     _glfw->mutex.lock(RAI_HERE);
+    needsRedraw = false;
+    _glfw->glwins.removeValue(this);
     glfwGetWindowPos(window, &_glfw->newWinX, &_glfw->newWinY);
     glfwDestroyWindow(window);
     _glfw->mutex.unlock();

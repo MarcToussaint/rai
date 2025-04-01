@@ -131,6 +131,8 @@ void TEST(PR2){
     C.setJointState(C.q);
   }
 
+  C.view(true);
+
   KOMO komo;
   komo.setConfig(C);
   komo.setTiming(1., 30, 10., 2);
@@ -240,9 +242,9 @@ int MAIN(int argc,char** argv){
   // testEasy();
   // testAlign();
   // testThin();
-  // testPR2();
+  testPR2();
   // testThreading();
-  testMobile();
+  // testMobile();
 
   return 0;
 }

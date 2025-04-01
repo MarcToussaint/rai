@@ -22,4 +22,4 @@ target { X: "t(.7 -.5 1.2)"  shape:sphere size=[.1 .1 .1 .05] color=[0 .5 0] }
 
 obstacle { X: "t(1. -1.5 1.)"  shape:sphere size=[1. .1 5. .5] color=[1 0 0] contact, }
 
-endeff(arm7){ shape:marker rel: "t(0 0 .3)" size=[.1 .1 .1 0] } # a marker shape at the tip of arm7
+endeff(arm7){ shape:marker pose: "t(0 0 .3)" size=[.1 .1 .1 0] } # a marker shape at the tip of arm7

@@ -11,11 +11,11 @@ tableC{ shape:ssBox, X: "t(.7 0 .8)", size=[1. .8 .04 .02], color=[.3 .3 .5] con
 tableL{ shape:ssBox, X: "t(.2 .7 .8)", size=[2. .6 .04 .02], color=[.3 .5 .3] contact }
 tableR{ shape:ssBox, X: "t(.2 -.7 .8)", size=[2. .6 .04 .02], color=[.3 .5 .3] contact }
 
-humanR (handR){ shape:marker size=[.1 0 0 0] color=[1 1 0] rel: "t(0 0 -.05) d(90 0 0 1)" }
-humanL (handL){ shape:marker size=[.1 0 0 0] color=[1 1 0] rel: "t(0 0 -.05) d(90 0 0 1)" }
+humanR (handR){ shape:marker size=[.1 0 0 0] color=[1 1 0] pose: "t(0 0 -.05) d(90 0 0 1)" }
+humanL (handL){ shape:marker size=[.1 0 0 0] color=[1 1 0] pose: "t(0 0 -.05) d(90 0 0 1)" }
 
-baxterR (right_wrist){ rel: "d(-90 0 1 0) d(-90 0 0 1) t(0 0 -.26)" shape:marker size=[.1 0 0 0] color=[1 1 0] }
-baxterL (left_wrist) { rel: "d(-90 0 1 0) d(-90 0 0 1) t(0 0 -.26)" shape:marker size=[.1 0 0 0] color=[1 1 0] }
+baxterR (right_wrist){ pose: "d(-90 0 1 0) d(-90 0 0 1) t(0 0 -.26)" shape:marker size=[.1 0 0 0] color=[1 1 0] }
+baxterL (left_wrist) { pose: "d(-90 0 1 0) d(-90 0 0 1) t(0 0 -.26)" shape:marker size=[.1 0 0 0] color=[1 1 0] }
 
 Handle { shape:ssBox size=[.05 .3 .15 .02] contact }
 (tableC Handle) { from: "t(-.2 .2 0) t(0 0 .1)" joint:rigid }
@@ -40,7 +40,7 @@ Include = '../../../../rai-robotModels/objects/screwdriver/screwdriver.ors'
 
 (tableR screwdriver) { from: "t(0 0 .06) t(-.5 .0 .0) " joint:rigid }
 #(tableR screwdriver) { from: "t(0 0 .06) t(.5 .0 .0) " joint:rigid }
-screwdriverHandle(screwdriver) { shape:marker rel: "d(90 0 0 1)" size=[.15 0 0 0] color=[1 1 0] }
+screwdriverHandle(screwdriver) { shape:marker pose: "d(90 0 0 1)" size=[.15 0 0 0] color=[1 1 0] }
 
 screwbox { shape:ssBox, size=[.05 .1 .04 .02], color=[.8 .3 .3] contact }
 (tableL screwbox) { from: "t(.8 0 .08)" joint:rigid }

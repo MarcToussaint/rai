@@ -26,4 +26,4 @@ target { X: "t(1. -.5 1.)"  type=1 size=[.1 .1 .1 .05] color=[0 .5 0] fixed, }
 #ball3 { X: "t(-.22 -1.5 2.)"  type=1 size=[.3 .3 .3 .1] color=[1 0 0] contact, fixed, }
 obstacle { X: "t(1. -1.5 .8)"  type=1 size=[1. .1 5. .5] color=[1 0 0] contact, fixed, }
 
-endeff(arm7){ type=5 rel: "t(0 0 .3)" size=[.1 .1 .1 0] } # a marker shape at the tip of arm7
+endeff(arm7){ type=5 pose: "t(0 0 .3)" size=[.1 .1 .1 0] } # a marker shape at the tip of arm7
