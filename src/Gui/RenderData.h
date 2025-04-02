@@ -120,7 +120,7 @@ struct RenderData {
     GLuint shadowFramebuffer, shadowTexture;
     GLuint prog_ID, prog_Projection_W, prog_ModelT_WM, prog_eyePosition_W, prog_ShadowProjection_W, prog_useShadow, prog_shadowMap, prog_numLights, prog_lightDirection_W, prog_FlatColor, prog_textureDim, prog_textureImage;
     GLuint progShadow, progShadow_ShadowProjection_W, progShadow_ModelT_WM;
-    GLuint progTensor, progTensor_Projection_W, progTensor_ModelT_WM, progTensor_ModelScale, progTensor_eyePosition_W, progTensor_tensorTexture;
+    GLuint progTensor, progTensor_Projection_W, progTensor_ModelT_WM, progTensor_ModelScale, progTensor_eyePosition_W, progTensor_FlatColor, progTensor_tensorTexture;
     GLuint progMarker, progMarker_Projection_W, progMarker_ModelT_WM;
     GLuint progText, progText_color, progText_useTexColor;
     RenderFont font;

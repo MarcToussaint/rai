@@ -337,10 +337,12 @@ struct sOpenGL : NonCopyable {
 // utility implementations
 //
 
-void id2color(byte rgb[3], uint id) {
-  rgb[0] = ((id>> 6)&0x3f) | ((id&1)<<7) | ((id& 8)<<3);
-  rgb[1] = ((id>>12)&0x3f) | ((id&2)<<6) | ((id&16)<<2);
-  rgb[2] = ((id>>18)&0x3f) | ((id&4)<<5) | ((id&32)<<1);
+byteA id2color_b(uint id) {
+  byteA rgb(3);
+  rgb(0) = ((id>> 6)&0x3f) | ((id&1)<<7) | ((id& 8)<<3);
+  rgb(1) = ((id>>12)&0x3f) | ((id&2)<<6) | ((id&16)<<2);
+  rgb(2) = ((id>>18)&0x3f) | ((id&4)<<5) | ((id&32)<<1);
+  return rgb;
 }
 
 uint color2id(byte rgb[3]) {
@@ -352,8 +354,7 @@ uint color2id(byte rgb[3]) {
 }
 
 arr id2color(uint id) {
-  byteA rgb(3);
-  id2color(rgb.p, id);
+  byteA rgb = id2color_b(id);
   return arr{rgb(0)/255., rgb(1)/255., rgb(2)/255.};
 }
 

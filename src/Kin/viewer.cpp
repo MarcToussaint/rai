@@ -77,6 +77,7 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
         add(f->ensure_X(), _marker).pointCloud(mesh->V, mesh->C);
         items(-1)->asset->version = mesh->version;
       }else if(f->shape->type()==ST_lines){
+        if(!mesh->isArrayFormatted) mesh->makeLinesArrayFormatted();
         add(f->ensure_X(), _marker).lines(mesh->V, mesh->C);
         items(-1)->asset->version = mesh->version;
       }else if(mesh->T.d1==3){
@@ -86,8 +87,7 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
       }else{
         NIY
       }
-      items(-1)->flatColor.resize(3);
-      id2color(items(-1)->flatColor.p, f->ID);
+      items(-1)->flatColor = id2color_b(f->ID);
     }
     shared_ptr<SDF> sdf = f->shape->_sdf;
     if(sdf){
@@ -98,6 +98,7 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
       }else{
         NIY;
       }
+      items(-1)->flatColor = id2color_b(f->ID);
     }
   }
   for(rai::Frame* f:frames) if(f->shape && f->shape->type()==ST_marker) {

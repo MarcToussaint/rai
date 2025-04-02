@@ -41,7 +41,7 @@ struct RenderData;
 // utility functions
 //
 
-void id2color(::byte rgb[3], uint id);
+byteA id2color_b(uint id);
 arr id2color(uint id);
 uint color2id(::byte rgb[3]);
 
