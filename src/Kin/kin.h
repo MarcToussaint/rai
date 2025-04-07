@@ -278,6 +278,7 @@ public:
   void glAdd(void (*call)(void*, OpenGL&), void* classP);
   int glAnimate();
   void view_close();
+  void view_focus(const char* frameName, double heightAbs=1.);
   void set_viewer(std::shared_ptr<ConfigurationViewer>& _viewer);
   void stepFcl();
   void stepPhysx(double tau);

@@ -2295,6 +2295,15 @@ void Configuration::view_close() {
   if(self && self->viewer) self->viewer.reset();
 }
 
+void Configuration::view_focus(const char* frameName, double heightAbs){
+  rai::Camera& cam = get_viewer()->displayCamera();
+  arr pos = getFrame(frameName)->getPosition();
+  cam.focus(pos(0), pos(1), pos(2), true);
+  double dist = heightAbs * cam.focalLength;
+  pos -= dist * cam.X.rot.getZ().getArr();
+  cam.setPosition(pos(0), pos(1), pos(2));
+}
+
 void Configuration::set_viewer(std::shared_ptr<ConfigurationViewer>& _viewer){
   self->viewer = _viewer;
 }

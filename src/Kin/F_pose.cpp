@@ -256,9 +256,9 @@ void angVel_base(rai::Frame* f0, rai::Frame* f1, arr& y, arr& J) {
     Jb*=-1.;
   }
   arr dq = b-a;
-  a(0) *=-1.;
+  for(uint j=1;j<4;j++) a(j) *=-1.; //inverse
   quat_concat(y_tmp, J0, J1, dq, a); //y_tmp = (b-a)*a^{-1}
-  for(uint i=0; i<J1.d0; i++) J1(i, 0) *= -1.;
+  for(uint i=0; i<J1.d0; i++) for(uint j=1;j<4;j++) J1(i, j) *= -1.;
   y_tmp.remove(0);
   J0.delRows(0);
   J1.delRows(0);
@@ -270,6 +270,12 @@ void angVel_base(rai::Frame* f0, rai::Frame* f1, arr& y, arr& J) {
   y = y_tmp;
 
   checkNan(y);
+
+#if 0 //check
+  arr w = (f1->ensure_X().rot * -f0->ensure_X().rot).getLog().getArr();
+  CHECK_ZERO(maxDiff(w, y.noJ()), 1e-2, "should be close");
+  // LOG(0) <<"w=" <<w <<"y=" <<y.noJ() <<endl;
+#endif
 
   if(!!J && !!Ja) {
     if(&f0->C!=&f1->C) { //different configurations -> assume consecutive

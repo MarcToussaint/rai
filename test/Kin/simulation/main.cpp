@@ -500,15 +500,17 @@ void testMotors(){
     //write_ppm(S.getScreenshot(), STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
   }
 
+  C.view(true);
 //  rai::wait();
 }
 
 //===========================================================================
 
-void testPassive(const char* filename){
+void testPassive(const char* filename, bool hold=false){
   rai::Configuration C;
   C.addFile(filename);
 //  C.processStructure(true);
+  arr q0 = C.getJointState();
 
   rai::Simulation S(C, S._physx, 2);
 //  rai::wait();
@@ -520,7 +522,11 @@ void testPassive(const char* filename){
     tic.waitForTic();
 //    rai::wait(1.);
 
-    S.step({}, tau, S._none);
+    if(!hold){
+      S.step({}, tau, S._none);
+    }else{
+      S.step(q0, tau, S._position);
+    }
 
     // arr V;
     // S.getState(NoArr, NoArr, V, NoArr);
@@ -600,7 +606,7 @@ int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
   testMotors();
-  testPassive("../../../../playground/24-humanoid/scene.g");
+  testPassive(rai::raiPath("../rai-robotModels/g1/g1.g"), true);
   testPassive("../../../../rai-robotModels/scenarios/pendulum.g");
   testComplexObjects();
   testRndScene();

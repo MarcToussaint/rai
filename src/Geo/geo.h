@@ -254,7 +254,6 @@ struct Camera {
   void setWHRatio(float ratio);
   void setFocalLength(float f);
   void setPosition(float x, float y, float z);
-  void setOffset(float x, float y, float z);
   void setKinect();
   void setDefault();
 
