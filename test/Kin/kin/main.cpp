@@ -740,6 +740,36 @@ void testInertias(){
 
 // =============================================================================
 
+void testMergeSceneMesh(){
+  rai::Configuration C;
+  C.addFile(rai::raiPath("../rai-robotModels/robo_casa/kitchen2/kitchen2.g"));
+  C.view(true);
+
+  //-- build a mesh which is the union of all convex hulls
+  rai::Mesh M;
+  for(rai::Frame *f:C.frames){
+    if(f->shape && f->shape->_mesh){
+      rai::Mesh m = f->shape->mesh();
+      m.makeConvexHull();
+      M.addMesh(m, f->ensure_X());
+    }
+  }
+
+  //-- display it
+  rai::Configuration C2;
+  rai::Frame *f = C2.addFrame("global_collision");
+  f->setMesh2(M);
+  cout <<"mesh size: " <<M <<endl;
+  C2.view(true);
+
+  //-- decompose it into simpler convex parts
+  M = M.decompose();
+  f->setMesh2(M);
+  cout <<"mesh size: " <<M <<endl;
+  C2.view(true);
+}
+
+// =============================================================================
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
@@ -761,6 +791,7 @@ int MAIN(int argc,char **argv){
   testLimits();
   testInertias();
   testTexture();
+  //testMergeSceneMesh();
 #ifdef RAI_ODE
 //  testMeshShapesInOde();
   testPlayTorqueSequenceInOde();

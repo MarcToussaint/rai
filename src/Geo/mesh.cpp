@@ -567,6 +567,7 @@ void Mesh::makeConvexHull() {
 #if 1
   V = getHull(V, T);
   cvxParts.clear();
+  if(C.nd==2) C.clear();
   Vn.clear();
   Tn.clear();
   texCoords.clear();

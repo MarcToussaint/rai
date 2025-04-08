@@ -749,8 +749,9 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
 rai::Frame& rai::Frame::setMesh2(const rai::Mesh& m) {
   C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
+  int version = getShape().mesh().version;
   getShape().mesh() = m;
-  getShape().mesh().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
+  getShape().mesh().version = version+1; //if(getShape().glListId>0) getShape().glListId *= -1;
   C.view_unlock();
   return *this;
 }

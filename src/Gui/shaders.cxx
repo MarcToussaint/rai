@@ -253,7 +253,7 @@ uniform mat4 ModelT_WM;
 
 void main() {
   gl_Position =  Projection_W * ModelT_WM * vec4(vertexPosition_M, 1);
-  gl_PointSize = 2.;
+  gl_PointSize = 4.;
   objColor = vertexColor;
 }
 
