@@ -25,6 +25,7 @@ struct Graph;
 struct ParseInfo;
 struct RenderingInfo;
 struct GraphEditCallback;
+struct BracketOp;
 typedef Array<Node*> NodeL;
 typedef Array<GraphEditCallback*> GraphEditCallbackL;
 }
@@ -141,7 +142,7 @@ struct Graph : NodeL {
   template<class T> Node* set(const char* key, const T& x){ Node* n = findNodeOfType(typeid(T), key); if(n) n->as<T>()=x; else n=add<T>(key, x); return n; }
 
   //-- get nodes
-  Node* operator[](const char* key) const { return findNode(key); } ///< returns nullptr if not found
+  BracketOp operator[](const char* key); ///< returns nullptr if not found
   Node* getNode(const char* key) const { return findNode(key); } ///< returns nullptr if not found
   Node* getEdge(Node* p1, Node* p2) const;
   Node* getEdge(const NodeL& parents) const;
@@ -190,7 +191,7 @@ struct Graph : NodeL {
   void write(std::ostream& os=cout, const char* ELEMSEP=",\n", const char* BRACKETS=0, int indent=-1, bool yamlMode=false, bool binary=false) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0, int focusIndex=-1, bool subGraphsAsNodes=false);
   void writeHtml(std::ostream& os, std::istream& is);
-  void writeYaml(std::ostream& os);
+  void writeYaml(std::ostream& os) const;
   void writeParseInfo(std::ostream& os);
 
   void displayDot(Node* highlight=nullptr);
@@ -288,6 +289,18 @@ struct NodeInitializer {
 
 /// pipe node initializers into a graph (to append nodes)
 inline Graph& operator<<(Graph& G, const NodeInitializer& n) { G.addInit(n); return G; }
+
+//===========================================================================
+
+struct BracketOp {
+  Graph& G;
+  const char* key;
+  Node *n;
+  template<class T> void operator=(const T& x){
+    if(!n) n = G.add<T>(key, x);
+    else n->as<T>() = x;
+  }
+};
 
 //===========================================================================
 //
@@ -480,6 +493,10 @@ template<class T> NodeInitializer::NodeInitializer(const char* key, const T& x) 
 template<class T> NodeInitializer::NodeInitializer(const char* key, const StringA& parents, const T& x)
   : parents(parents) {
   n = G.add<T>(key, x);
+}
+
+inline BracketOp Graph::operator[](const char* key) {
+  return BracketOp{*this, key, findNode(key)};
 }
 
 template<class T> T& Graph::get(const char* key) const {

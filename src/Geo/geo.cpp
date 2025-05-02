@@ -649,6 +649,32 @@ Quaternion& Quaternion::setInterpolateProper(double t, const Quaternion& from, c
   return *this;
 }
 
+void Quaternion::integrateDiffEq(arr& _qdot, double tau){
+  Quaternion inv = *this;
+  inv.invert();
+  Quaternion inv_qdot = inv * Quaternion(_qdot);
+
+  if(fabs(inv_qdot.w)>1e-5){
+    LOG(-1) <<"given qdot is not tangent: (q^-1 * qdot).w = " <<inv_qdot.w;
+  }
+  inv_qdot.w=0.; //ensure in Id-tangent
+
+#if 1
+  rai::Vector w = 2. * (inv_qdot).getThreeEntries();
+  Quaternion r;
+  r.setExp(tau*w);
+  *this = (*this) * r;
+#else
+  w += tau*qdot.w;
+  x += tau*qdot.x;
+  y += tau*qdot.y;
+  z += tau*qdot.z;
+#endif
+  normalize();
+
+  _qdot = ((*this)*inv_qdot).getArr();
+}
+
 /// euclidean addition (with weights) modulated by scalar product -- leaves you with UNNORMALIZED quaternion
 // void Quaternion::add(const Quaternion b, double w_b, double w_this) {
 //   if(quat_scalarProduct(*this, b)<0.) w_b *= -1.;

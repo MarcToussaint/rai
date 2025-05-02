@@ -116,7 +116,7 @@ struct Frame : NonCopyable {
   //accessors to transformations
   const Transformation& ensure_X();
   const Transformation& get_Q() const;
-  const Transformation& get_X() const;
+  const Transformation& get_X() { return ensure_X(); }
   Transformation_Xtoken set_X() { return Transformation_Xtoken(*this); }
   Transformation_Qtoken set_Q();
 

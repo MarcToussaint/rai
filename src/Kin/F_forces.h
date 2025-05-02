@@ -98,7 +98,7 @@ struct F_fex_POAAtFrame : Feature {
 
 struct F_fex_ForceInFrameCone : Feature {
   double mu;
-  F_fex_ForceInFrameCone(double _mu=.5) : mu(_mu) {}
+  F_fex_ForceInFrameCone(double _mu=.8) : mu(_mu) {}
   arr phi(const FrameL& F);
   uint dim_phi(const FrameL& F) { return 1; }
 };

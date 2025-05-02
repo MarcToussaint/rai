@@ -12,6 +12,8 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
   //  for(uint k=0;k<colls.d0;k++) cout <<"  " <<colls(k,0)->name <<' ' <<colls(k,1)->name <<endl;
 
 
+  C.setRandom();
+
   KOMO komo;
   komo.setConfig(C);
   komo.setTiming(1,1,1,0);
@@ -27,16 +29,18 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
   for(const str& thing:supports){
     if(rnd.uni()<.5){
       supp <<' ' <<thing;
-      komo.addContact_stick(0.,-1., "obj", thing, opt.frictionCone_mu);
+      // komo.addContact_stick(0.,-1., "obj", thing, opt.frictionCone_mu);
+      komo.addContact_WithPoaFrame(1., "obj", thing, opt.frictionCone_mu, .05);
     }
   }
   if(opt.verbose>0){
     LOG(0) <<"\n======================\n" <<supp;
   }
 
-  for(uint k=0;k<10;k++){
-    komo.initRandom();
-    //komo.view(true, "init");
+  for(uint k=0;k<1;k++){
+    // komo.initRandom();
+    // cout <<komo.pathConfig.reportForces() <<endl;
+    // komo.view(true, STRING("init with supports: " <<supp));
 
 #if 1
     auto ret = rai::NLP_Solver(komo.nlp())

@@ -148,10 +148,10 @@ const rai::Transformation& rai::Frame::get_Q() const {
   return Q;
 }
 
-const rai::Transformation& rai::Frame::get_X() const {
-  CHECK(_state_X_isGood, "");
-  return X;
-}
+// const rai::Transformation& rai::Frame::get_X() const {
+//   CHECK(_state_X_isGood, "");
+//   return X;
+// }
 
 rai::Transformation_Qtoken rai::Frame::set_Q() {
   CHECK(parent, "setQ is only allowed for child frames (at frame '" <<name <<"'");
@@ -422,7 +422,7 @@ void rai::Frame::_state_setXBadinBranch() {
 }
 
 bool transFromAts(rai::Transformation& X, const rai::Graph& ats, const char* key) {
-  rai::Node* n = ats[key];
+  rai::Node* n = ats.findNode(key);
   if(!n) return false;
   if(n->is<rai::String>()) X.read(n->as<rai::String>().resetIstream());
   else if(n->is<arr>()) X.set(n->as<arr>());
@@ -440,10 +440,10 @@ void rai::Frame::read(const Graph& ats) {
     if(!parent) set_X() = tmp; else set_Q() = tmp;
   }
 
-  if(ats["type"]) ats["type"]->key = "shape"; //compatibility with old convention: 'body { type... }' generates shape
+  if(ats.findNode("type")) ats.findNode("type")->key = "shape"; //compatibility with old convention: 'body { type... }' generates shape
 
   Node* n;
-  if((n=ats["joint"])) {
+  if((n=ats.findNode("joint"))) {
     if(n->as<String>()=="path") {
       new PathDof(*this);
       pathDof->read(ats);
@@ -454,7 +454,7 @@ void rai::Frame::read(const Graph& ats) {
       new Joint(*this);
       joint->read(ats);
     } else {
-      //if(ats["B"]) { //there is an extra transform from the joint into this frame -> create an own joint frame
+      //if(ats.findNode("B")) { //there is an extra transform from the joint into this frame -> create an own joint frame
 //        Frame* f = new Frame(parent);
 //        f->name <<'|' <<name; //the joint frame is actually the link frame of all child frames
 //        this->unLink();
@@ -463,8 +463,8 @@ void rai::Frame::read(const Graph& ats) {
 //        f->joint->read(ats);
     }
   }
-  if(ats["shape"] || ats["mesh"] || ats["mesh_decomp"] || ats["mesh_points"] || ats["sdf"]) { shape = new Shape(*this); shape->read(ats); }
-  if(ats["mass"]) { inertia = new Inertia(*this); inertia->read(ats); }
+  if(ats.findNode("shape") || ats.findNode("mesh") || ats.findNode("mesh_decomp") || ats.findNode("mesh_points") || ats.findNode("sdf")) { shape = new Shape(*this); shape->read(ats); }
+  if(ats.findNode("mass")) { inertia = new Inertia(*this); inertia->read(ats); }
 }
 
 void rai::Frame::write(Graph& G) const {
@@ -1817,7 +1817,7 @@ void rai::Joint::read(const Graph& ats) {
 
   transFromAts(A, ats, "A");
   transFromAts(A, ats, "pre");
-  if(ats["BinvA"]) B.setInverse(A);
+  if(ats.findNode("BinvA")) B.setInverse(A);
   transFromAts(B, ats, "B");
   transFromAts(B, ats, "post");
 
@@ -1848,7 +1848,7 @@ void rai::Joint::read(const Graph& ats) {
   }
 
   Node* n;
-  if((n=ats["Q"])) {
+  if((n=ats.findNode("Q"))) {
     if(n->is<String>()) frame->set_Q()->read(n->as<String>().resetIstream());
     else if(n->is<arr>()) frame->set_Q()->set(n->as<arr>());
     else NIY;
@@ -1892,6 +1892,8 @@ void rai::Joint::read(const Graph& ats) {
   ats.get(limits, "limits");
   if(limits.N && type!=JT_rigid && !mimic) {
     CHECK(limits.N>=2*dim/* || limits.N==2*qDim()+3*/, "parsed limits have wrong dimension: either lo-hi or lo-hi-vel-eff-acc PER DOF");
+    limits.reshape(2,dim);
+    for(uint i=0;i<limits.d1;i++) CHECK_LE(limits(0,i), limits(1,i), "limits are not lower-equal: " <<limits);
   }
   ats.get(ctrl_limits, "ctrl_limits");
   if(ctrl_limits.N && type!=JT_rigid) {
@@ -1912,7 +1914,7 @@ void rai::Joint::read(const Graph& ats) {
   if(ats.get<bool>("joint_stable", false)) isStable=true;
 
   //coupled to another joint requires post-processing by the Graph::read!!
-  if(ats["mimic"]) {
+  if(ats.findNode("mimic")) {
     mimic=(Joint*)1;
   }
 }
@@ -2049,7 +2051,7 @@ void rai::Shape::read(const Graph& ats) {
     if(mesh().V.N && type()==ST_none) type()=ST_mesh;
 
     //colored box?
-    if(ats["coloredBox"]) {
+    if(ats.findNode("coloredBox")) {
       CHECK_EQ(mesh().V.d0, 8, "I need a box");
       arr col=mesh().C;
       mesh().C.resize(mesh().T.d0, 3);
@@ -2063,7 +2065,7 @@ void rai::Shape::read(const Graph& ats) {
     createMeshes();
   }
 
-  if(ats["contact"]) {
+  if(ats.findNode("contact")) {
     double d;
     if(ats.get(d, "contact")) cont = (char)d;
     else cont=1;
@@ -2071,10 +2073,10 @@ void rai::Shape::read(const Graph& ats) {
 
   //center the mesh:
   if(type()==rai::ST_mesh && mesh().V.N) {
-    if(ats["rel_includes_mesh_center"]) {
+    if(ats.findNode("rel_includes_mesh_center")) {
       mesh().center();
     }
-    //    if(c.length()>1e-8 && !ats["rel_includes_mesh_center"]){
+    //    if(c.length()>1e-8 && !ats.findNode("rel_includes_mesh_center")){
     //      frame.link->Q.addRelativeTranslation(c);
     //      frame.ats.newNode<bool>({"rel_includes_mesh_center"}, true);
     //    }
@@ -2089,10 +2091,10 @@ void rai::Shape::write(std::ostream& os) const {
   if(_type!=ST_mesh) os <<", size: " <<size;
 
   Node* n;
-  if(frame.ats && (n=(*frame.ats)["color"])) { os <<", "; n->write(os, -1, true); }
+  if(frame.ats && (n=frame.ats->findNode("color"))) { os <<", "; n->write(os, -1, true); }
   else if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4) os <<", color: " <<_mesh->C;
-  if(frame.ats && (n=(*frame.ats)["mesh"])) { os <<", "; n->write(os, -1, true); }
-  if(frame.ats && (n=(*frame.ats)["meshscale"])) { os <<", "; n->write(os, -1, true); }
+  if(frame.ats && (n=frame.ats->findNode("mesh"))) { os <<", "; n->write(os, -1, true); }
+  if(frame.ats && (n=frame.ats->findNode("meshscale"))) { os <<", "; n->write(os, -1, true); }
   if(cont) os <<", contact: " <<(int)cont;
 }
 
@@ -2101,10 +2103,10 @@ void rai::Shape::write(Graph& g) {
   if(type()!=ST_mesh) g.add<arr>("size", size);
 
   Node* n;
-  if(frame.ats && (n=(*frame.ats)["color"])) n->newClone(g);
+  if(frame.ats && (n=frame.ats->findNode("color"))) n->newClone(g);
   else if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4) g.add<arr>("color", mesh().C);
-  if(frame.ats && (n=(*frame.ats)["mesh"])) n->newClone(g);
-  if(frame.ats && (n=(*frame.ats)["meshscale"])) n->newClone(g);
+  if(frame.ats && (n=frame.ats->findNode("mesh"))) n->newClone(g);
+  if(frame.ats && (n=frame.ats->findNode("meshscale"))) n->newClone(g);
   if(cont) g.add<int>("contact", cont);
 }
 
@@ -2371,7 +2373,7 @@ void rai::Inertia::read(const Graph& G) {
     // matrix *= .2*d;
     if(frame.shape && frame.shape->type()!=ST_marker) defaultInertiaByShape();
   }
-  if(G["inertia"]) {
+  if(G.findNode("inertia")) {
     arr& I = G.get<arr>("inertia");
     if(I.N==3) matrix.setDiag(I);
     else if(I.N==6) matrix.setSymmetric(I);

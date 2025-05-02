@@ -133,6 +133,7 @@ struct Quaternion {
   Quaternion& setDiff(const Vector& from, const Vector& to);
   Quaternion& setInterpolateEmbedded(double t, const Quaternion& from, const Quaternion to);
   Quaternion& setInterpolateProper(double t, const Quaternion& from, const Quaternion to);
+  void integrateDiffEq(arr& qdot, double tau);
   void invert();
   void flipSign();
   void uniqueSign();
@@ -151,6 +152,7 @@ struct Quaternion {
   bool isNormalized() const;
   Vector getLog() const;
   Vector getVector() const { return getLog(); }
+  Vector getThreeEntries() const { CHECK_ZERO(w, 1e-6, ""); return Vector(x, y, z); }
   double getRad() const;
   double getDeg() const{ return 180./RAI_PI*getRad(); }
   void getRad(double& angle, Vector& axis) const;

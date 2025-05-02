@@ -933,7 +933,7 @@ void Configuration::selectJointsBySubtrees(const FrameL& roots, bool notThose) {
 void Configuration::selectJointsByAtt(const StringA& attNames, bool notThose) {
   FrameL F;
   for(Frame* f:frames) if(f->joint) {
-      for(const String& s:attNames) if((*f->ats)[s]) { F.append(f); break; }
+      for(const String& s:attNames) if((*f->ats).findNode(s)) { F.append(f); break; }
     }
   selectJoints(F, notThose);
 }
@@ -2565,7 +2565,7 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
         case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
         case ST_sphere:    os <<"      <sphere radius=\"" <<size.last() <<"\" />\n";  break;
         case ST_mesh:      os <<"      <mesh filename=\"" <<a->ats->get<FileToken>("mesh").name <<'"';
-          if((*a->ats)["meshscale"]) os <<" scale=\"" <<a->ats->get<arr>("meshscale") <<'"';
+          if((*a->ats).find<arr>("meshscale")) os <<" scale=\"" <<a->ats->get<arr>("meshscale") <<'"';
           os <<" />\n";  break;
         default:           os <<"      <UNKNOWN_" <<a->shape->type() <<" />\n";  break;
       }
@@ -2592,7 +2592,7 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
             case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
             case ST_sphere:    os <<"      <sphere radius=\"" <<size.last() <<"\" />\n";  break;
             case ST_mesh:      os <<"      <mesh filename=\"" <<b->ats->get<FileToken>("mesh").name <<'"';
-              if((*b->ats)["meshscale"]) os <<" scale=\"" <<b->ats->get<arr>("meshscale") <<'"';
+              if((*b->ats).find<arr>("meshscale")) os <<" scale=\"" <<b->ats->get<arr>("meshscale") <<'"';
               os <<" />\n";  break;
             default:           os <<"      <UNKNOWN_" <<b->shape->type() <<" />\n";  break;
           }
@@ -2961,7 +2961,7 @@ Frame& Configuration::addDict(const Graph& G) {
   {
     Joint* j;
     for(Frame* f: frames) if((j=f->joint) && j->mimic==(Joint*)1) {
-        Node* mim = (*f->ats)["mimic"];
+        Node* mim = (*f->ats).findNode("mimic");
         String jointName;
         if(mim->is<String>()) jointName = mim->as<String>();
         else if(mim->is<NodeL>()) {
@@ -3168,8 +3168,14 @@ Configuration::FrameDynState& Configuration::dyn_ensure(Frame* f, const arr& q_d
     Vector V = 0;
     Vector W = 0;
     if(f->joint){
-      CHECK_EQ(f->joint->dim, 1, "");
-      W = q_dot(f->joint->qIndex) * f->joint->axis; //axis is already in world coordinates! (see Frame::calc_X_from_parent())
+      if(f->joint->dim==1){
+        CHECK_EQ(f->joint->dim, 1, "");
+        W = q_dot(f->joint->qIndex) * f->joint->axis; //axis is already in world coordinates! (see Frame::calc_X_from_parent())
+      }else{
+        arr Jang;
+        f->C.jacobian_angular(Jang, f);
+        W = Jang * q_dot;
+      }
     }
 
     //this child
@@ -3305,6 +3311,7 @@ arr Configuration::dyn_inverseDyamics(const arr& q_dot, const arr& q_ddot){
 arr Configuration::dyn_fwdDynamics(const arr& q_dot, const arr& u){
   arr M, F;
   dyn_MF(M, F, q_dot);
+  for(uint i=0;i<M.d0;i++) M.elem(i,i) += 1e-12;
   return lapack_Ainv_b_sym(M, u - F);
 }
 

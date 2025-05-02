@@ -705,6 +705,38 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
   }
 }
 
+void KOMO::addContact_WithPoaFrame(double time, str obj, str from, double frictionCone_mu, double init_objMass, double init_POAdist){
+  rai::Frame *f_obj = world.getFrame(obj);
+  rai::Frame *f_from = world.getFrame(from);
+  //create a stable POA frame as geometric DOF, attached to obj, with z becoming the contact normal
+  str poa_name = STRING("poa_" <<obj <<"_" <<from);
+  rai::Transformation relOrigin;
+  rai::Vector relVec = f_from->ensure_X().pos / f_obj->ensure_X();
+  relOrigin.pos = init_POAdist * relVec / relVec.length();
+  relOrigin.rot.setDiff(Vector_z, -relVec);
+  addFrameDof(poa_name, obj, rai::JT_free, true, 0, 0, relOrigin);
+
+  //create a force exchange DOF
+  rai::Transformation origin = f_obj->ensure_X() * relOrigin;
+  arr poa = origin.pos.getArr(); //.5*(finger->getPosition() + obj->getPosition());
+  arr force = origin.rot.getZ().getArr(); //obj->getPosition() - finger->getPosition());
+  force *= init_objMass*9.81;
+  addForceExchangeDofs({time}, obj, from, rai::FXT_poa, poa, force);
+
+  //constraints to make poa frames and force exchange consistent
+  addObjective({time}, make_shared<F_fex_POAAtFrame>(), {obj, from, poa_name}, OT_eq, {1e1});
+  addObjective({time}, make_shared<F_fex_ForceInFrameCone>(frictionCone_mu), {obj, from, poa_name}, OT_ineq, {1e0});
+  addObjective({}, FS_negDistance, {obj, poa_name}, OT_eq, {1e1});
+  addObjective({}, FS_negDistance, {from, poa_name}, OT_eq, {1e1});
+  addObjective({time}, make_shared<F_PairNormalAlign>(+1.), {poa_name, obj}, OT_eq, {1e0});
+  addObjective({time}, make_shared<F_PairNormalAlign>(-1.), {poa_name, from}, OT_eq, {1e0});
+
+  //no sliding
+  if(k_order>0){
+    addObjective({time}, FS_positionRel, {poa_name, from}, OT_eq, {1e1}, {}, 1, +1, +1);
+  }
+}
+
 void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const char* from, const char* to) {
   addSwitch({startTime}, true, make_shared<rai::KinematicSwitch>(rai::SW_addContact, rai::JT_none, from, to, world));
   if(endTime>0.) addSwitch(endTime, false, make_shared<rai::KinematicSwitch>(rai::SW_delContact, rai::JT_none, from, to, world));

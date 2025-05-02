@@ -32,6 +32,14 @@ H5_Writer::H5_Writer(const char* filename) {
   file = make_shared<H5::H5File>(filename, H5F_ACC_TRUNC);
 }
 
+void H5_Writer::addDict(const char* name, const Graph& dict){
+  str s;
+  dict.writeYaml(s);
+  charA b;
+  b.referTo(s.p, s.N+1);
+  add<char>(name, b);
+}
+
 void H5_Writer::addGroup(const char* group) {
   file->createGroup(group);
 }
@@ -70,6 +78,14 @@ template<class T> rai::Array<T> H5_Reader::read(const char* name, bool ifExists)
   x.resize(get_dim(dataset));
   dataset.read(x.p, get_h5type<T>());
   return x;
+}
+
+Graph H5_Reader::readDict(const char* name, bool ifExists){
+  if(ifExists && !exists(name)) return {};
+  charA b = read<char>(name);
+  CHECK_GE(b.N, 1, "");
+  str s(b.p);
+  return Graph(s);
 }
 
 template<class T> void readDatasetToGraph(rai::Graph& G, H5::DataSet& dataset, const uintA& dim, const char* name) {
