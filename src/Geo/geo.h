@@ -350,8 +350,10 @@ bool           operator!=(const Transformation&, const Transformation&);
 
 // MIXED
 Vector operator*(const Quaternion& b, const Vector& c);
+arr    operator*(const Quaternion& b, const arr& c);
 Vector operator/(const Vector& c, const Quaternion& b);
 Vector operator*(const Transformation& b, const Vector& c);
+arr    operator*(const Transformation& b, const arr& c);
 Vector operator/(const Vector& c, const Transformation& b);
 
 std::istream& operator>>(std::istream&, Vector&);

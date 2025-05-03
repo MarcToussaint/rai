@@ -705,16 +705,18 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
   }
 }
 
-void KOMO::addContact_WithPoaFrame(double time, str obj, str from, double frictionCone_mu, double init_objMass, double init_POAdist){
+rai::Frame* KOMO::addContact_WithPoaFrame(double time, str obj, str from, double frictionCone_mu, double init_objMass, double init_POAdist){
   rai::Frame *f_obj = world.getFrame(obj);
   rai::Frame *f_from = world.getFrame(from);
   //create a stable POA frame as geometric DOF, attached to obj, with z becoming the contact normal
   str poa_name = STRING("poa_" <<obj <<"_" <<from);
+  rai::Frame *f_poa = addFrameDof(poa_name, obj, rai::JT_free, true);
+  //initialize
   rai::Transformation relOrigin;
   rai::Vector relVec = f_from->ensure_X().pos / f_obj->ensure_X();
   relOrigin.pos = init_POAdist * relVec / relVec.length();
   relOrigin.rot.setDiff(Vector_z, -relVec);
-  addFrameDof(poa_name, obj, rai::JT_free, true, 0, 0, relOrigin);
+  f_poa->joint->setDofs(relOrigin.getArr7d());
 
   //create a force exchange DOF
   rai::Transformation origin = f_obj->ensure_X() * relOrigin;
@@ -735,6 +737,7 @@ void KOMO::addContact_WithPoaFrame(double time, str obj, str from, double fricti
   if(k_order>0){
     addObjective({time}, FS_positionRel, {poa_name, from}, OT_eq, {1e1}, {}, 1, +1, +1);
   }
+  return f_poa;
 }
 
 void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const char* from, const char* to) {
@@ -1740,7 +1743,6 @@ void KOMO::addForceExchangeDofs(const arr& times, const char* onto, const char* 
     if(initForce.N) ex->force = initForce;
     ex->q0 = ex->calcDofsFromConfig();
   }
-
 }
 
 rai::Frame* KOMO::applySwitch(const KinematicSwitch& sw) {

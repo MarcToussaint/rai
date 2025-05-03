@@ -1106,6 +1106,10 @@ Vector operator*(const Quaternion& b, const Vector& c) {
   return a;
 }
 
+arr operator*(const Quaternion& b, const arr& x) {
+  return (b*Vector(x)).getArr();
+}
+
 /// inverse transform of a vector by a rotation
 Vector operator/(const Vector& c, const Quaternion& b) {
   Matrix M;
@@ -1143,6 +1147,10 @@ Vector operator*(const Transformation& X, const Vector& c) {
   a = X.rot * c;
   a += X.pos;
   return a;
+}
+
+arr operator*(const Transformation& X, const arr& x) {
+  return (X*Vector(x)).getArr();
 }
 
 /// inverse transform of a vector by a frame

@@ -637,9 +637,9 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
         if(f->joint->limits.N){
           joint->setMotion(axis, PxArticulationMotion::eLIMITED);
           if(f->joint->scale>0.){
-            joint->setLimitParams(axis, {float(f->joint->scale*f->joint->limits(0)), float(f->joint->scale*f->joint->limits(1))});
+            joint->setLimitParams(axis, {float(f->joint->scale*f->joint->limits.elem(0)), float(f->joint->scale*f->joint->limits.elem(1))});
           }else{
-            joint->setLimitParams(axis, {float(f->joint->scale*f->joint->limits(1)), float(f->joint->scale*f->joint->limits(0))});
+            joint->setLimitParams(axis, {float(f->joint->scale*f->joint->limits.elem(1)), float(f->joint->scale*f->joint->limits.elem(0))});
           }
         }else{
           joint->setMotion(axis, PxArticulationMotion::eFREE);

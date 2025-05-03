@@ -74,11 +74,11 @@ StringA framesToNames(const FrameL& frames) {
   }
   return names;
 }
-uintA jointsToIndices(const JointL& joints) {
-  uintA I;
-  resizeAs(I, joints);
-  for(uint i=0; i<joints.N; i++) I.elem(i) = joints.elem(i)->frame->ID;
-  return I;
+FrameL dofsToFrames(const DofL& dofs) {
+  FrameL F;
+  resizeAs(F, dofs);
+  for(uint i=0; i<dofs.N; i++) F.elem(i) = dofs.elem(i)->frame;
+  return F;
 }
 
 void makeConvexHulls(FrameL& frames, bool onlyContactShapes) {

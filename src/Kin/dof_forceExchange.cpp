@@ -73,7 +73,7 @@ void rai::ForceExchangeDof::setDofs(const arr& q, uint n) {
     poa = q({n, n+2});
     force.clear();
     torque.clear();
-  } else if(type==FXT_torque) {
+  } else if(type==FXT_wrench) {
     poa = b.getPosition();
     force = q({n, n+2});
     torque = q({n+3, n+5});
@@ -101,7 +101,7 @@ arr rai::ForceExchangeDof::calcDofsFromConfig() const {
     q.setVectorBlock(force/scale, 3);
   } else if(type==FXT_poaOnly) {
     q = poa;
-  } else if(type==FXT_torque) {
+  } else if(type==FXT_wrench) {
     q.resize(6);
     q.setVectorBlock(force/scale, 0);
     q.setVectorBlock(torque/scale, 3);
@@ -128,9 +128,10 @@ void rai::ForceExchangeDof::kinPOA(arr& y, arr& J) const {
   } else if(type==FXT_poaOnly) {
     y = poa;
     if(!!J && active) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = 1.;
-  } else if(type==FXT_torque || type==FXT_force || type==FXT_forceZ) {
-    //use b as the POA!!
-    b.C.kinematicsPos(y, J, &b);
+  } else if(type==FXT_wrench || type==FXT_force || type==FXT_forceZ) {
+    //use b as the POA!! why??
+    // b.C.kinematicsPos(y, J, &b);
+    a.C.kinematicsPos(y, J, &a);
   } else NIY;
 }
 
@@ -142,7 +143,7 @@ void rai::ForceExchangeDof::kinForce(arr& y, arr& J) const {
     if(!!J && active) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = scale;
   } else if(type==FXT_poaOnly) {
     //is zero already
-  } else if(type==FXT_torque || type==FXT_force || type==FXT_force) {
+  } else if(type==FXT_wrench || type==FXT_force || type==FXT_force) {
     y = force;
     if(!!J && active) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = scale;
   } else if(type==FXT_forceZ) {
@@ -169,7 +170,7 @@ void rai::ForceExchangeDof::kinTorque(arr& y, arr& J) const {
       for(uint i=0; i<3; i++) J.elem(i, qIndex) += (force_to_torque*scale) * z.elem(i);
       J += (force_to_torque*force.scalar()) * Jz;
     }
-  } else if(type==FXT_torque) {
+  } else if(type==FXT_wrench) {
     y = torque;
     if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = scale;
   } else NIY;

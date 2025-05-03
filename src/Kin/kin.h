@@ -317,7 +317,7 @@ stdPipes(Configuration)
 //
 
 uintA framesToIndices(const FrameL& frames);
-uintA jointsToIndices(const JointL& joints);
+FrameL dofsToFrames(const DofL& dofs);
 StringA framesToNames(const FrameL& frames);
 
 //===========================================================================

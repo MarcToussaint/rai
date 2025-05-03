@@ -373,6 +373,8 @@ typedef rai::Array<intA>   intAA;
 typedef rai::Array<uintA>  uintAA;
 
 namespace rai { struct String; }
+typedef rai::Array<rai::String> strA;
+typedef rai::Array<rai::String> strAA;
 typedef rai::Array<rai::String> StringA;
 typedef rai::Array<StringA> StringAA;
 typedef rai::Array<rai::String*> StringL;

@@ -17,7 +17,7 @@ struct PairCollision;
 
 //===========================================================================
 
-enum ForceExchangeType : int { FXT_none=-1, FXT_poa=0, FXT_torque=1, FXT_force, FXT_forceZ, FXT_poaOnly };
+enum ForceExchangeType : int { FXT_none=-1, FXT_poa=0, FXT_wrench=1, FXT_force, FXT_forceZ, FXT_poaOnly };
 
 ///Description of a ForceExchange
 struct ForceExchangeDof : Dof, NonCopyable {

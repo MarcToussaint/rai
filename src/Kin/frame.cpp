@@ -2135,13 +2135,15 @@ void rai::Shape::createMeshes() {
       sscCore().V = arr({2, 3}, {0., 0., -.5*size(-2), 0., 0., .5*size(-2)});
       mesh().setSSCvx(sscCore().V, size(-1));
       break;
+    case rai::ST_quad: {
+      byteA tex = mesh().texImg().img;
+      mesh().setQuad(size(0), size(1), tex);
+    } break;
     case rai::ST_marker:
     case rai::ST_camera:
-      break;
     case rai::ST_mesh:
     case rai::ST_pointCloud:
     case rai::ST_lines:
-//      if(!mesh().V.N) LOG(-1) <<"mesh needs to be loaded";
       break;
     case rai::ST_sdf: {
       if(!sdf().lo.N) sdf().lo = -.5*size;
@@ -2160,10 +2162,6 @@ void rai::Shape::createMeshes() {
       if(gridSdf && gridSdf->gridData.N) {
         gridSdf->_densityDisplayData = make_shared<DensityDisplayData>(*gridSdf);
       }
-    } break;
-    case rai::ST_quad: {
-      byteA tex = mesh().texImg().img;
-      mesh().setQuad(size(0), size(1), tex);
     } break;
     case rai::ST_ssCvx:
       CHECK(size(-1)>1e-10, "");
