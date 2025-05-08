@@ -9,7 +9,7 @@ arm3 { shape:capsule size=[0.1 0.1 .3 .1] }
 arm4 { shape:capsule size=[0.1 0.1 .3 .1] }
 arm5 { shape:capsule size=[0.1 0.1 .3 .1] }
 
-(stem arm1) { joint:quatBall A: "t(0 0 1) d(90 1 0 0)" B: "t(0 0 .15)" } #quatBall
+(stem arm1) { joint:universal A: "t(0 0 1) d(90 1 0 0)" B: "t(0 0 .15)" } #quatBall
 j2(arm1 arm2) { joint:hingeX A: "t(0 0 0.15)" B: "t(0 0 .15)" axis=[0 0 1] }
 (arm2 arm3) { joint:free A: "t(0 0 0.15)" B: "t(0 0 .15)" axis=[1 0 0] } #free
 (arm3 arm4) { joint:hingeX A: "t(0 0 0.15)" B: "t(0 0 .15)" axis=[0 0 -1] mimic=j2 }

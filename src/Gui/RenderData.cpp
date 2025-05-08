@@ -210,6 +210,7 @@ void RenderData::ensureInitialized(OpenGL &gl){
   }
   id.progMarker_Projection_W = glGetUniformLocation(id.progMarker, "Projection_W");
   id.progMarker_ModelT_WM = glGetUniformLocation(id.progMarker, "ModelT_WM");
+  id.progMarker_FlatColor = glGetUniformLocation(id.progMarker, "flatColor");
 
   { //if(stopRender>_shadows){
     id.progShadow = LoadShaders( shadowVS, shadowFS );
@@ -300,7 +301,9 @@ void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs,
 
   if(type==_marker){
     distMarkers.pos.reshape(-1,2,3);
+    distMarkers.color.reshape(-1,3);
     CHECK_EQ(distMarkers.pos.d0, distMarkers.slices.N, "");
+    CHECK_EQ(distMarkers.color.d0, distMarkers.slices.N, "");
     for(uint i=0;i<distMarkers.pos.d0;i++){
       int s = distMarkers.slices(i);
       if(slice>=0 && s>=0 && s!=slice) continue;
@@ -329,6 +332,7 @@ void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs,
       ModelT_WM = X.getMatrix();
       for(uint k=0;k<4;k++) ModelT_WM(k,2) *= l; //scale length
       glUniformMatrix4fv(prog_ModelT_WM, 1, GL_TRUE, rai::convert<float>(ModelT_WM).p);
+      glUniform4f(idFlatColor, distMarkers.color(i,0), distMarkers.color(i,1), distMarkers.color(i,2), 1.);
       cylin.asset->glRender();
     }
   }
@@ -468,7 +472,7 @@ void RenderData::glDraw(OpenGL& gl){
   if(renderUntil>=_marker) {
     glUseProgram(id.progMarker);
     glUniformMatrix4fv(id.progMarker_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
-    renderObjects(id.progMarker_ModelT_WM, sorting, _marker);
+    renderObjects(id.progMarker_ModelT_WM, sorting, _marker, id.progMarker_FlatColor);
   }
 
   if(renderUntil>=_transparent) {
@@ -806,7 +810,7 @@ GLuint LoadShaders(const std::string& VertexShaderCode, const std::string& Fragm
   return ProgramID;
 }
 
-void RenderData::addDistMarker(const arr& a, const arr& b, int s, double size){
+void RenderData::addDistMarker(const arr& a, const arr& b, int s, double size, const arr& color){
   if(distMarkers.markerObj==-1){
     distMarkers.markerObj=items.N;
     rai::Mesh m;
@@ -815,8 +819,10 @@ void RenderData::addDistMarker(const arr& a, const arr& b, int s, double size){
     m.C={1.,0.,1.};
     add(0, _marker).mesh(m, .9);
   }
+  CHECK_EQ(color.N, 3, "");
   distMarkers.pos.append(a);
   distMarkers.pos.append(b);
+  distMarkers.color.append(color);
   distMarkers.slices.append(s);
 }
 
@@ -882,6 +888,7 @@ RenderData& RenderData::clear(){
   quads.clear();
   distMarkers.markerObj=-1;
   distMarkers.pos.clear();
+  distMarkers.color.clear();
   distMarkers.slices.clear();
   renderCount=0;
   slice=-1;

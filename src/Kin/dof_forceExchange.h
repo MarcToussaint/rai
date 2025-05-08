@@ -29,9 +29,9 @@ struct ForceExchangeDof : Dof, NonCopyable {
   PairCollision* __coll=0;
  public:
 
-  arr poa;
-  arr force;
-  arr torque;
+  arr poa; //in world coordinates!
+  arr force; //in world coordinates, acting at the poa
+  arr torque; //in world coordinates, acting at the poa
 
   ForceExchangeDof(Frame& a, Frame& b, ForceExchangeType _type, const ForceExchangeDof* copyContact=nullptr);
   ~ForceExchangeDof();

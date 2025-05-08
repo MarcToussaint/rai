@@ -93,6 +93,7 @@ struct RenderQuad {
 struct DistMarkers {
   int markerObj=-1;
   arr pos;
+  arr color;
   intA slices;
   void clear(){ pos.clear(); slices.clear(); }
 };
@@ -121,7 +122,7 @@ struct RenderData {
     GLuint prog_ID, prog_Projection_W, prog_ModelT_WM, prog_eyePosition_W, prog_ShadowProjection_W, prog_useShadow, prog_shadowMap, prog_numLights, prog_lightDirection_W, prog_FlatColor, prog_textureDim, prog_textureImage;
     GLuint progShadow, progShadow_ShadowProjection_W, progShadow_ModelT_WM;
     GLuint progTensor, progTensor_Projection_W, progTensor_ModelT_WM, progTensor_ModelScale, progTensor_eyePosition_W, progTensor_FlatColor, progTensor_tensorTexture;
-    GLuint progMarker, progMarker_Projection_W, progMarker_ModelT_WM;
+    GLuint progMarker, progMarker_Projection_W, progMarker_ModelT_WM, progMarker_FlatColor;
     GLuint progText, progText_color, progText_useTexColor;
     RenderFont font;
   };
@@ -133,7 +134,7 @@ struct RenderData {
 
   void addLight(const arr& pos, const arr& focus, double heightAbs=5.);
   void addAxes(double scale, const rai::Transformation& _X);
-  void addDistMarker(const arr& a, const arr& b, int s=-1, double size=.1);
+  void addDistMarker(const arr& a, const arr& b, int s=-1, double size=.1, const arr& color=arr{1.,0.,1.});
   void addText(const char* text, float x, float y, float size);
   void setText(const char* text);
   void addQuad(const byteA& img, float x, float y, float w, float h);

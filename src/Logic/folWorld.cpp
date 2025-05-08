@@ -65,10 +65,10 @@ void FOL_World::init(const Graph& _KB) {
   rewardFct = KB.find<Graph>("REWARD");
   worldRules = KB.getNodesWithTag("%Rule");
   decisionRules = KB.getNodesWithTag("%DecisionRule");
-  Terminate_keyword = KB["Terminate"];  if(!Terminate_keyword) Terminate_keyword = KB.add<bool>("Terminate"); CHECK(Terminate_keyword, "You need to declare the Terminate keyword");
-  Quit_keyword = KB["QUIT"];            if(!Quit_keyword) Quit_keyword = KB.add<bool>("QUIT");   CHECK(Quit_keyword, "You need to declare the QUIT keyword");
-  Wait_keyword = KB["WAIT"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
-  Subgoal_keyword = KB["SubgoalDone"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
+  Terminate_keyword = KB.findNode("Terminate");  if(!Terminate_keyword) Terminate_keyword = KB.add<bool>("Terminate"); CHECK(Terminate_keyword, "You need to declare the Terminate keyword");
+  Quit_keyword = KB.findNode("QUIT");            if(!Quit_keyword) Quit_keyword = KB.add<bool>("QUIT");   CHECK(Quit_keyword, "You need to declare the QUIT keyword");
+  Wait_keyword = KB.findNode("WAIT");            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
+  Subgoal_keyword = KB.findNode("SubgoalDone");            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
   Quit_literal = KB.add<bool>(0, true)->setParents({Quit_keyword});
   if(Subgoal_keyword) {
     Subgoal_literal = KB.add<bool>("tmp", true)->setParents({Subgoal_keyword});
@@ -579,7 +579,7 @@ Node* FOL_World::addSymbol(const char* name) {
 void FOL_World::addFact(const StringA& symbols) {
   NodeL parents;
   for(const String& s:symbols) {
-    Node* sym = KB[s];
+    Node* sym = KB.findNode(s);
     if(!sym) sym=addSymbol(s);
     parents.append(sym);
     CHECK(parents.last(), "Node '" <<s <<"' was not declared");
@@ -618,7 +618,7 @@ void FOL_World::addTerminalRule(const StringAA& literals) {
 
   for(const StringA& lit:literals) {
     NodeL parents;
-    for(const String& s:lit) parents.append(KB[s]);
+    for(const String& s:lit) parents.append(KB.findNode(s));
     preconditions.add<bool>(0, true)->setParents(parents);
   }
 

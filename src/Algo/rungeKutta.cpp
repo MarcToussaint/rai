@@ -20,18 +20,20 @@ void rk4(arr& x1, const arr& x0, const fct& f, double dt) {
   x1 += (dt/6.)*(k1 + 2.*k2 + 2.*k3 + k4);
 }
 
-void rk4_2ndOrder(arr& x, const arr& x0, const fct& f, double dt) {
+arr rk4_2ndOrder(const arr& x0, const std::function<arr(const arr& q, const arr& qdot)>& f, double dt) {
   CHECK(x0.nd==2 && x0.d0==2, "need a 2-times-n array   rk4_2ndOrder input");
 
   auto f2 = [f](const arr& x) -> arr {
     CHECK(x.nd==2 && x.d0==2, "");
     arr y(x.d0, x.d1);
     y[0] = x[1];
-    y[1] = f(x);
+    y[1] = f(x[0], x[1]);
     return y;
   };
 
+  arr x;
   rk4(x, x0, f2, dt);
+  return x;
 }
 
 #if 0

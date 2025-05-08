@@ -15,6 +15,7 @@ struct PhysX_Options {
   RAI_PARAM("physx/", int, verbose, 1)
   RAI_PARAM("physx/", bool, yGravity, false)
   RAI_PARAM("physx/", double, angularDamping, .1)
+  RAI_PARAM("physx/", double, jointFriction, 0.05)
   RAI_PARAM("physx/", double, defaultFriction, 1.)
   RAI_PARAM("physx/", double, defaultRestitution, .1) //restitution=1 should be elastic...
   RAI_PARAM("physx/", double, motorKp, 1000.)

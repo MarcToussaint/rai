@@ -45,6 +45,7 @@ void TEST(PairCollision){
     {
       auto lock = R.dataLock(RAI_HERE);
       R.distMarkers.pos.clear();
+      R.distMarkers.color.clear();
       R.distMarkers.slices.clear();
     }
 #endif

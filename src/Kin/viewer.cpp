@@ -164,6 +164,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   {
     auto lock = dataLock(RAI_HERE);
     distMarkers.pos.clear();
+    distMarkers.color.clear();
     distMarkers.slices.clear();
   }
 
@@ -191,7 +192,10 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
 
       int s=-1;
       if(timeSlices.N) s = fr->ID/timeSlices.d1;
-      addDistMarker(_poa, _poa+.1*_force, s, .025);
+      addDistMarker(_poa, _poa+.1*_force, s, .025, {1.,0.,1.});
+      if(f->type==rai::FXT_wrench){
+        addDistMarker(_poa, _poa+.1*_torque, s, .025, {1.,1.,0.});
+      }
     }
   }
 

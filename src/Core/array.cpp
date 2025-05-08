@@ -976,13 +976,12 @@ void scanArrFile(const char* name) {
 #endif
 
 /// numeric (finite difference) computation of the gradient
-arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalytic) {
+arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalytic, double eps) {
   arr dx, J;
   double y, dy;
   y=f(Janalytic, NoArr, x);
 
   J.resize(x.N);
-  double eps=CHECK_EPS;
   uint i;
   for(i=0; i<x.N; i++) {
     dx=x;
@@ -995,18 +994,19 @@ arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalyt
 }
 
 /// numeric (finite difference) computation of the gradient
-arr finiteDifferenceJacobian(const fct& f, const arr& _x, arr& Janalytic) {
+arr finiteDifferenceJacobian(const fct& f, const arr& _x, arr& Janalytic, double eps) {
   arr x=_x;
   arr y, dx, dy, J;
   y = f(x);
-  Janalytic = y.J_reset();
-  if(isRowShifted(Janalytic)
-      || isSparseMatrix(Janalytic)) {
-    Janalytic = unpack(Janalytic);
+  if(!!Janalytic){
+    Janalytic = y.J_reset();
+    if(isRowShifted(Janalytic)
+        || isSparseMatrix(Janalytic)) {
+      Janalytic = unpack(Janalytic);
+    }
   }
 
   J.resize(y.N, x.N);
-  double eps=CHECK_EPS;
   uint i, k;
   for(i=0; i<x.N; i++) {
     dx=x;
@@ -1015,7 +1015,7 @@ arr finiteDifferenceJacobian(const fct& f, const arr& _x, arr& Janalytic) {
     dy = (dy.noJ()-y.noJ())/eps;
     for(k=0; k<y.N; k++) J(k, i)=dy.elem(k);
   }
-  J.reshapeAs(Janalytic);
+  // J.reshape(Janalytic);
   return J;
 }
 
@@ -1303,7 +1303,7 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
   }
   arr x;
   if(b.nd==2) { //b is a matrix (unusual) repeat for each col:
-    RAI_MSG("TODO: directly call lapack with the matrix!")
+    // RAI_MSG("TODO: directly call lapack with the matrix!")
     arr bT = ~b;
     x.resizeAs(bT);
     for(uint i=0; i<bT.d0; i++) x[i].noconst() = lapack_Ainv_b_sym(A, bT[i]);

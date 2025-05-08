@@ -1092,6 +1092,7 @@ rai::Frame& rai::Frame::unLink() {
 rai::Frame& rai::Frame::setParent(rai::Frame* _parent, bool keepAbsolutePose_and_adaptRelativePose, bool checkForLoop) {
   CHECK(_parent, "you need to set a parent to link from");
   CHECK(!parent, "this frame ('" <<name <<"') already has a parent");
+  CHECK(&this->C==&_parent->C, "you can only set parent frames in the same configuration")
   if(parent==_parent) return *this;
   //if(parent){ //unlink first...
   //  parent->children.removeValue(this);
@@ -1340,10 +1341,9 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
       } break;
 
       case JT_universal: {
-        rai::Quaternion rot1, rot2;
-        rot1.setRadX(qp[0]);
-        rot2.setRadY(qp[1]);
-        Q.rot = rot1*rot2;
+        Q.rot.setZero();
+        Q.rot.appendX(qp[0]);
+        Q.rot.appendY(qp[1]);
       } break;
 
       case JT_circleZ: {
@@ -1521,14 +1521,8 @@ arr rai::Joint::calcDofsFromConfig() const {
 
     case JT_universal: {
       q.resize(2);
-      //angle
-      if(fabs(Q.rot.w)>1e-15) {
-        q(0) = 2.0 * atan(Q.rot.x/Q.rot.w);
-        q(1) = 2.0 * atan(Q.rot.y/Q.rot.w);
-      } else {
-        q(0) = RAI_PI;
-        q(1) = RAI_PI;
-      }
+      q(0) = Q.rot.getRoll_X();
+      q(1) = Q.rot.getPitch_Y();
     } break;
 
     case JT_circleZ: {

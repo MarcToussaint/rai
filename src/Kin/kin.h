@@ -116,7 +116,7 @@ struct Configuration {
   FrameL getJointsSlice(const FrameL& slice, bool activesOnly=true) const;
   uintA getDofIDs() const;
   StringA getJointNames() const;
-  DofL getDofs(const FrameL& F, bool actives, bool inactives, bool mimics=false) const;
+  DofL getDofs(const FrameL& F, bool actives, bool inactives, bool mimics=false, bool forces=true) const;
   uintA getCtrlFramesAndScale(arr& scale=NoArr, bool jointPairs=true) const;
   FrameL getRoots() const;
   FrameL getParts() const;
@@ -242,18 +242,20 @@ struct Configuration {
   void dyn_MF(arr& M, arr& F, const arr& q_dot);
   arr dyn_inverseDyamics(const arr& q_dot, const arr& q_ddot);
   arr dyn_fwdDynamics(const arr& q_dot, const arr& u);
+  void dyn_fwdStep_RungeKutta(arr& q_dot, const arr& u, double tau);
+  double dyn_energy(const arr& q_dot);
 private: //internal:
   struct FrameDynState{ bool isGood=false; Vector p, v, w, vd, wd; Matrix R; };
   FrameDynState& dyn_ensure(Frame* f, const arr& q_dot, Array<FrameDynState>& buffer);
   arr dyn_inertia(Frame* f);
   arr dyn_M(Frame *f, const arr& I_f);
   arr dyn_J_dot(Frame *f, const arr& q_dot, const arr& Jpos, const arr& Jang);
-  arr dyn_coriolis(Frame *f, const arr& q_dot, const arr& I_f, const arr& Jpos, const arr& Jang, Array<FrameDynState>& buffer);
+  arr dyn_C(Frame *f, const arr& q_dot, const arr& I_f, const arr& Jpos, const arr& Jang, Array<FrameDynState>& buffer);
 public:
 
   /// @name dynamics based on the fs() interface
   void equationOfMotion(arr& M, arr& F, const arr& qdot, bool gravity=true);
-  void fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity=true);
+  arr fwdDynamics(const arr& qd, const arr& tau, bool gravity=true);
   void inverseDynamics(arr& tau, const arr& qd, const arr& qdd, bool gravity=true);
 
   /// @name collisions & proxies

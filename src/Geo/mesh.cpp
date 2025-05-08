@@ -726,30 +726,30 @@ Mesh Mesh::decompose() {
   return M;
 }
 
-uint Mesh::getComponents() {
-  //usually we'd analyze connected components... here assume sorted vertices and triangles!
-  return 0;
-//  uint part=0;
-//  uint partStart=0;
-//  uint end=0;
-//  cvxParts = {0};
-//  for(uint i=0;i<T.d0;i++){
-//    uint* t = &T(i,0);
-//    if(t[0]>end && t[1]>end && t[2]>end){ //NEW COMPONENT!
-//      part++;
-//      cvxParts.append(end);
-//      partStart = end+1;
-//    }
-//    CHECK_GE(t[0], partStart, "");
-//    CHECK_GE(t[1], partStart, "");
-//    CHECK_GE(t[2], partStart, "");
-//    if(t[0]>end) end=t[0];
-//    if(t[1]>end) end=t[1];
-//    if(t[2]>end) end=t[2];
-//  }
-//  LOG(0) <<"parts:" <<cvxParts;
-  return cvxParts.N;
-}
+// uint Mesh::getComponents() {
+//   //usually we'd analyze connected components... here assume sorted vertices and triangles!
+//   return 0;
+// //  uint part=0;
+// //  uint partStart=0;
+// //  uint end=0;
+// //  cvxParts = {0};
+// //  for(uint i=0;i<T.d0;i++){
+// //    uint* t = &T(i,0);
+// //    if(t[0]>end && t[1]>end && t[2]>end){ //NEW COMPONENT!
+// //      part++;
+// //      cvxParts.append(end);
+// //      partStart = end+1;
+// //    }
+// //    CHECK_GE(t[0], partStart, "");
+// //    CHECK_GE(t[1], partStart, "");
+// //    CHECK_GE(t[2], partStart, "");
+// //    if(t[0]>end) end=t[0];
+// //    if(t[1]>end) end=t[1];
+// //    if(t[2]>end) end=t[2];
+// //  }
+// //  LOG(0) <<"parts:" <<cvxParts;
+//   return cvxParts.N;
+// }
 
 void Mesh::setSSCvx(const arr& core, double r, uint fineness) {
   if(r>0.) {
@@ -1824,12 +1824,12 @@ void Mesh::readArr(std::istream& is) {
   clear();
   Graph G(is);
   rai::Node* n;
-  n=G["V"]; if(n) { if(n->is<arr>()) V = n->as<arr>(); else V = convert<double>(n->as<floatA>()); }
-  n=G["T"]; if(n) { if(n->is<uintA>()) T = n->as<uintA>(); else { if(n->is<Array<int16_t>>()) T = convert<uint>(n->as<Array<int16_t>>()); else T = convert<uint>(n->as<uint16A>()); } }
-  n=G["C"]; if(n) { if(n->is<arr>()) C = n->as<arr>(); else { if(n->is<byteA>()) C = convert<double>(n->as<byteA>())/255.; else C = convert<double>(n->as<floatA>()); } }
+  n=G.findNode("V"); if(n) { if(n->is<arr>()) V = n->as<arr>(); else V = convert<double>(n->as<floatA>()); }
+  n=G.findNode("T"); if(n) { if(n->is<uintA>()) T = n->as<uintA>(); else { if(n->is<Array<int16_t>>()) T = convert<uint>(n->as<Array<int16_t>>()); else T = convert<uint>(n->as<uint16A>()); } }
+  n=G.findNode("C"); if(n) { if(n->is<arr>()) C = n->as<arr>(); else { if(n->is<byteA>()) C = convert<double>(n->as<byteA>())/255.; else C = convert<double>(n->as<floatA>()); } }
   G.get(cvxParts, "cvxParts");
   G.get(texCoords, "textureCoords");
-  n=G["textureImg"]; if(n) { if(n->is<byteA>()) texImg().img = n->as<byteA>(); }
+  n=G.findNode("textureImg"); if(n) { if(n->is<byteA>()) texImg().img = n->as<byteA>(); }
 }
 #else //old version...
 void rai::Mesh::readArr(std::istream& is){

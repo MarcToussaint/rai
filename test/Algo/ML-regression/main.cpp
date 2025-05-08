@@ -26,8 +26,8 @@ void testLinReg(const char *datafile=nullptr) {
   arr Phi = makeFeatures(X);
 
   //-- compute optimal parameters
-//  RidgeRegression R(Phi, y);
-  LocalLinearRidgeRegression R(X, y, -1);
+  RidgeRegression R(Phi, y);
+  // LocalLinearRidgeRegression R(X, y, -1);
 
 //  cout <<"estimated beta = "<< R.beta <<endl;
 //  if(R.beta.N==beta_true.N) cout <<"max-norm beta-beta_true = " <<maxDiff(R.beta, beta_true) <<endl; //beta_true is global and generated during artificialData
@@ -35,11 +35,12 @@ void testLinReg(const char *datafile=nullptr) {
 
   //-- evaluate model on a grid
   arr X_grid = grid(X.d1, -3, 3, (X.d1==1?600:30));
-//  Phi = makeFeatures(X_grid, "readFromCfgFile", X);
-//  arr y_grid = R.evaluate(Phi, s_grid); //Phi*beta;
-//  s_grid = sqrt(s_grid);
-  arr y_grid = R.evaluate(X_grid);
+  Phi = makeFeatures(X_grid, "readFromCfgFile", X);
   arr s_grid;
+  arr y_grid = R.evaluate(Phi, s_grid); //Phi*beta;
+  s_grid = sqrt(s_grid);
+  // arr y_grid = R.evaluate(X_grid);
+  // arr s_grid;
   if(!s_grid.N) s_grid.resizeAs(y_grid).setZero();
 //  arr s_grid = sqrt(evaluateBayesianRidgeRegressionSigma(Phi, Sigma)/*+rai::sqr(sigma)*/);
 

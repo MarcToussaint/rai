@@ -867,7 +867,7 @@ void KOMO::setConfiguration_qOrg(int t, const arr& q) {
 }
 
 arr KOMO::getConfiguration_dofs(uint t, const uintA& dofIndices) {
-  return pathConfig.getDofState(pathConfig.getDofs(pathConfig.getFrames(dofIndices + timeSlices(k_order+t, 0)->ID), true, true)); //also inactive ones, as the orgJointIndices are explicit
+  return pathConfig.getDofState(pathConfig.getDofs(pathConfig.getFrames(dofIndices + timeSlices(k_order+t, 0)->ID), true, true, false, false)); //also inactive ones, as the orgJointIndices are explicit
 }
 
 void KOMO::setConfiguration_X(int t, const arr& X) {

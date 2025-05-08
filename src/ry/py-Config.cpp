@@ -295,7 +295,7 @@ To get really precise distances and penetrations use the FS.distance feature wit
 
   .def("view_focus", &rai::Configuration::view_focus,
        "focus on a particular frame, given via name; second argument distances camara so that view window has roughly given absHeight around object",
-       pybind11::arg("frameName")
+       pybind11::arg("frameName"),
        pybind11::arg("absHeight")=2.)
 
   .def("view_recopyMeshes", [](shared_ptr<rai::Configuration>& self) {

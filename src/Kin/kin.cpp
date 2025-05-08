@@ -598,7 +598,7 @@ StringA Configuration::getJointNames() const {
   return names;
 }
 
-DofL Configuration::getDofs(const FrameL& F, bool actives, bool inactives, bool mimics) const {
+DofL Configuration::getDofs(const FrameL& F, bool actives, bool inactives, bool mimics, bool forces) const {
   DofL dofs;
   for(Frame* f:F) {
     Dof* dof = f->joint;
@@ -613,11 +613,13 @@ DofL Configuration::getDofs(const FrameL& F, bool actives, bool inactives, bool 
     if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
       dofs.append(dof);
     }
-    for(ForceExchangeDof* dof: f->forces) if(&dof->a==f) {
-        if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
-          dofs.append(dof);
+    if(forces){
+      for(ForceExchangeDof* dof: f->forces) if(&dof->a==f) {
+          if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
+            dofs.append(dof);
+          }
         }
-      }
+    }
   }
   return dofs;
 }
@@ -1646,6 +1648,9 @@ arr Configuration::calc_fwdPropagateVelocities(const arr& qdot) {
         if(j->type==JT_hingeX) {
           q_vel.setZero();
           q_angvel.set(qdot(j->qIndex), 0., 0.);
+        } else if(j->type==JT_hingeY) {
+          q_vel.setZero();
+          q_angvel.set(0., qdot(j->qIndex), 0.);
         } else if(j->type==JT_transX) {
           q_vel.set(qdot(j->qIndex), 0., 0.);
           q_angvel.setZero();
@@ -1741,6 +1746,20 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           J.elem(0, j_idx) += tmp.x;
           J.elem(1, j_idx) += tmp.y;
           J.elem(2, j_idx) += tmp.z;
+        } else if(j->type==JT_universal) {
+          rai::Vector tmp;
+          tmp = j->frame->parent->get_X().rot.getX();
+          tmp = tmp ^ (pos_world-j_pos);
+          tmp *= j->scale;
+          J.elem(0, j_idx) += tmp.x;
+          J.elem(1, j_idx) += tmp.y;
+          J.elem(2, j_idx) += tmp.z;
+          tmp = j->frame->get_X().rot.getY();
+          tmp = tmp ^ (pos_world-j_pos);
+          tmp *= j->scale;
+          J.elem(0, j_idx+1) += tmp.x;
+          J.elem(1, j_idx+1) += tmp.y;
+          J.elem(2, j_idx+1) += tmp.z;
         } else if(j->type==JT_transX || j->type==JT_transY || j->type==JT_transZ || j->type==JT_XBall) {
           J.elem(0, j_idx) += j->scale * j->axis.x;
           J.elem(1, j_idx) += j->scale * j->axis.y;
@@ -1875,6 +1894,19 @@ void Configuration::jacobian_angular(arr& J, Frame* a) const {
           J.elem(0, j_idx) += j->scale * j->axis.x;
           J.elem(1, j_idx) += j->scale * j->axis.y;
           J.elem(2, j_idx) += j->scale * j->axis.z;
+        }
+        if(j->type==JT_universal) {
+          rai::Vector tmp;
+          tmp = j->frame->parent->get_X().rot.getX();
+          tmp *= j->scale;
+          J.elem(0, j_idx) += tmp.x;
+          J.elem(1, j_idx) += tmp.y;
+          J.elem(2, j_idx) += tmp.z;
+          tmp = j->frame->get_X().rot.getY();
+          tmp *= j->scale;
+          J.elem(0, j_idx+1) += tmp.x;
+          J.elem(1, j_idx+1) += tmp.y;
+          J.elem(2, j_idx+1) += tmp.z;
         }
         if(j->type==JT_circleZ) {
           arr Jrot = j->X().rot.getMatrix() * a->get_Q().rot.getJacobian(); //transform w-vectors into world coordinate
@@ -2169,13 +2201,15 @@ void Configuration::equationOfMotion(arr& M, arr& F, const arr& qdot, bool gravi
 
 /** @brief return the joint accelerations \f$\ddot q\f$ given the
   joint torques \f$\tau\f$ (computed via Featherstone's Articulated Body Algorithm in O(n)) */
-void Configuration::fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity) {
+arr Configuration::fwdDynamics(const arr& qd, const arr& tau, bool gravity) {
   fs().update();
   if(gravity) fs().setGravity(); else fs().setGravity(0.);
   //  cout <<tree <<endl;
+  arr qdd;
   // fs().fwdDynamics_MF(qdd, qd, tau); //fail safe
     fs().fwdDynamics_aba_1D(qdd, qd, tau); //works
   //  fwdDynamics_aba_nD(qdd, tree, qd, tau); //does not work
+    return qdd;
 }
 
 /** @brief return the necessary joint torques \f$\tau\f$ to achieve joint accelerations
@@ -2423,10 +2457,10 @@ void Configuration::stepOde(double tau) {
 
 void Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double tau, double dynamicNoise, bool gravity) {
 
-  auto eqn = [&](const arr& x) -> arr {
-    setJointState(x[0]);
+  auto eqn = [&](const arr& q, const arr& qdot) -> arr {
+    setJointState(q);
     arr M, Minv, F;
-    equationOfMotion(M, F, x[1], gravity);
+    equationOfMotion(M, F, qdot, gravity);
     inverse_SymPosDef(Minv, M);
     //Minv = inverse(M); //TODO why does symPosDef fail?
     arr y = Minv * (Bu_control - F);
@@ -2446,7 +2480,7 @@ void Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double tau, d
   arr x1=cat(s->q, s->qdot).reshape(2, s->q.N);
 #else
   arr x1;
-  rk4_2ndOrder(x1, (q, qdot).reshape(2, q.N), eqn, tau);
+  x1 = rk4_2ndOrder((q, qdot).reshape(2, -1), eqn, tau);
   if(dynamicNoise) rndGauss(x1[1].noconst(), ::sqrt(tau)*dynamicNoise, true);
 #endif
 
@@ -3168,13 +3202,18 @@ Configuration::FrameDynState& Configuration::dyn_ensure(Frame* f, const arr& q_d
     Vector V = 0;
     Vector W = 0;
     if(f->joint){
-      if(f->joint->dim==1){
+      if(f->joint->dim==1 && f->joint->type>=rai::JT_hingeX && f->joint->type<=rai::JT_hingeZ){
         CHECK_EQ(f->joint->dim, 1, "");
         W = q_dot(f->joint->qIndex) * f->joint->axis; //axis is already in world coordinates! (see Frame::calc_X_from_parent())
+      }else if(f->joint->dim==1 && f->joint->type>=rai::JT_transX && f->joint->type<=rai::JT_transZ){
+        CHECK_EQ(f->joint->dim, 1, "");
+        V = q_dot(f->joint->qIndex) * f->joint->axis; //axis is already in world coordinates! (see Frame::calc_X_from_parent())
       }else{
-        arr Jang;
+        arr Jang, Jlin;
         f->C.jacobian_angular(Jang, f);
         W = Jang * q_dot;
+        f->C.jacobian_pos(Jlin, f, f->get_X().pos);
+        V = Jlin * q_dot;
       }
     }
 
@@ -3227,14 +3266,18 @@ arr Configuration::dyn_J_dot(Frame* f, const arr& q_dot, const arr& Jpos, const 
   return J_dot;
 }
 
-arr Configuration::dyn_coriolis(Frame* f, const arr& q_dot, const arr& I_f, const arr& Jpos, const arr& Jang, Array<FrameDynState>& buffer){
+arr Configuration::dyn_C(Frame* f, const arr& q_dot, const arr& I_f, const arr& Jpos, const arr& Jang, Array<FrameDynState>& buffer){
   arr J_dot = dyn_J_dot(f, q_dot, Jpos, Jang);
   arr M = dyn_M(f, I_f);
   arr w = Jang * q_dot;
-  arr c = zeros(6);
-  c.setVectorBlock(crossProduct(w, I_f * w), 3);
-  c += M * (J_dot * q_dot);
-  return c;
+  // arr c = M * (J_dot * q_dot);
+  // arr wIw = skew(w) * I_f * Jang * q_dot; //crossProduct(w, I_f * w);
+  // c.setVectorBlock(wIw, 3);
+  // return c;
+  arr C = M * J_dot;
+  arr wIw = skew(w) * I_f * Jang; //crossProduct(w, I_f * w);
+  C({3,5}) += wIw; //.setMatrixBlock(wIw, 3, 0);
+  return C;
 }
 
 arr Configuration::dyn_M(Frame* f, const arr& I_f){
@@ -3269,9 +3312,9 @@ void Configuration::dyn_MF(arr& M, arr& F, const arr& q_dot){
 	cg(2) = 9.81*f->inertia->mass;
 	F += ~J * (M_f*acc+cg);
 #else
-	cg = dyn_coriolis(f, q_dot, I, Jpos, Jang, buffer);
-	cg(2) += 9.81*f->inertia->mass;
-	F += ~J * cg;
+	// C += ~J * dyn_C(f, q_dot, I, Jpos, Jang, buffer);
+	F += ~J * dyn_C(f, q_dot, I, Jpos, Jang, buffer) * q_dot;
+	F += ~Jpos * arr{0., 0., 9.81*f->inertia->mass};
 #endif
       }
     }
@@ -3313,6 +3356,32 @@ arr Configuration::dyn_fwdDynamics(const arr& q_dot, const arr& u){
   dyn_MF(M, F, q_dot);
   for(uint i=0;i<M.d0;i++) M.elem(i,i) += 1e-12;
   return lapack_Ainv_b_sym(M, u - F);
+}
+
+void Configuration::dyn_fwdStep_RungeKutta(arr& q_dot, const arr& u, double tau){
+  auto diffEqn = [this,&u](const arr& q, const arr& q_dot) -> arr{
+    this->setJointState(q);
+    return this->dyn_fwdDynamics(q_dot, u);
+  };
+  arr x = rai::rk4_2ndOrder((q, q_dot).reshape(2,-1), diffEqn, tau);
+  setJointState(x[0]);
+  q_dot = x[1];
+}
+
+double Configuration::dyn_energy(const arr& q_dot){
+  Array<FrameDynState> buffer;
+  double E=0.;
+  for(Frame* f: frames) if(f->inertia) {
+      FrameDynState& B = dyn_ensure(f, q_dot, buffer);
+      rai::Matrix I = dyn_inertia(f);
+
+      double m=f->inertia->mass;
+      double v = B.v.length();
+      E += .5*m*v*v;
+      E += 9.81 * m * (f->ensure_X()*f->inertia->com).z;
+      E += .5*(B.w*(I*B.w));
+    }
+  return E;
 }
 
 #if 0
