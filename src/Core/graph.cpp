@@ -1192,7 +1192,7 @@ void Graph::writeYaml(std::ostream& os) const {
 }
 
 #else
-void Graph::writeYaml(std::ostream& os) {
+void Graph::writeYaml(std::ostream& os) const {
   //write(os, "\n", "{}", 0, true, false);
   write(os, "\n", 0, -1, true, false);
 }

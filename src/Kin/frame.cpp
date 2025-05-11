@@ -1886,6 +1886,7 @@ void rai::Joint::read(const Graph& ats) {
   ats.get(limits, "limits");
   if(limits.N && type!=JT_rigid && !mimic) {
     CHECK(limits.N>=2*dim/* || limits.N==2*qDim()+3*/, "parsed limits have wrong dimension: either lo-hi or lo-hi-vel-eff-acc PER DOF");
+    limits.resizeCopy(2*dim);
     limits.reshape(2,dim);
     for(uint i=0;i<limits.d1;i++) CHECK_LE(limits(0,i), limits(1,i), "limits are not lower-equal: " <<limits);
   }

@@ -159,7 +159,10 @@ struct Mesh {
 
 stdOutPipe(Mesh)
 
+void clearAssetMeshesTextures();
+
 } //namespace
+
 
 //===========================================================================
 

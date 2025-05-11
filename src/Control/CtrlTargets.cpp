@@ -250,13 +250,13 @@ CtrlTarget_PD::CtrlTarget_PD(const arr& _y_target, double decayTime, double damp
 CtrlTarget_PD::CtrlTarget_PD(const rai::Graph& params)
   : CtrlTarget_PD() {
   rai::Node* it;
-  if((it=params["PD"])) {
+  if((it=params.findNode("PD"))) {
     arr pd=it->as<arr>();
     setGainsAsNatural(pd(0), pd(1));
     maxVel = pd(2);
     maxAcc = pd(3);
   }
-  if((it=params["target"])) y_target = it->as<arr>();
+  if((it=params.findNode("target"))) y_target = it->as<arr>();
 }
 
 void CtrlTarget_PD::setGains(double _kp, double _kd) {

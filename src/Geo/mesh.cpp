@@ -66,6 +66,13 @@ SharedTextureImage& Mesh::texImg(const char* file){
   return *_texImg;
 }
 
+void clearAssetMeshesTextures(){
+  NodeL M = params()->findNodesOfType(typeid(shared_ptr<rai::Mesh>));
+  for(Node *n:M) delete n;
+  NodeL T = params()->findNodesOfType(typeid(shared_ptr<SharedTextureImage>));
+  for(Node *n:T) delete n;
+}
+
 Mesh::Mesh()
   : glX(0)
     /*parsing_pos_start(0),

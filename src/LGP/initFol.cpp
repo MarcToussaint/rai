@@ -16,8 +16,8 @@ void initFolStateFromKin(FOL_World& L, const Configuration& C) {
   boolA isSymbol;
   isSymbol.resize(C.frames.N) = false;
   for(Frame* a:C.frames) if(a->ats) {
-      if((*a->ats)["logical"]) { //-- explicit setting of logic predicates
-        const Graph& G = (*a->ats)["logical"]->graph();
+      if(a->ats->findNode("logical")) { //-- explicit setting of logic predicates
+        const Graph& G = a->ats->findNode("logical")->graph();
         for(Node* n:G) L.addFact({n->key, a->name});
         isSymbol(a->ID)=true;
       } else if(a->joint && a->joint->type==JT_rigid) { //-- implicit object
