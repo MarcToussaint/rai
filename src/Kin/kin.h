@@ -161,7 +161,7 @@ struct Configuration {
   arr getCtrlMetric() const;
   arr getNaturalCtrlMetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getJointLimits(const DofL& dofs) const;
-  arr getJointLimits() const { return getJointLimits(activeDofs); }
+  arr getJointLimits() const { getJointStateDimension(); return getJointLimits(activeDofs); }
   arr getTorqueLimits(const DofL& dofs, uint index=4) const;
   double getEnergy(const arr& qdot);
   double getTotalPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
@@ -192,6 +192,7 @@ struct Configuration {
   Joint* attach(Frame* a, Frame* b);
   Joint* attach(const char* a, const char* b);
   uintAA getCollisionExcludePairIDs(int verbose=0);
+  FrameL getCollidableShapes();
   FrameL getCollidablePairs();
   void prefixNames(bool clear=false);
 
@@ -269,6 +270,7 @@ public:
   void view_unlock();
   //std::shared_ptr<SwiftInterface> swift();
   std::shared_ptr<FclInterface> fcl(int verbose=0);
+  void fcl_reset();
   void swiftDelete();
   PhysXInterface& physx();
   OdeInterface& ode();

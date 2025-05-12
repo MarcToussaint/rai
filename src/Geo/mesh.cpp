@@ -579,6 +579,7 @@ void Mesh::makeConvexHull() {
   Tn.clear();
   texCoords.clear();
   _texImg.reset();
+  isArrayFormatted=false;
 #else
   uintA H = getHullIndices(V, T);
   intA Hinv = consts<int>(-1, V.d0);
@@ -599,7 +600,6 @@ void Mesh::makeConvexHull() {
     T(i, 1) = Hinv(T(i, 1));
     T(i, 2) = Hinv(T(i, 2));
   }
-
 #endif
 }
 

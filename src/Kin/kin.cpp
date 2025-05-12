@@ -1493,6 +1493,12 @@ uintAA Configuration::getCollisionExcludePairIDs(int verbose) {
   return ex;
 }
 
+FrameL Configuration::getCollidableShapes(){
+  FrameL coll;
+  for(Frame* A:frames) if(A->shape && A->shape->cont) coll.append(A);
+  return coll;
+}
+
 FrameL Configuration::getCollidablePairs() {
   FrameL coll;
 
@@ -2287,9 +2293,13 @@ std::shared_ptr<FclInterface> Configuration::fcl(int verbose) {
         if(verbose>0) LOG(0) <<"  SKIPPING from FCL interface: " <<f->name;
       }
     }
-    self->fcl = make_shared<FclInterface>(geometries, getCollisionExcludePairIDs(), FclInterface::_broadPhaseOnly); //-1.=broadphase only -> many proxies, 0.=binary, .1=exact margin (slow)
+    self->fcl = make_shared<FclInterface>(geometries, getCollisionExcludePairIDs(), FclInterface::_binaryCollisionAll); //broadphase only -> many proxies, binary, exact margin (slow)
   }
   return self->fcl;
+}
+
+void Configuration::fcl_reset() {
+  if(self && self->fcl) self->fcl.reset();
 }
 
 /// return a PhysX extension

@@ -63,6 +63,8 @@ FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _exclu
   self = new FclInterface_self;
 
   self->convexGeometryData.resize(geometries.N);
+  rai::Array<rai::Mesh> cvx_mesh(geometries.N);
+
   for(long int i=0; i<geometries.N; i++) {
     Shape* shape = geometries(i);
     if(shape) {
@@ -76,18 +78,13 @@ FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _exclu
 //      }else if(shape->type()==ST_box){
 //        geom = make_shared<fcl::Box>(shape->size(0), shape->size(1), shape->size(2));
       } else {
-        Mesh& mesh = shape->mesh();
-#if 0
-        auto model = make_shared<fcl::BVHModel<fcl::OBBRSS>>();
-        model->beginModel();
-        for(uint i=0; i<mesh.T.d0; i++)
-          model->addTriangle(Vec3f(&mesh.V(mesh.T(i, 0), 0)), Vec3f(&mesh.V(mesh.T(i, 1), 0)), Vec3f(&mesh.V(mesh.T(i, 2), 0)));
-        model->endModel();
-#elif 1
-        CHECK(!mesh.cvxParts.N, "mesh '" <<shape->frame.name <<"' has convex decomposition - not implemented yet in FCL! -- please separate in separate frames")
-        //rai::Mesh mesh;
-        //mesh.V = mesh_org.V;
-        //mesh.makeConvexHull();
+        Mesh& mesh_org = shape->mesh();
+        CHECK(!mesh_org.cvxParts.N, "mesh '" <<shape->frame.name <<"' has convex decomposition - not implemented yet in FCL! -- please separate in separate frames")
+        // rai::Mesh& mesh = mesh_org;
+        rai::Mesh& mesh = cvx_mesh(i);
+        mesh.V = mesh_org.V;
+        mesh.makeConvexHull();
+        if(!mesh.T.N) continue;
         mesh.computeTriNormals();
         std::shared_ptr<ConvexGeometryData> dat = make_shared<ConvexGeometryData>();
         dat->plane_dis = mesh.computeTriDistances();
@@ -104,9 +101,6 @@ FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _exclu
         geom = make_shared<fcl::Convex>((fcl::Vec3f*)mesh.Tn.p, dat->plane_dis.p, mesh.T.d0, (fcl::Vec3f*)mesh.V.p, mesh.V.d0, (int*)dat->polygons.p);
 #endif
         self->convexGeometryData(i) = dat;
-#else
-        auto model = make_shared<fcl::Sphere>(mesh.getRadius());
-#endif
       }
       CollObject* obj = new CollObject(geom, fcl::Transform3f());
       obj->setUserData((void*)(i));
