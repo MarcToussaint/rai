@@ -221,7 +221,7 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
 //===========================================================================
 
 
-void RRT_PathFinder::setProblem(const Configuration& C){
+void RRT_PathFinder::setProblem(Configuration& C){
   P = make_shared<ConfigurationProblem>(C, opt.useBroadCollisions, opt.collisionTolerance, 1);
   P->verbose=0;
 }
@@ -383,11 +383,17 @@ void revertPath(arr& path) {
 }
 
 void RRT_PathFinder::view(bool pause, const char* txt, bool play){
+#if 0
   ensure_DISP();
   DISP.get_viewer() -> updateConfiguration(DISP);
   if(path.N) DISP.get_viewer() -> setMotion(DISP, path);
   // if(play) DISP.get_viewer() -> playVideo();
   DISP.get_viewer() -> view(pause, txt);
+#else
+  P->C.get_viewer() -> updateConfiguration(P->C);
+  if(path.N) P->C.get_viewer() -> setMotion(P->C, path);
+  P->C.get_viewer() -> view(pause, txt);
+#endif
 }
 
 void RRT_PathFinder::ensure_DISP(){

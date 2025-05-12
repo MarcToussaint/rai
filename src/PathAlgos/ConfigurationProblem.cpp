@@ -13,7 +13,7 @@
 
 #include "ConfigurationProblem.h"
 
-ConfigurationProblem::ConfigurationProblem(const rai::Configuration& _C, bool _useBroadCollisions, double _collisionTolerance, int _verbose)
+ConfigurationProblem::ConfigurationProblem(rai::Configuration& _C, bool _useBroadCollisions, double _collisionTolerance, int _verbose)
   : C(_C),
     useBroadCollisions(_useBroadCollisions),
     collisionTolerance(_collisionTolerance),
@@ -29,7 +29,8 @@ ConfigurationProblem::ConfigurationProblem(const rai::Configuration& _C, bool _u
   }
   sphericalCoordinates.reshape(-1,2);
 
-  // C.fcl(verbose-1)->mode = rai::FclInterface::_binaryCollisionAll;
+  // C.fcl()->mode = rai::FclInterface::_distanceCutoff;
+  C.fcl()->mode = rai::FclInterface::_broadPhaseOnly;
 }
 
 void ConfigurationProblem::setExplicitCollisionPairs(const StringA& _collisionPairs) {
@@ -49,7 +50,6 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x) {
 
   C.setJointState(x);
   if(useBroadCollisions) {
-    //C.stepSwift();
     C.stepFcl();
   } else {
     //CHECK(collisionPairs.N, "you need either explicit collision pairs or useBroadCollisions");

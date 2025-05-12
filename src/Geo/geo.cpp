@@ -1150,7 +1150,13 @@ Vector operator*(const Transformation& X, const Vector& c) {
 }
 
 arr operator*(const Transformation& X, const arr& x) {
-  return (X*Vector(x)).getArr();
+  if(x.nd==1){
+    return (X*Vector(x)).getArr();
+  }else{
+    arr pts = x;
+    X.applyOnPointArray(pts);
+    return pts;
+  }
 }
 
 /// inverse transform of a vector by a frame

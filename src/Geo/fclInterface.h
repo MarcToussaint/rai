@@ -16,7 +16,7 @@ struct FclInterface {
   struct FclInterface_self* self=0;
   enum QueryMode { _broadPhaseOnly, _binaryCollisionSingle, _binaryCollisionAll, _distanceCutoff, _fine } mode;
 
-  double cutoff=-1.;
+  double cutoff=.01;
   uintAA excludes;
   uintA collisions; //return values!
   arr X_lastQuery;  //memory to check whether an object has moved in consecutive queries

@@ -31,7 +31,7 @@ struct QueryResult {
 stdOutPipe(QueryResult)
 
 struct ConfigurationProblem {
-  rai::Configuration C;
+  rai::Configuration& C;
   arr limits;
   uintA sphericalCoordinates;
 
@@ -44,7 +44,7 @@ struct ConfigurationProblem {
   int verbose=0;
   uint evals=0;
 
-  ConfigurationProblem(const rai::Configuration& _C, bool _useBroadCollisions=true, double _collisionTolerance=1e-3, int _verbose=0);
+  ConfigurationProblem(rai::Configuration& _C, bool _useBroadCollisions=true, double _collisionTolerance=1e-3, int _verbose=0);
 
   void setExplicitCollisionPairs(const StringA& _collisionPairs);
 
