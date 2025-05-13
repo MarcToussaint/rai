@@ -43,6 +43,7 @@ struct ConfigurationProblem {
   //user info
   int verbose=0;
   uint evals=0;
+  double queryTime=0.;
 
   ConfigurationProblem(rai::Configuration& _C, bool _useBroadCollisions=true, double _collisionTolerance=1e-3, int _verbose=0);
 

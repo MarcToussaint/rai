@@ -24,6 +24,8 @@ struct FclInterface {
   FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes, QueryMode _mode);
   ~FclInterface();
 
+  void setActiveColliders(uintA geom_ids);
+
   void step(const arr& X);
 
  protected:

@@ -164,8 +164,7 @@ struct Configuration {
   arr getJointLimits() const { getJointStateDimension(); return getJointLimits(activeDofs); }
   arr getTorqueLimits(const DofL& dofs, uint index=4) const;
   double getEnergy(const arr& qdot);
-  double getTotalPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
-  bool getCollisionFree();
+  // bool getCollisionFree(); //broken
   Graph reportForces();
   bool checkUniqueNames(bool makeUnique=false);
   FrameL calc_topSort() const;
@@ -260,7 +259,13 @@ public:
   void inverseDynamics(arr& tau, const arr& qd, const arr& qdd, bool gravity=true);
 
   /// @name collisions & proxies
-  void copyProxies(const ProxyA& _proxies);
+  void coll_setActiveColliders(const FrameL& colliders);
+  void coll_addExcludePair(uint aID, uint bID);
+
+  double coll_totalViolation(); ///< proxies are returns from a collision engine; contacts stable constraints
+  void coll_reportProxies(std::ostream& os=cout, double belowMargin=1., bool brief=true) const;
+  std::shared_ptr<FclInterface> coll_fcl(int verbose=0);
+  void coll_fclReset();
   void addProxies(const uintA& collisionPairs);
 
   /// @name extensions on demand
@@ -268,10 +273,6 @@ public:
   OpenGL& gl();
   void view_lock(const char* _lockInfo);
   void view_unlock();
-  //std::shared_ptr<SwiftInterface> swift();
-  std::shared_ptr<FclInterface> fcl(int verbose=0);
-  void fcl_reset();
-  void swiftDelete();
   PhysXInterface& physx();
   OdeInterface& ode();
   FeatherstoneInterface& fs();
@@ -284,7 +285,7 @@ public:
   void view_close();
   void view_focus(const char* frameName, double heightAbs=1.);
   void set_viewer(std::shared_ptr<ConfigurationViewer>& _viewer);
-  void stepFcl();
+  void coll_stepFcl();
   void stepPhysx(double tau);
   void stepOde(double tau);
   void stepDynamics(arr& qdot, const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);
@@ -306,7 +307,6 @@ public:
 
   //some info
   void report(std::ostream& os=cout) const;
-  void reportProxies(std::ostream& os=cout, double belowMargin=1., bool brief=true) const;
   void reportLimits(std::ostream& os=cout) const;
 
  private:

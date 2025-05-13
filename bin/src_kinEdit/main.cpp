@@ -72,9 +72,9 @@ int main(int argc,char **argv){
     //-- report collisions
     if(rai::checkParameter<bool>("collisions")){
       C.ensure_proxies();
-      LOG(0) <<"total penetration: " <<C.getTotalPenetration();
+      LOG(0) <<"total violation: " <<C.coll_totalViolation();
       LOG(0) <<"collision report: ";
-      C.reportProxies(cout, 0.);
+      C.coll_reportProxies(cout, 0.);
     }
 
     //-- save meshes

@@ -181,7 +181,10 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
     CHECK_ZERO(length(normal) - 1., 1e-5, "");
   }
 
-  CHECK_ZERO(scalarProduct(normal, p1-p2) - distance, 1e-5, "");
+  // CHECK_ZERO(scalarProduct(normal, p1-p2) - distance, 1e-5, "");
+  if(fabs(scalarProduct(normal, p1-p2) - distance)>1e-5){
+    LOG(-1) <<"distances inconsistent";
+  }
 
   CHECK_GE(rai::sign(distance) * scalarProduct(normal, p1-p2), -1e-10, "");
 
@@ -362,7 +365,7 @@ void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
   if(method==_ccdMPRPenetration) {
     int ret = ccdMPRPenetrationRai(&m1, &m2, &ccd, &_depth, &_dir, &_pos, simplex);
     if(ret<0) {
-      LOG(0) <<"WARNING: called MPR penetration for non intersecting meshes...";
+      // LOG(0) <<"WARNING: called MPR penetration for non intersecting meshes...";
       m1._support_vertex = rnd(m1.V.d0);
       m2._support_vertex = rnd(m2.V.d0);
       libccd(m1, m2, _ccdGJKIntersect);
@@ -867,7 +870,7 @@ double coll_1on3(arr& p2, arr& normal, const arr& pts1, const arr& pts2) {
   //compute normal of tri (plane eq first three parameters)
   arr a=tri[1]-tri[0], b=tri[2]-tri[0];
   normal = crossProduct(b, a);
-  normal /= length(normal);
+  normal /= length(normal)+1e-10;
 
   //find plane eq offset parameter
   double d = scalarProduct(normal, tri[0]);

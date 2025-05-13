@@ -1879,7 +1879,7 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
 
   if(computeCollisions) {
     if(!fcl) {
-      fcl = world.fcl();
+      fcl = world.coll_fcl();
       fcl->mode = fcl->_broadPhaseOnly;
     }
     timeCollisions -= rai::cpuTime();

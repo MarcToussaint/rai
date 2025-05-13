@@ -437,8 +437,8 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
   } else {
     //use broadphase
     C.ensure_proxies();
-    double p = C.getTotalPenetration();
-    if(verbose>1) C.reportProxies();
+    double p = C.coll_totalViolation();
+    if(verbose>1) C.coll_reportProxies();
     if(p>0.) good=false;
   }
 
@@ -448,7 +448,7 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
   if(!solve) {
     if(verbose) {
       LOG(-1) <<"collision check failed";
-      if(!collisionPairs.N) C.reportProxies();
+      if(!collisionPairs.N) C.coll_reportProxies();
     }
     if(assert) HALT("collision check failed");
     return false;
@@ -483,8 +483,8 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
     C.setJointState(ret->x);
     if(verbose>1) {
       C.ensure_proxies();
-      double p = C.getTotalPenetration();
-      if(verbose>1) C.reportProxies();
+      double p = C.coll_totalViolation();
+      if(verbose>1) C.coll_reportProxies();
       CHECK_LE(p, 0., "collisions were not resolved");
     }
     return true;

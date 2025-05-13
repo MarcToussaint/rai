@@ -62,7 +62,7 @@ LGP_SkeletonTool::~LGP_SkeletonTool() {
 void LGP_SkeletonTool::viewConfig() {
   lgproot->C.checkConsistency();
   lgproot->C.ensure_proxies(true);
-  lgproot->C.reportProxies(cout, .1, true);
+  lgproot->C.coll_reportProxies(cout, .1, true);
   lgproot->C.view(true);
 //  lgproot->C.watchFile(fileBase + ".g"); //could also retrieve the confFile parameter
 }

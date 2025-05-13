@@ -164,7 +164,9 @@ void Configuration::copy(const Configuration& C, bool referenceFclOnCopy) {
   frames.reshapeAs(C.frames);
 
   //copy proxies; first they point to origin frames; afterwards, let them point to own frames
-  copyProxies(C.proxies);
+  proxies.clear();
+  proxies.resize(C.proxies.N);
+  for(uint i=0; i<proxies.N; i++) proxies(i).copy(*this, C.proxies(i));
   //  proxies = K.proxies;
   //  for(Proxy& p:proxies) { p.a = frames.elem(p.a->ID); p.b = frames.elem(p.b->ID);  p.coll.reset(); }
 
@@ -1052,35 +1054,6 @@ double Configuration::getEnergy(const arr& qdot) {
   return E;
 }
 
-/// get the sum of all shape penetrations -- PRECONDITION: proxies have been computed (with stepFcl())
-double Configuration::getTotalPenetration() {
-  fcl()->mode = rai::FclInterface::_broadPhaseOnly;
-  ensure_proxies(true);
-
-  double D=0.;
-  for(const Proxy& p:proxies) {
-    //early check: if proxy is way out of collision, don't bother computing it precise
-    if(p.d > p.a->shape->radius()+p.b->shape->radius()+.01) continue;
-    //exact computation
-    if(!p.collision)((Proxy*)&p)->calc_coll();
-    double d = p.collision->getDistance();
-    if(d<0.) D -= d;
-  }
-  //  for(Frame *f:frames) for(ForceExchange *c:f->forces) if(&c->a==f) {
-  //        double d = c->getDistance();
-  //      }
-  return D;
-}
-
-bool Configuration::getCollisionFree() {
-  fcl()->mode = rai::FclInterface::_binaryCollisionAll;
-  ensure_proxies(false);
-
-  bool feas=true;
-  for(const rai::Proxy& p:proxies) if(p.d<=0.) { feas=false; break; }
-  return feas;
-}
-
 Graph Configuration::reportForces() {
   Graph G;
   for(Dof* dof : otherDofs) {
@@ -1693,11 +1666,6 @@ arr Configuration::calc_fwdPropagateVelocities(const arr& qdot) {
   return vel;
 }
 
-void Configuration::ensure_proxies(bool fine) {
-  if(!_state_proxies_isGood) stepFcl(); //broadphase
-  if(fine) for(Proxy& p: proxies) if(!p.collision) p.calc_coll(); //fine
-}
-
 //===========================================================================
 //
 // core: kinematics and dynamics
@@ -2232,6 +2200,180 @@ void Configuration::inverseDynamics(arr& tau, const arr& qd, const arr& qdd, boo
 #endif
 }
 
+/// return a Swift extension
+/*
+std::shared_ptr<SwiftInterface> Configuration::swift() {
+  if(self->swift && self->swift->swiftID.N != frames.N) self->swift.reset();
+  if(!self->swift){
+    self->swift = make_shared<SwiftInterface>(frames, .1, 0);
+    self->swift->deactivate(getCollisionExcludeIDs());
+    self->swift->deactivatePairs(getCollisionExcludePairIDs());
+  }
+  return self->swift;
+}
+*/
+
+//===========================================================================
+
+std::shared_ptr<FclInterface> Configuration::coll_fcl(int verbose) {
+  if(!self->fcl) {
+    Array<Shape*>::memMove=1;
+    Array<Shape*> geometries(frames.N);
+    geometries.setZero();
+    for(Frame* f:frames) {
+      if(f->shape && f->shape->cont) {
+        CHECK(f->shape->type()!=rai::ST_marker, "collision object can't be a marker");
+        if(!f->shape->mesh().V.N) f->shape->createMeshes();
+        CHECK(f->shape->mesh().V.N, "collision object with no vertices");
+        geometries(f->ID) = f->shape;
+        if(verbose>0) LOG(0) <<"  adding to FCL interface: " <<f->name;
+      } else {
+        if(verbose>0) LOG(0) <<"  SKIPPING from FCL interface: " <<f->name;
+      }
+    }
+    self->fcl = make_shared<FclInterface>(geometries, getCollisionExcludePairIDs(), FclInterface::_broadPhaseOnly); //broadphase only -> many proxies, binary, exact margin (slow)
+  }
+  return self->fcl;
+}
+
+void Configuration::coll_fclReset() {
+  if(self && self->fcl) self->fcl.reset();
+}
+
+void Configuration::addProxies(const uintA& collisionPairs) {
+  //-- copy them into proxies
+  uint j = proxies.N;
+  proxies.resizeCopy(j+collisionPairs.d0);
+  for(uint i=0; i<collisionPairs.d0; i++) {
+    uint a = collisionPairs.elem(2*i);
+    uint b = collisionPairs.elem(2*i+1);
+    if(a<b) { uint z=a; a=b; b=z; }
+    rai::Frame* f1 = frames.elem(a);
+    rai::Frame* f2 = frames.elem(b);
+#if 0
+    bool canCollide = f1->shape->canCollideWith(f2);
+    if(!canCollide) {
+      LOG(0) <<"you should not be here! filtering out: " <<f1->ID <<'.' <<f1->name  <<' ' <<f2->ID <<'.' <<f2->name;
+      continue;
+    }
+#endif
+    Proxy& p = proxies.elem(j);
+    p.a = f1;
+    p.b = f2;
+    p.d = -0.;
+    p.posA = f1->getPosition();
+    p.posB = f2->getPosition();
+    j++;
+  }
+}
+
+/*
+void Configuration::stepSwift() {
+  arr X = getFrameState();
+  uintA collisionPairs = swift()->step(X, false);
+  //  reportProxies();
+  //  watch(true);
+  //  gl()->closeWindow();
+  proxies.clear();
+  addProxies(collisionPairs);
+
+  _state_proxies_isGood=true;
+}
+*/
+
+void Configuration::coll_stepFcl() {
+  //-- get the frame state of collision objects
+#if 0
+  arr X = getFrameState();
+#else
+  static arr X;
+  X.resize(frames.N, 7).setZero();
+  for(uint i=0; i<X.d0; i++) {
+    rai::Frame* f = frames.elem(i);
+    if(f->shape && f->shape->cont) X[i] = f->ensure_X().getArr7d();
+  }
+#endif
+  //-- step fcl
+  coll_fcl()->step(X);
+  //-- add as proxies
+  proxies.clear();
+  addProxies(coll_fcl()->collisions);
+
+  _state_proxies_isGood=true;
+}
+
+
+void Configuration::ensure_proxies(bool fine) {
+  if(!_state_proxies_isGood) coll_stepFcl(); //broadphase
+  if(fine) for(Proxy& p: proxies) if(!p.collision) p.calc_coll(); //fine
+}
+
+
+void Configuration::coll_setActiveColliders(const FrameL& colliders){
+  coll_fcl()->setActiveColliders(rai::framesToIndices(colliders));
+}
+
+void Configuration::coll_addExcludePair(uint aID, uint bID){
+  if(aID<bID){
+    coll_fcl()->excludes(aID).setAppendInSorted(bID);
+  }else{
+    coll_fcl()->excludes(bID).setAppendInSorted(aID);
+  }
+}
+
+/// get the sum of all shape penetrations -- PRECONDITION: proxies have been computed (with stepFcl())
+double Configuration::coll_totalViolation() {
+  coll_fcl()->mode = rai::FclInterface::_broadPhaseOnly;
+  ensure_proxies(true);
+
+  double D=0.;
+  for(const Proxy& p:proxies) {
+    //early check: if proxy is way out of collision, don't bother computing it precise
+    if(p.d > p.a->shape->radius()+p.b->shape->radius()+.01) continue;
+    //exact computation
+    if(!p.collision)((Proxy*)&p)->calc_coll();
+    double d = p.collision->getDistance();
+    if(d<0.) D -= d;
+  }
+  //  for(Frame *f:frames) for(ForceExchange *c:f->forces) if(&c->a==f) {
+  //        double d = c->getDistance();
+  //      }
+  return D;
+}
+
+// bool Configuration::getCollisionFree() {
+//   fcl()->mode = rai::FclInterface::_binaryCollisionAll;
+//   ensure_proxies(false);
+
+//   bool feas=true;
+//   for(const rai::Proxy& p:proxies) if(p.d<=0.) { feas=false; break; }
+//   return feas;
+// }
+
+/// dump the list of current proximities on the screen
+void Configuration::coll_reportProxies(std::ostream& os, double belowMargin, bool brief) const {
+  CHECK(_state_proxies_isGood, "");
+
+  os <<"Proximity report: #" <<proxies.N <<endl;
+  uint i=0;
+  double pen = 0.;
+  for(const Proxy& p: proxies) {
+    if(p.d>belowMargin) continue;
+    if(p.d<0.) pen -= p.d;
+    os <<"  " <<i++;
+    p.write(os, brief);
+    os <<endl;
+  }
+  os <<"  TOTAL PENETRATION: " <<pen <<endl;
+  os <<"ForceExchange report:" <<endl;
+  for(Frame* a:frames) for(ForceExchangeDof* c:a->forces) {
+      if(&c->a==a) {
+        c->coll();
+        os <<*c <<endl;
+      }
+    }
+}
+
 /*void Configuration::impulsePropagation(arr& qd1, const arr& qd0){
   static Array<Featherstone::Link> tree;
   if(!tree.N) GraphToTree(tree, *this);
@@ -2264,43 +2406,6 @@ void Configuration::view_unlock() {
   }
 }
 
-/// return a Swift extension
-/*
-std::shared_ptr<SwiftInterface> Configuration::swift() {
-  if(self->swift && self->swift->swiftID.N != frames.N) self->swift.reset();
-  if(!self->swift){
-    self->swift = make_shared<SwiftInterface>(frames, .1, 0);
-    self->swift->deactivate(getCollisionExcludeIDs());
-    self->swift->deactivatePairs(getCollisionExcludePairIDs());
-  }
-  return self->swift;
-}
-*/
-
-std::shared_ptr<FclInterface> Configuration::fcl(int verbose) {
-  if(!self->fcl) {
-    Array<Shape*>::memMove=1;
-    Array<Shape*> geometries(frames.N);
-    geometries.setZero();
-    for(Frame* f:frames) {
-      if(f->shape && f->shape->cont) {
-        CHECK(f->shape->type()!=rai::ST_marker, "collision object can't be a marker");
-        if(!f->shape->mesh().V.N) f->shape->createMeshes();
-        CHECK(f->shape->mesh().V.N, "collision object with no vertices");
-        geometries(f->ID) = f->shape;
-        if(verbose>0) LOG(0) <<"  adding to FCL interface: " <<f->name;
-      } else {
-        if(verbose>0) LOG(0) <<"  SKIPPING from FCL interface: " <<f->name;
-      }
-    }
-    self->fcl = make_shared<FclInterface>(geometries, getCollisionExcludePairIDs(), FclInterface::_binaryCollisionAll); //broadphase only -> many proxies, binary, exact margin (slow)
-  }
-  return self->fcl;
-}
-
-void Configuration::fcl_reset() {
-  if(self && self->fcl) self->fcl.reset();
-}
 
 /// return a PhysX extension
 PhysXInterface& Configuration::physx() {
@@ -2390,68 +2495,6 @@ void Configuration::glGetMasks(int w, int h, bool rgbIndices) {
   }
 }
 #endif
-
-void Configuration::addProxies(const uintA& collisionPairs) {
-  //-- copy them into proxies
-  uint j = proxies.N;
-  proxies.resizeCopy(j+collisionPairs.d0);
-  for(uint i=0; i<collisionPairs.d0; i++) {
-    uint a = collisionPairs.elem(2*i);
-    uint b = collisionPairs.elem(2*i+1);
-    if(a<b) { uint z=a; a=b; b=z; }
-    rai::Frame* f1 = frames.elem(a);
-    rai::Frame* f2 = frames.elem(b);
-#if 0
-    bool canCollide = f1->shape->canCollideWith(f2);
-    if(!canCollide) {
-      LOG(0) <<"you should not be here! filtering out: " <<f1->ID <<'.' <<f1->name  <<' ' <<f2->ID <<'.' <<f2->name;
-      continue;
-    }
-#endif
-    Proxy& p = proxies.elem(j);
-    p.a = f1;
-    p.b = f2;
-    p.d = -0.;
-    p.posA = f1->getPosition();
-    p.posB = f2->getPosition();
-    j++;
-  }
-}
-
-/*
-void Configuration::stepSwift() {
-  arr X = getFrameState();
-  uintA collisionPairs = swift()->step(X, false);
-  //  reportProxies();
-  //  watch(true);
-  //  gl()->closeWindow();
-  proxies.clear();
-  addProxies(collisionPairs);
-
-  _state_proxies_isGood=true;
-}
-*/
-
-void Configuration::stepFcl() {
-  //-- get the frame state of collision objects
-#if 0
-  arr X = getFrameState();
-#else
-  static arr X;
-  X.resize(frames.N, 7).setZero();
-  for(uint i=0; i<X.d0; i++) {
-    rai::Frame* f = frames.elem(i);
-    if(f->shape && f->shape->cont) X[i] = f->ensure_X().getArr7d();
-  }
-#endif
-  //-- step fcl
-  fcl()->step(X);
-  //-- add as proxies
-  proxies.clear();
-  addProxies(fcl()->collisions);
-
-  _state_proxies_isGood=true;
-}
 
 void Configuration::stepPhysx(double tau) {
   physx().step(tau);
@@ -2557,12 +2600,6 @@ void Configuration::filterProxiesToContacts(double margin) {
   for(ForceExchange* c:old) delete c;
 }
 #endif
-
-void Configuration::copyProxies(const ProxyA& _proxies) {
-  proxies.clear();
-  proxies.resize(_proxies.N);
-  for(uint i=0; i<proxies.N; i++) proxies(i).copy(*this, _proxies(i));
-}
 
 /// prototype for \c operator<<
 void Configuration::write(std::ostream& os, bool explicitlySorted) const {
@@ -3055,30 +3092,6 @@ Frame& Configuration::addDict(const Graph& G) {
   checkConsistency();
 
   return *frames.elem(n_prev);
-}
-
-/// dump the list of current proximities on the screen
-void Configuration::reportProxies(std::ostream& os, double belowMargin, bool brief) const {
-  CHECK(_state_proxies_isGood, "");
-
-  os <<"Proximity report: #" <<proxies.N <<endl;
-  uint i=0;
-  double pen = 0.;
-  for(const Proxy& p: proxies) {
-    if(p.d>belowMargin) continue;
-    if(p.d<0.) pen -= p.d;
-    os <<"  " <<i++;
-    p.write(os, brief);
-    os <<endl;
-  }
-  os <<"  TOTAL PENETRATION: " <<pen <<endl;
-  os <<"ForceExchange report:" <<endl;
-  for(Frame* a:frames) for(ForceExchangeDof* c:a->forces) {
-      if(&c->a==a) {
-        c->coll();
-        os <<*c <<endl;
-      }
-    }
 }
 
 void Configuration::reportLimits(std::ostream& os) const {
@@ -3914,7 +3927,7 @@ void Configuration::watchFile(const char* filename) {
         ensure_proxies(true);
         double eps=.1;
         V->text.clear();
-        reportProxies(V->text, eps, true);
+        coll_reportProxies(V->text, eps, true);
         cout <<V->text <<endl;
         V->updateConfiguration(*this).view(false);
 #if 0

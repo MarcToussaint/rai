@@ -53,6 +53,7 @@ struct ConvexGeometryData {
 struct FclInterface_self {
   Array<shared_ptr<struct ConvexGeometryData>> convexGeometryData;
   std::vector<CollObject*> objects;
+  rai::Array<CollObject*> activeColliders;
   shared_ptr<BroadPhaseCollisionManager> manager;
 
   static bool BroadphaseCallback(CollObject* o1, CollObject* o2, void* cdata_);
@@ -123,6 +124,22 @@ FclInterface::~FclInterface() {
   delete self;
 }
 
+void FclInterface::setActiveColliders(uintA geom_ids){
+  uint max_id = max(geom_ids);
+  rai::Array<CollObject*> geomId2obj(max_id+1);
+  geomId2obj.setZero();
+  for(auto* obj:self->objects) {
+    uint i = (long int)obj->getUserData();
+    if(i<=max_id) geomId2obj(i) = obj;
+  }
+  for(uint i:geom_ids){
+    if(geomId2obj(i)){
+      self->activeColliders.append(geomId2obj(i));
+    }
+  }
+  LOG(0) <<"#active colliders: " <<self->activeColliders.N <<endl;
+}
+
 void FclInterface::step(const arr& X) {
   CHECK_EQ(X.nd, 2, "");
   CHECK_GE(X.d0, self->convexGeometryData.N, "");
@@ -139,7 +156,14 @@ void FclInterface::step(const arr& X) {
   self->manager->update();
 
   collisions.clear();
-  self->manager->collide(this, FclInterface_self::BroadphaseCallback);
+  if(!self->activeColliders.N){ //collide all
+    self->manager->collide(this, FclInterface_self::BroadphaseCallback);
+  }else{
+    for(auto* obj:self->activeColliders) {
+      self->manager->collide(obj, this, FclInterface_self::BroadphaseCallback);
+    }
+  }
+
   collisions.reshape(-1, 2);
 
   X_lastQuery = X;
@@ -156,6 +180,8 @@ bool FclInterface_self::BroadphaseCallback(CollObject* o1, CollObject* o2, void*
 
   uint a = (long int)o1->getUserData();
   uint b = (long int)o2->getUserData();
+  if(a==b) return false;
+
   if(fcl->excludes.N) {
     if(a<b) {
       if(fcl->excludes(a).containsInSorted(b)) return false;
@@ -194,3 +220,8 @@ rai::FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _
 rai::FclInterface::~FclInterface() { NICO }
 void rai::FclInterface::step(const arr& X) { NICO }
 #endif
+
+
+RUN_ON_INIT_BEGIN(fclInterface)
+rai::Array<CollObject*>::memMove=true;
+RUN_ON_INIT_END(fclInterface)

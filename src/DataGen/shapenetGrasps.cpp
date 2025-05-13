@@ -141,11 +141,11 @@ arr sampleGraspCandidate(rai::Configuration& C, const char *ptsFrame, const char
 
     C.setJointState(q);
     C.ensure_proxies(true);
-    double collisions = C.getTotalPenetration();
+    double collisions = C.coll_totalViolation();
 
     if(verbose>0){
       if(verbose>2){
-        C.reportProxies(cout, .0, false);
+        C.coll_reportProxies(cout, .0, false);
       }
       C.view(verbose>2, STRING("random pick pose " <<s <<" collisions: " <<collisions <<" bounds: " <<inBounds));
       if(verbose>1) rai::wait(.1);
@@ -200,7 +200,7 @@ arr sampleGraspCandidate(rai::Configuration& C, const char *ptsFrame, const char
   if(verbose>0){
     if(verbose>2){
       C.ensure_proxies(true);
-      C.reportProxies(std::cout, .01);
+      C.coll_reportProxies(std::cout, .01);
     }
     C.view(verbose>1, STRING("proposed grasp"));
   }
