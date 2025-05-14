@@ -6,6 +6,7 @@
 # (a tag like `FREEGLUT = 1' can be defined in the make-config as needed)
 
 ARCH = $(shell uname -m)
+USER_LIB = $(HOME)/.local
 
 ifeq ($(RAI_CMAKE),1)
 DEPEND :=
@@ -15,8 +16,8 @@ endif
 
 ifeq ($(JSON),1)
 DEPEND_UBUNTU += libjsoncpp-dev
-CXXFLAGS += -DRAI_JSON
-LIBS += -ljsoncpp
+CXXFLAGS += -DRAI_JSON `pkg-config --cflags jsoncpp`
+LIBS     += `pkg-config --libs jsoncpp`
 endif
 
 ifeq ($(YAML),1)
@@ -54,12 +55,6 @@ LIBS += -lpng
 endif
 
 ifeq ($(FCL),1)
-ifeq ($(FCL_LOCAL),1)
-#LPATHS += $(HOME)/git/fcl/build/lib
-#CPATH := $(CPATH):$(HOME)/git/fcl/build/include:$(HOME)/git/fcl/include
-else
-DEPEND_UBUNTU += libfcl-dev
-endif
 CXXFLAGS  += -DRAI_FCL
 LIBS      += -lfcl
 endif
@@ -182,7 +177,7 @@ QT := 1
 endif
 
 ifeq ($(GL),1)
-DEPEND_UBUNTU += libglew-dev freeglut3-dev
+DEPEND_UBUNTU += libglew-dev freeglut3-dev libglm-dev
 CXXFLAGS  += -DRAI_GL
 LIBS += -lGLEW -lglut -lGLU -lGL -lX11
 endif
@@ -215,19 +210,20 @@ LIBS += -pthread -Wl,-Bsymbolic-functions  -lwx_gtk2u_richtext-2.8 -lwx_gtk2u_au
 endif
 
 ifeq ($(ANN),1)
-DEPEND_UBUNTU += libann-dev
+#DEPEND_UBUNTU += libann-dev
 CXXFLAGS  += -DRAI_ANN
-LIBS += -lann
+LIBS += -lANN
 endif
 
 ifeq ($(QHULL),1)
 DEPEND_UBUNTU += libqhull-dev
 VAR = $(shell pkg-config qhull --silence-errors --modversion)
 ifeq ($(strip $(VAR)),)
-CXXFLAGS  += -DRAI_QHULL
+CXXFLAGS  += -DRAI_QHULL `pkg-config --cflags qhullcpp`
 else
 CXXFLAGS  += -DRAI_QHULL8
 endif
+#LIBS += `pkg-config --libs qhullcpp`
 LIBS      += -lqhull
 endif
 
@@ -365,9 +361,10 @@ endif
 
 ifeq ($(EIGEN),1)
 DEPEND_UBUNTU += libeigen3-dev
-CXXFLAGS += -DRAI_EIGEN -fopenmp
+CXXFLAGS += -DRAI_EIGEN -fopenmp `pkg-config --cflags eigen3`
+#LIBS     += `pkg-config --libs eigen3`
 LDFLAGS += -fopenmp
-CPATH := $(CPATH):/usr/include/eigen3:/usr/local/include/eigen3
+#CPATH := $(CPATH):/usr/include/eigen3:/usr/local/include/eigen3
 endif
 
 ifeq ($(HYBRID_AUTOMATON),1)

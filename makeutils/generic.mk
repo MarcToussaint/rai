@@ -88,11 +88,11 @@ UIC = uic
 YACC = bison -d
 
 LINK	= $(CXX)
-CPATHS	+= $(BASE)/rai $(HOME)/opt/include
+CPATHS	+= $(BASE)/rai $(HOME)/.local/include
 ifdef BASE2
 CPATHS	+= $(BASE2)
 endif
-LPATHS	+= $(BASE)/lib $(HOME)/opt/lib /usr/local/lib
+LPATHS	+= $(BASE)/lib $(HOME)/.local/lib /usr/local/lib
 ifdef BASE2
 LPATHS	+= $(BASE2)/lib
 endif
@@ -105,8 +105,8 @@ LIBS += -lrt
 
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
 
-CXXFLAGS += -Wno-terminate -Wno-pragmas -fPIC
-CFLAGS += -fPIC
+CXXFLAGS += -Wno-terminate -Wno-array-bounds -Wno-pragmas -fPIC
+CFLAGS += -fPIC -O3
 
 ifndef RAI_NO_CXX11
 CXXFLAGS += -std=c++2a
@@ -207,7 +207,7 @@ cleanLocks: force
 
 cleanLibs: force
 	@echo "   *** cleanLibs  " $(PWD)
-	@find $(BASE)/rai $(BASE)/lib $(BASE2) \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
+	@find $(BASE) $(BASE2) \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \) -not -path "$(BASE2)/build/*" -delete -print
 
 cleanAll: cleanLocks cleanDepends force
 	@echo "   *** cleanAll   " $(PWD)
@@ -252,6 +252,9 @@ info: force
 	@echo "  CXXFLAGS =" "$(CXXFLAGS)"
 	@echo "  LINK =" "$(LINK)"
 	@echo "  LDFLAGS =" "$(LDFLAGS)"
+	@echo "  CPATHS =" "$(CPATHS)"
+	@echo "  CPATHS =" "$(CPATHS)"
+	@echo "  CPATHS =" "$(CPATHS)"
 	@echo "  CPATH =" "$(CPATH)"
 	@echo "  LPATHS =" "$(LPATHS)"
 	@echo "  LPATH =" "$(LPATH)"
@@ -311,6 +314,7 @@ pywrapper: $(OUTPUT) $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 
 %.so: $(PREOBJS) $(BUILDS) $(OBJS)
 	$(LINK) $(LDFLAGS) -o $@ $(OBJS) $(LIBS) $(SHAREFLAG)
+	@mkdir -p $(BASE)/lib
 	cp $@ $(BASE)/lib
 
 #%.so: $(PREOBJS) $(BUILDS) z.unity.o
@@ -322,6 +326,7 @@ pywrapper: $(OUTPUT) $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 
 %.a: $(PREOBJS) $(BUILDS) $(OBJS)
 	ar -crvs $@ $(OBJS)
+	@mkdir -p $(BASE)/lib
 	cp $@ $(BASE)/lib
 
 #%.a: $(PREOBJS) $(BUILDS)

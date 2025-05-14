@@ -9,6 +9,7 @@
 #pragma once
 
 #include "defines.h"
+#include "stdint.h"
 
 #include <initializer_list>
 #include <tuple>
