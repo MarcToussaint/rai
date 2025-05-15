@@ -352,7 +352,7 @@ void TEST(Contacts){
 
   VectorFunction f = [&G](const arr& x) -> arr {
     G.setJointState(x);
-    G.stepFcl();
+    G.coll_stepFcl();
     arr y;
     G.kinematicsPenetration(y, y.J(), .2);
     return y;
@@ -361,9 +361,9 @@ void TEST(Contacts){
   x = G.getJointState();
   for(t=0;t<100;t++){
     G.setJointState(x);
-    G.stepFcl();
+    G.coll_stepFcl();
 
-    G.reportProxies();
+    G.coll_reportProxies();
 
     G.jacMode = G.JM_dense;
     G.kinematicsPenetration(con, grad, .2);
@@ -530,19 +530,19 @@ void TEST(Dynamics){
 
   arr u;
   bool friction=false;
-  VectorFunction diffEqn = [&C,&u,&friction](const arr& x) -> arr{
+  auto diffEqn = [&C,&u,&friction](const arr& x, const arr& xdot) -> arr{
     checkNan(x);
-    C.setJointState(x[0]);
+    C.setJointState(x);
     if(!u.N) u.resize(x.d1).setZero();
-    if(friction) u = -1e-1 * x[1];
+    if(friction) u = -1e-1 * xdot;
     checkNan(u);
     arr y, ytest;
-    C.fwdDynamics(y, x[1], u, true);
-    ytest = C.dyn_fwdDynamics(x[1], u);
+    y = C.fwdDynamics(xdot, u, true);
+    ytest = C.dyn_fwdDynamics(xdot, u);
     arr M, F, Mtest, Ftest;
     cout <<"qdd precision: " <<sumOfSqr(y-ytest) <<endl; // <<M <<endl <<Mtest <<endl
-    C.equationOfMotion(M, F, x[1], true);
-    C.dyn_MF(Mtest, Ftest, x[1]);
+    C.equationOfMotion(M, F, xdot, true);
+    C.dyn_MF(Mtest, Ftest, xdot);
     cout <<"M precision:   " <<sumOfSqr(M-Mtest) <<endl; // <<M <<endl <<Mtest <<endl
     cout <<"F precision:   " <<sumOfSqr(F-Ftest) <<endl; // <<F <<endl <<Ftest <<endl;
     checkNan(y);
@@ -569,7 +569,7 @@ void TEST(Dynamics){
       C.inverseDynamics(u, qd, qdd_des);
       arr utest = C.dyn_inverseDyamics(qd, qdd_des);
       cout <<"inv precision: " <<sumOfSqr(u-utest) <<endl; //<<u <<utest <<endl;
-      C.fwdDynamics(qdd, qd, u);
+      qdd = C.dyn_fwdDynamics(qd, u);
       CHECK(maxDiff(qdd,qdd_des,0)<1e-5,"dynamics and inverse dynamics inconsistent:\n" <<qdd <<'\n' <<qdd_des);
       q  += .5*dt*qd;
       qd +=    dt*qdd;
@@ -579,7 +579,7 @@ void TEST(Dynamics){
     }else{
       //cout <<q <<qd <<qdd <<' ' <<G.getEnergy() <<endl;
       arr x=(q, qd).reshape(2, q.N);
-      rai::rk4_2ndOrder(x, x, diffEqn, dt);
+      x = rai::rk4_2ndOrder(x, diffEqn, dt);
       q=x[0]; qd=x[1];
       if(t>200){
         friction=true;

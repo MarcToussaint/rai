@@ -21,8 +21,8 @@ namespace rai {
  */
 struct PairCollision : NonCopyable {
   //INPUTS
-  rai::Mesh mesh1; //V and T will typically be initialized by reference
-  rai::Mesh mesh2; //V and T will typically be initialized by reference
+  arr mesh1;
+  arr mesh2;
   const rai::Transformation* t1=0;
   const rai::Transformation* t2=0;
   double rad1=0., rad2=0.; ///< only kinVector and glDraw account for this; the basic collision geometry (OUTPUTS below) is computed neglecting radii!!
@@ -39,7 +39,7 @@ struct PairCollision : NonCopyable {
   arr poly, polyNorm;
 
   //mesh-to-mesh
-  PairCollision(rai::Mesh& mesh1, rai::Mesh& mesh2,
+  PairCollision(const arr& mesh1, const arr& mesh2,
                 const rai::Transformation& t1, const rai::Transformation& t2,
                 double rad1=0., double rad2=0.);
   //sdf-to-sdf
@@ -64,7 +64,7 @@ struct PairCollision : NonCopyable {
  private:
   //wrappers of external libs
   enum CCDmethod { _ccdGJKIntersect,  _ccdGJKSeparate, _ccdGJKPenetration, _ccdMPRIntersect, _ccdMPRPenetration };
-  void libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method); //calls ccdMPRPenetration of libccd
+  void libccd(const arr& m1, const arr& m2, CCDmethod method); //calls ccdMPRPenetration of libccd
   void GJK_sqrDistance(); //gjk_distance of libGJK
   bool simplexType(uint i, uint j) { return simplex1.d0==i && simplex2.d0==j; } //helper
 };

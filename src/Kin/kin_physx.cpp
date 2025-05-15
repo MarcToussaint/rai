@@ -773,7 +773,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     // } break;
     case rai::ST_ssCylinder:
     case rai::ST_ssCvx: {
-      floatA Vfloat = rai::convert<float>(s->sscCore().V);
+      floatA Vfloat = rai::convert<float>(s->sscCore());
       PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
                                      *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
                                      PxConvexFlag::eCOMPUTE_CONVEX);

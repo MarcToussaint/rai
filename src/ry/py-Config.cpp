@@ -255,7 +255,7 @@ between all frame shapes that have the collision tag set non-zero"
       )
 
   .def("getCollisions", [](shared_ptr<rai::Configuration>& self, double belowMargin) {
-    self->fcl()->mode = rai::FclInterface::_broadPhaseOnly;
+    self->coll_fcl()->mode = rai::FclInterface::_broadPhaseOnly;
     self->ensure_proxies(true);
 
     pybind11::list ret;
@@ -278,11 +278,11 @@ To get really precise distances and penetrations use the FS.distance feature wit
   pybind11::arg("belowMargin") = 1.
       )
 
-  .def("getCollisionsTotalPenetration", &rai::Configuration::getTotalPenetration,
+  .def("coll_totalViolation", &rai::Configuration::coll_totalViolation,
        "returns the sum of all penetrations (using FCL for broadphase; and low-level GJK/MRP for fine pair-wise distance/penetration computation)")
 
-  .def("getCollisionFree", &rai::Configuration::getCollisionFree,
-       "returns if the configuration is collision free (binary collision check, using FCL only; collidable objects need to have contact flag)")
+  //.def("getCollisionFree", &rai::Configuration::getCollisionFree,
+  //     "returns if the configuration is collision free (binary collision check, using FCL only; collidable objects need to have contact flag)")
 
   .def("getCollidablePairs", [](shared_ptr<rai::Configuration>& self) {
     return rai::framesToNames(self->getCollidablePairs());

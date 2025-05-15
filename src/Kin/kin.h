@@ -263,6 +263,7 @@ public:
   void coll_addExcludePair(uint aID, uint bID);
 
   double coll_totalViolation(); ///< proxies are returns from a collision engine; contacts stable constraints
+  bool coll_isCollisionFree();
   void coll_reportProxies(std::ostream& os=cout, double belowMargin=1., bool brief=true) const;
   std::shared_ptr<FclInterface> coll_fcl(int verbose=0);
   void coll_fclReset();

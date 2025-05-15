@@ -36,9 +36,9 @@ void TEST(FCL) {
   // C.reportProxies();
 
   cout <<"** FCL: " <<endl;
-  C.stepFcl();
-  C.getTotalPenetration();
-  C.reportProxies();
+  C.coll_stepFcl();
+  C.coll_totalViolation();
+  C.coll_reportProxies();
 }
 
 void TEST(CollisionTiming){
@@ -63,7 +63,7 @@ void TEST(CollisionTiming){
   //cout <<" SWIFT initialization time: " <<rai::timerRead(true) <<endl;
 
   rai::timerStart();
-  C.fcl();
+  C.coll_fcl();
   cout <<" FCL initialization time: " <<rai::timerRead(true) <<endl;
 
   arr q0,q;
@@ -89,13 +89,13 @@ void TEST(CollisionTiming){
     // C.reportProxies(FILE("z.col"), 0.);
     // V.setConfiguration(C, "SWIFT result", true);
 
-    C.stepFcl();
+    C.coll_stepFcl();
     cout <<"FCL:" <<endl;
     cout <<"#proxies: " <<C.proxies.N <<endl; //this also calls pair collisions!!
     cout <<"time: " <<rai::timerRead(true) <<endl;
-    cout <<"total penetration: " <<C.getTotalPenetration() <<endl; //this also calls pair collisions!!
+    cout <<"total penetration: " <<C.coll_totalViolation() <<endl; //this also calls pair collisions!!
     cout <<"time: " <<rai::timerRead(true) <<endl;
-    C.reportProxies(FILE("z.col"), 0.);
+    C.coll_reportProxies(FILE("z.col"), 0.);
     C.view(true, "FCL result");
   }
   cout <<" query time: " <<rai::timerRead(true) <<"sec" <<endl;

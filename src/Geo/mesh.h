@@ -104,7 +104,6 @@ struct Mesh {
 
   /// @name support function
   uint support(const double* dir);
-  void supportMargin(uintA& verts, const arr& dir, double margin, int initialization=-1);
 
   /// @name internal computations & cleanup
   void computeTriNormals();
@@ -172,6 +171,7 @@ void clearAssetMeshesTextures();
 
 uintA getSubMeshPositions(const char* filename);
 arr MinkowskiSum(const arr& A, const arr& B);
+void supportMargin(const arr& V, uintA& verts, const arr& dir, double margin, int initialization=-1);
 
 //===========================================================================
 //

@@ -26,10 +26,10 @@ void TEST(Read){
   G.checkConsistency();
   if(filename) return; //below only for "example.g"
   cout <<"\n** access to individual items:" <<endl;
-  cout <<*G["k"] <<endl;
-  cout <<G["k"]->graph() <<endl;
+  cout <<G.findNode("k") <<endl;
+  cout <<G.findNode("k")->graph() <<endl;
   //  cout <<G["val"]->graph()(0)->get<double>() <<endl;
-  cout <<G["k"]->graph()["z"]->as<rai::String>() <<endl;
+  cout <<G.findNode("k")->graph().findNode("z")->as<rai::String>() <<endl;
   cout <<"DONE" <<endl;
 
   G.writeHtml(FILE("z.html"), FILE("example.g"));

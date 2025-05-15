@@ -300,6 +300,9 @@ struct BracketOp {
     if(!n) n = G.add<T>(key, x);
     else n->as<T>() = x;
   }
+  Node* operator->() { return n; }
+  operator Node*() { return n; }
+  //T& operator->() { return *p; }
 };
 
 //===========================================================================

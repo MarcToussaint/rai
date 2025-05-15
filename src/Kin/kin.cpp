@@ -108,7 +108,7 @@ void computeMeshNormals(FrameL& frames, bool force) {
   for(Frame* f: frames) if(f->shape) {
       Shape* s = f->shape;
       if(force || s->mesh().V.d0!=s->mesh().Vn.d0 || s->mesh().T.d0!=s->mesh().Tn.d0) s->mesh().computeTriNormals();
-      if(force || s->sscCore().V.d0!=s->sscCore().Vn.d0 || s->sscCore().T.d0!=s->sscCore().Tn.d0) s->sscCore().computeTriNormals();
+      // if(force || s->sscCore().V.d0!=s->sscCore().Vn.d0 || s->sscCore().T.d0!=s->sscCore().Tn.d0) s->sscCore().computeTriNormals();
     }
 }
 
@@ -116,7 +116,7 @@ void computeMeshGraphs(FrameL& frames, bool force) {
   for(Frame* f: frames) if(f->shape) {
       Shape* s = f->shape;
       if(force || s->mesh().V.d0!=s->mesh().graph.N|| s->mesh().T.d0!=s->mesh().Tn.d0) s->mesh().buildGraph();
-      if(force || s->sscCore().V.d0!=s->sscCore().graph.N || s->sscCore().T.d0!=s->sscCore().Tn.d0) s->sscCore().buildGraph();
+      // if(force || s->sscCore().V.d0!=s->sscCore().graph.N || s->sscCore().T.d0!=s->sscCore().Tn.d0) s->sscCore().buildGraph();
     }
 }
 
@@ -1179,7 +1179,7 @@ void Configuration::pruneEmptyShapes() {
   for(Frame* f:frames) if(f->shape) {
       if(f->shape->type()==ST_mesh && !f->shape->mesh().V.N){
         delete f->shape;
-      }else if(f->shape->type()==ST_ssCvx && !f->shape->sscCore().V.N){
+      }else if(f->shape->type()==ST_ssCvx && !f->shape->sscCore().N){
         delete f->shape;
       }
     }
@@ -2341,14 +2341,14 @@ double Configuration::coll_totalViolation() {
   return D;
 }
 
-// bool Configuration::getCollisionFree() {
-//   fcl()->mode = rai::FclInterface::_binaryCollisionAll;
-//   ensure_proxies(false);
+bool Configuration::coll_isCollisionFree() {
+  coll_fcl()->mode = rai::FclInterface::_binaryCollisionAll;
+  ensure_proxies(false);
 
-//   bool feas=true;
-//   for(const rai::Proxy& p:proxies) if(p.d<=0.) { feas=false; break; }
-//   return feas;
-// }
+  bool feas=true;
+  for(const rai::Proxy& p:proxies) if(p.d<=0.) { feas=false; break; }
+  return feas;
+}
 
 /// dump the list of current proximities on the screen
 void Configuration::coll_reportProxies(std::ostream& os, double belowMargin, bool brief) const {

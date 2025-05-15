@@ -27,7 +27,7 @@ void generateProblem(rai::Configuration& C){
       q.appendZ(rnd.uni(-RAI_PI,RAI_PI));
       f->setRelativeQuaternion(q.getArr());
     }
-    C.stepFcl();
+    C.coll_stepFcl();
     arr y, J;
     C.kinematicsPenetration(y, J);
 //    cout <<"collision costs of config: " <<y.scalar() <<endl;

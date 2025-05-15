@@ -47,22 +47,21 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   double r1=0., r2=0.;
 
   //which meshes should we collide? -> m1, m2
-  rai::Mesh dot;
-  dot.setDot();
-  rai::Mesh* m1=&dot, *m2=&dot;
+  arr m1=zeros(1,3), m2=zeros(1,3);
   if(f1->shape && f1->shape->type()!=rai::ST_marker) {
     r1 = f1->shape->radius();
-    m1 = &f1->shape->sscCore();  if(!m1->V.N) { m1 = &f1->shape->mesh(); r1=0.; }
-    if(!m1->V.N) m1 = &dot;
+    m1 = f1->shape->sscCore();  if(!m1.N) { m1 = f1->shape->mesh().V; r1=0.; }
+    if(!m1.N) m1 = zeros(1,3);
   }
   if(f2->shape && f2->shape->type()!=rai::ST_marker) {
     r2 = f2->shape->radius();
-    m2 = &f2->shape->sscCore();  if(!m2->V.N) { m2 = &f2->shape->mesh(); r2=0.; }
-    if(!m2->V.N) m2 = &dot;
+    m2 = f2->shape->sscCore();  if(!m2.N) { m2 = f2->shape->mesh().V; r2=0.; }
+    if(!m2.N) m2 = zeros(1,3);
   }
 
   //if this a point cloud collision? -> different method
-  if((type==_negScalar || type==_vector) && m1->V.d0==1 && m2->V.d0>2 && !m2->T.N) {
+#if 0
+  if((type==_negScalar || type==_vector) && m1.d0==1 && m2.d0>2 && !m2->T.N) {
     arr Jp1, Jp2, Jx1, Jx2;
     if(!!J) {
       f1->C.jacobian_pos(Jp1, f1, f1->ensure_X().pos);
@@ -84,6 +83,7 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     if(!!J) checkNan(J);
     return;
   }
+#endif
 
   //compute the collision
   coll.reset();
@@ -96,7 +96,7 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     coll=make_shared<PairCollision>(*m1, *m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
   }
 #else
-  coll = make_shared<rai::PairCollision>(*m1, *m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
+  coll = make_shared<rai::PairCollision>(m1, m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
 #endif
 
   if(neglectRadii) coll->rad1=coll->rad2=0.;

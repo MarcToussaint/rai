@@ -333,14 +333,15 @@ struct Shape : NonCopyable {
   Enum<ShapeType> _type;
   arr size;
   shared_ptr<Mesh> _mesh;
-  shared_ptr<Mesh> _sscCore;
+  shared_ptr<arr> _sscCore;
+  double coreRadius;
   shared_ptr<SDF> _sdf;
   char cont=0;           ///< are contacts registered (or filtered in the callback)
 
   double radius() { if(size.N) return size(-1); return 0.; }
   Enum<ShapeType>& type() { return _type; }
   Mesh& mesh() { if(!_mesh) { if(_type==ST_none) _type=ST_mesh; _mesh = make_shared<Mesh>(); } return *_mesh; }
-  Mesh& sscCore() { if(!_sscCore) { if(_type==ST_none) _type=ST_ssCvx;  _sscCore = make_shared<Mesh>();  } return *_sscCore; }
+  arr& sscCore() { if(!_sscCore) { if(_type==ST_none) _type=ST_ssCvx;  _sscCore = make_shared<arr>();  } return *_sscCore; }
   SDF& sdf() { if(!_sdf) { if(_type==ST_none) _type=ST_sdf; _sdf = make_shared<TensorShape>(); } return *_sdf; }
   double alpha() { arr& C=mesh().C; if(C.N==4 || C.N==2 || (C.nd==2 && C.d1==4)) return C.elem(-1); return 1.; }
 

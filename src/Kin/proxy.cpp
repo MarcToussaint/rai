@@ -38,11 +38,11 @@ void rai::Proxy::calc_coll() {
 
   double r1=s1->radius();
   double r2=s2->radius();
-  rai::Mesh* m1 = &s1->sscCore();  if(!m1->V.N) { m1 = &s1->mesh(); r1=0.; }
-  rai::Mesh* m2 = &s2->sscCore();  if(!m2->V.N) { m2 = &s2->mesh(); r2=0.; }
+  arr m1 = s1->sscCore();  if(!m1.N) { m1 = s1->mesh().V; r1=0.; }
+  arr m2 = s2->sscCore();  if(!m2.N) { m2 = s2->mesh().V; r2=0.; }
 
   if(collision) collision.reset();
-  collision = make_shared<PairCollision>(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
+  collision = make_shared<PairCollision>(m1, m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
 
   d = collision->distance-collision->rad1-collision->rad2;
   normal = collision->normal;

@@ -728,14 +728,8 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
   } else {
     getShape().type() = ST_ssCvx;
     getShape().sscCore().clear();
-    getShape().sscCore().V=points; getShape().sscCore().V.reshape(-1, 3);
-    if(false && getShape().sscCore().V.d0>=4){
-      getShape().sscCore().makeConvexHull();
-      if(!getShape().sscCore().V.N){ //cvx hull of core failed
-        getShape().sscCore().V=points; getShape().sscCore().V.reshape(-1, 3);
-      }
-    }
-    mesh.setSSCvx(getShape().sscCore().V, radius);
+    getShape().sscCore()=points; getShape().sscCore().reshape(-1, 3);
+    mesh.setSSCvx(getShape().sscCore(), radius);
     getShape().size = arr{radius};
   }
   if(colors.N) {
@@ -1000,7 +994,7 @@ byteA rai::Frame::getMeshColors() const {
 
 arr rai::Frame::getMeshCorePoints() const {
   if(!shape) return {};
-  return shape->sscCore().V;
+  return shape->sscCore();
 }
 
 arr rai::Frame::getJointState() const {
@@ -2008,12 +2002,14 @@ void rai::Shape::read(const Graph& ats) {
     }
     if(ats.get(fil, "core"))      {
       fil.cd_file();
-      sscCore().read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
+      rai::Mesh m;
+      m.read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
+      sscCore() = m.V;
       fil.cd_base();
     }
     if(ats.get(x, "core")) {
       x.reshape(-1, 3);
-      sscCore().V = x;
+      sscCore() = x;
     }
 
     if(ats.get(str, "sdf"))      { sdf().read(FILE(str)); }
@@ -2116,10 +2112,10 @@ void rai::Shape::createMeshes() {
       mesh().scale(size(0), size(1), size(2));
       break;
     case rai::ST_sphere: {
-      sscCore().V = arr({1, 3}, {0., 0., 0.});
+      sscCore() = arr({1, 3}, {0., 0., 0.});
       double rad=1;
       if(size.N) rad=size(-1);
-      mesh().setSSCvx(sscCore().V, rad);
+      mesh().setSSCvx(sscCore(), rad);
     } break;
     case rai::ST_cylinder:
       CHECK(size(-1)>1e-10, "");
@@ -2127,8 +2123,8 @@ void rai::Shape::createMeshes() {
       break;
     case rai::ST_capsule:
       CHECK(size(-1)>1e-10, "");
-      sscCore().V = arr({2, 3}, {0., 0., -.5*size(-2), 0., 0., .5*size(-2)});
-      mesh().setSSCvx(sscCore().V, size(-1));
+      sscCore() = arr({2, 3}, {0., 0., -.5*size(-2), 0., 0., .5*size(-2)});
+      mesh().setSSCvx(sscCore(), size(-1));
       break;
     case rai::ST_quad: {
       byteA tex = mesh().texImg().img;
@@ -2160,40 +2156,43 @@ void rai::Shape::createMeshes() {
     } break;
     case rai::ST_ssCvx:
       CHECK(size(-1)>1e-10, "");
-      if(!sscCore().V.N) {
+      if(!sscCore().N) {
         CHECK(mesh().V.N, "mesh or sscCore needs to be loaded");
-        sscCore() = mesh();
+        sscCore() = mesh().V;
       }
-      if(!sscCore().T.N) sscCore().makeConvexHull();
-      mesh().setSSCvx(sscCore().V, size.last());
+      mesh().setSSCvx(sscCore(), size.last());
       break;
     case rai::ST_ssBox: {
       if(size(3)<1e-10) {
-        sscCore().setBox();
-        sscCore().scale(size(0), size(1), size(2));
-        mesh() = sscCore();
+        mesh().setBox();
+        mesh().scale(size(0), size(1), size(2));
+        sscCore() = mesh().V;
         break;
       }
       double r = size(3);
       CHECK(size.N==4 && r>1e-10, "");
       for(uint i=0; i<3; i++) if(size(i)<2.*r) size(i) = 2.*r;
-      sscCore().setBox();
-      sscCore().scale(size(0)-2.*r, size(1)-2.*r, size(2)-2.*r);
+      rai::Mesh m;
+      m.setBox();
+      m.scale(size(0)-2.*r, size(1)-2.*r, size(2)-2.*r);
+      sscCore() = m.V;
       mesh().setSSBox(size(0), size(1), size(2), r);
       //      mesh().setSSCvx(sscCore, r);
     } break;
     case rai::ST_ssCylinder: {
       if(size(2)<1e-10) {
-        sscCore().setCylinder(size(1), size(0));
-        mesh() = sscCore();
+        mesh().setCylinder(size(1), size(0));
+        sscCore() = mesh().V;
         break;
       }
       double r = size(2);
       CHECK(size.N==3 && r>1e-10, "");
       if(size(0)<2.*r) size(0) = 2.*r;
       if(size(1)<r) size(1) = r;
-      sscCore().setCylinder(size(1)-r, size(0)-2.*r);
-      mesh().setSSCvx(sscCore().V, r);
+      rai::Mesh m;
+      m.setCylinder(size(1)-r, size(0)-2.*r);
+      sscCore() = m.V;
+      mesh().setSSCvx(sscCore(), r);
     } break;
     case rai::ST_ssBoxElip: {
       CHECK_EQ(size.N, 7, "");
@@ -2205,8 +2204,8 @@ void rai::Shape::createMeshes() {
       rai::Mesh elip;
       elip.setSphere();
       elip.scale(size(3), size(4), size(5));
-      sscCore().setSSCvx(MinkowskiSum(box.V, elip.V), 0);
-      mesh().setSSCvx(sscCore().V, r);
+      sscCore() = MinkowskiSum(box.V, elip.V);
+      mesh().setSSCvx(sscCore(), r);
     } break;
     default: {
       HALT("createMeshes not possible for shape type '" <<_type <<"'");

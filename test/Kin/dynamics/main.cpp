@@ -29,16 +29,15 @@ void TEST(Dynamics){
 
   arr u;
   bool friction=false;
-  VectorFunction diffEqn = [&C,&u,&friction](const arr& x) -> arr{
+  auto diffEqn = [&C,&u,&friction](const arr& x, const arr& xdot) -> arr{
     checkNan(x);
-    C.setJointState(x[0]);
+    C.setJointState(x);
     if(!u.N) u.resize(x.d1).setZero();
-    if(friction) u = -10. * x[1];
+    if(friction) u = -10. * xdot;
     /*if(T2::addContactsToDynamics){
         G.contactsToForces(100.,10.);
       }*/
-    arr y;
-    C.fwdDynamics(y, x[1], u);
+    arr y = C.dyn_fwdDynamics(xdot, u);
     checkNan(y);
     return y;
   };
@@ -63,7 +62,7 @@ void TEST(Dynamics){
       //tau.resize(n); tau.setZero();
       //G.clearForces();
       //G.gravityToForces();
-      C.fwdDynamics(qdd, qd, u);
+      qdd = C.dyn_fwdDynamics(qd, u);
       CHECK_LE(maxDiff(qdd,qdd_,0), 1e-5, "dynamics and inverse dynamics inconsistent");
       //cout <<q <<qd <<qdd <<endl;
       cout <<"test dynamics: fwd-inv error =" <<maxDiff(qdd,qdd_,0) <<endl;
@@ -76,7 +75,7 @@ void TEST(Dynamics){
     }else{
       //cout <<q <<qd <<qdd <<' ' <<G.getEnergy() <<endl;
       arr x = (q,qd).reshape(2,q.N);
-      rai::rk4_2ndOrder(x, x, diffEqn, dt);
+      x = rai::rk4_2ndOrder(x, diffEqn, dt);
       q=x[0]; qd=x[1];
       if(t>500){
         friction=true;

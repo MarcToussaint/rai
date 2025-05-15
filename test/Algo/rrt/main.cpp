@@ -105,7 +105,7 @@ void testKinematics(bool withCollisions, uint N=100000){
   arr q = C.getJointState();
 
   if(withCollisions){
-    C.fcl()->mode = rai::FclInterface::_binaryCollisionAll;
+    C.coll_fcl()->mode = rai::FclInterface::_binaryCollisionAll;
 //    C.fcl()->mode = rai::FclInterface::_distanceCutoff;  C.fcl()->cutoff = .0;
   }
 
@@ -121,7 +121,7 @@ void testKinematics(bool withCollisions, uint N=100000){
       C.stepFcl();
       bool feas = !C.proxies.N;
 #else
-      bool feas = C.getCollisionFree();
+      bool feas = C.coll_isCollisionFree();
 #endif
       if(!feas) count++;
     }

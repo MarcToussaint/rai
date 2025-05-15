@@ -2199,7 +2199,14 @@ uint Mesh::support(const double* dir) {
 #endif
 }
 
-void Mesh::supportMargin(uintA& verts, const arr& dir, double margin, int initialization) {
+} //namespace
+
+//==============================================================================
+
+
+void supportMargin(const arr& V, uintA& verts, const arr& dir, double margin, int initialization) {
+  NIY
+#if 0
   if(initialization<0 || !graph.N) initialization=support(dir.p);
 
   arr p = V[initialization];
@@ -2218,9 +2225,8 @@ void Mesh::supportMargin(uintA& verts, const arr& dir, double margin, int initia
       for(uint j : graph(i)) if(!done(j)) queue.append(j);
     }
   }
+#endif
 }
-
-} //namespace
 
 //==============================================================================
 

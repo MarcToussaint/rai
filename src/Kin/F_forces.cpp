@@ -24,19 +24,18 @@ void POA_distance(arr& y, arr& J, rai::ForceExchangeDof* ex, bool b_or_a) {
   if(b_or_a) s = ex->b.shape;
   CHECK(s, "contact object does not have a shape!");
   double r=s->radius();
-  rai::Mesh* m = &s->sscCore();  if(!m->V.N) { m = &s->mesh(); r=0.; }
+  arr m = s->sscCore();  if(!m.N) { m = s->mesh().V; r=0.; }
 
   CHECK_EQ(&ex->a.C, &ex->b.C, "");
   rai::Configuration& K = ex->a.C;
 
-  rai::Mesh M0;
-  M0.setDot();
+  arr M0 = zeros(1,3);
   rai::Transformation X0=0;
   arr pos, Jpos;
   ex->kinPOA(pos, Jpos);
   X0.pos = pos;
 
-  rai::PairCollision coll(M0, *m, X0, s->frame.ensure_X(), 0., r);
+  rai::PairCollision coll(M0, m, X0, s->frame.ensure_X(), 0., r);
 
   arr Jp;
   K.jacobian_pos(Jp, &s->frame, coll.p1);
@@ -685,18 +684,17 @@ void F_fex_POAContactDistances::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK(s1 && s2, "");
   double r1=s1->radius();
   double r2=s2->radius();
-  rai::Mesh* m1 = &s1->sscCore();  if(!m1->V.N) { m1 = &s1->mesh(); r1=0.; }
-  rai::Mesh* m2 = &s2->sscCore();  if(!m2->V.N) { m2 = &s2->mesh(); r2=0.; }
+  arr m1 = s1->sscCore();  if(!m1.N) { m1 = s1->mesh().V; r1=0.; }
+  arr m2 = s2->sscCore();  if(!m2.N) { m2 = s2->mesh().V; r2=0.; }
 
-  rai::Mesh M0;
-  M0.setDot();
+  arr M0=zeros(1,3);
   rai::Transformation X0=0;
   arr pos, Jpos;
   ex->kinPOA(pos, Jpos);
   X0.pos = pos;
 
-  rai::PairCollision coll1(M0, *m1, X0, s1->frame.ensure_X(), 0., r1);
-  rai::PairCollision coll2(M0, *m2, X0, s2->frame.ensure_X(), 0., r2);
+  rai::PairCollision coll1(M0, m1, X0, s1->frame.ensure_X(), 0., r1);
+  rai::PairCollision coll2(M0, m2, X0, s2->frame.ensure_X(), 0., r2);
 
   arr Jp1, Jp2;
   f1->C.jacobian_pos(Jp1, f1, coll1.p1);
