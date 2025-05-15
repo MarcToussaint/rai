@@ -44,10 +44,11 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.N, 2, "");
   rai::Frame* f1 = F.elem(0);
   rai::Frame* f2 = F.elem(1);
-  double r1=0., r2=0.;
 
-  //which meshes should we collide? -> m1, m2
+  double r1=0., r2=0.;
   arr m1=zeros(1,3), m2=zeros(1,3);
+#if 0
+  //which meshes should we collide? -> m1, m2
   if(f1->shape && f1->shape->type()!=rai::ST_marker) {
     r1 = f1->shape->radius();
     m1 = f1->shape->sscCore();  if(!m1.N) { m1 = f1->shape->mesh().V; r1=0.; }
@@ -58,6 +59,16 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     m2 = f2->shape->sscCore();  if(!m2.N) { m2 = f2->shape->mesh().V; r2=0.; }
     if(!m2.N) m2 = zeros(1,3);
   }
+#else
+  if(f1->shape){
+    m1.referTo( f1->shape->sscCore() );
+    r1=f1->shape->coll_cvxRadius;
+  }
+  if(f2->shape){
+    m2.referTo( f2->shape->sscCore() );
+    r2=f2->shape->coll_cvxRadius;
+  }
+#endif
 
   //if this a point cloud collision? -> different method
 #if 0

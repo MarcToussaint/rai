@@ -23,8 +23,8 @@ void POA_distance(arr& y, arr& J, rai::ForceExchangeDof* ex, bool b_or_a) {
   rai::Shape* s = ex->a.shape;
   if(b_or_a) s = ex->b.shape;
   CHECK(s, "contact object does not have a shape!");
-  double r=s->radius();
-  arr m = s->sscCore();  if(!m.N) { m = s->mesh().V; r=0.; }
+  double r=s->coll_cvxRadius;
+  arr m = s->sscCore();
 
   CHECK_EQ(&ex->a.C, &ex->b.C, "");
   rai::Configuration& K = ex->a.C;
@@ -682,10 +682,10 @@ void F_fex_POAContactDistances::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Shape* s1 = f1->shape;
   rai::Shape* s2 = f2->shape;
   CHECK(s1 && s2, "");
-  double r1=s1->radius();
-  double r2=s2->radius();
-  arr m1 = s1->sscCore();  if(!m1.N) { m1 = s1->mesh().V; r1=0.; }
-  arr m2 = s2->sscCore();  if(!m2.N) { m2 = s2->mesh().V; r2=0.; }
+  double r1=s1->coll_cvxRadius;
+  double r2=s2->coll_cvxRadius;
+  arr m1 = s1->sscCore();
+  arr m2 = s2->sscCore();
 
   arr M0=zeros(1,3);
   rai::Transformation X0=0;

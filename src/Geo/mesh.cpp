@@ -766,11 +766,15 @@ void Mesh::setSSCvx(const arr& core, double r, uint fineness) {
 
     arr c=C;
     clear();
+#if 1
+    V = MinkowskiSum(core, ball.V);
+#else
     for(uint i=0; i<core.d0; i++) {
       ball.translate(core(i, 0), core(i, 1), core(i, 2));
       addMesh(ball);
       ball.translate(-core(i, 0), -core(i, 1), -core(i, 2));
     }
+#endif
     makeConvexHull();
     C=c;
   } else {

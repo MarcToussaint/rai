@@ -334,7 +334,7 @@ struct Shape : NonCopyable {
   arr size;
   shared_ptr<Mesh> _mesh;
   shared_ptr<arr> _sscCore;
-  double coreRadius;
+  double coll_cvxRadius=-1.;
   shared_ptr<SDF> _sdf;
   char cont=0;           ///< are contacts registered (or filtered in the callback)
 

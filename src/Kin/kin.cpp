@@ -805,6 +805,7 @@ void Configuration::setDofState(const arr& _q, const DofL& dofs, bool mimicsIncl
 
   uint nd=0;
   for(Dof* j:dofs) {
+    CHECK(&j->frame->C==this, "you're setting dofs of another config");
     if(!j) continue;
     if(mimicsIncludedInQ && j->mimic) j = j->mimic; //equivalent to setting state of mimic dof!!
     if(!j->mimic) CHECK_LE(nd+j->dim, _q.N, "given q-vector too small");
@@ -898,6 +899,7 @@ void Configuration::selectJoints(const DofL& dofs, bool notThose) {
   for(Frame* f: frames) if(f->joint) f->joint->active = notThose;
   for(Dof* d: otherDofs) d->active = notThose;
   for(Dof* dof: dofs) if(dof) {
+      CHECK(&dof->frame->C==this, "you're setting dofs of another config");
       dof->active = !notThose;
       if(dof->mimic) dof->mimic->active = dof->active; //activate also the joint mimic'ed
     }
@@ -2451,6 +2453,14 @@ void Configuration::view_focus(const char* frameName, double heightAbs){
   double dist = heightAbs * cam.focalLength;
   pos -= dist * cam.X.rot.getZ().getArr();
   cam.setPosition(pos(0), pos(1), pos(2));
+}
+
+void Configuration::view_setCameraPose(const arr& pose){
+  get_viewer()->displayCamera().X.set(pose);
+}
+
+arr Configuration::view_getCameraPose(){
+  return get_viewer()->displayCamera().X.getArr7d();
 }
 
 void Configuration::set_viewer(std::shared_ptr<ConfigurationViewer>& _viewer){

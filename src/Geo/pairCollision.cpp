@@ -35,6 +35,11 @@ namespace rai {
 PairCollision::PairCollision(const arr& _mesh1, const arr& _mesh2, const rai::Transformation& _t1, const rai::Transformation& _t2, double rad1, double rad2)
   : t1(&_t1), t2(&_t2), rad1(rad1), rad2(rad2) {
 
+  CHECK(_mesh1.N, "PairCollision needs non-empty pts");
+  CHECK(_mesh2.N, "PairCollision needs non-empty pts");
+  CHECK_GE(rad1, 0., "PairCollision needs positive radius");
+  CHECK_GE(rad2, 0., "PairCollision needs positive radius");
+
   mesh1.referTo(_mesh1);
   mesh2.referTo(_mesh2);
 

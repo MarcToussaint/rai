@@ -308,13 +308,10 @@ rai::Frame& rai::Frame::convertDecomposedShapeToChildFrames() {
   for(uint i=0; i<m.cvxParts.N; i++) {
     rai::Frame* ch = new Frame(this);
     ch->name <<name <<'_' <<i;
-    ch->setShape(ST_mesh, {});
-    Mesh& s = ch->shape->mesh();
     int start = m.cvxParts(i);
     int end = i+1<m.cvxParts.N ? m.cvxParts(i+1)-1 : -1;
-    s.V = m.V({start, end});
-    s.makeConvexHull();
-    if(!s.V.N) {
+    ch->setConvexMesh(m.V({start, end}));
+    if(!ch->shape->mesh().V.N) {
       delete ch; //ch->setShape(ST_marker, {.01});
     } else {
       ch->shape->cont = shape->cont;
@@ -718,24 +715,25 @@ rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors, co
 
 rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, double radius) {
   C.view_lock(RAI_HERE);
-  rai::Mesh& mesh = getShape().mesh();
+  if(getShape()._sscCore.get()!=&points){
+    getShape().sscCore()=points; getShape().sscCore().reshape(-1, 3);
+  }
+  getShape().mesh().setSSCvx(getShape().sscCore(), radius);
   if(radius<=0.) {
     getShape().type() = ST_mesh;
-    mesh.clear();
-    mesh.V = points; mesh.V.reshape(-1, 3);
-    mesh.makeConvexHull();
+    getShape().coll_cvxRadius = 0.;
     getShape().size.clear();
   } else {
     getShape().type() = ST_ssCvx;
-    getShape().sscCore().clear();
-    getShape().sscCore()=points; getShape().sscCore().reshape(-1, 3);
-    mesh.setSSCvx(getShape().sscCore(), radius);
+    getShape().coll_cvxRadius = radius;
     getShape().size = arr{radius};
   }
   if(colors.N) {
-    mesh.C = reshapeColor(convert<double>(colors) /= 255.);
+    getShape().mesh().C = reshapeColor(convert<double>(colors) /= 255.);
+  }else{
+    getShape().mesh().C.clear();
   }
-  mesh.version++;
+  getShape().mesh().version++;
   C.view_unlock();
   return *this;
 }
@@ -840,6 +838,7 @@ rai::Frame& rai::Frame::setJoint(rai::JointType jointType, const arr& limits, do
 
 rai::Frame& rai::Frame::setContact(int cont) {
   getShape().cont = cont;
+  if(!getShape().sscCore().N) getShape().createMeshes();
   return *this;
 }
 
@@ -1940,6 +1939,7 @@ rai::Shape::Shape(Frame& f, const Shape* copyShape)
     const Shape& s = *copyShape;
     if(s._mesh) _mesh = s._mesh; //shallow shared_ptr copy!
     if(s._sscCore) _sscCore = s._sscCore; //shallow shared_ptr copy!
+    coll_cvxRadius = s.coll_cvxRadius;
     if(s._sdf) _sdf = s._sdf; //shallow shared_ptr copy!
     _type = s._type;
     size = s.size;
@@ -1964,96 +1964,92 @@ bool rai::Shape::canCollideWith(const rai::Frame* f) const {
 
 void rai::Shape::read(const Graph& ats) {
 
-  {
-    double d;
-    arr x;
-    rai::String str;
-    rai::FileToken fil;
+  double d;
+  arr x;
+  rai::String str;
+  rai::FileToken fil;
 
-    ats.get(size, "size");
+  ats.get(size, "size");
 
-    if(ats.get(d, "shape"))        { type()=(ShapeType)(int)d;}
-    else if(ats.get(str, "shape")) { str>> type(); }
-    else if(ats.get(d, "type"))    { type()=(ShapeType)(int)d;}
-    else if(ats.get(str, "type"))  { str>> type(); }
+  if(ats.get(d, "shape"))        { type()=(ShapeType)(int)d;}
+  else if(ats.get(str, "shape")) { str>> type(); }
+  else if(ats.get(d, "type"))    { type()=(ShapeType)(int)d;}
+  else if(ats.get(str, "type"))  { str>> type(); }
 
-    if(ats.get(str, "mesh"))     { frame.setMeshFile(str); } //mesh().read(FILE(str), str.getLastN(3).p, str); }
-    else if(ats.get(fil, "mesh"))     { frame.setMeshFile(fil.fullPath()); }
-      // fil.cd_file();
-      // mesh().read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
-      // fil.cd_start();
-    // }
+  if(ats.get(str, "mesh"))     { frame.setMeshFile(str); } //mesh().read(FILE(str), str.getLastN(3).p, str); }
+  else if(ats.get(fil, "mesh"))     { frame.setMeshFile(fil.fullPath()); }
+  // fil.cd_file();
+  // mesh().read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
+  // fil.cd_start();
+  // }
 
-    if(ats.get(str, "mesh_decomp")) { mesh().readH5(str, "decomp"); }
-    else if(ats.get(fil, "mesh_decomp")) { fil.cd_file(); mesh().readH5(fil.name, "decomp"); fil.cd_base(); }
+  if(ats.get(str, "mesh_decomp")) { mesh().readH5(str, "decomp"); }
+  else if(ats.get(fil, "mesh_decomp")) { fil.cd_file(); mesh().readH5(fil.name, "decomp"); fil.cd_base(); }
 
-    if(ats.get(str, "mesh_points")) { mesh().readH5(str, "points"); }
-    else if(ats.get(fil, "mesh_points")) { fil.cd_file(); mesh().readH5(fil.name, "points"); fil.cd_base(); }
+  if(ats.get(str, "mesh_points")) { mesh().readH5(str, "points"); }
+  else if(ats.get(fil, "mesh_points")) { fil.cd_file(); mesh().readH5(fil.name, "points"); fil.cd_base(); }
 
-    if(type()==rai::ST_mesh && !mesh().T.N) type()=rai::ST_pointCloud;
+  if(type()==rai::ST_mesh && !mesh().T.N) type()=rai::ST_pointCloud;
 
-    if(ats.get(str, "texture"))     { frame.setTextureFile(str); }
-    else if(ats.get(fil, "texture"))     {
-      // fil.cd_file();
-      frame.setTextureFile(fil.name);
-      // mesh().texImg(fil.name).img = rai::loadImage(fil.name);
-      // read_ppm(mesh().texImg(fil.name).img, fil.name, true);
-      // fil.cd_start();
+  if(ats.get(str, "texture"))     { frame.setTextureFile(str); }
+  else if(ats.get(fil, "texture"))     {
+    // fil.cd_file();
+    frame.setTextureFile(fil.name);
+    // mesh().texImg(fil.name).img = rai::loadImage(fil.name);
+    // read_ppm(mesh().texImg(fil.name).img, fil.name, true);
+    // fil.cd_start();
+  }
+  if(ats.get(fil, "core"))      {
+    fil.cd_file();
+    rai::Mesh m;
+    m.read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
+    sscCore() = m.V;
+    fil.cd_base();
+  }
+  if(ats.get(x, "core")) {
+    x.reshape(-1, 3);
+    sscCore() = x;
+  }
+
+  if(ats.get(str, "sdf"))      { sdf().read(FILE(str)); }
+  else if(ats.get(fil, "sdf")) { sdf().read(fil); }
+  if(_sdf) {
+    if(size.N) {
+      if(size.N==1) { sdf().lo *= size.elem(); sdf().up *= size.elem(); }
+      else NIY;
     }
-    if(ats.get(fil, "core"))      {
-      fil.cd_file();
-      rai::Mesh m;
-      m.read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
-      sscCore() = m.V;
-      fil.cd_base();
+    if(type()==ST_none) type()=ST_sdf;
+    //else CHECK_EQ(type(), ST_sdf, "");
+  }
+  if(ats.get(d, "meshscale"))  { mesh().scale(d); }
+  if(ats.get(x, "meshscale"))  { mesh().scale(x(0), x(1), x(2)); }
+  if(ats.get(mesh().C, "color")) {
+    CHECK(mesh().C.N>=1 && mesh().C.N<=4, "color needs to be 1D, 2D, 3D or 4D (floats)");
+  }
+  if(ats.get(x, "mesh_rope"))  {
+    CHECK_EQ(x.N, 4, "requires 3D extend and numSegments");
+    uint n=x(-1);
+    arr y = x({0, 2});
+    arr& V = mesh().V;
+    V.resize(n+1, 3).setZero();
+    for(uint i=1; i<=n; i++) {
+      V[i] = (double(i)/n)*y;
     }
-    if(ats.get(x, "core")) {
-      x.reshape(-1, 3);
-      sscCore() = x;
-    }
+    mesh().makeLines();
+  }
 
-    if(ats.get(str, "sdf"))      { sdf().read(FILE(str)); }
-    else if(ats.get(fil, "sdf")) { sdf().read(fil); }
-    if(_sdf) {
-      if(size.N) {
-        if(size.N==1) { sdf().lo *= size.elem(); sdf().up *= size.elem(); }
-        else NIY;
-      }
-      if(type()==ST_none) type()=ST_sdf;
-      //else CHECK_EQ(type(), ST_sdf, "");
-    }
-    if(ats.get(d, "meshscale"))  { mesh().scale(d); }
-    if(ats.get(x, "meshscale"))  { mesh().scale(x(0), x(1), x(2)); }
-    if(ats.get(mesh().C, "color")) {
-      CHECK(mesh().C.N>=1 && mesh().C.N<=4, "color needs to be 1D, 2D, 3D or 4D (floats)");
-    }
-    if(ats.get(x, "mesh_rope"))  {
-      CHECK_EQ(x.N, 4, "requires 3D extend and numSegments");
-      uint n=x(-1);
-      arr y = x({0, 2});
-      arr& V = mesh().V;
-      V.resize(n+1, 3).setZero();
-      for(uint i=1; i<=n; i++) {
-        V[i] = (double(i)/n)*y;
-      }
-      mesh().makeLines();
-    }
+  if(mesh().V.N && type()==ST_none) type()=ST_mesh;
 
-    if(mesh().V.N && type()==ST_none) type()=ST_mesh;
-
-    //colored box?
-    if(ats.findNode("coloredBox")) {
-      CHECK_EQ(mesh().V.d0, 8, "I need a box");
-      arr col=mesh().C;
-      mesh().C.resize(mesh().T.d0, 3);
-      for(uint i=0; i<mesh().C.d0; i++) {
-        if(i==2 || i==3) mesh().C[i] = col; //arr(color, 3);
-        else if(i>=4 && i<=7) mesh().C[i] = 1.;
-        else mesh().C[i] = .5;
-      }
+  //colored box?
+  if(ats.findNode("coloredBox")) {
+    CHECK_EQ(mesh().V.d0, 8, "I need a box");
+    arr col=mesh().C;
+    mesh().C.resize(mesh().T.d0, 3);
+    for(uint i=0; i<mesh().C.d0; i++) {
+      if(i==2 || i==3) mesh().C[i] = col; //arr(color, 3);
+      else if(i>=4 && i<=7) mesh().C[i] = 1.;
+      else mesh().C[i] = .5;
     }
-
-    createMeshes();
   }
 
   if(ats.findNode("contact")) {
@@ -2062,19 +2058,10 @@ void rai::Shape::read(const Graph& ats) {
     else cont=1;
   }
 
-  //center the mesh:
-  if(type()==rai::ST_mesh && mesh().V.N) {
-    if(ats.findNode("rel_includes_mesh_center")) {
-      mesh().center();
-    }
-    //    if(c.length()>1e-8 && !ats.findNode("rel_includes_mesh_center")){
-    //      frame.link->Q.addRelativeTranslation(c);
-    //      frame.ats.newNode<bool>({"rel_includes_mesh_center"}, true);
-    //    }
-  }
+  createMeshes();
 
   //compute the bounding radius
-//  if(mesh().V.N) mesh_radius = mesh().getRadius();
+  //if(mesh().V.N) mesh_radius = mesh().getRadius();
 }
 
 void rai::Shape::write(std::ostream& os) const {
@@ -2105,37 +2092,47 @@ void rai::Shape::write(Graph& g) {
 void rai::Shape::createMeshes() {
   //create mesh for basic shapes
   switch(_type) {
-    case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
-    case rai::ST_box:
+    case rai::ST_none: {
+      HALT("shapes should have a type - somehow wrong initialization..."); break;
+    } break;
+    case rai::ST_box: {
+      CHECK_EQ(size.N, 3, "");
       mesh().clear();
       mesh().setBox();
       mesh().scale(size(0), size(1), size(2));
-      break;
+    } break;
     case rai::ST_sphere: {
-      sscCore() = arr({1, 3}, {0., 0., 0.});
-      double rad=1;
-      if(size.N) rad=size(-1);
-      mesh().setSSCvx(sscCore(), rad);
+      CHECK_EQ(size.N, 1, "");
+      coll_cvxRadius = size(-1);
+      sscCore() = zeros(1,3);
+      mesh().setSSCvx(sscCore(), coll_cvxRadius);
     } break;
     case rai::ST_cylinder:
+      CHECK_EQ(size.N, 2, "");
       CHECK(size(-1)>1e-10, "");
-      mesh().setCylinder(size(-1), size(-2));
+      mesh().setCylinder(size(-1), size(0));
       break;
     case rai::ST_capsule:
-      CHECK(size(-1)>1e-10, "");
-      sscCore() = arr({2, 3}, {0., 0., -.5*size(-2), 0., 0., .5*size(-2)});
-      mesh().setSSCvx(sscCore(), size(-1));
+      CHECK_EQ(size.N, 2, "");
+      coll_cvxRadius = size(-1);
+      CHECK(coll_cvxRadius>1e-10, "");
+      sscCore() = arr({2, 3}, {0., 0., -.5*size(0), 0., 0., .5*size(0)});
+      mesh().setSSCvx(sscCore(), coll_cvxRadius);
       break;
     case rai::ST_quad: {
+      CHECK_EQ(size.N, 2, "");
       byteA tex = mesh().texImg().img;
       mesh().setQuad(size(0), size(1), tex);
     } break;
     case rai::ST_marker:
-    case rai::ST_camera:
-    case rai::ST_mesh:
+    case rai::ST_camera: {
+      coll_cvxRadius = 0.;
+      sscCore() = zeros(1,3); //a dot
+    } break;
     case rai::ST_pointCloud:
     case rai::ST_lines:
-      break;
+    case rai::ST_mesh: {
+    } break;
     case rai::ST_sdf: {
       if(!sdf().lo.N) sdf().lo = -.5*size;
       if(!sdf().up.N) sdf().up = +.5*size;
@@ -2155,62 +2152,78 @@ void rai::Shape::createMeshes() {
       }
     } break;
     case rai::ST_ssCvx:
-      CHECK(size(-1)>1e-10, "");
+      CHECK_EQ(size.N, 1, "");
+      coll_cvxRadius = size(-1);
+      CHECK(coll_cvxRadius>1e-10, "");
       if(!sscCore().N) {
         CHECK(mesh().V.N, "mesh or sscCore needs to be loaded");
         sscCore() = mesh().V;
       }
-      mesh().setSSCvx(sscCore(), size.last());
+      mesh().setSSCvx(sscCore(), coll_cvxRadius);
       break;
     case rai::ST_ssBox: {
-      if(size(3)<1e-10) {
+      CHECK_EQ(size.N, 4, "");
+      coll_cvxRadius = size(-1);
+      if(coll_cvxRadius<1e-10) {
         mesh().setBox();
         mesh().scale(size(0), size(1), size(2));
         sscCore() = mesh().V;
         break;
       }
-      double r = size(3);
-      CHECK(size.N==4 && r>1e-10, "");
-      for(uint i=0; i<3; i++) if(size(i)<2.*r) size(i) = 2.*r;
+      for(uint i=0; i<3; i++) if(size(i)<2.*coll_cvxRadius) size(i) = 2.*coll_cvxRadius;
       rai::Mesh m;
       m.setBox();
-      m.scale(size(0)-2.*r, size(1)-2.*r, size(2)-2.*r);
+      m.scale(size(0)-2.*coll_cvxRadius, size(1)-2.*coll_cvxRadius, size(2)-2.*coll_cvxRadius);
       sscCore() = m.V;
-      mesh().setSSBox(size(0), size(1), size(2), r);
+      mesh().setSSBox(size(0), size(1), size(2), coll_cvxRadius);
       //      mesh().setSSCvx(sscCore, r);
     } break;
     case rai::ST_ssCylinder: {
-      if(size(2)<1e-10) {
+      CHECK(size.N==3, "");
+      coll_cvxRadius = size(-1);
+      if(coll_cvxRadius<1e-10) {
         mesh().setCylinder(size(1), size(0));
         sscCore() = mesh().V;
         break;
       }
-      double r = size(2);
-      CHECK(size.N==3 && r>1e-10, "");
-      if(size(0)<2.*r) size(0) = 2.*r;
-      if(size(1)<r) size(1) = r;
+      if(size(0)<2.*coll_cvxRadius) size(0) = 2.*coll_cvxRadius;
+      if(size(1)<coll_cvxRadius) size(1) = coll_cvxRadius;
       rai::Mesh m;
-      m.setCylinder(size(1)-r, size(0)-2.*r);
+      m.setCylinder(size(1)-coll_cvxRadius, size(0)-2.*coll_cvxRadius);
       sscCore() = m.V;
-      mesh().setSSCvx(sscCore(), r);
+      mesh().setSSCvx(sscCore(), coll_cvxRadius);
     } break;
     case rai::ST_ssBoxElip: {
       CHECK_EQ(size.N, 7, "");
-      double r = size(-1);
-      for(uint i=0; i<3; i++) if(size(i)<2.*r) size(i) = 2.*r;
+      coll_cvxRadius = size(-1);
+      for(uint i=0; i<3; i++) if(size(i)<2.*coll_cvxRadius) size(i) = 2.*coll_cvxRadius;
       rai::Mesh box;
       box.setBox();
-      box.scale(size(0)-2.*r, size(1)-2.*r, size(2)-2.*r);
+      box.scale(size(0)-2.*coll_cvxRadius, size(1)-2.*coll_cvxRadius, size(2)-2.*coll_cvxRadius);
       rai::Mesh elip;
       elip.setSphere();
       elip.scale(size(3), size(4), size(5));
       sscCore() = MinkowskiSum(box.V, elip.V);
-      mesh().setSSCvx(sscCore(), r);
+      mesh().setSSCvx(sscCore(), coll_cvxRadius);
     } break;
     default: {
       HALT("createMeshes not possible for shape type '" <<_type <<"'");
     }
   }
+
+  if(cont && !sscCore().N){
+    rai::Mesh m;
+    m.V = mesh().V;
+    m.makeConvexHull();
+    if(!m.T.N){ //empty mesh -> remove
+      LOG(-1) <<"shape " <<frame.name <<" coll_core is trivial -> removing contact flag";
+      cont=0;
+    }else{
+      coll_cvxRadius=0.;
+      sscCore() = m.V;
+    }
+  }
+
 //  if(_mesh && _mesh->C.nd==2 && _mesh->C.d0==_mesh->V.d0) _mesh->computeFaceColors();
   mesh().version++; //if(glListId>0) glListId *= -1;
 //  auto func = functional(false);

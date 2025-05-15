@@ -285,6 +285,8 @@ public:
   int glAnimate();
   void view_close();
   void view_focus(const char* frameName, double heightAbs=1.);
+  void view_setCameraPose(const arr& pose);
+  arr view_getCameraPose();
   void set_viewer(std::shared_ptr<ConfigurationViewer>& _viewer);
   void coll_stepFcl();
   void stepPhysx(double tau);

@@ -64,7 +64,7 @@ FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _exclu
   self = new FclInterface_self;
 
   self->convexGeometryData.resize(geometries.N);
-  rai::Array<rai::Mesh> cvx_mesh(geometries.N);
+  rai::Array<rai::Mesh> cvx_meshes(geometries.N);
 
   for(long int i=0; i<geometries.N; i++) {
     Shape* shape = geometries(i);
@@ -76,15 +76,19 @@ FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _exclu
         geom = make_shared<fcl::Cylinder>(shape->size(-1), shape->size(-2));
       } else if(shape->type()==ST_sphere) {
         geom = make_shared<fcl::Sphere>(shape->size(-1));
-//      }else if(shape->type()==ST_box){
-//        geom = make_shared<fcl::Box>(shape->size(0), shape->size(1), shape->size(2));
+      }else if(shape->type()==ST_box){
+        geom = make_shared<fcl::Box>(shape->size(0), shape->size(1), shape->size(2));
       } else {
-        Mesh& mesh_org = shape->mesh();
-        CHECK(!mesh_org.cvxParts.N, "mesh '" <<shape->frame.name <<"' has convex decomposition - not implemented yet in FCL! -- please separate in separate frames")
-        // rai::Mesh& mesh = mesh_org;
-        rai::Mesh& mesh = cvx_mesh(i);
-        mesh.V = mesh_org.V;
-        mesh.makeConvexHull();
+        CHECK(shape->sscCore().N, "for FCL broadphase, every shape with 'contact' enabled needs a convex core: " <<shape->frame.name);
+        CHECK_EQ(shape->radius(), shape->coll_cvxRadius, "should be equal");
+        rai::Mesh& mesh = cvx_meshes(i);
+        mesh.setSSCvx(shape->sscCore(), shape->coll_cvxRadius*1.05, 1); //make it a little larger... sphere approx
+        // Mesh& mesh_org = shape->mesh();
+        // CHECK(!mesh_org.cvxParts.N, "mesh '" <<shape->frame.name <<"' has convex decomposition - not implemented yet in FCL! -- please separate in separate frames")
+        // // rai::Mesh& mesh = mesh_org;
+        // rai::Mesh& mesh = cvx_mesh(i);
+        // mesh.V = mesh_org.V;
+        // mesh.makeConvexHull();
         if(!mesh.T.N) continue;
         mesh.computeTriNormals();
         std::shared_ptr<ConvexGeometryData> dat = make_shared<ConvexGeometryData>();
