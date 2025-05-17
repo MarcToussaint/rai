@@ -225,7 +225,7 @@ template<class T> struct Array {
   void delRows(int i, uint k=1);
   void delColumns(int i, uint k=1);
   void insRows(int i, uint k=1);
-  void insColumns(int i, uint k=1);
+  Array<T>& insColumns(int i, uint k=1);
   void resizeDim(uint k, uint dk);
   void setAppend(const T& x); //? same as if(findValue(x)==-1) append(x)
   void setAppend(const Array<T>& x);

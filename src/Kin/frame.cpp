@@ -1911,7 +1911,7 @@ void rai::Joint::write(Graph& ats) const {
   ats.add<Enum<JointType>>("joint", type);
   if(H!=1.) ats.add<double>("ctrl_H", H);
   if(scale!=1.) ats.add<double>("joint_scale", scale);
-  if(limits.N) ats.add<arr>("limits", limits);
+  if(limits.N) ats.add<arr>("limits", limits.copy().reshape(-1));
   if(mimic) ats.add<rai::String>("mimic", mimic->frame->name);
 }
 

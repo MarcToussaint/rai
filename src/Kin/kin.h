@@ -244,7 +244,7 @@ struct Configuration {
   arr dyn_fwdDynamics(const arr& q_dot, const arr& u);
   void dyn_fwdStep_RungeKutta(arr& q_dot, const arr& u, double tau);
   double dyn_energy(const arr& q_dot);
-private: //internal:
+// private: //internal:
   struct FrameDynState{ bool isGood=false; Vector p, v, w, vd, wd; Matrix R; };
   FrameDynState& dyn_ensure(Frame* f, const arr& q_dot, Array<FrameDynState>& buffer);
   arr dyn_inertia(Frame* f);

@@ -643,10 +643,10 @@ template<class T> void Array<T>::delColumns(int i, uint k) {
 }
 
 /// inserts k columns at the i-th column [must be 2D]
-template<class T> void Array<T>::insColumns(int i, uint k) {
+template<class T> Array<T>& Array<T>::insColumns(int i, uint k) {
   CHECK(memMove, "only with memMove");
   CHECK_EQ(nd, 2, "only for matricies");
-  if(!k) return;
+  if(!k) return *this;
   if(i<0) i+=d1+1;
   CHECK_LE(i, (int)d1, "range check error");
   uint n=d1;
@@ -656,6 +656,7 @@ template<class T> void Array<T>::insColumns(int i, uint k) {
     memset(p+j*d1+i, 0, sizeT*k);
     if(i) memmove(p+j*d1, p+j*n, sizeT*i);
   }
+  return *this;
 }
 
 /// changes the range of one dimension (generalization of ins/delColumn to arbitrary tensors)
