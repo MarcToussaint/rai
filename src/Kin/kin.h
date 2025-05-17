@@ -265,6 +265,7 @@ public:
   double coll_totalViolation(); ///< proxies are returns from a collision engine; contacts stable constraints
   bool coll_isCollisionFree();
   void coll_reportProxies(std::ostream& os=cout, double belowMargin=1., bool brief=true) const;
+  StringA coll_getProxyPairs(double belowMargin, arr& distances=NoArr);
   std::shared_ptr<FclInterface> coll_fcl(int verbose=0);
   void coll_fclReset();
   void addProxies(const uintA& collisionPairs);

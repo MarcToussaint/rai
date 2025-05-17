@@ -2376,6 +2376,19 @@ void Configuration::coll_reportProxies(std::ostream& os, double belowMargin, boo
     }
 }
 
+StringA Configuration::coll_getProxyPairs(double belowMargin, arr& distances){
+  StringA P;
+  for(const Proxy& p: proxies) {
+    if(p.d<=belowMargin){
+      P.append(p.a->name);
+      P.append(p.b->name);
+      if(!!distances) distances.append(p.d);
+    }
+  }
+  P.reshape(-1,2);
+  return P;
+}
+
 /*void Configuration::impulsePropagation(arr& qd1, const arr& qd0){
   static Array<Featherstone::Link> tree;
   if(!tree.N) GraphToTree(tree, *this);
