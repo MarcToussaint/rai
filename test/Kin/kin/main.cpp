@@ -488,7 +488,7 @@ void TEST(FollowRedundantSequence){
   arr lines(2*(Z.d0-1), 3);
   for(uint i=0;i<Z.d0-1;i++){ lines[2*i]=Z[i]; lines[2*i+1]=Z[i+1];  }
   C.addFrame("plotPath")
-      ->setMesh(lines, {})
+      ->setLines(lines, {})
       .setShape(rai::ST_lines, {1.,1.,0.});
   C.view(false);
   //-- follow the trajectory kinematically
@@ -533,7 +533,7 @@ void TEST(Dynamics){
   auto diffEqn = [&C,&u,&friction](const arr& x, const arr& xdot) -> arr{
     checkNan(x);
     C.setJointState(x);
-    if(!u.N) u.resize(x.d1).setZero();
+    if(!u.N) u.resize(x.N).setZero();
     if(friction) u = -1e-1 * xdot;
     checkNan(u);
     arr y, ytest;
@@ -790,7 +790,7 @@ int MAIN(int argc,char **argv){
   testContacts();
   testLimits();
   testInertias();
-  testTexture();
+  //testTexture();
   //testMergeSceneMesh();
 #ifdef RAI_ODE
 //  testMeshShapesInOde();

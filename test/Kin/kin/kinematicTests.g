@@ -1,13 +1,13 @@
-base { X: "t(0 0 .2)" shape:box size=[.4 .4 .4 0] color=[0 0 0]}
+base { X: "t(0 0 .2)" shape:box size=[.4 .4 .4] color=[0 0 0]}
 
-stem { X: "t(0 0 1)" shape:capsule size=[0.1 0.1 2 .1] }
+stem { X: "t(0 0 1)" shape:capsule size=[2 .1] }
 transRot (base stem){ joint:phiTransXY B: "t(0 0 .6)" } #phiTransXY=12 #transXYPhi=8
 
-arm1 { shape:capsule size=[0.1 0.1 .3 .1] }
-arm2 { shape:capsule size=[0.1 0.1 .3 .1] }
-arm3 { shape:capsule size=[0.1 0.1 .3 .1] }
-arm4 { shape:capsule size=[0.1 0.1 .3 .1] }
-arm5 { shape:capsule size=[0.1 0.1 .3 .1] }
+arm1 { shape:capsule size=[.3 .1] }
+arm2 { shape:capsule size=[.3 .1] }
+arm3 { shape:capsule size=[.3 .1] }
+arm4 { shape:capsule size=[.3 .1] }
+arm5 { shape:capsule size=[.3 .1] }
 
 (stem arm1) { joint:universal A: "t(0 0 1) d(90 1 0 0)" B: "t(0 0 .15)" } #quatBall
 j2(arm1 arm2) { joint:hingeX A: "t(0 0 0.15)" B: "t(0 0 .15)" axis=[0 0 1] }

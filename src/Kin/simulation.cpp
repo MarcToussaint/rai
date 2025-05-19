@@ -587,8 +587,8 @@ bool Simulation::getGripperIsClose(const char* gripperFrameName) {
   if(joint->frame->parent->name.contains("robotiq")) speed=-1.;
   if(joint) {
     double q = joint->get_q();
-    if((speed>0. && q<joint->limits(0)+.005)
-        || (speed<0. && q>joint->limits(1)-.005)) return true;
+    if((speed>0. && q<joint->limits.elem(0)+.005)
+        || (speed<0. && q>joint->limits.elem(1)-.005)) return true;
   } else {
     NIY;
   }
@@ -604,8 +604,8 @@ bool Simulation::getGripperIsOpen(const char* gripperFrameName) {
   if(joint->frame->parent->name.contains("robotiq")) speed=1.;
   if(joint) {
     double q = joint->get_q();
-    if((speed>0. && q<joint->limits(0)+.005)
-        || (speed<0. && q>joint->limits(1)-.005)) return true;
+    if((speed>0. && q<joint->limits.elem(0)+.005)
+        || (speed<0. && q>joint->limits.elem(1)-.005)) return true;
   } else {
     NIY;
   }
@@ -868,8 +868,8 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
     fing2->set_Q()->pos = -q*axis;
   }
 
-  if((speed>0. && q>limits(1))
-      || (speed<0. && q < limits(0))) { //stop grasp by joint limits -> unsuccessful
+  if((speed>0. && q>limits.elem(1))
+      || (speed<0. && q < limits.elem(0))) { //stop grasp by joint limits -> unsuccessful
     if(S.verbose>0) {
       LOG(1) <<"terminating closing gripper (limit) - nothing grasped";
     }
@@ -922,7 +922,7 @@ Imp_GripperMove::Imp_GripperMove(Frame* _gripper, Joint* _joint, Frame* _fing1, 
     if(q) axis /= q; else axis = Vector_x;
   }
 
-  rai::clip(stop, limits(0), limits(1));
+  rai::clip(stop, limits.elem(0), limits.elem(1));
 
   if((stop>q && speed<0.) || (stop<q && speed>0.)) speed *= -1.;
 }

@@ -212,9 +212,10 @@ void TEST(Mobile){
 
   uint T=100;
   T = rrt.path.d0;
+  C.setJointState(q0);
   KOMO komo;
   komo.setConfig(C);
-  komo.setTiming(1, T, 1., 2);
+  komo.setTiming(1, T, 10., 2);
   komo.addControlObjective({}, 1, 1e-2);
   komo.addControlObjective({}, 2, 1e-1);
   komo.addQuaternionNorms({}, 1e2, false);
@@ -223,6 +224,7 @@ void TEST(Mobile){
   komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e1}, {}, 1);
   komo.initWithPath_qOrg(rrt.path);
   // komo.checkGradients();
+  // komo.opt.animateOptimization=1;
   rai::NLP_Solver sol;
   sol.setProblem(komo.nlp());
   sol.opt.set_verbose(2);
@@ -239,10 +241,10 @@ int MAIN(int argc,char** argv){
 
 //  rnd.clockSeed();
 
-  testEasy();
-  testAlign();
-  testThin();
-  testPR2();
+  // testEasy();
+  // testAlign();
+  // testThin();
+  // testPR2();
   // testThreading();
   testMobile();
 

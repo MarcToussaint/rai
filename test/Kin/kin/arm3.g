@@ -12,5 +12,5 @@ pre3(joint2) { Q:[0 0 .3] }
 joint3(pre3) { joint:hingeX q:-.2 }
 eff(joint3) { Q:[0 0 .15] shape:capsule, mass:1, size:[.3 .05] }
 
-#target { X:[.0 .2 1.7], shape:sphere, mass:.001, size:[0 0 0 .02], color:[0 0 0] }
+#target { X:[.0 .2 1.7], shape:sphere, mass:.001, size:[.02], color:[0 0 0] }
 

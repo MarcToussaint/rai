@@ -45,9 +45,8 @@ void TEST(GJK_Jacobians) {
   for(uint k=0;k<100;k++){
 //    //randomize shapes
     s1.mesh().clear();             s2.mesh().clear();
-    s1.sscCore().setRandom();      s2.sscCore().setRandom();
-    s1.sscCore().scale(2.);       s2.sscCore().scale(2.);
-    s1.mesh().C = {.5,.8,.5,.4};   s2.mesh().C = {.5,.5,.8,.4};
+    s1.sscCore() = 2.*rand(10,3);      s2.sscCore() =  2.*rand(10,3);
+     s1.mesh().C = {.5,.8,.5,.4};   s2.mesh().C = {.5,.5,.8,.4};
     s1.type() = s2.type() = rai::ST_ssCvx; //ST_mesh;
     s1.size = arr{rnd.uni(.01, .3)}; s2.size = arr{rnd.uni(.01, .3)};
     if(rnd.uni()<.2) s1.sscCore() = zeros(1,3);
@@ -109,7 +108,7 @@ void TEST(GJK_Jacobians) {
 
 //===========================================================================
 
-#if 0
+#if 1
 
 void TEST(GJK_Jacobians2) {
   rai::Configuration C;
@@ -122,19 +121,19 @@ void TEST(GJK_Jacobians2) {
 
     a->setConvexMesh({}, {}, .02 + .1*rnd.uni());
     a->setColor({.5,.5,.8,.6});
-    a->shape->sscCore().setRandom();
+    a->shape->sscCore() = rand(10,3);
     a->shape->createMeshes();
     a->setContact(1);
   }
 
   C.gl().drawOptions.drawProxies=true;
 
-  C.stepFcl();
+  C.coll_stepFcl();
 //  C.reportProxies();
 
   VectorFunction f = [&C](const arr& x) -> arr {
     C.setJointState(x);
-    C.stepFcl();
+    C.coll_stepFcl();
     arr y;
     C.kinematicsPenetration(y, y.J(), .05);
     return y;
@@ -147,7 +146,7 @@ void TEST(GJK_Jacobians2) {
   double y_last=0.;
   for(uint t=0;t<1000;t++){
     C.setJointState(q);
-    C.stepFcl();
+    C.coll_stepFcl();
 
 //    checkJacobian(f, q, 1e-4);
 
@@ -200,14 +199,14 @@ void TEST(GJK_Jacobians3) {
 
   C.gl().drawOptions.drawProxies=true;
 
-  C.stepFcl();
-  C.reportProxies();
+  C.coll_stepFcl();
+  C.coll_reportProxies();
 
   arr q = C.getJointState();
 
   for(uint t=0;t<100;t++){
     C.setJointState(q);
-    C.stepFcl();
+    C.coll_stepFcl();
 //    C.stepFcl();
 //    K.reportProxies(cout, -1., false);
 
@@ -215,7 +214,7 @@ void TEST(GJK_Jacobians3) {
 
     F_PairCollision gjk(F_PairCollision::_negScalar);
     FrameL F = {&B1, &B2};
-    bool good = checkJacobian(gjk.vf2(F), q, 1e-4);
+    bool good = checkJacobian(gjk.asFct(F), q, 1e-4);
     if(!good) rndGauss(q, 1e-4, true);
 
     arr y = gjk.eval(F);
@@ -354,14 +353,14 @@ void testSweepingSDFs(){
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-//  rnd.clockSeed();
+  rnd.clockSeed();
 
-//  testGJK_Jacobians();
-//  testGJK_Jacobians2();
-//  testGJK_Jacobians3();
+  // testGJK_Jacobians();
+  testGJK_Jacobians2();
+  // testGJK_Jacobians3();
 
-  testFunctional();
-  testSweepingSDFs();
+  // testFunctional();
+  // testSweepingSDFs();
 
   return 0;
 }

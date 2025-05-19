@@ -32,7 +32,7 @@ void TEST(Dynamics){
   auto diffEqn = [&C,&u,&friction](const arr& x, const arr& xdot) -> arr{
     checkNan(x);
     C.setJointState(x);
-    if(!u.N) u.resize(x.d1).setZero();
+    if(!u.N) u.resize(x.N).setZero();
     if(friction) u = -10. * xdot;
     /*if(T2::addContactsToDynamics){
         G.contactsToForces(100.,10.);
