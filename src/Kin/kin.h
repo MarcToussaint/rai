@@ -299,7 +299,7 @@ public:
   void write(Graph& G) const;
   void writeURDF(std::ostream& os, const char* robotName="myrobot") const;
   void writeCollada(const char* filename, const char* format="collada") const;
-  void writeMeshes(str pathPrefix="meshes/", bool copyTextures=false, bool enumerateTextures=false) const;
+  void writeMeshes(str pathPrefix="meshes/", bool copyTextures=false, bool enumerateAssets=false) const;
   void writeMesh(const char* filename="z.ply") const;
   void read(std::istream& is);
   Graph getGraph() const;

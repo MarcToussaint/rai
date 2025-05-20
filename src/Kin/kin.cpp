@@ -2812,7 +2812,7 @@ void Configuration::writeCollada(const char* filename, const char* format) const
 #endif //ASSIMP
 
 /// write meshes into an own binary array file format
-void Configuration::writeMeshes(str pathPrefix, bool copyTextures, bool enumerateTextures) const {
+void Configuration::writeMeshes(str pathPrefix, bool copyTextures, bool enumerateAssets) const {
   if(pathPrefix && pathPrefix(-1)=='/'){
     if(!FileToken(pathPrefix).exists()){
       rai::system(STRING("mkdir -p " <<pathPrefix));
@@ -2827,7 +2827,7 @@ void Configuration::writeMeshes(str pathPrefix, bool copyTextures, bool enumerat
       rai::FileToken fil(t->file.p);
       fil.decomposeFilename();
       str newfilename;
-      if(enumerateTextures) newfilename <<texCount++ <<'_' <<fil.name;
+      if(enumerateAssets) newfilename <<texCount++ <<'_' <<fil.name;
       else newfilename = fil.name;
       if(!FileToken(newfilename).exists()){
         str cmd = STRING("cp " <<fil.fullPath() <<' ' <<pathPrefix <<newfilename);
@@ -2853,21 +2853,23 @@ void Configuration::writeMeshes(str pathPrefix, bool copyTextures, bool enumerat
       rai::FileToken fil(n->key);
       fil.name.resize(fil.name.find('.',true), true);
       fil.decomposeFilename();
-      str newfilename = STRING(pathPrefix <<fil.name <<".h5");
+      str newfilename = pathPrefix;
+      if(enumerateAssets) newfilename <<meshCount++ <<'_' <<fil.name <<".h5";
+      else newfilename <<fil.name <<".h5";
       if(!FileToken(newfilename).exists()){
         if(m->C.d0==m->V.d0 && m->_texImg && m->texCoords.N){ m->C.clear(); }
         m->writeH5(newfilename, "mesh");
       }
-  for(Frame* f:frames) {
+      for(Frame* f:frames) {
         if(f->shape && f->shape->_mesh && f->shape->_mesh.get() == m.get()){
-      Node *n;
-      n = f->ats->findNode("mesh"); if(n) delete n;
+          Node *n;
+          n = f->ats->findNode("mesh"); if(n) delete n;
           n = f->ats->findNode("texture"); if(n) delete n;
-      n = f->ats->findNode("meshscale"); if(n) delete n;
-      f->ats->getNew<FileToken>("mesh").name = newfilename;
+          n = f->ats->findNode("meshscale"); if(n) delete n;
+          f->ats->getNew<FileToken>("mesh").name = newfilename;
+        }
       }
     }
-  }
   }
   // for(Frame* f:frames) {
   //   if(f->shape &&
