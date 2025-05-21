@@ -38,7 +38,6 @@ struct Simulation_self {
   std::shared_ptr<BulletBridge> bulletBridge;
   rai::Configuration bridgeC;
 #endif
-  std::shared_ptr<OpenGL> glDebug;
 
   BSplineCtrlReference ref;
   arr a_ref; //admittance ref
@@ -150,7 +149,14 @@ Simulation::Simulation(Configuration& _C, Engine _engine, int _verbose)
     //nothing
   } else NIY;
   self->ref.initialize(C.getJointState(), NoArr, time);
-  if(verbose>1) self->display = make_shared<Simulation_DisplayThread>(C, STRING(" ["<<rai::Enum<Engine>(engine)<<"]"));
+  if(verbose>1){
+    // if(engine==_physx){
+    //   self->display = make_shared<Simulation_DisplayThread>(self->physx->getDebugConfig(), STRING(" ["<<rai::Enum<Engine>(engine)<<"]"));
+    // }else{
+    self->display = make_shared<Simulation_DisplayThread>(C, STRING(" ["<<rai::Enum<Engine>(engine)<<"]"));
+    // }
+  }
+
 }
 
 Simulation::~Simulation() {
@@ -301,7 +307,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   if(self->display) self->updateDisplayData(time, C); //does not update with freq >20hz - see method
 
   if(engine==_physx && verbose>2){
-    self->physx->view(false, STRING("Simulation physx debug time: " <<time));
+    self->physx->getDebugConfig().view(false, STRING("Simulation physx debug time: " <<time));
   }
 }
 
@@ -754,7 +760,11 @@ void Simulation_self::updateDisplayData(double _time, const rai::Configuration& 
   display->drawCount = 0;
   display->mux.unlock();
 
+  // if(physx){
+  //   display->updateConfiguration(physx->getDebugConfig());
+  // }else{
   display->updateConfiguration(_C);
+  // }
 }
 
 void Simulation_self::updateDisplayData(const byteA& _image, const floatA& _depth) {

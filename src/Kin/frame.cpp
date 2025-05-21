@@ -2211,7 +2211,7 @@ void rai::Shape::createMeshes() {
     }
   }
 
-  if(cont && !sscCore().N){
+  if(!sscCore().N){
     rai::Mesh m;
     m.V = mesh().V;
     m.makeConvexHull();

@@ -718,8 +718,10 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
     if(opt.verbose>0) cout <<"-- kin_physx.cpp:    computing compound inertia for link frame '" <<link->name <<endl;
     link->computeCompoundInertia();
   }
-  if(!link->inertia){
-    LOG(-1) <<"link '" <<link->name <<"' does not have inertia! -> computing standard inertias (It's better if you define inertias for all links before starting physix)";
+  if(!link->inertia) {
+    if(opt.verbose>0) {
+      LOG(-1) <<"link '" <<link->name <<"' does not have inertia! -> computing standard inertias (It's better if you define inertias for all links before starting physix)";
+    }
     bool hasMass = link->standardizeInertias();
     if(hasMass){
     }else{
@@ -732,7 +734,7 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
     // f->inertia->com = conv_PxVec3_arr(actor->getCMassLocalPose().p);
     // //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
   }
-  if(link->inertia && link->inertia->mass<1e-12){
+  if(link->inertia && link->inertia->mass<1e-12) {
     LOG(-1) <<"link '" <<link->name <<"' has zero mass -> making it minimally .001";
     link->inertia->mass = .001;
     link->inertia->com.setZero();
@@ -764,62 +766,71 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       geometry = make_shared<PxSphereGeometry>(s->size(0));
       if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape sphere '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
     } break;
-    // case rai::ST_capsule: {
-    //   geometry = make_shared<PxCapsuleGeometry>(s->size(1), .5*s->size(0));
-    //   if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape capsule '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
-    // } break;
+    case rai::ST_capsule: { //GRRRR... capsule are extended along x-axis in physx.. all inconsistent. use explicit mesh
+      // geometry = make_shared<PxCapsuleGeometry>(s->size(1), .5*s->size(0));
+      floatA Vfloat = rai::convert<float>(s->mesh().V);
+      PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
+          *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
+          PxConvexFlag::eCOMPUTE_CONVEX);
+      meshes.append(triangleMesh);
+      geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
+      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape capsule '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
+    } break;
     // case rai::ST_cylinder:{
     //   NIY;
     // } break;
     case rai::ST_ssCylinder:
-    case rai::ST_ssCvx: {
+    case rai::ST_ssCvx:
+    default: {
+      CHECK(s->sscCore().N, "physx needs a convex collision shape, frame: " <<s->frame.name <<" (cvxParts are disabled->convert them to child frames)");
+      CHECK_EQ(s->radius(), s->coll_cvxRadius, "");
       floatA Vfloat = rai::convert<float>(s->sscCore());
       PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
                                      *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
                                      PxConvexFlag::eCOMPUTE_CONVEX);
       geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
-      paddingRadius = s->radius();
+      paddingRadius = s->coll_cvxRadius;
       if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape cvx mesh '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
     } break;
     case rai::ST_sdf:
-    default: {
-      rai::Mesh& M = s->mesh();
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape mesh '" <<s->frame.name <<"' (" <<s->type() <<") as mesh" <<endl;
-      if(M.cvxParts.N) {
-        floatA Vfloat;
-        if(opt.verbose>0) cout <<"-- kin_physx.cpp:    creating " <<M.cvxParts.N <<" convex parts for shape " <<s->frame.name <<endl;
-        for(uint i=0; i<M.cvxParts.N; i++) {
-          Vfloat.clear();
-          int start = M.cvxParts(i);
-          int end = i+1<M.cvxParts.N ? M.cvxParts(i+1)-1 : -1;
-          copy(Vfloat, M.V({start, end}));
-          PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
-                                         *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
-                                         PxConvexFlag::eCOMPUTE_CONVEX);
-          meshes.append(triangleMesh);
-          geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
-          PxShape* shape = core()->mPhysics->createShape(*geometry, *defaultMaterial);
-          actor->attachShape(*shape);
-          if(&s->frame!=f) {
-            if(s->frame.parent==f) {
-              shape->setLocalPose(conv_Transformation2PxTrans(s->frame.get_Q()));
-            } else {
-              rai::Transformation rel = s->frame.ensure_X() / f->ensure_X();
-              shape->setLocalPose(conv_Transformation2PxTrans(rel));
-            }
-          }
-        }
-        geometry.reset();
-      } else {
-        if(opt.verbose>0) cout <<"-- kin_physx.cpp:    using cvx hull of mesh as no decomposition (M.cvxParts) is available" <<endl;
-        floatA Vfloat = rai::convert<float>(s->mesh().V);
-        PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
-                                       *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
-                                       PxConvexFlag::eCOMPUTE_CONVEX);
-        meshes.append(triangleMesh);
-        geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
-      }
-    } break;
+    // default: {
+    //   rai::Mesh& M = s->mesh();
+    //   if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape mesh '" <<s->frame.name <<"' (" <<s->type() <<") as mesh" <<endl;
+    //   if(M.cvxParts.N) {
+    //     floatA Vfloat;
+    //     if(opt.verbose>0) cout <<"-- kin_physx.cpp:    creating " <<M.cvxParts.N <<" convex parts for shape " <<s->frame.name <<endl;
+    //     for(uint i=0; i<M.cvxParts.N; i++) {
+    //       Vfloat.clear();
+    //       int start = M.cvxParts(i);
+    //       int end = i+1<M.cvxParts.N ? M.cvxParts(i+1)-1 : -1;
+    //       copy(Vfloat, M.V({start, end}));
+    //       PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
+    //                                      *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
+    //                                      PxConvexFlag::eCOMPUTE_CONVEX);
+    //       meshes.append(triangleMesh);
+    //       geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
+    //       PxShape* shape = core()->mPhysics->createShape(*geometry, *defaultMaterial);
+    //       actor->attachShape(*shape);
+    //       if(&s->frame!=f) {
+    //         if(s->frame.parent==f) {
+    //           shape->setLocalPose(conv_Transformation2PxTrans(s->frame.get_Q()));
+    //         } else {
+    //           rai::Transformation rel = s->frame.ensure_X() / f->ensure_X();
+    //           shape->setLocalPose(conv_Transformation2PxTrans(rel));
+    //         }
+    //       }
+    //     }
+    //     geometry.reset();
+    //   } else {
+    //     if(opt.verbose>0) cout <<"-- kin_physx.cpp:    using cvx hull of mesh as no decomposition (M.cvxParts) is available" <<endl;
+    //     floatA Vfloat = rai::convert<float>(s->mesh().V);
+    //     PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
+    //                                    *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
+    //                                    PxConvexFlag::eCOMPUTE_CONVEX);
+    //     meshes.append(triangleMesh);
+    //     geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
+    //   }
+    // } break;
     case rai::ST_camera:
     case rai::ST_pointCloud:
     case rai::ST_marker: {
@@ -1252,9 +1263,9 @@ void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& fra
 //     }
 // }
 
-void PhysXInterface::view(bool pause, const char* txt) {
+rai::Configuration& PhysXInterface::getDebugConfig(){
   self->syncDebugConfig();
-  self->debugConfig.view(pause, txt);
+  return self->debugConfig;
 }
 
 void PhysXInterface::setGravity(float grav) {

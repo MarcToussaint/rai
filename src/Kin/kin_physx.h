@@ -42,12 +42,11 @@ struct PhysXInterface {
   void removeJoint(rai::Joint* j);
   void postAddObject(rai::Frame* f);
 
-  void view(bool pause=false, const char* txt=nullptr);
-
   void setGravity(float grav);
   void disableGravity(rai::Frame* f, bool disable=true);
   void addForce(rai::Vector& force, rai::Frame* b);
   void addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos);
 
+  rai::Configuration& getDebugConfig();
   rai::PhysX_Options& opt();
 };
