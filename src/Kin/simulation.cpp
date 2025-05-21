@@ -318,7 +318,7 @@ void Simulation::setSplineRef(const arr& _x, const arr& _times, bool append) {
   arr times = _times;
   if(times.N==1 && path.d0>1) {
     double t = times.elem();
-    times.setGrid(1, t/(path.d0), t, path.d0-1).reshape(-1);
+    times = rai::grid(1, t/(path.d0), t, path.d0-1).reshape(-1);
   }
   CHECK_EQ(path.d0, times.N, "need times for each control point");
 

@@ -99,7 +99,7 @@ void TEST(Mesh) {
   }
 
   //connect them to a grid (i.e., define the triangle between the points)
-  mesh.setGrid(N,N);
+  mesh = rai::grid(N,N);
   //mesh.trinormals=true; //leads to uniform triangle colors
   //mesh.gridToStrips(grid); //alternative to triangle list -- but deletion is disabled
 

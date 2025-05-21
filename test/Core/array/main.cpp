@@ -220,12 +220,12 @@ void TEST(StdVectorCompat) {
   //-- plain conversion
   std::vector<double> x(3);
   x[0]=1.;
-  cout <<"std::vector to arr:" <<arr(x, true) <<endl;
+  cout <<"std::vector to arr:" <<as_arr(x, true) <<endl;
 
   arr y(10);
   y.setStraightPerm(10);
-  x=y.vec();
-  cout <<"arr -> std::vector -> arr = " <<arr(x, true) <<endl;
+  x=as_vector(y);
+  cout <<"arr -> std::vector -> arr = " <<as_arr(x, true) <<endl;
 
   //-- real interoperability
 

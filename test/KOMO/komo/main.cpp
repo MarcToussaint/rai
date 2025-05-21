@@ -231,7 +231,7 @@ void TEST(Mobile){
   sol.solve();
   cout <<komo.report(false, true, true) <<endl;
   komo.view(true);
-  komo.view_play(true, 0, 5.);
+  komo.view_play(true, 0, 1.);
 }
 
 //===========================================================================
@@ -241,10 +241,10 @@ int MAIN(int argc,char** argv){
 
 //  rnd.clockSeed();
 
-  // testEasy();
-  // testAlign();
-  // testThin();
-  // testPR2();
+  testEasy();
+  testAlign();
+  testThin();
+  testPR2();
   // testThreading();
   testMobile();
 

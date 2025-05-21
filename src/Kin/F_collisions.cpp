@@ -236,7 +236,7 @@ void F_AccumulatedCollisions::phi2(arr& y, arr& J, const FrameL& F) {
 namespace rai {
 template<class T>
 arr block(const Array<T>& A, const Array<T>& B, const Array<T>& C, const Array<T>& D) {
-  arr X(A.d0+C.d0, A.d1+B.d1);
+  arr X = zeros(A.d0+C.d0, A.d1+B.d1);
   X.setMatrixBlock(A, 0, 0);
   X.setMatrixBlock(B, 0, A.d1);
   X.setMatrixBlock(C, A.d0, 0);

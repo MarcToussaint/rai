@@ -17,7 +17,7 @@ void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause) {
   dim = gp.X.d1 ? gp.X.d1 : gp.dX.d1;
   CHECK(dim > 0, "still no data here. I have no clue about dimensionality!?!");
 
-  X.setGrid(dim, lo, hi, 100);
+  X = rai::grid(dim, lo, hi, 100);
   gp.evaluate(X, Y, S);
   plot()->Clear();
   switch(dim) {
@@ -45,7 +45,7 @@ void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause) {
 
 void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause) {
   arr X, K, KD1, KD2;
-  X.setGrid(1, lo, hi, 600);
+  X = rai::grid(1, lo, hi, 600);
   K.resize(X.d0);
   KD1.resize(X.d0);
   KD2.resize(X.d0);
@@ -64,7 +64,7 @@ void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause) {
 
 void plotKernel2D(GaussianProcess& gp, double lo, double hi, bool pause) {
   arr X, K, KD1, KD2;
-  X.setGrid(2, lo, hi, 1000);
+  X = rai::grid(2, lo, hi, 1000);
   K.resize(X.d0, X.d1);
   KD1.resize(X.d0, X.d1);
   KD2.resize(X.d0, X.d1);

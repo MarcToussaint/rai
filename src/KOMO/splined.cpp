@@ -19,7 +19,7 @@ SplinedKOMO::SplinedKOMO(uint degree, uint numCtrlPoints, KOMO& _komo)
   for(uint i=0; i<pts.d0; i++) {
     pts[i] = komo.getConfiguration_qOrg(komo.T*(double(i)/double(pts.d0-1))-1);
   }
-  S.set(degree, pts, grid(1, 0., komo.tau*komo.T, numCtrlPoints).reshape(-1));
+  S.set(degree, pts, rai::grid<double>(1, 0., komo.tau*komo.T, numCtrlPoints).reshape(-1));
 
   //setup the NLP signature
   dimension = numCtrlPoints*x0.N;

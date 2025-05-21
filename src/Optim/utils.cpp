@@ -124,7 +124,7 @@ void NLP_LinTransformed::evaluate(arr& phi, arr& J, const arr& x) {
 
 void displayFunction(const ScalarFunction& f, bool wait, double lo, double hi) {
   arr X, Y;
-  X.setGrid(2, lo, hi, 100);
+  X = rai::grid(2, lo, hi, 100);
   Y.resize(X.d0);
   for(uint i=0; i<X.d0; i++) {
     double fx=f(NoArr, NoArr, X[i]);

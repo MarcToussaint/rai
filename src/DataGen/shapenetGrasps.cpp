@@ -275,7 +275,7 @@ arr ShapenetGrasps::evaluateGrasp(){
       physx.pullDynamicStates(C);
       physx.pullMotorStates(C, NoArr);
       if(physx.opt().verbose>3){
-        physx.view(false, STRING("Simulation physx debug time: " <<t));
+        physx.getDebugConfig().view(false, STRING("Simulation physx debug time: " <<t));
       }
       q_real = C.getJointState();
 

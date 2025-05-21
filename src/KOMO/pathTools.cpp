@@ -326,7 +326,7 @@ arr path_resampleLinear(const arr& q, uint T) {
 
 rai::BSpline getSpline(const arr& q, double duration, uint degree) {
   rai::BSpline S;
-  S.set(degree, q, grid(1, 0., duration, q.N-1));
+  S.set(degree, q, rai::grid<double>(1, 0., duration, q.N-1));
   return S;
 }
 

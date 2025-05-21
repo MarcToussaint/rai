@@ -47,7 +47,7 @@ void TEST(ANNIncremental) {
 /*void TEST(ANNregression){
   arr X,Y,Z;
   uint i,j;
-  X.setGrid(1,-3.,3.,100);
+  X = rai::grid(1,-3.,3.,100);
   Y.resize(X.d0,1);
   for(i=0;i<X.N;i++) Y(i,0)=::sin(X(i,0));
   write(X,Y,"z.Y");

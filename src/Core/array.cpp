@@ -92,7 +92,7 @@ I've put the clapack.h directly into the rai directory - one only has to link to
 namespace rai {
 
 /// make sparse: create the \ref sparse index
-SparseVector& arr::sparseVec() {
+template<> SparseVector& Array<double>::sparseVec() {
   SparseVector* s;
   if(!special) {
     if(N) {
@@ -112,7 +112,7 @@ SparseVector& arr::sparseVec() {
   return *s;
 }
 
-const SparseVector& arr::sparseVec() const {
+template<> const SparseVector& Array<double>::sparseVec() const {
   CHECK(isSparseVector(*this), "");
   SparseVector* s = dynamic_cast<SparseVector*>(special);
   CHECK(s, "");
@@ -120,7 +120,7 @@ const SparseVector& arr::sparseVec() const {
 }
 
 /// make sparse: create the \ref sparse index
-SparseMatrix& arr::sparse() {
+template<> SparseMatrix& Array<double>::sparse() {
   SparseMatrix* s;
   if(special) {
     s = dynamic_cast<SparseMatrix*>(special);
@@ -142,7 +142,7 @@ SparseMatrix& arr::sparse() {
 }
 
 /// make sparse: create the \ref sparse index
-const SparseMatrix& arr::sparse() const {
+template<> const SparseMatrix& Array<double>::sparse() const {
   CHECK(isSparseMatrix(*this), "");
   SparseMatrix* s = dynamic_cast<SparseMatrix*>(special);
   CHECK(s, "");
@@ -150,7 +150,7 @@ const SparseMatrix& arr::sparse() const {
 }
 
 /// make sparse: create the \ref sparse index
-RowShifted& arr::rowShifted() {
+template<> RowShifted& Array<double>::rowShifted() {
   rai::RowShifted* r;
   if(!special) {
     r = new rai::RowShifted(*this);
@@ -170,7 +170,7 @@ RowShifted& arr::rowShifted() {
 }
 
 /// make sparse: create the \ref sparse index
-const RowShifted& arr::rowShifted() const {
+template<> const RowShifted& Array<double>::rowShifted() const {
   CHECK(isRowShifted(*this), "");
   rai::RowShifted* r = dynamic_cast<RowShifted*>(special);
   CHECK(r, "");
@@ -178,19 +178,19 @@ const RowShifted& arr::rowShifted() const {
 }
 
 /// attach jacobian
-arr& arr::J() {
+template<> Array<double>& Array<double>::J() {
   if(!jac) {
     jac = make_unique<arr>();
   }
   return *jac;
 }
-arr arr::noJ() const {
+template<> Array<double> Array<double>::noJ() const {
   arr x;
   CHECK(!isSpecial(*this), "reference for special doesn't work yet..");
   x.referTo(*this);
   return x;
 }
-arr arr::J_reset() {
+template<> Array<double> Array<double>::J_reset() {
   CHECK(jac, "");
   arr J;
   if(jac) {
@@ -198,6 +198,13 @@ arr arr::J_reset() {
     jac.reset();
   } else J.setNoArr();
   return J;
+}
+
+template<> void Array<double>::J_setId() {
+  CHECK(!jac, "");
+  CHECK(nd==1, "");
+  jac = make_unique<arr>();
+  jac->setId(N);
 }
 
 }
@@ -259,7 +266,7 @@ arr repmat(const arr& A, uint m, uint n) {
   B.referTo(A);
   if(B.nd==1) B.reshape(B.N, 1);
   arr z;
-  z.resize(B.d0*m, B.d1*n);
+  z.resize(B.d0*m, B.d1*n).setZero();
   for(uint i=0; i<m; i++)
     for(uint j=0; j<n; j++)
       z.setMatrixBlock(B, i*B.d0, j*B.d1);
@@ -2060,13 +2067,6 @@ SparseVector::SparseVector(arr& _Z, const SparseVector& s) : SparseVector(_Z) {
 
 SparseMatrix::SparseMatrix(arr& _Z, const SparseMatrix& s) : SparseMatrix(_Z) {
   elems = s.elems;
-}
-
-/// return fraction of non-zeros in the array
-double arr::sparsity() {
-  uint i, m=0;
-  for(i=0; i<N; i++) if(elem(i)) m++;
-  return ((double)m)/N;
 }
 
 void SparseVector::resize(uint d0, uint n) {

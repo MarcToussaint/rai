@@ -107,7 +107,7 @@ struct SimpleConstraintFunction : NLP {
   virtual void evaluate(arr& phi, arr& J, const arr& _x) {
     CHECK_EQ(_x.N, 2, "");
     phi.resize(4);
-    if(!!J) { J.resize(4, 2); J.setZero(); }
+    if(!!J) { J.resize(4, 2).setZero(); }
 
     //simple squared potential, displaced by 1
     arr x(_x);

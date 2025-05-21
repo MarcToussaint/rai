@@ -11,14 +11,13 @@
 #include "array.h"
 
 #include <algorithm>
+#include <type_traits>
 
 #define ARRAY_flexiMem true
 
 namespace rai {
 
 //fwd declarations
-extern int64_t globalMemoryTotal, globalMemoryBound;
-extern bool globalMemoryStrict;
 
 extern uint lineCount;
 char skip(std::istream& is, const char* skipSymbols, const char* stopSymbols, bool skipCommentLines);
@@ -77,7 +76,9 @@ template<class T> Array<T>::Array(Array<T>&& a)
     isReference(a.isReference),
     M(a.M),
     special(a.special) {
-  //if(a.jac) jac = std::move(a.jac);
+  if constexpr(std::is_same_v<T, double>){
+    if(a.jac) jac = std::move(a.jac);
+  }
   // CHECK_EQ(a.d, &a.d0, "NIY for larger tensors");
   if(a.d!=&a.d0) { d=a.d; a.d=&a.d0; }
   a.p=NULL;
@@ -100,6 +101,8 @@ template<class T> Array<T>::Array(std::initializer_list<T> values) : Array() { o
 
 /// initialization via {1., 2., 3., ...} lists, with certain dimensionality
 template<class T> Array<T>::Array(std::initializer_list<uint> dim, std::initializer_list<T> values) : Array() { operator=(values); reshape(dim); }
+
+template<class T> Array<T>::Array(const T* p, uint size, bool byReference) : Array() { if(byReference) referTo(p, size); else setCarray(p, size); }
 
 template<class T> Array<T>::~Array() {
 #if 0
@@ -246,11 +249,6 @@ template<class T> Array<T>& Array<T>::reshapeAs(const Array<T>& a) {
   CHECK_EQ(N, a.N, "reshape must preserve total memory size");
   nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2; resetD();
   if(nd>3) { d=new uint[nd];  memmove(d, a.d, nd*sizeof(uint)); }
-  return *this;
-}
-
-template<class T> Array<T>& Array<T>::reshapeFlat() {
-  reshape(N);
   return *this;
 }
 
@@ -713,8 +711,15 @@ template<class T> T& Array<T>::elem(int i, int j) {
   if(j<0) j += d1;
   CHECK(nd==2 && (uint)i<d0 && (uint)j<d1,
         "2D range error (" <<nd <<"=2, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<")");
+  if constexpr(std::is_same_v<T, double>){
+    if(isSparseMatrix(*this)) {
+      return sparse().addEntry(i, j);
+    }
+    if(isRowShifted(*this)) {
+      return rowShifted().elemNew(i, j);
+    }
+  }
   return p[i*d1+j];
-
 }
 
 /// multi-dimensional (tensor) access
@@ -1016,6 +1021,10 @@ template<class T> Array<T>& Array<T>::operator=(const Array<T>& a) {
   if(memMove) memmove(p, a.p, sizeT*N);
   else for(uint i=0; i<N; i++) p[i]=a.p[i];
   if(special) { delete special; special=NULL; }
+  if constexpr(std::is_same_v<T, double>){
+    if(isSpecial(a)) special_copy(*this, a);
+    if(a.jac) jac = std::make_unique<arr>(*a.jac);
+  }
   return *this;
 }
 
@@ -1050,7 +1059,7 @@ template<class T> Array<T> catCol(const Array<Array<T>*>& X) {
 //          d1+=x->d1;
 //      }
   } else {
-    z.resize(d0, d1);
+    z.resize(d0, d1).setZero();
     d1=0;
     for(const Array<T>* x:  X) { z.setMatrixBlock(*x, 0, d1); d1+=x->nd==2?x->d1:1; }
   }
@@ -1071,7 +1080,7 @@ template<class T> Array<T> catCol(const Array<Array<T>>& X) {
 }
 
 /// set all entries to same value x [default: don't change dimension]
-template<class T> void Array<T>::setUni(const T& x, int d) {
+template<class T> void Array<T>::setConst(const T& x, int d) {
   if(d!=-1) resize(d);
   uint i;
   for(i=0; i<N; i++) elem(i)=x;
@@ -1083,7 +1092,9 @@ template<class T> void Array<T>::setId(int d) {
   CHECK(d!=-1 || (nd==2 && d0==d1), "need squared matrix to set to identity");
   if(d!=-1) resize(d, d);
   setZero();
-  for(uint i=0; i<d0; i++) operator()(i, i)=(T)1;
+  if constexpr(std::is_scalar_v<T>){
+    for(uint i=0; i<d0; i++) operator()(i, i)=(T)1;
+  }else NIY;
 }
 
 template<class T> void Array<T>::setDiag(const T& x, int d) {
@@ -1120,13 +1131,38 @@ template<class T> void Array<T>::setBlockMatrix(const Array<T>& A, const Array<T
 template<class T> void Array<T>::setBlockMatrix(const Array<T>& A, const Array<T>& B) {
   CHECK(A.nd==2 && B.nd==2, "");
   CHECK(A.d1==B.d1, "");
-  resize(A.d0+B.d0, A.d1);
+
+  if constexpr(std::is_same_v<T, double>){
+    if(isSparse(A)){
+      CHECK(isSparse(B), "");
+      sparse().resize(A.d0+B.d0, A.d1, 0);
+    }else{
+      resize(A.d0+B.d0, A.d1).setZero();
+    }
+  }else{
+    resize(A.d0+B.d0, A.d1).setZero();
+  }
+
   setMatrixBlock(A, 0, 0);
   setMatrixBlock(B, A.d0, 0);
 }
 
 /// constructs a vector x=[a, b]
 template<class T> void Array<T>::setBlockVector(const Array<T>& a, const Array<T>& b) {
+
+  if constexpr(std::is_same_v<T, double>){
+    if(a.jac || b.jac) {
+      const Array<T>& A=*a.jac;
+      const Array<T>& B=*b.jac;
+      if(isSparse(A)){
+        CHECK(isSparse(B), "");
+        J().sparse().resize(A.d0+B.d0, A.d1, 0);
+      }else{
+        CHECK(!isSparse(B), "");
+        J().resize(A.d0+B.d0, A.d1).setZero();
+      }
+    }
+  }
   CHECK(a.nd==1 && b.nd==1, "");
   resize(a.N+b.N);
   setVectorBlock(a, 0);   //for(i=0;i<a.N;i++) operator()(i    )=a(i);
@@ -1135,6 +1171,13 @@ template<class T> void Array<T>::setBlockVector(const Array<T>& a, const Array<T
 
 /// write the matrix B into 'this' matrix at location lo0, lo1
 template<class T> void Array<T>::setMatrixBlock(const Array<T>& B, uint lo0, uint lo1) {
+  if constexpr(std::is_same_v<T, double>){
+    if(isSparse(*this)){
+      sparse().add(B, lo0, lo1);
+      return;
+    }
+  }
+
   CHECK(!special && !B.special, "");
   CHECK(B.nd==1 || B.nd==2, "");
   if(B.nd==2) {
@@ -1158,18 +1201,29 @@ template<class T> void Array<T>::setVectorBlock(const Array<T>& B, uint lo) {
   CHECK(nd==1 && B.nd==1 && lo+B.N<=N, "");
   uint i;
   for(i=0; i<B.N; i++) elem(lo+i)=B.elem(i);
+  if constexpr(std::is_same_v<T, double>){
+    if(B.jac) {
+      CHECK(jac && jac->d1==B.jac->d1, "Jacobian needs to be pre-sized");
+      CHECK(!B.jac->jac, "NOT HANDLED YET");
+      jac->setMatrixBlock(*B.jac, lo, 0);
+    }
+  }
 }
 
 /// sorted permutation of length \c n
 template<class T> void Array<T>::setStraightPerm(int n) {
   if(n!=-1) resize(n);
-  for(uint i=0; i<N; i++) elem(i)=(T)i;
+  if constexpr(std::is_arithmetic_v<T>){
+    for(uint i=0; i<N; i++) elem(i)=static_cast<T>(i);
+  } else NIY;
 }
 
 /// reverse sorted permutation of lenth \c N
 template<class T> void Array<T>::setReversePerm(int n) {
   if(n!=-1) resize(n);
-  for(uint i=0; i<N; i++) elem(N-1-i)=(T)i;
+  if constexpr(std::is_arithmetic_v<T>){
+    for(uint i=0; i<N; i++) elem(N-1-i)=static_cast<T>(i);
+  } else NIY;
 }
 
 /// permute all elements randomly
@@ -1339,47 +1393,6 @@ template<class T> void Array<T>::takeOver(Array<T>& a) {
 #endif
 }
 
-/** @brief return a `dim'-dimensional grid with `steps' intervals
-  filling the range [lo, hi] in each dimension. Note: returned array is
-  `flat', rather than grid-shaped. */
-template<class T> Array<T>& Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
-  CHECK(steps, "steps needs to be >0");
-  uint i, j, k;
-  if(dim==1) {
-    resize(steps+1, 1);
-    for(i=0; i<d0; i++) elem(i)=lo+(hi-lo)*i/steps;
-    return *this;
-  }
-  if(dim==2) {
-    resize(steps+1, steps+1, 2);
-    for(i=0; i<d0; i++) for(j=0; j<d1; j++) {
-        operator()(i, j, 0)=lo+(hi-lo)*i/steps;
-        operator()(i, j, 1)=lo+(hi-lo)*j/steps;
-      }
-    reshape(d0*d1, 2);
-    return *this;
-  }
-  if(dim==3) {
-    resize(uintA{steps+1, steps+1, steps+1, 3});
-    T dx = (hi-lo)/steps;
-    for(i=0; i<d0; i++) for(j=0; j<d1; j++) {
-        T* p = &elem(uintA{i, j, 0, 0});
-        for(k=0; k<d2; k++) {
-          *(p++) = lo+dx*i;
-          *(p++) = lo+dx*j;
-          *(p++) = lo+dx*k;
-//        elem(uintA{i, j, k, 0}) = lo+dx*i;
-//        elem(uintA{i, j, k, 1}) = lo+dx*j;
-//        elem(uintA{i, j, k, 2}) = lo+dx*k;
-        }
-      }
-    reshape(d0*d1*d2, 3);
-    return *this;
-  }
-  NIY;
-  return *this;
-}
-
 template<class T> T rai::Array<T>::median_nonConst() {
   CHECK_GE(N, 1, "");
   std::nth_element(p, p+N/2, p+N);
@@ -1501,7 +1514,7 @@ template<class T> void Array<T>::permuteInv(const Array<uint>& permutation) {
 template<class T> void Array<T>::permuteRowsInv(const Array<uint>& permutation) {
   CHECK_LE(permutation.N, d0, "array smaller than permutation ("<<N<<"<"<<permutation.N<<")");
   Array<T> b=(*this);
-  for(uint i=0; i<d0; i++) operator[](permutation(i))()=b[i];
+  for(uint i=0; i<d0; i++) operator[](permutation(i))=b[i];
 }
 
 /// randomly permute all entries of 'this'
@@ -1534,9 +1547,28 @@ template<class T> void Array<T>::shift(int offset, bool wrapAround) {
 
 //==================================================================================
 
+/// return fraction of non-zeros in the array
+template<class T> double Array<T>::sparsity() {
+  uint i, m=0;
+  for(i=0; i<N; i++) if(elem(i)) m++;
+  return ((double)m)/N;
+}
+
+//==================================================================================
+
 /** @brief prototype for operator<<, writes the array by separating elements with ELEMSEP, separating rows with LINESEP, using BRACKETS[0] and BRACKETS[1] to brace the data, optionally writs a dimensionality tag before the data (see below), and optinally in binary format */
 template<class T> void Array<T>::write(std::ostream& os, const char* ELEMSEP, const char* LINESEP, const char* BRACKETS, bool dimTag, bool binary) const {
-  CHECK(!special, "");
+
+  if constexpr(std::is_same_v<T, double>){
+    if(special){
+      special_write(os, *this);
+      if(jac) os <<" -- JACOBIAN:\n" <<*jac <<endl;
+      return;
+    }
+  }else{
+    CHECK(!special, "");
+  }
+
   CHECK(!binary || memMove, "binary write works only for memMoveable data");
   uint i, j, k;
   if(!ELEMSEP) ELEMSEP=arrayElemsep;
@@ -1584,6 +1616,10 @@ template<class T> void Array<T>::write(std::ostream& os, const char* ELEMSEP, co
     }
     if(BRACKETS[1]) os <<BRACKETS[1];
   }
+
+  if constexpr(std::is_same_v<T, double>){
+    if(jac) os <<" -- JACOBIAN:\n" <<*jac <<endl;
+  }
 }
 
 /** @brief prototype for operator>>, if there is a dimensionality tag: fast reading of ascii (if there is brackets[]) or binary (if there is \\0\\0 brackets) data; otherwise slow ascii read */
@@ -1610,7 +1646,9 @@ template<class T> Array<T>& Array<T>::read(std::istream& is) {
     } else { //fast ascii read
       for(uint i=0; i<N; i++) {
         if(is.fail()) PARSERR("could not read " <<i <<"-th element of an array");
-        is >>p[i];
+        if constexpr(!std::is_pointer_v<T>){
+          is >>p[i];
+        } else NIY;
       }
     }
     if(expectBracket) {
@@ -1635,7 +1673,9 @@ template<class T> Array<T>& Array<T>::read(std::istream& is) {
         continue;
       }
       if(c!=',') is.putback(c);
-      is >>x;
+      if constexpr(!std::is_pointer_v<T>){
+        is >>x;
+      }else NIY;
       if(!is.good()) {
         if(!expectBracket) is.clear(); //ok
         else PARSERR("failed reading ending bracket ]");
@@ -1828,6 +1868,7 @@ template<class T> void writeConsecutiveConstant(std::ostream& os, const Array<T>
 
 /// contatenation of two arrays
 template<class T> Array<T> operator, (const Array<T>& y, const Array<T>& z) { Array<T> x(y); x.append(z); return x; }
+
 /// calls Array<T>::read
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x) { x.read(is); return is; }
 
@@ -1870,6 +1911,124 @@ template<class T> bool operator<(const Array<T>& v, const Array<T>& w) {
     return false; //they are equal
   }
   return v.N<w.N;
+}
+
+//core for matrix-matrix (elem-wise) update
+#define UpdateOperator_MM( op ) \
+if constexpr(std::is_same_v<T, double>){ \
+      if(isNoArr(x)){ return; } \
+      if(isSparseMatrix(x) && isSparseMatrix(y)){ x.sparse() op y.sparse(); return; }  \
+      if(isRowShifted(x) && isRowShifted(y)){ x.rowShifted() op y.rowShifted(); return; }  \
+} \
+    CHECK(!x.special, "");  \
+    CHECK(!y.special, "");  \
+    CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
+    T *xp=x.p, *xstop=xp+x.N; \
+    const T *yp=y.p; \
+    for(; xp!=xstop; xp++, yp++) *xp op *yp;
+
+//core for matrix-scalar update
+#define UpdateOperator_MS( op ) \
+if constexpr(std::is_same_v<T, double>){ \
+      if(isNoArr(x)){ return; } \
+      if(isSparseMatrix(x)){ x.sparse() op y; return; }  \
+      if(isRowShifted(x)){ x.rowShifted() op y; return; }  \
+} \
+    CHECK(!x.special, "");  \
+    T *xp=x.p, *xstop=xp+x.N; \
+    for(; xp!=xstop; xp++) *xp op y;
+
+
+template<class T> void operator+=(Array<T>& x, const Array<T>& y) {
+  UpdateOperator_MM(+=);
+  if constexpr(std::is_same_v<T, double>){
+    if(y.jac) {
+      if(x.jac) *x.jac += *y.jac;
+      else x.J() = *y.jac;
+    }
+  }
+  // CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")");
+  // T* xp=x.p, *xstop=xp+x.N;
+  // const T* yp=y.p;
+  // for(; xp!=xstop; xp++, yp++) *xp += *yp;
+}
+template<class T> void operator+=(Array<T>& x, const T& y) {
+  UpdateOperator_MS(+=);
+  // T* xp=x.p, *xstop=xp+x.N;
+  // for(; xp!=xstop; xp++) *xp += y;
+}
+template<class T> void operator-=(Array<T>& x, const Array<T>& y) {
+  UpdateOperator_MM(-=);
+  if constexpr(std::is_same_v<T, double>){
+    if(y.jac) {
+      if(x.jac) *x.jac -= *y.jac;
+      else x.J() = -(*y.jac);
+    }
+  }
+  // CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")");
+  // T* xp=x.p, *xstop=xp+x.N;
+  // const T* yp=y.p;
+  // for(; xp!=xstop; xp++, yp++) *xp -= *yp;
+}
+template<class T> void operator-=(Array<T>& x, const T& y) {
+  UpdateOperator_MS(-=);
+  // T* xp=x.p, *xstop=xp+x.N;
+  // for(; xp!=xstop; xp++) *xp -= y;
+}
+template<class T> void operator*=(Array<T>& x, const T& y) {
+  if constexpr(std::is_same_v<T, double>){
+    if(x.jac) *x.jac *= y;
+  }
+  UpdateOperator_MS(*=);
+  // T* xp=x.p, *xstop=xp+x.N;
+  // for(; xp!=xstop; xp++) *xp *= y;
+}
+
+#undef UpdateOperator_MM
+#undef UpdateOperator_MS
+
+//===========================================================================
+
+/** @brief return a `dim'-dimensional grid with `steps' intervals
+  filling the range [lo, hi] in each dimension. Note: returned array is
+  `flat', rather than grid-shaped. */
+template<class T> Array<T> grid(uint dim, T lo, T hi, uint steps) {
+  Array<T> x;
+  CHECK(steps, "steps needs to be >0");
+  uint i, j, k;
+  if(dim==1) {
+    x.resize(steps+1, 1);
+    for(i=0; i<x.d0; i++) x.elem(i)=lo+(hi-lo)*i/steps;
+    return x;
+  }
+  if(dim==2) {
+    x.resize(steps+1, steps+1, 2);
+    for(i=0; i<x.d0; i++) for(j=0; j<x.d1; j++) {
+        x(i, j, 0)=lo+(hi-lo)*i/steps;
+        x(i, j, 1)=lo+(hi-lo)*j/steps;
+      }
+    x.reshape(x.d0*x.d1, 2);
+    return x;
+  }
+  if(dim==3) {
+    x.resize(uintA{steps+1, steps+1, steps+1, 3});
+    T dx = (hi-lo)/steps;
+    for(i=0; i<x.d0; i++) for(j=0; j<x.d1; j++) {
+        T* p = &x.elem(uintA{i, j, 0, 0});
+        for(k=0; k<x.d2; k++) {
+          *(p++) = lo+dx*i;
+          *(p++) = lo+dx*j;
+          *(p++) = lo+dx*k;
+          //        elem(uintA{i, j, k, 0}) = lo+dx*i;
+          //        elem(uintA{i, j, k, 1}) = lo+dx*j;
+          //        elem(uintA{i, j, k, 2}) = lo+dx*k;
+        }
+      }
+    x.reshape(x.d0*x.d1*x.d2, 3);
+    return x;
+  }
+  NIY;
+  return x;
 }
 
 } //namespace

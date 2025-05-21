@@ -344,7 +344,7 @@ void CarSimulator::getLinearObservationModelAtState(arr& C, arr& c, const arr& X
   uint N=landmarks.d0;
   arr R = arr{cos(X(2)), sin(X(2)), -sin(X(2)), cos(X(2))};
   R.reshape(2, 2);
-  C.resize(2*N, 2*N);  C.setZero();
+  C.resize(2*N, 2*N).setZero();
   for(uint i=0; i<N; i++) C.setMatrixBlock(R, 2*i, 2*i);
   cout <<C <<endl;
   c.resize(2*N);

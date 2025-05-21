@@ -391,7 +391,7 @@ void NLP_Viewer::display(double mu, double muLB) {
 
   //-- make grid
   arr X, Y, phi;
-  X.setGrid(2, 0., 1., 100);
+  X = rai::grid(2, 0., 1., 100);
   for(uint i=0; i<X.d0; i++) { X[i] = lo + (up-lo)%X[i]; }
   Y.resize(X.d0);
 

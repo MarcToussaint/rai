@@ -485,7 +485,7 @@ arr CubicSplineMaxJer(const arr& x0, const arr& v0, const arr& x1, const arr& v1
   }
 
   uint n=x0.N;
-  arr y(2*n);
+  arr y = zeros(2*n);
   if(a6.jac) y.J().sparse().resize(y.N, a6.jac->d1, 0);
   y.setVectorBlock(a6, 0*n);
   y.setVectorBlock(-a6, 1*n);
@@ -538,7 +538,7 @@ arr CubicSplineMaxAcc(const arr& x0, const arr& v0, const arr& x1, const arr& v1
   }
 
   uint d=x0.N;
-  arr y(4*d);
+  arr y = zeros(4*d);
   if(b2.jac) y.J().sparse().resize(y.N, b2.jac->d1, 0);
   y.setVectorBlock(b2, 0*d);
   y.setVectorBlock(-b2, 1*d);

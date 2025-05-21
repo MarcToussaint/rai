@@ -118,7 +118,7 @@ arr artificialData(arr& X, arr& y, str dataType) {
     y = y + sigma*randn(y.dim());
     beta_true = beta;
   } else if(dataType=="sinus") {
-    X.setGrid(1, -3, 3, n-1);
+    X = rai::grid<double>(1, -3, 3, n-1);
     y.resize(X.d0);
     for(uint i=0; i<X.d0; i++) y(i) = sin(X(i, 0));
     y += sigma*randn(y.dim());

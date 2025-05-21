@@ -545,7 +545,7 @@ struct FitCapsuleProblem : NLP {
     B.setId();
     B *= 1./l;
     B -= ((a-b)^(a-b)) / (l*l*l);
-    arr A(6, 6);
+    arr A = zeros(6, 6);
     A.setMatrixBlock(B, 0, 0);
     A.setMatrixBlock(-B, 0, 3);
     A.setMatrixBlock(-B, 3, 0);

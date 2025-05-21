@@ -47,6 +47,7 @@
 
 //***** constructors
 
+#if 0
 arr& arr::operator=(std::initializer_list<double> values) {
   resize(values.size());
   uint i=0;
@@ -282,6 +283,7 @@ void rai::ArrayDouble::write(std::ostream& os, const char* ELEMSEP, const char* 
     os <<" -- JACOBIAN:\n" <<*jac <<endl;
   }
 }
+#endif
 
 /// x = y^T
 void op_transpose(arr& x, const arr& y) {
@@ -1962,6 +1964,28 @@ bool operator<(const arr& v, const arr& w) {
   return v.N<w.N;
 }
 
+void special_copy(arr& x, const arr& a){
+  if(isRowShifted(a)) {
+    x.special = new RowShifted(x, *dynamic_cast<RowShifted*>(a.special));
+  } else if(isSparseVector(a)) {
+    x.special = new SparseVector(x, *dynamic_cast<SparseVector*>(a.special));
+  } else if(isSparseMatrix(a)) {
+    x.special = new SparseMatrix(x, *dynamic_cast<SparseMatrix*>(a.special));
+  } else if(isNoArr(a)) {
+    x.setNoArr();
+  } else NIY;
+}
+
+void special_write(ostream& os, const arr& x) {
+  if(isSparseVector(x)) {
+    intA& elems = dynamic_cast<SparseVector*>(x.special)->elems;
+    for(uint i=0; i<x.N; i++) os <<"( " <<elems(i) <<" ) " <<x.elem(i) <<endl;
+  } else if(isSparseMatrix(x)) {
+    intA& elems = dynamic_cast<SparseMatrix*>(x.special)->elems;
+    for(uint i=0; i<x.N; i++) os <<'(' <<elems[i] <<") " <<x.elem(i) <<endl;
+  }
+}
+
 } //namespace
 
 //===========================================================================
@@ -2099,12 +2123,5 @@ template struct rai::Array<bool>;
 //
 // differentiation
 //
-
-void arr::J_setId() {
-  CHECK(!jac, "");
-  CHECK(nd==1, "");
-  jac = make_unique<arr>();
-  jac->setId(N);
-}
 
 #pragma GCC diagnostic pop

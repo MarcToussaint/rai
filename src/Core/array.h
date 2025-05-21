@@ -14,6 +14,7 @@
 #include <initializer_list>
 #include <tuple>
 #include <iostream>
+#include <memory>
 
 using std::endl;
 
@@ -26,6 +27,8 @@ namespace rai {
 extern const char* arrayElemsep;
 extern const char* arrayLinesep;
 extern const char* arrayBrackets;
+extern int64_t globalMemoryTotal, globalMemoryBound;
+extern bool globalMemoryStrict;
 
 // default sorting methods
 template<class T> bool lower(const T& a, const T& b) { return a<b; }
@@ -42,9 +45,13 @@ template<class T> bool greaterEqual(const T& a, const T& b) { return a>=b; }
 
 namespace rai {
 
+//fwd declarations
 template<class T> struct ArrayModRaw;
 template<class T> struct ArrayModList;
 struct SpecialArray;
+struct SparseVector;
+struct SparseMatrix;
+struct RowShifted;
 
 /** Simple array container to store arbitrary-dimensional arrays (tensors).
   Can buffer more memory than necessary for faster
@@ -78,6 +85,7 @@ template<class T> struct Array {
   explicit Array(uint D0, uint D1, uint D2);
   Array(std::initializer_list<T> values);
   Array(std::initializer_list<uint> dim, std::initializer_list<T> values);
+  explicit Array(const T* p, uint size, bool byReference);
   virtual ~Array();
 
   /// @name assignments
@@ -132,7 +140,6 @@ template<class T> struct Array {
   Array<T>& resizeAs(const Array<T>& a);
   Array<T>& reshapeAs(const Array<T>& a);
   Array<T>& resizeCopyAs(const Array<T>& a);
-  Array<T>& reshapeFlat();
   Array<T>& dereference();
 
   /// @name dimensionality access
@@ -142,7 +149,7 @@ template<class T> struct Array {
   /// @name initializing/assigning entries
   Array<T>& clear();
   Array<T>& setZero(byte zero=0);
-  void setUni(const T& scalar, int d=-1);
+  void setConst(const T& scalar, int d=-1);
   void setId(int d=-1);
   void setDiag(const T& scalar, int d=-1);
   void setDiag(const Array<T>& vector);
@@ -166,7 +173,6 @@ template<class T> struct Array {
   void referToDim(const Array<T>& a, uint i, uint j);
   void referToDim(const Array<T>& a, uint i, uint j, uint k);
   void takeOver(Array<T>& a);  //a is cleared (earlier: becomes a reference to its previously owned memory)
-  Array<T>& setGrid(uint dim, T lo, T hi, uint steps);
 
   /// @name access by reference (direct memory access)
   Array<T> ref() const; //a reference on this
@@ -256,6 +262,22 @@ template<class T> struct Array {
   void permuteRandomly();
   void shift(int offset, bool wrapAround=true);
 
+  /// @name special matrices -- only for double
+  double sparsity();
+  SparseMatrix& sparse();
+  const SparseMatrix& sparse() const;
+  SparseVector& sparseVec();
+  const SparseVector& sparseVec() const;
+  RowShifted& rowShifted();
+  const RowShifted& rowShifted() const;
+
+  /// @name attached Jacobian -- only for double
+  std::unique_ptr<Array<double>> jac=0; ///< optional pointer to Jacobian, to enable autodiff
+  void J_setId();
+  Array<double>& J();
+  Array<double> noJ() const;
+  Array<double> J_reset();
+
   /// @name I/O
   void write(std::ostream& os=std::cout, const char* ELEMSEP=nullptr, const char* LINESEP=nullptr, const char* BRACKETS=nullptr, bool dimTag=false, bool binary=false) const;
   Array<T>& read(std::istream& is);
@@ -302,30 +324,12 @@ template<class T> std::istream& operator>>(std::istream& is, Array<T>& x);
 template<class T> Array<T>& operator>>(Array<T>& x, std::istream& is);
 template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x);
 
-template<class T> void operator+=(Array<T>& x, const Array<T>& y) {
-  CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")");
-  T* xp=x.p, *xstop=xp+x.N;
-  const T* yp=y.p;
-  for(; xp!=xstop; xp++, yp++) *xp += *yp;
-}
-template<class T> void operator+=(Array<T>& x, const T& y) {
-  T* xp=x.p, *xstop=xp+x.N;
-  for(; xp!=xstop; xp++) *xp += y;
-}
-template<class T> void operator-=(Array<T>& x, const Array<T>& y) {
-  CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")");
-  T* xp=x.p, *xstop=xp+x.N;
-  const T* yp=y.p;
-  for(; xp!=xstop; xp++, yp++) *xp -= *yp;
-}
-template<class T> void operator-=(Array<T>& x, const T& y) {
-  T* xp=x.p, *xstop=xp+x.N;
-  for(; xp!=xstop; xp++) *xp -= y;
-}
-template<class T> void operator*=(Array<T>& x, const T& y) {
-  T* xp=x.p, *xstop=xp+x.N;
-  for(; xp!=xstop; xp++) *xp *= y;
-}
+template<class T> void operator+=(Array<T>& x, const Array<T>& y);
+template<class T> void operator+=(Array<T>& x, const T& y);
+template<class T> void operator-=(Array<T>& x, const Array<T>& y);
+template<class T> void operator-=(Array<T>& x, const T& y);
+template<class T> void operator*=(Array<T>& x, const T& y);
+
 template<class T> Array<T> operator+(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x+=z; return x; }
 template<class T> Array<T> operator+(const Array<T>& y, T z) {                Array<T> x(y); x+=z; return x; }
 template<class T> Array<T> operator-(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x-=z; return x; }
@@ -360,6 +364,7 @@ template <class T> std::ostream& operator<<(std::ostream& os, const ArrayModList
 /// @name standard types
 /// @{
 
+typedef rai::Array<double> arr;
 typedef rai::Array<uint>   uintA;
 typedef rai::Array<int>    intA;
 typedef rai::Array<char>   charA;
@@ -387,7 +392,7 @@ typedef rai::Array<rai::String*> StringL;
 namespace rai {
 
 /// return array of c's
-template<class T> Array<T> consts(const T& c, const uintA& d)  {  Array<T> z;  z.resize(d);  z.setUni(c);  return z; }
+template<class T> Array<T> consts(const T& c, const uintA& d)  {  Array<T> z;  z.resize(d);  z.setConst(c);  return z; }
 /// return VECTOR of c's
 template<class T> Array<T> consts(const T& c, uint n) { return consts(c, uintA{n}); }
 /// return matrix of c's
@@ -411,6 +416,11 @@ template<class T> Array<Array<T>> getArrayArray(const Array<T>& data) {
   for(uint i=0; i<data.d0; i++) xx(i).referTo(data.p+i*data.d1, data.d1);
   return xx;
 }
+
+/** @brief return a `dim'-dimensional grid with `steps' intervals
+  filling the range [lo, hi] in each dimension. Note: returned array is
+  `flat', rather than grid-shaped. */
+template<class T> Array<T> grid(uint dim, T lo, T hi, uint steps);
 
 }
 
@@ -528,8 +538,7 @@ template<class T> Array<T> setSectionSorted(const Array<T>& x, const Array<T>& y
   return R;
 }
 
-template<class T>
-void setMinusSorted(Array<T>& x, const Array<T>& y, bool (*comp)(const T& a, const T& b)) {
+template<class T> void setMinusSorted(Array<T>& x, const Array<T>& y, bool (*comp)(const T& a, const T& b)) {
 #if 1
   int i=x.N-1, j=y.N-1;
   if(j<0) return;

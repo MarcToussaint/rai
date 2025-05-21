@@ -64,7 +64,7 @@ void BayesOpt::report(bool display, const ScalarFunction& f) {
   cout <<"mean=" <<f_now->mu <<" var=" <<kernel_now->hyperParam2.scalar() <<endl;
 
   arr X_grid, s_grid;
-  X_grid.setGrid(data_X.d1, 0., 1., (data_X.d1==1?500:30));
+  X_grid = rai::grid(data_X.d1, 0., 1., (data_X.d1==1?500:30));
   X_grid = X_grid % (bounds[1]-bounds[0]);
   X_grid += repmat(bounds[0], X_grid.d0, 1);
   arr y_grid = f_now->evaluate(X_grid, s_grid);

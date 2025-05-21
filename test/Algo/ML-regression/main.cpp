@@ -34,7 +34,7 @@ void testLinReg(const char *datafile=nullptr) {
 //  cout <<"Mean error (sdv) = " <<R.meanSqrErr <<endl;
 
   //-- evaluate model on a grid
-  arr X_grid = grid(X.d1, -3, 3, (X.d1==1?600:30));
+  arr X_grid = rai::grid<double>(X.d1, -3, 3, (X.d1==1?600:30));
   Phi = makeFeatures(X_grid, "readFromCfgFile", X);
   arr s_grid;
   arr y_grid = R.evaluate(Phi, s_grid); //Phi*beta;
@@ -107,7 +107,7 @@ void testRobustRegression(const char *datafile=nullptr) {
 
   //-- evaluate model on a grid
   arr X_grid,y_grid;
-  X_grid.setGrid(X.d1,-5,5, (X.d1==1?500:30)).reshape(-1, X.d1);
+  X_grid = rai::grid<double>(X.d1,-5,5, (X.d1==1?500:30)).reshape(-1, X.d1);
   Phi = makeFeatures(X_grid, "readFromCfgFile", X);
   y_grid = Phi*beta;
   arr s_grid = sqrt(evaluateBayesianRidgeRegressionSigma(Phi, Sigma)/*+rai::sqr(sigma)*/);
@@ -203,7 +203,7 @@ void testKernelReg(const char *datafile=nullptr) {
 
   //-- evaluate model on a grid
   arr X_grid, s_grid;
-  X_grid.setGrid(X.d1, -5., 5., (X.d1==1?500:30)).reshape(-1, X.d1);
+  X_grid = rai::grid(X.d1, -5., 5., (X.d1==1?500:30)).reshape(-1, X.d1);
   arr y_grid = f.evaluate(X_grid, s_grid);
   s_grid = sqrt(s_grid);
 
@@ -242,7 +242,7 @@ void test2Class() {
   arr beta = logisticRegression2Class(Phi, y, -1., Sigma);
   
   arr X_grid;
-  X_grid.setGrid(X.d1,-2,3, (X.d1==1?500:50));
+  X_grid = rai::grid<double>(X.d1,-2,3, (X.d1==1?500:50));
   Phi = makeFeatures(X_grid,"readFromCfgFile", X);
   arr y_grid = Phi*beta;
   arr s_grid = evaluateBayesianRidgeRegressionSigma(Phi, Sigma);
@@ -287,7 +287,7 @@ void testKernelLogReg(){
   KernelLogisticRegression klr(X,y, defaultKernelFunction, -1., -0.);
 
   arr X_grid;
-  X_grid.setGrid(X.d1,-2, 3, (X.d1==1?500:50)).reshape(-1, X.d1);
+  X_grid = rai::grid<double>(X.d1,-2, 3, (X.d1==1?500:50)).reshape(-1, X.d1);
   arr p_ba,p_hi,p_lo;
 //  arr p_grid = klr.evaluateF(X_grid, p_ba); p_hi=p_grid+p_ba;  p_lo=p_grid-p_ba;
   arr p_grid = klr.evaluate(X_grid, p_ba, p_hi, p_lo);
@@ -331,7 +331,7 @@ void testMultiClass(){
   rai::arrayBrackets="  ";
   FILE("z.train") <<catCol(X, label, y, p_pred).modRaw();
   
-  arr X_grid = grid(2,-2,3,50);
+  arr X_grid = rai::grid<double>(2,-2,3,50);
   Phi = makeFeatures(X_grid,"readFromCfgFile",X);
   arr p_grid = exp(Phi*beta);
   for(uint i=0; i<p_grid.d0; i++) p_grid[i] /= sum(p_grid[i]);
@@ -396,7 +396,7 @@ void exercise1() {
 
   //predict on grid
   arr X_grid,y_grid;
-  X_grid.setGrid(X.d1,-3,3,30).reshape(-1, X.d1);
+  X_grid = rai::grid<double>(X.d1,-3,3,30).reshape(-1, X.d1);
   Phi = makeFeatures(X_grid,"readFromCfgFile",X);
   y_grid = Phi*beta;
 

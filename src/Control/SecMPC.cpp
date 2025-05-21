@@ -228,7 +228,7 @@ rai::CubicSplineCtor SecMPC::getShortPath_debug(double realtime) {
   S.set(sp.pts, sp.vels, sp.times);
 
 #if 1
-  arr times = grid(1, .0, .5, 10).reshape(-1);
+  arr times = rai::grid(1, .0, .5, 10).reshape(-1);
   arr pts = S.eval(times);
   arr vels = S.eval(times, 1);
   vels.clear();

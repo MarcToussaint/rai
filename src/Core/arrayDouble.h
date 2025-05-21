@@ -38,9 +38,6 @@ struct Serializable {
 namespace rai {
 
 //struct FileToken;
-struct SparseVector;
-struct SparseMatrix;
-struct RowShifted;
 
 // OLD, TODO: hide -> array.cpp
 extern bool useLapack;
@@ -66,6 +63,7 @@ extern const char* arrayBrackets;
 
 namespace rai {
 
+#if 0
 /** Simple array container to store arbitrary-dimensional arrays (tensors).
   Can buffer more memory than necessary for faster
   resize; enables non-const reference of subarrays; enables fast
@@ -147,10 +145,9 @@ struct ArrayDouble : public Array<double> {
 
   void write(std::ostream& os=stdCout(), const char* ELEMSEP=nullptr, const char* LINESEP=nullptr, const char* BRACKETS=nullptr, bool dimTag=false, bool binary=false) const;
 };
+#endif
 
 }
-
-typedef rai::ArrayDouble arr;
 
 //===========================================================================
 ///
@@ -328,7 +325,7 @@ inline arr zeros(uint d0, uint d1) { return zeros(uintA{d0, d1}); }
 inline arr zeros(uint d0, uint d1, uint d2) { return zeros(uintA{d0, d1, d2}); }
 
 /// return array of c's
-inline arr consts(const double& c, const uintA& d)  {  arr z;  z.resize(d);  z.setUni(c);  return z; }
+inline arr consts(const double& c, const uintA& d)  {  arr z;  z.resize(d);  z.setConst(c);  return z; }
 /// return VECTOR of c's
 inline arr consts(const double& c, uint n) { return consts(c, uintA{n}); }
 /// return matrix of c's
@@ -357,16 +354,14 @@ inline arr randn(uint d0, uint d1) { return randn(uintA{d0, d1}); }
 
 /// return a grid with different lo/hi/steps in each dimension
 arr grid(const arr& lo, const arr& hi, const uintA& steps);
-/// return a grid (1D: range) split in 'steps' steps
-inline arr grid(uint dim, double lo, double hi, uint steps) { arr g;  g.setGrid(dim, lo, hi, steps);  return g; }
 /// return a 1D-grid
-inline arr range(double lo, double hi, uint steps) { arr g;  g.setGrid(1, lo, hi, steps).reshape(-1);  return g; }
+inline arr range(double lo, double hi, uint steps) { return rai::grid(1, lo, hi, steps).reshape(-1); }
 //inline uintA range(uint n) { uintA r;  r.setStraightPerm(n);  return r; }
 
 arr repmat(const arr& A, uint m, uint n);
 
 //inline uintA randperm(uint n) {  uintA z;  z.setRandomPerm(n);  return z; }
-inline arr linspace(double base, double limit, uint n) {  arr z;  z.setGrid(1, base, limit, n).reshape(-1);  return z;  }
+inline arr linspace(double base, double limit, uint n) {  return rai::grid(1, base, limit, n).reshape(-1); }
 arr logspace(double base, double limit, uint n);
 
 void normalizeWithJac(arr& y, arr& J, double eps=0.);
@@ -612,6 +607,8 @@ inline bool isEmptyShape(const arr& X)   { return X.special && X.special->type==
 inline bool isRowShifted(const arr& X)   { return X.special && X.special->type==SpecialArray::RowShiftedST; }
 inline bool isSparseMatrix(const arr& X) { return X.special && X.special->type==SpecialArray::sparseMatrixST; }
 inline bool isSparseVector(const arr& X) { return X.special && X.special->type==SpecialArray::sparseVectorST; }
+void special_copy(arr& x, const arr& a);
+void special_write(ostream& os, const arr& x);
 
 struct RowShifted : SpecialArray {
   arr& Z;           ///< references the array itself
@@ -741,6 +738,19 @@ UpdateOperator(%=)
 #undef UpdateOperator
 
 }//namespace rai
+
+//===========================================================================
+//
+// conv with std::vec
+//
+
+template<class T> rai::Array<T> as_arr(const std::vector<T>& a, bool byReference) {
+  return rai::Array<T>(&a.front(), a.size(), byReference);
+}
+
+template<class T> std::vector<T> as_vector(const rai::Array<T>& a) {
+  return std::vector<T>(a.p, a.p+a.N);
+}
 
 //===========================================================================
 //

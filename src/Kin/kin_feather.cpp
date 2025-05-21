@@ -233,7 +233,7 @@ void FrameToMatrix(arr& X, const rai::Transformation& f) {
   arr r(3, 3);  Featherstone::skew(r, &f.pos.x);
   arr R(3, 3);  f.rot.getMatrix(R.p);
   transpose(R);
-  X.resize(6, 6);
+  X.resize(6, 6).setZero();
   X.setMatrixBlock(R, 0, 0);
   X.setMatrixBlock(z, 0, 3);
   X.setMatrixBlock(R*~r, 3, 0);
@@ -448,7 +448,7 @@ void Featherstone::RBmci(arr& rbi, double m, double* c, const rai::Matrix& I) {
   II.referTo(&I.m00, 9);
   II.reshape(3, 3);
 
-  rbi.resize(6, 6);
+  rbi.resize(6, 6).setZero();
   rbi.setMatrixBlock(II + m*C*~C, 0, 0);
   rbi.setMatrixBlock(m*C, 0, 3);
   rbi.setMatrixBlock(m*~C, 3, 0);
@@ -481,7 +481,7 @@ void Featherstone::crossM(arr& vcross, const arr& v) {
   % motion vector or any matrix or tensor mapping to M6.
   */
   CHECK(v.nd==1 && v.N==6, "");
-  vcross.resize(6, 6);  vcross.setZero();
+  vcross.resize(6, 6).setZero();
 
   arr vc;  skew(vc, v.p);
   vcross.setMatrixBlock(vc, 0, 0);

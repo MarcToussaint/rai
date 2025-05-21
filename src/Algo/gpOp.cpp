@@ -43,7 +43,7 @@ void GaussianProcessOptimized::appendObsRecompute(const arr& x, const double& y)
     double lDiag = sqrt(k-sumOfSqr(l));
 
     arr temp;
-    temp.resize(L.d0+1, L.d1+1);
+    temp.resize(L.d0+1, L.d1+1).setZero();
     temp.setMatrixBlock(L, 0, 0);
     temp.setMatrixBlock(l, 0, L.d1);
     temp.setMatrixBlock(zeros(1, L.d1), L.d0, 0);

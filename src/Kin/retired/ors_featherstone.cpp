@@ -501,7 +501,7 @@ void Featherstone::crossM(arr& vcross, const arr& v) {
   % motion vector or any matrix or tensor mapping to M6.
   */
   CHECK(v.nd==1 && v.N==6, "");
-  vcross.resize(6, 6);  vcross.setZero();
+  vcross.resize(6, 6).setZero();
 
   arr vc;  skew(vc, v.p);
   vcross.setMatrixBlock(vc, 0, 0);
