@@ -618,6 +618,7 @@ rai::Frame& rai::Frame::setMesh(const arr& verts, const uintA& tris, const byteA
 rai::Frame& rai::Frame::setMeshFile(str file, double scale){
   C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
+  bool cd_into_mesh_files = rai::getParameter<bool>("cd_into_mesh_files", true);
 
   FileToken fil(file);
   auto p = params()->find<shared_ptr<rai::Mesh>>(file);
@@ -626,9 +627,9 @@ rai::Frame& rai::Frame::setMeshFile(str file, double scale){
   }else{
     rai::Mesh& mesh = getShape().mesh();
     params()->add<shared_ptr<rai::Mesh>>(file, getShape()._mesh);
-  fil.cd_file();
-  mesh.read(fil, file.getLastN(3).p, fil.name.p);
-  fil.cd_base();
+    if(cd_into_mesh_files) fil.cd_file();
+    mesh.read(fil, file.getLastN(3).p, fil.name.p);
+    if(cd_into_mesh_files) fil.cd_base();
   if(scale!=1.) mesh.scale(scale);
   }
   getAts().set<FileToken>("mesh", FileToken(file));

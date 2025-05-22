@@ -2149,9 +2149,9 @@ void Camera::setKinect() {
 }
 
 void Camera::setDefault() {
-  setHeightAngle(30.);
-  setZRange(.02, 200.);
-  setPosition(5., 10., 2.);
+  setHeightAngle(60.);
+  setZRange(.01, 100.);
+  setPosition(2., 5., 1.7);
 //  setPosition(10., -4., 10.);
   focus(0, .0, 1., true);
 //  focus(.9, 0., 1.3);

@@ -375,7 +375,7 @@ reloads, displays and animates the configuration whenever the file is changed"
 
   .def("writeMeshes", &rai::Configuration::writeMeshes,
        "write all object meshes in a directory",
-       pybind11::arg("pathPrefix"), pybind11::arg("copyTextures")=true, pybind11::arg("enumerateTextures")=false)
+       pybind11::arg("pathPrefix"), pybind11::arg("copyTextures")=true, pybind11::arg("enumerateAssets")=false)
 
   .def("writeURDF", [](shared_ptr<rai::Configuration>& self) { str s; self->writeURDF(s);  return pybind11::str(s.p, s.N); },
   "write the full configuration as URDF in a string, e.g. for file export")
