@@ -140,7 +140,7 @@ void TaskControlThread::step() {
       qdot_real = ctrl_obs.get()->qdot;
       arr pr2odom = pr2_odom.get();
       if(q_real.N==realWorld.q.N && pr2odom.N==3) {
-        q_real({trans->qIndex, trans->qIndex+2}) = pr2odom;
+        q_real({trans->qIndex, trans->qIndex+2+1}) = pr2odom;
       }
 
       if(qLastReading.d0 > 0) {

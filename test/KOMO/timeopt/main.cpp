@@ -92,7 +92,7 @@ struct TimeOpt : NLP {
     featureTypes(0) = OT_f;
 
     //..and the smoothness prior
-    if(smooth>0) featureTypes({1,n}) = OT_sos;
+    if(smooth>0) featureTypes({1,n+1}) = OT_sos;
   }
 
   //-- essential methods that need overload
@@ -235,7 +235,7 @@ void timeOpt(){
 
   TimeOpt nlp(path, k, 2., 4., 30., 1e1);
   nlp.animate=false;
-//  checkJacobianCP(nlp, tau.sub(k,-1), 1e-6);
+//  checkJacobianCP(nlp, tau.sub({k,-1+1}), 1e-6);
 //  rai::wait();
 
   rai::setParameter<double>("opt/stepMax", 1e-1);
@@ -254,7 +254,7 @@ void timeOpt(){
 //  checkJacobianCP(nlp, ret->x, 1e-6);
   arr tau(path.d0);
   tau=.01;
-  tau({k,-1}) = nlp.tau;
+  tau({k,-1+1}) = nlp.tau;
 
   cout <<tau <<endl;
 

@@ -80,7 +80,7 @@ void controlMobile(){
 
       C.view(false, STRING("t:" <<t));
       rai::wait(.05);
-      arr err = ((C.q-q_last)({0,2})/tau - vstar);
+      arr err = ((C.q-q_last)({0,2+1})/tau - vstar);
       err.write(fil, 0, 0, "  "); fil<<endl;
       q_last = C.q;
 

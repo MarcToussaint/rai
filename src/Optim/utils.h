@@ -67,8 +67,8 @@ struct Conv_NLP_SlackLeastSquares : NLP {
   virtual void evaluate(arr& phi, arr& J, const arr& x) {
     arr Pphi, PJ;
     P->evaluate(Pphi, PJ, x);
-    phi = Pphi.sub(pick);
-    J = PJ.sub(pick);
+    phi = Pphi.pick(pick);
+    J = PJ.pick(pick);
     for(uint i=0; i<pick.N; i++) {
       if(P->featureTypes(pick(i))==OT_ineq) {
         if(phi(i)<0.) { phi(i)=0.; J[i]=0.; } //ReLu for g

@@ -171,7 +171,7 @@ int main(int argc,char **argv){
       for(uint i=0;i<floating.d0;i++){
         rai::Frame *f = C[floating(i,1)];
         rai::String pathFile = STRING("guide_"<<floating(i,1)<<".dat");
-        arr path = X.sub(0,-1,f->ID,f->ID,0,-1);
+        arr path = X.sub({0,-1+1},{f->ID,f->ID+1},{0,-1+1});
         FILE(pathFile) <<path;
         rai::Frame *g = C.addFrame(f->name+"_guide");
         if(!g->shape) g->shape = new rai::Shape(*g, f->shape); //copy shap

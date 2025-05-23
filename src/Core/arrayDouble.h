@@ -103,7 +103,7 @@ struct ArrayDouble : public Array<double> {
   using Array<double>::elem; //adopt all elem(..) methods
   double& elem(int i, int j); //access that also handles sparse matrices
   using Array<double>::operator(); //adopt all double& operator()(..) methods
-  ArrayDouble operator()(std::pair<int, int> I) const { ArrayDouble z; z.referToRange(*this, I.first, I.second); return z; }
+  ArrayDouble operator()(std::pair<int, int> I) const { ArrayDouble z; z.referToRange(*this, I.first, I.second+1); return z; }
   ArrayDouble operator()(int i, std::pair<int, int> J) const { ArrayDouble z; z.referToRange(*this, i, J.first, J.second); return z; }
   ArrayDouble operator()(int i, int j, std::initializer_list<int> K) const;
   ArrayDouble operator[](int i) const { ArrayDouble z; z.referToDim(*this, i); return z; }
@@ -738,19 +738,6 @@ UpdateOperator(%=)
 #undef UpdateOperator
 
 }//namespace rai
-
-//===========================================================================
-//
-// conv with std::vec
-//
-
-template<class T> rai::Array<T> as_arr(const std::vector<T>& a, bool byReference) {
-  return rai::Array<T>(&a.front(), a.size(), byReference);
-}
-
-template<class T> std::vector<T> as_vector(const rai::Array<T>& a) {
-  return std::vector<T>(a.p, a.p+a.N);
-}
 
 //===========================================================================
 //

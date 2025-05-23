@@ -423,7 +423,7 @@ void pca(arr& Y, arr& v, arr& W, const arr& X, uint npc) {
   Y = D * W;
 
   v *= 1./sum(v);
-  v.sub(0, npc-1);
+  v.sub({0, npc-1+1});
 }
 
 void check_inverse(const arr& Ainv, const arr& A) {

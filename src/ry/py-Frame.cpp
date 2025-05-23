@@ -121,7 +121,7 @@ void init_Frame(pybind11::module& m) {
     CHECK(self->shape, "this frame is not a mesh!");
     CHECK_EQ(self->shape->type(), rai::ST_mesh, "this frame is not a mesh!");
     uint n = lines.size()/3;
-    self->shape->mesh().V = lines;
+    self->shape->mesh().V = as_arr(lines, false);
     self->shape->mesh().V.reshape(n, 3);
     uintA& T = self->shape->mesh().T;
     T.resize(n/2, 2);

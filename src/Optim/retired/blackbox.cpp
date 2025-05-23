@@ -47,7 +47,7 @@ void LocalModelBasedOptim::step() {
   X.reshape(y.N, x_init.N);
   X = catCol(ones(y.N), X); //add bias term
   arr beta = inverse_SymPosDef(~X* X + 1e-1*eye(X.d1))* ~X * y;
-  arr grad = beta.sub(1, -1); //remove bias term
+  arr grad = beta.sub({1, -1+1}); //remove bias term
 
   arr delta = grad / length(grad); //always normalize gradient
   //add 'exploration' (determinante component...)

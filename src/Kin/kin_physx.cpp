@@ -803,7 +803,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     //       Vfloat.clear();
     //       int start = M.cvxParts(i);
     //       int end = i+1<M.cvxParts.N ? M.cvxParts(i+1)-1 : -1;
-    //       copy(Vfloat, M.V({start, end}));
+    //       copy(Vfloat, M.V({start, end+1}));
     //       PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
     //                                      *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
     //                                      PxConvexFlag::eCOMPUTE_CONVEX);

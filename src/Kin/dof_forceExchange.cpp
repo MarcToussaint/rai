@@ -66,20 +66,20 @@ uint rai::ForceExchangeDof::getDimFromType() {
 
 void rai::ForceExchangeDof::setDofs(const arr& q, uint n) {
   if(type==FXT_poa) {
-    poa = q({n, n+2});
-    force = q({n+3, n+5});
+    poa = q({n, n+2+1});
+    force = q({n+3, n+5+1});
     torque.resize(3).setZero();
   } else if(type==FXT_poaOnly) {
-    poa = q({n, n+2});
+    poa = q({n, n+2+1});
     force.clear();
     torque.clear();
   } else if(type==FXT_wrench) {
     poa = b.getPosition();
-    force = q({n, n+2});
-    torque = q({n+3, n+5});
+    force = q({n, n+2+1});
+    torque = q({n+3, n+5+1});
   } else if(type==FXT_force) {
     poa = b.getPosition();
-    force = q({n, n+2});
+    force = q({n, n+2+1});
     torque.resize(3).setZero();
   } else if(type==FXT_forceZ) {
     poa = b.getPosition();

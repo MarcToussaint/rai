@@ -39,7 +39,7 @@ uint TM_Transition::dim_phi(const ConfigurationL& G) {
     return G.last()->getJointStateDimension();
   } else {
 //    for(uint i=0;i<G.N;i++) cout <<i <<' ' <<G(i)->joints.N <<' ' <<G(i)->q.N <<' ' <<G(i)->getJointStateDimension() <<endl;
-    rai::Array<rai::Joint*> matchingJoints = getMatchingJoints(G.sub(-1-order, -1), effectiveJointsOnly);
+    rai::Array<rai::Joint*> matchingJoints = getMatchingJoints(G.sub({-1-order, -1+1}), effectiveJointsOnly);
     uint ydim=0;
     for(uint i=0; i<matchingJoints.d0; i++) {
 //      cout <<i <<' ' <<matchingJoints(i,0)->qIndex <<' ' <<matchingJoints(i,0)->qDim() <<' ' <<matchingJoints(i,0)->name <<endl;
@@ -153,7 +153,7 @@ void TM_Transition::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 
     }
   } else { //with switches
-    rai::Array<rai::Joint*> matchingJoints = getMatchingJoints(Ktuple.sub(-1-order, -1), effectiveJointsOnly);
+    rai::Array<rai::Joint*> matchingJoints = getMatchingJoints(Ktuple.sub({-1-order, -1+1}), effectiveJointsOnly);
     double h = H_rate*sqrt(tau), tau2=tau*tau;
 
     uint ydim=0;

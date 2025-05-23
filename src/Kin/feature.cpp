@@ -18,8 +18,8 @@ arr Feature::phi_finiteDifferenceReduce(const FrameL& F) {
   order--;
   // arr y0 = phi(F({0, -2}));
   // arr y1 = phi(F({1, -1}));
-  arr y0 = phi(F({0, 0+order}));
-  arr y1 = phi(F({1, 1+order}));
+  arr y0 = phi(F({0, 0+order+1}));
+  arr y1 = phi(F({1, 1+order+1}));
   order++;
   timeIntegral++;
 
@@ -186,7 +186,7 @@ fct Feature::asFct(const FrameL& F) { ///< direct conversion to vector function:
 //    uintA qdim = getKtupleDim(Ctuple);
 //    qdim.prepend(0);
 //    for(uint i=0; i<Ctuple.N; i++){
-//      Ctuple(i)->setJointState(x({qdim(i), qdim(i+1)-1}));
+//      Ctuple(i)->setJointState(x({qdim(i), qdim(i+1)-1+1}));
 //    }
 //    phi(y, J, Ctuple);
 //  };

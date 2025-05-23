@@ -49,7 +49,7 @@ pybind11::dict graph2dict(const rai::Graph& G, const rai::NodeL& parents, bool p
     } else if(n->is<rai::FileToken>()) {
       dict[key.p] = STRING("<" <<n->as<rai::FileToken>().autoPath().p <<">");
     } else if(n->is<arr>()) {
-      dict[key.p] = n->as<arr>().vec();
+      dict[key.p] = as_vector(n->as<arr>());
     } else if(n->is<arrA>()) {
       dict[key.p] = Array2vec(n->as<arrA>());
     } else if(n->is<intA>()) {
@@ -130,7 +130,7 @@ pybind11::list graph2list(const rai::Graph& G) {
     } else if(n->is<str>()) {
       list.append(n->as<str>().p);
     } else if(n->is<arr>()) {
-      list.append(n->as<arr>().vec());
+      list.append(as_vector(n->as<arr>()));
     } else if(n->is<double>()) {
       list.append(n->as<double>());
     } else if(n->is<int>()) {

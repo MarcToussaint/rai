@@ -29,10 +29,10 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
     if(tangents.N) vels=zeros(waypoints.d0-1);
   }
 
-  TimingProblem nlp(waypoints({phase, -1}), tangents({phase, -1}),
+  TimingProblem nlp(waypoints({phase, -1+1}), tangents({phase, -1+1}),
                     x0, v0, timeCost, ctrlCost,
                     true, false,
-                    vels({phase, -1}), tau({phase, -1}));
+                    vels({phase, -1+1}), tau({phase, -1+1}));
 
   rai::NLP_Solver S;
   if(warmstart_dual.N) {
@@ -51,8 +51,8 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
            <<"## taus: " <<nlp.tau;
   }
 
-  tau({phase, -1}) = nlp.tau;
-  vels({phase, -1}) = nlp.v;
+  tau({phase, -1+1}) = nlp.tau;
+  vels({phase, -1+1}) = nlp.v;
   warmstart_dual = ret->dual;
 
   if(verbose>0) {
@@ -65,9 +65,9 @@ arr TimingMPC::getVels() const {
   if(done()) return zeros(1, waypoints.d1);
   arr _vels;
   if(!tangents.N) {
-    _vels = vels({phase, -1}).copy();
+    _vels = vels({phase, -1+1}).copy();
   } else {
-    _vels = (vels%tangents)({phase, -1}).copy();
+    _vels = (vels%tangents)({phase, -1+1}).copy();
   }
   _vels.append(zeros(waypoints.d1));
   _vels.reshape(waypoints.d0 - phase, waypoints.d1);

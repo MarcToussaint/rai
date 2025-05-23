@@ -37,7 +37,7 @@ void PhaseOneProblem::initialize(arr& x) {
 
 void PhaseOneProblem::evaluate(arr& meta_phi, arr& meta_J, const arr& meta_x) {
   CHECK_EQ(meta_x.N, dimension+1, "");
-  arr x = meta_x({0, -2});
+  arr x = meta_x({0, -2+1});
   double s = meta_x(-1);
 
   arr phi, J;

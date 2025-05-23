@@ -337,13 +337,13 @@ struct sObjectFilter {
       std::copy(objects(i)->values.begin(), objects(i)->values.end(), measurement.p);
       arr measurement_;
       //DEBUG_VAR(pointcloud, measurement);
-      arr pos_ = measurement.sub(0, 0, 0, 2)+0.5*measurement.sub(0, 0, 3, 5);
+      arr pos_ = measurement.sub({0, 0+1},{ 0, 2+1})+0.5*measurement.sub({0, 0+1},{ 3, 5+1});
       measurement(0, 0) = pos_(0, 0);
       measurement(0, 1) = pos_(0, 1);
       measurement(0, 2) = pos_(0, 2);
       //DEBUG_VAR(pointcloud, measurement);
-      measurement_.append(measurement.sub(0, 0, 0, 2));
-      measurement_.append(-measurement.sub(0, 0, 3, 5));
+      measurement_.append(measurement.sub({0, 0+1},{ 0, 2+1}));
+      measurement_.append(-measurement.sub({0, 0+1},{ 3, 5+1}));
       measurement_.append(measurement(0, 6));
       measurement_.resize(1, 7);
       double epsilon = rai::getParameter<double>("objectDistance");
@@ -417,7 +417,7 @@ void ObjectFilter::step() {
       cyl_pos(i, 0) += .5*cyl_pos(i, 3);
       cyl_pos(i, 1) += .5*cyl_pos(i, 4);
       cyl_pos(i, 2) += .5*cyl_pos(i, 5);
-      cyl_pos.append(cyl_pos.sub(i, i, 0, -1));
+      cyl_pos.append(cyl_pos.sub({i, i+1},{ 0, -1+1}));
       cyl_pos.reshape(oldd0+1, 7);
       cyl_pos(oldd0, 0) -= cyl_pos(i, 3);
       cyl_pos(oldd0, 1) -= cyl_pos(i, 4);

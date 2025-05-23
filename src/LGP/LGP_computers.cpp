@@ -132,7 +132,7 @@ void rai::PoseBoundsComputer::untimedCompute() {
 
   rai::Skeleton S;
   //-- extract skeleton
-  S.setFromStateSequence(sket->states({0, t}), sket->times({0, t}));
+  S.setFromStateSequence(sket->states({0, t+1}), sket->times({0, t+1}));
   cout <<S <<endl;
   S.addExplicitCollisions(sket->root->explicitCollisions);
   std::shared_ptr<KOMO> komo = S.getKomo_finalSlice(sket->root->C, 1e-2, -1e-2);

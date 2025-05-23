@@ -112,7 +112,7 @@ struct SimpleConstraintFunction : NLP {
     //simple squared potential, displaced by 1
     arr x(_x);
     x(0) -= 1.;
-    phi({0, 1}) = x;
+    phi({0, 1+1}) = x;
     if(!!J) J.setMatrixBlock(eye(2), 0, 0);
     x(0) += 1.;
 

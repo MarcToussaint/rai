@@ -50,7 +50,7 @@ void threeStepGraspHeuristic(arr& x, KOMO& MP, uint shapeId, uint verbose) {
   }
 
   //-- open hand
-  //x({7,13}) = arr{0,-1.,.8,-1.,.8,-1.,.8};
+  //x({7,13+1}) = arr{0,-1.,.8,-1.,.8,-1.,.8};
   x(MP.world.getJointByName("l_gripper_l_finger_joint")->qIndex) = 1.;
 
   if(verbose>=2) {

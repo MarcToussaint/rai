@@ -294,7 +294,7 @@ void KOMO::TimeSliceProblem::evaluate(arr& phi, arr& J, const arr& x) {
   phi.resize(dimPhi);
   if(!!J) J.resize(dimPhi, x.N).setZero();
 
-  uintA x_index = getKtupleDim(komo.configurations({komo.k_order, -1}));
+  uintA x_index = getKtupleDim(komo.configurations({komo.k_order, -1+1}));
   x_index.prepend(0);
 
   arr y, Jy;

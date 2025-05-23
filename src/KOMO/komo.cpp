@@ -1601,7 +1601,7 @@ void KOMO::getSubProblem(uint phase, Configuration& C, arr& q0, arr& q1) {
     }
   }
   q0 = C.getJointState();
-  C.setFrameState(getConfiguration_X(phase), C.frames({0, world.frames.N-1}));
+  C.setFrameState(getConfiguration_X(phase), C.frames({0, world.frames.N-1+1}));
   q1 = C.getJointState();
   C.setJointState(q0);
   //  C.view(true);

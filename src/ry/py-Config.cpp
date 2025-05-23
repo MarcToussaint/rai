@@ -152,7 +152,7 @@ void init_Config(pybind11::module& m) {
       )
 
   .def("setJointStateSlice", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& q, uint t) {
-    self->setJointStateSlice(arr(q, true), t);
+    self->setJointStateSlice(as_arr(q, true), t);
   }, "")
 
   .def("getFrameNames", [](shared_ptr<rai::Configuration>& self) {
@@ -175,7 +175,7 @@ void init_Config(pybind11::module& m) {
       )
 
   .def("setFrameState", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& X, const std::vector<std::string>& frames) {
-    arr _X(X, true);
+    arr _X = as_arr(X, true);
     _X.reshape(_X.N/7, 7);
     if(frames.size()) {
       self->setFrameState(_X, self->getFrames(strvec2StringA(frames)));

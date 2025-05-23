@@ -41,7 +41,7 @@ void testPhaseOne(const shared_ptr<NLP>& f, uint dim_x){
   //properly done: check in each step if constraints are fulfilled and exit phase one then
   //no need to really minimize
 
-  x=x.sub(0,-2);
+  x=x.sub({0,-2+1});
   lectureDemo(f, x);
 }
 

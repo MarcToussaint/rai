@@ -378,8 +378,8 @@ void F_NewtonEuler_DampedVelocities::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK(a->inertia, "F_NewtonEuler needs inertia defined for '" <<a->name <<"'");
   CHECK(a->inertia->matrix.isDiagonal(), "can only handle diagonal");
   arr mass_diag(6);
-  mass_diag({0, 2}) = a->inertia->mass;
-  mass_diag({3, 5}) = a->inertia->matrix.getDiag();
+  mass_diag({0, 2+1}) = a->inertia->mass;
+  mass_diag({3, 5+1}) = a->inertia->matrix.getDiag();
 
   //collect total contact forces
   arr fo = F_TotalForce(true)

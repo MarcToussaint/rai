@@ -244,8 +244,8 @@ BoxNLP::BoxNLP(){
 
 void BoxNLP::evaluate(arr& phi, arr& J, const arr& x){
   phi.resize(2*dimension);
-  phi({0,dimension-1}) = -(x + 1.);
-  phi({dimension,-1}) = x - 1.;
+  phi({0,dimension-1+1}) = -(x + 1.);
+  phi({dimension,-1+1}) = x - 1.;
 
   J.resize(phi.N, x.N).setZero();
   for(uint i=0;i<dimension;i++){
@@ -387,7 +387,7 @@ void ChoiceConstraintFunction::evaluate(arr& phi, arr& J, const arr& x) {
       }
       CHECK_EQ(randomG.d1, x.N+1, "you changed dimensionality");
       phi.append(randomG * (arr{1.}, x));
-      if(!!J) J.append(randomG.sub(0, -1, 1, -1));
+      if(!!J) J.append(randomG.sub({0, -1+1},{ 1, -1+1}));
     } break;
     case boundConstrained: {
 //      phi.append(1. - x(0));
@@ -499,5 +499,5 @@ void NLP_RandomLP::evaluate(arr& phi, arr& J, const arr& x) {
   if(!!J) J = ones(1, x.N);
 
   phi.append(randomG * (arr{1.}, x));
-  if(!!J) J.append(randomG.sub(0, -1, 1, -1));
+  if(!!J) J.append(randomG.sub({0, -1+1},{ 1, -1+1}));
 }

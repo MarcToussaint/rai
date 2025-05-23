@@ -209,7 +209,7 @@ void BSpline::eval2(arr& x, arr& xDot, arr& xDDot, double t, arr& Jpoints, arr& 
   //-- compute B-spline coefficients on relevant knots
   BSpline core;
   core.degree = degree;
-  core.knots.referToRange(knots, lo, up);
+  core.knots.referToRange(knots, {lo, up+1});
   core.calcB(t, derivative, (!!Jtimes));
 
   //-- multiply coefficients with control points

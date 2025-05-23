@@ -540,7 +540,7 @@ void Mesh::addMesh(const Mesh& mesh2, const Transformation& X) {
   // if(V.d0==C.d0 && (C.N || mesh2.C.N)) {
   //   if(mesh2.V.d0==mesh2.C.d0) C.append(mesh2.C);
   //   else if(mesh2.C.N==3) C.append(replicate(mesh2.C, mesh2.V.d0));
-  //   else if(mesh2.C.N==4) C.append(replicate(mesh2.C({0, 2}), mesh2.V.d0));
+  //   else if(mesh2.C.N==4) C.append(replicate(mesh2.C({0, 2+1}), mesh2.V.d0));
   //   else if(!mesh2.C.N) C.append(replicate(arr{.8, .8, .8}, mesh2.V.d0));
   // } else {
   //   if(C.nd==2) C.clear();
@@ -557,7 +557,7 @@ void Mesh::addMesh(const Mesh& mesh2, const Transformation& X) {
     _texImg = mesh2._texImg;
   }
   if(!X.isZero()) {
-    X.applyOnPointArray(V({n, -1}).noconst());
+    X.applyOnPointArray(V({n, -1+1}).noconst());
   }
 }
 
@@ -1421,8 +1421,8 @@ void Mesh::samplePoints(arr& pts, arr& normals, uint n){
   CHECK(isArrayFormatted, "");
   V.reshape(V.d0/3, 3, 3);
   Vn.reshape(Vn.d0/3, 3, 3);
-  arr Vsel = B % V.sub(sel).reshape(n*3,3);
-  arr Nsel = B % Vn.sub(sel).reshape(n*3,3);
+  arr Vsel = B % V.pick(sel).reshape(n*3,3);
+  arr Nsel = B % Vn.pick(sel).reshape(n*3,3);
   pts = ::sum(Vsel.reshape(n,3,3), 1u);
   normals = ::sum(Nsel.reshape(n,3,3), 1u);
   V.reshape(V.d0*3, 3);
@@ -1859,8 +1859,8 @@ void Mesh::readPts(std::istream& is) {
     rai::copy(V, pts);
   } else {
     CHECK_EQ(pts.d1, 6, "need only points (3D), or points and normals (6D)");
-    rai::copy(V, pts.sub(0, -1, 0, 2));
-    rai::copy(Vn, pts.sub(0, -1, 3, 5));
+    rai::copy(V, pts.sub({0, -1+1},{ 0, 2+1}));
+    rai::copy(Vn, pts.sub({0, -1+1},{ 3, 5+1}));
   }
   C = {0., 0., .3};
 }

@@ -510,7 +510,7 @@ void KOMO::reportFeatures(bool brief) {
           cout <<' ' <<c->prec(t);
           if(ttMatrix.N) {
             cout <<' ' <<ttMatrix(t).elem(m)
-                 <<' ' <<sumOfSqr(phiMatrix(t)({m, m+d-1}));
+                 <<' ' <<sumOfSqr(phiMatrix(t)({m, m+d-1+1}));
           }
           cout <<endl;
         }
@@ -564,7 +564,7 @@ void KOMO::costReport(bool gnuplt) {
       if(ttMatrix.N) for(uint i=0; i<d; i++) CHECK_EQ(ttMatrix(t)(m+i), c->feat.type, "");
       if(d) {
         if(c->feat.type==OT_sos) {
-          taskC(i) += a = sumOfSqr(phiMatrix(t).sub(m, m+d-1));
+          taskC(i) += a = sumOfSqr(phiMatrix(t).sub({m, m+d-1+1}));
           plotData(t, i) = a;
         }
         if(c->feat.type==OT_ineq) {
@@ -657,7 +657,7 @@ Graph KOMO::getReport() {
       uint d=c->dim_phi(world, t);
       for(uint i=0; i<d; i++) CHECK_EQ(ttMatrix(t)(m+i), c->feat.type, "");
       if(d) {
-        if(c->feat.type==OT_sos) taskC(i) += sumOfSqr(phiMatrix(t).sub(m, m+d-1));
+        if(c->feat.type==OT_sos) taskC(i) += sumOfSqr(phiMatrix(t).sub({m, m+d-1+1}));
         if(c->feat.type==OT_ineq) {
           for(uint j=0; j<d; j++) {
             double g=phiMatrix(t)(m+j);
@@ -796,7 +796,7 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, 
   arr _phi, _J;
   ObjectiveTypeA _tt;
 #ifdef NEWCODE
-  MP.getPhi(_phi, _J, (!!tt?_tt:NoTermTypeA), t, MP.configurations({t, t+k}), MP.tau);
+  MP.getPhi(_phi, _J, (!!tt?_tt:NoTermTypeA), t, MP.configurations({t, t+k+1}), MP.tau);
 #else
   MP.getPhi(_phi, _J, (!!tt?_tt:NoTermTypeA), t, MP.configurations, MP.tau);
 #endif

@@ -58,7 +58,7 @@ void readNode(rai::Graph* i, uintA& hsitoi, uintA& itohsi, int ind) {
   if(hsi >= hsitoi.N) {
     hsitoiN = hsitoi.N;
     hsitoi.resizeCopy(hsi+1);
-    hsitoi({hsitoiN, hsi}) = -1;
+    hsitoi({hsitoiN, hsi+1}) = -1;
   }
   hsitoi(hsi) = ind;
   itohsi.append(hsi);
@@ -267,10 +267,10 @@ void G4Rec::load(const char* recdir, bool interpolate) {
 
   // setting quaternions as a continuous path on the 4d sphere
   arr dataquat, dataquatprev;
-  dataquatprev = data[0].sub(0, -1, 3, -1);
+  dataquatprev = data[0].sub({0, -1+1},{ 3, -1+1});
   for(uint f = 1; f < data.d0; f++) {
     for(uint i = 0; i < data.d1; i++) {
-      dataquat.referToRange(data(f, i, {}), 3, -1);
+      dataquat.referToRange(data(f, i, {}), {3, -1});
       if(sum(dataquat % dataquatprev[i]) < 0)
         dataquat *= -1.;
       if(!length(dataquatprev[i]) || length(dataquat))
@@ -310,8 +310,8 @@ void G4Rec::load(const char* recdir, bool interpolate) {
   // setting up default BAMs
   arr datatmp;
   tensorPermutation(datatmp, data, {1u, 0u, 2u});
-  arr pos = datatmp.sub(0, -1, 0, -1, 0, 2);
-  arr quat = datatmp.sub(0, -1, 0, -1, 3, -1);
+  arr pos = datatmp.sub({0, -1+1},{ 0, -1+1},{ 0, 2+1});
+  arr quat = datatmp.sub({0, -1+1},{ 0, -1+1},{ 3, -1+1});
   arr pose = datatmp;
 
   // organizing data about this dir
@@ -331,7 +331,7 @@ void G4Rec::load(const char* recdir, bool interpolate) {
       for(rai::Node* lock: pair->graph()) {
         from = (uint)lock->graph().get<double>("from");
         to = (uint)lock->graph().get<double>("to");
-        ann->operator()({from, to}) = 1;
+        ann->operator()({from, to+1}) = 1;
       }
       NIY; //don't get the following
       //pair->graph().append("ann", ann);
@@ -554,7 +554,7 @@ void G4Rec::computeDQuat(const char* sensor) {
 //   for(uint i = 0; i < bam.d0; i++) {
 //     for(uint fi = ff; fi < ft; fi++) {
 //       uint wi = fi - ff;
-//       window.referToRange(bam[i], wi, wi + wlen - 1);
+//       window.referToRange(bam[i], wi, wi + wlen - 1+1);
 //       windowMean = sum(window, 0) / (double)wlen;
 //       windowMean = ~repmat(windowMean, 1, wlen);
 //       bamVar(i, fi) = sumOfSqr(window - windowMean);
@@ -592,7 +592,7 @@ void G4Rec::computeVar(const char* type) {
       uint f = (f_thin + 1) * thinning - 1;
       if(f < ff) continue;
       // if(f > ft) break;
-      window.referToRange(bam[i], f - wlen + 1, f);
+      window.referToRange(bam[i], {f - wlen + 1, f+1});
       windowMean = sum(window, 0) / (double)wlen;
       // windowMeanRep = ~repmat(windowMean, 1, wlen);
       // bamVar(i, f_thin) = sumOfSqr(window - windowMeanRep);

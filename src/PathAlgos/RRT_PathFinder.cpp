@@ -147,18 +147,18 @@ bool RRT_PathFinder::growTreeTowardsRandom(RRT_SingleTree& rrt) {
 }
 
 void normalizeSphericalCoordinates(arr& x, const uintA& idx){
-  arr xsub = x({idx(0), idx(0)+idx(1)-1});
+  arr xsub = x({idx(0), idx(0)+idx(1)-1+1});
   op_normalize(xsub);
 }
 
 void randomSphericalCoordinates(arr& x, const uintA& idx){
-  arr xsub = x({idx(0), idx(0)+idx(1)-1});
+  arr xsub = x({idx(0), idx(0)+idx(1)-1+1});
   xsub = randn(xsub.N);
   op_normalize(xsub);
 }
 
 void flipSphericalCoordinates(arr& x, const uintA& idx){
-  arr xsub = x({idx(0), idx(0)+idx(1)-1});
+  arr xsub = x({idx(0), idx(0)+idx(1)-1+1});
   xsub *= -1.;
 }
 

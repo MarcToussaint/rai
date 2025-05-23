@@ -88,7 +88,7 @@ void TEST(Basics){
   double *ap=a.p, *astop=ap+a.N;
   for(; ap!=astop; ap++) *ap=ap-a.p; //assign pointer offsets to entries
   cout <<"\narray filled with pointer offsets (-> memory is linear):\n" <<a <<endl;
-  cout <<"\nsubarray (of the original) [2:4,:] (in MATLAB notation)\n" <<a.sub(2,4,0,-1) <<endl;
+  cout <<"\nsubarray (of the original) [2:4,:] (in MATLAB notation)\n" <<a.sub({2,4+1},{0,-1+1}) <<endl;
   CHECK_EQ(a.elem(-1),a.N-1,"");
 
   //reshape
@@ -124,10 +124,10 @@ void TEST(Basics){
   CHECK_EQ(a[1],a[2],"");
 
   //range access:
-  cout <<"\nall rows:\n" <<a({0,-1}) <<endl;
-  cout <<"\nrow 3:\n" <<a({3,3}) <<endl;
+  cout <<"\nall rows:\n" <<a({0,-1+1}) <<endl;
+  cout <<"\nrow 3:\n" <<a({3,3+1}) <<endl;
   cout <<"\nrow 3:\n" <<a(3, {0,-1}) <<endl;
-  cout <<"\nrows 1-3:\n" <<a({1,3}) <<endl;
+  cout <<"\nrows 1-3:\n" <<a({1,3+1}) <<endl;
   cout <<"\nentries 1-4 of row 3:\n" <<a(3, {1,4}) <<endl;
 
   ints.setStraightPerm(8);
@@ -138,8 +138,8 @@ void TEST(Basics){
 //  cout <<"\nentries (1,0,{}):\n" <<ints(1, 0, {0,-1}) <<endl;
 
   //access (copy and reference) of subarrays
-  cout <<"\n({2,4}) =\n" <<a({2,4}) <<endl;
-  a({2,4}) *= 10.;
+  cout <<"\n({2,4+1}) =\n" <<a({2,4+1}) <<endl;
+  a({2,4+1}) *= 10.;
   cout <<"\nrows manipulated:\n" <<a <<endl;
 
   //setting arrays ``by hand''

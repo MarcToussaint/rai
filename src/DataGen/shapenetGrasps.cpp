@@ -133,7 +133,7 @@ arr sampleGraspCandidate(rai::Configuration& C, const char *ptsFrame, const char
     //-- move the gripper to the ref pose, aligning poses, open gripper to .05
     rai::Transformation pose=ref->ensure_X();
     arr q = C.getJointState();
-    q({0,6}) = pose.getArr7d();
+    q({0,6+1}) = pose.getArr7d();
     q(7) = .04;
 
     arr bounds = C.getJointLimits();
@@ -260,7 +260,7 @@ arr ShapenetGrasps::evaluateGrasp(){
 
       //define control reference: move along 'dir'
       //if(phase==dirs.d0+1) physx.disableGravity(obj, false); //gravity
-      if(phase>0 && phase-1<dirs.d0) q_ref({0,2}) += opt.moveSpeed*dirs[phase-1]; //move along dirs
+      if(phase>0 && phase-1<dirs.d0) q_ref({0,2+1}) += opt.moveSpeed*dirs[phase-1]; //move along dirs
 
       //always close gripper (compliant grasp)
       q_ref(3) -= opt.gripperCloseSpeed;
@@ -388,7 +388,7 @@ arr ShapenetGrasps::evaluateSample(const arr& x, uint shape){
 void ShapenetGrasps::setGraspPose(const arr& pose, const char* objPts){
   rai::Transformation gripperPose = C[objPts]->ensure_X() * rai::Transformation(pose);
   arr q = C.getJointState();
-  q({-8,-2}) = gripperPose.getArr7d();
+  q({-8,-2+1}) = gripperPose.getArr7d();
   q(7) = .04;
   C.setJointState(q);
 }

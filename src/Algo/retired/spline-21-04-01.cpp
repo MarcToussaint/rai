@@ -191,7 +191,7 @@ arr Spline::eval(double t, uint derivative) const {
   arr coeffs = getCoeffs(t, K, derivative);
 //  if(!derivative){
 //      cout <<"t: " <<t <<" dot: " <<derivative <<" a: " <<coeffs <<endl;
-//      cout <<"t: " <<t <<" dot: " <<derivative <<" a: " <<rai::getCoeffs(t, times({2,4}), 0) <<endl;
+//      cout <<"t: " <<t <<" dot: " <<derivative <<" a: " <<rai::getCoeffs(t, times({2,4+1}), 0) <<endl;
 //  }
   return (~coeffs * points).reshape(points.d1);
 }

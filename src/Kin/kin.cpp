@@ -1315,14 +1315,14 @@ bool Configuration::checkConsistency() const {
         CHECK_EQ(jq.N, j->dim, "");
         arr tmpq;
         if(j->active) {
-          tmpq.referToRange(q, j->qIndex, j->qIndex+j->dim-1);
+          tmpq.referToRange(q, {j->qIndex, j->qIndex+j->dim-1+1});
         } else {
-          tmpq.referToRange(qInactive, j->qIndex, j->qIndex+j->dim-1);
+          tmpq.referToRange(qInactive, {j->qIndex, j->qIndex+j->dim-1+1});
           //for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - qInactive.elem(j->qIndex+i), RAI_2PI), 2e-5, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
         }
         if(j->type==JT_circleZ) { op_normalize(tmpq); }
         if(j->type==JT_quatBall) { op_normalize(tmpq); }
-        if(j->type==JT_free) { op_normalize(tmpq({3, 6}).noconst()); }
+        if(j->type==JT_free) { op_normalize(tmpq({3, 6+1}).noconst()); }
         //for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - tmpq.elem(i), RAI_2PI), 2e-5, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
       }
   }
@@ -1743,11 +1743,11 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
         } else if(j->type==JT_transXY) {
           arr R = j->X().rot.getMatrix();
           R *= j->scale;
-          J.setMatrixBlock(R.sub(0, -1, 0, 1), 0, j_idx);
+          J.setMatrixBlock(R.sub({0, -1+1},{ 0, 1+1}), 0, j_idx);
         } else if(j->type==JT_transXYPhi) {
           arr R = j->X().rot.getMatrix();
           R *= j->scale;
-          J.setMatrixBlock(R.sub(0, -1, 0, 1), 0, j_idx);
+          J.setMatrixBlock(R.sub({0, -1+1},{ 0, 1+1}), 0, j_idx);
           Vector tmp = j->axis ^ (pos_world-j_pos); //(j->X().pos + j->X().rot*a->Q.pos));
           tmp *= j->scale;
           J.elem(0, j_idx+2) += tmp.x;
@@ -1761,7 +1761,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           J.elem(2, j_idx) += tmp.z;
           arr R = (j->X().rot*a->Q.rot).getMatrix();
           R *= j->scale;
-          J.setMatrixBlock(R.sub(0, -1, 0, 1), 0, j_idx+1);
+          J.setMatrixBlock(R.sub({0, -1+1},{ 0, 1+1}), 0, j_idx+1);
         }
         if(j->type==JT_generic) {
           arr R = j->frame->parent->get_X().rot.getMatrix();
@@ -1789,7 +1789,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
                 arr Jrot = j->X().rot.getMatrix() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
                 Jrot *= j->scale;
                 Jrot = crossProduct(Jrot, conv_vec2arr(d));  //cross-product of all 4 w-vectors with lever
-                Jrot /= sqrt(sumOfSqr(q({j_idx+i, j_idx+i+3})));   //account for the potential non-normalization of q
+                Jrot /= sqrt(sumOfSqr(q({j_idx+i, j_idx+i+3+1})));   //account for the potential non-normalization of q
                 J.setMatrixBlock(Jrot, 0, j_idx+i);
                 i+=3;
               } break;
@@ -1811,7 +1811,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           arr Jrot = j->X().rot.getMatrix() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot.delColumns(1,2);
           Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-j_pos)); //(j->X().pos+j->X().rot*a->Q.pos)));  //cross-product of all 4 w-vectors with lever
-          Jrot /= sqrt(sumOfSqr(q({j->qIndex, j->qIndex+1})));   //account for the potential non-normalization of q
+          Jrot /= sqrt(sumOfSqr(q({j->qIndex, j->qIndex+1+1})));   //account for the potential non-normalization of q
           Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx);
         }
@@ -1821,7 +1821,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           if(j->type==JT_free) offset=3;
           arr Jrot = j->X().rot.getMatrix() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-j_pos)); //(j->X().pos+j->X().rot*a->Q.pos)));  //cross-product of all 4 w-vectors with lever
-          double qnorm = sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3})));   //account for the potential non-normalization of q
+          double qnorm = sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3+1})));   //account for the potential non-normalization of q
           Jrot /= qnorm; //+1e-4;
           //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J.elem(k,j_idx+offset+i) += Jrot(k,i);
           Jrot *= j->scale;
@@ -1887,7 +1887,7 @@ void Configuration::jacobian_angular(arr& J, Frame* a) const {
         if(j->type==JT_circleZ) {
           arr Jrot = j->X().rot.getMatrix() * a->get_Q().rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot.delColumns(1,2);
-          Jrot /= sqrt(sumOfSqr(q({j->qIndex, j->qIndex+1}))); //account for the potential non-normalization of q
+          Jrot /= sqrt(sumOfSqr(q({j->qIndex, j->qIndex+1+1}))); //account for the potential non-normalization of q
           Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx);
         }
@@ -1896,7 +1896,7 @@ void Configuration::jacobian_angular(arr& J, Frame* a) const {
           if(j->type==JT_XBall) offset=1;
           if(j->type==JT_free) offset=3;
           arr Jrot = j->X().rot.getMatrix() * a->get_Q().rot.getJacobian(); //transform w-vectors into world coordinate
-          double qnorm = sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3}))); //account for the potential non-normalization of q
+          double qnorm = sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3+1}))); //account for the potential non-normalization of q
           Jrot /= qnorm; //+1e-4;
           //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J.elem(k,j_idx+offset+i) += Jrot(k,i);
           Jrot *= j->scale;
@@ -1919,7 +1919,7 @@ void Configuration::jacobian_angular(arr& J, Frame* a) const {
               case 'w': {
                 arr Jrot = j->X().rot.getMatrix() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
                 Jrot *= j->scale;
-                Jrot /= sqrt(sumOfSqr(q({j_idx+i, j_idx+i+3}))); //account for the potential non-normalization of q
+                Jrot /= sqrt(sumOfSqr(q({j_idx+i, j_idx+i+3+1}))); //account for the potential non-normalization of q
                 J.setMatrixBlock(Jrot, 0, j_idx+i);
                 i+=3;
               } break;
@@ -2665,7 +2665,7 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
       os <<"  <visual>\n    <geometry>\n";
       arr& size = a->shape->size;
       switch(a->shape->type()) {
-        case ST_box:       os <<"      <box size=\"" <<size({0, 2}) <<"\" />\n";  break;
+        case ST_box:       os <<"      <box size=\"" <<size({0, 2+1}) <<"\" />\n";  break;
         case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
         case ST_sphere:    os <<"      <sphere radius=\"" <<size.last() <<"\" />\n";  break;
         case ST_mesh:      os <<"      <mesh filename=\"" <<a->ats->get<FileToken>("mesh").name <<'"';
@@ -2692,7 +2692,7 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
           os <<"  <visual>\n    <geometry>\n";
           arr& size = b->shape->size;
           switch(b->shape->type()) {
-            case ST_box:       os <<"      <box size=\"" <<size({0, 2}) <<"\" />\n";  break;
+            case ST_box:       os <<"      <box size=\"" <<size({0, 2+1}) <<"\" />\n";  break;
             case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
             case ST_sphere:    os <<"      <sphere radius=\"" <<size.last() <<"\" />\n";  break;
             case ST_mesh:      os <<"      <mesh filename=\"" <<b->ats->get<FileToken>("mesh").name <<'"';
@@ -3130,7 +3130,7 @@ void Configuration::reportLimits(std::ostream& os) const {
         l.reshape(2, -1);
         good = boundCheck(q, l);
 //      } else {
-//        good = boundCheck(q, l({0, 0}), l({1, 1}));
+//        good = boundCheck(q, l({0, 0+1}), l({1, 1+1}));
 //      }
       if(!good) LOG(0) <<d->name() <<" violates limits";
     }
@@ -3324,7 +3324,7 @@ arr Configuration::dyn_C(Frame* f, const arr& q_dot, const arr& I_f, const arr& 
   // return c;
   arr C = M * J_dot;
   arr wIw = skew(w) * I_f * Jang; //crossProduct(w, I_f * w);
-  C({3,5}) += wIw; //.setMatrixBlock(wIw, 3, 0);
+  C({3,5+1}) += wIw; //.setMatrixBlock(wIw, 3, 0);
   return C;
 }
 
@@ -3550,8 +3550,8 @@ void displayTrajectory(const arr& _x, int steps, Configuration& G, const Kinemat
   }
   arr x, z;
   if(dim_z) {
-    x.referToRange(_x, 0, -dim_z-1);
-    z.referToRange(_x, -dim_z, -1);
+    x.referToRange(_x, 0, -dim_z-1+1);
+    z.referToRange(_x, -dim_z, -1+1);
   } else {
     x.referTo(_x);
   }

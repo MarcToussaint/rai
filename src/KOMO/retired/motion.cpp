@@ -24,13 +24,13 @@ void KOMO::costReport(bool gnuplt) {
     for(uint i=0; i<tasks.N; i++) {
       Task* c = tasks(i);
       if(!c->isActive(t)) continue;
-      uint d=c->feat.dim_phi(configurations({t, t+k_order}), t);
+      uint d=c->feat.dim_phi(configurations({t, t+k_order+1}), t);
 
       if(tt.N) for(uint i=0; i<d; i++) CHECK_EQ(tt(M+i), c->type, "");
 
       if(d) {
         if(c->type==OT_sos) {
-          taskC(i) += a = sumOfSqr(phi.sub(M, M+d-1));
+          taskC(i) += a = sumOfSqr(phi.sub({M, M+d-1+1}));
           plotData(t, i) = a;
         }
         if(c->type==OT_ineq) {

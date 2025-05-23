@@ -179,7 +179,7 @@ void NLP_Factored::evaluate(arr& phi, arr& J, const arr& x) {
   uint n=0;
   for(uint i=0; i<variableDimensions.N; i++) {
     uint d = variableDimensions(i);
-    arr xi = x({n, n+d-1});
+    arr xi = x({n, n+d-1+1});
     setSingleVariable(i, xi);
     n += d;
   }
@@ -196,7 +196,7 @@ void NLP_Factored::evaluate(arr& phi, arr& J, const arr& x) {
     evaluateSingleFeature(i, phi_i, J_i, NoArr);
     CHECK_EQ(phi_i.N, d, "");
     CHECK_EQ(J_i.d0, d, "");
-    phi({n, n+d-1}) = phi_i;
+    phi({n, n+d-1+1}) = phi_i;
     if(!!J) {
       CHECK(!!J_i, "");
       if(resetJ) {
@@ -210,7 +210,7 @@ void NLP_Factored::evaluate(arr& phi, arr& J, const arr& x) {
           int varId = featureVariables(i)(j);
           if(varId>=0) {
             uint varDim = variableDimensions(varId);
-            J.setMatrixBlock(J_i.sub(0, -1, Jii, Jii+varDim-1), n, varDimIntegral(varId));
+            J.setMatrixBlock(J_i.sub({0, -1+1},{ Jii, Jii+varDim-1+1}), n, varDimIntegral(varId));
             Jii += varDim;
           }
         }
@@ -251,7 +251,7 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
   for(uint i=0; i<variableDimensions.N; i++) {
     uint d = variableDimensions(i);
     CHECK_EQ(n, varDimIntegral(i), "");
-    arr xi = x({n, n+d-1});
+    arr xi = x({n, n+d-1+1});
     P.setSingleVariable(i, xi);
     n += d;
   }

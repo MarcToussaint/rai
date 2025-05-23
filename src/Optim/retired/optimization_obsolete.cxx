@@ -716,9 +716,9 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 //   if(!!J) {
 //     arr Japp(_J.d0,3*n);
 //     Japp.setZero();
-//     Japp.setMatrixBlock(_J.sub(0,-1,0,n-1), 0, 1*n); //w.r.t. q1
-//     Japp.setMatrixBlock((-0.5/tau)*_J.sub(0,-1,n,-1), 0, 0); //w.r.t. q0
-//     Japp.setMatrixBlock(( 0.5/tau)*_J.sub(0,-1,n,-1), 0, 2*n); //w.r.t. q2
+//     Japp.setMatrixBlock(_J.sub({0,-1+1},{0,n-1+1}), 0, 1*n); //w.r.t. q1
+//     Japp.setMatrixBlock((-0.5/tau)*_J.sub({0,-1+1},{n,-1+1}), 0, 0); //w.r.t. q0
+//     Japp.setMatrixBlock(( 0.5/tau)*_J.sub({0,-1+1},{n,-1+1}), 0, 2*n); //w.r.t. q2
 //     J.append(Japp);
 //   }
 
@@ -731,8 +731,8 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 //     if(!!J){
 //       arr Japp(_J.d0,3*n);
 //       Japp.setZero();
-//       Japp.setMatrixBlock(_J.sub(0,-1,0,n-1) - (1./tau)*_J.sub(0,-1,n,-1), 0, 0); //w.r.t. q0
-//       Japp.setMatrixBlock((1./tau)*_J.sub(0,-1,n,-1), 0, 1*n); //w.r.t. q1
+//       Japp.setMatrixBlock(_J.sub({0,-1+1},{0,n-1+1}) - (1./tau)*_J.sub({0,-1+1},{n,-1+1}), 0, 0); //w.r.t. q0
+//       Japp.setMatrixBlock((1./tau)*_J.sub({0,-1+1},{n,-1+1}), 0, 1*n); //w.r.t. q1
 //       J.append(Japp);
 //     }
 //   }
@@ -744,8 +744,8 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 //     if(!!J) {
 //       arr Japp(_J.d0,3*n);
 //       Japp.setZero();
-//       Japp.setMatrixBlock(_J.sub(0,-1,0,n-1) - (1./tau)*_J.sub(0,-1,n,-1), 0, 0); //w.r.t. q0
-//       Japp.setMatrixBlock((1./tau)*_J.sub(0,-1,n,-1), 0, 1*n); //w.r.t. q1
+//       Japp.setMatrixBlock(_J.sub({0,-1+1},{0,n-1+1}) - (1./tau)*_J.sub({0,-1+1},{n,-1+1}), 0, 0); //w.r.t. q0
+//       Japp.setMatrixBlock((1./tau)*_J.sub({0,-1+1},{n,-1+1}), 0, 1*n); //w.r.t. q1
 //       J.append(Japp);
 //     }
 //   }
@@ -758,8 +758,8 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 //     if(!!J) {
 //       arr Japp(_J.d0,3*n);
 //       Japp.setZero();
-//       Japp.setMatrixBlock(_J.sub(0,-1,0,n-1) + (1./tau)*_J.sub(0,-1,n,-1), 0, 2*n); //w.r.t. q2
-//       Japp.setMatrixBlock((-1./tau)*_J.sub(0,-1,n,-1), 0, 1*n); //w.r.t. q1
+//       Japp.setMatrixBlock(_J.sub({0,-1+1},{0,n-1+1}) + (1./tau)*_J.sub({0,-1+1},{n,-1+1}), 0, 2*n); //w.r.t. q2
+//       Japp.setMatrixBlock((-1./tau)*_J.sub({0,-1+1},{n,-1+1}), 0, 1*n); //w.r.t. q1
 //       J.append(Japp);
 //     }
 //   }

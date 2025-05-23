@@ -89,7 +89,7 @@ void Teleop2Tasks::updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effpo
   arr pos, pos_div;
 
   //get positiondata
-  copy(pos, cal_pose.sub(0, 2));
+  copy(pos, cal_pose.sub({0, 2+1}));
   pos += arr{0.6, 0., 1.};
 
   //calculate difference in position
@@ -150,8 +150,8 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
 
   //set an inital value to all of the old_* variables
   if(!initialised) {
-    copy(old_pos_rh, cal_pose_rh.sub(0, 2));
-    copy(old_pos_lh, cal_pose_lh.sub(0, 2));
+    copy(old_pos_rh, cal_pose_rh.sub({0, 2+1}));
+    copy(old_pos_lh, cal_pose_lh.sub({0, 2+1}));
     old_pos_rh += arr{0.6, 0., 1.};
     old_pos_lh += arr{0.6, 0., 1.};
     copy(old_effpos_r, old_pos_rh);

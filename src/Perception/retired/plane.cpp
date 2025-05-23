@@ -11,9 +11,9 @@
 #include "../Gui/opengl.h"
 
 CostFct_PlanePoints::CostFct_PlanePoints(const arr& n, const arr& m, const arr& X, const arr& transform)
-  : n(n), m(m), X(X), transform(transform), r(transform.sub(3, 6)) {
+  : n(n), m(m), X(X), transform(transform), r(transform.sub({3, 6+1})) {
   y = X*~r.getArr()*n;
-  y += scalarProduct(transform.sub(0, 2), n);
+  y += scalarProduct(transform.sub({0, 2+1}), n);
   y -= scalarProduct(m, n);
 }
 

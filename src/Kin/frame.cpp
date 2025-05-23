@@ -310,7 +310,7 @@ rai::Frame& rai::Frame::convertDecomposedShapeToChildFrames() {
     ch->name <<name <<'_' <<i;
     int start = m.cvxParts(i);
     int end = i+1<m.cvxParts.N ? m.cvxParts(i+1)-1 : -1;
-    ch->setConvexMesh(m.V({start, end}));
+    ch->setConvexMesh(m.V({start, end+1}));
     if(!ch->shape->mesh().V.N) {
       delete ch; //ch->setShape(ST_marker, {.01});
     } else {
@@ -1676,7 +1676,7 @@ arr rai::Joint::getScrewMatrix() {
   } else if(type==JT_transXY) {
     if(mimic) NIY;
     arr R = X().rot.getMatrix();
-    S[1] = R({0, 1});
+    S[1] = R({0, 1+1});
   } else if(type==JT_transXYPhi) {
     if(mimic) NIY;
     arr R = X().rot.getMatrix();
@@ -1698,7 +1698,7 @@ arr rai::Joint::getScrewMatrix() {
     S(0, 0, {}) = axis.getArr();
     S(1, 0, {}) = (-axis ^ X().pos).getArr();
     arr R = (X().rot*Q().rot).getMatrix();
-    S[1] = R({0, 1});
+    S[1] = R({0, 1+1});
   }
   if(type==JT_trans3 || type==JT_free) {
     if(mimic) NIY;
@@ -1712,7 +1712,7 @@ arr rai::Joint::getScrewMatrix() {
     uint offset=0;
     if(type==JT_free) offset=3;
     arr Jrot = X().rot.getMatrix() * Q().rot.getJacobian(); //transform w-vectors into world coordinate
-    NIY; //Jrot /= sqrt(sumOfSqr( q({qIndex+offset, qIndex+offset+3}) )); //account for the potential non-normalization of q
+    NIY; //Jrot /= sqrt(sumOfSqr( q({qIndex+offset, qIndex+offset+3+1}) )); //account for the potential non-normalization of q
     //    Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(X().pos+X().rot*Q().pos)) ); //cross-product of all 4 w-vectors with lever
     for(uint i=0; i<4; i++) for(uint k=0; k<3; k++) S(0, i+offset, k) = Jrot(k, i);
     Jrot = crossProduct(Jrot, conv_vec2arr(-(X().pos+X().rot*Q().pos)));  //cross-product of all 4 w-vectors with lever
@@ -2030,7 +2030,7 @@ void rai::Shape::read(const Graph& ats) {
   if(ats.get(x, "mesh_rope"))  {
     CHECK_EQ(x.N, 4, "requires 3D extend and numSegments");
     uint n=x(-1);
-    arr y = x({0, 2});
+    arr y = x({0, 2+1});
     arr& V = mesh().V;
     V.resize(n+1, 3).setZero();
     for(uint i=1; i<=n; i++) {

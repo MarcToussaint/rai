@@ -141,7 +141,7 @@ arr GaussianProcessOptimized::gradientVariance(const arr& x) {
   //return kernel->dk_dx(x,x) - 2.0*(~kappa*lapack_Ainv_b_symPosDef_givenCholesky(L, dKappa)).reshapeFlat();
 
   //this is the optimized, n^2 version, was quite easy :-)
-  return kernel->dk_dx(x, x) - 2.0*(~lapack_Ainv_b_symPosDef_givenCholesky(L, kappa)*dKappa).reshapeFlat();
+  return kernel->dk_dx(x, x) - 2.0*(~lapack_Ainv_b_symPosDef_givenCholesky(L, kappa)*dKappa).reshape(-1);
 }
 
 arr GaussianProcessOptimized::hessian(const arr& x) {

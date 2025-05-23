@@ -271,7 +271,7 @@ struct SweepingSDFPenetration : ScalarFunction {
 
   double scalarFunction(arr& g, arr& H, const arr& x_s) {
     s = x_s.last();
-    x = x_s({0, -2});
+    x = x_s({0, -2+1});
     CHECK_EQ(x.N, 3, "");
 //    CHECK_GE(s, 0., "");
 //    CHECK_LE(s, 1., "");
@@ -336,8 +336,8 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F) {
     d1 = P->d1;
     d2 = P->d2;
     x = P->x;
-    g1 = P->g1.sub(0, 2);
-    g2 = P->g2.sub(0, 2);
+    g1 = P->g1.sub({0, 2+1});
+    g2 = P->g2.sub({0, 2+1});
     double s = P->s;
 //    LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" s:" <<s <<" iters:" <<newton.its;
 //    LOG(0) <<"x:" <<x ;

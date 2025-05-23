@@ -22,7 +22,7 @@ AdaptiveMotionExecution::AdaptiveMotionExecution(rai::Configuration& _world, arr
   sRef = linspace(0., 1., _trajRef.d0-1);
 
   if(useOrientation) {
-    goalMO->setOrientation(goalRef({3, 5}));
+    goalMO->setOrientation(goalRef({3, 5+1}));
   }
 
   traj = ~x0;
@@ -149,8 +149,8 @@ void AdaptiveMotionExecution::plotState() {
     }
   }
 
-  write(LIST<arr>(sqrt(sum(sqr(~(~dtrajRef)({0, 2})), 1))), STRING(scene<<"/dtrajRef.output"));
-  write(LIST<arr>(sqrt(sum(sqr(~(~dtraj)({0, 2})), 1))), STRING(scene<<"/dtraj.output"));
+  write(LIST<arr>(sqrt(sum(sqr(~(~dtrajRef)({0, 2+1})), 1))), STRING(scene<<"/dtrajRef.output"));
+  write(LIST<arr>(sqrt(sum(sqr(~(~dtraj)({0, 2+1})), 1))), STRING(scene<<"/dtraj.output"));
   gnuplot("set term wxt 11 title 'velocity profile'");
   gnuplot(STRING("plot '"<<scene<<"/dtrajRef.output' us 1,'"<<scene<<"/dtraj.output' us 1"));
 
@@ -190,7 +190,7 @@ void AdaptiveMotionExecution::printState() {
 //    y_target = traj[traj.d0-1];
 
 //    // task 1: POSITION
-//    yPos_target = y_target({0,2});
+//    yPos_target = y_target({0,2+1});
 //    costs = (yPos - yPos_target)/ fPos_deviation;
 //    posCosts.append(~costs*costs);
 //    Phi = ((yPos - yPos_target)/ fPos_deviation);
@@ -198,7 +198,7 @@ void AdaptiveMotionExecution::printState() {
 
 //    // task  2: ORIENTATION
 //    if (useOrientation) {
-//      yVec_target = y_target({3,5});
+//      yVec_target = y_target({3,5+1});
 //      costs = (yVec - yVec_target)/ fVec_deviation;
 //      vecCosts.append(~costs*costs);
 //      Phi.append(costs);

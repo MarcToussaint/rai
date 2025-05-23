@@ -203,7 +203,7 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
     uint x_dim = dim_x(t);
     if(x_dim) {
       rai::timerRead(true);
-      if(x.nd==1)  configurations(s)->setJointState(x({x_count, x_count+x_dim-1}));
+      if(x.nd==1)  configurations(s)->setJointState(x({x_count, x_count+x_dim-1+1}));
       else         configurations(s)->setJointState(x[t]);
       timeKinematics += rai::timerRead(true);
       if(computeCollisions) {
@@ -328,7 +328,7 @@ void KOMO::Conv_KOMO_KOMOProblem_toBeRetired::getStructure(uintA& variableDimens
     for(uint i=0; i<komo.objectives.N; i++) {
       shared_ptr<Objective> task = komo.objectives.elem(i);
       if(task->isActive(t)) {
-        uint m = task->feat->__dim_phi(komo.configurations({t, t+komo.k_order})); //dimensionality of this task
+        uint m = task->feat->__dim_phi(komo.configurations({t, t+komo.k_order+1})); //dimensionality of this task
 
         if(!!featureTimes) featureTimes.append(t, m); //consts<uint>(t, m));
         if(!!featureTypes) featureTypes.append(task->type, m); //consts<ObjectiveType>(task->type, m));
@@ -366,7 +366,7 @@ void KOMO::Conv_KOMO_KOMOProblem_toBeRetired::phi(arr& phi, arrA& J, arrA& H, ui
   uint M=0;
   for(uint t=0; t<komo.T; t++) {
     //build the Ktuple with order given by map
-    ConfigurationL Ktuple = komo.configurations({t, t+komo.k_order});
+    ConfigurationL Ktuple = komo.configurations({t, t+komo.k_order+1});
     uintA Ktuple_dim = getKtupleDim(Ktuple);
 
     for(uint i=0; i<komo.objectives.N; i++) {
@@ -562,7 +562,7 @@ void KOMO::Conv_KOMO_GraphProblem_toBeRetired::getPartialPhi(arr& phi, arrA& J, 
     if(!!phi) phi.resize(dimPhi);
     if(!!J) J.resize(dimPhi);
 
-//    uintA x_index = getKtupleDim(komo.configurations({komo.k_order,-1}));
+//    uintA x_index = getKtupleDim(komo.configurations({komo.k_order,-1+1}));
 //    x_index.prepend(0);
 
     arr y, Jy;

@@ -372,10 +372,10 @@ void F_qQuaternionNorms::phi2(arr& y, arr& J, const FrameL& F) {
       rai::Joint* j = f->joint;
       if(j && j->active && (j->type==rai::JT_circleZ || j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall)) {
         arr q;
-        if(j->type==rai::JT_circleZ)  q.referToRange(C.q, j->qIndex+0, j->qIndex+1);
-        if(j->type==rai::JT_quatBall) q.referToRange(C.q, j->qIndex+0, j->qIndex+3);
-        if(j->type==rai::JT_XBall)    q.referToRange(C.q, j->qIndex+1, j->qIndex+4);
-        if(j->type==rai::JT_free)     q.referToRange(C.q, j->qIndex+3, j->qIndex+6);
+        if(j->type==rai::JT_circleZ)  q.referToRange(C.q, {j->qIndex+0, j->qIndex+1+1});
+        if(j->type==rai::JT_quatBall) q.referToRange(C.q, {j->qIndex+0, j->qIndex+3+1});
+        if(j->type==rai::JT_XBall)    q.referToRange(C.q, {j->qIndex+1, j->qIndex+4+1});
+        if(j->type==rai::JT_free)     q.referToRange(C.q, {j->qIndex+3, j->qIndex+6+1});
         double norm = sumOfSqr(q);
         y(i) = norm - 1.;
 
@@ -392,7 +392,7 @@ void F_qQuaternionNorms::phi2(arr& y, arr& J, const FrameL& F) {
       rai::DirectionDof* dof = f->dirDof;
       if(dof && dof->active){
         arr q;
-        q.referToRange(C.q, dof->qIndex+0, dof->qIndex+2);
+        q.referToRange(C.q, {dof->qIndex+0, dof->qIndex+2+1});
         double norm = sumOfSqr(q);
         y(i) = norm - 1.;
 

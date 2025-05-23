@@ -432,8 +432,8 @@ void MinimalConvexCore::evaluate(arr& phi, arr& J, const arr& _x) {
       arr d = x[a]-x[b];
       double l = length(d);
       cost += attractor(l, l_a, dxdl_l);
-      Jcost({3*a, 3*a+2}) += d*dxdl_l;
-      Jcost({3*b, 3*b+2}) += -d*dxdl_l;
+      Jcost({3*a, 3*a+2+1}) += d*dxdl_l;
+      Jcost({3*b, 3*b+2+1}) += -d*dxdl_l;
       //            if(!!H){
       //              for(uint k=0;k<3;k++) for(uint l=0;l<3;l++){
       //                H(3*a+k,3*a+l) += d(k)*d(l)/(l*l);
@@ -444,15 +444,15 @@ void MinimalConvexCore::evaluate(arr& phi, arr& J, const arr& _x) {
       arr d = x[c]-x[b];
       double l = length(d);
       cost += attractor(l, l_a, dxdl_l);
-      Jcost({3*c, 3*c+2}) += d*dxdl_l;
-      Jcost({3*b, 3*b+2}) += -d*dxdl_l;
+      Jcost({3*c, 3*c+2+1}) += d*dxdl_l;
+      Jcost({3*b, 3*b+2+1}) += -d*dxdl_l;
     }
     {
       arr d = x[a]-x[c];
       double l = length(d);
       cost += attractor(l, l_a, dxdl_l);
-      Jcost({3*a, 3*a+2}) += d*dxdl_l;
-      Jcost({3*c, 3*c+2}) += -d*dxdl_l;
+      Jcost({3*a, 3*a+2+1}) += d*dxdl_l;
+      Jcost({3*c, 3*c+2+1}) += -d*dxdl_l;
     }
   }
 
@@ -465,7 +465,7 @@ void MinimalConvexCore::evaluate(arr& phi, arr& J, const arr& _x) {
     double l = length(d);
     phi(i+1) = l - radius;
     if(l>1e-6) {
-      if(!!J) J(i+1, {3*i, 3*i+2}) += -d/l;
+      if(!!J) J(i+1, {3*i, 3*i+2+1}) += -d/l;
     }
   }
 

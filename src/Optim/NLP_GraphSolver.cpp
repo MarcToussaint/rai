@@ -97,8 +97,8 @@ void NLP_GraphSolver::test() {
     A.setRandomPerm(P->numTotalVariables());
     uint i=rnd(A.N-1);
     uint j=rnd(A.N-i);
-    uintA X = A({0, i});
-    uintA Y = A({i+1, i+j});
+    uintA X = A({0, i+1});
+    uintA Y = A({i+1, i+j+1});
     P->subSelect(X, Y);
     P->report(cout, 2);
     x = P->getInitializationSample();
@@ -128,8 +128,8 @@ std::shared_ptr<SolverReturn> NLP_GraphSolver::solveRandom() {
   A.setRandomPerm(P->numTotalVariables());
   uint i=rnd(A.N-1);
   uint j=rnd(A.N-i);
-  uintA X = A({0, i});
-  uintA Y = A({i+1, i+j});
+  uintA X = A({0, i+1});
+  uintA Y = A({i+1, i+j+1});
   P->subSelect(X, Y);
   P->report(cout, 2);
   subSolver.x = P->getInitializationSample();
@@ -149,7 +149,7 @@ std::shared_ptr<SolverReturn> NLP_GraphSolver::solveInOrder(uintA order) {
   if(!order.N) order.setStraightPerm(P->numTotalVariables());
   for(uint i=0; i<order.N; i++) {
 #if 1
-    if(i) Y = order({0, i-1});
+    if(i) Y = order({0, i-1+1});
     X = {order(i)};
     P->subSelect(X, Y);
 //    P->report(cout, 2);
@@ -166,7 +166,7 @@ std::shared_ptr<SolverReturn> NLP_GraphSolver::solveInOrder(uintA order) {
     //--
 #endif
     if(true) { //ret && !ret->feasible){
-      X = order({0, i});
+      X = order({0, i+1});
       Y.clear();
       P->subSelect(X, Y);
 //      P->report(cout, 2);

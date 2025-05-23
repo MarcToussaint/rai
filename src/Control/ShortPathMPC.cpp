@@ -137,5 +137,5 @@ std::shared_ptr<SolverReturn> ShortPathMPC::solve(bool alsoVels, int verbose) {
 
 arr ShortPathMPC::getPath() {
   if(!feasible) return arr{};
-  return path({0, sliceOfConstraint});
+  return path({0, sliceOfConstraint+1});
 }

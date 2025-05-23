@@ -244,14 +244,14 @@ void TM_Gravity2::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 //  // flip the quaternion sign if necessary
 //  quat.flipTargetSignOnNegScalarProduct = true;
 //  quat.order=1;
-//  quat.Feature::eval(y({d+3,d+6})(), (!!J?J({d+3,d+6})():NoArr), Ktuple);
+//  quat.Feature::eval(y({d+3,d+6+1})(), (!!J?J({d+3,d+6+1})():NoArr), Ktuple);
 //  if(false) { //rotational friction
 //    double eps = 1e-2;
 //    arr w,Jw;
 //    quat.order=1;
 //    quat.Feature::eval(w, (!!J?Jw:NoArr), Ktuple);
-//    y({d+3,d+6}) += eps*w;
-//    if(!!J) J({d+3,d+6}) += eps*Jw;
+//    y({d+3,d+6+1}) += eps*w;
+//    if(!!J) J({d+3,d+6+1}) += eps*Jw;
 //  }
 
 }

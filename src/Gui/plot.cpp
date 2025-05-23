@@ -276,7 +276,7 @@ void rai::PlotModule::Covariance(const arr& mean, const arr& cov) {
     arr d(101, 2), Cov, U, V, w;
     double phi;
     uint i;
-    if(cov.d0>2) { Cov=cov.sub(0, 1, 0, 1); } else { Cov.referTo(cov); }
+    if(cov.d0>2) { Cov=cov.sub({0, 1+1},{ 0, 1+1}); } else { Cov.referTo(cov); }
     for(i=0; i<d.d0; i++) { //standard circle
       phi=RAI_2PI*((double)i)/(d.d0-1);
       d(i, 0)=cos(phi); d(i, 1)=sin(phi);
@@ -318,7 +318,7 @@ void rai::PlotModule::Covariance(const arr& mean, const arr& cov) {
     double phi;
     uint i;
     //x-y
-    Cov=cov.sub(0, 1, 0, 1);
+    Cov=cov.sub({0, 1+1},{ 0, 1+1});
     for(i=0; i<d.d0; i++) { //standard circle
       phi=RAI_2PI*((double)i)/(d.d0-1);
       d(i, 0)=cos(phi); d(i, 1)=sin(phi);
@@ -329,7 +329,7 @@ void rai::PlotModule::Covariance(const arr& mean, const arr& cov) {
     for(i=0; i<d.d0; i++) { dd(i, 0)=d(i, 0); dd(i, 1)=d(i, 1); dd(i, 2)=mean(2); }
     self->lines.append(dd);
     //y-z
-    Cov=cov.sub(1, 2, 1, 2);
+    Cov=cov.sub({1, 2+1},{ 1, 2+1});
     for(i=0; i<d.d0; i++) { //standard circle
       phi=RAI_2PI*((double)i)/(d.d0-1);
       d(i, 0)=cos(phi); d(i, 1)=sin(phi);

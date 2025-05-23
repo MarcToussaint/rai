@@ -30,8 +30,8 @@ struct CoveringSpheresProblem : NLP {
   virtual double phi(arr& df, arr& Hf, arr& g, arr& Jg, const arr& c_r) {
     uint s=c_r.N/4;
     arr c,r;
-    c.referToRange(c_r,0,3*s-1); c.reshape(s,3);
-    r.referToRange(c_r,3*s,-1); r.reshape(s);
+    c.referToRange(c_r,{0,3*s-1+1}); c.reshape(s,3);
+    r.referToRange(c_r,{3*s,-1+1}); r.reshape(s);
 
     //f
     double fx = 0.;

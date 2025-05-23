@@ -641,24 +641,24 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
   // x{0,2} are box-wall-coordinates, not width!
   CHECK_EQ(x.N, 14, "query-pt + abcr + pose");
   rai::Transformation t;
-  t.pos.set(x({7, 9}));
-  t.rot.set(x({10, 13}));
+  t.pos.set(x({7, 9+1}));
+  t.rot.set(x({10, 13+1}));
   t.rot.normalize();
   arr closest, signs;
-  closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x({0, 2}));
-  arr grad = x({0, 2}) - closest;
+  closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x({0, 2+1}));
+  arr grad = x({0, 2+1}) - closest;
   double d = length(grad);
   grad /= d;
   d -= x(6);
   if(!!g) {
     g.resize(14);
     g.setZero();
-    g({0, 2}) = grad;
-    g({7, 9}) = - grad;
-    g({3, 5}) = - signs%(rai::Vector(grad) / t.rot).getArr();
+    g({0, 2+1}) = grad;
+    g({7, 9+1}) = - grad;
+    g({3, 5+1}) = - signs%(rai::Vector(grad) / t.rot).getArr();
     g(6) = -1.;
-    g({10, 13}) = ~grad*crossProduct(t.rot.getJacobian(), (x({0, 2})-t.pos.getArr()));
-    g({10, 13}) /= -sqrt(sumOfSqr(x({10, 13}))); //account for the potential non-normalization of q
+    g({10, 13+1}) = ~grad*crossProduct(t.rot.getJacobian(), (x({0, 2+1})-t.pos.getArr()));
+    g({10, 13+1}) /= -sqrt(sumOfSqr(x({10, 13+1}))); //account for the potential non-normalization of q
   }
   return d;
 };

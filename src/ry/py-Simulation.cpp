@@ -130,7 +130,7 @@ void init_Simulation(pybind11::module& m) {
   .def("depthData2pointCloud", [](std::shared_ptr<rai::Simulation>& self, const pybind11::array_t<float>& depth, const std::vector<double>& fxycxy) {
     arr points;
     floatA _depth = numpy2arr<float>(depth);
-    depthData2pointCloud(points, _depth, arr(fxycxy, true));
+    depthData2pointCloud(points, _depth, as_arr(fxycxy, true));
     return arr2numpy(points);
   })
 

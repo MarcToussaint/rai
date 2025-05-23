@@ -140,7 +140,7 @@ PairCollision::PairCollision(const arr& _mesh1, const arr& _mesh2, const rai::Tr
     int end = imin+1<(int)_mesh2.cvxParts.N ? _mesh2.cvxParts(imin+1)-1 : _mesh2.d0-1;
     mesh2.clear();
     mesh2.T.clear();
-    mesh2.V = _mesh2.V({start, end});
+    mesh2.V = _mesh2.V({start, end+1});
   }
 #endif
 

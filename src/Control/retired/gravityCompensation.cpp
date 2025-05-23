@@ -61,7 +61,7 @@ void GravityCompensation::learnGCModel() {
   for(rai::String joint : joints) {
     uint index = world.getFrame(joint)->joint->qIndex;
     double c;
-    betasGC[joint] = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0, -1, index, index), lambdas, false, c);
+    betasGC[joint] = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub({0, -1+1},{ index, index+1}), lambdas, false, c);
     cout << c << endl;
   }
 }
@@ -99,8 +99,8 @@ void GravityCompensation::learnFTModel() {
   arr mL = zeros(6);
   arr mR = zeros(6);
   for(uint i = 0; i < 6; i++) {
-    betaFTL.append(~cv.calculateBetaWithCV(PhiL, fL.sub(0, -1, i, i), lambdas, false, mL(i)));
-    betaFTR.append(~cv.calculateBetaWithCV(PhiR, fR.sub(0, -1, i, i), lambdas, false, mR(i)));
+    betaFTL.append(~cv.calculateBetaWithCV(PhiL, fL.sub({0, -1+1},{ i, i+1}), lambdas, false, mL(i)));
+    betaFTR.append(~cv.calculateBetaWithCV(PhiR, fR.sub({0, -1+1},{ i, i+1}), lambdas, false, mR(i)));
   }
   betaFTL = ~betaFTL;
   betaFTR = ~betaFTR;
@@ -253,7 +253,7 @@ arr GravityCompensation::featuresGC(arr q, arr qSign, const rai::String& joint) 
       Phi_tmp.append(~(T*F));
       //Phi_tmp.append(~F);
     }
-    //.sub(0,-1,index,index)
+    //.sub({0,-1+1},{index,index+1})
     Phi = catCol(Phi, Phi_tmp);
   }
 
@@ -261,7 +261,7 @@ arr GravityCompensation::featuresGC(arr q, arr qSign, const rai::String& joint) 
   if(sinFeature) Phi = catCol(Phi, sin(X));
   if(cosFeature) Phi = catCol(Phi, cos(X));
 
-  if(stictionFeature) Phi = catCol(Phi, sign(qSign.sub(0, -1, index, index)));
+  if(stictionFeature) Phi = catCol(Phi, sign(qSign.sub({0, -1+1},{ index, index+1})));
 
   //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_pos, world, "endeffL"), q));
   //Phi = catCol(Phi, generateTaskMapFeature(TM_Default(TMT_vec, world,"endeffL",rai::Vector(0.,0.,1.)), q));
@@ -363,7 +363,7 @@ void GravityCompensation::generatePredictionsOnDataSet(const arr& Q, const arr& 
     }
     FILE("joints.dat") << joints;
     FILE(STRING(s << "_uPred.dat")) << UPred;
-    FILE(STRING(s << "_u.dat")) << U.sub(0, -1, index, index);
+    FILE(STRING(s << "_u.dat")) << U.sub({0, -1+1},{ index, index+1});
   }
 }
 
@@ -406,7 +406,7 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
     //Summed sinus/cosinus
     arr temp;
     for(uint i = 0; i < leftJoints.N; i++) {
-      temp = X.sub(0,-1,i,-1);
+      temp = X.sub({0,-1+1},{i,-1+1});
       Phi = catCol(Phi,sin(sum(temp,1)));
       Phi = catCol(Phi,cos(sum(temp,1)));
     }
@@ -462,7 +462,7 @@ arr GravityCompensation::features(arr Q, const GravityCompensation::RobotPart ro
     //Summed sinus/cosinus
     arr temp;
     for(uint i = 0; i < rightJoints.N; i++) {
-      temp = X.sub(0,-1,i,-1);
+      temp = X.sub({0,-1+1},{i,-1+1});
       Phi = catCol(Phi,sin(sum(temp,1)));
       Phi = catCol(Phi,cos(sum(temp,1)));
     }

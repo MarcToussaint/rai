@@ -123,8 +123,8 @@ void F_StaticStability::phi2(arr& y, arr& J, const FrameL& F) {
 
   //align avg with object center
   K.kinematicsPos(y, J, a);
-  y = (y-cog)({0, 1});
-  if(!!J) J=(J-J_cog)({0, 1});
+  y = (y-cog)({0, 1+1});
+  if(!!J) J=(J-J_cog)({0, 1+1});
 
 #if 1
   CHECK(a->shape, "");

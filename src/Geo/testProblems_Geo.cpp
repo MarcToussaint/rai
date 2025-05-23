@@ -53,8 +53,8 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
         y = X[i];
         y.append(x);
         phi(i+5) = DistanceFunction_SSBox(Jy, NoArr, y);
-        //      Jy({3,5})() *= -1.;
-        if(!!J) J[i+5] = Jy({3, -1});
+        //      Jy({3,5+1})() *= -1.;
+        if(!!J) J[i+5] = Jy({3, -1+1});
       }
     }
     virtual void getFHessian(arr& H, const arr& x) {
@@ -80,12 +80,12 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
   rot.setRandom();
   arr tX = X * rot.getMatrix(); //rotate points (with rot^{-1})
   arr ma = max(tX, 0), mi = min(tX, 0); //get coordinate-wise min and max
-  x({0, 2}) = (ma-mi)/2.;  //sizes
+  x({0, 2+1}) = (ma-mi)/2.;  //sizes
   x(3) = 1.; //sum(ma-mi)/6.;  //radius
-  x({4, 6}) = rot.getMatrix() * (mi+.5*(ma-mi)); //center (rotated back)
-  x({7, 10}) = conv_quat2arr(rot);
-  rndGauss(x({7, 10}).noconst(), .1, true);
-  x({7, 10}) /= length(x({7, 10}));
+  x({4, 6+1}) = rot.getMatrix() * (mi+.5*(ma-mi)); //center (rotated back)
+  x({7, 10+1}) = conv_quat2arr(rot);
+  rndGauss(x({7, 10+1}).noconst(), .1, true);
+  x({7, 10+1}) /= length(x({7, 10+1}));
 
   if(verbose>1) {
     F.checkJacobian(x, 1e-4);
@@ -141,8 +141,8 @@ void computeOptimalSSBox(rai::Mesh& mesh, arr& x_ret, rai::Transformation& t_ret
 
   rai::Transformation t;
   t.setZero();
-  t.pos.set(x({4, 6}));
-  t.rot.set(x({7, -1}));
+  t.pos.set(x({4, 6+1}));
+  t.rot.set(x({7, -1+1}));
   t.rot.normalize();
   mesh.setSSBox(x(0), x(1), x(2), x(3));
   t.applyOnPointArray(mesh.V);
@@ -188,8 +188,8 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
           double l = length(d);
           cost += l;
           if(l>1e-6) {
-            Jcost({3*a, 3*a+2}) += d/l;
-            Jcost({3*b, 3*b+2}) += -d/l;
+            Jcost({3*a, 3*a+2+1}) += d/l;
+            Jcost({3*b, 3*b+2+1}) += -d/l;
             //            if(!!H){
             //              for(uint k=0;k<3;k++) for(uint l=0;l<3;l++){
             //                H(3*a+k,3*a+l) += d(k)*d(l)/(l*l);
@@ -202,8 +202,8 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
           double l = length(d);
           cost += l;
           if(l>1e-6) {
-            Jcost({3*c, 3*c+2}) += d/l;
-            Jcost({3*b, 3*b+2}) += -d/l;
+            Jcost({3*c, 3*c+2+1}) += d/l;
+            Jcost({3*b, 3*b+2+1}) += -d/l;
           }
         }
         {
@@ -211,8 +211,8 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
           double l = length(d);
           cost += l;
           if(l>1e-6) {
-            Jcost({3*a, 3*a+2}) += d/l;
-            Jcost({3*c, 3*c+2}) += -d/l;
+            Jcost({3*a, 3*a+2+1}) += d/l;
+            Jcost({3*c, 3*c+2+1}) += -d/l;
           }
         }
       }
@@ -227,7 +227,7 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
         double l = length(d);
         phi(i+1) = l - radius;
         if(l>1e-6) {
-          if(!!J) J(i+1, {3*i, 3*i+2}) += -d/l;
+          if(!!J) J(i+1, {3*i, 3*i+2+1}) += -d/l;
         }
       }
 
@@ -471,14 +471,14 @@ struct FitSphereProblem : NLP {
     if(!!J)  J(0, 3) = 1.;
 
     //-- all constraints
-    arr c = x({0, 2});
+    arr c = x({0, 2+1});
     double r = x(3);
     for(uint i=0; i<X.d0; i++) {
       arr d = c - X[i];
       double dlen = length(d);
       phi(1+i) = dlen - r;
       if(!!J) {
-        J(1+i, {0, 2}) = d / dlen;
+        J(1+i, {0, 2+1}) = d / dlen;
         J(1+i, 3) = -1.;
       }
     }
@@ -499,18 +499,18 @@ struct FitCapsuleProblem : NLP {
     if(!!J)  J(0, 6) = 4.;
 
     //-- the capsule length objective
-    arr a = x({0, 2});
-    arr b = x({3, 5});
+    arr a = x({0, 2+1});
+    arr b = x({3, 5+1});
     double l = length(a-b);
     phi(0) += l;
     if(!!J) {
-      J(0, {0, 2}) += (a-b)/l;
-      J(0, {3, 5}) += (b-a)/l;
+      J(0, {0, 2+1}) += (a-b)/l;
+      J(0, {3, 5+1}) += (b-a)/l;
     }
 
     //-- all constraints
     double scale = 1e1;
-    arr pts2 = x({0, 5});
+    arr pts2 = x({0, 5+1});
     pts2.reshape(2, 3);
     double r = x(6);
     for(uint i=0; i<X.d0; i++) {
@@ -523,12 +523,12 @@ struct FitCapsuleProblem : NLP {
         phi(2+i) = scale*(d - r);
         if(!!J) {
           if(s<=0.) {
-            J(2+i, {0, 2}) = normal;
+            J(2+i, {0, 2+1}) = normal;
           } else if(s>=1.) {
-            J(2+i, {3, 5}) = normal;
+            J(2+i, {3, 5+1}) = normal;
           } else {
-            J(2+i, {0, 2}) = (1.-s)*normal;
-            J(2+i, {3, 5}) = s*normal;
+            J(2+i, {0, 2+1}) = (1.-s)*normal;
+            J(2+i, {3, 5+1}) = s*normal;
           }
           J(2+i, 6) = -scale;
         }
@@ -537,8 +537,8 @@ struct FitCapsuleProblem : NLP {
     checkNan(J);
   }
   virtual void getFHessian(arr& H, const arr& x) {
-    arr a = x({0, 2});
-    arr b = x({3, 5});
+    arr a = x({0, 2+1});
+    arr b = x({3, 5+1});
     double l = length(a-b);
 
     arr B(3, 3);
@@ -610,7 +610,7 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
     F->checkHessian(x, 1e-4);
   }
 
-  core = x({0, x.N-2});
+  core = x({0, x.N-2+1});
   core.reshape(-1, 3);
   radius = x.last();
 

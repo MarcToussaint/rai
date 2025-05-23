@@ -36,7 +36,7 @@ double PrimalDualProblem::primalDual(arr& r, arr& R, const arr& x_lambda) {
 
   //copy the latter part of x into lambdas for the inequalities
   uint n = L.x.N; //x_lambda.N - (n_eq+n_ineq);
-  const arr x = x_lambda({0, n-1});
+  const arr x = x_lambda({0, n-1+1});
   if(!L.lambda.N) L.lambda = zeros(L.phi_x.N);
   for(uint i=0; i<L.phi_x.N; i++) if(ot.p[i]==OT_eq) L.lambda(i) = x_lambda(n++);
   for(uint i=0; i<L.phi_x.N; i++) if(ot.p[i]==OT_ineq) L.lambda(i) = x_lambda(n++);
@@ -75,7 +75,7 @@ double PrimalDualProblem::primalDual(arr& r, arr& R, const arr& x_lambda) {
   if(!!r) {
     // 1st KKT: dL
     r.resize(x_lambda.N).setZero();
-    r({0, x.N-1}) = dL;
+    r({0, x.N-1+1}) = dL;
 
     // 2nd KKT: primal feasibility of equalities h
     n=x.N;
@@ -240,7 +240,7 @@ uint OptPrimalDual::run(uint maxIt) {
 
     newton.reinit(newton.x); //potential to optimize! don't recompute everything naively
 
-    x = newton.x({0, x.N-1});
+    x = newton.x({0, x.N-1+1});
 
     if(opt.verbose>0) {
       cout <<"** optPrimalDual it=" <<its

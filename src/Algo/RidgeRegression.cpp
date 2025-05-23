@@ -355,7 +355,7 @@ KernelLogisticRegression::KernelLogisticRegression(const arr& X, const arr& y, K
   //-- iterate Newton steps on training data
   arr f(n), p(n), Z(n), w(n);
   double logLike;
-  f.setUni(mu);
+  f.setConst(mu);
   for(uint k=0; k<100; k++) {
     p = exp(f);
     Z = 1.+p;

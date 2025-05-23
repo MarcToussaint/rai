@@ -110,7 +110,7 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
         x_bar.resize(k+1, n);
         for(int i=t-k; i<=(int)t; i++) x_bar[i-t+k]() = (i>=(int)x.d0)? x_post[i-x.d0] : x[i];
       } else {
-        x_bar.referToRange(x, t-k, t);
+        x_bar.referToRange(x, t-k, t+1);
       }
     } else { //x_bar includes the prefix
       x_bar.resize(k+1, n);

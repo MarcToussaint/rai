@@ -66,8 +66,8 @@ void TM_AlignStacking::phi(arr& y, arr& J, const rai::Configuration& G) {
 //    if(verbose>1){ cout <<"Adding cost term Object" <<*obj <<" below "; listWrite(supporters, cout); cout <<endl; }
   G.kinematicsPos(y1, J1, b);
   G.kinematicsPos(y2, J2, b_support);
-  y = (y1-y2)({0, 1}); //only x-y-position
-  if(!!J) J = (J1-J2)({0, 1});
+  y = (y1-y2)({0, 1+1}); //only x-y-position
+  if(!!J) J = (J1-J2)({0, 1+1});
 
 #endif
 }

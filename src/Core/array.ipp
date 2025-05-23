@@ -775,7 +775,7 @@ template<class T> Array<T> Array<T>::ref() const {
 
 template<class T> Array<T> Array<T>::operator()(std::pair<int, int> I) const {
   Array<T> z;
-  z.referToRange(*this, I.first, I.second);
+  z.referToRange(*this, I);
   //  if(I.size()==2) z.referToRange(*this, I.begin()[0], I.begin()[1]);
   //  else if(I.size()==0) z.referTo(*this);
   //  else if(I.size()==1) z.referToDim(*this, I.begin()[0]);
@@ -785,9 +785,8 @@ template<class T> Array<T> Array<T>::operator()(std::pair<int, int> I) const {
 
 /// range reference access
 template<class T> Array<T> Array<T>::operator()(int i, std::pair<int, int> J) const {
-  if(i<0) i += d0;
   Array<T> z;
-  z.referToRange(*this, i, J.first, J.second);
+  z.referToRange(*this, i, J);
 //  if(J.size()==2)
 //  else if(J.size()==0) z.referToDim(*this, i);
 //  else if(J.size()==1) z.referToDim(*this, i, J.begin()[0]);
@@ -797,10 +796,8 @@ template<class T> Array<T> Array<T>::operator()(int i, std::pair<int, int> J) co
 
 /// range reference access
 template<class T> Array<T> Array<T>::operator()(int i, int j, std::initializer_list<int> K) const {
-  if(i<0) i += d0;
-  if(j<0) j += d1;
   Array<T> z;
-  if(K.size()==2) z.referToRange(*this, i, j, K.begin()[0], K.begin()[1]);
+  if(K.size()==2) z.referToRange(*this, i, j, {K.begin()[0], K.begin()[1]});
   else if(K.size()==0) z.referToDim(*this, i, j);
   else if(K.size()==1) z.referToDim(*this, i, j, K.begin()[0]);
   else HALT("range list needs 0,1, or 2 entries exactly");
@@ -835,8 +832,9 @@ template<class T> Array<T> Array<T>::copy() const { return Array<T>(*this); }
 /** @brief a sub array of a 1D Array (corresponds to matlab [i:I]); when
   the upper limit I is -1, it is replaced by the max limit (like
   [i:]) */
-template<class T> Array<T> Array<T>::sub(int i, int I) const {
+template<class T> Array<T> Array<T>::sub(std::pair<int, int> _I) const {
   CHECK_EQ(nd, 1, "1D range error ");
+  int i=_I.first, I=_I.second-1;
   Array<T> x;
   if(i<0) i+=d0;
   if(I<0) I+=d0;
@@ -853,8 +851,9 @@ template<class T> Array<T> Array<T>::sub(int i, int I) const {
 /** @brief copies a sub array of a 2D Array (corresponds to matlab [i:I, j:J]);
   when the upper limits I or J are -1, they are replaced by the
   max limit (like [i:, j:]) */
-template<class T> Array<T> Array<T>::sub(int i, int I, int j, int J) const {
+template<class T> Array<T> Array<T>::sub(std::pair<int, int> _I, std::pair<int, int> _J) const {
   CHECK_EQ(nd, 2, "2D range error ");
+  int i=_I.first, I=_I.second-1, j=_J.first, J=_J.second-1;
   Array<T> x;
   if(i<0) i+=d0;
   if(j<0) j+=d1;
@@ -873,8 +872,9 @@ template<class T> Array<T> Array<T>::sub(int i, int I, int j, int J) const {
 /** @brief copies a sub array of a 3D Array (corresponds to matlab [i:I, j:J]);
   when the upper limits I or J are -1, they are replaced by the
   max limit (like [i:, j:]) */
-template<class T> Array<T> Array<T>::sub(int i, int I, int j, int J, int k, int K) const {
+template<class T> Array<T> Array<T>::sub(std::pair<int, int> _I, std::pair<int, int> _J, std::pair<int, int> _K) const {
   CHECK_EQ(nd, 3, "3D range error ");
+  int i=_I.first, I=_I.second-1, j=_J.first, J=_J.second-1, k=_K.first, K=_K.second-1;
   Array<T> x;
   if(i<0) i+=d0;
   if(j<0) j+=d1;
@@ -899,8 +899,9 @@ template<class T> Array<T> Array<T>::sub(int i, int I, int j, int J, int k, int 
   runs from i to I (as explained above) while the second index runs
   over the columns explicitly referred to by cols. (col doesn't have
   to be ordered or could also contain some columns multiply) */
-template<class T> Array<T> Array<T>::sub(int i, int I, Array<uint> cols) const {
+template<class T> Array<T> Array<T>::pick(std::pair<int, int> _I, Array<uint> cols) const {
   CHECK_EQ(nd, 2, "2D range error ");
+  int i=_I.first, I=_I.second-1;
   Array<T> x;
   if(i<0) i+=d0;
   if(I<0) I+=d0;
@@ -910,7 +911,7 @@ template<class T> Array<T> Array<T>::sub(int i, int I, Array<uint> cols) const {
   return x;
 }
 
-template<class T> Array<T> Array<T>::sub(Array<uint> elems) const {
+template<class T> Array<T> Array<T>::pick(Array<uint> elems) const {
   Array<T> x;
   if(nd==1) {
     x.resize(elems.N);
@@ -938,7 +939,7 @@ template<class T> Array<T> Array<T>::sub(Array<uint> elems) const {
  */
 template<class T>
 Array<T> Array<T>::row(uint row_index) const {
-  return sub(row_index, row_index, 0, d1 - 1);
+  return sub({row_index, row_index+1},{ 0, d1 - 1+1});
 }
 
 /**
@@ -953,7 +954,7 @@ Array<T> Array<T>::row(uint row_index) const {
  */
 template<class T>
 Array<T> Array<T>::col(uint col_index) const {
-  return sub(0, d0 - 1, col_index, col_index).reshape(d0);
+  return sub({0, d0 - 1+1},{ col_index, col_index+1}).reshape(d0);
 }
 
 /**
@@ -969,7 +970,7 @@ Array<T> Array<T>::col(uint col_index) const {
  */
 template<class T>
 Array<T> Array<T>::rows(uint start_row, uint end_row) const {
-  return sub(start_row, end_row - 1, 0, d1 - 1);
+  return sub({start_row, end_row - 1+1},{ 0, d1 - 1+1});
 }
 
 /**
@@ -985,7 +986,7 @@ Array<T> Array<T>::rows(uint start_row, uint end_row) const {
  */
 template<class T>
 Array<T> Array<T>::cols(uint start_col, uint end_col) const {
-  return sub(0, d0 - 1, start_col, end_col - 1);
+  return sub({0, d0 - 1+1},{ start_col, end_col - 1+1});
 }
 
 /// makes this array a reference to the C buffer
@@ -1266,8 +1267,9 @@ template<class T> void Array<T>::referTo(const Array<T>& a) {
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void Array<T>::referToRange(const Array<T>& a, int i_lo, int i_up) {
+template<class T> void Array<T>::referToRange(const Array<T>& a, std::pair<int, int> I) {
   CHECK_LE(a.nd, 3, "not implemented yet");
+  int i_lo=I.first, i_up=I.second-1;
   if(i_lo<0) i_lo+=a.d0;
   if(i_up<0) i_up+=a.d0;
   if(i_lo>i_up) { clear(); return; }
@@ -1285,9 +1287,10 @@ template<class T> void Array<T>::referToRange(const Array<T>& a, int i_lo, int i
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void Array<T>::referToRange(const Array<T>& a, int i, int j_lo, int j_up) {
+template<class T> void Array<T>::referToRange(const Array<T>& a, int i, std::pair<int, int> J) {
   CHECK(a.nd>1, "does not make sense");
   CHECK_LE(a.nd, 3, "not implemented yet");
+  int j_lo=J.first, j_up=J.second-1;
   if(i<0) i+=a.d0;
   if(j_lo<0) j_lo+=a.d1;
   if(j_up<0) j_up+=a.d1;
@@ -1304,9 +1307,10 @@ template<class T> void Array<T>::referToRange(const Array<T>& a, int i, int j_lo
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void Array<T>::referToRange(const Array<T>& a, int i, int j, int k_lo, int k_up) {
+template<class T> void Array<T>::referToRange(const Array<T>& a, int i, int j, std::pair<int, int> K) {
   CHECK(a.nd>2, "does not make sense");
   CHECK_LE(a.nd, 3, "not implemented yet");
+  int k_lo=K.first, k_up=K.second-1;
   if(i<0) i+=a.d0;
   if(j<0) j+=a.d1;
   if(k_lo<0) k_lo+=a.d2;

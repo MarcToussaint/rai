@@ -19,7 +19,7 @@
 SecMPC::SecMPC(KOMO& komo, int subSeqStart, int subSeqStop, double timeCost, double ctrlCost,
                bool _setNextWaypointTangent, const StringA& explicitCollisions)
   : waypointMPC(komo),
-    timingMPC(waypointMPC.path({subSeqStart, subSeqStop}), timeCost, ctrlCost),
+    timingMPC(waypointMPC.path({subSeqStart, subSeqStop+1}), timeCost, ctrlCost),
 shortMPC(komo.world, 5, .1),
 subSeqStart(subSeqStart), subSeqStop(subSeqStop), setNextWaypointTangent(_setNextWaypointTangent) {
 
@@ -64,7 +64,7 @@ void SecMPC::updateWaypoints(const rai::Configuration& C) {
 
 void SecMPC::updateTiming(const rai::Configuration& C, const ObjectiveL& phi, const arr& q_real) {
   //-- adopt the new path
-  timingMPC.set_updatedWaypoints(waypointMPC.path({subSeqStart, subSeqStop}), setNextWaypointTangent);
+  timingMPC.set_updatedWaypoints(waypointMPC.path({subSeqStart, subSeqStop+1}), setNextWaypointTangent);
 
   //-- progress time (potentially phase)
   if(!timingMPC.done() && ctrlTimeDelta>0.) {

@@ -15,6 +15,7 @@
 #include <tuple>
 #include <iostream>
 #include <memory>
+#include <vector>
 
 using std::endl;
 
@@ -166,9 +167,9 @@ template<class T> struct Array {
   Array<T>& setCarray(const T** buffer, uint D0, uint D1);
   Array<T>& referTo(const T* buffer, uint n);
   void referTo(const Array<T>& a);
-  void referToRange(const Array<T>& a, int i_lo, int i_up);
-  void referToRange(const Array<T>& a, int i, int j_lo, int j_up);
-  void referToRange(const Array<T>& a, int i, int j, int k_lo, int k_up);
+  void referToRange(const Array<T>& a, std::pair<int, int> I);
+  void referToRange(const Array<T>& a, int i,  std::pair<int, int> J);
+  void referToRange(const Array<T>& a, int i, int j,  std::pair<int, int> K);
   void referToDim(const Array<T>& a, int i);
   void referToDim(const Array<T>& a, uint i, uint j);
   void referToDim(const Array<T>& a, uint i, uint j, uint k);
@@ -197,11 +198,11 @@ template<class T> struct Array {
 
   /// @name access by copy
   Array<T> copy() const;
-  Array<T> sub(int i, int I) const;
-  Array<T> sub(int i, int I, int j, int J) const;
-  Array<T> sub(int i, int I, int j, int J, int k, int K) const;
-  Array<T> sub(int i, int I, Array<uint> cols) const;
-  Array<T> sub(Array<uint> elems) const;
+  Array<T> sub(std::pair<int, int> I) const;
+  Array<T> sub(std::pair<int, int> I, std::pair<int, int> J) const;
+  Array<T> sub(std::pair<int, int> I, std::pair<int, int> J, std::pair<int, int> K) const;
+  Array<T> pick(std::pair<int, int> I, Array<uint> cols) const;
+  Array<T> pick(Array<uint> elems) const;
   Array<T> row(uint row_index) const;
   Array<T> rows(uint start_row, uint end_row) const;
   Array<T> col(uint col_index) const;
@@ -696,6 +697,19 @@ int b64_codeLen(uint data_len);
 uint b64_maxDataLen(uint code_len);
 void b64_encode(char* code, int code_len, const char* data, int data_len);
 void b64_decode(char* data, int data_len, const char* code, int code_len);
+}
+
+//===========================================================================
+//
+// conversions
+//
+
+template<class T> rai::Array<T> as_arr(const std::vector<T>& a, bool byReference) {
+  return rai::Array<T>(&a.front(), a.size(), byReference);
+}
+
+template<class T> std::vector<T> as_vector(const rai::Array<T>& a) {
+  return std::vector<T>(a.p, a.p+a.N);
 }
 
 //===========================================================================
