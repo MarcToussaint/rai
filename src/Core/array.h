@@ -322,7 +322,6 @@ template<class T> bool operator==(const Array<T>& v, const Array<T>& w); //equal
 template<class T> Array<byte> operator==(const Array<T>& v, const T& w); //element-wise equal
 template<class T> bool operator!=(const Array<T>& v, const Array<T>& w);
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x);
-template<class T> Array<T>& operator>>(Array<T>& x, std::istream& is);
 template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x);
 
 template<class T> void operator+=(Array<T>& x, const Array<T>& y);

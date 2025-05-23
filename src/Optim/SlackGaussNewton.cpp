@@ -139,9 +139,9 @@ void SlackGaussNewton::Eval::eval(const arr& _x, SlackGaussNewton& walker) {
   ObjectiveTypeA& ft = walker.nlp->featureTypes;
   uintA idx;
   for(uint i=0; i<ft.N; i++) if(ft(i)==OT_ineq || ft(i)==OT_eq) idx.append(i);
-  s = phi.sub(idx);
+  s = phi.pick(idx);
   if(!rai::isSparse(J)){
-    Js = J.sub(idx);
+    Js = J.pick(idx);
   }else{
     Js.sparse().resize(idx.N, J.d1, 0);
     for(uint i=0;i<idx.N;i++) Js.sparse().add(J.sparse().getSparseRow(idx(i)), i, 0);

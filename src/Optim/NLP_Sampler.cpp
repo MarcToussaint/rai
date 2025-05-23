@@ -615,10 +615,10 @@ void NLP_Sampler::Eval::eval(const arr& _x, NLP_Sampler& walker) {
     //grab ineqs
     uintA ineqIdx;
     for(uint i=0; i<walker.nlp->featureTypes.N; i++) if(walker.nlp->featureTypes(i)==OT_ineq) ineqIdx.append(i);
-    g = phi.sub(ineqIdx);
+    g = phi.pick(ineqIdx);
     if(walker.opt.margin>0.) g += walker.opt.margin;
     if(!rai::isSparse(J)){
-      Jg = J.sub(ineqIdx);
+      Jg = J.pick(ineqIdx);
     }else{
       Jg.sparse().resize(ineqIdx.N, J.d1, 0);
       for(uint i=0;i<ineqIdx.N;i++) Jg.sparse().add(J.sparse().getSparseRow(ineqIdx(i)), i, 0);
@@ -629,9 +629,9 @@ void NLP_Sampler::Eval::eval(const arr& _x, NLP_Sampler& walker) {
     //grab eqs
     uintA eqIdx;
     for(uint i=0; i<walker.nlp->featureTypes.N; i++) if(walker.nlp->featureTypes(i)==OT_eq) eqIdx.append(i);
-    h = phi.sub(eqIdx);
+    h = phi.pick(eqIdx);
     if(!rai::isSparse(J)){
-      Jh = J.sub(eqIdx);
+      Jh = J.pick(eqIdx);
     }else{
       Jh.sparse().resize(eqIdx.N, J.d1, 0);
       for(uint i=0;i<eqIdx.N;i++) Jh.sparse().add(J.sparse().getSparseRow(eqIdx(i)), i, 0);
@@ -679,9 +679,9 @@ void NLP_Sampler::Eval::eval(const arr& _x, NLP_Sampler& walker) {
     //grab sos
     uintA sosIdx;
     for(uint i=0; i<walker.nlp->featureTypes.N; i++) if(walker.nlp->featureTypes(i)==OT_sos) sosIdx.append(i);
-    r = phi.sub(sosIdx);
+    r = phi.pick(sosIdx);
     if(!rai::isSparse(J)){
-      Jr = J.sub(sosIdx);
+      Jr = J.pick(sosIdx);
     }else{
       Jr.sparse().resize(sosIdx.N, J.d1, 0);
       for(uint i=0;i<sosIdx.N;i++) Jr.sparse().add(J.sparse().getSparseRow(sosIdx(i)), i, 0);

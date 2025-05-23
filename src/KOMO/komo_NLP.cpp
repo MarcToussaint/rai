@@ -377,7 +377,7 @@ void Conv_KOMO_FactoredNLP::subSelect(const uintA& activeVariables, const uintA&
   featureTypes.clear();
   for(uint i=0; i<featsN(); i++) {
     featureDimensions(i) = feats(i).ob->feat->dim(feats(i).ob->frames); //__featureIndex(f).dim = ob->feat->dim(ob->frames);
-    featureVariables(i) = subVarsInv.sub(feats(i).vars);
+    featureVariables(i) = subVarsInv.pick(feats(i).vars);
     featureTypes.append(consts<ObjectiveType>(feats(i).ob->type, featureDimensions(i)));
   }
 }

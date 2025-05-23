@@ -1871,7 +1871,7 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
   if(!selectedConfigurationsOnly.N) {
     pathConfig.setJointState(x);
   } else {
-    pathConfig.setJointState(x, timeSlices.sub(selectedConfigurationsOnly+k_order));
+    pathConfig.setJointState(x, timeSlices.pick(selectedConfigurationsOnly+k_order));
     HALT("this is untested...");
   }
 
