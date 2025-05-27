@@ -757,7 +757,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape box '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
     } break;
     case rai::ST_ssBox: {
-      double r = s->radius();
+      double r = s->size(3);
       geometry = make_shared<PxBoxGeometry>(.5*s->size(0)-r, .5*s->size(1)-r, .5*s->size(2)-r);
       paddingRadius = r;
       if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape ssBox '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
@@ -783,7 +783,6 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     case rai::ST_ssCvx:
     default: {
       CHECK(s->sscCore().N, "physx needs a convex collision shape, frame: " <<s->frame.name <<" (cvxParts are disabled->convert them to child frames)");
-      CHECK_EQ(s->radius(), s->coll_cvxRadius, "");
       floatA Vfloat = rai::convert<float>(s->sscCore());
       PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
                                      *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
@@ -1300,7 +1299,7 @@ rai::PhysX_Options& PhysXInterface::opt() {
 #else //RAI_PHYSX
 
 #include "kin_physx.h"
-PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose, const rai::PhysX_Options* _opt) { NICO }
+PhysXInterface::PhysXInterface(rai::Configuration& C, int verbose, const rai::PhysX_Options* _opt) { NICO }
 PhysXInterface::~PhysXInterface() { NICO }
 
 void PhysXInterface::step(double tau) { NICO }
@@ -1313,12 +1312,12 @@ void PhysXInterface::postAddObject(rai::Frame* f) { NICO }
 void PhysXInterface::changeObjectType(rai::Frame* f, int _type) { NICO }
 void PhysXInterface::addJoint(rai::Joint* j) { NICO }
 void PhysXInterface::removeJoint(rai::Joint* j) { NICO }
-void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) { NICO }
-void PhysXInterface::view(bool pause, const char* txt) { NICO }
 void PhysXInterface::setGravity(float grav) { NICO }
 void PhysXInterface::disableGravity(rai::Frame* f, bool disable) { NICO }
 void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b) { NICO }
 void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos) { NICO }
+
+rai::Configuration& PhysXInterface::getDebugConfig() { NICO }
 
 void glPhysXInterface(void* classP) { NICO }
 

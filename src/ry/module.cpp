@@ -93,7 +93,7 @@ PYBIND11_MODULE(_robotic, m) {
 }
 
 void init_params(pybind11::module& m) {
-  m.def("params_add", [](const pybind11::dict& D) { rai::params()->copy(dict2graph(D), true); }, "add/set parameters", pybind11::arg("python dictionary or params to add"));
+  m.def("params_add", [](const pybind11::dict& D) { rai::Graph G = dict2graph(D); for(rai::Node *n:G) rai::params()->set(n); }, "add/set parameters", pybind11::arg("python dictionary or params to add"));
   m.def("params_file", [](const char* filename) {
     ifstream fil(filename);
     if(fil.good()) rai::params()->read(fil);

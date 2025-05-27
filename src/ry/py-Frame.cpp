@@ -74,8 +74,8 @@ void init_Frame(pybind11::module& m) {
 
   .def("setAttribute", &rai::Frame::setAttribute, "")
   .def("addAttributes",  [](shared_ptr<rai::Frame>& self, const pybind11::dict& D) {
-    if(!self->ats) self->ats = make_shared<rai::Graph>();
-    self->ats->copy(dict2graph(D), true);
+    rai::Graph G = dict2graph(D);
+    for(rai::Node *n:G) self->getAts().set(n);
   }, "add/set attributes for the frame")
 
   .def("getAttributes", [](shared_ptr<rai::Frame>& self) {

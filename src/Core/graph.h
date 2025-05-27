@@ -140,6 +140,7 @@ struct Graph : NodeL {
 
   //
   template<class T> Node* set(const char* key, const T& x){ Node* n = findNodeOfType(typeid(T), key); if(n) n->as<T>()=x; else n=add<T>(key, x); return n; }
+  Node* set(Node* _n){ Node* n = findNodeOfType(_n->type, _n->key); if(n) n->copyValue(_n); else n=_n->newClone(*this); return n; }
 
   //-- get nodes
   BracketOp operator[](const char* key); ///< returns nullptr if not found
