@@ -76,12 +76,6 @@ void init_Simulation(pybind11::module& m) {
                                 Array2numpy<float>(depth));
   })
 
-//  .def("getSegmentation", [](std::shared_ptr<rai::Simulation>& self) {
-//    byteA seg;
-//    self->getSegmentation(seg);
-//    return pybind11::array_t<byte>(seg.dim(), seg.p);
-//  })
-
   .def("addSensor",  &rai::Simulation::addSensor,
        "",
        pybind11::arg("sensorName"),
@@ -109,6 +103,8 @@ void init_Simulation(pybind11::module& m) {
        pybind11::arg("frameVelocities") = NoArr,
        pybind11::arg("jointVelocities") = NoArr
       )
+
+  .def("resetTime", &rai::Simulation::resetTime, "")
 
   .def("pushConfigurationToSimulator", &rai::Simulation::pushConfigurationToSimulator,
        "set the simulator to the full (frame) state of the configuration",

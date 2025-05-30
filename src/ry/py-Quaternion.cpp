@@ -31,10 +31,11 @@ void init_Quaternion(pybind11::module& m) {
       .def("setInterpolateEmbedded", &rai::Quaternion::setInterpolateEmbedded, "", pybind11::arg("t"), pybind11::arg("from"), pybind11::arg("to"))
       .def("setInterpolateProper", &rai::Quaternion::setInterpolateProper, "", pybind11::arg("t"), pybind11::arg("from"), pybind11::arg("to"))
 
+      .def("asArr", &rai::Quaternion::getArr, "")
+
       .def("getLog", &rai::Quaternion::getLog, "")
       .def("getMatrix", pybind11::overload_cast<>(&rai::Quaternion::getMatrix, pybind11::const_), "")
       .def("getRad", pybind11::overload_cast<>(&rai::Quaternion::getRad, pybind11::const_), "")
-      .def("getArr", &rai::Quaternion::getArr, "")
       .def("getRollPitchYaw", &rai::Quaternion::getRollPitchYaw, "")
       .def("getJacobian", &rai::Quaternion::getJacobian, "")
 
@@ -47,6 +48,8 @@ void init_Quaternion(pybind11::module& m) {
       .def("sqrNorm", &rai::Quaternion::sqrNorm, "")
       .def("applyOnPointArray", &rai::Quaternion::applyOnPointArray, "", pybind11::arg("pts"))
 
+      .def("__mul__", [](const rai::Quaternion& a, const rai::Quaternion& b){ return a * b; }, pybind11::is_operator(),
+           "concatenation (quaternion multiplication) of two transforms")
       ;
 
   //===========================================================================

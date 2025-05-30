@@ -92,6 +92,7 @@ struct Simulation {
   //== management interface
 
   //-- store and reset the state of the simulation
+  void resetTime();
   void getState(arr& frameState, arr& q=NoArr, arr& frameVelocities=NoArr, arr& qDot=NoArr);
   void setState(const arr& frameState, const arr& q=NoArr, const arr& frameVelocities=NoArr, const arr& qDot=NoArr);
   void pushConfigurationToSimulator(const arr& frameVelocities=NoArr, const arr& qDot=NoArr);

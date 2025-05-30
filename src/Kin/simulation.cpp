@@ -859,6 +859,12 @@ void Simulation::detach(rai::Frame* obj) {
 #endif
 }
 
+void Simulation::resetTime(){
+  time=0.;
+  if(self->display) self->display->time=0.;
+  resetSplineRef();
+}
+
 void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
   if(killMe) return;
 
