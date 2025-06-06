@@ -613,11 +613,12 @@ void Mesh::makeTriangleFan() {
 }
 
 void Mesh::makeLines() {
-  T.resize(V.d0-1, 2);
-//  T[0] = {V.d0-1, 0};
-  for(uint i=1; i<V.d0; i++) {
-    T[i-1] = {i-1, i};
+  CHECK(!(V.d0&1), "must have even number of lines vertices")
+  T.resize(V.d0/2, 2);
+  for(uint i=0; i<T.d0; i++) {
+    T[i] = {2*i, 2*i+1};
   }
+  isArrayFormatted=true;
 }
 
 void Mesh::makeLinesArrayFormatted() {

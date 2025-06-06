@@ -56,6 +56,9 @@ void init_Frame(pybind11::module& m) {
            "set the texture of the mesh of a shape",
            pybind11::arg("image_filename"),
            pybind11::arg("texCoords")=arr{})
+  .def("setLines", &rai::Frame::setLines,
+         "attach lines as shape",
+         pybind11::arg("verts"), pybind11::arg("colors") = byteA{})
   .def("setPointCloud", &rai::Frame::setPointCloud,
        "attach a point cloud shape",
        pybind11::arg("points"), pybind11::arg("colors") = byteA{}, pybind11::arg("normals")=arr{})
