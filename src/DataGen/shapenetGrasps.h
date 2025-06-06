@@ -32,8 +32,9 @@ struct ShapenetGrasps{
   bool loadObject(uint shape, bool rndOrientation=true);
   void resetObjectPose(int idx=0, bool rndOrientation=true);
   arr getPointCloud();
+  arr getPointNormals();
   arr sampleGraspPose();
-  void setGraspPose(const arr& pose, const char* objPts="objPts0");
+  void setGraspPose(const arr& pose, const char* objPts="obj0_pts");
   arr evaluateGrasp();
 
 
@@ -42,7 +43,7 @@ struct ShapenetGrasps{
 
 private:
   void clearScene();
-  bool addSceneObject(const char* file, int idx, bool rndOri=true, bool visual=false);
+  bool addSceneObject(const char* file, int idx, bool rndOri=true);
 };
 
 arr sampleGraspCandidate(rai::Configuration& C, const char *ptsFrame, const char* refFrame, double pregraspNormalSdv=.2, int verbose=1);

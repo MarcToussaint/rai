@@ -573,6 +573,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
         str <<" and joint " <<f->joint->type;
         if(noMotor) str <<" (no motor!)";
         else str <<" (Kp=" <<motorKp <<" Kd=" <<motorKd <<")";
+        if(f->joint->limits.N) str <<" limits: " <<f->joint->limits;
         if(!f->joint->active) str <<"(inactive)";
       }
       if(f->inertia) str <<" and mass " <<f->inertia->mass;
@@ -719,9 +720,7 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
     link->computeCompoundInertia();
   }
   if(!link->inertia) {
-    if(opt.verbose>0) {
-      LOG(-1) <<"link '" <<link->name <<"' does not have inertia! -> computing standard inertias (It's better if you define inertias for all links before starting physix)";
-    }
+    if(opt.verbose>0) cout <<"-- kin_physx.cpp:    link '" <<link->name <<"' does not have inertia -> computing standard inertias (alternatively, define inertias for links before starting physx)" <<endl;
     bool hasMass = link->standardizeInertias();
     if(hasMass){
     }else{

@@ -19,7 +19,7 @@ void ShapenetGrasps::clearScene(){
   C.clear();
 
   rai::Frame *ref = C.addFrame("ref");
-  ref->setShape(rai::ST_marker, {.02});
+  ref->setShape(rai::ST_marker, {.1});
   ref->setColor({1.,1.,0.});
 }
 
@@ -29,63 +29,11 @@ void ShapenetGrasps::resetObjectPose(int idx, bool rndOrientation){
   obj->setPosition({double(idx),0.,1.});
 }
 
-bool ShapenetGrasps::addSceneObject(const char* file, int idx, bool rndOri, bool visual){
+bool ShapenetGrasps::addSceneObject(const char* file, int idx, bool rndOri){
   LOG(0) <<"loading shapenet object " <<file;
-#if 1
   rai::Frame *obj = C.addH5Object(STRING("obj"<<idx), file, 2);
   if(!obj) return false;
   obj->inertia->scaleTo(.1);
-#else
-  rai::H5_Reader H(file);
-
-  rai::Frame *obj = C.addFrame(STRING("obj"<<idx));
-
-  {
-    arr pts = H.read<double>("points/vertices");
-    arr normals = H.read<double>("points/normals");
-
-    rai::Frame *objPts = C.addFrame(obj->name+"_pts");
-    objPts->setParent(obj);
-    objPts->setPointCloud(pts, {}, normals);
-//    objPts->setMesh(pts);
-    objPts->setContact(0);
-    objPts->setColor({1., 0., 0., .9});
-  }
-
-  if(!visual){
-    arr pts = H.read<double>("decomp/vertices");
-    uintA faces = H.read<uint>("decomp/faces");
-    byteA colors = H.read<byte>("decomp/colors");
-    uintA parts = H.read<uint>("decomp/parts");
-
-    rai::Frame *objDecomp = C.addFrame(obj->name+"_decomp");
-    objDecomp ->setParent(obj);
-    objDecomp ->setMesh(pts, faces, colors, parts);
-    objDecomp ->setContact(1);
-    objDecomp ->setMass(.1);
-
-    obj->computeCompoundInertia();
-    obj->transformToDiagInertia();
-
-    objDecomp ->convertDecomposedShapeToChildFrames();
-    if(!objDecomp ->children.N){
-      //there are no collision shapes
-      return false;
-    }
-  }else{
-    arr pts = H.read<double>("mesh/vertices");
-    uintA faces = H.read<uint>("mesh/faces");
-
-    rai::Frame *objMesh = C.addFrame(obj->name+"_mesh");
-    objMesh->setParent(obj);
-    objMesh->setMesh(pts, faces);
-  }
-
-  try{ obj->get_X().checkNan(); } catch(...) {
-    //obj transform is buggy (typically singular inertia)
-    return false;
-  }
-#endif
 
   // obj->setShape(rai::ST_marker, {.5});
   resetObjectPose(idx, rndOri);
@@ -158,29 +106,31 @@ arr sampleGraspCandidate(rai::Configuration& C, const char *ptsFrame, const char
     if(!inBounds)
       continue;
 
+#if 0
     //-- refine using optimization
     KOMO komo;
     komo.setConfig(C, true);
     komo.setTiming(1,1,1,0);
     //    komo.addControlObjective({}, 0, 1e-1);
     q.append(double(q(-1))); //for the mimic joint..
-    komo.addObjective({}, FS_qItself, {}, OT_sos, {1e0}, q);
+    komo.addObjective({}, FS_qItself, {}, OT_sos, {1e1}, q); //stay close to initialization
     komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e2});
     komo.addObjective({}, FS_oppose, {"dotA", "dotB", ptsFrame}, OT_sos, {1e1});
-    //      komo.addObjective({}, FS_distance, {"dotA", "objPts"}, OT_sos, {1e2}, {-.01});
-    //      komo.addObjective({}, FS_distance, {"dotB", "objPts"}, OT_sos, {1e2}, {-.01});
+    // komo.addObjective({}, FS_distance, {"dotA", ptsFrame}, OT_sos, {1e2}, {-.01});
+    // komo.addObjective({}, FS_distance, {"dotB", ptsFrame}, OT_sos, {1e2}, {-.01});
 
     //komo.view(true, "init");
     //-- solve and display
+    komo.opt.animateOptimization=2;
     auto ret = rai::NLP_Solver(komo.nlp(), verbose).setInitialization(C.getJointState()) .solve();
-    //komo.nlp()->checkJacobian(ret->x, 1e-4, komo.featureNames);
+    // komo.nlp()->checkJacobian(ret->x, 1e-4, komo.featureNames);
     C.setJointState(komo.getConfiguration_qOrg(0));
 
     if(verbose>0){
       cout <<"  refinement: " <<*ret <<endl;
-      if(verbose>2){
+      if(verbose>1){
         cout <<komo.report() <<endl;
-        cout <<komo.pathConfig.reportForces() <<endl;
+        // cout <<komo.pathConfig.reportForces() <<endl;
         //    komo.view(true);
       }
       //C.get_viewer()->nonThreaded=true;
@@ -192,6 +142,7 @@ arr sampleGraspCandidate(rai::Configuration& C, const char *ptsFrame, const char
     //-- reject if not precise
     if(ret->eq+ret->ineq>=.01)
       continue;
+#endif
 
     //-- success! break the loop
     break;
@@ -337,6 +288,11 @@ arr ShapenetGrasps::getPointCloud(){
   return objPts->getMeshPoints();
 }
 
+arr ShapenetGrasps::getPointNormals(){
+  rai::Frame * objPts = C["obj0_pts"];
+  return objPts->shape->mesh().Vn;
+}
+
 void ShapenetGrasps::getSamples(arr& X, uintA& shapes, arr& Scores, uint N){
   if(opt.endShape<0) opt.endShape = files.N;
 
@@ -412,7 +368,7 @@ void ShapenetGrasps::displaySamples(const arr& X, const uintA& shapes, const arr
     uint idx=0;
     if(shape2place.find(shape) == shape2place.end()){
       idx = shape2place.size();
-      bool succ = addSceneObject(opt.filesPrefix+files(shape), idx, false, false);
+      bool succ = addSceneObject(opt.filesPrefix+files(shape), idx, false);
       CHECK(succ, "");
       shape2place[shape] = idx;
     }else{

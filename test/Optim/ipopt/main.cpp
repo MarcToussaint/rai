@@ -1,6 +1,6 @@
 #include <Optim/opt-ipopt.h>
 
-#include <Optim/testProblems_Opt.h>.h>
+#include <Optim/testProblems_Opt.h>
 #include <Optim/constrained.h>
 
 //===========================================================================

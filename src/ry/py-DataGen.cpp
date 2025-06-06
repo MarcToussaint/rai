@@ -56,12 +56,14 @@ void init_DataGen(pybind11::module& m) {
        pybind11::arg("rndPose")=true)
   .def("getPointCloud", &ShapenetGrasps::getPointCloud,
        "(direct interface) return pcl of loaded object")
+  .def("getPointNormals", &ShapenetGrasps::getPointNormals,
+       "(direct interface) return point normals of the pcl of loaded object")
   .def("sampleGraspPose", &ShapenetGrasps::sampleGraspPose,
        "(direct interface) return (relative) pose of random sampled grasp candidate")
   .def("setGraspPose", &ShapenetGrasps::setGraspPose,
        "(direct interface) set (relative) pose of grasp candidate",
        pybind11::arg("pose"),
-       pybind11::arg("objPts")="objPts0")
+       pybind11::arg("objPts")="obj0_pts")
   .def("evaluateGrasp", &ShapenetGrasps::evaluateGrasp,
        "(direct interface) return scores of grasp candidate (min(scores)<0. means fail)")
 

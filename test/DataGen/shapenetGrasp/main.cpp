@@ -11,11 +11,18 @@ void testLowLevel() {
   arr pcl = SG.getPointCloud();
   cout <<"point cloud size: " <<pcl.d0 <<endl;
 
-  arr pose = SG.sampleGraspPose();
-  cout <<"candidate pose: " <<pose <<endl;
+  for(uint i=0;i<10;i++){
+    SG.resetObjectPose();
 
-  arr scores = SG.evaluateGrasp();
-  cout <<"scores: " <<scores <<endl;
+    arr pose = SG.sampleGraspPose();
+    cout <<"candidate pose: " <<pose <<endl;
+
+    if(!pose.N) continue;
+    SG.setGraspPose(pose);
+
+    arr scores = SG.evaluateGrasp();
+    cout <<"scores: " <<scores <<endl;
+  }
 }
 
 //===========================================================================
@@ -107,9 +114,9 @@ int main(int argc,char** argv){
   rnd.clockSeed();
 
   // testLowLevel();
-  // testBatchGeneration();
+  testBatchGeneration();
   // generateGraspsFiles(100);
-  displayGraspsFiles();
+  // displayGraspsFiles();
 
   return 0;
 }
