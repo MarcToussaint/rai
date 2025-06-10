@@ -3828,7 +3828,7 @@ EditConfigurationHoverCall::EditConfigurationHoverCall(Configuration& _ors) {
 struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   Configuration& C;
   EditConfigurationKeyCall(Configuration& _C): C(_C) {}
-  bool keyCallback(OpenGL& gl) {
+  bool keyCallback(OpenGL& gl, int key, int mods, bool _keyIsDown) {
     if(!gl.keyIsDown) return true;
     switch(gl.pressedkey) {
         case '1':  gl.drawOptions.drawShapes^=1;  break;

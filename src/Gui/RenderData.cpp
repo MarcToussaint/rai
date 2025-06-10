@@ -574,14 +574,7 @@ void RenderAsset::pointCloud(const arr& points, const arr& color){
 
 void RenderAsset::lines(const arr& lines, const arr& color){
   vertices = rai::convert<float>(lines).reshape(-1, 3);
-  if(color.N>3){
-    colors = rai::convert<float>(color).reshape(-1, 3);
-  }else if(colors.N==3){
-    colors = rai::convert<float>(replicate(color, vertices.d0));
-  }else{
-    colors.resize(vertices.d0, 3).setZero();
-  }
-  if(colors.d1==3){ colors.insColumns(3); for(uint i=0;i<colors.d0;i++) colors(i,3)=1.; }
+  colors = rai::convert<float>(reshapeColor(color, vertices.d0));
   normals.clear();
   mode = GL_LINES;
 }

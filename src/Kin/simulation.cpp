@@ -1094,7 +1094,7 @@ bool TeleopCallbacks::hasNewMarker() {
   return false;
 }
 
-bool TeleopCallbacks::clickCallback(OpenGL& gl) {
+bool TeleopCallbacks::clickCallback(OpenGL& gl, int button, int buttonIsDown) {
   LOG(0) <<"click";
   if(gl.modifiersCtrl() && gl.mouseIsDown) {
     LOG(0) <<"creating marker " <<nMarkers;
@@ -1118,7 +1118,7 @@ bool TeleopCallbacks::clickCallback(OpenGL& gl) {
   return true;
 }
 
-bool TeleopCallbacks::keyCallback(OpenGL& gl) {
+bool TeleopCallbacks::keyCallback(OpenGL& gl, int key, int mods, bool _keyIsDown) {
   if(gl.pressedkey=='q') stop=true;
   return true;
 }

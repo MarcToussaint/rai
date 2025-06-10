@@ -43,6 +43,12 @@ struct ConfigurationViewer : RenderData {
   void glDraw(OpenGL&);
   void setCamera(rai::Frame* cam);
 
+  void setupEventHandler(rai::Configuration& C, bool blockDefaultHandler);
+  rai::Transformation getEventCursorPose();
+  rai::Frame* getEventCursorFrame();
+  StringA getEvents();
+  Mutex& getEventsMutex();
+
   //mimic a OpenGL, directly calling the same methods in its gl
   void _resetPressedKey();
 
@@ -51,6 +57,7 @@ private://draw data
   bool abortPlay;
   uint pngCount=0;
   bool drawFrameLines=true;
+  shared_ptr<struct ViewerEventHandler> eventHandler;
 public:
   int drawSlice;
   String text;

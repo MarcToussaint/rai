@@ -107,8 +107,8 @@ void write_png(const byteA& img, const char* file_name, bool swap_rows=true);
 struct OpenGL {
   /// @name little structs to store objects and callbacks
   struct GLHoverCall { virtual bool hoverCallback(OpenGL&) = 0; };
-  struct GLClickCall { virtual bool clickCallback(OpenGL&) = 0; };
-  struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
+  struct GLClickCall { virtual bool clickCallback(OpenGL&, int button, int buttonIsDown) = 0; };
+  struct GLKeyCall  { virtual bool keyCallback(OpenGL&, int key, int mods, bool keyIsDown) = 0; };
   struct GLScrollCall { virtual bool scrollCallback(OpenGL&, int) = 0; };
   struct GLEvent    { int button, key, x, y; float dx, dy; void set(int b, int k, int _x, int _y, float _dx, float _dy) { button=b; key=k; x=_x; y=_y; dx=_dx; dy=_dy; } };
   struct GLView     { double le, ri, bo, to;  rai::Array<rai::RenderData*> drawers;  rai::Camera camera;  GLView() { le=bo=0.; ri=to=1.; }  str text; };
@@ -147,7 +147,7 @@ struct OpenGL {
   Signaler isUpdating;
   Signaler watching;
   OpenGLDrawOptions drawOptions;
-  uint selectID;
+  int selectID=-1;
   std::shared_ptr<rai::RenderData> _data;
 
   bool fullscreen=false; ///<window starts in fullscreenmode on the primary screen

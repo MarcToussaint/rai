@@ -680,7 +680,7 @@ rai::Frame& rai::Frame::setLines(const arr& verts, const byteA& colors){
   mesh.V.reshape(-1, 3);
   mesh.makeLines();
   if(colors.N) {
-    mesh.C = convert<double>(colors).reshape(-1, 3);
+    mesh.C = convert<double>(colors); //.reshape(-1, 3);
     mesh.C /= 255.;
     if(mesh.C.N <= 4) { mesh.C.reshape(-1); }
   }

@@ -126,8 +126,8 @@ struct TeleopCallbacks : OpenGL::GLClickCall, OpenGL::GLKeyCall, OpenGL::GLHover
   TeleopCallbacks(rai::Configuration& C, rai::Frame* marker=0) : C(C), marker(marker) { q_ref = C.getJointState(); }
 
   bool hasNewMarker();
-  virtual bool clickCallback(OpenGL& gl);
-  virtual bool keyCallback(OpenGL& gl);
+  virtual bool clickCallback(OpenGL& gl, int button, int buttonIsDown);
+  virtual bool keyCallback(OpenGL& gl, int key, int mods, bool _keyIsDown);
   virtual bool hoverCallback(OpenGL& gl);
 };
 

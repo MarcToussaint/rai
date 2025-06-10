@@ -129,18 +129,21 @@ struct GlfwSingleton : Thread {
     OpenGL* gl=(OpenGL*)glfwGetWindowUserPointer(window);
 //    gl->modifiers=mods;
     CALLBACK_DEBUG(gl, key <<' ' <<action <<' ' <<mods);
+    if(key==256) key=27;
+    if(key==257) key=13;
+    if(key==258) key=9;
+    if(key>='A' && key<='Z') key += 'a' - 'A';
     if(action == GLFW_PRESS) {
-      if(key==256) key=27;
-      if(key==257) key=13;
       if(key==GLFW_KEY_LEFT_CONTROL) { mods |= GLFW_MOD_CONTROL; key='%'; }
       if(key==GLFW_KEY_LEFT_SHIFT) { mods |= GLFW_MOD_SHIFT; key='%'; }
-//      if(key>0xff) key='%';
-      if(key>='A' && key<='Z') key += 'a' - 'A';
+      if(key==GLFW_KEY_RIGHT_SHIFT) { mods |= GLFW_MOD_SHIFT; key='%'; }
+      if(key==GLFW_KEY_LEFT_ALT) { mods |= GLFW_MOD_ALT; key='%'; }
       gl->Key(key, mods, true);
     } else if(action==GLFW_RELEASE) {
       if(key==GLFW_KEY_LEFT_CONTROL) { mods &= ~GLFW_MOD_CONTROL; key='%'; }
       if(key==GLFW_KEY_LEFT_SHIFT) { mods &= ~GLFW_MOD_SHIFT; key='%'; }
-//      if(key>0xff) key='%';
+      if(key==GLFW_KEY_RIGHT_SHIFT) { mods &= ~GLFW_MOD_SHIFT; key='%'; }
+      if(key==GLFW_KEY_LEFT_ALT) { mods &= ~GLFW_MOD_ALT; key='%'; }
       gl->Key(key, mods, false);
     }
   }
@@ -711,12 +714,13 @@ bool OpenGL::modifiersCtrl() { return _CTRL(modifiers); }
 
 arr OpenGL::get3dMousePos(arr& normal) {
   double d = 0;
-  if(mouseposy>=0. && mouseposy<=height-1 && mouseposx>=0. && mouseposx<=width-1)
+  if(mouseposy>=1. && mouseposy<=height-2 && mouseposx>=1. && mouseposx<=width-2)
     d = captureDepth(mouseposy, mouseposx);
-  arr x = {mouseposx, mouseposy, d};
+  arr x;
   if(d<.01 || d==1.) {
     cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
   } else {
+    x = {mouseposx, mouseposy, d};
     camera.unproject_fromPixelsAndGLDepth(x, width, height);
   }
   if(!!normal) {
@@ -736,15 +740,15 @@ arr OpenGL::get3dMousePos(arr& normal) {
 }
 
 uint OpenGL::get3dMouseObjID() {
-  drawOptions.drawMode_idColor = true;
-  drawOptions.drawColors = false;
-  beginContext(true);
-  Render(width, height, nullptr, true);
-  endContext(true);
-  drawOptions.drawMode_idColor = false;
-  drawOptions.drawColors = true;
-  selectID = color2id(&captureImage(mouseposy, mouseposx, 0));
-  LOG(1) <<"SELECTION: ID: " <<selectID;
+  for(rai::RenderData* r:drawers){  /*r->renderUntil=rai::_solid;*/  r->renderFlatColors=true; }
+  beginContext();
+  Render(width, height);
+  endContext();
+  for(rai::RenderData* r:drawers){  /*r->renderUntil=rai::_all;*/  r->renderFlatColors=false; }
+  selectID = -1;
+  if(mouseposy>=0. && mouseposy<=height-1 && mouseposx>=0. && mouseposx<=width-1)
+    selectID = color2id(&captureImage(mouseposy, mouseposx, 0));
+  // LOG(1) <<"SELECTION: ID: " <<selectID;
   return selectID;
 }
 
@@ -771,12 +775,11 @@ void OpenGL::Key(int key, int mods, bool _keyIsDown) {
   keyIsDown = _keyIsDown;
 
   bool cont=true;
-  for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
+  for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this, key, mods, _keyIsDown);
 
   if(key==263 && keyIsDown){ scrollCounter++; pressedkey=0; postRedrawEvent(true); }
   if(key==262 && keyIsDown){ scrollCounter--; pressedkey=0; postRedrawEvent(true); }
 
-//  if(key==13 || key==27 || key=='q' || rai::contains(exitkeys, key)) watching.setStatus(0);
   if(keyIsDown && !modifiers && pressedkey && pressedkey!='%') watching.setStatus(0);
 }
 
@@ -832,6 +835,11 @@ void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
   downFoc=cam->foc;
   downModifiers = modifiers;
 
+  //step through all callbacks
+  bool cont=true;
+  for(uint i=0; i<clickCalls.N; i++) cont = cont && clickCalls(i)->clickCallback(*this, button, 1-buttonIsUp);
+  if(!cont) return;
+
   //-- shift-ctrl-LEFT -> check object clicked on
   if(mouse_button==1 && !hideCameraControls && _SHIFT(modifiers) && _CTRL(modifiers)) {
     if(!buttonIsUp) {
@@ -885,9 +893,6 @@ void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
     }
     needsUpdate=true;
   }
-
-  //step through all callbacks
-  for(uint i=0; i<clickCalls.N; i++) needsUpdate = needsUpdate || clickCalls(i)->clickCallback(*this);
 
   if(needsUpdate) postRedrawEvent(true);
 }
@@ -962,6 +967,12 @@ void OpenGL::MouseMotion(double _x, double _y) {
 
   bool needsUpdate=false;
 
+  //step through all callbacks
+  bool cont=true;
+  for(uint i=0; i<hoverCalls.N; i++) cont=cont && hoverCalls(i)->hoverCallback(*this);
+  if(!cont) return;
+
+
   //-- LEFT -> rotation
   if(mouse_button==1 && _NONE(downModifiers) && !downVec.isZero) {
     rai::Quaternion rot;
@@ -992,9 +1003,6 @@ void OpenGL::MouseMotion(double _x, double _y) {
     cam->X.pos = downPos - diff;
     needsUpdate=true;
   }
-
-  //step through all callbacks
-  for(uint i=0; i<hoverCalls.N; i++) needsUpdate = needsUpdate || hoverCalls(i)->hoverCallback(*this);
 
   if(needsUpdate) postRedrawEvent(true);
 }

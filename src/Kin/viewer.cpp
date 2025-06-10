@@ -15,15 +15,13 @@
 #include "../Kin/dof_direction.h"
 #include "../Kin/proxy.h"
 
-double shadowHeight = 3.; //5.;
-//arr floorColor = ones(3);
-arr floorColor = arr{.4, .45, .5};
+namespace rai{
 
-rai::ConfigurationViewer::~ConfigurationViewer() {
+ConfigurationViewer::~ConfigurationViewer() {
   close_gl();
 }
 
-OpenGL& rai::ConfigurationViewer::ensure_gl() {
+OpenGL& ConfigurationViewer::ensure_gl() {
   if(!gl) {
     gl = make_shared<OpenGL>("ConfigurationViewer", 600, 500);
 //    gl->reportEvents=true;
@@ -34,14 +32,14 @@ OpenGL& rai::ConfigurationViewer::ensure_gl() {
   return *gl;
 }
 
-void rai::ConfigurationViewer::close_gl() {
+void ConfigurationViewer::close_gl() {
   if(gl){
     gl->remove(this);
     gl.reset();
   }
 }
 
-void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
+void ConfigurationViewer::recopyMeshes(const FrameL& frames) {
   {
     if(gl && gl->window) gl->beginContext();
     clear();
@@ -55,16 +53,16 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
   uint maxID = 0;
   if(frames.N){
     maxID = frames(-1)->ID;
-    for(rai::Frame* f:frames) if(f->ID>maxID) maxID = f->ID;
+    for(Frame* f:frames) if(f->ID>maxID) maxID = f->ID;
   }
 
   frame2itemID.resize(maxID+1) = -1;
-  for(rai::Frame* f:frames) if(f->shape) {
+  for(Frame* f:frames) if(f->shape) {
     shared_ptr<Mesh> mesh = f->shape->_mesh;
     if(mesh && mesh->V.N){
       //find mimic?
-      rai::Frame *f_sharedMesh=0;
-      for(rai::Frame* fm:frames) if(fm->shape && fm->shape->_mesh.get()==mesh.get()){
+      Frame *f_sharedMesh=0;
+      for(Frame* fm:frames) if(fm->shape && fm->shape->_mesh.get()==mesh.get()){
         if(fm!=f) f_sharedMesh=fm;
         break;
       }
@@ -101,7 +99,7 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
       items(-1)->flatColor = id2color_b(f->ID);
     }
   }
-  for(rai::Frame* f:frames) if(f->shape && f->shape->type()==ST_marker) {
+  for(Frame* f:frames) if(f->shape && f->shape->type()==ST_marker) {
     frame2itemID(f->ID) = items.N;
     double s = .1;
     if(f->shape->size.N) s = f->shape->size(-1);
@@ -109,7 +107,7 @@ void rai::ConfigurationViewer::recopyMeshes(const FrameL& frames) {
   }
 }
 
-rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const rai::Configuration& C, const FrameL& timeSlices, bool forceCopyMeshes) {
+ConfigurationViewer& ConfigurationViewer::updateConfiguration(const Configuration& C, const FrameL& timeSlices, bool forceCopyMeshes) {
   bool copyMeshes = false;
   if(!items.N) copyMeshes = true;
 
@@ -123,11 +121,11 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   if(frame2itemID.N!=C.frames.N){
     copyMeshes = true;
   } else {
-    for(rai::Frame *f : C.frames) {
+    for(Frame *f : C.frames) {
       int o = frame2itemID(f->ID);
       if(f->shape && f->shape->_mesh && f->shape->_mesh->V.N && o==-1){ copyMeshes=true; break; }
       if(o==-1) continue;
-      rai::Shape* s = f->shape;
+      Shape* s = f->shape;
       if(!s || !s->_mesh){ copyMeshes=true; break; }
       if((int)items.N<=o){ copyMeshes=true; break; }
       if(s->_mesh->V.N && items(o)->asset->version != s->_mesh->version) { copyMeshes=true; break; }
@@ -138,7 +136,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   //-- update poses
   {
     auto lock = dataLock(RAI_HERE);
-    for(rai::Frame* f : frames) {
+    for(Frame* f : frames) {
       int objID = frame2itemID(f->ID);
       if(objID!=-1){
         items(objID)->X = f->ensure_X();
@@ -171,7 +169,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   //-- update proxies
   if(C.proxies.N) {
     auto lock = dataLock(RAI_HERE);
-    for(const rai::Proxy& p: C.proxies){
+    for(const Proxy& p: C.proxies){
       if(p.d<.05){
         int s=-1;
         if(timeSlices.N) s = p.a->ID/timeSlices.d1;
@@ -183,7 +181,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   //-- update forces
   if(true){
     auto lock = dataLock(RAI_HERE);
-    for(rai::Frame* fr: C.frames) for(ForceExchangeDof* f:fr->forces) if(f->sign(fr)>0.){
+    for(Frame* fr: C.frames) for(ForceExchangeDof* f:fr->forces) if(f->sign(fr)>0.){
 
       arr _poa, _torque, _force;
       f->kinPOA(_poa, NoArr);
@@ -193,7 +191,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
       int s=-1;
       if(timeSlices.N) s = fr->ID/timeSlices.d1;
       addDistMarker(_poa, _poa+.1*_force, s, .025, {1.,0.,1.});
-      if(f->type==rai::FXT_wrench){
+      if(f->type==FXT_wrench){
         addDistMarker(_poa, _poa+.1*_torque, s, .025, {1.,1.,0.});
       }
     }
@@ -202,7 +200,7 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   //-- update directions
   {
     auto lock = dataLock(RAI_HERE);
-    for(rai::Frame* f:frames) if(f->dirDof){
+    for(Frame* f:frames) if(f->dirDof){
         arr p = f->getPosition();
         arr v = (f->get_X().rot * f->dirDof->vec).getArr();
         // LOG(0) <<*f->dirDof <<' ' <<v <<' ' <<p;
@@ -213,13 +211,15 @@ rai::ConfigurationViewer& rai::ConfigurationViewer::updateConfiguration(const ra
   }
 
   //-- update camera
-  rai::Frame* camF = C.getFrame("camera_gl", false);
-  if(camF) setCamera(camF);
+  if(!gl){
+    Frame* camF = C.getFrame("camera_init", false);
+    if(camF) setCamera(camF);
+  }
 
   return *this;
 }
 
-void rai::ConfigurationViewer::setMotion(const uintA& frameIDs, const arr& _motion){
+void ConfigurationViewer::setMotion(const uintA& frameIDs, const arr& _motion){
   CHECK_EQ(_motion.d1, frameIDs.N, "");
   CHECK_EQ(_motion.d2, 7, "");
   auto lock = dataLock(RAI_HERE);
@@ -236,14 +236,14 @@ void rai::ConfigurationViewer::setMotion(const uintA& frameIDs, const arr& _moti
   }
 }
 
-void rai::ConfigurationViewer::setMotion(Configuration& C, const arr& path){
+void ConfigurationViewer::setMotion(Configuration& C, const arr& path){
   CHECK_EQ(path.nd, 2, "");
   auto lock = dataLock(RAI_HERE);
   drawSlice=-1;
   motion.resize(path.d0, items.N, 7).setZero();
   for(uint t=0;t<path.d0;t++){
     C.setJointState(path[t]);
-    for(rai::Frame* f:C.frames){
+    for(Frame* f:C.frames){
       int o = frame2itemID(f->ID);
       if(o!=-1){
         motion(t, o, {}) = f->ensure_X().getArr7d();
@@ -252,39 +252,41 @@ void rai::ConfigurationViewer::setMotion(Configuration& C, const arr& path){
   }
 }
 
-void rai::ConfigurationViewer::setCamera(rai::Frame* camF) {
+void ConfigurationViewer::setCamera(Frame* camF) {
   ensure_gl();
-  rai::Camera& cam = gl->camera;
+  Camera& cam = gl->camera;
+  uint W=gl->width, H=gl->height;
   {
     auto lock = gl->dataLock(RAI_HERE);
+
     if(camF) {
       cam.X = camF->ensure_X();
 
-      rai::Node* at=0;
+      Node* at=0;
       if((at=camF->ats->getNode("focalLength"))) cam.setFocalLength(at->as<double>());
       if((at=camF->ats->getNode("orthoAbsHeight"))) cam.setHeightAbs(at->as<double>());
       if((at=camF->ats->getNode("zRange"))) { arr z=at->as<arr>(); cam.setZRange(z(0), z(1)); }
-      if((at=camF->ats->getNode("width"))) gl->width=at->as<double>();
-      if((at=camF->ats->getNode("height"))) gl->height=at->as<double>();
+      if((at=camF->ats->getNode("width"))) W=at->as<double>();
+      if((at=camF->ats->getNode("height"))) H=at->as<double>();
       //    cam.setWHRatio((double)gl->width/gl->height);
     } else {
       gl->camera.setDefault();
     }
   }
-  gl->resize(gl->width, gl->height);
+  if(W!=gl->width || H!=gl->height) gl->resize(W, H);
 }
 
-void rai::ConfigurationViewer::_resetPressedKey() {
+void ConfigurationViewer::_resetPressedKey() {
   ensure_gl();
   gl->pressedkey=0;
 }
 
-void rai::ConfigurationViewer::raiseWindow() {
+void ConfigurationViewer::raiseWindow() {
   ensure_gl();
   gl->raiseWindow();
 }
 
-int rai::ConfigurationViewer::view(bool watch, const char* _text) {
+int ConfigurationViewer::view(bool watch, const char* _text) {
   if(_text) text = _text;
   if(watch && (!text.N || text(-1)!=']')) text <<"\n[press key to continue]";
 
@@ -293,8 +295,8 @@ int rai::ConfigurationViewer::view(bool watch, const char* _text) {
   return gl->update(watch, nonThreaded);
 }
 
-int rai::ConfigurationViewer::view_play(bool watch, double delay, str saveVideoPath) {
-  if(rai::getDisableGui()) return false;
+int ConfigurationViewer::view_play(bool watch, double delay, str saveVideoPath) {
+  if(getDisableGui()) return false;
 
   if(saveVideoPath) {
     if(saveVideoPath(-1)=='/') rai::system(STRING("mkdir -p " <<saveVideoPath));
@@ -316,7 +318,7 @@ int rai::ConfigurationViewer::view_play(bool watch, double delay, str saveVideoP
   bool _nonThreaded = nonThreaded;
   nonThreaded = true;
   for(uint t=0; t<motion.d0; t++) {
-    if(t && delay>0.) tic.waitForTic(); //rai::wait(delay / F.d0);
+    if(t && delay>0.) tic.waitForTic(); //wait(delay / F.d0);
 
     if(abortPlay){ watch=true; break; }
 
@@ -330,7 +332,7 @@ int rai::ConfigurationViewer::view_play(bool watch, double delay, str saveVideoP
   return key;
 }
 
-int rai::ConfigurationViewer::view_slice(uint t, bool watch){
+int ConfigurationViewer::view_slice(uint t, bool watch){
   {
     auto lock = gl->dataLock(RAI_HERE);
     drawSlice = t;
@@ -339,7 +341,7 @@ int rai::ConfigurationViewer::view_slice(uint t, bool watch){
   return view(watch);
 }
 
-void rai::ConfigurationViewer::savePng(str saveVideoPath, int count) {
+void ConfigurationViewer::savePng(str saveVideoPath, int count) {
   nonThreaded=true;
   if(saveVideoPath && saveVideoPath(-1)=='/'){
     if(!FileToken(saveVideoPath).exists()){
@@ -352,19 +354,19 @@ void rai::ConfigurationViewer::savePng(str saveVideoPath, int count) {
   write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"), true);
 }
 
-rai::Camera& rai::ConfigurationViewer::displayCamera() {
+Camera& ConfigurationViewer::displayCamera() {
   ensure_gl();
   return gl->camera;
 }
 
-byteA rai::ConfigurationViewer::getRgb() {
+byteA ConfigurationViewer::getRgb() {
   ensure_gl();
   byteA image = gl->captureImage;
   flip_image(image);
   return image;
 }
 
-floatA rai::ConfigurationViewer::getDepth() {
+floatA ConfigurationViewer::getDepth() {
   ensure_gl();
   floatA depth = gl->captureDepth;
   flip_image(depth);
@@ -375,7 +377,7 @@ floatA rai::ConfigurationViewer::getDepth() {
   return depth;
 }
 
-void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
+void ConfigurationViewer::glDraw(OpenGL& gl) {
   //if(gl.drawOptions.drawVisualsOnly) renderUntil=_shadow; else renderUntil=_all;
   if(!motion.N){
     RenderData::setText(text);
@@ -417,17 +419,128 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
 
 //===========================================================================
 
-rai::ConfigurationViewerThread::ConfigurationViewerThread(const Var<rai::Configuration>& _config, double beatIntervalSec)
+struct ViewerEventHandler : OpenGL::GLClickCall, OpenGL::GLKeyCall, OpenGL::GLScrollCall, OpenGL::GLHoverCall {
+  Mutex mux;
+  Configuration& C;
+  bool blockDefaultHandler;
+  rai::Transformation cursor;
+  StringA events;
+
+  ViewerEventHandler(Configuration& C, bool blockDefaultHandler) : C(C), blockDefaultHandler(blockDefaultHandler) {
+  }
+
+  virtual bool clickCallback(OpenGL& gl, int button, int buttonIsDown){
+    str e;
+    if(buttonIsDown) e <<"click down "; else e <<"click up ";
+    if(button==0) e <<"left";
+    else if(button==1) e <<"middle";
+    else if(button==2) e <<"right";
+    else e <<button;
+    auto lock = mux(RAI_HERE);
+    events.append(e);
+    return !blockDefaultHandler;
+  }
+
+  virtual bool keyCallback(OpenGL& gl, int key, int mods, bool _keyIsDown){
+    str e;
+    if(key=='%'){
+      e <<"mod";
+      if(mods&1) e<<" shift";
+      if(mods&2) e<<" ctrl";
+      if(mods&4) e<<" alt";
+    }else{
+      e <<"key ";
+      if(_keyIsDown) e <<"down "; else e <<"up ";
+      if((key>='a' && key<='z') || (key>='A' && key<='Z')) e <<(char)key;
+      else if(key==27) e <<"esc";
+      else if(key==13) e <<"enter";
+      else if(key==32) e <<"space";
+      else if(key==8) e <<"backspace";
+      else if(key==9) e <<"tab";
+      else e <<key;
+    }
+    auto lock = mux(RAI_HERE);
+    events.append(e);
+    return !blockDefaultHandler;
+  }
+
+  virtual bool scrollCallback(OpenGL& gl, int direction){
+    str e;
+    e <<"scroll ";
+    if(direction>0) e <<"up";
+    else if(direction<0) e <<"down";
+    auto lock = mux(RAI_HERE);
+    events.append(e);
+    return !blockDefaultHandler;
+  }
+
+  virtual bool hoverCallback(OpenGL& gl){
+    arr normal;
+    arr x = gl.get3dMousePos(normal);
+    if(!x.N) return false; //outside window
+
+    auto lock = mux(RAI_HERE);
+    cursor.pos = x;
+    cursor.rot.setDiff(Vector_z, normal);
+      // cursor->setPose(cursor);
+      // cursor->setPosition(x);
+    return !blockDefaultHandler;
+  }
+};
+
+void ConfigurationViewer::setupEventHandler(Configuration& C, bool blockDefaultHandler){
+  eventHandler = make_shared<ViewerEventHandler>(C, blockDefaultHandler);
+  ensure_gl().addHoverCall(eventHandler.get());
+  ensure_gl().addKeyCall(eventHandler.get());
+  ensure_gl().scrollCalls.append(eventHandler.get());
+  ensure_gl().clickCalls.append(eventHandler.get());
+}
+
+rai::Transformation ConfigurationViewer::getEventCursorPose(){
+  rai::Transformation cursor;
+  {
+    auto lock = eventHandler->mux(RAI_HERE);
+    cursor = eventHandler->cursor;
+  }
+  return cursor;
+}
+
+Frame* ConfigurationViewer::getEventCursorFrame(){
+  uint id = gl->get3dMouseObjID();
+  Frame *f = 0;
+  if(id<eventHandler->C.frames.N) f = eventHandler->C.frames(id);
+  return f;
+}
+
+StringA ConfigurationViewer::getEvents(){
+  StringA events;
+  {
+    auto lock = eventHandler->mux(RAI_HERE);
+    if(eventHandler->events.N){ events = eventHandler->events; eventHandler->events.resize(0); }
+  }
+  return events;
+}
+
+Mutex& ConfigurationViewer::getEventsMutex(){
+  return eventHandler->mux;
+}
+
+
+
+
+//===========================================================================
+
+ConfigurationViewerThread::ConfigurationViewerThread(const Var<Configuration>& _config, double beatIntervalSec)
   : Thread("ConfigurationViewerThread", beatIntervalSec),
     config(this, _config, (beatIntervalSec<0.)) {
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
-rai::ConfigurationViewerThread::~ConfigurationViewerThread() {
+ConfigurationViewerThread::~ConfigurationViewerThread() {
   threadClose();
 }
 
-void rai::ConfigurationViewerThread::open() {
+void ConfigurationViewerThread::open() {
   viewer = make_shared<ConfigurationViewer>();
   {
     auto C = config.get();
@@ -436,12 +549,13 @@ void rai::ConfigurationViewerThread::open() {
   }
 }
 
-void rai::ConfigurationViewerThread::close() {
+void ConfigurationViewerThread::close() {
   viewer.reset();
 }
 
-void rai::ConfigurationViewerThread::step() {
+void ConfigurationViewerThread::step() {
   auto C = config.get();
   viewer->updateConfiguration(C);
 }
 
+} //namespace
