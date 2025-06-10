@@ -158,7 +158,7 @@ void waypointHunting(){
   F.getCubicSpline(S, zeros(3), zeros(3));
 
   rai::Frame *spline = C.addFrame("spline");
-  spline->setLines( S.eval(range(0., S.times.last(), 100)) );
+  spline->setLines( S.eval(range(0., S.times.last(), 100)), {}, true );
 
 //  C.gl().add(M);
   C.view(true);
@@ -199,7 +199,7 @@ void waypointHunting(){
     if(t>.1){
       F.solve(x0, v0);
       F.getCubicSpline(S, x0, v0);
-      spline->setLines( S.eval(range(0., S.times.last(), 100)) );
+      spline->setLines( S.eval(range(0., S.times.last(), 100)), {}, true );
       t = .0;
     }
 

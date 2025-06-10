@@ -1530,7 +1530,7 @@ std::shared_ptr<ConfigurationViewer> KOMO::get_viewer(){
   return pathConfig.get_viewer();
 }
 
-void KOMO::set_viewer(std::shared_ptr<rai::ConfigurationViewer>& _viewer){
+void KOMO::set_viewer(const std::shared_ptr<rai::ConfigurationViewer>& _viewer){
   pathConfig.set_viewer(_viewer);
 }
 

@@ -271,7 +271,7 @@ public:
   void addProxies(const uintA& collisionPairs);
 
   /// @name extensions on demand
-  std::shared_ptr<ConfigurationViewer>& get_viewer(const char* window_title=nullptr, bool offscreen=false);
+  std::shared_ptr<ConfigurationViewer> get_viewer(const char* window_title=nullptr, bool offscreen=false);
   OpenGL& gl();
   void view_lock(const char* _lockInfo);
   void view_unlock();
@@ -280,15 +280,13 @@ public:
   FeatherstoneInterface& fs();
   bool hasView();
   int view(bool pause=false, const char* txt=nullptr);
-  void view_savePng(str saveVideoPath="z.vid/", int count=-1);
   void saveVideoPic(uint& t, const char* pathPrefix="vid/");
   void glAdd(void (*call)(void*, OpenGL&), void* classP);
   int glAnimate();
   void view_close();
-  void view_focus(const char* frameName, double heightAbs=1.);
   void view_setCameraPose(const arr& pose);
   arr view_getCameraPose();
-  void set_viewer(std::shared_ptr<ConfigurationViewer>& _viewer);
+  void set_viewer(const std::shared_ptr<ConfigurationViewer>& _viewer);
   void coll_stepFcl();
   void stepPhysx(double tau);
   void stepOde(double tau);

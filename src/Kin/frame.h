@@ -169,7 +169,7 @@ struct Frame : NonCopyable {
   Frame& setMesh(const arr& verts, const uintA& tris, const byteA& colors={}, const uintA& cvxParts={});
   Frame& setMeshFile(str file, double scale=1.);
   Frame& setTextureFile(str imgFile, const arr& texCoords={});
-  Frame& setLines(const arr& verts, const byteA& colors={});
+  Frame& setLines(const arr& verts, const byteA& colors={}, bool singleConnectedLine=false);
   Frame& setPointCloud(const arr& points, const byteA& colors= {}, const arr& normals= {});
   Frame& setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
   Frame& setSdf(std::shared_ptr<SDF>& sdf);

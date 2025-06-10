@@ -58,7 +58,7 @@ void init_Frame(pybind11::module& m) {
            pybind11::arg("texCoords")=arr{})
   .def("setLines", &rai::Frame::setLines,
          "attach lines as shape",
-         pybind11::arg("verts"), pybind11::arg("colors") = byteA{})
+         pybind11::arg("verts"), pybind11::arg("colors") = byteA{}, pybind11::arg("singleConnectedLine") = false)
   .def("setPointCloud", &rai::Frame::setPointCloud,
        "attach a point cloud shape",
        pybind11::arg("points"), pybind11::arg("colors") = byteA{}, pybind11::arg("normals")=arr{})
@@ -75,11 +75,10 @@ void init_Frame(pybind11::module& m) {
   .def("computeCompoundInertia", &rai::Frame::computeCompoundInertia, "")
   .def("convertDecomposedShapeToChildFrames", &rai::Frame::convertDecomposedShapeToChildFrames, "")
 
-  .def("setAttribute", &rai::Frame::setAttribute, "")
-  .def("addAttributes",  [](shared_ptr<rai::Frame>& self, const pybind11::dict& D) {
+  .def("setAttributes",  [](shared_ptr<rai::Frame>& self, const pybind11::dict& D) {
     rai::Graph G = dict2graph(D);
     for(rai::Node *n:G) self->getAts().set(n);
-  }, "add/set attributes for the frame")
+  }, "set attributes for the frame")
 
   .def("getAttributes", [](shared_ptr<rai::Frame>& self) {
     if(!self->ats) self->ats = make_shared<rai::Graph>();

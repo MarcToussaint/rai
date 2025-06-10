@@ -672,15 +672,27 @@ rai::Frame& rai::Frame::setTextureFile(str imgFile, const arr& texCoords){
   return *this;
 }
 
-rai::Frame& rai::Frame::setLines(const arr& verts, const byteA& colors){
+rai::Frame& rai::Frame::setLines(const arr& verts, const byteA& colors, bool singleConnectedLine){
   C.view_lock(RAI_HERE);
   getShape().type() = ST_lines;
   rai::Mesh& mesh = getShape().mesh();
-  mesh.V = verts;
-  mesh.V.reshape(-1, 3);
+  if(!singleConnectedLine){
+    mesh.V = verts;
+    mesh.V.reshape(-1, 3);
+  }else{
+    mesh.V.resize(2*(verts.d0-1), 3);
+    for(uint i=0;i<verts.d0-1;i++){
+      mesh.V[2*i] = verts[i];
+      mesh.V[2*i+1] = verts[i+1];
+    }
+  }
   mesh.makeLines();
   if(colors.N) {
-    mesh.C = convert<double>(colors); //.reshape(-1, 3);
+    if(!singleConnectedLine){
+      mesh.C = convert<double>(colors); //.reshape(-1, 3);
+    }else{
+      NIY;
+    }
     mesh.C /= 255.;
     if(mesh.C.N <= 4) { mesh.C.reshape(-1); }
   }
@@ -784,7 +796,7 @@ rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, 
   C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
   TensorShape sdf(0, data, -.5*size, +.5*size);
-  sdf.smooth(3, blur);
+  if(blur>0) sdf.smooth(3, blur);
   if(resample>0.) {
     arr d = size/resample;
     LOG(0) <<" uniform resampling resolution: " <<1000.*resample <<"mm  grid size: " <<d;

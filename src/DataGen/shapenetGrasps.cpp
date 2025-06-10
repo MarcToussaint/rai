@@ -198,7 +198,10 @@ arr ShapenetGrasps::evaluateGrasp(){
 
   arr scores(dirs.d0+1, 2);
 
+  evalGripperPoses.resize(dirs.d0+2, 7);
+
   for(uint phase=0;phase<=dirs.d0;phase++){ //close, x, y, z, gravity
+    evalGripperPoses[phase] = (gripper->get_X() / ref->parent->get_X()).getArr7d();
 
     //set the 'ref' frame to the current grasp center -> diff between 'ref' and 'gripper' indicates in hand motion in each phase
     ref->setPose(gripper->getPose());
@@ -246,6 +249,7 @@ arr ShapenetGrasps::evaluateGrasp(){
         }
       }
     }
+    evalGripperPoses[-1] = (gripper->get_X() / ref->parent->get_X()).getArr7d();
 
     scores(phase,0) = totalOffset/double(T);
     scores(phase,1) = totalRot/double(T);

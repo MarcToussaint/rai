@@ -117,19 +117,17 @@ ConfigurationViewer& ConfigurationViewer::updateConfiguration(const Configuratio
   else frames = C.frames;
   frames.reshape(-1);
 
-  //-- update meshes (checks if needed)
-  if(frame2itemID.N!=C.frames.N){
-    copyMeshes = true;
-  } else {
-    for(Frame *f : C.frames) {
-      int o = frame2itemID(f->ID);
-      if(f->shape && f->shape->_mesh && f->shape->_mesh->V.N && o==-1){ copyMeshes=true; break; }
-      if(o==-1) continue;
-      Shape* s = f->shape;
-      if(!s || !s->_mesh){ copyMeshes=true; break; }
-      if((int)items.N<=o){ copyMeshes=true; break; }
-      if(s->_mesh->V.N && items(o)->asset->version != s->_mesh->version) { copyMeshes=true; break; }
-    }
+  //-- check if we need to update meshes
+  for(Frame *f : C.frames) {
+    if(f->ID>=frame2itemID.N){ copyMeshes=true; break; }
+    int o = frame2itemID(f->ID);
+    if(o==-1 && f->shape && f->shape->_mesh && f->shape->_mesh->V.N){ copyMeshes=true; break; }
+    if(o==-1 && f->shape && f->shape->_type==ST_marker){ copyMeshes=true; break; }
+    if(o==-1) continue;
+    Shape* s = f->shape;
+    if(!s || !s->_mesh){ copyMeshes=true; break; }
+    if((int)items.N<=o){ copyMeshes=true; break; }
+    if(s->_mesh->V.N && items(o)->asset->version != s->_mesh->version) { copyMeshes=true; break; }
   }
   if(copyMeshes || forceCopyMeshes) recopyMeshes(frames);
 
@@ -215,6 +213,8 @@ ConfigurationViewer& ConfigurationViewer::updateConfiguration(const Configuratio
     Frame* camF = C.getFrame("camera_init", false);
     if(camF) setCamera(camF);
   }
+  rai::Frame* camF = C.getFrame("camera_track", false);
+  if(camF) setCamera(camF);
 
   return *this;
 }
@@ -252,28 +252,45 @@ void ConfigurationViewer::setMotion(Configuration& C, const arr& path){
   }
 }
 
-void ConfigurationViewer::setCamera(Frame* camF) {
+void ConfigurationViewer::setCamera(Frame* camFrame) {
   ensure_gl();
   Camera& cam = gl->camera;
   uint W=gl->width, H=gl->height;
   {
     auto lock = gl->dataLock(RAI_HERE);
 
-    if(camF) {
-      cam.X = camF->ensure_X();
+    if(camFrame) {
+      cam.X = camFrame->ensure_X();
 
       Node* at=0;
-      if((at=camF->ats->getNode("focalLength"))) cam.setFocalLength(at->as<double>());
-      if((at=camF->ats->getNode("orthoAbsHeight"))) cam.setHeightAbs(at->as<double>());
-      if((at=camF->ats->getNode("zRange"))) { arr z=at->as<arr>(); cam.setZRange(z(0), z(1)); }
-      if((at=camF->ats->getNode("width"))) W=at->as<double>();
-      if((at=camF->ats->getNode("height"))) H=at->as<double>();
+      if((at=camFrame->ats->getNode("focalLength"))) cam.setFocalLength(at->as<double>());
+      if((at=camFrame->ats->getNode("orthoAbsHeight"))) cam.setHeightAbs(at->as<double>());
+      if((at=camFrame->ats->getNode("zRange"))) { arr z=at->as<arr>(); cam.setZRange(z(0), z(1)); }
+      if((at=camFrame->ats->getNode("width"))) W=at->as<double>();
+      if((at=camFrame->ats->getNode("height"))) H=at->as<double>();
       //    cam.setWHRatio((double)gl->width/gl->height);
     } else {
       gl->camera.setDefault();
     }
   }
   if(W!=gl->width || H!=gl->height) gl->resize(W, H);
+}
+
+void ConfigurationViewer::focus(const arr& position, double heightAbs){
+  rai::Camera& cam = displayCamera();
+  arr pos = position;
+  cam.focus(pos(0), pos(1), pos(2), true);
+  double dist = heightAbs * cam.focalLength;
+  pos -= dist * cam.X.rot.getZ().getArr();
+  cam.setPosition(pos(0), pos(1), pos(2));
+}
+
+void ConfigurationViewer::setCameraPose(const arr& pose){
+  displayCamera().X.set(pose);
+}
+
+arr ConfigurationViewer::getCameraPose(){
+  return displayCamera().X.getArr7d();
 }
 
 void ConfigurationViewer::_resetPressedKey() {
@@ -421,12 +438,12 @@ void ConfigurationViewer::glDraw(OpenGL& gl) {
 
 struct ViewerEventHandler : OpenGL::GLClickCall, OpenGL::GLKeyCall, OpenGL::GLScrollCall, OpenGL::GLHoverCall {
   Mutex mux;
-  Configuration& C;
+  // Configuration& C;
   bool blockDefaultHandler;
-  rai::Transformation cursor;
+  arr cursor;
   StringA events;
 
-  ViewerEventHandler(Configuration& C, bool blockDefaultHandler) : C(C), blockDefaultHandler(blockDefaultHandler) {
+  ViewerEventHandler(bool blockDefaultHandler) : blockDefaultHandler(blockDefaultHandler) {
   }
 
   virtual bool clickCallback(OpenGL& gl, int button, int buttonIsDown){
@@ -480,24 +497,21 @@ struct ViewerEventHandler : OpenGL::GLClickCall, OpenGL::GLKeyCall, OpenGL::GLSc
     if(!x.N) return false; //outside window
 
     auto lock = mux(RAI_HERE);
-    cursor.pos = x;
-    cursor.rot.setDiff(Vector_z, normal);
-      // cursor->setPose(cursor);
-      // cursor->setPosition(x);
+    cursor = (x, normal);
     return !blockDefaultHandler;
   }
 };
 
-void ConfigurationViewer::setupEventHandler(Configuration& C, bool blockDefaultHandler){
-  eventHandler = make_shared<ViewerEventHandler>(C, blockDefaultHandler);
+void ConfigurationViewer::setupEventHandler(bool blockDefaultHandler){
+  eventHandler = make_shared<ViewerEventHandler>(blockDefaultHandler);
   ensure_gl().addHoverCall(eventHandler.get());
   ensure_gl().addKeyCall(eventHandler.get());
   ensure_gl().scrollCalls.append(eventHandler.get());
   ensure_gl().clickCalls.append(eventHandler.get());
 }
 
-rai::Transformation ConfigurationViewer::getEventCursorPose(){
-  rai::Transformation cursor;
+arr ConfigurationViewer::getEventCursor(){
+  arr cursor;
   {
     auto lock = eventHandler->mux(RAI_HERE);
     cursor = eventHandler->cursor;
@@ -505,11 +519,9 @@ rai::Transformation ConfigurationViewer::getEventCursorPose(){
   return cursor;
 }
 
-Frame* ConfigurationViewer::getEventCursorFrame(){
+uint ConfigurationViewer::getEventCursorObject(){
   uint id = gl->get3dMouseObjID();
-  Frame *f = 0;
-  if(id<eventHandler->C.frames.N) f = eventHandler->C.frames(id);
-  return f;
+  return id;
 }
 
 StringA ConfigurationViewer::getEvents(){

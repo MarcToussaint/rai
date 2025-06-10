@@ -203,7 +203,7 @@ struct KOMO : NonCopyable {
   int view_slice(uint t, bool pause=false);
   void view_close();
   std::shared_ptr<rai::ConfigurationViewer> get_viewer();
-  void set_viewer(std::shared_ptr<rai::ConfigurationViewer>& _viewer);
+  void set_viewer(const std::shared_ptr<rai::ConfigurationViewer>& _viewer);
 
 
   void plotTrajectory();

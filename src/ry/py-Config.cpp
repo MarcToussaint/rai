@@ -261,21 +261,20 @@ between all frame shapes that have the collision tag set non-zero"
     pybind11::list ret;
     for(const rai::Proxy& p: self->proxies) {
       if(!p.collision)((rai::Proxy*)&p)->calc_coll();
-      if(p.d>belowMargin) continue;
-      pybind11::tuple tuple(3);
-      tuple[0] = p.a->name.p;
-      tuple[1] = p.b->name.p;
-      tuple[2] = p.d;
-//      tuple[3] = p.posA;
-//      tuple[4] = p.posB;
-      ret.append(tuple) ;
+      if(p.d<=belowMargin){
+        pybind11::tuple tuple(3);
+        tuple[0] = p.a->name.p;
+        tuple[1] = p.b->name.p;
+        tuple[2] = p.d;
+        ret.append(tuple);
+      }
     }
     return ret;
   },
   "return the results of collision computations: a list of 3 tuples with (frame1, frame2, distance). \
 Optionally report only on distances below a margin \
 To get really precise distances and penetrations use the FS.distance feature with the two frame names",
-  pybind11::arg("belowMargin") = 1.
+  pybind11::arg("belowMargin") = 0.
       )
 
   .def("coll_totalViolation", &rai::Configuration::coll_totalViolation,
@@ -292,57 +291,15 @@ To get really precise distances and penetrations use the FS.distance feature wit
        "open a view window for the configuration",
        pybind11::arg("pause")=false,
        pybind11::arg("message")=nullptr)
-
-  .def("view_focus", &rai::Configuration::view_focus,
-       "focus on a particular frame, given via name; second argument distances camara so that view window has roughly given absHeight around object",
-       pybind11::arg("frameName"),
-       pybind11::arg("absHeight")=2.)
-
   .def("view_recopyMeshes", [](shared_ptr<rai::Configuration>& self) {
     self->get_viewer()->recopyMeshes(self->frames);
   }, "")
 
-  .def("view_getRgb", [](std::shared_ptr<rai::Configuration>& self) {
-    return Array2numpy<byte>(self->get_viewer()->getRgb());
-  }, "")
-
-  .def("view_getDepth", [](std::shared_ptr<rai::Configuration>& self) {
-    return Array2numpy<float>(self->get_viewer()->getDepth());
-  }, "")
-
-  .def("view_savePng", [](std::shared_ptr<rai::Configuration>& self, const char* pathPrefix) {
-    self->get_viewer()->savePng(pathPrefix);
-  }, "saves a png image of the current view, numbered with a global counter, with the intention to make a video",
-  pybind11::arg("pathPrefix") = "z.vid/"
-      )
-
   .def("view_close", &rai::Configuration::view_close, "close the view")
+
   .def("set_viewer",  &rai::Configuration::set_viewer, "")
+  .def("viewer",  &rai::Configuration::get_viewer, "", pybind11::arg("window_title")=nullptr, pybind11::arg("offscreen")=false)
   .def("get_viewer",  &rai::Configuration::get_viewer, "", pybind11::arg("window_title")=nullptr, pybind11::arg("offscreen")=false)
-
-  .def("view_raise", [](shared_ptr<rai::Configuration>& self) {
-    self->get_viewer()->raiseWindow();
-  }, "raise the view")
-
-  .def("view_pose", [](shared_ptr<rai::Configuration>& self) {
-    rai::Camera& cam = self->get_viewer()->displayCamera();
-    return cam.X.getArr7d();
-  }, "return the 7D pose of the view camera")
-
-  .def("view_focalLength", [](shared_ptr<rai::Configuration>& self) {
-    rai::Camera& cam = self->get_viewer()->displayCamera();
-    return cam.focalLength;
-  }, "return the focal length of the view camera (only intrinsic parameter)")
-
-  .def("view_fxycxy", [](shared_ptr<rai::Configuration>& self) {
-    OpenGL& gl = self->get_viewer()->ensure_gl();
-    rai::Camera& cam = self->get_viewer()->displayCamera();
-    return cam.getFxycxy(gl.width, gl.height);
-  }, "return (fx, fy, cx, cy): the focal length and image center in PIXEL UNITS")
-
-  .def("view_setCamera", [](shared_ptr<rai::Configuration>& self, rai::Frame* frame) {
-    self->get_viewer()->setCamera(frame);
-  }, "set the camera pose to a frame, and check frame attributes for intrinsic parameters (focalLength, width height)")
 
   .def("watchFile", &rai::Configuration::watchFile,
        "launch a viewer that listents (inode) to changes of a file (made by you in an editor), and \
@@ -424,7 +381,32 @@ reloads, displays and animates the configuration whenever the file is changed"
   pybind11::class_<rai::ConfigurationViewer, shared_ptr<rai::ConfigurationViewer>>(m, "ConfigurationViewer", "internal viewer handle (gl window)")
 
     .def("visualsOnly", &rai::ConfigurationViewer::visualsOnly, "display only visuals (no markers/transparent/text)", pybind11::arg("_visualsOnly")=true)
-    .def("savePng", &rai::ConfigurationViewer::savePng, "save enumerated pngs in a path - for video making", pybind11::arg("saveVideoPath")="z.vid/", pybind11::arg("count")=-1)
+
+    .def("getRgb", &rai::ConfigurationViewer::getRgb, "return the view's rgb image")
+    .def("getDepth", &rai::ConfigurationViewer::getDepth, "return the view's depth array (scaled to meters)")
+    .def("savePng", &rai::ConfigurationViewer::savePng, "saves a png image of the current view, numbered with a global counter, with the intention to make a video", pybind11::arg("saveVideoPath")="z.vid/", pybind11::arg("count")=-1)
+
+    .def("raiseWindow", &rai::ConfigurationViewer::raiseWindow, "raise the window")
+    .def("setCamera", &rai::ConfigurationViewer::setCamera, "set the camera pose to a frame, and check frame attributes for intrinsic parameters (focalLength, width height)", pybind11::arg("camFrame"))
+    .def("setCameraPose", &rai::ConfigurationViewer::setCameraPose, "set the camera pose directly", pybind11::arg("pose_7d"))
+    .def("focus", &rai::ConfigurationViewer::focus, "focus at a 3D position; second argument distances camara so that view window has roughly given absHeight around object", pybind11::arg("position_7d"), pybind11::arg("heightAbs")=1.)
+
+    .def("getCamera_pose", &rai::ConfigurationViewer::getCameraPose, "get the camera pose directly")
+    .def("getCamera_focalLength", [](shared_ptr<rai::ConfigurationViewer>& self) {
+      rai::Camera& cam = self->displayCamera();
+      return cam.focalLength;
+    }, "return the focal length of the view camera (only intrinsic parameter)")
+
+    .def("getCamera_fxycxy", [](shared_ptr<rai::ConfigurationViewer>& self) {
+      OpenGL& gl = self->ensure_gl();
+      rai::Camera& cam = self->displayCamera();
+      return cam.getFxycxy(gl.width, gl.height);
+    }, "return (fx, fy, cx, cy): the focal length and image center in PIXEL UNITS")
+
+    .def("setupEventHandler", &rai::ConfigurationViewer::setupEventHandler, "setup callbacks to grab window events and return them with methods below", pybind11::arg("blockDefaultHandler"))
+    .def("getEvents", &rai::ConfigurationViewer::getEvents, "return accumulated events as list of strings")
+    .def("getEventCursor", &rai::ConfigurationViewer::getEventCursor, "return the position and normal of the 'curser': mouse position 3D projected into scene via depth, and 3D normal of depth map -- returned as 6D vector")
+    .def("getEventCursorObject", &rai::ConfigurationViewer::getEventCursorObject, "(aka mouse picking) return the frame ID (or -1) that the 'cursor' currently points at")
   ;
 
 }

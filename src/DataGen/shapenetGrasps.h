@@ -40,6 +40,7 @@ struct ShapenetGrasps{
 
   rai::Configuration C;
   StringA files;
+  arr evalGripperPoses;
 
 private:
   void clearScene();

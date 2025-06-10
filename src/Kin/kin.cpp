@@ -2398,7 +2398,7 @@ StringA Configuration::coll_getProxyPairs(double belowMargin, arr& distances){
 }*/
 
 /// return a OpenGL extension
-std::shared_ptr<ConfigurationViewer>& Configuration::get_viewer(const char* window_title, bool offscreen) {
+std::shared_ptr<ConfigurationViewer> Configuration::get_viewer(const char* window_title, bool offscreen) {
   if(!self->viewer) {
     self->viewer = make_shared<ConfigurationViewer>();
   }
@@ -2451,32 +2451,11 @@ int Configuration::view(bool pause, const char* txt) {
   return get_viewer()->updateConfiguration(*this).view(pause, txt);
 }
 
-void Configuration::view_savePng(str saveVideoPath, int count){
-  get_viewer()->savePng(saveVideoPath, count);
-}
-
 void Configuration::view_close() {
   if(self && self->viewer) self->viewer.reset();
 }
 
-void Configuration::view_focus(const char* frameName, double heightAbs){
-  rai::Camera& cam = get_viewer()->displayCamera();
-  arr pos = getFrame(frameName)->getPosition();
-  cam.focus(pos(0), pos(1), pos(2), true);
-  double dist = heightAbs * cam.focalLength;
-  pos -= dist * cam.X.rot.getZ().getArr();
-  cam.setPosition(pos(0), pos(1), pos(2));
-}
-
-void Configuration::view_setCameraPose(const arr& pose){
-  get_viewer()->displayCamera().X.set(pose);
-}
-
-arr Configuration::view_getCameraPose(){
-  return get_viewer()->displayCamera().X.getArr7d();
-}
-
-void Configuration::set_viewer(std::shared_ptr<ConfigurationViewer>& _viewer){
+void Configuration::set_viewer(const std::shared_ptr<ConfigurationViewer>& _viewer){
   self->viewer = _viewer;
 }
 

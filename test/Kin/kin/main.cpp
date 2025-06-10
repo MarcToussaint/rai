@@ -63,13 +63,20 @@ void testJacobianInFile(const char* filename, const char* shape){
 
 void TEST(Viewer){
 
-  rai::Configuration C(rai::raiPath("../rai-robotModels/panda/panda.g"));
+  rai::Configuration C;
+  C.view();
+
+  C.addFrame("first") ->setShape(rai::ST_marker, {.3}). setPosition({0,0,.5});
+  C.view();
+
+  C.addFile(rai::raiPath("../rai-robotModels/panda/panda.g"));
+  C.view();
 
   rai::Frame *f = C.addFrame("changer");
 //  f->setShape(rai::ST_mesh, {});
   f->setConvexMesh({}, {255,0,0}, .05);
   C.get_viewer()->renderUntil=rai::_marker;
-  C.view(true); return;
+  C.view(true);
 
   rai::Configuration C2;
   C2.addConfigurationCopy(C);

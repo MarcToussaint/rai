@@ -41,12 +41,15 @@ struct ConfigurationViewer : RenderData {
 
   void raiseWindow();
   void glDraw(OpenGL&);
-  void setCamera(rai::Frame* cam);
+  void setCamera(rai::Frame* camFrame);
+  void setCameraPose(const arr& pose);
+  void focus(const arr& position, double heightAbs=1.);
+  arr getCameraPose();
 
-  void setupEventHandler(rai::Configuration& C, bool blockDefaultHandler);
-  rai::Transformation getEventCursorPose();
-  rai::Frame* getEventCursorFrame();
+  void setupEventHandler(bool blockDefaultHandler);
   StringA getEvents();
+  arr getEventCursor();
+  uint getEventCursorObject();
   Mutex& getEventsMutex();
 
   //mimic a OpenGL, directly calling the same methods in its gl

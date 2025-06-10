@@ -21,6 +21,7 @@ void testLowLevel() {
     SG.setGraspPose(pose);
 
     arr scores = SG.evaluateGrasp();
+    cout <<"rel gripper poses:\n" <<SG.evalGripperPoses <<endl;
     cout <<"scores: " <<scores <<endl;
   }
 }
@@ -113,8 +114,8 @@ int main(int argc,char** argv){
 
   rnd.clockSeed();
 
-  // testLowLevel();
-  testBatchGeneration();
+  testLowLevel();
+  // testBatchGeneration();
   // generateGraspsFiles(100);
   // displayGraspsFiles();
 
