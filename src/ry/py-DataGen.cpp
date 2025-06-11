@@ -54,6 +54,8 @@ void init_DataGen(pybind11::module& m) {
        "(direct interface) clear scene and load object and gripper",
        pybind11::arg("shape"),
        pybind11::arg("rndPose")=true)
+  .def("resetObjectPose", &ShapenetGrasps::resetObjectPose,
+      pybind11::arg("idx")=0, pybind11::arg("rndOrientation")=true)
   .def("getPointCloud", &ShapenetGrasps::getPointCloud,
        "(direct interface) return pcl of loaded object")
   .def("getPointNormals", &ShapenetGrasps::getPointNormals,
@@ -67,6 +69,7 @@ void init_DataGen(pybind11::module& m) {
   .def("evaluateGrasp", &ShapenetGrasps::evaluateGrasp,
        "(direct interface) return scores of grasp candidate (min(scores)<0. means fail)")
 
+  .def("getEvalGripperPoses",  [](std::shared_ptr<ShapenetGrasps>& self) { return self->evalGripperPoses; }, "return the relative gripper after each motion phase: esp. poses[1] (after closing fingers) is interesting; the later ones allow you to estimate relative motion yourself)")
   .def("getConfig",  [](std::shared_ptr<ShapenetGrasps>& self) { return std::shared_ptr<rai::Configuration>(&(self->C), &Config_null_deleter); }, "")
 
   .def("setOptions", [](std::shared_ptr<ShapenetGrasps>& self
