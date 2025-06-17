@@ -320,10 +320,10 @@ int main(int argc,char** argv){
 
   rnd.clockSeed();
 
-  // testPickAndPlace();
+  testPickAndPlace();
   testPushIntoTable();
-  // testPivot();
-  // testMobileGrasp();
+  testPivot();
+  testMobileGrasp();
 
   return 0;
 }

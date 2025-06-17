@@ -2343,7 +2343,7 @@ arr SparseMatrix::A_B(const arr& B) const {
 }
 
 arr SparseMatrix::B_A(const arr& B) const {
-  if(!isSparse(B) && B.N<25) {
+  if(!isSparse(B) && B.N<64) {
     arr C;
     SparseMatrix& S = C.sparse();
     S.resize(B.d0, Z.d1, B.d0*Z.N); //resize to maximal possible
@@ -2359,7 +2359,7 @@ arr SparseMatrix::B_A(const arr& B) const {
     return C;
   }
   Eigen::SparseMatrix<double> A_eig = conv_sparseArr2sparseEigen(*this);
-  Eigen::SparseMatrix<double> B_eig = conv_sparseArr2sparseEigen(B.copy().sparse());
+  Eigen::SparseMatrix<double> B_eig = conv_sparseArr2sparseEigen( (isSparse(B) ? B.sparse() : B.copy().sparse()) );
 
   Eigen::SparseMatrix<double> W = B_eig * A_eig;
 

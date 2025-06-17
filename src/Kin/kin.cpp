@@ -840,6 +840,7 @@ void Configuration::setFrameState(const arr& X, const FrameL& F) {
       f->Q.setRelative(f->parent->ensure_X(), f->X);
       _state_q_isGood=false;
     }
+  _state_proxies_isGood=false;
 }
 
 /// set the 'tau-coordinate' (time interval from previous time slice) for equal for all frames

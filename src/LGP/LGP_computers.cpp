@@ -302,10 +302,11 @@ rai::LGPcomp_RRTpath::LGPcomp_RRTpath(ComputeNode* _par, rai::LGPcomp_Waypoints*
   if(!t) CHECK_EQ(_par, _ways, "");
   name <<"LGPcomp_RRTpath#" <<ways->seed <<'.' <<t;
   if(sket->verbose()>1) LOG(0) <<"rrt for phase:" <<t;
-  rai::Skeleton::getTwoWaypointProblem(t, C, q0, qT, *ways->komoWaypoints);
+  C = make_shared<rai::Configuration>();
+  rai::Skeleton::getTwoWaypointProblem(t, *C, q0, qT, *ways->komoWaypoints);
   //cout <<C.getJointNames() <<endl;
 
-  for(rai::Frame* f:C.frames) f->ensure_X();
+  for(rai::Frame* f:C->frames) f->ensure_X();
   rrt = make_shared<RRT_PathFinder>();
   rrt->P = make_shared<ConfigurationProblem>(C, true, sket->root->info->rrtTolerance);
   if(sket->skeleton.explicitCollisions.N) rrt->P->setExplicitCollisionPairs(sket->skeleton.explicitCollisions);
@@ -419,7 +420,7 @@ rai::LGPcomp_OptimizePath::LGPcomp_OptimizePath(rai::LGPcomp_RRTpath* _par, rai:
 
   for(uint t=0; t<ways->komoWaypoints->T; t++) {
     CHECK(rrts(t)->isFeasible, "rrt of t=" <<t <<" is infeasible - can't use RRT-initialized KOMO")
-    komoPath->initPhaseWithDofsPath(t, rrts(t)->C.getDofIDs(), rrts(t)->path, false);
+    komoPath->initPhaseWithDofsPath(t, rrts(t)->C->getDofIDs(), rrts(t)->path, false);
     if(sket->verbose()>2) {
       komoPath->view(sket->verbose()>3, STRING(name <<" - init with rrt part" <<t));
       rai::wait(.1);

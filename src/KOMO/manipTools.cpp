@@ -526,17 +526,17 @@ std::shared_ptr<ManipulationHelper> ManipulationHelper::sub_motion(uint phase, u
 }
 
 std::shared_ptr<rai::RRT_PathFinder> ManipulationHelper::sub_rrt(uint phase, const StringA& explicitCollisionPairs, const StringA& activeDofs) {
-  rai::Configuration C;
+  std::shared_ptr<rai::Configuration> C = make_shared<rai::Configuration>();
   arr q0, q1;
-  k().getSubProblem(phase, C, q0, q1);
+  k().getSubProblem(phase, *C, q0, q1);
 
   if(activeDofs.N){
-    DofL orgDofs = C.activeDofs;
-    C.selectJointsByName(activeDofs);
-    C.setDofState(q1, orgDofs);
-    q1 = C.getJointState();
-    C.setDofState(q0, orgDofs);
-    q0 = C.getJointState();
+    DofL orgDofs = C->activeDofs;
+    C->selectJointsByName(activeDofs);
+    C->setDofState(q1, orgDofs);
+    q1 = C->getJointState();
+    C->setDofState(q0, orgDofs);
+    q0 = C->getJointState();
   }
 
   std::shared_ptr<rai::RRT_PathFinder> rrt = make_shared<rai::RRT_PathFinder>();

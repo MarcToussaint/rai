@@ -78,7 +78,7 @@ struct RRT_PathFinder : NonCopyable {
   arr path;
 
   //setup
-  void setProblem(Configuration& C);
+  void setProblem(shared_ptr<Configuration> C);
   void setStartGoal(const arr& _starts, const arr& _goals);
   void setExplicitCollisionPairs(const StringA& collisionPairs);
 

@@ -29,13 +29,13 @@
 void init_Frame(pybind11::module& m) {
   pybind11::class_<rai::Frame, shared_ptr<rai::Frame>>(m, "Frame", "A (coordinate) frame of a configuration, which can have a parent, and associated shape, joint, and/or inertia")
 
-  .def("setPoseByText",  [](shared_ptr<rai::Frame>& self, const char* pose) { self->setPose(rai::Transformation(pose)); }, "")
-  .def("setPose",  [](shared_ptr<rai::Frame>& self, const arr& pose) { self->setPose(rai::Transformation(pose)); }, "")
+  .def("setPoseByText",  [](shared_ptr<rai::Frame>& self, const char* pose) { self->setPose(rai::Transformation(pose)); return self; }, "")
+  .def("setPose",  [](shared_ptr<rai::Frame>& self, const arr& pose) { self->setPose(rai::Transformation(pose)); return self; }, "")
   .def("setPosition", &rai::Frame::setPosition, "")
   .def("setQuaternion", &rai::Frame::setQuaternion, "")
   .def("setRotationMatrix", &rai::Frame::setRotationMatrix, "")
-  .def("setRelativePoseByText", [](shared_ptr<rai::Frame>& self, const char* pose) { self->setRelativePose(rai::Transformation(pose)); }, "")
-  .def("setRelativePose",  [](shared_ptr<rai::Frame>& self, const arr& pose) { self->setRelativePose(rai::Transformation(pose)); }, "")
+  .def("setRelativePoseByText", [](shared_ptr<rai::Frame>& self, const char* pose) { self->setRelativePose(rai::Transformation(pose)); return self; }, "")
+  .def("setRelativePose",  [](shared_ptr<rai::Frame>& self, const arr& pose) { self->setRelativePose(rai::Transformation(pose)); return self; }, "")
   .def("setRelativePosition", &rai::Frame::setRelativePosition, "")
   .def("setRelativeQuaternion", &rai::Frame::setRelativeQuaternion, "")
   .def("setRelativeRotationMatrix", &rai::Frame::setRelativeRotationMatrix, "")

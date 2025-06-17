@@ -171,7 +171,7 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
     t.resize(rrt_A.getNode(0).N);
     for(uint i=0; i<t.N; i++) {
       double lo=P->limits(0, i), up=P->limits(1, i);
-      CHECK_GE(up-lo, 1e-3, "limits are null interval: " <<i <<' ' <<P->C.getJointNames());
+      CHECK_GE(up-lo, 1e-3, "limits are null interval: " <<i <<' ' <<P->C->getJointNames());
       t.elem(i) = lo + rnd.uni()*(up-lo);
     }
     for(uint i=0;i<P->sphericalCoordinates.d0;i++) randomSphericalCoordinates(t, P->sphericalCoordinates[i]);
@@ -221,7 +221,7 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
 //===========================================================================
 
 
-void RRT_PathFinder::setProblem(Configuration& C){
+void RRT_PathFinder::setProblem(shared_ptr<Configuration> C){
   P = make_shared<ConfigurationProblem>(C, opt.useBroadCollisions, opt.collisionTolerance, 1);
   P->verbose=0;
 }
@@ -390,15 +390,15 @@ void RRT_PathFinder::view(bool pause, const char* txt, bool play){
   // if(play) DISP.get_viewer() -> playVideo();
   DISP.get_viewer() -> view(pause, txt);
 #else
-  P->C.get_viewer() -> updateConfiguration(P->C);
-  if(path.N) P->C.get_viewer() -> setMotion(P->C, path);
-  P->C.get_viewer() -> view(pause, txt);
+  P->C->get_viewer() -> updateConfiguration(*P->C);
+  if(path.N) P->C->get_viewer() -> setMotion(*P->C, path);
+  P->C->get_viewer() -> view(pause, txt);
 #endif
 }
 
 void RRT_PathFinder::ensure_DISP(){
-  if(DISP.getJointStateDimension() != P->C.getJointStateDimension()){
-    DISP.copy(P->C);
+  if(DISP.getJointStateDimension() != P->C->getJointStateDimension()){
+    DISP.copy(*P->C);
   }
 }
 

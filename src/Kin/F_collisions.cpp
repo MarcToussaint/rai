@@ -28,7 +28,7 @@ uint F_PairCollision::dim_phi(const FrameL& F) {
 
 void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0) {  Feature::phi2(y, J, F);  return;  }
-  if(F.nd>=2) {
+  if(F.N>2) {
     FrameL _F = F.ref();
     if(F.nd==3) _F.reshape(F.d1, F.d2);
     F.last()->C.kinematicsZero(y, J, dim_phi(_F));
@@ -46,29 +46,20 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Frame* f2 = F.elem(1);
 
   double r1=0., r2=0.;
-  arr m1=zeros(1,3), m2=zeros(1,3);
-#if 0
-  //which meshes should we collide? -> m1, m2
-  if(f1->shape && f1->shape->type()!=rai::ST_marker) {
-    r1 = f1->shape->radius();
-    m1 = f1->shape->sscCore();  if(!m1.N) { m1 = f1->shape->mesh().V; r1=0.; }
-    if(!m1.N) m1 = zeros(1,3);
-  }
-  if(f2->shape && f2->shape->type()!=rai::ST_marker) {
-    r2 = f2->shape->radius();
-    m2 = f2->shape->sscCore();  if(!m2.N) { m2 = f2->shape->mesh().V; r2=0.; }
-    if(!m2.N) m2 = zeros(1,3);
-  }
-#else
+  arr m1, m2;
   if(f1->shape){
     m1.referTo( f1->shape->sscCore() );
     r1=f1->shape->coll_cvxRadius;
+  }else{
+    m1.resize(1,3).setZero();
   }
+
   if(f2->shape){
     m2.referTo( f2->shape->sscCore() );
     r2=f2->shape->coll_cvxRadius;
+  }else{
+    m2.resize(1,3).setZero();
   }
-#endif
 
   //if this a point cloud collision? -> different method
 #if 0

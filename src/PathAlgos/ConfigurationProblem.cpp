@@ -13,29 +13,29 @@
 
 #include "ConfigurationProblem.h"
 
-ConfigurationProblem::ConfigurationProblem(rai::Configuration& _C, bool _useBroadCollisions, double _collisionTolerance, int _verbose)
+ConfigurationProblem::ConfigurationProblem(shared_ptr<rai::Configuration> _C, bool _useBroadCollisions, double _collisionTolerance, int _verbose)
   : C(_C),
     useBroadCollisions(_useBroadCollisions),
     collisionTolerance(_collisionTolerance),
     verbose(_verbose) {
 
-  limits = C.getJointLimits();
+  limits = C->getJointLimits();
 
-  C.ensure_q();
-  for(rai::Dof* dof:C.activeDofs) if(dof->joint()){
+  C->ensure_q();
+  for(rai::Dof* dof:C->activeDofs) if(dof->joint()){
     if(dof->joint()->type==rai::JT_circleZ || dof->joint()->type==rai::JT_quatBall){
       sphericalCoordinates.append(uintA{dof->qIndex, dof->dim});
     }
   }
   sphericalCoordinates.reshape(-1,2);
 
-  // C.fcl()->mode = rai::FclInterface::_distanceCutoff;
-  C.coll_fcl()->mode = rai::FclInterface::_broadPhaseOnly;
+  // C->fcl()->mode = rai::FclInterface::_distanceCutoff;
+  C->coll_fcl()->mode = rai::FclInterface::_broadPhaseOnly;
 }
 
 void ConfigurationProblem::setExplicitCollisionPairs(const StringA& _collisionPairs) {
   useBroadCollisions = false;
-  collisionPairs = C.getFrameIDs(_collisionPairs);
+  collisionPairs = C->getFrameIDs(_collisionPairs);
   collisionPairs.reshape(-1, 2);
 }
 
@@ -48,43 +48,43 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x) {
   //   }
   // }
 
-  C.setJointState(x);
+  C->setJointState(x);
   if(useBroadCollisions) {
-    C.coll_stepFcl();
+    C->coll_stepFcl();
   } else {
     //CHECK(collisionPairs.N, "you need either explicit collision pairs or useBroadCollisions");
-    C.proxies.resize(collisionPairs.d0);
+    C->proxies.resize(collisionPairs.d0);
     for(uint i=0; i<collisionPairs.d0; i++) {
-      C.proxies(i).a = C.frames(collisionPairs(i, 0));
-      C.proxies(i).b = C.frames(collisionPairs(i, 1));
-      C.proxies(i).d = -0.;
+      C->proxies(i).a = C->frames(collisionPairs(i, 0));
+      C->proxies(i).b = C->frames(collisionPairs(i, 1));
+      C->proxies(i).d = -0.;
     }
-    for(rai::Proxy& p:C.proxies) p.calc_coll();
-    C._state_proxies_isGood = true;
+    for(rai::Proxy& p:C->proxies) p.calc_coll();
+    C->_state_proxies_isGood = true;
   }
   evals++;
 
-  //C.view();
+  //C->view();
 
   shared_ptr<QueryResult> qr = make_shared<QueryResult>();
 
 #if 1
     double D=0.;
-    for(rai::Proxy& p:C.proxies){
+    for(rai::Proxy& p:C->proxies){
       p.calc_coll();
       if(p.d<0.) D -= p.d;
     }
     qr->totalCollision = D;
     qr->isFeasible = (qr->totalCollision<collisionTolerance);
 #else
-    qr->totalCollision = C.getTotalPenetration();
+    qr->totalCollision = C->getTotalPenetration();
     qr->isFeasible = (qr->totalCollision<collisionTolerance);
 #endif
 
   //display (link of last joint)
-  qr->disp3d = C.activeDofs.elem(-1)->frame->getPosition();
+  qr->disp3d = C->activeDofs.elem(-1)->frame->getPosition();
   if(verbose) {
-    C.view(verbose>1, STRING("ConfigurationProblem query:\n" <<*qr));
+    C->view(verbose>1, STRING("ConfigurationProblem query:\n" <<*qr));
   }
 
   return qr;
@@ -96,7 +96,7 @@ void QueryResult::write(std::ostream& os) const {
 
 void QueryResult::writeDetails(std::ostream& os, const ConfigurationProblem& P, double margin) const {
   write(os);
-  for(const rai::Proxy& p:P.C.proxies) if(p.d<=margin) {
+  for(const rai::Proxy& p:P.C->proxies) if(p.d<=margin) {
       os <<"\nproxy: " <<p;
     }
   os <<std::endl;

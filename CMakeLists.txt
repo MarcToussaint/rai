@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 project(rai_devel)
 
 ## variable default values
-set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ version selection")
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ version selection")
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/.local" CACHE PATH "..." FORCE)
 endif()
@@ -19,7 +19,7 @@ option(BUILD_TESTS "build tests" OFF)
 ## compile options
 add_compile_options(
   -O3 -g -Wall -Wpedantic
-  $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
+  $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
   $<$<COMPILE_LANGUAGE:CXX>:-Wno-terminate>
   $<$<COMPILE_LANGUAGE:CXX>:-Wno-array-bounds>
   )

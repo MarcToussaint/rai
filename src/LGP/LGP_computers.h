@@ -145,7 +145,7 @@ struct LGPcomp_RRTpath : ComputeNode {
   LGPcomp_Waypoints* ways=0;
   LGPcomp_RRTpath* prev=0;
 
-  Configuration C;
+  shared_ptr<Configuration> C;
   uint t;
   shared_ptr<RRT_PathFinder> rrt;
   arr q0, qT;

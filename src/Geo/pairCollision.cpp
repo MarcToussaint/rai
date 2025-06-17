@@ -569,10 +569,9 @@ void PairCollision::GJK_sqrDistance() {
 
 void PairCollision::kinDistance(arr& y, arr& J,
                                 const arr& Jp1, const arr& Jp2) {
-  y = arr{distance-rad1-rad2};
+  y.resize(1).elem() = distance-rad1-rad2;
   if(!!J) {
-    arr Jdiff = Jp1 - Jp2;
-    J = ~normal*Jdiff;
+    J = ~normal * (Jp1-Jp2);
   }
 }
 
