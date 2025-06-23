@@ -271,7 +271,7 @@ public:
   void addProxies(const uintA& collisionPairs);
 
   /// @name extensions on demand
-  std::shared_ptr<ConfigurationViewer> get_viewer(const char* window_title=nullptr, bool offscreen=false);
+  std::shared_ptr<ConfigurationViewer> get_viewer();
   OpenGL& gl();
   void view_lock(const char* _lockInfo);
   void view_unlock();

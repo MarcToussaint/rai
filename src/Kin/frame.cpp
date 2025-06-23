@@ -2084,6 +2084,7 @@ void rai::Shape::write(std::ostream& os) const {
   Node* n;
   if(frame.ats && (n=frame.ats->findNode("color"))) { os <<", "; n->write(os, -1, true); }
   else if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4) os <<", color: " <<_mesh->C;
+  else if(_mesh && _mesh->C.nd==2) os <<", color: " <<_mesh->C[0];
   if(frame.ats && (n=frame.ats->findNode("mesh"))) { os <<", "; n->write(os, -1, true); }
   if(frame.ats && (n=frame.ats->findNode("meshscale"))) { os <<", "; n->write(os, -1, true); }
   if(cont) os <<", contact: " <<(int)cont;
@@ -2096,6 +2097,7 @@ void rai::Shape::write(Graph& g) {
   Node* n;
   if(frame.ats && (n=frame.ats->findNode("color"))) n->newClone(g);
   else if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4) g.add<arr>("color", mesh().C);
+  else if(_mesh && _mesh->C.nd==2) g.add<arr>("color", mesh().C[0]);
   if(frame.ats && (n=frame.ats->findNode("mesh"))) n->newClone(g);
   if(frame.ats && (n=frame.ats->findNode("meshscale"))) n->newClone(g);
   if(cont) g.add<int>("contact", cont);

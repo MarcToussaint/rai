@@ -395,7 +395,7 @@ void Simulation::moveGripper(const char* gripperFrameName, double width, double 
   //reattach object to world frame, and make it physical
   if(obj) {
     if(verbose>0) LOG(1) <<"initiating moving gripper " <<gripper->name <<" and releasing obj " <<obj->name <<" width:" <<width <<" speed:" <<speed;
-    detach(obj);
+    detach(gripper, obj);
   } else {
     if(verbose>0) LOG(1) <<"initiating moving gripper " <<gripper->name <<" (without releasing obj)" <<" width:" <<width <<" speed:" <<speed;
   }
@@ -816,10 +816,10 @@ Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Joint* _joint,  Frame* _fing
   }
 }
 
-void Simulation::attach(Frame* gripper, Frame* obj) {
-  obj = obj->getUpwardLink();
-  gripper = gripper->getUpwardLink();
-  Joint* j = C.attach(gripper, obj);
+void Simulation::attach(Frame* from, Frame* to) {
+  from = from->getUpwardLink();
+  to = to->getUpwardLink();
+  // Joint* j = C.attach(gripper, obj);
 #if 0
   obj->inertia->type = BT_kinematic;
 
@@ -832,7 +832,7 @@ void Simulation::attach(Frame* gripper, Frame* obj) {
   } else NIY;
 #else
   if(engine==_physx) {
-    self->physx->addJoint(j);
+    self->physx->addRigidJoint(from, to);
   } else if(engine==_bullet) {
     NIY;
   } else if(engine==_kinematic) {
@@ -840,8 +840,9 @@ void Simulation::attach(Frame* gripper, Frame* obj) {
 #endif
 }
 
-void Simulation::detach(rai::Frame* obj) {
-  obj = obj->getUpwardLink();
+void Simulation::detach(Frame* from, Frame* to) {
+  from = from->getUpwardLink();
+  to = to->getUpwardLink();
 #if 0
   obj->unLink();
   obj->inertia->type = BT_dynamic;
@@ -853,9 +854,9 @@ void Simulation::detach(rai::Frame* obj) {
   } else NIY;
 #else
   if(engine==_physx) {
-    self->physx->removeJoint(obj->joint);
+    self->physx->removeJoint(from, to);
   }
-  obj->unLink();
+  // obj->unLink();
 #endif
 }
 

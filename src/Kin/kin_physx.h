@@ -38,8 +38,8 @@ struct PhysXInterface {
   void pullMotorStates(rai::Configuration& C, arr& qDot);
 
   void changeObjectType(rai::Frame* f, int type);
-  void addJoint(rai::Joint* j);
-  void removeJoint(rai::Joint* j);
+  void addRigidJoint(rai::Frame* from, rai::Frame* to);
+  void removeJoint(const rai::Frame* from, const rai::Frame* to);
   void postAddObject(rai::Frame* f);
 
   void setGravity(float grav);

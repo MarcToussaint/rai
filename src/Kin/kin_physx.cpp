@@ -328,9 +328,6 @@ void PhysXInterface_self::addLink(rai::Frame* f) {
 
 #if 1
 void PhysXInterface_self::addJoint(const rai::Joint* jj) {
-  //HALT("REALLY?");
-  while(joints.N <= jj->frame->ID)
-    joints.append(nullptr);
 
   rai::Transformation rel=0;
   rai::Frame* to = jj->frame;
@@ -392,7 +389,7 @@ void PhysXInterface_self::addJoint(const rai::Joint* jj) {
         //desc->setDriveVelocity(PxVec3(0, 0, 0), PxVec3(5e-1, 0, 0));
       }
 #endif
-      joints(to->ID) = joint;
+      joints.append(joint);
     }
     break;
     case rai::JT_rigid: {
@@ -400,7 +397,7 @@ void PhysXInterface_self::addJoint(const rai::Joint* jj) {
       PxFixedJoint* joint = PxFixedJointCreate(*core()->mPhysics, actors(from->ID), A, actors(to->ID), B.getInverse());
       // desc->setProjectionLinearTolerance(1e10);
       // desc->setProjectionAngularTolerance(3.14);
-      joints(to->ID) = joint;
+      joints.append(joint);
     }
     break;
     case rai::JT_trans3: {
@@ -415,7 +412,7 @@ void PhysXInterface_self::addJoint(const rai::Joint* jj) {
       desc->setMotion(PxD6Axis::eY, PxD6Motion::eFREE);
       desc->setMotion(PxD6Axis::eSWING2, PxD6Motion::eFREE);
 
-      joints(to->ID) = desc;
+      joints.append(desc);
 #endif
       break;
     }
@@ -446,7 +443,7 @@ void PhysXInterface_self::addJoint(const rai::Joint* jj) {
       } else {
         desc->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
       }
-      joints(to->ID) = desc;
+      joints.append(desc);
 #endif
     }
     break;
@@ -1108,19 +1105,42 @@ void PhysXInterface::changeObjectType(rai::Frame* f, int _type) {
   self->actorTypes(f->ID) = type;
 }
 
-#if 1
-void PhysXInterface::addJoint(rai::Joint* j) {
-  self->addJoint(j);
+void PhysXInterface::addRigidJoint(rai::Frame *from, rai::Frame *to) {
+  // self->addJoint(from, to, rai::JT_rigid, to->ensure_X()/from->ensure_X());
+  PxRigidActor *From = self->actors(from->ID);
+  PxRigidActor *To = self->actors(to->ID);
+  CHECK(From, from->name <<" it not an actor");
+  CHECK(To, to->name <<" it not an actor");
+
+  PxTransform A = conv_Transformation2PxTrans(to->ensure_X()/from->ensure_X());
+  PxTransform B = Id_PxTrans();
+  PxFixedJoint* joint = PxFixedJointCreate(*core()->mPhysics, From, A, To, B);
+  self->joints.append(joint);
 }
 
-void PhysXInterface::removeJoint(rai::Joint* j) {
-  rai::Frame* to = j->frame;
-  rai::Frame* from = j->frame->parent->getUpwardLink();
-  LOG(0) <<"REMOVING JOINT " <<from <<'-' <<to <<" of type " <<j->type;
-  PxJoint* joint = self->joints(to->ID);
-  if(joint) joint->release();
+void PhysXInterface::removeJoint(const rai::Frame* from, const rai::Frame* to) {
+  LOG(0) <<"REMOVING JOINT " <<from->name <<'-' <<to->name;
+  PxRigidActor *From = self->actors(from->ID);
+  PxRigidActor *To = self->actors(to->ID);
+  CHECK(From, from->name <<" it not an actor");
+  CHECK(To, to->name <<" it not an actor");
+
+  bool found = false;
+  for(uint i=self->joints.N;i--;){
+    PxJoint *joint = self->joints.elem(i);
+    CHECK(joint, "");
+    PxRigidActor *a, *b;
+    joint->getActors(a, b);
+    if(a==From && b==To){
+      joint->release();
+      self->joints.remove(i);
+      found = true;
+    }
+  }
+  if(!found){
+    LOG(-1) <<"that joint didn't exist!";
+  }
 }
-#endif
 
 void PhysXInterface::postAddObject(rai::Frame* f) {
   while(self->actors.N<=f->ID) self->actors.append(0);

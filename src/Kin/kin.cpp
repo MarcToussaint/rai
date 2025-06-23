@@ -2399,7 +2399,7 @@ StringA Configuration::coll_getProxyPairs(double belowMargin, arr& distances){
 }*/
 
 /// return a OpenGL extension
-std::shared_ptr<ConfigurationViewer> Configuration::get_viewer(const char* window_title, bool offscreen) {
+std::shared_ptr<ConfigurationViewer> Configuration::get_viewer() {
   if(!self->viewer) {
     self->viewer = make_shared<ConfigurationViewer>();
   }

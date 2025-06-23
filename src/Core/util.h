@@ -623,6 +623,15 @@ inline bool operator==(Type& t1, Type& t2) { return t1.typeId() == t2.typeId(); 
 
 //===========================================================================
 //
+// shared ptrs
+//
+
+template<class T> void _delete(T* ptr){}
+template<class T> std::shared_ptr<T> _shared(T& x){ return std::shared_ptr<T>(&x, &_delete<T>); }
+
+
+//===========================================================================
+//
 /// running code on init (in cpp files)
 //
 

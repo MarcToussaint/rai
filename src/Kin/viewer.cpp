@@ -303,6 +303,11 @@ void ConfigurationViewer::raiseWindow() {
   gl->raiseWindow();
 }
 
+void ConfigurationViewer::setWindow(const char* window_title, int w, int h){
+  ensure_gl().setTitle(window_title);
+  ensure_gl().resize(w, h);
+}
+
 int ConfigurationViewer::view(bool watch, const char* _text) {
   if(_text) text = _text;
   if(watch && (!text.N || text(-1)!=']')) text <<"\n[press key to continue]";

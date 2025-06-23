@@ -9,6 +9,8 @@
 #include "graph.h"
 #include "util.ipp"
 
+#include <type_traits>
+
 #include <map>
 
 #ifdef RAI_JSON
@@ -29,6 +31,8 @@ rai::NodeL& NoNodeL=*((rai::NodeL*)nullptr);
 
 namespace rai {
   NodeL readNodeParents2(Graph& G, String& str);
+  enum ShapeType : int;
+  enum JointType : int;
 }
 
 //===========================================================================
@@ -1171,6 +1175,8 @@ void node2yaml(Node* n, YAML::Node& root){
   } else if(n->is<uint>()) { y = n->as<uint>();
   } else if(n->is<float>()) { y = n->as<float>();
   } else if(n->is<double>()) { y = n->as<double>();
+  } else if(n->is<rai::Enum<rai::ShapeType>>()) { y = n->as<rai::Enum<rai::ShapeType>>().name();
+  } else if(n->is<rai::Enum<rai::JointType>>()) { y = n->as<rai::Enum<rai::JointType>>().name();
   } else{
     THROW("type conversion not implemented: " <<rai::niceTypeidName(n->type))
     NIY;
@@ -1207,13 +1213,13 @@ void Graph::write(std::ostream& os, const char* ELEMSEP, const char* BRACKETS, i
     BRACKETSlength=strlen(BRACKETS);
     for(uint b=0; b<BRACKETSlength/2; b++) os <<BRACKETS[b];
   }
-  bool hasSubgraphs=false;
-  for(const Node* n: *this) if(n->is<Graph>()) { hasSubgraphs=true; break; }
+  // bool hasSubgraphs=false;
+  // for(const Node* n: *this) if(n->is<Graph>()) { hasSubgraphs=true; break; }
 
   if(indent>=0) indent += 2;
   for(uint i=0; i<N; i++) {
-    if(indent>=0) { if(i) os <<ELEMSEP <<'\n'; for(int i=0; i<indent; i++) os <<' '; }
-    else if(i) { if(hasSubgraphs) os <<',' <<endl; else os <<ELEMSEP; }
+    if(indent>=0) { if(i) os <<'\n'; for(int i=0; i<indent; i++) os <<' '; }
+    else if(i) os <<ELEMSEP; //{ if(hasSubgraphs) os <<',' <<endl; else os <<ELEMSEP; }
     if(elem(i)) elem(i)->write(os, indent, yamlMode, binary); else os <<"<nullptr>";
   }
   if(BRACKETS) {

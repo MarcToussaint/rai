@@ -224,7 +224,7 @@ void ManipulationHelper::place_box(double time, const char* obj, const char* tab
   }else NIY
   arr tableSize = k().world.getFrame(table)->getSize();  tableSize.resizeCopy(3);
   double relPos=0.;
-  FeatureSymbol zVector;
+  FeatureSymbol zVector = FS_none;
   rai::Array<FeatureSymbol> align;
   if(place_direction == "x") {
     relPos = .5*(boxSize(0)+tableSize(2));

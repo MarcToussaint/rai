@@ -40,6 +40,7 @@ struct ConfigurationViewer : RenderData {
   void savePng(str saveVideoPath="z.vid/", int count=-1);
 
   void raiseWindow();
+  void setWindow(const char* window_title, int w=400, int h=400);
   void glDraw(OpenGL&);
   void setCamera(rai::Frame* camFrame);
   void setCameraPose(const arr& pose);

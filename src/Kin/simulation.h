@@ -86,8 +86,8 @@ struct Simulation {
   //what are really the fundamental perturbations? Their (reactive?) management should be realized by 'agents'. We need a method to add purturbation agents.
   void addImp(ImpType type, const StringA& frames, const arr& parameters);
 
-  void attach(Frame* gripper, Frame* obj);
-  void detach(Frame* obj);
+  void attach(Frame* from, Frame* to);
+  void detach(Frame* from, Frame* to);
 
   //== management interface
 

@@ -6,6 +6,7 @@
 #include <PathAlgos/RRT_PathFinder.h>
 
 #include <thread>
+#include <memory>
 
 //===========================================================================
 
@@ -205,7 +206,7 @@ void TEST(Mobile){
 
   rai::RRT_PathFinder rrt;
   rrt.opt.set_maxIters(500000). set_verbose(2). set_stepsize(.2) .set_subsamples(0);
-  rrt.setProblem(C);
+  rrt.setProblem(_shared(C));
   rrt.setStartGoal(q0, q1);
   rrt.solve();
   rrt.view(false, STRING(*rrt.ret));

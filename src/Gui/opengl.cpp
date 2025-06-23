@@ -714,27 +714,28 @@ bool OpenGL::modifiersCtrl() { return _CTRL(modifiers); }
 
 arr OpenGL::get3dMousePos(arr& normal) {
   double d = 0;
-  if(mouseposy>=1. && mouseposy<=height-2 && mouseposx>=1. && mouseposx<=width-2)
+  if(mouseposy>=1 && mouseposy<=captureDepth.d0-2 && mouseposx>=1 && mouseposx<=captureDepth.d1-2)
     d = captureDepth(mouseposy, mouseposx);
   arr x;
   if(d<.01 || d==1.) {
     cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
+    if(!!normal) normal.clear();
   } else {
     x = {mouseposx, mouseposy, d};
     camera.unproject_fromPixelsAndGLDepth(x, width, height);
-  }
-  if(!!normal) {
-    arr x1 = {mouseposx-1., mouseposy, captureDepth(mouseposy, mouseposx-1.)};
-    camera.unproject_fromPixelsAndGLDepth(x1, width, height);
-    arr x2 = {mouseposx+1., mouseposy, captureDepth(mouseposy, mouseposx+1.)};
-    camera.unproject_fromPixelsAndGLDepth(x2, width, height);
-    arr y1 = {mouseposx, mouseposy-1., captureDepth(mouseposy-1., mouseposx)};
-    camera.unproject_fromPixelsAndGLDepth(y1, width, height);
-    arr y2 = {mouseposx, mouseposy+1., captureDepth(mouseposy+1., mouseposx)};
-    camera.unproject_fromPixelsAndGLDepth(y2, width, height);
+    if(!!normal) {
+      arr x1 = {mouseposx-1., mouseposy, captureDepth(mouseposy, mouseposx-1.)};
+      camera.unproject_fromPixelsAndGLDepth(x1, width, height);
+      arr x2 = {mouseposx+1., mouseposy, captureDepth(mouseposy, mouseposx+1.)};
+      camera.unproject_fromPixelsAndGLDepth(x2, width, height);
+      arr y1 = {mouseposx, mouseposy-1., captureDepth(mouseposy-1., mouseposx)};
+      camera.unproject_fromPixelsAndGLDepth(y1, width, height);
+      arr y2 = {mouseposx, mouseposy+1., captureDepth(mouseposy+1., mouseposx)};
+      camera.unproject_fromPixelsAndGLDepth(y2, width, height);
 
-    normal = crossProduct(x2-x1, y2-y1);
-    normal /= length(normal);
+      normal = crossProduct(x2-x1, y2-y1);
+      normal /= length(normal);
+    }
   }
   return x;
 }
