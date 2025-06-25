@@ -19,17 +19,19 @@
 #include <climits>
 #include <mutex>
 #include <functional>
+#include <random>
 
 using std::cout;
 using std::cerr;
 using std::endl;
+
+namespace rai {
 
 //===========================================================================
 //
 // standard little methods (this needs cleanup)
 //
 
-namespace rai {
 extern int argc;
 extern char** argv;
 extern std::string startDir;
@@ -121,7 +123,6 @@ const char* niceTypeidName(const std::type_info& type);
 //----- get verbose level
 bool getInteractivity();
 bool getDisableGui();
-}
 
 //===========================================================================
 //
@@ -132,7 +133,6 @@ bool getDisableGui();
 #define STRINGF(format,...) (rai::String().printf(format, __VA_ARGS__))
 #define STREAM(x) (((rai::String&)(rai::String().stream() <<x)).stream())
 
-namespace rai {
 /** @brief String implements the functionalities of an ostream and an
 istream, but also can be send to an ostream or read from an
 istream. It is based on a simple streambuf derived from the
@@ -214,16 +214,13 @@ struct String : public std::iostream {
 
   /// @name I/O
   void write(std::ostream& os) const;
-  uint read(std::istream& is, const char* skipSymbols=nullptr, const char* stopSymbols=nullptr, int eatStopSymbol=-1);
+  uint read(std::istream& is, const char* skipSymbols=0, const char* stopSymbols=0, int eatStopSymbol=-1);
 };
 stdPipes(String)
 
 inline String operator+(const String& a, const char* b) { String s=a; s <<b; return s; }
   //template<class T> String operator+(const String& a, const T& b) { String s=a; s <<b; return s; }
 
-} //namespace
-
-typedef rai::String str;
 
 void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 
@@ -236,26 +233,25 @@ void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 // give names to Enum (for pipe << >> )
 //
 
-namespace rai {
 template<class enum_T>
 struct Enum {
   enum_T x;
   static const char* names [];
   Enum():x((enum_T)-1) {}
   Enum(enum_T y):x(y) {}
-  explicit Enum(const rai::String& str):Enum() { operator=(str); }
+  explicit Enum(const String& str):Enum() { operator=(str); }
   const enum_T& operator=(enum_T y) { x=y; return x; }
   bool operator==(const enum_T& y) const { return x==y; }
   bool operator!=(const enum_T& y) const { return x!=y; }
   operator enum_T() const { return x; }
   void read(std::istream& is) {
-    rai::String str(is);
+    String str(is);
     operator=(str);
   }
   void operator=(const char* str) {
     operator=(STRING(str));
   }
-  void operator=(const rai::String& str) {
+  void operator=(const String& str) {
     bool good=false;
     for(int i=0; names[i]; i++) {
       const char* n = names[i];
@@ -263,14 +259,14 @@ struct Enum {
         if(str==n) { x=(enum_T)(i); good=true; break; }
     }
     if(!good) {
-      rai::String all;
+      String all;
       for(int i=0; names[i]; i++) all <<names[i] <<' ';
       HALT("Enum::read could not find the keyword '" <<str <<"'. Possible Enum keywords: " <<all);
     } else {
       CHECK(str.p && !strcmp(names[x], str.p), "");
     }
   }
-  static bool contains(const rai::String& str) {
+  static bool contains(const String& str) {
     for(int i=0; names[i]; i++) {
       if(str==names[i]) return true;
     }
@@ -287,14 +283,12 @@ struct Enum {
 };
 template<class T> std::istream& operator>>(std::istream& is, Enum<T>& x) { x.read(is); return is; }
 template<class T> std::ostream& operator<<(std::ostream& os, const Enum<T>& x) { x.write(os); return os; }
-}
 
 //===========================================================================
 //
 // parameters
 //
 
-namespace rai {
 //----- parameter grabbing from command line, config file, or default value
 template<class T> T getParameter(const char* tag);
 template<class T> T getParameter(const char* tag, const T& Default);
@@ -331,8 +325,6 @@ template<class T> struct ParameterInitEnum {
   auto& set_##name(type _##name){ name=_##name; return *this; } \
   rai::ParameterInitEnum<type> __init_##name = {name, scope #name, Default};
 
-}
-
 //===========================================================================
 //
 // Testing
@@ -359,15 +351,13 @@ template<class T> struct ParameterInitEnum {
 // FileToken
 //
 
-namespace rai {
-
 /** @brief A ostream/istream wrapper that allows easier initialization of objects, like:
 arr X = FILE("inname");
 X >>FILE("outfile");
 etc
 */
 struct FileToken {
-  rai::String path, name, baseDir;
+  String path, name, baseDir;
   std::shared_ptr<std::ofstream> os;
   std::shared_ptr<std::ifstream> is;
 
@@ -386,9 +376,9 @@ struct FileToken {
   operator std::istream& () { return getIs(); }
   operator std::ostream& () { return getOs(); }
 
-  rai::String autoPath() const;
-  rai::String relPath() const;
-  rai::String fullPath() const;
+  String autoPath() const;
+  String relPath() const;
+  String fullPath() const;
 };
 template<class T> FileToken& operator>>(FileToken& fil, T& x) { fil.getIs() >>x;  return fil; }
 template<class T> std::ostream& operator<<(FileToken& fil, const T& x) { fil.getOs() <<x;  return fil.getOs(); }
@@ -396,7 +386,7 @@ inline std::ostream& operator<<(std::ostream& os, const FileToken& fil) { return
 template<class T> FileToken& operator<<(T& x, FileToken& fil) { fil.getIs() >>x; return fil; }
 template<class T> void operator>>(const T& x, FileToken& fil) { fil.getOs() <<x; }
 inline bool operator==(const FileToken&, const FileToken&) { return false; }
-}
+
 #define FILE(filename) (rai::FileToken(filename)()) //it needs to return a REFERENCE to a local scope object
 
 //===========================================================================
@@ -404,15 +394,17 @@ inline bool operator==(const FileToken&, const FileToken&) { return false; }
 // random number generator
 //
 
-namespace rai {
 /** @brief A random number generator. An global instantiation \c
-  rai::rnd of a \c Rnd object is created. Use this one object to get
+  rnd of a \c Rnd object is created. Use this one object to get
   random numbers.*/
 class Rnd {
  private:
   bool ready;
   int32_t rpoint;     /* Feldindex    */
   int32_t rfield[256];   /* Schieberegisterfeld  */
+public:
+  std::minstd_rand e1;
+  std::random_device r;
 
  public:
   /// ...
@@ -420,51 +412,22 @@ class Rnd {
 
  public:/// @name initialization
   /// initialize with a specific seed
-  uint32_t seed(uint32_t n);
+   void seed(int s){ e1.seed(s); ready=true; }
 
   /// use Parameter<uint>("seed") as seed
-  uint32_t seed();
+  void seed(){ e1.seed(getParameter<uint32_t>("seed", 0)); ready=true; }
 
   /// uses the internal clock to generate a seed
-  uint32_t clockSeed();
+  void seed_random(){ e1.seed(r()); ready=true; }
 
  public:/// @name access
-  /// a initeger random number uniformly distributed in [0, ?]
-  uint32_t num() { if(!ready) seed(); return (uint32_t)rnd250() >>5; }
-  /// same as \c num()
-  uint32_t operator()() { return num(); }
-  /// a initeger random number uniformly distributed in [0, \c i-1]
-  uint32_t num(uint32_t limit) {
-    CHECK(limit, "zero limit in rnd.num()"); return num() % limit;
-  }
-  uint32_t num(int32_t lo, int32_t hi) { return lo+num(hi-lo+1); }
-  /// same as \c num(i)
-  uint32_t operator()(uint32_t i) { return num(i); }
-  uint32_t operator()(int32_t lo, int32_t hi) { return num(lo, hi); }
-  /// a random variable uniformly distributed in [0, 1]
-  double uni() { return ((double)num(1 <<22))/(1 <<22); }
-  /// a random variable uniformly distributed in [\c low, \c high]
-  double uni(double low, double high) { return low+uni()*(high-low); }
-  /// a gaussian random variable with mean zero
-  double gauss();
-  /** @brief a positive integer drawn from a poisson distribution with given
-    \c mean; is case \c mean>100, a (positive) gauss number
-    \c floor(mean+gauss(sqrt(mean))+.5) is returned */
-  uint32_t poisson(double mean);
+  int uni_int(int lo, int up) { if(!ready) seed(); std::uniform_int_distribution<int> dist(lo, up); return dist(e1); }
+  double uni(double lo=0., double up=1.) { if(!ready) seed(); std::uniform_real_distribution<double> dist(lo, up); return dist(e1); }
+  double gauss(double mean=0., double std=1.){ if(!ready) seed(); std::normal_distribution<double> dist(mean, std); return dist(e1); }
 
- private:
-  int32_t rnd250() {
-    rpoint = (rpoint+1) & 255;          // Index erhoehen
-    return rfield[rpoint] =  rfield[(rpoint-250) & 255]
-                             ^ rfield[(rpoint-103) & 255];
-  }
+  uint operator()(uint up) { return uint(uni_int(0, up-1)); }
 
-  void seed250(int32_t seed);
 };
-
-}
-/// The global Rnd object
-extern rai::Rnd rnd;
 
 //===========================================================================
 //
@@ -475,7 +438,7 @@ struct Inotify {
   int fd, wd;
   char* buffer;
   uint buffer_size;
-  rai::FileToken* fil;
+  FileToken* fil;
   Inotify(const char* filename);
   ~Inotify();
   bool poll(bool block=false, bool verbose=false);
@@ -541,7 +504,6 @@ struct Singleton {
 // just a hook to make things gl drawable
 //
 
-struct OpenGL;
 struct OpenGLDrawOptions {
   bool drawWires=false;
   bool drawColors=true;
@@ -569,22 +531,20 @@ struct CoutToken {
   ~CoutToken() { coutMutex.unlock(); }
   std::ostream& getOs() { return cout; }
 };
-#define COUT (CoutToken().getOs())
+#define COUT (rai::CoutToken().getOs())
 
 //===========================================================================
 //
 // to register a type
 //
 
-namespace rai {
 struct Node;
 struct Graph;
-}
 
 struct Type {
   virtual ~Type() {}
   virtual const std::type_info& typeId() const {NIY}
-  virtual struct rai::Node* readIntoNewNode(struct rai::Graph& container, std::istream&) const {NIY}
+  virtual struct Node* readIntoNewNode(struct Graph& container, std::istream&) const {NIY}
   virtual void* newInstance() const {NIY}
   void write(std::ostream& os) const {  os <<"Type '" <<typeId().name() <<"' ";  }
   void read(std::istream& is) const {NIY}
@@ -606,7 +566,7 @@ inline bool operator==(Type& t1, Type& t2) { return t1.typeId() == t2.typeId(); 
 //
 
  template<class T> T fromFile(const char* filename) {
-   rai::FileToken file(filename);
+   FileToken file(filename);
    T x;
    file.cd_file();
    x.read(file.getIs());
@@ -621,6 +581,14 @@ inline bool operator==(Type& t1, Type& t2) { return t1.typeId() == t2.typeId(); 
 //   return x;
 // }
 
+} //namespace
+
+//===========================================================================
+
+typedef rai::String str;
+extern rai::Rnd rnd;
+std::istream& operator>>(std::istream& is, char* str);
+
 //===========================================================================
 //
 // shared ptrs
@@ -629,6 +597,13 @@ inline bool operator==(Type& t1, Type& t2) { return t1.typeId() == t2.typeId(); 
 template<class T> void _delete(T* ptr){}
 template<class T> std::shared_ptr<T> _shared(T& x){ return std::shared_ptr<T>(&x, &_delete<T>); }
 
+//===========================================================================
+//
+// gnuplot calls
+//
+
+void gnuplot(const char* command, bool pause=false, bool persist=false, const char* PDFfile=nullptr);
+void gnuplotClose();
 
 //===========================================================================
 //
@@ -637,12 +612,4 @@ template<class T> std::shared_ptr<T> _shared(T& x){ return std::shared_ptr<T>(&x
 
 #define RUN_ON_INIT_BEGIN(key) struct key##_RUN_ON_INIT{ key##_RUN_ON_INIT(){
 #define RUN_ON_INIT_END(key)   } } key##_RUN_ON_INIT_dummy;
-
-//===========================================================================
-//
-// gnuplot calls
-//
-
-void gnuplot(const char* command, bool pause=false, bool persist=false, const char* PDFfile=nullptr);
-void gnuplotClose();
 

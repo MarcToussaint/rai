@@ -57,7 +57,7 @@
 
 struct GlfwSingleton : Thread {
   rai::Array<OpenGL*> glwins;
-  Mutex mutex;
+  rai::Mutex mutex;
   int newWinX=-50, newWinY=50;
 
   GlfwSingleton() : Thread("GlfwSpinnerSpinner", .01) {
@@ -869,8 +869,8 @@ void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
   }
 
   //mouse scroll wheel:
-  if(mouse_button==4 && !hideCameraControls && !buttonIsUp) cam->X.pos += downRot*Vector_z * (.1 * (downPos-downFoc).length());
-  if(mouse_button==5 && !hideCameraControls && !buttonIsUp) cam->X.pos -= downRot*Vector_z * (.1 * (downPos-downFoc).length());
+  // if(mouse_button==4 && !hideCameraControls && !buttonIsUp) cam->X.pos += downRot*Vector_z * (.1 * (downPos-downFoc).length());
+  // if(mouse_button==5 && !hideCameraControls && !buttonIsUp) cam->X.pos -= downRot*Vector_z * (.1 * (downPos-downFoc).length());
 
   //-- RIGHT -> focus on selected point
   if(mouse_button==3 && (_NONE(modifiers))) {
@@ -934,10 +934,10 @@ void OpenGL::Scroll(int wheel, int direction) {
     }
 
     //-- ctrl -> focal length
-//    if(!_SHIFT(modifiers) && _CTRL(modifiers)) {
-//      if(direction<0.) cam->focalLength *= 1.1;
-//      else cam->focalLength /= 1.1;
-//    }
+   if(!_SHIFT(modifiers) && _CTRL(modifiers)) {
+     cam->focalLength *= (1.-dz);
+     cam->X.pos += cam->X.rot.getZ() * (dz * (cam->X.pos-cam->foc).length());
+   }
   }
 
   postRedrawEvent(true);
@@ -992,6 +992,7 @@ void OpenGL::MouseMotion(double _x, double _y) {
     cam->X.rot = downRot * rot;   //rotate camera's direction
     rot = downRot * rot * -downRot; //interpret rotation relative to current viewing
     cam->X.pos = downFoc + rot * (downPos - downFoc);   //rotate camera's position
+    cam->checkFocus();
     needsUpdate=true;
   }
 
@@ -1002,6 +1003,8 @@ void OpenGL::MouseMotion(double _x, double _y) {
     diff *= .5*(downFoc - downPos).length()/cam->focalLength;
     diff = downRot * diff;
     cam->X.pos = downPos - diff;
+    cam->foc = downFoc - diff;
+    cam->checkFocus();
     needsUpdate=true;
   }
 
@@ -1086,7 +1089,7 @@ struct XBackgroundContext {
 #endif
 };
 
-Singleton<XBackgroundContext> xBackgroundContext;
+rai::Singleton<XBackgroundContext> xBackgroundContext;
 
 void OpenGL::renderInBack(int w, int h, bool fromWithinCallback) {
   bool org_offscreen=offscreen;

@@ -30,9 +30,8 @@ rai::NodeL& NoNodeL=*((rai::NodeL*)nullptr);
 //Graph& NoGraph=*((Graph*)nullptr);
 
 namespace rai {
-  NodeL readNodeParents2(Graph& G, String& str);
-  enum ShapeType : int;
-  enum JointType : int;
+  NodeL getParents(Graph& G, const StringA& pars);
+  NodeL getParentsFromTag(Graph& G, String& str);
 }
 
 //===========================================================================
@@ -639,14 +638,14 @@ void Graph::read(std::istream& is, bool parseInfo) {
     if(!n) break;
 
     //-- special keys
-    if(n->key=="Parent" && n->is<NodeL>()) {
-      NodeL& P = n->as<NodeL>();
-      Node* nn = n->container.isNodeOfGraph;
-      CHECK(nn, "can set 'Parent' only within a subgraph node");
-      for(Node* par:P) nn->addParent(par);
-      delete n; n=nullptr;
+    // if(n->key=="parent" && n->is<StringA>()) {
+    //   NodeL& P = n->as<StringA>();
+    //   Node* nn = n->container.isNodeOfGraph;
+    //   CHECK(nn, "can set 'Parent' only within a subgraph node");
+    //   for(Node* par:P) nn->addParent(par);
+    //   delete n; n=nullptr;
 
-    } else if(n->key=="Quit") {
+    if(n->key=="Quit") {
       delete n; n=nullptr;
 
     } else if(n->key=="Include") {
@@ -743,12 +742,13 @@ void Graph::read(std::istream& is, bool parseInfo) {
     for(uint i=Nbefore; i<N; i++) {
       Node* n=elem(i);
       if(parentTags(i).N){
-        NodeL par = readNodeParents2(*this, parentTags(i));
+        NodeL par = getParentsFromTag(*this, parentTags(i));
         n->setParents(par);
       }else if(n->is<Graph>()){
-        Node *p = n->graph().findNodeOfType(typeid(NodeL), "parent");
+        Node *p = n->graph().findNodeOfType(typeid(StringA), "parent");
         if(p){
-          n->setParents(p->as<NodeL>());
+          NodeL par = getParents(*this, p->as<StringA>());
+          n->setParents(par);
           delNode(p);
         }
       }
@@ -803,34 +803,56 @@ void writeFromStream(std::ostream& os, std::istream& is, istream::pos_type beg, 
 
 //  if(node) cerr <<"  (node='" <<*node <<"')" <<endl;
 
-void readNodeParents(Graph& G, std::istream& is, NodeL& parents, ParseInfo& pinfo) {
-  String str;
-  pinfo.parents_beg=is.tellg();
-  for(uint j=0;; j++) {
-    if(!str.read(is, " \t\n\r,", " \t\n\r,)", false)) break;
-    Node* e = G.findNode(str, true, false); //important: recurse up
+// void readNodeParents(Graph& G, std::istream& is, NodeL& parents, ParseInfo& pinfo) {
+//   String str;
+//   pinfo.parents_beg=is.tellg();
+//   for(uint j=0;; j++) {
+//     if(!str.read(is, " \t\n\r,", " \t\n\r,)", false)) break;
+//     Node* e = G.findNode(str, true, false); //important: recurse up
+//     if(e) { //sucessfully found
+//       parents.append(e);
+//       pinfo.parents_end=is.tellg();
+//     } else { //this element is not known!!
+//       int rel=0;
+//       str >>rel;
+//       if(rel<0 && (int)G.N+rel>=0) { //check if this is a negative integer
+//         e=G.elem(G.N+rel);
+//         parents.append(e);
+//         pinfo.parents_end=is.tellg();
+//       } else {
+//         PARSERR("unknown " <<j <<". parent '" <<str <<"'", pinfo);
+//         skip(is, nullptr, ")", false);
+//       }
+//     }
+//   }
+//   parse(is, ")");
+// }
+
+NodeL getParents(Graph& G, const StringA& pars) {
+  NodeL parents;
+
+  for(const String& par: pars){
+    Node* e = G.findNode(par, true, false); //important: recurse up
     if(e) { //sucessfully found
       parents.append(e);
-      pinfo.parents_end=is.tellg();
     } else { //this element is not known!!
-      int rel=0;
-      str >>rel;
-      if(rel<0 && (int)G.N+rel>=0) { //check if this is a negative integer
-        e=G.elem(G.N+rel);
-        parents.append(e);
-        pinfo.parents_end=is.tellg();
-      } else {
-        PARSERR("unknown " <<j <<". parent '" <<str <<"'", pinfo);
-        skip(is, nullptr, ")", false);
-      }
+      // int rel=0;
+      // str >>rel;
+      // if(rel<0 && (int)G.N+rel>=0) { //check if this is a negative integer
+      //   e=G.elem(G.N+rel);
+      //   parents.append(e);
+      // } else {
+      LOG(-1) <<"parsing parent '" <<par <<"' -- unknown";
+      // }
     }
-  }
-  parse(is, ")");
+ }
+
+  return parents;
 }
 
-NodeL readNodeParents2(Graph& G, String& str) {
+NodeL getParentsFromTag(Graph& G, String& str) {
   String par;
-  NodeL parents;
+  StringA pars;
   str.clearStream();
   for(uint j=0;; j++) {
     par.read(str, " \t\n\r,", " \t\n\r,", false);
@@ -841,22 +863,9 @@ NodeL readNodeParents2(Graph& G, String& str) {
       }
       break;
     }
-    Node* e = G.findNode(par, true, false); //important: recurse up
-    if(e) { //sucessfully found
-      parents.append(e);
-    } else { //this element is not known!!
-      int rel=0;
-      str >>rel;
-      if(rel<0 && (int)G.N+rel>=0) { //check if this is a negative integer
-        e=G.elem(G.N+rel);
-        parents.append(e);
-      } else {
-        LOG(-1) <<"parsing parent tuple '" <<str <<"' -- unknown " <<j <<". parent '" <<par <<"'";
-      }
-    }
+    pars.append(par);
   }
-
-  return parents;
+  return getParents(G, pars);
 }
 
 Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo) {
@@ -977,11 +986,9 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo) {
               StringA strings;
               String::readSkipSymbols=",\"";
               String::readStopSymbols="\"";
-              String::readEatStopSymbol = 1;
               is >>strings;
               String::readSkipSymbols = " \t";
               String::readStopSymbols = ",\n\r";
-              String::readEatStopSymbol = 1;
               add<StringA>(key,  strings);
             } else if(type=='[') { //arrA
               is.putback(type);
@@ -1009,11 +1016,11 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo) {
           }
           node = elem(-1);
         } break;
-        case '(': { // set of parent nodes
-          NodeL par;
-          readNodeParents(*this, is, par, pinfo);
-          node = add<NodeL>(key,  par);
-        } break;
+        // case '(': { // set of parent nodes
+        //   NodeL par;
+        //   readNodeParents(*this, is, par, pinfo);
+        //   node = add<NodeL>(key,  par);
+        // } break;
         case '{': { // sub graph
           is.putback(c);
           Graph& subgraph = this->addSubgraph(key);
@@ -1157,7 +1164,7 @@ void node2yaml(Node* n, YAML::Node& root){
   if(n->is<Graph>()){
     Graph& g = n->graph();
     g.checkUniqueKeys(true);
-    for(Node* p:n->parents) y["edge"].push_back(p->key.p);
+    for(Node* p:n->parents) y["parent"].push_back(p->key.p);
     for(Node *ch:g) node2yaml(ch, y);
   } else if(n->is<String>()) { y = n->as<String>().p;
   } else if(n->is<FileToken>()) { y = n->as<FileToken>().autoPath().p;
@@ -1175,12 +1182,15 @@ void node2yaml(Node* n, YAML::Node& root){
   } else if(n->is<uint>()) { y = n->as<uint>();
   } else if(n->is<float>()) { y = n->as<float>();
   } else if(n->is<double>()) { y = n->as<double>();
-  } else if(n->is<rai::Enum<rai::ShapeType>>()) { y = n->as<rai::Enum<rai::ShapeType>>().name();
-  } else if(n->is<rai::Enum<rai::JointType>>()) { y = n->as<rai::Enum<rai::JointType>>().name();
-  } else{
-    THROW("type conversion not implemented: " <<rai::niceTypeidName(n->type))
-    NIY;
+  } else {
+    str tmp;
+    n->writeValue(tmp);
+    y = tmp.p;
   }
+  // } else{
+  //   THROW("type conversion not implemented: " <<rai::niceTypeidName(n->type))
+  //   NIY;
+  // }
 }
 
 void Graph::writeYaml(std::ostream& os) const {

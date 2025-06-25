@@ -57,7 +57,7 @@ void createPath(){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-//  rnd.clockSeed();
+//  rnd.seed_random();
 
   createPath();
 

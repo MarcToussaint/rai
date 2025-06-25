@@ -313,7 +313,7 @@ void testKernelLogReg(){
 
 void testMultiClass(){
   //rnd.seed(1);
-  rnd.clockSeed();
+  rnd.seed_random();
 
   arr X,y;
   artificialData_HastiesMultiClass(X, y);
@@ -365,7 +365,7 @@ void testCV(){
     };
   } cv;
   
-  rnd.clockSeed();
+  rnd.seed_random();
   arr X,y;
   artificialData(X, y);
   arr Phi = makeFeatures(X);
@@ -455,7 +455,7 @@ int main(int argc, char *argv[]) {
   rai::arrayBrackets="[]";
 
   uint seed = rai::getParameter<double>("seed", 0);
-  if(!seed) rnd.clockSeed();
+  if(!seed) rnd.seed_random();
   else rnd.seed(seed);
 
   plotDev = rai::getParameter<bool>("plotDev", true);

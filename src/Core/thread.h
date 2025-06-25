@@ -51,7 +51,7 @@ struct CallbackL : rai::Array<Callback<F>*> {
 struct RWLock {
   std::shared_timed_mutex rwLock;
   int rwCount=0;     ///< -1==write locked, positive=numer of readers, 0=unlocked
-  Mutex rwCountMutex;
+  rai::Mutex rwCountMutex;
   RWLock();
   ~RWLock();
   void readLock();   ///< multiple threads may request 'lock for read'
@@ -67,7 +67,7 @@ struct RWLock {
 //
 
 /// This RW lock counts revisions and broadcasts accesses to listeners; who is accessing can be logged; it has a unique name
-struct Var_base : NonCopyable {
+struct Var_base : rai::NonCopyable {
   RWLock rwlock;               ///< rwLock (handled via read/writeAccess)
   uint revision=0;
   rai::String name;            ///< name
@@ -227,7 +227,7 @@ template<class T> std::ostream& operator<<(std::ostream& os, Var<T>& x) { x.writ
 /// a basic condition variable
 struct Signaler {
   int status;
-  Mutex statusMutex;
+  rai::Mutex statusMutex;
   std::condition_variable cond;
 
   Signaler(int initialStatus=0);
@@ -240,13 +240,13 @@ struct Signaler {
   void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
   void statusUnlock();
 
-  int  getStatus(Mutex::Token* userHasLocked=0) const;
-  bool waitForSignal(Mutex::Token* userHasLocked=0, double timeout=-1.);
-  bool waitForEvent(std::function<bool()> f, Mutex::Token* userHasLocked=0);
-  bool waitForStatusEq(int i, Mutex::Token* userHasLocked=0, double timeout=-1.);    ///< return value is the state after the waiting
-  int waitForStatusNotEq(int i, Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
-  int waitForStatusGreaterThan(int i, Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
-  int waitForStatusSmallerThan(int i, Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
+  int  getStatus(rai::Mutex::Token* userHasLocked=0) const;
+  bool waitForSignal(rai::Mutex::Token* userHasLocked=0, double timeout=-1.);
+  bool waitForEvent(std::function<bool()> f, rai::Mutex::Token* userHasLocked=0);
+  bool waitForStatusEq(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.);    ///< return value is the state after the waiting
+  int waitForStatusNotEq(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
+  int waitForStatusGreaterThan(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
+  int waitForStatusSmallerThan(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
 };
 
 //===========================================================================
@@ -331,7 +331,7 @@ struct Thread {
   rai::String name;
   std::unique_ptr<std::thread> thread;    ///< the underlying pthread; nullptr iff not opened
   int tid;                    ///< system thread id
-  Mutex stepMutex;              ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
+  rai::Mutex stepMutex;              ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
   uint step_count;              ///< how often the step was called
   Metronome metronome;          ///< used for beat-looping
   CycleTimer timer;             ///< measure how the time spend per cycle, within step, idle

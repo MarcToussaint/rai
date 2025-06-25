@@ -32,7 +32,7 @@ extern ObjectiveTypeA& NoObjectiveTypeA;
  *
  *  Importantly: the Jacobian may be sparse! This allows to implicitly represent structured NLP (in contrast to explicit structure, see below)
  */
-struct NLP : NonCopyable {
+struct NLP : rai::NonCopyable {
   //-- problem signature: needs to be defined in the constructor or a derived class
   uint dimension=0;
   ObjectiveTypeA featureTypes;

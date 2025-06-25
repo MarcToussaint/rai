@@ -2814,6 +2814,7 @@ template<class T> Array<T> integral(const Array<T>& x) {
 }
 
 template Array<double> integral(const Array<double>&);
+template Array<float> integral(const Array<float>&);
 template Array<uint> integral(const Array<uint>&);
 
 
@@ -2873,6 +2874,7 @@ template<class T> Array<T> differencing(const Array<T>& x, uint w) {
 }
 
 template Array<double> differencing(const Array<double>& x, uint w);
+template Array<float> differencing(const Array<float>& x, uint w);
 template Array<uint> differencing(const Array<uint>& x, uint w);
 
 

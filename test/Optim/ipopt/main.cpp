@@ -40,7 +40,7 @@ void TEST(Ipopt){
 
 int main(int argn, char** argv){
   rai::initCmdLine(argn, argv);
-  rnd.clockSeed();
+  rnd.seed_random();
 
   testIpopt();
 

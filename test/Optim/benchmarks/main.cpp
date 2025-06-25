@@ -103,7 +103,7 @@ void test(str problemName={}, int initUniform=-1){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  //  rnd.clockSeed();
+  //  rnd.seed_random();
   rnd.seed(0);
 
   // testKOMO_IK();

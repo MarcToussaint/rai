@@ -14,12 +14,13 @@
 
 ostream& stdCout() { return std::cout; }
 
-std::ostream& rai::LogToken::os() {
+namespace rai {
+
+std::ostream& LogToken::os() {
   if(!msg) msg = new String;
   return msg->stream();
 }
 
-namespace rai {
 String& errStringStream() {
   static String _errString;
   return _errString;

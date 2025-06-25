@@ -463,18 +463,16 @@ void TensorShape::resample(uint d0, int d1, int d2) {
 }
 
 void TensorShape::smooth(uint width, uint iters) {
-  arr dat = rai::convert<double>(gridData);
 //  uint half = (width-1)/2;
   for(uint i=0; i<iters; i++) {
-    dat = integral(dat);
-    dat = differencing(dat, width);
+    gridData = integral(gridData);
+    gridData = differencing(gridData, width);
 //    dat.shift(half*(-1-dat.d2-dat.d1*dat.d2), false);
 //    //overwrite padding
 //    for(uint i=dat.d0-half;i<dat.d0;i++) for(uint j=0;j<dat.d1;j++) for(uint k=0;k<dat.d2;k++) dat(i,j,k) = gridData(i,j,k);
 //    for(uint i=0;i<dat.d0;i++) for(uint j=dat.d1-half;j<dat.d1;j++) for(uint k=0;k<dat.d2;k++) dat(i,j,k) = gridData(i,j,k);
 //    for(uint i=0;i<dat.d0;i++) for(uint j=0;j<dat.d1;j++) for(uint k=dat.d2-half;k<dat.d2;k++) dat(i,j,k) = gridData(i,j,k);
   }
-  gridData = rai::convert<float>(dat);
 }
 
 void TensorShape::getNeighborsAndWeights(uintA& neigh, arr& weights, const arr& x_rel) {
@@ -700,10 +698,8 @@ double PCL2Field::stepDiffusion(const arr& pts, const arr& values, double boundV
   //adapt
   if(err>lastErr && lastErr>0.) {
     //for(float &s:source) s *= .9;
-    arr tmp = rai::convert<double>(source);
-    tmp = integral(tmp);
-    tmp= differencing(tmp, 3);
-    source = rai::convert<float>(tmp);
+    source = integral(source);
+    source= differencing(source, 3);
     //alpha *= .5;
   }
   lastErr = err;

@@ -214,7 +214,7 @@ int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
 //  rnd.seed(1);
-  rnd.clockSeed();
+  rnd.seed_random();
 
   timeOpt();
 

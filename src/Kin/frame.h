@@ -174,7 +174,7 @@ struct Frame : NonCopyable {
   Frame& setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
   Frame& setSdf(std::shared_ptr<SDF>& sdf);
   Frame& setTensorShape(const floatA& data, const arr& size);
-  Frame& setImplicitSurface(const floatA& data, const arr& size, uint blur, double resample);
+  Frame& setImplicitSurface(const floatA& data, const arr& size, uint blur=0, double resample=-1.);
   Frame& setColor(const arr& color);
   Frame& setJoint(rai::JointType jointType, const arr& limits={}, double scale=1., Frame* mimic=0);
   Frame& setContact(int cont);

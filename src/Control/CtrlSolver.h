@@ -15,7 +15,7 @@
 
 //===========================================================================
 
-struct CtrlSolver : NonCopyable {
+struct CtrlSolver : rai::NonCopyable {
   KOMO komo;
   double tau;
   double maxVel=1.;

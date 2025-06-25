@@ -21,7 +21,7 @@ void drawGnuplot(rai::sPlotModule& data);
 // global structures
 //
 
-Singleton<rai::PlotModule> plot;
+rai::Singleton<rai::PlotModule> plot;
 
 namespace rai {
 

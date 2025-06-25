@@ -103,7 +103,7 @@ void testSpherePacking(){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  // rnd.clockSeed();
+  // rnd.seed_random();
   rnd.seed(0);
 
   // testDisplay();

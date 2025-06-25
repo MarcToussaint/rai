@@ -9,7 +9,7 @@
 void run_rrt(rai::Configuration& C, const arr& q0, const arr& q1) {
 
   rai::RRT_PathFinder rrt;
-  rrt.setProblem(C);
+  rrt.setProblem(_shared(C));
   rrt.setStartGoal(q0, q1);
   if(!rrt.opt.useBroadCollisions){
     StringA pairs = rai::getParameter<StringA>("collisionPairs", {});
@@ -135,7 +135,7 @@ void testKinematics(bool withCollisions, uint N=100000){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-//  rnd.clockSeed();
+//  rnd.seed_random();
   // test_minimalistic(); return 0;
 
   cout <<"=== RRT test" <<endl;

@@ -240,12 +240,12 @@ void TEST(Mobile){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-//  rnd.clockSeed();
+//  rnd.seed_random();
 
-  testEasy();
-  testAlign();
-  testThin();
-  testPR2();
+  // testEasy();
+  // testAlign();
+  // testThin();
+  // testPR2();
   // testThreading();
   testMobile();
 

@@ -72,7 +72,7 @@ rai::Graph& rndSubgraph(rai::Graph& G){
 
 rai::NodeL rndParents(const rai::Graph& G){
   if(!G.N) return {};
-  uint nparents=rnd(0,10);
+  uint nparents=rnd.uni_int(0,10);
   rai::NodeL par;
   for(uint i=0;i<nparents;i++){
     par.append(rndContainer(G).rndElem());

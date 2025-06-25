@@ -262,6 +262,7 @@ struct Camera {
   void focus(float x, float y, float z, bool makeUpright=false);
   void watchDirection(const Vector& d);
   void upright(const Vector& up=Vector(0, 0, 1));
+  bool checkFocus();
 
   //-- projection matrix stuff
   arr getT_IC() const;

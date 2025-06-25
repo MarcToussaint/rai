@@ -746,7 +746,7 @@ void TEST(Tensor){
 void TEST(RowShifted){
   cout <<"\n*** RowShifted\n";
 
-//  rnd.clockSeed();
+//  rnd.seed_random();
   
   arr J;
   rai::RowShifted& J_ = J.rowShifted();
@@ -894,7 +894,7 @@ void TEST(SparseVector){
 //===========================================================================
 
 void TEST(EigenValues){
-  rnd.clockSeed();
+  rnd.seed_random();
   arr C(30,8);
   rndUniform(C,-1., 1.);
   arr H=~C*C;

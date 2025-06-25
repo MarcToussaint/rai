@@ -343,6 +343,10 @@ Frame* Configuration::addH5Object(const char* framename, const char* filename, i
     objDecomp->convertDecomposedShapeToChildFrames();
 
     // CHECK_EQ(parts.N, objDecomp->children.N, "couldn't create parts");
+    for(rai::Frame *ch:objDecomp->children){
+      ch->getAts().add<bool>("simulate", true);
+      ch->setColor({1., 1., 0., .5});
+    }
 
     if(verbose>0) LOG(0) <<"added " <<objDecomp->children.N <<" convex-decomposed shapes in subframes";
 

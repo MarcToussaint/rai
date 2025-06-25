@@ -139,14 +139,14 @@ struct OpenGL {
   int scrollCounter=0;
   byteA captureImage;
   floatA captureDepth;
-  Mutex dataLock; //'data' means anything: member fields (camera, variables), drawers, data the drawers access
+  rai::Mutex dataLock; //'data' means anything: member fields (camera, variables), drawers, data the drawers access
 //  uint fbo, render_buf;
   uint offscreenFramebuffer=0;
   uint offscreenColor=0;
   uint offscreenDepth=0;
   Signaler isUpdating;
   Signaler watching;
-  OpenGLDrawOptions drawOptions;
+  rai::OpenGLDrawOptions drawOptions;
   int selectID=-1;
   std::shared_ptr<rai::RenderData> _data;
 

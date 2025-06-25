@@ -112,7 +112,7 @@ void displayGraspsFiles(uint N=10) {
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  rnd.clockSeed();
+  rnd.seed_random();
 
   testLowLevel();
   // testBatchGeneration();

@@ -161,15 +161,15 @@ void Signaler::statusUnlock() {
   statusMutex.unlock();
 }
 
-int Signaler::getStatus(Mutex::Token* userHasLocked) const {
-  Mutex* m = (Mutex*)&statusMutex; //sorry: to allow for 'const' access
+int Signaler::getStatus(rai::Mutex::Token* userHasLocked) const {
+  rai::Mutex* m = (rai::Mutex*)&statusMutex; //sorry: to allow for 'const' access
   if(!userHasLocked) m->lock(RAI_HERE); else CHECK_EQ(m->state, getpid(), "user must have locked before calling this!");
   int i=status;
   if(!userHasLocked) m->unlock();
   return i;
 }
 
-bool Signaler::waitForSignal(Mutex::Token* userHasLocked, double timeout) {
+bool Signaler::waitForSignal(rai::Mutex::Token* userHasLocked, double timeout) {
   bool ret = true;
   if(userHasLocked) {
     if(timeout<0.) {
@@ -188,7 +188,7 @@ bool Signaler::waitForSignal(Mutex::Token* userHasLocked, double timeout) {
   return ret;
 }
 
-bool Signaler::waitForEvent(std::function<bool()> f, Mutex::Token* userHasLocked) {
+bool Signaler::waitForEvent(std::function<bool()> f, rai::Mutex::Token* userHasLocked) {
   if(userHasLocked) {
     cond.wait(*userHasLocked, f);
   } else {
@@ -199,7 +199,7 @@ bool Signaler::waitForEvent(std::function<bool()> f, Mutex::Token* userHasLocked
 
 }
 
-bool Signaler::waitForStatusEq(int i, Mutex::Token* userHasLocked, double timeout) {
+bool Signaler::waitForStatusEq(int i, rai::Mutex::Token* userHasLocked, double timeout) {
   bool ret = true;
   if(userHasLocked) {
     while(status!=i) ret = waitForSignal(userHasLocked, timeout);
@@ -210,7 +210,7 @@ bool Signaler::waitForStatusEq(int i, Mutex::Token* userHasLocked, double timeou
   return ret;
 }
 
-int Signaler::waitForStatusNotEq(int i, Mutex::Token* userHasLocked, double timeout) {
+int Signaler::waitForStatusNotEq(int i, rai::Mutex::Token* userHasLocked, double timeout) {
   if(userHasLocked) {
     while(status==i) waitForSignal(userHasLocked, timeout);
   } else {
@@ -220,7 +220,7 @@ int Signaler::waitForStatusNotEq(int i, Mutex::Token* userHasLocked, double time
   return status;
 }
 
-int Signaler::waitForStatusGreaterThan(int i, Mutex::Token* userHasLocked, double timeout) {
+int Signaler::waitForStatusGreaterThan(int i, rai::Mutex::Token* userHasLocked, double timeout) {
   if(userHasLocked) {
     while(status<=i) waitForSignal(userHasLocked, timeout);
   } else {
@@ -230,7 +230,7 @@ int Signaler::waitForStatusGreaterThan(int i, Mutex::Token* userHasLocked, doubl
   return status;
 }
 
-int Signaler::waitForStatusSmallerThan(int i, Mutex::Token* userHasLocked, double timeout) {
+int Signaler::waitForStatusSmallerThan(int i, rai::Mutex::Token* userHasLocked, double timeout) {
   if(userHasLocked) {
     while(status>=i) waitForSignal(userHasLocked, timeout);
   } else {

@@ -86,14 +86,13 @@ PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, con
   PxCookingParams params(scale);
   params.meshWeldTolerance = 0.001f;
   params.meshPreprocessParams = PxMeshPreprocessingFlags(PxMeshPreprocessingFlag::eWELD_VERTICES);
-  params.buildTriangleAdjacencies = false;
-  //params.buildGPUData = true;
+  // params.buildTriangleAdjacencies = false;
+  // params.buildGPUData = true;
 
-  params.meshPreprocessParams |= PxMeshPreprocessingFlag::eENABLE_INERTIA;
-  params.meshWeldTolerance = 1e-7f;
+  // params.meshPreprocessParams |= PxMeshPreprocessingFlag::eENABLE_INERTIA;
+  // params.meshWeldTolerance = 1e-7f;
 
   PxSDFDesc sdfDesc;
-
   float sdfSpacing=-.01;
   if(sdfSpacing > 0.f) {
     sdfDesc.spacing = sdfSpacing;
@@ -104,11 +103,7 @@ PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, con
   }
 
   return PxCreateTriangleMesh(params, meshDesc, physics.getPhysicsInsertionCallback());
-  //return cooking.createTriangleMesh(meshDesc); //, physics.getPhysicsInsertionCallback());
-//  PxDefaultMemoryOutputStream writeBuffer;
-//  if(!cooking.cookTriangleMesh(meshDesc, writeBuffer)) return nullptr;
-//  PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
-//  return physics.createTriangleMesh(readBuffer);
+  // return cooking.createTriangleMesh(meshDesc); //, physics.getPhysicsInsertionCallback());
 }
 }
 
@@ -717,11 +712,11 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
     link->computeCompoundInertia();
   }
   if(!link->inertia) {
-    if(opt.verbose>0) cout <<"-- kin_physx.cpp:    link '" <<link->name <<"' does not have inertia -> computing standard inertias (alternatively, define inertias for links before starting physx)" <<endl;
     bool hasMass = link->standardizeInertias();
     if(hasMass){
+      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    link '" <<link->name <<"' does not have inertia -> computing standard inertias (alternatively, define inertias for links before starting physx)" <<endl;
     }else{
-      if(opt.verbose>0) LOG(0) <<"link '" <<link->name <<"' has no mases -> becomes static";
+      if(opt.verbose>0) LOG(0) <<"link '" <<link->name <<"' has no mass -> becomes static";
     }
     // PxRigidBodyExt::updateMassAndInertia(*actor, 1000.f);
     // if(!f->inertia) new rai::Inertia(*f);
@@ -778,15 +773,24 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     case rai::ST_ssCylinder:
     case rai::ST_ssCvx:
     default: {
-      CHECK(s->sscCore().N, "physx needs a convex collision shape, frame: " <<s->frame.name <<" (cvxParts are disabled->convert them to child frames)");
-      floatA Vfloat = rai::convert<float>(s->sscCore());
-      PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
-                                     *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
-                                     PxConvexFlag::eCOMPUTE_CONVEX);
-      geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
-      paddingRadius = s->coll_cvxRadius;
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape cvx mesh '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
-    } break;
+      // CHECK(s->sscCore().N, "physx needs a convex collision shape, frame: " <<s->frame.name <<" (cvxParts are disabled->convert them to child frames)");
+      if(s->sscCore().N){ //has a convex collision core
+        floatA Vfloat = rai::convert<float>(s->sscCore());
+        PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
+            *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
+            PxConvexFlag::eCOMPUTE_CONVEX);
+        geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
+        paddingRadius = s->coll_cvxRadius;
+        if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape cvx mesh '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
+      }else if(s->mesh().V.N){ //a non-convex mesh!
+        floatA Vfloat = rai::convert<float>(s->mesh().V);
+        uintA& Tri = s->mesh().T;
+        PxTriangleMesh* triangleMesh = PxToolkit::createTriangleMesh32(
+            *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0, (PxU32*) Tri.p, Tri.d0);
+        geometry = make_shared<PxTriangleMeshGeometry>(triangleMesh);
+        if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape non-cvx mesh '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
+      }else NIY;
+      } break;
     case rai::ST_sdf:
     // default: {
     //   rai::Mesh& M = s->mesh();
@@ -984,7 +988,7 @@ void PhysXInterface_self::syncDebugConfig() {
 		T16.referTo((uint16_t*)g.triangleMesh->getTriangles(), 3*g.triangleMesh->getNbTriangles()).reshape(-1, 3);
 		m.T = rai::convert<uint>(T16);
 	      } else {
-		m.T.referTo((uint*)g.triangleMesh->getTriangles(), 3*g.triangleMesh->getNbTriangles()).reshape(-1, 3);
+		m.T.setCarray((uint*)g.triangleMesh->getTriangles(), 3*g.triangleMesh->getNbTriangles()).reshape(-1, 3);
 	      }
 	      if(!Q.isZero()) m.transform(Q);
 	      mesh.addMesh(m);

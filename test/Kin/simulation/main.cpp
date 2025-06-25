@@ -7,6 +7,7 @@
 #include <Kin/kin_physx.h>
 
 #include <Geo/depth2PointCloud.h>
+#include <Geo/signedDistanceFunctions.h>
 
 #include <iomanip>
 
@@ -431,6 +432,7 @@ void testComplexObjects(){
   StringA files = fromFile<StringA>(rai::raiPath("../rai-robotModels/shapenet/models/files"));
 
   rai::Configuration C;
+  C.addFrame("floor") ->setShape(rai::ST_ssBox, {5., 5., .1, .01}) .setColor({.3});
 
   for(uint k=0;k<10;k++){
     str file = rai::raiPath("../rai-robotModels/shapenet/models/") + files(3+rnd(10));
@@ -438,8 +440,36 @@ void testComplexObjects(){
     obj->set_X()->setRandom();
     obj->set_X()->pos.z += 1.;
   }
+  C.view(false);
 
   rai::Simulation S(C, S._physx, 2);
+
+  double tau=.01;
+  Metronome tic(tau);
+
+  for(uint t=0;t<4./tau;t++){
+    tic.waitForTic();
+
+    S.step({}, tau, S._none);
+  }
+
+  C.view(true);
+}
+
+//===========================================================================
+
+void testNonconvexObjects(){
+  rai::Configuration C;
+
+  SDF_Torus t(.2, .05);
+  floatA tensor = t.evalGrid(20,20,20);
+
+  C.addFrame("torus") ->setImplicitSurface(tensor, t.up-t.lo) .setPosition({0.,0.,1.}) .setMass(.2);
+  C.addFrame("sphere") ->setShape(rai::ST_sphere, {.2}) .setPosition({.05, .01, .5}) .setMass(2.);
+  C.addFrame("table") ->setShape(rai::ST_ssBox, {1.,1.,.1,.01}) .setPosition({0., 0., .1});
+  C.view(true);
+
+  rai::Simulation S(C, S._physx, 4);
 
   double tau=.01;
   Metronome tic(tau);
@@ -609,6 +639,7 @@ int MAIN(int argc,char **argv){
   testPassive(rai::raiPath("../rai-robotModels/g1/g1.g"), true);
   testPassive("../../../../rai-robotModels/scenarios/pendulum.g");
   testComplexObjects();
+  testNonconvexObjects();
   testRndScene();
   testConstructor();
   testPcl();

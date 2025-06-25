@@ -53,7 +53,6 @@ struct Node {
   void swapParent(uint i, Node* p);
 
   //-- get value
-  //get() -> as()
   template<class T> bool is() const { return type==typeid(T); }
   template<class T> T& as() { T* x=getValue<T>(); CHECK(x, "this node '" <<*this <<"' is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
   template<class T> const T& as() const { const T* x=getValue<T>(); CHECK(x, "this node '" <<*this <<"'is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
@@ -61,10 +60,9 @@ struct Node {
 
   template<class T> T* getValue();    ///< query whether node type is equal to (or derived from) T, return the value if so
   template<class T> const T* getValue() const; ///< as above
-  template<class T> std::shared_ptr<T> getPtr() const;  ///< query whether node type is equal to (or derived from) shared_ptr<T>, return the shared_ptr if so
-  template<class T> bool getFromDouble(T& x) const; ///< return value = false means parsing object of type T from the string failed
+  template<class T> bool getFromDouble(T& x) const; ///< return value = false means parsing object of type T from the double failed
   template<class T> bool getFromString(T& x) const; ///< return value = false means parsing object of type T from the string failed
-  template<class T> bool getFromArr(T& x) const; ///< return value = false means parsing object of type T from the string failed
+  template<class T> bool getFromArr(T& x) const; ///< return value = false means parsing object of type T from the arr failed
   bool isBoolAndTrue() const { if(type!=typeid(bool)) return false; return *getValue<bool>() == true; }
   bool isBoolAndFalse() const { if(type!=typeid(bool)) return false; return *getValue<bool>() == false; }
 
@@ -82,12 +80,10 @@ struct Node {
   virtual void copyValue(Node*) {NIY}
   virtual bool hasEqualValue(Node*) {NIY}
   virtual void writeValue(std::ostream& os) const {NIY}
-//  virtual void copyValueInto(void*) const {NIY}
   virtual Node* newClone(Graph& container) const {NIY}
 };
-
-inline std::istream& operator>>(std::istream& is, Node*& x) { HALT("prohibited"); return is; }
 stdOutPipe(Node)
+
 } //namespace
 
 //===========================================================================
@@ -408,10 +404,6 @@ struct Node_typed : Node {
     else os <<value;
   }
 
-//  virtual void copyValueInto(void* value_ptr) const {
-//    *((T*)value_ptr) = value;
-//  }
-
   virtual const std::type_info& getValueType() const {
     return typeid(T);
   }
@@ -443,15 +435,6 @@ template<class T> const T* Node::getValue() const {
   const Node_typed<T>* typed = dynamic_cast<const Node_typed<T>*>(this);
   if(!typed) return nullptr;
   return &typed->value;
-}
-
-template<class T> std::shared_ptr<T> Node::getPtr() const {
-  NIY
-//  std::shared_ptr<T> typed = std::dynamic_pointer_cast<T>(std::shared_ptr<T>(value_ptr));
-  return std::shared_ptr<T>();
-//  const Node_typed<std::shared_ptr<T>>* typed = dynamic_cast<const Node_typed<std::shared_ptr<T>>*>(this);
-//  if(!typed) return nullptr;
-//  return typed->value;
 }
 
 template<class T> bool Node::getFromDouble(T& x) const {

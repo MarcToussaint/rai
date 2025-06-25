@@ -99,9 +99,9 @@ struct DistMarkers {
 };
 
 struct RenderData {
-  Mutex dataLock;
+  rai::Mutex dataLock;
 
-  Render_Options opt;
+  rai::Render_Options opt;
 
   rai::Camera camera;
   rai::Array<std::shared_ptr<RenderItem>> items;

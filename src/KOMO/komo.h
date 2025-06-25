@@ -38,7 +38,7 @@ struct KOMO_Options {
 };
 }//namespace
 
-struct KOMO : NonCopyable {
+struct KOMO : rai::NonCopyable {
 
   //-- the problem definition
   uint stepsPerPhase=0;        ///< time slices per phase

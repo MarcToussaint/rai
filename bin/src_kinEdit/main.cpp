@@ -91,6 +91,9 @@ int main(int argc,char **argv){
       C.writeURDF(FILE("z.urdf"));
       C.writeMesh("z.ply");
       C.writeCollada("z.dae");
+      rai::Graph G;
+      C.write(G);
+      G.writeYaml(FILE("z.yml"));
     }
 
     if(rai::checkParameter<double>("scale")){

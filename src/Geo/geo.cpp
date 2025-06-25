@@ -1885,6 +1885,18 @@ void Camera::upright(const Vector& up) {
 #endif
 }
 
+bool Camera::checkFocus(){
+  Vector d = foc - X.pos;
+  d.normalize();
+  Vector z = X.rot.getZ();
+  double err = sqrDistance(d,z);
+  if(err>1e-4){
+    LOG(-1) <<"focus point is not aligned with z-direction";
+    return false;
+  }
+  return true;
+}
+
 //}
 
 void Camera::setCameraProjectionMatrix(const arr& P) {

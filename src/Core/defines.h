@@ -52,14 +52,16 @@ using std::istream;
 using std::ofstream;
 using std::ifstream;
 
+namespace rai {
+
+struct String;
+
 //===========================================================================
 //
 // enums
 //
 
-namespace rai {
 enum ArgWord { _left, _right, _sequence, _path, _xAxis, _yAxis, _zAxis, _xNegAxis, _yNegAxis, _zNegAxis };
-}
 
 //===========================================================================
 
@@ -83,9 +85,6 @@ struct Stepper {
 //
 // logging
 //
-
-namespace rai {
-struct String;
 
 /// An object that represents a log file and/or cout logging, together with log levels read from a cfg file
 struct LogObject {
@@ -117,11 +116,11 @@ extern LogObject _log;
 const char* errString();
 String& errStringStream();
 
-}
-
 //----- parsing strings in a stream
 struct PARSE { const char* str; PARSE(const char* _str):str(_str) {} };
 std::istream& operator>>(std::istream& is, const PARSE&);
+
+} //namespace
 
 //===========================================================================
 //
@@ -177,7 +176,7 @@ std::istream& operator>>(std::istream& is, const PARSE&);
 // macros to define the standard <<and >>operatos for most classes
 //
 
-#define stdInPipe(type)\
+#define stdInPipe(type)							\
   inline std::istream& operator>>(std::istream& is, type& x){ x.read(is); return is; }
 #define stdOutPipe(type)\
   inline std::ostream& operator<<(std::ostream& os, const type& x){ x.write(os); return os; }

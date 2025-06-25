@@ -311,6 +311,7 @@ rai::Frame& rai::Frame::convertDecomposedShapeToChildFrames() {
     int start = m.cvxParts(i);
     int end = i+1<m.cvxParts.N ? m.cvxParts(i+1)-1 : -1;
     ch->setConvexMesh(m.V({start, end+1}));
+    if(m.C.N<=4) ch->setColor(m.C);
     if(!ch->shape->mesh().V.N) {
       delete ch; //ch->setShape(ST_marker, {.01});
     } else {
@@ -2084,7 +2085,7 @@ void rai::Shape::write(std::ostream& os) const {
   Node* n;
   if(frame.ats && (n=frame.ats->findNode("color"))) { os <<", "; n->write(os, -1, true); }
   else if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4) os <<", color: " <<_mesh->C;
-  else if(_mesh && _mesh->C.nd==2) os <<", color: " <<_mesh->C[0];
+  // else if(_mesh && _mesh->C.nd==2) os <<", color: " <<_mesh->C[0];
   if(frame.ats && (n=frame.ats->findNode("mesh"))) { os <<", "; n->write(os, -1, true); }
   if(frame.ats && (n=frame.ats->findNode("meshscale"))) { os <<", "; n->write(os, -1, true); }
   if(cont) os <<", contact: " <<(int)cont;
@@ -2097,7 +2098,7 @@ void rai::Shape::write(Graph& g) {
   Node* n;
   if(frame.ats && (n=frame.ats->findNode("color"))) n->newClone(g);
   else if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4) g.add<arr>("color", mesh().C);
-  else if(_mesh && _mesh->C.nd==2) g.add<arr>("color", mesh().C[0]);
+  // else if(_mesh && _mesh->C.nd==2) g.add<arr>("color", mesh().C[0]);
   if(frame.ats && (n=frame.ats->findNode("mesh"))) n->newClone(g);
   if(frame.ats && (n=frame.ats->findNode("meshscale"))) n->newClone(g);
   if(cont) g.add<int>("contact", cont);
@@ -2226,6 +2227,7 @@ void rai::Shape::createMeshes() {
     }
   }
 
+#if 0
   if(!sscCore().N){
     rai::Mesh m;
     m.V = mesh().V;
@@ -2238,6 +2240,7 @@ void rai::Shape::createMeshes() {
       sscCore() = m.V;
     }
   }
+#endif
 
 //  if(_mesh && _mesh->C.nd==2 && _mesh->C.d0==_mesh->V.d0) _mesh->computeFaceColors();
   mesh().version++; //if(glListId>0) glListId *= -1;

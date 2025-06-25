@@ -3,6 +3,25 @@
 #include <math.h>
 #include <iomanip>
 
+void TEST(Rnd){
+  uint n=100;
+  arr X(n,1);
+  for(uint i=0;i<n;i++){
+    X.elem(i) = rnd.uni();
+  }
+  FILE("z.dat") <<X.modRaw() <<endl;
+  gnuplot("plot 'z.dat' us 0:1 w p", true);
+
+  std::map<int, int> hist;
+  for (int n = 0; n != 10000; ++n)
+    ++hist[std::round(rnd.gauss(2, 3))];
+
+  std::cout << "Normal distribution around " << mean << ":\n"
+            << std::fixed << std::setprecision(1);
+  for (auto [x, y] : hist)
+    std::cout << std::setw(2) << x << ' ' << std::string(y / 100, '*') << '\n';
+}
+
 void TEST(String){
   //-- basic IO
   rai::String s("4.123, ");                     // create the string
@@ -17,7 +36,7 @@ void TEST(String){
   double a,b;
   s="a=1.2, b=3.4, blabla";
   cout <<s <<'|' <<endl;
-  s >>(const char*)"a=" >>a >>(const char*)", b=" >>b;  // read things from string
+  s >>"a=" >>a >>", b=" >>b;  // read things from string
   s >>"," >>tmp;      // read string from string (starting at current scan position)
   CHECK_ZERO(a-1.2, 1e-10, "");
   CHECK_ZERO(b-3.4, 1e-10, "");
@@ -97,7 +116,7 @@ void TEST(Paths){
 }
 
 void TEST(Inotify){
-  Inotify I(".");
+  rai::Inotify I(".");
   for(uint i=0;i<3;i++){
     rai::wait(1.);
     I.poll(false, true);
@@ -112,6 +131,7 @@ int MAIN(int argc,char** argv){
   uint long_int_size=sizeof(long);
   cout <<"double size: " <<double_size <<"\nlong int size: " <<long_int_size <<endl;
 
+  testRnd(); return 0;
   testPaths();
   testString();
   testParameter();

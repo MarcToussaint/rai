@@ -367,7 +367,7 @@ void testWalking(rai::ArgWord pathOrSeq){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-//  rnd.clockSeed();
+//  rnd.seed_random();
 
   testPickAndPlace(rai::_path);
 //  testPickAndPlace(rai::_sequence);

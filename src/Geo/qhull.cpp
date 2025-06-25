@@ -26,7 +26,7 @@ extern "C" {
 
 int QHULL_DEBUG_LEVEL=0;
 
-static Mutex qhullMutex;
+static rai::Mutex qhullMutex;
 
 //===========================================================================
 

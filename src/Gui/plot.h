@@ -72,6 +72,6 @@ struct PlotModule {
 
 }
 
-extern Singleton<rai::PlotModule> plot;
+extern rai::Singleton<rai::PlotModule> plot;
 
 //===========================================================================

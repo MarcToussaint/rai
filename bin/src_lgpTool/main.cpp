@@ -95,7 +95,7 @@ int main(int argc,char** argv){
   }
 
   int s = rai::getParameter<double>("seed", -1.);
-  if(s==-1) rnd.clockSeed(); else rnd.seed(s);
+  if(s==-1) rnd.seed_random(); else rnd.seed(s);
 
   lgpTool();
 

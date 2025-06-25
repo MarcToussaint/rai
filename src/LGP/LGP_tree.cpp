@@ -288,7 +288,7 @@ String LGP_Tree::queryForChoice() {
 bool LGP_Tree::execRandomChoice() {
   String cmd;
   if(rnd.uni()<.5) {
-    switch(rnd.num(4)) {
+    switch(rnd(4)) {
       case 0: cmd="u"; break;
       case 1: cmd="p"; break;
       case 2: cmd="s"; break;

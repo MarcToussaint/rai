@@ -1652,8 +1652,8 @@ void tensorMultiply_old(arr& x, const arr& y, const uintA& d, const uintA& ids) 
 
 /// Assign all elements of \c a to a uniformly distributed discrete value in {low, .., hi}
 void rndInteger(arr& a, int low, int high, bool add) {
-  if(!add) for(uint i=0; i<a.N; i++) a.p[i] =(double)(low+(int)rnd.num(1+high-low));
-  else     for(uint i=0; i<a.N; i++) a.p[i]+=(double)(low+(int)rnd.num(1+high-low));
+  if(!add) for(uint i=0; i<a.N; i++) a.p[i] =(double)(low+(int)rnd.uni_int(0, 1+high-low));
+  else     for(uint i=0; i<a.N; i++) a.p[i]+=(double)(low+(int)rnd.uni_int(0, 1+high-low));
 }
 
 /// Assign all elements of \c a to a uniformly distributed continuous value in [low, hi]
