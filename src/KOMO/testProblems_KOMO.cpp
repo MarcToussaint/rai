@@ -154,7 +154,7 @@ shared_ptr<KOMO> problem_StableSphere(){
   C.addFrame("table", "world", "Q:[0 0 .1], shape: ssBox, size: [1 1 .1 .01], color: [.8], contact: 1" );
   C.addFrame("wall", "table", "Q:[-.45 0 .3], shape: ssBox, size: [.1 1 .5 .01], color: [.8], contact: 1" );
   C.addFrame("box", "table", "Q:[.05 -.35 .25], shape: ssBox, size: [.9 .3 .4 .01], color: [.8], contact: 1" );
-  C.addFrame("obj", "world", "joint:trans3, limits:[-.5,.5,-.5,.5,0,1], Q:[0 0 .3], shape: sphere, size: [.1], color: [1 .5 .0 .5], mass: .2, sampleUniform: 1., contact: 1" );
+  C.addFrame("obj", "world", "joint:trans3, limits:[-.5,-.5,0,.5,.5,1], Q:[0 0 .3], shape: sphere, size: [.1], color: [1 .5 .0 .5], mass: .2, sampleUniform: 1., contact: 1" );
 
   C["l_finger"]->setShape(rai::ST_sphere, {.05});
   C["l_jointX"]->joint->limits = {-.5,.5};
@@ -200,9 +200,14 @@ void Problem::load(str problem){
 
   if(komo) komo.reset();
 
-  if(problem == "box") nlp = make_shared<BoxNLP>();
-  else if(problem == "modes") nlp = make_shared<ModesNLP>();
-  else if(problem == "linear-program") nlp = getBenchmarkFromCfg();
+  if(problem == "quadratic") nlp = make_shared<NLP_Squared>();
+  else if(problem == "RastriginSOS") nlp = make_shared<NLP_RastriginSOS>();
+
+  else if(problem == "Box") nlp = make_shared<BoxNLP>();
+  else if(problem == "Modes") nlp = make_shared<ModesNLP>();
+  else if(problem == "Wedge") nlp = make_shared<NLP_Wedge>();
+  else if(problem == "HalfCircle") nlp = make_shared<NLP_HalfCircle>();
+  else if(problem == "LinearProgram") nlp = make_shared<NLP_RandomLP>();
 
   else if(problem == "IK") komo = problem_IK();
   else if(problem == "IKobstacle") komo = problem_IKobstacle();

@@ -385,9 +385,14 @@ void NLP_Viewer::display(double mu, double muLB) {
   CHECK_EQ(d, 2, "can only display 2D problems for now");
 
   //-- get bounds
-  arr lo=P->bounds[0], up=P->bounds[1];
-  if(!lo.N) lo = -ones(2);
-  if(!up.N) up = ones(2);
+  arr lo, up;
+  if(P->bounds.N){
+    lo=P->bounds[0];
+    up=P->bounds[1];
+  }else{
+    lo = -ones(2);
+    up = ones(2);
+  }
 
   //-- make grid
   arr X, Y, phi;

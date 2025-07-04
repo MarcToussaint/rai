@@ -93,7 +93,9 @@ int main(int argc,char** argv){
 
   rnd.seed_random();
 
-  ChoiceConstraintFunction F;
+  // ChoiceConstraintFunction F;
+  // NLP_RandomLP F(2);
+  NLP_Wedge F;
 //  RandomLPFunction F;
 //  SimpleConstraintFunction F;
   arr x_init = rai::getParameter<arr>("x_init", {.3,.2});

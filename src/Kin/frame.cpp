@@ -2116,6 +2116,8 @@ void rai::Shape::createMeshes() {
       mesh().clear();
       mesh().setBox();
       mesh().scale(size(0), size(1), size(2));
+      coll_cvxRadius = 0.;
+      sscCore() = mesh().V;
     } break;
     case rai::ST_sphere: {
       CHECK_EQ(size.N, 1, "");

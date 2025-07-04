@@ -69,6 +69,7 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
       if(savePngs){
         C.get_viewer()->savePng();
       }
+      C.setJointState(komo.getPath_qOrg()[0]);
       return true;
     }
   }

@@ -196,6 +196,15 @@ case ${lib} in
 	if [ -z "$version" ]; then version="default"; fi
 	echo 'just testing -- version:' ${version}
 	;;
+
+    isaacsim)
+	wget https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone%404.5.0-rc.36%2Brelease.19112.f59b3005.gl.linux-x86_64.release.zip
+	cd ${pre}
+	mkdir -p isaac-sim
+	cd isaac-sim
+	unzip
+	
+	
 	
     *)
 	echo 'package' ${lib} 'not defined'
