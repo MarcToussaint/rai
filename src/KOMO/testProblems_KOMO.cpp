@@ -195,13 +195,20 @@ shared_ptr<KOMO> problem_StableSphere(){
 
 //===========================================================================
 
-void Problem::load(str problem){
+StringA rai::get_NLP_Problem_names(){
+  static StringA names = {"quadratic", "RastriginSOS", "Modes", "Wedge", "HalfCircle", "LinearProgram", "IK", "IKobstacle", "IKtorus", "PushToReach", "StableSphere", "SpherePacking", "MinimalConvexCore"};
+  return names;
+}
+
+
+std::shared_ptr<NLP> rai::make_NLP_Problem(str problem){
   if(!problem.N) problem = rai::getParameter<str>("problem");
 
-  if(komo) komo.reset();
+  std::shared_ptr<NLP> nlp;
 
   if(problem == "quadratic") nlp = make_shared<NLP_Squared>();
   else if(problem == "RastriginSOS") nlp = make_shared<NLP_RastriginSOS>();
+  // else if(problem == "Rosenbrock") nlp = make_shared<NLP_Rosenbrock>();
 
   else if(problem == "Box") nlp = make_shared<BoxNLP>();
   else if(problem == "Modes") nlp = make_shared<ModesNLP>();
@@ -209,21 +216,21 @@ void Problem::load(str problem){
   else if(problem == "HalfCircle") nlp = make_shared<NLP_HalfCircle>();
   else if(problem == "LinearProgram") nlp = make_shared<NLP_RandomLP>();
 
-  else if(problem == "IK") komo = problem_IK();
-  else if(problem == "IKobstacle") komo = problem_IKobstacle();
-  else if(problem == "IKtorus") komo = problem_IKtorus();
-  else if(problem == "PushToReach") komo = problem_PushToReach();
-  else if(problem == "StableSphere") komo = problem_StableSphere();
+  else if(problem == "IK") nlp = KOMO_wrap(problem_IK());
+  else if(problem == "IKobstacle") nlp = KOMO_wrap(problem_IKobstacle());
+  else if(problem == "IKtorus") nlp = KOMO_wrap(problem_IKtorus());
+  else if(problem == "PushToReach") nlp = KOMO_wrap(problem_PushToReach());
+  else if(problem == "StableSphere") nlp = KOMO_wrap(problem_StableSphere());
 
   else if(problem == "SpherePacking") nlp = make_shared<SpherePacking>();
   else if(problem == "MinimalConvexCore") nlp = make_shared<MinimalConvexCore>();
 
   else HALT("can't create problem '" <<problem <<"'");
 
-  if(komo && !nlp) nlp = komo->nlp();
-
   CHECK(nlp, "");
   //  NLP_Viewer(nlp).display();  rai::wait();
+
+  return nlp;
 }
 
 //===========================================================================
@@ -664,5 +671,4 @@ OptBench_Skeleton_StackAndBalance::OptBench_Skeleton_StackAndBalance(rai::ArgWor
   };
   create(rai::raiPath("test/KOMO/skeleton/model2.g"), S, sequenceOrPath);
 }
-
 

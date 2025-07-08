@@ -14,20 +14,23 @@
 
 #include "../Optim/NLP.h"
 
+namespace rai{
+  std::shared_ptr<NLP> make_NLP_Problem(str problem={});
+  StringA get_NLP_Problem_names();
+}
+
+struct KOMO_wrap : std::shared_ptr<NLP> {
+  std::shared_ptr<KOMO> komo;
+  KOMO_wrap(const std::shared_ptr<KOMO>& _komo) : komo(_komo){
+    std::shared_ptr<NLP>::operator=( komo->nlp() );
+  }
+};
+
 shared_ptr<KOMO> problem_IK();
 shared_ptr<KOMO> problem_IKobstacle();
 shared_ptr<KOMO> problem_IKtorus();
 shared_ptr<KOMO> problem_PushToReach();
 shared_ptr<KOMO> problem_StableSphere();
-
-//===========================================================================
-
-struct Problem{
-  std::shared_ptr<KOMO> komo;
-  std::shared_ptr<NLP> nlp;
-
-  void load(str problem={});
-};
 
 //===========================================================================
 

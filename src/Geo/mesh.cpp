@@ -1801,6 +1801,10 @@ void Mesh::writeArr(std::ostream& os) {
   G.write(os, ",\n", "{\n\n}", -1, false, true);
 }
 
+void Mesh::writeAssimp(const char* filename, const char* format){
+  ::writeAssimp(*this, filename, format);
+}
+
 void Mesh::writeH5(const char* filename, const str& group) {
   H5_Writer H(filename);
   H.addGroup(group);

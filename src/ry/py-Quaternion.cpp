@@ -15,8 +15,8 @@ void init_Quaternion(pybind11::module& m) {
 
   //===========================================================================
 
-  pybind11::class_<rai::Quaternion, shared_ptr<rai::Quaternion>>(m, "Quaternion", "")
-
+  pybind11::class_<rai::Quaternion, shared_ptr<rai::Quaternion>>(m, "Quaternion",
+                                                                 "See the Quaternion Lecture Note https://www.user.tu-berlin.de/mtoussai/notes/quaternions.html for details")
       .def(pybind11::init<>(), "non-initialized")
 
       .def("setZero", &rai::Quaternion::setZero, "")

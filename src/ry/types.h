@@ -46,6 +46,7 @@ template<class T> rai::Array<T> vec2Array(const std::vector<T>& x) {
 }
 
 template<class T> pybind11::array_t<T> Array2numpy(const rai::Array<T>& x) {
+  if(!x.N) return pybind11::array_t<T>();
   return pybind11::array_t<T>(vecdim(x), x.p);
 }
 

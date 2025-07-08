@@ -262,13 +262,15 @@ void ConfigurationViewer::setCamera(Frame* camFrame) {
     if(camFrame) {
       cam.X = camFrame->ensure_X();
 
-      Node* at=0;
-      if((at=camFrame->ats->getNode("focalLength"))) cam.setFocalLength(at->as<double>());
-      if((at=camFrame->ats->getNode("orthoAbsHeight"))) cam.setHeightAbs(at->as<double>());
-      if((at=camFrame->ats->getNode("zRange"))) { arr z=at->as<arr>(); cam.setZRange(z(0), z(1)); }
-      if((at=camFrame->ats->getNode("width"))) W=at->as<double>();
-      if((at=camFrame->ats->getNode("height"))) H=at->as<double>();
-      //    cam.setWHRatio((double)gl->width/gl->height);
+      if(camFrame->ats){
+        Node* at=0;
+        if((at=camFrame->ats->getNode("focalLength"))) cam.setFocalLength(at->as<double>());
+        if((at=camFrame->ats->getNode("orthoAbsHeight"))) cam.setHeightAbs(at->as<double>());
+        if((at=camFrame->ats->getNode("zRange"))) { arr z=at->as<arr>(); cam.setZRange(z(0), z(1)); }
+        if((at=camFrame->ats->getNode("width"))) W=at->as<double>();
+        if((at=camFrame->ats->getNode("height"))) H=at->as<double>();
+        //    cam.setWHRatio((double)gl->width/gl->height);
+      }
     } else {
       gl->camera.setDefault();
     }

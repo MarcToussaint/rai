@@ -65,6 +65,11 @@ void init_Optim(pybind11::module& m) {
 
   //===========================================================================
 
+  m.def("make_NLP_Problem", rai::make_NLP_Problem, "create a benchmark NLP", pybind11::arg("problem_name"));
+  m.def("get_NLP_Problem_names", rai::get_NLP_Problem_names, "return all problem names");
+
+  //===========================================================================
+
   pybind11::class_<NLP, shared_ptr<NLP>> __mp(m, "NLP", "A Nonlinear Mathematical Program (bindings to the c++ object - distinct from the python template nlp.NLP" );
   __mp
 
@@ -90,7 +95,7 @@ void init_Optim(pybind11::module& m) {
   .def("getBounds", [](std::shared_ptr<NLP>& self) {
     return self->bounds;
   },
-  "returns the tuple $(b_{lo},b_{up})$, where both vectors are of same dimensionality of $x$ (or size zero, if there are no bounds)")
+  "returns a 2xn array with lower and upper bounds as rows (or size zero, if there are no bounds)")
 
   .def("getInitializationSample",
        &NLP::getInitializationSample,

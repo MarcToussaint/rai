@@ -39,9 +39,9 @@ void init_Simulation(pybind11::module& m) {
 
       .def("step", &rai::Simulation::step,
            "",
-           pybind11::arg("u_control"),
+           pybind11::arg("u_control") = arr{},
            pybind11::arg("tau") = .01,
-           pybind11::arg("u_mode") = rai::Simulation::_velocity
+           pybind11::arg("u_mode") = rai::Simulation::_none
           )
 
       .def("setSplineRef", &rai::Simulation::setSplineRef,

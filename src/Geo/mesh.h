@@ -150,6 +150,7 @@ struct Mesh {
   void writeJson(std::ostream&);
   void readJson(std::istream&);
   void writeArr(std::ostream&);
+  void writeAssimp(const char* filename, const char* format);
   void writeH5(const char* filename, const String& group);
   void readH5(const char* filename, const String& group);
   void readArr(std::istream&);

@@ -8,7 +8,7 @@
 #include "../Kin/viewer.h"
 
 ShapenetGrasps::ShapenetGrasps(){
-  files = fromFile<StringA>(opt.filesPrefix+"files");
+  files = rai::fromFile<StringA>(opt.filesPrefix+"files");
   files.reshape(-1);
   if(opt.verbose>0){
     LOG(0) <<"files: " <<files(0) <<" ... " <<files(-1);

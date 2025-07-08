@@ -459,6 +459,16 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
   return nlp;
 }
 
+NLP_RastriginSOS::NLP_RastriginSOS() {
+  a = rai::getParameter<double>("Rastrigin/a", 4.);
+  condition = rai::getParameter<double>("benchmark/condition", 20.);
+
+  dimension=2;
+  featureTypes = rai::consts<ObjectiveType>(OT_sos, 4);
+
+  cout <<bounds <<endl;
+}
+
 void NLP_RastriginSOS::evaluate(arr& phi, arr& J, const arr& x) {
   CHECK_EQ(x.N, 2, "");
   phi.resize(4);

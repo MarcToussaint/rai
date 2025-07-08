@@ -75,7 +75,7 @@ struct NLP_TrivialSquareFunction : NLP {
 struct NLP_RandomLP : NLP {
   arr randomG;
 
-  NLP_RandomLP(uint dim);
+  NLP_RandomLP(uint dim=2);
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 
@@ -126,13 +126,7 @@ struct SimpleConstraintFunction : NLP {
 struct NLP_RastriginSOS : NLP {
   double a;
   double condition;
-  NLP_RastriginSOS() {
-    a = rai::getParameter<double>("Rastrigin/a");
-    condition = rai::getParameter<double>("benchmark/condition");
-
-    dimension=2;
-    featureTypes = rai::consts<ObjectiveType>(OT_sos, 4);
-  }
+  NLP_RastriginSOS();
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 };
 
@@ -143,7 +137,7 @@ struct NLP_Squared : NLP {
   arr C; /// $A = C^T C $
   uint n;  /// dimensionality of $x$
 
-  NLP_Squared(uint n, double condition=100., bool random=true);
+  NLP_Squared(uint n=2, double condition=100., bool random=true);
 
   virtual void evaluate(arr& phi, arr& J, const arr& x) { phi=C*x; if(!!J) J=C; }
 //  virtual arr getInitializationSample(){ return ones(n); }

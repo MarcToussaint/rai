@@ -129,10 +129,12 @@ int main(int argc,char **argv){
   }
 
   cout <<"  saving.. to z.*" <<endl;
-  mesh.writePLY("z.ply", true);
+  // mesh.writePLY("z.ply", true);
   mesh.writeArr(FILE("z.arr"));
   mesh.writeJson(FILE("z.msh"));
   mesh.writeH5("z.h5", "mesh");
+  mesh.writeAssimp("z.stl", "stlb");
+  mesh.writeAssimp("z.ply", "plyb");
 
   cout <<"== bye bye ==" <<endl;
 

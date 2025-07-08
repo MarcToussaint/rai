@@ -67,6 +67,9 @@ PYBIND11_MODULE(_robotic, m) {
   m.def("raiPath", &rai::raiPath, "get a path relative to rai base path");
   m.def("compiled", []() { std::stringstream msg; msg <<"compile time: "<< __DATE__ <<' ' <<__TIME__; return msg.str(); }, "return a compile date+time version string");
 
+  m.def("rnd_seed_random", []() { rnd.seed_random(); }, "seed rnd randomly");
+  m.def("rnd_seed", [](int s) { rnd.seed(s); }, "seed rnd with s", pybind11::arg("s"));
+
   init_params(m);
   init_Frame(m);
   init_Config(m);

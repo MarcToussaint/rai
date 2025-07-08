@@ -429,7 +429,7 @@ void testCompound(){
 //===========================================================================
 
 void testComplexObjects(){
-  StringA files = fromFile<StringA>(rai::raiPath("../rai-robotModels/shapenet/models/files"));
+  StringA files = rai::fromFile<StringA>(rai::raiPath("../rai-robotModels/shapenet/models/files"));
 
   rai::Configuration C;
   C.addFrame("floor") ->setShape(rai::ST_ssBox, {5., 5., .1, .01}) .setColor({.3});
