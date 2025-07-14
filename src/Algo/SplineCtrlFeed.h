@@ -40,7 +40,7 @@ struct BSplineCtrlReference : ReferenceFeed {
   //info:
   double getEndTime() { return spline.get()->end(); }
   arr getEndPoint() { return spline.get()->ctrlPoints[-1].copy(); }
-  void eval(arr& x, arr& xDot, arr& xDDot, double t) { spline.get()->eval2(x, xDot, xDDot, t); }
+  void eval(arr& x, arr& xDot, arr& xDDot, double t) { spline.get()->eval3(x, xDot, xDDot, t); }
 
   void report(double ctrlTime);
 };

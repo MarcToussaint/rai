@@ -131,19 +131,19 @@ void BSpline::clear() {
   knots.clear();
 }
 
-void BSpline::setCtrlPoints(const arr& pts, bool addStartDuplicates, bool addEndDuplicates, const arr& setStartVel, const arr& setEndVel) {
+void BSpline::setCtrlPoints(const arr& points, bool addStartDuplicates, bool addEndDuplicates, const arr& setStartVel, const arr& setEndVel) {
   CHECK(knots.N, "need to set knots first");
-  if(!pts.d1){ ctrlPoints.resize(pts.d0+2*(degree/2), pts.d1); return; }
+  if(!points.d1){ ctrlPoints.resize(points.d0+2*(degree/2), points.d1); return; }
 
-  ctrlPoints = pts;
+  ctrlPoints = points;
   for(uint i=0; i<degree/2; i++) {
-    if(addStartDuplicates) ctrlPoints.prepend(pts[0]);
-    if(addEndDuplicates) ctrlPoints.append(pts[-1]);
+    if(addStartDuplicates) ctrlPoints.prepend(points[0]);
+    if(addEndDuplicates) ctrlPoints.append(points[-1]);
   }
   CHECK_EQ(ctrlPoints.d0, knots.N-degree-1, "");
 
   if(!!setStartVel && setStartVel.N) setDoubleKnotVel(-1, setStartVel);
-  if(!!setEndVel && setEndVel.N) setDoubleKnotVel(pts.d0-1, setEndVel);
+  if(!!setEndVel && setEndVel.N) setDoubleKnotVel(points.d0-1, setEndVel);
 }
 
 BSpline& BSpline::set(uint _degree, const arr& points, const arr& times, const arr& startVel, const arr& endVel) {
@@ -157,26 +157,17 @@ BSpline& BSpline::set(uint _degree, const arr& points, const arr& times, const a
   return *this;
 }
 
-// BSpline& BSpline::set_vel(uint degree, const arr& _points, const arr& velocities, const arr& _times) {
-//   arr pts = repmat(_points, 1, 2).reshape(-1, _points.d1);
-//   arr tms = repmat(_times, 1, 2).reshape(-1);
-//   set(degree, pts, tms);
-//   if(velocities.N) {
-//     for(uint t=0; t<velocities.d0; t++) {
-//       setDoubleKnotVel(2*t, velocities[t]);
-//     }
-//   }
-//   return *this;
-// }
+void BSpline::overwriteSmooth(const arr& points, const arr& times_rel, double time_cut){
+  arr x_cut, xDot_cut;
+  eval3(x_cut, xDot_cut, NoArr, time_cut);
 
-// BSpline& BSpline::setUniform(uint _degree, uint steps) {
-//   arr t = ::range(0., 1., steps);
-//   arr x = t;
-//   set(_degree, x.reshape(-1, 1), t);
-//   return *this;
-// }
+  arr _points(points), _times(times_rel);
+  _times.prepend(0.);
+  _points.prepend(x_cut);
+  set(degree, _points, _times+time_cut, xDot_cut);
+}
 
-void BSpline::eval2(arr& x, arr& xDot, arr& xDDot, double t, arr& Jpoints, arr& Jtimes) const {
+void BSpline::eval3(arr& x, arr& xDot, arr& xDDot, double t, arr& Jpoints, arr& Jtimes) const {
   uint n = ctrlPoints.d1;
   if(!!x) x.resize(n).setZero();
   if(!!xDot) xDot.resize(n).setZero();
@@ -237,18 +228,18 @@ void BSpline::eval2(arr& x, arr& xDot, arr& xDDot, double t, arr& Jpoints, arr& 
 
 arr BSpline::eval(double t, uint derivative) const {
   arr x;
-  if(derivative==0) eval2(x, NoArr, NoArr, t);
-  else if(derivative==1) eval2(NoArr, x, NoArr, t);
-  else if(derivative==2) eval2(NoArr, NoArr, x, t);
+  if(derivative==0) eval3(x, NoArr, NoArr, t);
+  else if(derivative==1) eval3(NoArr, x, NoArr, t);
+  else if(derivative==2) eval3(NoArr, NoArr, x, t);
   else NIY;
   return x;
 }
 
 arr BSpline::eval(const arr& sampleTimes, uint derivative) const {
   arr f(sampleTimes.N, ctrlPoints.d1);
-  if(derivative==0){ for(uint i=0; i<sampleTimes.N; i++) eval2(f[i].noconst(), NoArr, NoArr, sampleTimes(i)); }
-  else if(derivative==1){ for(uint i=0; i<sampleTimes.N; i++) eval2(NoArr, f[i].noconst(), NoArr, sampleTimes(i)); }
-  else if(derivative==2){ for(uint i=0; i<sampleTimes.N; i++) eval2(NoArr, NoArr, f[i].noconst(), sampleTimes(i)); }
+  if(derivative==0){ for(uint i=0; i<sampleTimes.N; i++) eval3(f[i].noconst(), NoArr, NoArr, sampleTimes(i)); }
+  else if(derivative==1){ for(uint i=0; i<sampleTimes.N; i++) eval3(NoArr, f[i].noconst(), NoArr, sampleTimes(i)); }
+  else if(derivative==2){ for(uint i=0; i<sampleTimes.N; i++) eval3(NoArr, NoArr, f[i].noconst(), sampleTimes(i)); }
   else NIY;
   return f;
 }
@@ -260,12 +251,12 @@ arr BSpline::eval(const arr& sampleTimes, uint derivative) const {
 //   return core.getBmatrix(::range(0., 1., T), degree);
 // }
 
-void BSpline::append(const arr& points, const arr& times, bool inside) {
+void BSpline::append(const arr& points, const arr& times_rel, bool inside) {
   CHECK_EQ(points.nd, 2, "");
-  CHECK_EQ(points.d0, times.N, "");
+  CHECK_EQ(points.d0, times_rel.N, "");
 
-  CHECK_GE(times.first(), 0., "append needs to be in relative time, always with _times.first()>=0.");
-  if(!times.first()) {
+  CHECK_GE(times_rel.first(), 0., "append needs to be in relative time, always with _times.first()>=0.");
+  if(!times_rel.first()) {
     CHECK_LE(maxDiff(ctrlPoints[-1], points[0]), 1e-10, "when appending with _times.first()=0., the first point needs to be identical to the previous last, making this a double knot");
   }
 
@@ -282,18 +273,17 @@ void BSpline::append(const arr& points, const arr& times, bool inside) {
 
   //append things:
   ctrlPoints.append(points);
-  knots.append(times+Tend);
+  knots.append(times_rel+Tend);
   if(!(degree%2)) {
     arr tmp = knots;
-    for(uint i=knots.N-1; i>=knots.N-times.N; i--) {
-//      times(i) = .5*(times(i-1)+times(i));
+    for(uint i=knots.N-1; i>=knots.N-times_rel.N; i--) {
       knots(i) = .5*(tmp(i-1) + tmp(i));
     }
   }
 
   //append tails;
   for(uint i=0; i<degree/2; i++) ctrlPoints.append(points[-1]);
-  knots.append(times(-1)+Tend, 1+2*(degree/2)); //multiple
+  knots.append(times_rel(-1)+Tend, 1+2*(degree/2)); //multiple
 
   CHECK_EQ(ctrlPoints.d0, knots.N-degree-1, "");
 }

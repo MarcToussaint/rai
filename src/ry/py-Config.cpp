@@ -150,6 +150,13 @@ void init_Config(pybind11::module& m) {
     return F;
   })
 
+  .def("getRoots", [](shared_ptr<rai::Configuration>& self) {
+    FrameL R = self->getRoots();
+    std::vector<shared_ptr<rai::Frame>> F;
+    for(rai::Frame* f:R) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-sense deleter!
+    return F;
+  })
+
   .def("delFrame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName) {
     rai::Frame* p = self->getFrame(frameName.c_str(), true);
     if(p) delete p;

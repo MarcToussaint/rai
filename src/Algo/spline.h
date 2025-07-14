@@ -29,27 +29,23 @@ struct BSpline {
   arr getBmatrix(const arr& sampleTimes, bool startDuplicates=false, bool endDuplicates=false);
 
   //-- methods concerning ctrl points
-  void setCtrlPoints(const arr& pts, bool addStartDuplicates=true, bool addEndDuplicates=true, const arr& setStartVel=NoArr, const arr& setEndVel=NoArr);
-  void append(const arr& points, const arr& times, bool inside);
+  void setCtrlPoints(const arr& points, bool addStartDuplicates=true, bool addEndDuplicates=true, const arr& setStartVel=NoArr, const arr& setEndVel=NoArr);
 
   //-- convenience user functions
   BSpline& set(uint _degree, const arr& points, const arr& times, const arr& startVel=NoArr, const arr& endVel=NoArr);
+  void overwriteSmooth(const arr& points, const arr& times_rel, double time_cut);
+  void append(const arr& points, const arr& times_rel, bool inside);
   void clear();
   arr& getKnots(){ return knots; }
   arr& getCtrlPoints(){ return ctrlPoints; }
   arr getPoints();
-
-  //-- obsolete
-  // BSpline& set_vel(uint degree, const arr& points, const arr& velocities, const arr& _times);
-
 
   //experimental
   void doubleKnot(uint t);
   void setDoubleKnotVel(int t, const arr& vel);
 
   /// core method to evaluate spline
-  // void eval(arr& x, arr& xDot, arr& xDDot, double t) const;
-  void eval2(arr& x, arr& xDot, arr& xDDot, double t, arr& Jpoints=NoArr, arr& Jtimes=NoArr) const;
+  void eval3(arr& x, arr& xDot, arr& xDDot, double t, arr& Jpoints=NoArr, arr& Jtimes=NoArr) const;
   arr eval(double t, uint derivative=0) const;
   arr eval(const arr& sampleTimes, uint derivative=0) const;
 

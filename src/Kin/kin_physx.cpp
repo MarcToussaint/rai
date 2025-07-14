@@ -1041,14 +1041,7 @@ PhysXInterface::PhysXInterface(rai::Configuration& C, int verbose, const rai::Ph
 
   FrameL parts = C.getParts();
   for(rai::Frame* f : parts) {
-    bool asMultiBody=false;
-#if 0
-    FrameL sub = f->getSubtree();
-    for(rai::Frame* a:sub) if(a->joint) { asMultiBody=true; break; }
-#else
-    if(f->ats && f->ats->get<bool>("multibody", false)) asMultiBody=true;
-#endif
-    if(asMultiBody) {
+    if(f->ats && f->ats->get<bool>("multibody", false)) {
       self->addMultiBody(f);
     } else {
       self->addLink(f);

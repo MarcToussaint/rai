@@ -22,7 +22,7 @@ void BSplineCtrlReference::waitForInitialized() {
 
 void BSplineCtrlReference::getReference(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, const arr& q_real, const arr& qDot_real, double ctrlTime) {
   if(!spline.get()->ctrlPoints.N) initialize(q_real, qDot_real, ctrlTime);
-  spline.get() -> eval2(q_ref, qDot_ref, qDDot_ref, ctrlTime);
+  spline.get() -> eval3(q_ref, qDot_ref, qDDot_ref, ctrlTime);
 }
 
 void BSplineCtrlReference::append(const arr& x, const arr& t, double ctrlTime) {
@@ -44,16 +44,12 @@ void BSplineCtrlReference::append(const arr& x, const arr& t, double ctrlTime) {
 void BSplineCtrlReference::overwriteSmooth(const arr& x, const arr& t, double ctrlTime) {
   CHECK(t.first()>.001, "that's too harsh!");
   if(!spline.get()->knots.N) { //not yet initialized
+    HALT("are you every here?");
     append(x, t, ctrlTime);
     return;
   }
-  arr x_now, xDot_now;
-  arr _x(x), _t(t);
   auto splineSet = spline.set();
-  splineSet->eval2(x_now, xDot_now, NoArr, ctrlTime);
-  _x.prepend(x_now);
-  _t.prepend(0.);
-  splineSet->set(degree, _x, _t+ctrlTime, xDot_now);
+  splineSet->overwriteSmooth(x, t, ctrlTime);
 }
 
 void BSplineCtrlReference::overwriteHard(const arr& x, const arr& t, double ctrlTime) {
@@ -66,13 +62,13 @@ void BSplineCtrlReference::overwriteHard(const arr& x, const arr& t, double ctrl
 
   //only saftey checks: evaluate the old spline
   arr x_old, xDot_old;
-  splineSet->eval2(x_old, xDot_old, NoArr, ctrlTime);
+  splineSet->eval3(x_old, xDot_old, NoArr, ctrlTime);
 
   splineSet->set(degree, x, t+ctrlTime, xDot_old);
 
   //only saftey checks: evaluate the new spline
   arr x_new, xDot_new;
-  splineSet->eval2(x_new, xDot_new, NoArr, ctrlTime);
+  splineSet->eval3(x_new, xDot_new, NoArr, ctrlTime);
   if(maxDiff(x_old, x_new)>.1) LOG(0) <<"your first point knot is too far from the current spline";
   if(maxDiff(xDot_old, xDot_new)>.5) LOG(0) <<"your initial velocity is too far from the current spline";
 }
@@ -82,11 +78,11 @@ void BSplineCtrlReference::report(double ctrlTime) {
   arr x, xDot;
   auto splineGet = spline.get();
   cout <<"times: current: " <<ctrlTime << " knots: " <<splineGet->knots <<endl;
-  splineGet->eval2(x, xDot, NoArr, splineGet->knots.first());
+  splineGet->eval3(x, xDot, NoArr, splineGet->knots.first());
   cout <<"eval(first): " <<x <<' ' <<xDot <<endl;
-  splineGet->eval2(x, xDot, NoArr, splineGet->knots.last());
+  splineGet->eval3(x, xDot, NoArr, splineGet->knots.last());
   cout <<"eval(last): " <<x <<' ' <<xDot <<endl;
-  splineGet->eval2(x, xDot, NoArr, ctrlTime);
+  splineGet->eval3(x, xDot, NoArr, ctrlTime);
   cout <<"eval(current): " <<x <<' ' <<xDot <<endl;
 }
 
