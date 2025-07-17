@@ -50,12 +50,13 @@ void testPushes(){
   byteA rgb;
   floatA depth;
 
-  arr Xstart = C.getFrameState();
+  rai::Simulation::State X;
+  S.getState(X);
 
   for(uint k=0;k<2;k++){
 
     //restart from the same state multiple times
-    S.setState(Xstart);
+    S.setState(X);
 
     for(uint t=0;t<300;t++){
       tic.waitForTic();
@@ -77,7 +78,7 @@ void testPushes(){
         p(2) += .2;
         C["box"]->setPosition(p);
 
-        S.setState(C.getFrameState());
+        S.pushConfigurationToSimulator();
       }
     }
   }
@@ -465,7 +466,7 @@ void testNonconvexObjects(){
   floatA tensor = t.evalGrid(20,20,20);
 
   C.addFrame("torus") ->setImplicitSurface(tensor, t.up-t.lo) .setPosition({0.,0.,1.}) .setMass(.2);
-  C.addFrame("sphere") ->setShape(rai::ST_sphere, {.2}) .setPosition({.05, .01, .5}) .setMass(2.);
+  C.addFrame("sphere")->setShape(rai::ST_sphere, {.2}) .setPosition({.05, .01, .5}) .setMass(2.);
   C.addFrame("table") ->setShape(rai::ST_ssBox, {1.,1.,.1,.01}) .setPosition({0., 0., .1});
   C.view(true);
 
@@ -501,8 +502,8 @@ void testMotors(){
 
   rai::system("mkdir -p z.vid/; rm -f z.vid/*.ppm");
 
-  arr X, V, q, qDot;
-  S.getState(X, q, V, qDot);
+  rai::Simulation::State X;
+  S.getState(X);
 
   S.setSplineRef(qT, {1.});
 
@@ -513,18 +514,27 @@ void testMotors(){
 //    S.step(q0, tau, S._position);
     S.step({}, tau, S._spline);
 
+    if(!((t+50)%100)){
+      S.getState(X);
+    }
+
     if(!(t%100)){
-      S.setState(X, q, V, qDot);
-      q0 = q;
+      S.setState(X);
+      q0 = X.q;
       S.resetSplineRef();
       S.setSplineRef(qT, {1.});
 
-      arr _X, _V, _q, _qDot;
-      S.getState(_X, _q, _V, _qDot);
-      // CHECK_ZERO(maxDiff(X, _X), 1e-4, "");
-      CHECK_ZERO(maxDiff(q, _q), 1e-6, "");
-      // CHECK_ZERO(maxDiff(V, _V), 1e-6, "");
-      CHECK_ZERO(maxDiff(qDot, _qDot), 1e-6, '\n' <<qDot <<'\n' <<_qDot);
+      rai::Simulation::State _X;
+      S.getState(_X);
+      cout <<"reset state errors: "
+           <<maxDiff(X.q, _X.q) <<' '
+           <<maxDiff(X.qDot, _X.qDot) <<' '
+           <<maxDiff(X.freeStates, _X.freeStates) <<' '
+           <<maxDiff(X.freeVelocities, _X.freeVelocities) <<endl;
+      CHECK_ZERO(maxDiff(X.q, _X.q), 1e-6, "");
+      CHECK_ZERO(maxDiff(X.qDot, _X.qDot), 1e-6, '\n' <<X.qDot <<'\n' <<_X.qDot);
+      CHECK_ZERO(maxDiff(X.freeStates, _X.freeStates), 1e-6, "");
+      CHECK_ZERO(maxDiff(X.freeVelocities, _X.freeVelocities), 1e-6, "");
     }
 
     //write_ppm(S.getScreenshot(), STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));

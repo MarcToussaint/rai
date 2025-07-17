@@ -92,9 +92,10 @@ struct Simulation {
   //== management interface
 
   //-- store and reset the state of the simulation
-  void resetTime();
-  void getState(arr& frameState, arr& q=NoArr, arr& frameVelocities=NoArr, arr& qDot=NoArr);
-  void setState(const arr& frameState, const arr& q=NoArr, const arr& frameVelocities=NoArr, const arr& qDot=NoArr);
+  void resetTime(double t=0.);
+  struct State { double time; arr q, qDot, freeStates, freeVelocities; };
+  void getState(State& state);
+  void setState(const State& state);
   void pushConfigurationToSimulator(const arr& frameVelocities=NoArr, const arr& qDot=NoArr);
 
   //-- post-hoc world manipulations
@@ -108,6 +109,8 @@ struct Simulation {
   std::shared_ptr<struct PhysXInterface> hidden_physx();
   OpenGL& hidden_gl();
   void loadTeleopCallbacks();
+private:
+  void _controls2refs(arr& q_ref, arr& qDot_ref, double tau, const arr& q_real, const arr& u_control, ControlMode u_mode);
 };
 
 //===========================================================================

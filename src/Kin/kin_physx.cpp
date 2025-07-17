@@ -147,6 +147,9 @@ PhysXInterface_Engine* core() {
 struct PhysXInterface_self {
   ~PhysXInterface_self();
 
+  FrameL parts;
+  FrameL articulationJoints;
+
   PxScene* gScene = nullptr;
   rai::Array<PxConvexMesh*> meshes;
   rai::Array<PxRigidActor*> actors;
@@ -485,15 +488,15 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
     LOG(0) <<"adding multibody with base '" <<base->name <<"' fixedBase: " <<multibody_fixedBase <<" gravity: " <<multibody_gravity;
   }
 
-  //-- collect all links for that root
+  //-- collect all links/joints for that root
   FrameL F = {base};
-  //base->getPartSubFrames(F);
   base->getSubtree(F);
   FrameL links = {base};
   for(auto* f:F) { if(f->joint && !f->joint->isPartBreak) links.append(f); }
   intA parents(links.N);
   parents = -1;
   for(uint i=1; i<links.N; i++) {
+    articulationJoints.append(links(i));
     rai::Frame* p = links(i)->parent->getUpwardLink();
     parents(i) = links.findValue(p);
     if(parents(i)==-1) {
@@ -1039,8 +1042,8 @@ PhysXInterface::PhysXInterface(rai::Configuration& C, int verbose, const rai::Ph
 
   for(rai::Frame* a : C.frames) a->ensure_X();
 
-  FrameL parts = C.getParts();
-  for(rai::Frame* f : parts) {
+  self->parts = C.getParts();
+  for(rai::Frame* f : self->parts) {
     if(f->ats && f->ats->get<bool>("multibody", false)) {
       self->addMultiBody(f);
     } else {
@@ -1064,13 +1067,18 @@ void PhysXInterface::step(double tau) {
   }
 }
 
-void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& frameVelocities) {
-  if(!!frameVelocities) frameVelocities.resize(C.frames.N, 2, 3).setZero();
+const FrameL& PhysXInterface::getBodyFrames(){
+  return self->parts;
+}
 
-  for(rai::Frame* f : C.frames) {
+void PhysXInterface::pullBodyStates(rai::Configuration& C, arr& frameVelocities) {
+  if(!!frameVelocities) frameVelocities.resize(self->parts.N, 2, 3).setZero();
+
+  uint i=0;
+  for(rai::Frame* f : self->parts) {
     if(self->actors.N <= f->ID) continue;
     PxRigidActor* a = self->actors(f->ID);
-    if(!a) continue;
+    CHECK(a, ""); if(!a) continue;
 
     // if(f->joint && !f->joint->active && f->joint->dim==1) continue; //don't pull gripper joint states
 
@@ -1078,12 +1086,12 @@ void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& frameVelociti
       f->set_X() = conv_PxTrans2Transformation(a->getGlobalPose());
       if(!!frameVelocities && (a->getType() == PxActorType::eRIGID_DYNAMIC || a->getType() == PxActorType::eARTICULATION_LINK)) {
         PxRigidBody* px_body = (PxRigidBody*)(a);
-        frameVelocities(f->ID, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());
-        frameVelocities(f->ID, 1, {}) = conv_PxVec3_arr(px_body->getAngularVelocity());
+        frameVelocities(i, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());
+        frameVelocities(i, 1, {}) = conv_PxVec3_arr(px_body->getAngularVelocity());
       }
-
 //      if(f->parent) LOG(0) <<f->parent->name <<f->ensure_X().pos <<f->parent->ensure_X().pos <<f->get_Q().pos;
     }
+    i++;
   }
 }
 
@@ -1151,12 +1159,13 @@ void PhysXInterface::postAddObject(rai::Frame* f) {
   }
 }
 
-void PhysXInterface::pushMotorTargets(const rai::Configuration& C, const arr& qDot_ref, bool setStatesInstantly) {
-  for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)) {
+void PhysXInterface::pushJointTargets(const rai::Configuration& C, const arr& qDot_ref, bool setStatesInstantly) {
+  // for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)) {
+  for(rai::Frame *f:self->articulationJoints){
       PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
-      if(!actor) continue;
+      CHECK(actor,""); if(!actor) continue;
       PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
-      if(!joint) continue;
+      CHECK(joint,""); if(!joint) continue;
 
       auto axis = self->jointAxis(f->ID);
       if(axis!=PxArticulationAxis::eCOUNT){ //only joints with drive
@@ -1174,17 +1183,18 @@ void PhysXInterface::pushMotorTargets(const rai::Configuration& C, const arr& qD
     }
 }
 
-void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot) {
+void PhysXInterface::pullJointStates(rai::Configuration& C, arr& qDot) {
   C.ensure_q();
   arr q = C.getJointState();
   arr qInactive = C.qInactive;
   if(!!qDot) qDot.resize(q.N).setZero();
 
-  for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)) { //f->joint->active &&
+  // for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)) { //f->joint->active &&
+  for(rai::Frame *f:self->articulationJoints){
       PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
-      if(!actor) continue;
+    CHECK(actor,""); if(!actor) continue;
       PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
-      if(!joint) continue;
+    CHECK(joint,""); if(!joint) continue;
 
       auto axis = self->jointAxis(f->ID);
       if(axis!=PxArticulationAxis::eCOUNT){ //only joints with drive
@@ -1234,12 +1244,13 @@ void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot) {
 #endif
 }
 
-void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& frameVelocities, bool onlyKinematic) {
+void PhysXInterface::pushBodyStates(const rai::Configuration& C, const arr& frameVelocities, bool onlyKinematic) {
   // frame states (including of dynamic, e.g. falling, objects)
-  for(rai::Frame* f : C.frames) {
+  uint i=0;
+  for(rai::Frame* f : self->parts) {
     if(self->actors.N <= f->ID) continue;
     PxRigidActor* a = self->actors(f->ID);
-    if(!a) continue; //f is not an actor
+    CHECK(a, ""); if(!a) continue; //f is not an actor
 
     if(self->actorTypes(f->ID)==rai::BT_kinematic) {
       ((PxRigidDynamic*)a)->setKinematicTarget(conv_Transformation2PxTrans(f->ensure_X()));
@@ -1249,14 +1260,15 @@ void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& fra
       if(self->actorTypes(f->ID)==rai::BT_dynamic && (a->getType() == PxActorType::eRIGID_DYNAMIC)) {
         PxRigidDynamic* px_body = (PxRigidDynamic*)(a);
         if(!!frameVelocities && frameVelocities.N) {
-          px_body->setLinearVelocity(PxVec3(frameVelocities(f->ID, 0, 0), frameVelocities(f->ID, 0, 1), frameVelocities(f->ID, 0, 2)));
-          px_body->setAngularVelocity(PxVec3(frameVelocities(f->ID, 1, 0), frameVelocities(f->ID, 1, 1), frameVelocities(f->ID, 1, 2)));
+          px_body->setLinearVelocity(PxVec3(frameVelocities(i, 0, 0), frameVelocities(i, 0, 1), frameVelocities(i, 0, 2)));
+          px_body->setAngularVelocity(PxVec3(frameVelocities(i, 1, 0), frameVelocities(i, 1, 1), frameVelocities(i, 1, 2)));
         } else {
           px_body->setLinearVelocity(PxVec3(0., 0., 0.));
           px_body->setAngularVelocity(PxVec3(0., 0., 0.));
         }
       }
     }
+    i++;
   }
 }
 

@@ -29,7 +29,6 @@ namespace rai {
 
 struct Simulation_self {
   arr qDot;
-  arr frameVelocities;
   std::shared_ptr<struct Simulation_DisplayThread> display;
   std::shared_ptr<CameraView> cameraview;
   std::shared_ptr<BulletInterface> bullet;
@@ -60,10 +59,7 @@ struct Simulation_self {
 //===========================================================================
 
 struct SimulationImp {
-  enum When { _undefined, _beforeControl, _beforePhysics, _afterPhysics, _afterImages };
-
   Simulation::ImpType type;
-  When when = _undefined;
   bool killMe = false;
 
   //-- imps overload these methods to modify/perturb something
@@ -108,7 +104,7 @@ struct Imp_ObjectImpulses : SimulationImp {
   Frame* obj;
   double timeToImpulse=0.;
 
-  Imp_ObjectImpulses(Frame* _obj) : obj(_obj) { CHECK(obj, "");  when = _beforePhysics;  }
+  Imp_ObjectImpulses(Frame* _obj) : obj(_obj) { CHECK(obj, "");  }
   virtual void modConfiguration(Simulation& S, double tau);
 };
 
@@ -124,7 +120,6 @@ struct Imp_BlockJoints : SimulationImp {
 //===========================================================================
 
 struct Imp_NoPenetrations : SimulationImp {
-  Imp_NoPenetrations() {when = _beforePhysics;};
   virtual void modConfiguration(Simulation& S, double tau);
 };
 
@@ -165,27 +160,13 @@ Simulation::~Simulation() {
   }
 }
 
-void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
-  //-- kill done imps
-  for(uint i=imps.N; i--;) {
-    if(imps.elem(i)->killMe) imps.remove(i);
-  }
-
+void Simulation::_controls2refs(arr& q_ref, arr& qDot_ref, double tau, const arr& q_real, const arr& u_control, ControlMode u_mode){
   arr ucontrol = u_control; //a copy to allow for perturbations
   if(!ucontrol.N && u_mode==_position && teleopCallbacks) {
     ucontrol = teleopCallbacks->q_ref;
-  }
-
-  //-- imps before control
-  for(shared_ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_beforeControl) {
-      imp->modControl(*this, ucontrol, tau, u_mode);
     }
 
   //-- bring C in reference state depending on control mode (size zero means no reference)
-  arr q_real = C.getJointState();
-  arr q_ref, qDot_ref;
-  time += tau;
-  stepCount ++;
   if(u_mode==_none) {
   } else if(u_mode==_position) {
     q_ref = ucontrol;
@@ -255,26 +236,39 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     q_ref += self->a_ref;
     if(q_ref.N) C.setJointState(q_ref);
   }
+}
+
+void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
+  //-- kill done imps
+  for(uint i=imps.N; i--;) if(imps.elem(i)->killMe) imps.remove(i);
+
+  //-- kinematic pushes
+  if(engine==_physx) {
+    self->physx->pushBodyStates(C, NoArr, true); //kinematicOnly (usually none anyway)
+  } else if(engine==_bullet) {
+    self->bullet->pushKinematicStates(C);
+  }
+
+  //-- increment time
+  time += tau;
+  stepCount ++;
+
+  //-- get control references
+  arr q_ref, qDot_ref;
+  _controls2refs(q_ref, qDot_ref, tau, C.getJointState(), u_control, u_mode);
 
   //-- imps before physics
-  for(shared_ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_beforePhysics) {
-      imp->modConfiguration(*this, tau);
-    }
+  for(shared_ptr<SimulationImp>& imp : imps) imp->modConfiguration(*this, tau);
 
   //-- call the physics engine
   if(engine==_physx) {
     C.ensure_q();
-    self->physx->pushFrameStates(C, NoArr, true); //kinematicOnly (usually none anyway)
-    self->physx->pushMotorTargets(C); //qDot_ref, motor control
+    self->physx->pushJointTargets(C); //qDot_ref, motor control
     self->physx->step(tau);
-    self->physx->pullDynamicStates(C, self->frameVelocities);
-    self->physx->pullMotorStates(C, self->qDot);
+    self->physx->pullBodyStates(C);
+    self->physx->pullJointStates(C, self->qDot);
   } else if(engine==_bullet) {
-    self->bullet->pushKinematicStates(C);
-    if(self->bullet->opt().multiBody) {
-      if(ucontrol.nd!=2) LOG(1) <<"stepping motorized bullet without ctrl reference";
-      else self->bullet->setMotorQ(ucontrol[0], ucontrol[1]); //C.getJointState(), self->qDot);
-    }
+    if(self->bullet->opt().multiBody) self->bullet->setMotorQ(q_ref, qDot_ref);
     self->bullet->step(tau);
     self->bullet->pullDynamicStates(C); //, self->frameVelocities);
 #ifdef BACK_BRIDGE
@@ -285,12 +279,6 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     //already done
   } else NIY;
   C.ensure_q();
-
-  //-- imps after physics
-  for(shared_ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_afterPhysics) {
-      imp->modConfiguration(*this, tau);
-    }
-
 
   //-- data log?
   if(writeData>0){ // && !(steps%10)){
@@ -513,33 +501,39 @@ bool Simulation::gripperIsDone(const char* gripperFrameName) {
 #endif
 }
 
-void Simulation::getState(arr& frameState, arr& q, arr& frameVelocities, arr& qDot) {
+void Simulation::getState(State& state) {
+  state.time = time;
   if(engine==_physx) {
-    self->physx->pullDynamicStates(C, frameVelocities);
-    self->physx->pullMotorStates(C, qDot);
+    state.q = C.getJointState();
+    self->physx->pullJointStates(C, state.qDot);
+    self->physx->pullBodyStates(C, state.freeVelocities);
+    state.freeStates = C.getFrameState(self->physx->getBodyFrames());
   } else if(engine==_bullet) {
-    self->bullet->pullDynamicStates(C, frameVelocities);
-    if(!!q) NIY;
+    state.q = C.getJointState();
+    self->bullet->pullDynamicStates(C, state.freeVelocities);
+    NIY;
+    state.freeStates = C.getFrameState();
   } else NIY;
-  frameState = C.getFrameState();
-  q = C.getJointState();
 }
 
-void Simulation::setState(const arr& frameState, const arr& q, const arr& frameVelocities, const arr& qDot) {
-  C.setFrameState(frameState);
-  if(!!q && q.N) C.setJointState(q);
-  pushConfigurationToSimulator(frameVelocities, qDot);
+void Simulation::setState(const State& state) {
   if(engine==_physx) {
+    C.setFrameState(state.freeStates, self->physx->getBodyFrames());
+    C.setJointState(state.q);
+    pushConfigurationToSimulator(state.freeVelocities, state.qDot);
     self->physx->step(1e-3);
-    pushConfigurationToSimulator(frameVelocities, qDot);
+    pushConfigurationToSimulator(state.freeVelocities, state.qDot);
+  }else{
+    NIY;
   }
+  resetTime(state.time);
 }
 
 void Simulation::pushConfigurationToSimulator(const arr& frameVelocities, const arr& qDot) {
   C.ensure_q();
   if(engine==_physx) {
-    self->physx->pushFrameStates(C, frameVelocities);
-    self->physx->pushMotorTargets(C, qDot, true);
+    self->physx->pushBodyStates(C, frameVelocities);
+    self->physx->pushJointTargets(C, qDot, true);
   } else if(engine==_bullet) {
     self->bullet->pushFullState(C, frameVelocities);
   } else NIY;
@@ -560,7 +554,13 @@ const arr& Simulation::get_qDot() {
 }
 
 const arr& Simulation::get_frameVelocities(){
-  return self->frameVelocities;
+  arr frameVelocities;
+  if(engine==_physx) {
+    self->physx->pullBodyStates(C, frameVelocities);
+  }else{
+    NIY;
+  }
+  return frameVelocities;
 }
 
 double Simulation::getTimeToSplineEnd() {
@@ -643,11 +643,6 @@ void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
   cameraview().updateConfiguration(C);
   cameraview().renderMode = CameraView::visuals;
   cameraview().computeImageAndDepth(image, depth);
-
-  //-- imps after images
-  for(shared_ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_afterImages) {
-      imp->modImages(*this, image, depth);
-    }
 
   if(self->display) self->updateDisplayData(image, depth);
 }
@@ -788,7 +783,6 @@ byteA Simulation::getScreenshot() {
 
 Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Joint* _joint,  Frame* _fing1, Frame* _fing2, Frame* _obj, double _speed)
   : gripper(_gripper), fing1(_fing1), fing2(_fing2), obj(_obj), finger1(fing1), finger2(fing2), joint(_joint), speed(_speed) {
-  when = _beforePhysics;
   type = Simulation::_closeGripper;
 
   while(!finger1->shape || finger1->shape->type()!=ST_ssBox) finger1=finger1->children.last();
@@ -860,9 +854,9 @@ void Simulation::detach(Frame* from, Frame* to) {
 #endif
 }
 
-void Simulation::resetTime(){
-  time=0.;
-  if(self->display) self->display->time=0.;
+void Simulation::resetTime(double t){
+  time=t;
+  if(self->display) self->display->time=t;
   resetSplineRef();
 }
 
@@ -923,7 +917,6 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
 
 Imp_GripperMove::Imp_GripperMove(Frame* _gripper, Joint* _joint, Frame* _fing1, Frame* _fing2, double _speed, double _stop)
   : gripper(_gripper), fing1(_fing1), fing2(_fing2), joint(_joint), speed(_speed), stop(_stop) {
-  when = _beforePhysics;
   type = Simulation::_moveGripper;
 
   if(joint->frame->parent->name.contains("robotiq")) speed *= -1.;
@@ -982,19 +975,18 @@ void Imp_ObjectImpulses::modConfiguration(Simulation& S, double tau) {
   vel(0) *= .1;
   vel(1) *= .1;
 
-  arr X, V;
-  S.getState(X, V);
+  rai::Simulation::State X;
+  S.getState(X);
 
-  V(obj->ID, 0, {}) = vel;
+  X.freeVelocities(obj->ID, 0, {}) = vel;
 
-  S.setState(X, V);
+  S.setState(X);
 }
 
 //===========================================================================
 
 Imp_BlockJoints::Imp_BlockJoints(const FrameL& _joints, Simulation& S)
   : joints(_joints) {
-  when = _beforePhysics;
   qBlocked.resize(joints.N);
   arr q = S.C.getJointState();
   for(uint i=0; i<joints.N; i++) {

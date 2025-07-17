@@ -224,10 +224,10 @@ arr ShapenetGrasps::evaluateGrasp(){
       //step simulation
       C.setJointState(q_ref);
       //physx.pushKinematicStates(C); //not necessary, no kinematic robot involved
-      physx.pushMotorTargets(C);
+      physx.pushJointTargets(C);
       physx.step(opt.simTau);
-      physx.pullDynamicStates(C);
-      physx.pullMotorStates(C, NoArr);
+      physx.pullBodyStates(C);
+      physx.pullJointStates(C, NoArr);
       if(physx.opt().verbose>3){
         physx.getDebugConfig().view(false, STRING("Simulation physx debug time: " <<t));
       }
