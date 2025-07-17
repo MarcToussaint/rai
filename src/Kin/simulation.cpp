@@ -384,13 +384,13 @@ void Simulation::moveGripper(const char* gripperFrameName, double width, double 
   if(!gripper) return;
 
   //remove gripper from grasps list
-  for(uint i=grasps.N; i--;) {
-    if(grasps.elem(i)==gripper) grasps.remove(i);
+  rai::Frame* obj = 0;
+  for(uint i=grasps.d0; i--;) {
+    if(grasps(i,0)==gripper){
+      obj = grasps(i,1);
+      grasps.delRows(i);
+    }
   }
-
-  //check if an object is attached
-  rai::Frame* obj = gripper->children(-1);
-  if(!obj || !obj->joint || obj->joint->type != rai::JT_rigid) obj=0;
 
   //reattach object to world frame, and make it physical
   if(obj) {
@@ -907,6 +907,8 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
 
         //allows the user to know that gripper grasps something
         S.grasps.append(gripper);
+        S.grasps.append(obj);
+        S.grasps.reshape(-1,2);
 
         if(S.verbose>0) LOG(1) <<"terminating grasp of object " <<obj->name <<" - SUCCESS (distances d1:" <<d1 <<" d2:" <<d2 <<" oppose:" <<y.noJ() <<")";
       } else { //unsuccessful

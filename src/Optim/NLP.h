@@ -74,6 +74,8 @@ struct NLP : rai::NonCopyable {
     return d;
   }
   arr summarizeErrors(const arr& phi);
+
+  shared_ptr<rai::NonCopyable> obj;
 };
 
 //===========================================================================

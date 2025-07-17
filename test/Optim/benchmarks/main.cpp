@@ -1,4 +1,5 @@
 #include <KOMO/testProblems_KOMO.h>
+#include <KOMO/komo_NLP.h>
 #include <Optim/NLP_Solver.h>
 #include <KOMO/komo.h>
 #include <Kin/viewer.h>
@@ -46,24 +47,26 @@ void TEST(Skeleton_Handover) {
 
 void test(str problemName={}, int initUniform=-1){
   if(initUniform<0) initUniform = rai::getParameter<int>("initUniform");
+  if(!problemName.N) problemName = rai::getParameter<str>("problem");
   uint s=0;
   for(uint k=0;k<1;k++){
-    Problem P;
-    P.load(problemName);
+    auto nlp = make_NLP_Problem(problemName);
 
     for(uint i=0;i<50;i++){
       rai::NLP_Solver S;
-      S.setProblem(P.nlp);
+      S.setProblem(nlp);
 
       LOG(0) <<"problem: " <<problemName <<" method: " <<rai::Enum<rai::OptMethod>(S.opt.method) <<" initUniform: " <<initUniform;
 
-      if(P.komo){
+      KOMO *komo = (KOMO*)(nlp->obj.get());
+
+      if(komo){
         if(initUniform){
-          S.setInitialization(P.nlp->getUniformSample());
-          P.komo->pathConfig.setJointState(S.x);
+          S.setInitialization(nlp->getUniformSample());
+          komo->pathConfig.setJointState(S.x);
         }else{
-          P.komo->initRandom();
-          S.setInitialization(P.nlp->getInitializationSample());
+          komo->initRandom();
+          S.setInitialization(nlp->getInitializationSample());
         }
       }
 
@@ -85,14 +88,14 @@ void test(str problemName={}, int initUniform=-1){
       S.gnuplot_costs();
       // S.getProblem()->checkJacobian(ret->x, 1e-4, {});
       //cout <<P.komo->report() <<endl;
-      if(P.komo){
-        P.komo->view(ret->feasible);
+      if(komo){
+        komo->view(ret->feasible);
         if(ret->feasible){
-          P.komo->get_viewer()->visualsOnly();
-          P.komo->view_play(false, 0, .2, STRING("z."<<s++<<".vid/"));
+          komo->get_viewer()->visualsOnly();
+          komo->view_play(false, 0, .2, STRING("z."<<s++<<".vid/"));
         }
       }else{
-        P.nlp->report(cout, 10);
+        nlp->report(cout, 10);
       }
     }
   }

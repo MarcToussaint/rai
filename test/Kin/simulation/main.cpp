@@ -539,7 +539,7 @@ void testMotors(){
 void testPassive(const char* filename, bool hold=false){
   rai::Configuration C;
   C.addFile(filename);
-//  C.processStructure(true);
+ // C.processStructure(true);
   arr q0 = C.getJointState();
 
   rai::Simulation S(C, S._physx, 2);

@@ -3033,6 +3033,7 @@ Frame& Configuration::addDict(const Graph& G) {
       f->setParent(p);
 
       if(n->parents.N==2) { //this is an inserted joint -> 2 frames (pre-joint and joint)
+        HALT("deprectated");
         Frame* post   = node2frame(n->parents(1)->index);
         CHECK(post, "JOINT: to '" <<n->parents(1)->key <<"' does not exist ["<<*n <<"]");
         CHECK(!p->isChildOf(post, INT32_MAX), "you can't insert joint in loops!");
@@ -3042,8 +3043,7 @@ Frame& Configuration::addDict(const Graph& G) {
       }
     }
 
-    f->ats = make_shared<Graph>();
-    f->ats->copy(n->graph(), false, true);
+    f->getAts().copy(n->graph(), false, true);
     f->read(n->graph());
   }
 

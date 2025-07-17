@@ -2229,7 +2229,7 @@ void rai::Shape::createMeshes() {
     }
   }
 
-#if 0
+#if 1
   if(!sscCore().N){
     rai::Mesh m;
     m.V = mesh().V;

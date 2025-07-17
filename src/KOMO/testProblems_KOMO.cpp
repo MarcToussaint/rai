@@ -200,6 +200,11 @@ StringA rai::get_NLP_Problem_names(){
   return names;
 }
 
+std::shared_ptr<NLP> KOMO_wrap(std::shared_ptr<KOMO> komo){
+  auto nlp = komo->nlp();
+  nlp->obj = komo;
+  return nlp;
+}
 
 std::shared_ptr<NLP> rai::make_NLP_Problem(str problem){
   if(!problem.N) problem = rai::getParameter<str>("problem");

@@ -8,7 +8,7 @@ void plotIt(rai::BSpline& S){
   ofstream fil("z.test");
   for(double t=S.begin()-.1;t<=S.end()+.1;t+=.001){
     arr x, xDot, xDDot;
-    S.eval2(x, xDot, xDDot, t);
+    S.eval3(x, xDot, xDDot, t);
     fil <<t <<' ' <<x.modRaw() <<' ' <<xDot.modRaw() <<' ' <<xDDot.modRaw() <<endl;
   }
   fil.close();
@@ -136,8 +136,8 @@ void testConvertToHermite(){
     double tau = S.knots(i) - S.knots(i-1);
     if(tau>0.){
       arr x0,v0,x1,v1;
-      S.eval2(x0, v0, NoArr, S.knots(i-1));
-      S.eval2(x1, v1, NoArr, S.knots(i));
+      S.eval3(x0, v0, NoArr, S.knots(i-1));
+      S.eval3(x1, v1, NoArr, S.knots(i));
       rai::CubicPiece p;
       p.set(x0, v0, x1, v1, tau);
       // cout <<i <<' ' <<tau <<" x0,v0: " <<S.knots(i-1) <<x0 <<v0 <<" x1,v1: " <<S.knots(i) <<x1 <<v1 <<endl;
@@ -170,7 +170,7 @@ void testJacobian(){
   fct evalFromKnots = [&S, &teval](const arr& knots) -> arr {
     S.knots = knots;
     arr y;
-    S.eval2(y, NoArr, NoArr, teval, NoArr, y.J());
+    S.eval3(y, NoArr, NoArr, teval, NoArr, y.J());
     return y;
   };
 
@@ -192,7 +192,7 @@ void testJacobian(){
   fct evalFromCtrlPoints= [&S, &teval](const arr& ctrlPoints) -> arr {
     S.ctrlPoints = ctrlPoints;
     arr y;
-    S.eval2(y, NoArr, NoArr, teval, y.J(), NoArr);
+    S.eval3(y, NoArr, NoArr, teval, y.J(), NoArr);
     return y;
   };
 
