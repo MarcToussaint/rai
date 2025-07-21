@@ -59,7 +59,7 @@ struct Simulation {
   //-- get state information
   const arr& get_q() { return C.getJointState(); }
   const arr& get_qDot();
-  const arr& get_frameVelocities();
+  const arr get_frameVelocities();
   double getTimeToSplineEnd();
   double getGripperWidth(const char* gripperFrameName);
   bool getGripperIsGrasping(const char* gripperFrameName);
@@ -93,9 +93,11 @@ struct Simulation {
 
   //-- store and reset the state of the simulation
   void resetTime(double t=0.);
-  struct State { double time; arr q, qDot, freeStates, freeVelocities; };
+  struct State { double time; arr q, qDot, freePos, freeVel; };
   void getState(State& state);
   void setState(const State& state);
+  FrameL getFreeFrames();
+  FrameL getJointFrames();
   void pushConfigurationToSimulator(const arr& frameVelocities=NoArr, const arr& qDot=NoArr);
 
   //-- post-hoc world manipulations

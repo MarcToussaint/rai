@@ -147,7 +147,7 @@ PhysXInterface_Engine* core() {
 struct PhysXInterface_self {
   ~PhysXInterface_self();
 
-  FrameL parts;
+  FrameL freeFrames;
   FrameL articulationJoints;
 
   PxScene* gScene = nullptr;
@@ -1042,21 +1042,37 @@ PhysXInterface::PhysXInterface(rai::Configuration& C, int verbose, const rai::Ph
 
   for(rai::Frame* a : C.frames) a->ensure_X();
 
-  self->parts = C.getParts();
-  for(rai::Frame* f : self->parts) {
+  FrameL parts = C.getParts();
+  for(rai::Frame* f : parts) {
     if(f->ats && f->ats->get<bool>("multibody", false)) {
       self->addMultiBody(f);
     } else {
       self->addLink(f);
     }
+    if(self->actorTypes(f->ID)==rai::BT_dynamic){
+      self->freeFrames.append(f);
+    }
   }
 
-  if(self->opt.verbose>0) LOG(0) <<"... done creating Configuration within PhysX";
+  if(self->opt.verbose>0){
+    LOG(0) <<"list of free frames: " <<rai::framesToNames(self->freeFrames);
+    LOG(0) <<"list of articulation joints: " <<rai::framesToNames(self->articulationJoints);
+    LOG(0) <<"... done creating Configuration within PhysX";
+  }
 }
 
 PhysXInterface::~PhysXInterface() {
   delete self;
 }
+
+const FrameL& PhysXInterface::getFreeFrames(){
+  return self->freeFrames;
+}
+
+const FrameL& PhysXInterface::getJointFrames(){
+  return self->articulationJoints;
+}
+
 
 void PhysXInterface::step(double tau) {
   self->stepCount++;
@@ -1064,34 +1080,6 @@ void PhysXInterface::step(double tau) {
 
   //...perform useful work here using previous frame's state data
   while(!self->gScene->fetchResults()) {
-  }
-}
-
-const FrameL& PhysXInterface::getBodyFrames(){
-  return self->parts;
-}
-
-void PhysXInterface::pullBodyStates(rai::Configuration& C, arr& frameVelocities) {
-  if(!!frameVelocities) frameVelocities.resize(self->parts.N, 2, 3).setZero();
-
-  uint i=0;
-  for(rai::Frame* f : self->parts) {
-    if(self->actors.N <= f->ID) continue;
-    PxRigidActor* a = self->actors(f->ID);
-    CHECK(a, ""); if(!a) continue;
-
-    // if(f->joint && !f->joint->active && f->joint->dim==1) continue; //don't pull gripper joint states
-
-    if(self->actorTypes(f->ID) == rai::BT_dynamic) {
-      f->set_X() = conv_PxTrans2Transformation(a->getGlobalPose());
-      if(!!frameVelocities && (a->getType() == PxActorType::eRIGID_DYNAMIC || a->getType() == PxActorType::eARTICULATION_LINK)) {
-        PxRigidBody* px_body = (PxRigidBody*)(a);
-        frameVelocities(i, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());
-        frameVelocities(i, 1, {}) = conv_PxVec3_arr(px_body->getAngularVelocity());
-      }
-//      if(f->parent) LOG(0) <<f->parent->name <<f->ensure_X().pos <<f->parent->ensure_X().pos <<f->get_Q().pos;
-    }
-    i++;
   }
 }
 
@@ -1203,6 +1191,7 @@ void PhysXInterface::pullJointStates(rai::Configuration& C, arr& qDot) {
           if(!!qDot) qDot(f->joint->qIndex) = joint->getJointVelocity(axis) / f->joint->scale;
         }else{
           qInactive(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
+          if(!!qDot){ NIY }
         }
       }
     }
@@ -1244,13 +1233,14 @@ void PhysXInterface::pullJointStates(rai::Configuration& C, arr& qDot) {
 #endif
 }
 
-void PhysXInterface::pushBodyStates(const rai::Configuration& C, const arr& frameVelocities, bool onlyKinematic) {
+void PhysXInterface::pushFreeStates(const rai::Configuration& C, const arr& frameVelocities, bool onlyKinematic) {
+  if(!!frameVelocities && frameVelocities.N) CHECK_EQ(frameVelocities.d0, self->freeFrames.N, "");
+
   // frame states (including of dynamic, e.g. falling, objects)
   uint i=0;
-  for(rai::Frame* f : self->parts) {
-    if(self->actors.N <= f->ID) continue;
+  for(rai::Frame* f : self->freeFrames) {
     PxRigidActor* a = self->actors(f->ID);
-    CHECK(a, ""); if(!a) continue; //f is not an actor
+    if(!a) continue; //f is not an actor
 
     if(self->actorTypes(f->ID)==rai::BT_kinematic) {
       ((PxRigidDynamic*)a)->setKinematicTarget(conv_Transformation2PxTrans(f->ensure_X()));
@@ -1267,6 +1257,29 @@ void PhysXInterface::pushBodyStates(const rai::Configuration& C, const arr& fram
           px_body->setAngularVelocity(PxVec3(0., 0., 0.));
         }
       }
+    }
+    i++;
+  }
+}
+
+void PhysXInterface::pullFreeStates(rai::Configuration& C, arr& frameVelocities) {
+  if(!!frameVelocities) frameVelocities.resize(self->freeFrames.N, 2, 3).setZero();
+
+  uint i=0;
+  for(rai::Frame* f : self->freeFrames) {
+    PxRigidActor* a = self->actors(f->ID);
+    if(!a) continue;
+
+    // if(f->joint && !f->joint->active && f->joint->dim==1) continue; //don't pull gripper joint states
+
+    if(self->actorTypes(f->ID) == rai::BT_dynamic) {
+      f->set_X() = conv_PxTrans2Transformation(a->getGlobalPose());
+      if(!!frameVelocities && (a->getType() == PxActorType::eRIGID_DYNAMIC || a->getType() == PxActorType::eARTICULATION_LINK)) {
+        PxRigidBody* px_body = (PxRigidBody*)(a);
+        frameVelocities(i, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());
+        frameVelocities(i, 1, {}) = conv_PxVec3_arr(px_body->getAngularVelocity());
+      }
+      //      if(f->parent) LOG(0) <<f->parent->name <<f->ensure_X().pos <<f->parent->ensure_X().pos <<f->get_Q().pos;
     }
     i++;
   }

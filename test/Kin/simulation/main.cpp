@@ -529,12 +529,12 @@ void testMotors(){
       cout <<"reset state errors: "
            <<maxDiff(X.q, _X.q) <<' '
            <<maxDiff(X.qDot, _X.qDot) <<' '
-           <<maxDiff(X.freeStates, _X.freeStates) <<' '
-           <<maxDiff(X.freeVelocities, _X.freeVelocities) <<endl;
+           <<maxDiff(X.freePos, _X.freePos) <<' '
+           <<maxDiff(X.freeVel, _X.freeVel) <<endl;
       CHECK_ZERO(maxDiff(X.q, _X.q), 1e-6, "");
       CHECK_ZERO(maxDiff(X.qDot, _X.qDot), 1e-6, '\n' <<X.qDot <<'\n' <<_X.qDot);
-      CHECK_ZERO(maxDiff(X.freeStates, _X.freeStates), 1e-6, "");
-      CHECK_ZERO(maxDiff(X.freeVelocities, _X.freeVelocities), 1e-6, "");
+      CHECK_ZERO(maxDiff(X.freePos, _X.freePos), 1e-6, "");
+      CHECK_ZERO(maxDiff(X.freeVel, _X.freeVel), 1e-6, "");
     }
 
     //write_ppm(S.getScreenshot(), STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
@@ -626,24 +626,33 @@ void testResetState(){
   f->setMass(.1);
   f->setJoint(rai::JT_transX);
 
-// q0 = C.getJointState()
-// X0 = C.getFrameState()
-
   C.view();
 
   double tau = .01;
   rai::Simulation S(C, S._physx, 4);
+  rai::Simulation::State X;
+  S.getState(X);
   Metronome tic(tau);
-  for(uint t=0;t<2./tau;t++){
+  for(int t=0;t<2./tau;t++){
     tic.waitForTic();
-    S.step({}, tau, S._none);
+    S.step({-10.}, tau, S._velocity);
     C.view();
+    if(t==100){
+      S.getState(X);
+      arr A = X.freePos[0].copy();
+      X.freePos[0] = X.freePos[4];
+      X.freePos[4] = A;
+      S.setState(X);
+      C.view(true);
+    }
   }
 }
 //===========================================================================
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
+
+  testResetState(); return 0;
 
   testMotors();
   testPassive(rai::raiPath("../rai-robotModels/g1/g1.g"), true);

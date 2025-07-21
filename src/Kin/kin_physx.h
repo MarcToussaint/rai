@@ -28,12 +28,13 @@ struct PhysXInterface {
 
   PhysXInterface(rai::Configuration& C, int verbose=1, const rai::PhysX_Options* _opt=0);
   ~PhysXInterface();
+  const FrameL& getFreeFrames();
+  const FrameL& getJointFrames();
 
   void step(double tau=.01);
 
-  const FrameL& getBodyFrames();
-  void pushBodyStates(const rai::Configuration& C, const arr& frameVelocities=NoArr, bool onlyKinematic=false);
-  void pullBodyStates(rai::Configuration& C, arr& frameVelocities=NoArr);
+  void pushFreeStates(const rai::Configuration& C, const arr& frameVelocities=NoArr, bool onlyKinematic=false);
+  void pullFreeStates(rai::Configuration& C, arr& frameVelocities=NoArr);
 
   void pushJointTargets(const rai::Configuration& C, const arr& qDot_ref=NoArr, bool setStatesInstantly=false);
   void pullJointStates(rai::Configuration& C, arr& qDot);

@@ -26,6 +26,14 @@ struct SimulationState {
 }
 
 void init_Simulation(pybind11::module& m) {
+  // pybind11::class_<rai::Simulation::State, std::shared_ptr<rai::Simulation::State>>(m, "SimulationState", "")
+  //     .def_readwrite("time", &rai::Simulation::State::time)
+  //     .def_readwrite("q", &rai::Simulation::State::q)
+  //     .def_readwrite("qDot", &rai::Simulation::State::qDot)
+  //     .def_readwrite("freePos", &rai::Simulation::State::freePos)
+  //     .def_readwrite("freeVel", &rai::Simulation::State::freeVel)
+  //     ;
+
   pybind11::class_<rai::Simulation, std::shared_ptr<rai::Simulation>>(m, "Simulation", "A direct simulation interface to physics engines (Nvidia PhysX, Bullet) -- see https://marctoussaint.github.io/robotics-course/tutorials/simulation.html")
 
       .def(pybind11::init<rai::Configuration&, rai::Simulation::Engine, int>(), "create a Simulation that is associated/attached to the given configuration",
@@ -91,17 +99,19 @@ void init_Simulation(pybind11::module& m) {
       )
 
   .def("getState", [](std::shared_ptr<rai::Simulation>& self) {
-    arr X, V, x, v;
-    self->getState(X, x, V, v);
-    return pybind11::make_tuple(arr2numpy(X), arr2numpy(x), arr2numpy(V), arr2numpy(v));
-  }, "returns a 4-tuple or frame state, joint state, frame velocities (linear & angular), joint velocities")
+    rai::Simulation::State X;
+    self->getState(X);
+    return pybind11::make_tuple(X.time, arr2numpy(X.q), arr2numpy(X.qDot), arr2numpy(X.freePos), arr2numpy(X.freeVel));
+  }, "returns a 5-tuple of (time, q, qDot, freePos, freeVel)")
 
-  .def("setState", &rai::Simulation::setState,
-       "",
-       pybind11::arg("frameState"),
-       pybind11::arg("jointState") = NoArr,
-       pybind11::arg("frameVelocities") = NoArr,
-       pybind11::arg("jointVelocities") = NoArr
+  .def("setState", [](std::shared_ptr<rai::Simulation>& self, double time, const arr& q, const arr& qDot, const arr& freePos, const arr& freeVel) {
+        self->setState({time, q, qDot, freePos, freeVel});
+      }, "",
+      pybind11::arg("time"),
+      pybind11::arg("q"),
+      pybind11::arg("qDot"),
+      pybind11::arg("freePos"),
+      pybind11::arg("freeVel")
       )
 
   .def("resetTime", &rai::Simulation::resetTime, "")

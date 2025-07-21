@@ -244,7 +244,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   //-- kinematic pushes
   if(engine==_physx) {
-    self->physx->pushBodyStates(C, NoArr, true); //kinematicOnly (usually none anyway)
+    // self->physx->pushFreeStates(C, NoArr, true); //kinematicOnly (usually none anyway)
   } else if(engine==_bullet) {
     self->bullet->pushKinematicStates(C);
   }
@@ -265,7 +265,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     C.ensure_q();
     self->physx->pushJointTargets(C); //qDot_ref, motor control
     self->physx->step(tau);
-    self->physx->pullBodyStates(C);
+    self->physx->pullFreeStates(C);
     self->physx->pullJointStates(C, self->qDot);
   } else if(engine==_bullet) {
     if(self->bullet->opt().multiBody) self->bullet->setMotorQ(q_ref, qDot_ref);
@@ -504,35 +504,52 @@ bool Simulation::gripperIsDone(const char* gripperFrameName) {
 void Simulation::getState(State& state) {
   state.time = time;
   if(engine==_physx) {
-    state.q = C.getJointState();
+    self->physx->pullFreeStates(C, state.freeVel);
     self->physx->pullJointStates(C, state.qDot);
-    self->physx->pullBodyStates(C, state.freeVelocities);
-    state.freeStates = C.getFrameState(self->physx->getBodyFrames());
+    state.q = C.getJointState();
+    state.freePos = C.getFrameState(self->physx->getFreeFrames());
   } else if(engine==_bullet) {
     state.q = C.getJointState();
-    self->bullet->pullDynamicStates(C, state.freeVelocities);
+    self->bullet->pullDynamicStates(C, state.freeVel);
     NIY;
-    state.freeStates = C.getFrameState();
+    state.freePos = C.getFrameState();
   } else NIY;
 }
 
 void Simulation::setState(const State& state) {
   if(engine==_physx) {
-    C.setFrameState(state.freeStates, self->physx->getBodyFrames());
+    C.setFrameState(state.freePos, self->physx->getFreeFrames());
     C.setJointState(state.q);
-    pushConfigurationToSimulator(state.freeVelocities, state.qDot);
-    self->physx->step(1e-3);
-    pushConfigurationToSimulator(state.freeVelocities, state.qDot);
+    self->physx->pushFreeStates(C, state.freeVel);
+    self->physx->pushJointTargets(C, state.qDot, true);
+    self->physx->step(1e-12);
+    self->physx->pushFreeStates(C, state.freeVel);
+    self->physx->pushJointTargets(C, state.qDot, true);
+    self->physx->step(1e-12);
+    self->physx->pushFreeStates(C, state.freeVel);
+    self->physx->pushJointTargets(C, state.qDot, true);
   }else{
     NIY;
   }
   resetTime(state.time);
 }
 
+FrameL Simulation::getFreeFrames(){
+  if(engine==_physx) return self->physx->getFreeFrames();
+  else NIY;
+  return {};
+}
+
+FrameL Simulation::getJointFrames(){
+  if(engine==_physx) return self->physx->getJointFrames();
+  else NIY;
+  return {};
+}
+
 void Simulation::pushConfigurationToSimulator(const arr& frameVelocities, const arr& qDot) {
   C.ensure_q();
   if(engine==_physx) {
-    self->physx->pushBodyStates(C, frameVelocities);
+    self->physx->pushFreeStates(C, frameVelocities);
     self->physx->pushJointTargets(C, qDot, true);
   } else if(engine==_bullet) {
     self->bullet->pushFullState(C, frameVelocities);
@@ -553,10 +570,10 @@ const arr& Simulation::get_qDot() {
   return self->qDot;
 }
 
-const arr& Simulation::get_frameVelocities(){
+const arr Simulation::get_frameVelocities(){
   arr frameVelocities;
   if(engine==_physx) {
-    self->physx->pullBodyStates(C, frameVelocities);
+    self->physx->pullFreeStates(C, frameVelocities);
   }else{
     NIY;
   }
@@ -978,7 +995,7 @@ void Imp_ObjectImpulses::modConfiguration(Simulation& S, double tau) {
   rai::Simulation::State X;
   S.getState(X);
 
-  X.freeVelocities(obj->ID, 0, {}) = vel;
+  X.freeVel(obj->ID, 0, {}) = vel;
 
   S.setState(X);
 }
