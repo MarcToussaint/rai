@@ -17,9 +17,7 @@ NodeGlobal& info() {
 }
 
 void rai::ComputeNode::compute() {
-  if(info().verbose>0) {
-    LOG(0) <<"compute at " <<name <<" ...";
-  }
+  if(info().verbose>0) LOG(0) <<"compute at " <<name <<" ...";
   c_now = -rai::cpuTime();
   untimedCompute();
   c_now += rai::cpuTime();
@@ -34,6 +32,7 @@ void rai::ComputeNode::compute() {
 }
 
 std::shared_ptr<rai::TreeSearchNode> rai::ComputeNode::transition(int i) {
+  if(info().verbose>0) LOG(0) <<"transition to " <<i <<" at " <<name;
   auto child = createNewChild(i);
   // update level
   if(!child->parent) {

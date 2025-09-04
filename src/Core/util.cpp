@@ -702,7 +702,7 @@ LogToken::~LogToken() {
 
       if(log_level==-1) { if(useCout) cout <<"-- WARNING:" <<errString() <<endl; return; }
       else if(log_level==-2) { if(useCout) cerr <<"== ERROR:" <<errString() <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
-      //INSERT BREAKPOINT HERE (or before and after this line)
+      //INSERT BREAKPOINT HERE (before and after this line)
       else if(log_level<=-3) { if(useCout) cerr <<"== HARD EXIT! " <<errString() <<endl;  exit(1); }
 //      if(log_level<=-3) raise(SIGABRT);
     }

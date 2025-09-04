@@ -1,4 +1,5 @@
 #include <LGP/LGP_Tool.h>
+#include <LGP/LGP_SkeletonTool.h>
 
 const char *USAGE =
     "\nUsage: lgpTool <lgp-filename>"
@@ -18,8 +19,15 @@ const char *USAGE =
 void lgpTool(){
   rai::String problem = rai::getParameter<rai::String>("problem", STRING("none"));
 
-  rai::Configuration C; NIY; //initialize C!
-  rai::LGP_SkeletonTool lgp(C, problem);
+  str lgpFile = problem + ".lgp";
+  str confFile = problem + ".g";
+  LOG(0) <<"using lgpFile: '" <<lgpFile <<"'";
+  LOG(0) <<"using confFile: '" <<confFile <<"'";
+
+  rai::Configuration C;
+  C.addFile(confFile);
+
+  rai::LGP_SkeletonTool lgp(C, lgpFile);
 
 //  rai::LGP_Tool lgp(L, C,
 //                    lgpConfig.get<bool>("genericCollisions"),

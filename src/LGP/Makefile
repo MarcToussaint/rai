@@ -4,6 +4,8 @@ OUTPUT = lib$(NAME).so
 
 DEPEND = Logic KOMO PathAlgos Search
 
+OPTIM = debug
+
 LAPACK = 1
 GL = 1
 

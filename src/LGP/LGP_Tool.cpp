@@ -6,6 +6,8 @@
 #include "../Kin/frame.h"
 #include "../Kin/feature.h"
 #include "../Optim/NLP_Sampler.h"
+#include "../Optim/NLP_Solver.h"
+#include "LGP_SkeletonTool.h"
 
 namespace rai{
 
@@ -27,7 +29,10 @@ ActionNode::~ActionNode(){
   }
 }
 
-PTR<KOMO>& ActionNode::get_ways(Configuration& C, Actions2KOMO_Translator& trans, const StringA& explicitCollisions){
+PTR<KOMO>& ActionNode::get_ways(Configuration& C, Actions2KOMO_Translator& trans, TAMP_Provider& tamp){
+  StringAA action_sequence = getPlan();
+  if(!ways) ways = TAMP_SolverInterface(trans, tamp).get_waypointsProblem(C, action_sequence, tamp.explicitCollisions());
+#if 0
   if(!ways){
     ActionNodeL path = getTreePath();
     //      str planString;
@@ -47,6 +52,7 @@ PTR<KOMO>& ActionNode::get_ways(Configuration& C, Actions2KOMO_Translator& trans
       ways->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
     }
   }
+#endif
 
   return ways;
 }
@@ -260,7 +266,7 @@ void LGP_Tool::solve_step(){
         pathJobs.append(a->ways_job.get());
 #if 1
 //        PTR<KOMO>& ways =
-        a->get_ways(C, trans, tamp.explicitCollisions());
+        a->get_ways(C, trans, tamp);
         Array<PTR<KOMO_Motif>>& ways_motifs= a->getWayMotifs();
         for(PTR<KOMO_Motif>& motif:ways_motifs){
           std::string hash = motif->getHash().p;
@@ -289,7 +295,7 @@ void LGP_Tool::solve_step(){
 
     if(verbose>0) cout <<"+++ solving sub-plan " <<sub->getPlanString() <<endl;
 
-    PTR<KOMO>& ways = sub->get_ways(C, trans, tamp.explicitCollisions());
+    PTR<KOMO>& ways = sub->get_ways(C, trans, tamp);
 
 #if 0
     //-- loop through all subNLPs first
@@ -368,7 +374,7 @@ void LGP_Tool::solve_step(){
 
     if(verbose>0) cout <<"+++ solving motif " <<job->niceMsg() <<endl;
 
-    PTR<KOMO>& ways_komo = motif_origin->get_ways(C, trans, tamp.explicitCollisions());
+    PTR<KOMO>& ways_komo = motif_origin->get_ways(C, trans, tamp);
     auto ret = motif->solve(*ways_komo, "gauss", verbose-2);
 
     job->rets.append(ret);
@@ -465,6 +471,13 @@ std::shared_ptr<KOMO> LGP_Tool::get_piecewiseMotionProblem(uint phase, bool fixE
 std::shared_ptr<KOMO> LGP_Tool::get_fullMotionProblem(bool initWithWaypoints){
   StringAA path =  getSolvedPlan();
 
+  TAMP_SolverInterface ti(trans, tamp);
+  if(initWithWaypoints){
+    return ti.get_fullMotionProblem(C, path, getSolvedKOMO());
+  }
+  return ti.get_fullMotionProblem(C, path, {});
+
+#if 0
   ManipulationHelper manip;
   manip.setup_motion(C, path.N, 16, -1.);
 
@@ -492,6 +505,56 @@ std::shared_ptr<KOMO> LGP_Tool::get_fullMotionProblem(bool initWithWaypoints){
 //  for(uint k=0;k<waypointsAll.d0;k++){
 //    manip.komo->addObjective({double(k)}, FS_qItself, {}, OT_sos, {1e1}, waypointsAll(k));
 //  }
+
+  return manip.komo;
+#endif
+}
+
+
+std::shared_ptr<KOMO>& TAMP_SolverInterface::get_waypointsProblem(Configuration& C, StringAA& action_sequence, const StringA& explicitCollisions){
+  std::shared_ptr<KOMO> ways = trans.setup_sequence(C, action_sequence.N-1);
+
+  double t = 0.;
+  for(StringA& action: action_sequence){
+    trans.add_action_constraints(ways, t, action);
+    t+=1.;
+  }
+
+  for(uint i=0; i<explicitCollisions.N; i+=2) {
+    ways->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
+  }
+
+  return ways;
+}
+
+std::shared_ptr<KOMO> TAMP_SolverInterface::get_fullMotionProblem(rai::Configuration& C, StringAA& action_sequence, shared_ptr<KOMO> initWithWaypoints){
+  ManipulationHelper manip;
+  manip.setup_motion(C, action_sequence.N, 16, -1.);
+
+  for(uint t=0;t<action_sequence.N;t++){
+    trans.add_action_constraints(manip.komo, double(t)+1., action_sequence(t));
+  }
+
+  StringA explicitCollisions = tamp.explicitCollisions();
+  for(uint i=0; i<explicitCollisions.N; i+=2) {
+    manip.komo->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
+  }
+
+  if(initWithWaypoints){
+    auto ways = initWithWaypoints;
+    arr stable_q = ways->getConfiguration_qAll(-1);
+    manip.komo->setConfiguration_qAll(-2, stable_q);
+    arrA waypointsAll = ways->getPath_qAll();
+    manip.komo->initWithWaypoints(waypointsAll, 1, true, 0.1);
+  }
+
+  for(uint t=0;t<action_sequence.N;t++){
+    trans.add_action_constraints_motion(manip.komo, double(t)+1., (t>0?action_sequence(t-1):StringA()), action_sequence(t), t);
+  }
+
+  //  for(uint k=0;k<waypointsAll.d0;k++){
+  //    manip.komo->addObjective({double(k)}, FS_qItself, {}, OT_sos, {1e1}, waypointsAll(k));
+  //  }
 
   return manip.komo;
 }
@@ -585,7 +648,7 @@ struct Default_Actions2KOMO_Translator : Actions2KOMO_Translator{
       manip.komo->addRigidSwitch(time, {snapFrame, obj});
       if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
 
-      manip.grasp_box(time, gripper, obj, palm, "y");
+      // manip.grasp_box(time, gripper, obj, palm, "y");
       manip.komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
 
     }else if(action(0)=="place"){

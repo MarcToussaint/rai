@@ -11,13 +11,13 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
   //  cout <<"COLLIDABLE PAIRS:" <<endl;
   //  for(uint k=0;k<colls.d0;k++) cout <<"  " <<colls(k,0)->name <<' ' <<colls(k,1)->name <<endl;
 
-
   C.setRandom();
 
   KOMO komo;
   komo.setConfig(C);
   komo.setTiming(1,1,1,0);
   komo.addControlObjective({}, 0, 1e-1);
+  komo.add_jointLimits(true);
 
   komo.addObjective({}, make_shared<F_TotalForce>(), {"obj"}, OT_eq, {1e1} );
   komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e1} );
@@ -25,7 +25,7 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
   if(opt.verbose>0) komo.set_viewer(C.get_viewer());
 
   //-- discrete decisions:
-  str supp="supports:";
+  supp.clear();
   for(const str& thing:supports){
     if(rnd.uni()<.5){
       supp <<' ' <<thing;

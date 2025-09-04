@@ -127,13 +127,13 @@ int main(int argc,char **argv){
         rai::Skeleton::getTwoWaypointProblem(t, C, q0, qT, *komo_way);
         if(q0.N==0 && qT.N==0) continue;
         //cout <<C.getJointNames() <<endl;
-        ConfigurationProblem cp(C, true, rrtTolerance);
+        ConfigurationProblem cp(_shared(C), true, rrtTolerance);
         if(S.explicitCollisions.N) cp.setExplicitCollisionPairs(S.explicitCollisions);
         cp.useBroadCollisions = S.useBroadCollisions;
 
         for(rai::Frame *f:C.frames) f->ensure_X();
 	rai::RRT_PathFinder rrt;
-	rrt.setProblem(C);
+	rrt.setProblem(_shared(C));
 	rrt.opt.useBroadCollisions = S.useBroadCollisions;
 	rrt.setStartGoal(q0, qT);
 	rrt.opt.stepsize = rrtStepsize;

@@ -11,6 +11,7 @@ struct RndStableConfigs {
   RndStableConfigs_Options opt;
   uint totalEvals=0, totalSucc=0;
   bool savePngs=false;
+  str supp;
 
   bool getSample(rai::Configuration& C, const StringA& supports);
   void report();
