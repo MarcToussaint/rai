@@ -226,8 +226,6 @@ rai::LGPcomp_Waypoints::LGPcomp_Waypoints(rai::LGPcomp_Skeleton* _sket, int rndS
   komoWaypoints->initRandom(0);
   if(sket->verbose()>2) komoWaypoints->view(sket->verbose()>3, STRING(name <<" - init"));
 
-//  komoWaypoints->opt.animateOptimization=1;
-
   sol.setProblem(komoWaypoints->nlp());
   sol.setOptions(OptOptions().set_stopEvals(sket->root->info->waypointStopEvals));
   sol.setInitialization(komoWaypoints->x);

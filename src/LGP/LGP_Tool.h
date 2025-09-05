@@ -17,7 +17,8 @@ struct TAMP_Provider{
   virtual ~TAMP_Provider() {}
   virtual Array<StringA> getNewPlan() = 0;
   virtual Configuration& getConfig() = 0;
-  virtual StringA explicitCollisions() = 0;
+  bool useBroadCollisions=false;
+  StringA explicitCollisions;
 };
 
 struct TAMP_SolverInterface {
@@ -25,8 +26,7 @@ struct TAMP_SolverInterface {
   TAMP_Provider& tamp;
   TAMP_SolverInterface(Actions2KOMO_Translator& _trans, TAMP_Provider& _tamp): trans(_trans), tamp(_tamp) {}
 
-  std::shared_ptr<KOMO>& get_waypointsProblem(Configuration& C, StringAA& action_sequence, const StringA& explicitCollisions);
-
+  std::shared_ptr<KOMO> get_waypointsProblem(Configuration& C, StringAA& action_sequence, const StringA& explicitCollisions);
   std::shared_ptr<KOMO> get_fullMotionProblem(Configuration& C, StringAA& action_sequence, shared_ptr<KOMO> initWithWaypoints={});
 
 };

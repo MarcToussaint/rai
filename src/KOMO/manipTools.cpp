@@ -44,17 +44,11 @@ void ManipulationHelper::setup_inverse_kinematics(rai::Configuration& C, double 
 void ManipulationHelper::setup_sequence(rai::Configuration& C, uint K, double homing_scale, double velocity_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms){
   k().setTiming(double(K), 1, 1., 1);
   k().setConfig(C, accumulated_collisions);
-  k().addControlObjective({}, 0, homing_scale);
-  k().addControlObjective({}, 1, velocity_scale);
-  if(accumulated_collisions) {
-    k().addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e0});
-  }
-  if(joint_limits) {
-    k().addObjective({}, FS_jointLimits, {}, OT_ineq, {1e0});
-  }
-  if(quaternion_norms) {
-    k().addQuaternionNorms();
-  }
+  if(homing_scale>0.)        k().addControlObjective({}, 0, homing_scale);
+  if(velocity_scale>0.)      k().addControlObjective({}, 1, velocity_scale);
+  if(accumulated_collisions) k().addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e0});
+  if(joint_limits)           k().addObjective({}, FS_jointLimits, {}, OT_ineq, {1e0});
+  if(quaternion_norms)       k().addQuaternionNorms();
 }
 
 void ManipulationHelper::setup_motion(rai::Configuration& C, uint K, uint steps_per_phase, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms){

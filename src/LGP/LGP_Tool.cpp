@@ -31,7 +31,7 @@ ActionNode::~ActionNode(){
 
 PTR<KOMO>& ActionNode::get_ways(Configuration& C, Actions2KOMO_Translator& trans, TAMP_Provider& tamp){
   StringAA action_sequence = getPlan();
-  if(!ways) ways = TAMP_SolverInterface(trans, tamp).get_waypointsProblem(C, action_sequence, tamp.explicitCollisions());
+  if(!ways) ways = TAMP_SolverInterface(trans, tamp).get_waypointsProblem(C, action_sequence, tamp.explicitCollisions);
 #if 0
   if(!ways){
     ActionNodeL path = getTreePath();
@@ -511,13 +511,14 @@ std::shared_ptr<KOMO> LGP_Tool::get_fullMotionProblem(bool initWithWaypoints){
 }
 
 
-std::shared_ptr<KOMO>& TAMP_SolverInterface::get_waypointsProblem(Configuration& C, StringAA& action_sequence, const StringA& explicitCollisions){
-  std::shared_ptr<KOMO> ways = trans.setup_sequence(C, action_sequence.N-1);
+std::shared_ptr<KOMO> TAMP_SolverInterface::get_waypointsProblem(Configuration& C, StringAA& action_sequence, const StringA& explicitCollisions){
+  std::shared_ptr<KOMO> ways = trans.setup_sequence(C, action_sequence.N);
 
-  double t = 0.;
-  for(StringA& action: action_sequence){
-    trans.add_action_constraints(ways, t, action);
-    t+=1.;
+  // cout <<ways->report(true, true, false) <<endl;
+
+  for(uint t=0;t<action_sequence.N;t++){
+    trans.add_action_constraints(ways, double(t)+1., action_sequence(t));
+    // cout <<ways->report(true, true, false) <<endl;
   }
 
   for(uint i=0; i<explicitCollisions.N; i+=2) {
@@ -529,13 +530,13 @@ std::shared_ptr<KOMO>& TAMP_SolverInterface::get_waypointsProblem(Configuration&
 
 std::shared_ptr<KOMO> TAMP_SolverInterface::get_fullMotionProblem(rai::Configuration& C, StringAA& action_sequence, shared_ptr<KOMO> initWithWaypoints){
   ManipulationHelper manip;
-  manip.setup_motion(C, action_sequence.N, 16, -1.);
+  manip.setup_motion(C, action_sequence.N, 30, -1.);
 
   for(uint t=0;t<action_sequence.N;t++){
     trans.add_action_constraints(manip.komo, double(t)+1., action_sequence(t));
   }
 
-  StringA explicitCollisions = tamp.explicitCollisions();
+  StringA explicitCollisions = tamp.explicitCollisions;
   for(uint i=0; i<explicitCollisions.N; i+=2) {
     manip.komo->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
   }
@@ -625,7 +626,8 @@ struct Default_Actions2KOMO_Translator : Actions2KOMO_Translator{
 
   virtual std::shared_ptr<KOMO> setup_sequence(Configuration& C, uint K){
     ManipulationHelper manip;
-    manip.setup_sequence(C, K);
+    manip.setup_sequence(C, K, -1e-2, 1e-2, false, false, true);
+    // manip.setup_sequence(C, K,);
     return manip.komo;
   }
 
@@ -634,24 +636,47 @@ struct Default_Actions2KOMO_Translator : Actions2KOMO_Translator{
 
     ManipulationHelper manip(komo);
 
-    if(action(0)=="pick" || action(0)=="handover"){
+    if(action(0)=="pick_box" || action(0)=="handover" || action(0)=="pick_touch"){
       str& obj = action(1);
+      str& from = action(2);
       str& gripper = action(3);
       str palm;
-      if(gripper.endsWith("_gripper")){
-        palm = gripper.getFirstN(gripper.N-8);
-        palm <<"_palm";
-      }
+      if(gripper.endsWith("_gripper")){  palm = gripper.getFirstN(gripper.N-8); palm <<"_palm";  }
 
       str snapFrame; snapFrame <<"pickPose_" <<gripper <<'_' <<obj <<'_' <<time;
-      manip.komo->addFrameDof(snapFrame, gripper, JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
-      manip.komo->addRigidSwitch(time, {snapFrame, obj});
+
+#if 0
+      // seq.komo->addModeSwitch({1., -1.}, rai::SY_stable, {gripper, obj}, true); //a temporary free stable joint gripper -> object
+      rai::Frame* f = 0;
+      manip.komo->addModeSwitch({time, -1.}, rai::SY_stable, {gripper, obj}, true); //a temporary free stable joint gripper -> object
+#elif 1
+      // seq.komo->addFrameDof("obj_grasp", gripper, rai::JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
+      // seq.komo->addRigidSwitch(1., {"obj_grasp", obj});
+      rai::Frame* f = manip.komo->addFrameDof(snapFrame, gripper, JT_free, true, 0); //a permanent free stable gripper->grasp joint; and a snap grasp->object
+      manip.komo->addRigidSwitch(time, {snapFrame, obj}, true);
       if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
+#else
+      // seq.komo->addFrameDof("obj_grasp", obj, rai::JT_free, true, obj); //a permanent free stable object->grasp joint; and a snap gripper->grasp
+      // seq.komo->addRigidSwitch(1., {gripper, "obj_grasp"});
+      rai::Frame* f = manip.komo->addFrameDof(snapFrame, obj, JT_free, true, obj); //a permanent free stable obj->grasp joint; and a snap gripper->grasp
+      manip.komo->initFrameDof(f, manip.komo->world.getFrame(gripper));
+      manip.komo->addRigidSwitch(time, {gripper, snapFrame}, true);
+#endif
 
-      // manip.grasp_box(time, gripper, obj, palm, "y");
-      manip.komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
+      if(f){
+        manip.komo->initFrameDof(f, manip.komo->world.getFrame(obj));
+        // f->joint->sampleUniform=1.;
+        // f->joint->q0 = zeros(7);
+      }
 
-    }else if(action(0)=="place"){
+      if(action(0)=="pick_box"){
+        manip.grasp_box(time, gripper, obj, palm, "y");
+        manip.komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
+      }else if(action(0)=="pick_touch"){
+        manip.komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_eq, {1e2});
+      }else HALT("action constraint not implemented: " <<action);
+
+    }else if(action(0)=="place_box" || action(0)=="place_straightOn"){
       str& obj = action(1);
       str& gripper = action(2);
       str& target = action(3);
@@ -661,17 +686,47 @@ struct Default_Actions2KOMO_Translator : Actions2KOMO_Translator{
         palm <<"_palm";
       }
 
-      if(time<manip.komo->T/manip.komo->stepsPerPhase){
-        str snapFrame; snapFrame <<"placePose_" <<target <<'_' <<obj <<'_' <<time;
-        manip.komo->addFrameDof(snapFrame, target, JT_free, true, obj); //a permanent free stable target->place joint; and a snap place->object
-        manip.komo->addRigidSwitch(time, {snapFrame, obj});
-        if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
+      str snapFrame;
+
+      if(action(0)=="place_straightOn"){
+        snapFrame <<"placePose_" <<target <<'_' <<obj <<'_' <<time;
+        rai::Frame *targetF = manip.komo->world.getFrame(target);
+        rai::Frame *objF = manip.komo->world.getFrame(obj);
+#if 0
+	rai::Frame* f = 0;
+	manip.komo->addModeSwitch({time, -1.}, rai::SY_stableOn, {target, obj}, true); //a temporary free stable joint gripper -> object
+#else
+	Transformation rel = 0;
+	rel.pos.set(0, 0, .5*(shapeSize(targetF) + shapeSize(objF)));
+	rai::Frame* f = manip.komo->addFrameDof(snapFrame, target, JT_transXYPhi, true, 0, 0,  rel); //a permanent free stable target->place joint
+	// manip.komo->initFrameDof(f, manip.komo->world.getFrame(obj));
+	manip.komo->addRigidSwitch(time, {snapFrame, obj}, true); //and a snap place->object
+	if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
+#endif
+        if(f){
+          //limits
+          rai::Shape* on = targetF->shape;
+          CHECK_EQ(on->type(), rai::ST_ssBox, "")
+          f->joint->limits = {-.5*on->size(0), -.5*on->size(1), -RAI_2PI,
+                              +.5*on->size(0), +.5*on->size(1),  RAI_2PI };
+          f->joint->limits.reshape(2,-1);
+          //init heuristic
+          f->joint->sampleUniform=1.;
+          f->joint->q0 = zeros(3);
+        }
+      }else{
+        if(time<manip.komo->T/manip.komo->stepsPerPhase){
+          manip.komo->addFrameDof(snapFrame, target, JT_free, true, obj); //a permanent free stable target->place joint
+          manip.komo->addRigidSwitch(time, {snapFrame, obj}, true); //and a snap place->object
+          if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
+        }
       }
 
-      manip.place_box(time, obj, target, palm, "z");
-      //gripper center at least inside object
-      manip.komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
-
+      if(action(0)=="place_box"){
+        manip.place_box(time, obj, target, palm, "z");
+        //gripper center at least inside object
+        manip.komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
+      }
 
     }else if(action(0)=="gripper_push"){
       str& obj = action(1);
@@ -707,31 +762,31 @@ struct Default_Actions2KOMO_Translator : Actions2KOMO_Translator{
   virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, double time, const StringA& prev_action, const StringA& action, uint actionPhase){
     if(!action.N) return;
 
-    ManipulationHelper manip(komo);
+//    ManipulationHelper manip(komo);
+//
+//     if(action(0)=="pick" || action(0)=="handover"){
+//       str& gripper = action(3);
+//       manip.retract({time-1., time-.8}, gripper);
+//       manip.approach({time-.2, time}, gripper);
+//     }
+//     else if(action(0)=="place"){
+//       str& gripper = action(2);
 
-    if(action(0)=="pick" || action(0)=="handover"){
-      str& gripper = action(3);
-      manip.retract({time-1., time-.8}, gripper);
-      manip.approach({time-.2, time}, gripper);
-    }
-    else if(action(0)=="place"){
-      str& gripper = action(2);
+//       manip.retract({time-1., time-.8}, gripper);
+//       manip.approach({time-.2, time}, gripper);
+//     }
+//     else if(action(0)=="end_push"){
+//       str& gripper = action(1);
+//       str& obj = action(2);
 
-      manip.retract({time-1., time-.8}, gripper);
-      manip.approach({time-.2, time}, gripper);
-    }
-    else if(action(0)=="end_push"){
-      str& gripper = action(1);
-      str& obj = action(2);
+//       //    komo->addObjective(time_interval, FS_positionRel, {gripper, helperStart}, OT_eq, 1e1*arr{{2, 3}, {1., 0., 0., 0., 0., 1.}});
+//       str helperEnd = STRING("_straight_pushEnd_" <<gripper <<"_" <<obj <<'_' <<actionPhase+1);
 
-      //    komo->addObjective(time_interval, FS_positionRel, {gripper, helperStart}, OT_eq, 1e1*arr{{2, 3}, {1., 0., 0., 0., 0., 1.}});
-      str helperEnd = STRING("_straight_pushEnd_" <<gripper <<"_" <<obj <<'_' <<actionPhase+1);
-
-//      komo->addObjective({time-1., time}, FS_positionRel, {obj, helperEnd}, OT_eq, 1e1*arr{{2, 3}, {1., 0., 0., 0., 0., 1.}});
-      komo->addObjective({time-1., time}, FS_position, {obj}, OT_eq, 1e1*arr{{1, 3}, {0., 0., 1.}}, {}, 1);
-      komo->addObjective({time-1., time}, FS_vectorZ, {obj}, OT_eq, {1e1}, {0., 0., 1.});
-//      komo->addObjective({time-1., time}, FS_quaternion, {obj}, OT_eq, {1e1}, {}, 1);
-    }
+// //      komo->addObjective({time-1., time}, FS_positionRel, {obj, helperEnd}, OT_eq, 1e1*arr{{2, 3}, {1., 0., 0., 0., 0., 1.}});
+//       komo->addObjective({time-1., time}, FS_position, {obj}, OT_eq, 1e1*arr{{1, 3}, {0., 0., 1.}}, {}, 1);
+//       komo->addObjective({time-1., time}, FS_vectorZ, {obj}, OT_eq, {1e1}, {0., 0., 1.});
+// //      komo->addObjective({time-1., time}, FS_quaternion, {obj}, OT_eq, {1e1}, {}, 1);
+//     }
 
   }
 };
@@ -741,7 +796,10 @@ struct Default_Actions2KOMO_Translator : Actions2KOMO_Translator{
 struct Default_TAMP_Provider : TAMP_Provider{
   LGP_SkeletonTool tool;
 
-  Default_TAMP_Provider(rai::Configuration& C, const char* file) : tool(C, file) {}
+  Default_TAMP_Provider(rai::Configuration& C, const char* file) : tool(C, file) {
+    explicitCollisions = tool.lgproot->explicitCollisions;
+    useBroadCollisions = tool.lgproot->useBroadCollisions;
+  }
   virtual Array<StringA> getNewPlan(){
     FOL_World_State* s = tool.step_folPlan();
   #if 0 //state sequence
@@ -763,7 +821,6 @@ struct Default_TAMP_Provider : TAMP_Provider{
     return plan;
   }
   virtual Configuration& getConfig(){ return tool.lgproot->C; }
-  virtual StringA explicitCollisions(){ return tool.lgproot->explicitCollisions; }
 };
 
 //===========================================================================

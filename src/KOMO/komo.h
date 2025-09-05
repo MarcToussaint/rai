@@ -103,6 +103,7 @@ struct KOMO : rai::NonCopyable {
   void clearObjectives(); ///< clear all objective
   void removeObjective(const Objective* ob);
   void copyObjectives(KOMO& komoB, bool deepCopyFeatures=true);
+  void checkConsistency();
 
   void addContact_slide(double startTime, double endTime, const char* from, const char* to);
   void addContact_stick(double startTime, double endTime, const char* from, const char* to, double frictionCone_mu=.8);
@@ -217,6 +218,7 @@ struct KOMO : rai::NonCopyable {
   //
 
   rai::Frame* addFrameDof(const char* name, const char* parent, rai::JointType jointType, bool stable, const char* originFrameName=0, rai::Frame* originFrame=0, const rai::Transformation& relOrigin=0);
+  void initFrameDof(rai::Frame* f, rai::Frame *q0Frame);
   void addForceExchangeDofs(const arr& times, const char* onto, const char* from,  rai::ForceExchangeType _type, const arr& initPoa={}, const arr& initForce={});
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly= {});           ///< set the state trajectory of all configurations
 private:

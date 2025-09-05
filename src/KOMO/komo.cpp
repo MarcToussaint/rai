@@ -139,12 +139,6 @@ void KOMO::clone(const KOMO& komo, bool deepCopyFeatures) {
   pathConfig.copy(komo.pathConfig, false);
   timeSlices = pathConfig.getFrames(framesToIndices(komo.timeSlices));
 
-  //copy running objectives
-  for(const shared_ptr<Objective>& o:komo.objectives) {
-    std::shared_ptr<Feature> f = o->feat;
-    if(deepCopyFeatures) f = f->deepCopy();
-    objectives.append(make_shared<Objective>(f, o->type, o->name, o->times));
-  }
 
   //copy grounded objectives
   for(const shared_ptr<GroundedObjective>& o:komo.objs) {
@@ -154,6 +148,18 @@ void KOMO::clone(const KOMO& komo, bool deepCopyFeatures) {
     objs(-1)->frames = pathConfig.getFrames(framesToIndices(o->frames));
     objs(-1)->objId = o->objId;
   }
+
+  //link objectives to grounded objectives
+  uint i=0;
+  //copy running objectives
+  for(const shared_ptr<Objective>& o:komo.objectives) {
+    std::shared_ptr<Feature> f = o->feat;
+    if(deepCopyFeatures) f = f->deepCopy();
+    auto o_copy = make_shared<Objective>(f, o->type, o->name, o->times);
+    for(uint t=0;t<o->groundings.N;t++) o_copy->groundings.append(objs.elem(i++).get());
+    objectives.append(o_copy);
+  }
+  CHECK_EQ(i, objs.N, "");
 }
 
 void KOMO::addTimeOptimization() {
@@ -209,6 +215,17 @@ void KOMO::copyObjectives(KOMO& komoB, bool deepCopyFeatures) {
     //std::shared_ptr<Objective> ocopy = make_shared<Objective>(f, o->type, o->name, o->times);
     addObjective(o->times, f, {}, o->type);
   }
+}
+
+void KOMO::checkConsistency(){
+  uint i=0;
+  for(const std::shared_ptr<Objective>& ob:objectives) {
+    for(const GroundedObjective* o:ob->groundings) {
+      CHECK_EQ(o, objs.elem(i).get(), "");
+      i++;
+    }
+  }
+  CHECK_EQ(i, objs.N, "grounded objectives not consistent with declared objectives");
 }
 
 void KOMO::_addObjective(const std::shared_ptr<Objective>& ob, const intA& timeSlices) {
@@ -390,9 +407,9 @@ void KOMO::addRigidSwitch(double time, const StringA& frames, bool noJumpStart) 
     rai::Frame* rootOfPicked = toBePicked->getUpwardLink(NoTransformation, true);
     rai::Frame* prev = rootOfPicked->prev;
     if(prev && prev->joint && prev->joint->isStable){
-      addObjective({time}, FS_poseRel, {rootOfPicked->name, prev->parent->name}, OT_eq, {1e0}, NoArr, 1);
+      addObjective({time}, FS_poseRel, {rootOfPicked->name, prev->parent->name}, OT_eq, {1e1}, NoArr, 1);
     }else{
-      addObjective({time}, FS_pose, {rootOfPicked->name}, OT_eq, {1e0}, NoArr, 1);
+      addObjective({time}, FS_pose, {rootOfPicked->name}, OT_eq, {1e1}, NoArr, 1);
     }
     if(k_order>1) addObjective({time}, make_shared<F_LinAngVel>(), {frames(1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
   }
@@ -1304,6 +1321,16 @@ Graph KOMO::report(bool specs, bool listObjectives, bool plotOverTime) {
     g.add("#totalDOF", pathConfig.getJointStateDimension());
     g.add("#frames", pathConfig.frames.N);
     g.add("#pathQueries", pathConfig.setJointStateCount);
+
+    if(switches.N){
+      Graph& g = G.addSubgraph("switches");
+
+      for(auto& sw:switches){
+        str tmp;
+        sw->write(tmp, world.frames);
+        g.add("sw", tmp);
+      }
+    }
   }
 
   arr err = info_objectiveErrorTraces();
@@ -1726,6 +1753,16 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
     for(Frame* f: pathConfig.frames) f->ID = i++;
   }
   return f0;
+}
+
+void KOMO::initFrameDof(rai::Frame* f, rai::Frame* q0Frame){
+  f->setPose(q0Frame->getPose());
+  f->joint->q0 = f->joint->calcDofsFromConfig();
+  boundClip(f->joint->q0, f->joint->limits);
+  f->joint->setDofs(f->joint->q0, 0); //ensures we are in the joint sub-space
+
+  //check in bound
+  // if(!boundCheck(f->joint->q0, f->joint->limits)) LOG(-1) <<"creation config is out of autoLimits!";
 }
 
 void KOMO::addForceExchangeDofs(const arr& times, const char* onto, const char* from, rai::ForceExchangeType type, const arr& initPoa, const arr& initForce){

@@ -932,8 +932,10 @@ void rai::Frame::setAutoLimits() {
   if(jointType==JT_free) {
     double maxsize = 0.;
     if(from && from->type()!=rai::ST_marker) {
-      if(from->type()==rai::ST_sphere || from->type()==rai::ST_cylinder || from->type()==rai::ST_ssCylinder) {
-        maxsize += 2.*from->size(0);
+      if(from->type()==rai::ST_sphere){
+        maxsize += 2.*from->radius();
+      } else if(from->type()==rai::ST_cylinder || from->type()==rai::ST_ssCylinder) {
+        maxsize += from->size(0)+2.*from->size(1);
       } else {
         maxsize += absMax(from->size);
       }
@@ -941,8 +943,10 @@ void rai::Frame::setAutoLimits() {
       CHECK_EQ(from->type(), ST_marker, "");
     }
     if(to && to->type()!=rai::ST_marker) {
-      if(to->type()==rai::ST_sphere || to->type()==rai::ST_cylinder || to->type()==rai::ST_ssCylinder) {
-        maxsize += 2.*to->size(0);
+      if(to->type()==rai::ST_sphere){
+        maxsize += 2.*to->radius();
+      } else if(to->type()==rai::ST_cylinder || to->type()==rai::ST_ssCylinder) {
+        maxsize += to->size(0)+2.*to->size(1);
       } else {
         maxsize += absMax(to->size);
       }
@@ -971,8 +975,12 @@ void rai::Frame::setAutoLimits() {
   } else {
     NIY;
   }
+  joint->limits.reshape(2,-1);
   //sample heuristic
   joint->q0 = joint->calcDofsFromConfig();
+  boundClip(joint->q0, joint->limits);
+  //check in bound
+  // if(!boundCheck(joint->q0, joint->limits)) LOG(-1) <<"creation config is out of autoLimits!";
 }
 
 rai::JointType rai::Frame::getJointType() const {
