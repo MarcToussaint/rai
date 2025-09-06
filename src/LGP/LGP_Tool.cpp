@@ -29,9 +29,9 @@ ActionNode::~ActionNode(){
   }
 }
 
-PTR<KOMO>& ActionNode::get_ways(Configuration& C, Actions2KOMO_Translator& trans, TAMP_Provider& tamp){
+PTR<KOMO>& ActionNode::get_ways(Configuration& C, LGP_TAMP_Abstraction& tamp){
   StringAA action_sequence = getPlan();
-  if(!ways) ways = TAMP_SolverInterface(trans, tamp).get_waypointsProblem(C, action_sequence, tamp.explicitCollisions);
+  if(!ways) ways = tamp.get_waypointsProblem(C, action_sequence);
 #if 0
   if(!ways){
     ActionNodeL path = getTreePath();
@@ -178,8 +178,8 @@ str Job::niceMsg(){
 
 //===========================================================================
 
-LGP_Tool::LGP_Tool(Configuration& _C, TAMP_Provider& _tamp, Actions2KOMO_Translator& _trans)
-  : C(_C), tamp(_tamp), trans(_trans) {
+LGP_Tool::LGP_Tool(Configuration& _C, LGP_TAMP_Abstraction& _tamp)
+  : C(_C), tamp(_tamp) {
   actionTreeRoot = new ActionNode(0, {});
 
   newPlanJob = make_shared<Job>(-1.5, actionTreeRoot, nullptr, _new_plan);
@@ -192,7 +192,7 @@ LGP_Tool::~LGP_Tool(){
 }
 
 ActionNode* LGP_Tool::addNewOpenPlan(){
-  Array<StringA> plan = tamp.getNewPlan();
+  Array<StringA> plan = tamp.getNewActionSequence();
   ActionNode* a = actionTreeRoot->descentAndCreate(plan);
   a->isTerminal = true;
   return a;
@@ -266,7 +266,7 @@ void LGP_Tool::solve_step(){
         pathJobs.append(a->ways_job.get());
 #if 1
 //        PTR<KOMO>& ways =
-        a->get_ways(C, trans, tamp);
+        a->get_ways(C, tamp);
         Array<PTR<KOMO_Motif>>& ways_motifs= a->getWayMotifs();
         for(PTR<KOMO_Motif>& motif:ways_motifs){
           std::string hash = motif->getHash().p;
@@ -295,7 +295,7 @@ void LGP_Tool::solve_step(){
 
     if(verbose>0) cout <<"+++ solving sub-plan " <<sub->getPlanString() <<endl;
 
-    PTR<KOMO>& ways = sub->get_ways(C, trans, tamp);
+    PTR<KOMO>& ways = sub->get_ways(C, tamp);
 
 #if 0
     //-- loop through all subNLPs first
@@ -374,7 +374,7 @@ void LGP_Tool::solve_step(){
 
     if(verbose>0) cout <<"+++ solving motif " <<job->niceMsg() <<endl;
 
-    PTR<KOMO>& ways_komo = motif_origin->get_ways(C, trans, tamp);
+    PTR<KOMO>& ways_komo = motif_origin->get_ways(C, tamp);
     auto ret = motif->solve(*ways_komo, "gauss", verbose-2);
 
     job->rets.append(ret);
@@ -463,19 +463,18 @@ std::shared_ptr<KOMO> LGP_Tool::get_piecewiseMotionProblem(uint phase, bool fixE
 
   ManipulationHelper manip(getSolvedKOMO());
   auto komo = manip.sub_motion(phase, fixEnd)->komo;
-  if(!fixEnd) trans.add_action_constraints(komo, 1., action);
-  trans.add_action_constraints_motion(komo, 1., prev_action, action, phase);
+  if(!fixEnd) tamp.add_action_constraints(komo, 1., action);
+  tamp.add_action_constraints_motion(komo, 1., prev_action, action, phase);
   return komo;
 }
 
 std::shared_ptr<KOMO> LGP_Tool::get_fullMotionProblem(bool initWithWaypoints){
   StringAA path =  getSolvedPlan();
 
-  TAMP_SolverInterface ti(trans, tamp);
   if(initWithWaypoints){
-    return ti.get_fullMotionProblem(C, path, getSolvedKOMO());
+    return tamp.get_fullMotionProblem(C, path, getSolvedKOMO());
   }
-  return ti.get_fullMotionProblem(C, path, {});
+  return tamp.get_fullMotionProblem(C, path, {});
 
 #if 0
   ManipulationHelper manip;
@@ -508,56 +507,6 @@ std::shared_ptr<KOMO> LGP_Tool::get_fullMotionProblem(bool initWithWaypoints){
 
   return manip.komo;
 #endif
-}
-
-
-std::shared_ptr<KOMO> TAMP_SolverInterface::get_waypointsProblem(Configuration& C, StringAA& action_sequence, const StringA& explicitCollisions){
-  std::shared_ptr<KOMO> ways = trans.setup_sequence(C, action_sequence.N);
-
-  // cout <<ways->report(true, true, false) <<endl;
-
-  for(uint t=0;t<action_sequence.N;t++){
-    trans.add_action_constraints(ways, double(t)+1., action_sequence(t));
-    // cout <<ways->report(true, true, false) <<endl;
-  }
-
-  for(uint i=0; i<explicitCollisions.N; i+=2) {
-    ways->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
-  }
-
-  return ways;
-}
-
-std::shared_ptr<KOMO> TAMP_SolverInterface::get_fullMotionProblem(rai::Configuration& C, StringAA& action_sequence, shared_ptr<KOMO> initWithWaypoints){
-  ManipulationHelper manip;
-  manip.setup_motion(C, action_sequence.N, 30, -1.);
-
-  for(uint t=0;t<action_sequence.N;t++){
-    trans.add_action_constraints(manip.komo, double(t)+1., action_sequence(t));
-  }
-
-  StringA explicitCollisions = tamp.explicitCollisions;
-  for(uint i=0; i<explicitCollisions.N; i+=2) {
-    manip.komo->addObjective({}, FS_distance, {explicitCollisions.elem(i), explicitCollisions.elem(i+1)}, OT_ineq, {1e1});
-  }
-
-  if(initWithWaypoints){
-    auto ways = initWithWaypoints;
-    arr stable_q = ways->getConfiguration_qAll(-1);
-    manip.komo->setConfiguration_qAll(-2, stable_q);
-    arrA waypointsAll = ways->getPath_qAll();
-    manip.komo->initWithWaypoints(waypointsAll, 1, true, 0.1);
-  }
-
-  for(uint t=0;t<action_sequence.N;t++){
-    trans.add_action_constraints_motion(manip.komo, double(t)+1., (t>0?action_sequence(t-1):StringA()), action_sequence(t), t);
-  }
-
-  //  for(uint k=0;k<waypointsAll.d0;k++){
-  //    manip.komo->addObjective({double(k)}, FS_qItself, {}, OT_sos, {1e1}, waypointsAll(k));
-  //  }
-
-  return manip.komo;
 }
 
 int LGP_Tool::display(std::shared_ptr<KOMO>& komo, std::shared_ptr<SolverReturn>& ret, bool pause, const char* msg, bool play){
@@ -617,216 +566,6 @@ MotifL analyzeMotifs(KOMO& komo, int verbose){
 
   return subs;
 }
-
-//===========================================================================
-
-struct Default_Actions2KOMO_Translator : Actions2KOMO_Translator{
-
-  ~Default_Actions2KOMO_Translator() {}
-
-  virtual std::shared_ptr<KOMO> setup_sequence(Configuration& C, uint K){
-    ManipulationHelper manip;
-    manip.setup_sequence(C, K, -1e-2, 1e-2, false, false, true);
-    // manip.setup_sequence(C, K,);
-    return manip.komo;
-  }
-
-  virtual void add_action_constraints(std::shared_ptr<KOMO>& komo, double time, const StringA& action){
-    if(!action.N) return;
-
-    ManipulationHelper manip(komo);
-
-    if(action(0)=="pick_box" || action(0)=="handover" || action(0)=="pick_touch"){
-      str& obj = action(1);
-      str& from = action(2);
-      str& gripper = action(3);
-      str palm;
-      if(gripper.endsWith("_gripper")){  palm = gripper.getFirstN(gripper.N-8); palm <<"_palm";  }
-
-      str snapFrame; snapFrame <<"pickPose_" <<gripper <<'_' <<obj <<'_' <<time;
-
-#if 0
-      // seq.komo->addModeSwitch({1., -1.}, rai::SY_stable, {gripper, obj}, true); //a temporary free stable joint gripper -> object
-      rai::Frame* f = 0;
-      manip.komo->addModeSwitch({time, -1.}, rai::SY_stable, {gripper, obj}, true); //a temporary free stable joint gripper -> object
-#elif 1
-      // seq.komo->addFrameDof("obj_grasp", gripper, rai::JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
-      // seq.komo->addRigidSwitch(1., {"obj_grasp", obj});
-      rai::Frame* f = manip.komo->addFrameDof(snapFrame, gripper, JT_free, true, 0); //a permanent free stable gripper->grasp joint; and a snap grasp->object
-      manip.komo->addRigidSwitch(time, {snapFrame, obj}, true);
-      if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
-#else
-      // seq.komo->addFrameDof("obj_grasp", obj, rai::JT_free, true, obj); //a permanent free stable object->grasp joint; and a snap gripper->grasp
-      // seq.komo->addRigidSwitch(1., {gripper, "obj_grasp"});
-      rai::Frame* f = manip.komo->addFrameDof(snapFrame, obj, JT_free, true, obj); //a permanent free stable obj->grasp joint; and a snap gripper->grasp
-      manip.komo->initFrameDof(f, manip.komo->world.getFrame(gripper));
-      manip.komo->addRigidSwitch(time, {gripper, snapFrame}, true);
-#endif
-
-      if(f){
-        manip.komo->initFrameDof(f, manip.komo->world.getFrame(obj));
-        // f->joint->sampleUniform=1.;
-        // f->joint->q0 = zeros(7);
-      }
-
-      if(action(0)=="pick_box"){
-        manip.grasp_box(time, gripper, obj, palm, "y");
-        manip.komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
-      }else if(action(0)=="pick_touch"){
-        manip.komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_eq, {1e2});
-      }else HALT("action constraint not implemented: " <<action);
-
-    }else if(action(0)=="place_box" || action(0)=="place_straightOn"){
-      str& obj = action(1);
-      str& gripper = action(2);
-      str& target = action(3);
-      str palm;
-      if(gripper.endsWith("_gripper")){
-        palm = gripper.getFirstN(gripper.N-8);
-        palm <<"_palm";
-      }
-
-      str snapFrame;
-
-      if(action(0)=="place_straightOn"){
-        snapFrame <<"placePose_" <<target <<'_' <<obj <<'_' <<time;
-        rai::Frame *targetF = manip.komo->world.getFrame(target);
-        rai::Frame *objF = manip.komo->world.getFrame(obj);
-#if 0
-	rai::Frame* f = 0;
-	manip.komo->addModeSwitch({time, -1.}, rai::SY_stableOn, {target, obj}, true); //a temporary free stable joint gripper -> object
-#else
-	Transformation rel = 0;
-	rel.pos.set(0, 0, .5*(shapeSize(targetF) + shapeSize(objF)));
-	rai::Frame* f = manip.komo->addFrameDof(snapFrame, target, JT_transXYPhi, true, 0, 0,  rel); //a permanent free stable target->place joint
-	// manip.komo->initFrameDof(f, manip.komo->world.getFrame(obj));
-	manip.komo->addRigidSwitch(time, {snapFrame, obj}, true); //and a snap place->object
-	if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
-#endif
-        if(f){
-          //limits
-          rai::Shape* on = targetF->shape;
-          CHECK_EQ(on->type(), rai::ST_ssBox, "")
-          f->joint->limits = {-.5*on->size(0), -.5*on->size(1), -RAI_2PI,
-                              +.5*on->size(0), +.5*on->size(1),  RAI_2PI };
-          f->joint->limits.reshape(2,-1);
-          //init heuristic
-          f->joint->sampleUniform=1.;
-          f->joint->q0 = zeros(3);
-        }
-      }else{
-        if(time<manip.komo->T/manip.komo->stepsPerPhase){
-          manip.komo->addFrameDof(snapFrame, target, JT_free, true, obj); //a permanent free stable target->place joint
-          manip.komo->addRigidSwitch(time, {snapFrame, obj}, true); //and a snap place->object
-          if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
-        }
-      }
-
-      if(action(0)=="place_box"){
-        manip.place_box(time, obj, target, palm, "z");
-        //gripper center at least inside object
-        manip.komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
-      }
-
-    }else if(action(0)=="gripper_push"){
-      str& obj = action(1);
-      str& table = action(2);
-      str& gripper = action(3);
-
-      if(time<manip.komo->T/manip.komo->stepsPerPhase){
-        str snapFrame; snapFrame <<"pushPose_" <<gripper <<'_' <<obj <<'_' <<time;
-        manip.komo->addFrameDof(snapFrame, gripper, rai::JT_free, true, obj);
-        manip.komo->addRigidSwitch(time, {snapFrame, obj});
-        if(manip.komo->stepsPerPhase>2) manip.komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
-      }
-
-      manip.straight_push({time,time+1}, obj, gripper, table);
-
-    }else if(action(0)=="end_push"){
-      //str& gripper = action(1);
-      str& obj = action(2);
-      //str& floor = action(3);
-      str& target = action(4);
-
-      if(time<manip.komo->T/manip.komo->stepsPerPhase){
-        NIY;
-      }
-
-      manip.place_box(time, obj, target, 0, "z");
-
-    }else{
-      HALT("action constraint not implemented: " <<action);
-    }
-  }
-
-  virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, double time, const StringA& prev_action, const StringA& action, uint actionPhase){
-    if(!action.N) return;
-
-//    ManipulationHelper manip(komo);
-//
-//     if(action(0)=="pick" || action(0)=="handover"){
-//       str& gripper = action(3);
-//       manip.retract({time-1., time-.8}, gripper);
-//       manip.approach({time-.2, time}, gripper);
-//     }
-//     else if(action(0)=="place"){
-//       str& gripper = action(2);
-
-//       manip.retract({time-1., time-.8}, gripper);
-//       manip.approach({time-.2, time}, gripper);
-//     }
-//     else if(action(0)=="end_push"){
-//       str& gripper = action(1);
-//       str& obj = action(2);
-
-//       //    komo->addObjective(time_interval, FS_positionRel, {gripper, helperStart}, OT_eq, 1e1*arr{{2, 3}, {1., 0., 0., 0., 0., 1.}});
-//       str helperEnd = STRING("_straight_pushEnd_" <<gripper <<"_" <<obj <<'_' <<actionPhase+1);
-
-// //      komo->addObjective({time-1., time}, FS_positionRel, {obj, helperEnd}, OT_eq, 1e1*arr{{2, 3}, {1., 0., 0., 0., 0., 1.}});
-//       komo->addObjective({time-1., time}, FS_position, {obj}, OT_eq, 1e1*arr{{1, 3}, {0., 0., 1.}}, {}, 1);
-//       komo->addObjective({time-1., time}, FS_vectorZ, {obj}, OT_eq, {1e1}, {0., 0., 1.});
-// //      komo->addObjective({time-1., time}, FS_quaternion, {obj}, OT_eq, {1e1}, {}, 1);
-//     }
-
-  }
-};
-
-//===========================================================================
-
-struct Default_TAMP_Provider : TAMP_Provider{
-  LGP_SkeletonTool tool;
-
-  Default_TAMP_Provider(rai::Configuration& C, const char* file) : tool(C, file) {
-    explicitCollisions = tool.lgproot->explicitCollisions;
-    useBroadCollisions = tool.lgproot->useBroadCollisions;
-  }
-  virtual Array<StringA> getNewPlan(){
-    FOL_World_State* s = tool.step_folPlan();
-  #if 0 //state sequence
-    String planString;
-    Array<Graph*> states;
-    arr times;
-    s->getStateSequence(states, times, planString);
-    LOG(0) <<states <<times <<planString;
-  #else //action sequence (as stringAA)
-    str debug;
-    NodeL decisions = s->getDecisionSequence(debug);
-    Array<StringA> plan(decisions.N);
-    for(uint i=0;i<plan.N;i++){
-      plan(i).resize(decisions(i)->parents.N);
-      for(uint j=0;j<plan(i).N;j++) plan(i)(j) = decisions(i)->parents(j)->key;
-    }
-    //  LOG(0) <<plan <<endl <<debug;
-  #endif
-    return plan;
-  }
-  virtual Configuration& getConfig(){ return tool.lgproot->C; }
-};
-
-//===========================================================================
-
-std::shared_ptr<TAMP_Provider> default_TAMP_Provider(rai::Configuration& C, const char* lgp_configfile){ return make_shared<Default_TAMP_Provider>(C, lgp_configfile); }
-std::shared_ptr<Actions2KOMO_Translator> default_Actions2KOMO_Translator(){ return make_shared<Default_Actions2KOMO_Translator>(); }
 
 }//namespace
 

@@ -308,6 +308,74 @@ void ManipulationHelper::freeze_relativePose(const arr& time_interval, str to, s
   komo->addObjective(time_interval, FS_poseRel, {to, from}, OT_eq, {1e1}, {}, 1);
 }
 
+void ManipulationHelper::action_pick(str action, double time, str gripper, str obj){
+  str snapFrame;
+  snapFrame <<"pickPose_" <<gripper <<'_' <<obj <<'_' <<time;
+
+  rai::Frame* f = komo->addFrameDof(snapFrame, gripper, rai::JT_free, true, 0); //a permanent free stable gripper->grasp joint; and a snap grasp->object
+  komo->addRigidSwitch(time, {snapFrame, obj}, true);
+  if(komo->stepsPerPhase>2) komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
+
+  if(f){
+    komo->initFrameDof(f, komo->world.getFrame(obj));
+    // f->joint->sampleUniform=1.;
+    // f->joint->q0 = zeros(7);
+  }
+
+  if(action=="pick_touch"){
+    komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_eq, {1e2});
+  } else if(action=="pick_box"){
+    str palm;
+    if(gripper.endsWith("_gripper")){  palm = gripper.getFirstN(gripper.N-8); palm <<"_palm";  }
+    grasp_box(time, gripper, obj, palm, "y");
+    komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
+  } else NIY;
+}
+
+void ManipulationHelper::action_place_straightOn(str action, double time, str obj, str table){
+  str snapFrame;
+  snapFrame <<"placePose_" <<table <<'_' <<obj <<'_' <<time;
+  rai::Frame *targetF = komo->world.getFrame(table);
+  rai::Frame *objF = komo->world.getFrame(obj);
+  rai::Transformation rel = 0;
+  rel.pos.set(0, 0, .5*(shapeSize(targetF) + shapeSize(objF)));
+
+  rai::Frame* f = komo->addFrameDof(snapFrame, table, rai::JT_transXYPhi, true, 0, 0,  rel); //a permanent free stable target->place joint
+    // komo->initFrameDof(f, komo->world.getFrame(obj));
+  komo->addRigidSwitch(time, {snapFrame, obj}, true); //and a snap place->object
+  if(komo->stepsPerPhase>2) komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
+
+  if(f){
+    //limits
+    rai::Shape* on = targetF->shape;
+    CHECK_EQ(on->type(), rai::ST_ssBox, "")
+    f->joint->limits = {-.5*on->size(0), -.5*on->size(1), -RAI_2PI,
+                        +.5*on->size(0), +.5*on->size(1),  RAI_2PI };
+    f->joint->limits.reshape(2,-1);
+    //init heuristic
+    f->joint->sampleUniform=1.;
+    f->joint->q0 = zeros(3);
+  }
+}
+
+void ManipulationHelper::action_place_box(str action, double time, str obj, str table, str gripper, str place_direction){
+  str snapFrame;
+  snapFrame <<"placePose_" <<table <<'_' <<obj <<'_' <<time;
+
+  if(time<komo->T/komo->stepsPerPhase){
+    komo->addFrameDof(snapFrame, table, rai::JT_free, true, obj); //a permanent free stable target->place joint
+    komo->addRigidSwitch(time, {snapFrame, obj}, true); //and a snap place->object
+    if(komo->stepsPerPhase>2) komo->addObjective({time}, FS_poseDiff, {snapFrame, obj}, OT_eq, {1e0}, NoArr, 0, -1, 0);
+  }
+
+  str palm;
+  if(gripper.endsWith("_gripper")){  palm = gripper.getFirstN(gripper.N-8); palm <<"_palm";  }
+  place_box(time, obj, table, palm, place_direction);
+  //gripper center at least inside object
+  komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
+
+}
+
 void ManipulationHelper::snap_switch(double time, str parent, str obj){
   /* a kinematic mode switch, where at given time the obj becomes attached to parent with zero relative transform
      the parent is typically a stable_frame (i.e. a frame that has parameterized but stable (i.e. constant) relative transform) */

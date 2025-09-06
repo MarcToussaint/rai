@@ -13,7 +13,7 @@
 #include "../Logic/folWorld.h"
 #include "../Optim/NLP_GraphSolver.h"
 #include "../PathAlgos/RRT_PathFinder.h"
-#include "LGP_Tool.h"
+#include "LGP_TAMP_Abstraction.h"
 
 namespace rai {
 
@@ -40,8 +40,7 @@ struct LGP2_GlobalInfo {
 struct LGPComp2_root : ComputeNode {
   // FOL_World& L;
   Configuration& C;
-  TAMP_Provider& tamp;
-  Actions2KOMO_Translator& trans;
+  LGP_TAMP_Abstraction& tamp;
   // bool useBroadCollisions=false;
   // StringA explicitCollisions;
   // StringA explicitLift;
@@ -50,7 +49,7 @@ struct LGPComp2_root : ComputeNode {
   std::shared_ptr<LGP2_GlobalInfo> info;
   bool fixedSkeleton=false;
 
-  LGPComp2_root(Configuration& _C, TAMP_Provider& _tamp, Actions2KOMO_Translator& _trans, bool useBroadCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton);
+  LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton);
 
   virtual void untimedCompute() {}
   virtual int getNumDecisions() { return -1.; }
@@ -70,7 +69,7 @@ struct LGPComp2_Skeleton : ComputeNode {
   // Skeleton skeleton;
   //shared_ptr<SkeletonSolver> sol;
   // StringA actionSequence;
-  Array<StringA> action_sequence;
+  Array<StringA> actionSequence;
   // Array<Graph*> states;
   // arr times;
 

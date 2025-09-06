@@ -47,6 +47,10 @@ struct ManipulationHelper {
   void freeze_joint(const arr& time_interval, const StringA& joints);
   void freeze_relativePose(const arr& time_interval, str to, str from);
 
+  void action_pick(str action, double time, str gripper, str obj); //action can be 'pick_touch', 'pick_box'
+  void action_place_straightOn(str action, double time, str obj, str table); //action must be 'place_straightOn'
+  void action_place_box(str action, double time, str obj, str table, str gripper, str place_direction); //action can be 'place_box'
+
   void snap_switch(double time, str parent, str obj);
 
   void target_position();

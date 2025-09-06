@@ -57,7 +57,7 @@ void solve(){
   //  K.addFile("model2.g");
   C.selectJointsByAtt({"base","armL","armR"});
   C.processStructure();
-  //  C.sortFrames(); FILE("z.g") <<C;
+  FILE("z.g") <<C;
 
   rai::LGP_Tree lgp(C, "fol-pnp-switch.g");
   lgp.fol.addTerminalRule("(on tray obj0) (on tray obj1) (on tray obj2)");

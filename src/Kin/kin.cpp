@@ -3836,20 +3836,14 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
 void Configuration::watchFile(const char* filename) {
   checkConsistency();
 
-  std::shared_ptr<ConfigurationViewer> V = get_viewer();
-
-  //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
-  //  gl.addHoverCall(new EditConfigurationHoverCall(K));
   EditConfigurationKeyCall key_callback(*this);
-  V->ensure_gl().addKeyCall(&key_callback);
-//  V->ensure_gl().addClickCall(new EditConfigurationClickCall(*this));
-  V->ensure_gl().setTitle(STRING("ConfigView <" <<filename <<">"));
-//  V->text = "waiting for file change ('h' for help)";
-  //  gl()->ensure_gl().reportEvents=true;
+  std::shared_ptr<ConfigurationViewer> V;
+
   Inotify ino(filename);
   for(;;) {
     //-- LOADING
     LOG(0) <<"loading `" <<filename <<"' ... ";
+    Configuration C_tmp;
     {
       bool succ=true;
       FileToken file(filename);
@@ -3866,12 +3860,7 @@ void Configuration::watchFile(const char* filename) {
 
       if(succ) {
         try {
-          Configuration C_tmp;
           C_tmp.addDict(G);
-          {
-            V->ensure_gl().dataLock(RAI_HERE);
-            copy(C_tmp, false);
-          }
           report();
         } catch(std::runtime_error& err) {
           LOG(0) <<"Configuration initialization failed: " <<err.what();
@@ -3885,6 +3874,23 @@ void Configuration::watchFile(const char* filename) {
 
     //-- WATCHING
     LOG(0) <<"watching...";
+    {
+      if(V) V->ensure_gl().dataLock(RAI_HERE);
+      copy(C_tmp, false);
+    }
+    if(!V){
+      V = get_viewer();
+
+      V->updateConfiguration(*this, {}, true);
+
+      //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
+      //  gl.addHoverCall(new EditConfigurationHoverCall(K));
+      V->ensure_gl().setTitle(STRING("ConfigView <" <<filename <<">"));
+      V->ensure_gl().addKeyCall(&key_callback);
+      //  V->ensure_gl().addClickCall(new EditConfigurationClickCall(*this));
+      //  V->text = "waiting for file change ('h' for help)";
+      //  gl()->ensure_gl().reportEvents=true;
+    }
     V->updateConfiguration(*this, {}, true);
     V->_resetPressedKey();
     int key = V->view(false, "waiting for file change ('h' for help, 'q' to close)");

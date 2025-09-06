@@ -1,35 +1,9 @@
 #pragma once
 
 #include "Motif.h"
+#include "LGP_TAMP_Abstraction.h"
 
 namespace rai {
-
-//===========================================================================
-
-struct Actions2KOMO_Translator {
-  virtual ~Actions2KOMO_Translator() {}
-  virtual std::shared_ptr<KOMO> setup_sequence(Configuration& C, uint K) = 0;
-  virtual void add_action_constraints(std::shared_ptr<KOMO>& komo, double time, const StringA& action) = 0;
-  virtual void add_action_constraints_motion(std::shared_ptr<KOMO>& komo, double time, const StringA& prev_action, const StringA& action, uint actionPhase) = 0;
-};
-
-struct TAMP_Provider{
-  virtual ~TAMP_Provider() {}
-  virtual Array<StringA> getNewPlan() = 0;
-  virtual Configuration& getConfig() = 0;
-  bool useBroadCollisions=false;
-  StringA explicitCollisions;
-};
-
-struct TAMP_SolverInterface {
-  Actions2KOMO_Translator& trans;
-  TAMP_Provider& tamp;
-  TAMP_SolverInterface(Actions2KOMO_Translator& _trans, TAMP_Provider& _tamp): trans(_trans), tamp(_tamp) {}
-
-  std::shared_ptr<KOMO> get_waypointsProblem(Configuration& C, StringAA& action_sequence, const StringA& explicitCollisions);
-  std::shared_ptr<KOMO> get_fullMotionProblem(Configuration& C, StringAA& action_sequence, shared_ptr<KOMO> initWithWaypoints={});
-
-};
 
 //===========================================================================
 
@@ -82,7 +56,7 @@ struct ActionNode{
   ActionNode(ActionNode* _parent, StringA _action);
   ~ActionNode();
 
-  PTR<KOMO>& get_ways(Configuration& C, Actions2KOMO_Translator& trans, TAMP_Provider& tamp);
+  PTR<KOMO>& get_ways(Configuration& C, LGP_TAMP_Abstraction& tamp);
   Array<PTR<KOMO_Motif>>& getWayMotifs();
 
 
@@ -106,8 +80,7 @@ protected:
 struct LGP_Tool{
   //problem interface
   Configuration& C;
-  TAMP_Provider& tamp;
-  Actions2KOMO_Translator& trans;
+  LGP_TAMP_Abstraction& tamp;
   int verbose=1;
 
   //internal data structures for action search and job management
@@ -121,7 +94,7 @@ struct LGP_Tool{
   uint step_count=0;
 
   LGP_Tool(const char* lgp_configfile);
-  LGP_Tool(Configuration& _C, TAMP_Provider& _tamp, Actions2KOMO_Translator& _trans);
+  LGP_Tool(Configuration& _C, LGP_TAMP_Abstraction& _tamp);
   ~LGP_Tool();
 
   void solve_step();
@@ -151,7 +124,5 @@ private:
 //===========================================================================
 
 MotifL analyzeMotifs(KOMO& komo, int verbose=0);
-PTR<TAMP_Provider> default_TAMP_Provider(rai::Configuration &C, const char* lgp_configfile);
-PTR<Actions2KOMO_Translator> default_Actions2KOMO_Translator();
 
 } //namespace

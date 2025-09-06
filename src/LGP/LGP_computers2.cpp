@@ -16,9 +16,8 @@
 #include "../KOMO/pathTools.h"
 
 rai::LGPComp2_root::
-    LGPComp2_root(Configuration& _C, TAMP_Provider& _tamp, Actions2KOMO_Translator& _trans, bool useBroadCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton)
-    // LGPComp2_root(rai::FOL_World& _L, rai::Configuration& _C, bool useBroadCollisions, const StringA& explicitCollisions, const StringA& explicitLift, const String& explicitTerminalSkeleton)
-    : ComputeNode(0), C(_C), tamp(_tamp), trans(_trans) {
+    LGPComp2_root(Configuration& _C, LGP_TAMP_Abstraction& _tamp, const StringA& explicitLift, const String& explicitTerminalSkeleton)
+    : ComputeNode(0), C(_C), tamp(_tamp) {
     // useBroadCollisions(useBroadCollisions),
     // explicitCollisions(explicitCollisions),
     // explicitLift(explicitLift) {
@@ -74,8 +73,8 @@ void rai::LGPComp2_Skeleton::createNLPs(const Configuration& C) {
 
 void rai::LGPComp2_Skeleton::untimedCompute() {
   //-- get next astar solution
-  action_sequence = root->tamp.getNewPlan();
-  if(!action_sequence.N){
+  actionSequence = root->tamp.getNewActionSequence();
+  if(!actionSequence.N){
     LOG(-1) <<"astar found no new skeleton";
     isComplete=true;
     isFeasible=false;
@@ -107,7 +106,7 @@ void rai::LGPComp2_Skeleton::untimedCompute() {
   isComplete=true;
   l=0.;
 
-  if(root->info->verbose>0) LOG(0) <<"FOL action sequence:" <<action_sequence;
+  if(root->info->verbose>0) LOG(0) <<"FOL action sequence:" <<actionSequence;
   // if(root->info->verbose>1) LOG(0) <<skeleton;
 }
 
@@ -225,8 +224,7 @@ rai::LGPComp2_Waypoints::LGPComp2_Waypoints(rai::LGPComp2_Skeleton* _sket, int r
 
   LGPComp2_root* root=sket->root;
 
-  TAMP_SolverInterface ti(root->trans, root->tamp);
-  komoWaypoints = ti.get_waypointsProblem(root->C, sket->action_sequence, root->tamp.explicitCollisions);
+  komoWaypoints = root->tamp.get_waypointsProblem(root->C, sket->actionSequence);
 
   //rnd.seed(rndSeed);
   komoWaypoints->initRandom(0);
@@ -374,8 +372,7 @@ rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_Skeleton* _sket)
 
   isTerminal = true;
 
-  TAMP_SolverInterface ti(root->trans, root->tamp);
-  komoPath = ti.get_fullMotionProblem(root->C, sket->action_sequence, {});
+  komoPath = root->tamp.get_fullMotionProblem(root->C, sket->actionSequence, {});
   // komoPath->clone(*sket->skeleton.komoPath);
 
   //random initialize
@@ -398,8 +395,7 @@ rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_Waypoints* _ways
 
   isTerminal = true;
 
-  TAMP_SolverInterface ti(root->trans, root->tamp);
-  komoPath = ti.get_fullMotionProblem(root->C, sket->action_sequence, ways->komoWaypoints);
+  komoPath = root->tamp.get_fullMotionProblem(root->C, sket->actionSequence, ways->komoWaypoints);
   // komoPath = make_shared<KOMO>();
   // komoPath->clone(*sket->skeleton.komoPath);
 
@@ -424,8 +420,7 @@ rai::LGPComp2_OptimizePath::LGPComp2_OptimizePath(rai::LGPComp2_RRTpath* _par, r
 
   isTerminal = true;
 
-  TAMP_SolverInterface ti(root->trans, root->tamp);
-  komoPath = ti.get_fullMotionProblem(root->C, sket->action_sequence, ways->komoWaypoints);
+  komoPath = root->tamp.get_fullMotionProblem(root->C, sket->actionSequence, ways->komoWaypoints);
 
   //collect path and initialize
   rai::Array<LGPComp2_RRTpath*> rrts(ways->komoWaypoints->T);
@@ -485,7 +480,7 @@ void rai::LGPComp2_OptimizePath::untimedCompute() {
 
     if(root->verbose()>0) LOG(0) <<"path " <<*sol.ret;
     if(root->verbose()>1) cout <<komoPath->report(false, true, root->verbose()>2);
-    if(root->verbose()>0) komoPath->view(root->verbose()>2, STRING(name <<" - optimized \n" <<*sol.ret <<"\n" <<sket->action_sequence <<"\n"));
+    if(root->verbose()>0) komoPath->view(root->verbose()>2, STRING(name <<" - optimized \n" <<*sol.ret <<"\n" <<sket->actionSequence <<"\n"));
     //komoPath->checkGradients();
     if(root->verbose()>1) komoPath->view_play(root->verbose()>1 && sol.ret->feasible);
 
@@ -503,7 +498,7 @@ void rai::LGPComp2_OptimizePath::untimedCompute() {
 
         komoPath->view_play(false, 0, .1, path);
         ofstream fil(path + "info.txt");
-        fil <<*sol.ret <<"\n\nSkeleton:{" <<sket->action_sequence <<"\n}" <<endl;
+        fil <<*sol.ret <<"\n\nSkeleton:{" <<sket->actionSequence <<"\n}" <<endl;
         fil <<komoPath->report() <<endl;
         fil <<sol.optCon->L.reportGradients(komoPath->featureNames) <<endl;
         ofstream cfil(path + "last.g");
