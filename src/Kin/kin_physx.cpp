@@ -1342,17 +1342,19 @@ rai::PhysX_Options& PhysXInterface::opt() {
 #include "kin_physx.h"
 PhysXInterface::PhysXInterface(rai::Configuration& C, int verbose, const rai::PhysX_Options* _opt) { NICO }
 PhysXInterface::~PhysXInterface() { NICO }
+const FrameL& PhysXInterface::getFreeFrames() { NICO }
+const FrameL& PhysXInterface::getJointFrames() { NICO }
 
 void PhysXInterface::step(double tau) { NICO }
-void PhysXInterface::pushFrameStates(const rai::Configuration& C, const arr& frameVelocities, bool onlyKinematic) { NICO }
-void PhysXInterface::pullDynamicStates(rai::Configuration& C, arr& vels) { NICO }
-void PhysXInterface::pushMotorTargets(const rai::Configuration& C, const arr& qDot_ref, bool setStatesInstantly) { NICO }
-void PhysXInterface::pullMotorStates(rai::Configuration& C, arr& qDot) { NICO }
+void PhysXInterface::pushFreeStates(const rai::Configuration& C, const arr& frameVelocities, bool onlyKinematic) { NICO }
+void PhysXInterface::pullFreeStates(rai::Configuration& C, arr& frameVelocities) { NICO }
+void PhysXInterface::pushJointTargets(const rai::Configuration& C, const arr& qDot_ref, bool setStatesInstantly) { NICO }
+void PhysXInterface::pullJointStates(rai::Configuration& C, arr& qDot){ NICO }
 void PhysXInterface::postAddObject(rai::Frame* f) { NICO }
 
 void PhysXInterface::changeObjectType(rai::Frame* f, int _type) { NICO }
-void PhysXInterface::addJoint(rai::Joint* j) { NICO }
-void PhysXInterface::removeJoint(rai::Joint* j) { NICO }
+void PhysXInterface::addRigidJoint(rai::Frame* from, rai::Frame* to) { NICO }
+void PhysXInterface::removeJoint(const rai::Frame* from, const rai::Frame* to) { NICO }
 void PhysXInterface::setGravity(float grav) { NICO }
 void PhysXInterface::disableGravity(rai::Frame* f, bool disable) { NICO }
 void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b) { NICO }
