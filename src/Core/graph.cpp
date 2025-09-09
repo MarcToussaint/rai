@@ -1296,8 +1296,10 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
     if(hasRenderingInfo(n) && getRenderingInfo(n).skip) continue;
     String label;
     if(n->key.N) label <<n->key;
-    if(label.N) label <<"\\n";
-    n->writeValue(label);
+    if(!n->isBoolAndTrue()){
+      if(label.N) label <<"\\n";
+      n->writeValue(label);
+    }
 
     String shape;
 //    if(n->key.contains("box")) shape <<", shape=box"; else shape <<", shape=ellipse";

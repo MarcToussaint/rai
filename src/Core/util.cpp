@@ -1394,6 +1394,7 @@ template Graph getParameter<Graph>(const char*);
 
 template void setParameter<double>(const char*, const double&);
 template void setParameter<uint>(const char*, const uint&);
+template void setParameter<int>(const char*, const int&);
 template void setParameter<arr>(const char*, const arr&);
 template void setParameter<String>(const char*, const String&);
 
