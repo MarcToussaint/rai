@@ -48,13 +48,14 @@ void TEST(Skeleton_Handover) {
 void test(str problemName={}, int initUniform=-1){
   if(initUniform<0) initUniform = rai::getParameter<int>("initUniform");
   if(!problemName.N) problemName = rai::getParameter<str>("problem");
+  uint runs = rai::getParameter<uint>("runs", 20);
 
   // uint s=0;
-  double _feasible=0., _cost=0., _time=0., _count=0.;
+  double _feasible=0., _cost=0., _constraints=0., _time=0., _count=0.;
   for(uint k=0;k<1;k++){
     auto nlp = make_NLP_Problem(problemName);
 
-    for(uint i=0;i<50;i++){
+    for(uint i=0;i<runs;i++){
       _count++;
       rai::NLP_Solver S;
       S.setProblem(nlp);
@@ -88,8 +89,11 @@ void test(str problemName={}, int initUniform=-1){
       // P.komo->view(true);
       auto ret = S.solve();
       cout <<*ret <<endl;
-      if(ret->feasible) _feasible++;
-      _cost += 10.*(ret->eq+ret->ineq) + ret->sos + ret->f;
+      if(ret->feasible){
+        _feasible++;
+        _cost += ret->sos + ret->f;
+        _constraints += ret->eq + ret->ineq;
+      }
       _time += ret->time;
       S.gnuplot_costs();
       // S.getProblem()->checkJacobian(ret->x, 1e-4, {});
@@ -106,11 +110,12 @@ void test(str problemName={}, int initUniform=-1){
     }
   }
 
-  cout <<"\n=================================\n";
+  cout <<"\n================================= (avgs over " <<_count <<" runs)\n";
   rai::OptOptions opt;
   cout <<"method.:\t" <<rai::Enum<rai::OptMethod>(opt.method) <<endl;
   cout <<"feas.:\t" <<_feasible/_count <<endl;
-  cout <<"cost:\t" <<_cost/_count <<endl;
+  cout <<"cost:\t" <<_cost/_feasible <<endl;
+  cout <<"constraints:\t" <<_constraints/_feasible <<endl;
   cout <<"time:\t" <<_time/_count <<endl;
   cout <<"=================================\n";
 }

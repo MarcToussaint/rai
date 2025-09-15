@@ -41,7 +41,6 @@ template<> const char* Enum<NLopt_SolverOption>::names []= {
     "LD_TNEWTON_PRECOND_RESTART", nullptr
 };
 
-
 struct FuncCallData {
   NLoptInterface* I=0;
   uint feature=0;

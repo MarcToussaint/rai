@@ -10,6 +10,7 @@
 
 #include "gradient.h"
 #include "newton.h"
+#include "lbfgs.h"
 #include "opt-nlopt.h"
 #include "opt-ipopt.h"
 #include "opt-ceres.h"
@@ -84,6 +85,9 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     auto P1 = make_shared<Conv_NLP_TrivialFactoreded>(P);
     CeresInterface ceres(P1);
     x = ceres.solve();
+  } else if(opt.method==M_LBFGS) {
+    Conv_NLP_ScalarProblem P1(P);
+    ret = OptLBFGS(x, P1, opt).solve();
   } else HALT("solver wrapper not implemented yet for solver ID '" <<Enum<OptMethod>(opt.method) <<"'");
 
   if(optCon) {

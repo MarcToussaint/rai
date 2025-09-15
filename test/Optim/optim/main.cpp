@@ -33,7 +33,7 @@ void TEST(Solver) {
   }else{
     NLP_Viewer(nlp).display(1., -1.);
   }
-  rai::wait(.5, true);
+  // rai::wait(.5, true);
 
   //  arr x = nlp->getInitializationSample();
   //  checkJacobianCP(*nlp, x, 1e-4);
@@ -107,8 +107,8 @@ int MAIN(int argc,char** argv){
   rnd.seed(0);
 
   // testDisplay();
-  // testSolver();
+  testSolver();
 
-  testSpherePacking();
+  // testSpherePacking();
   return 0;
 }
