@@ -35,7 +35,7 @@ int proc_progress(
     int k,
     int ls
     ){
-  OptLBFGS* This = (OptLBFGS*) instance;
+  //OptLBFGS* This = (OptLBFGS*) instance;
   cout <<"==lbfgs== it:" <<k <<" ls: " <<ls <<" f:" <<fx <<" |g|:" <<gnorm <<" |delta|:" <<step <<endl;
   return 0;
 }
@@ -59,4 +59,8 @@ std::shared_ptr<SolverReturn> OptLBFGS::solve(){
   ret->f = f_x;
   ret->done=true;
   return ret;
+}
+
+extern "C" {
+#include "liblbfgs.cxx"
 }

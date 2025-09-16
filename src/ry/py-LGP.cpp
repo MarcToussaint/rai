@@ -13,12 +13,11 @@
 
 void init_LGP(pybind11::module& m) {
 
-  pybind11::class_<rai::TAMP_Provider, shared_ptr<rai::TAMP_Provider>>(m, "TAMP_Provider", "TAMP_Provider");
-  pybind11::class_<rai::Actions2KOMO_Translator, shared_ptr<rai::Actions2KOMO_Translator>>(m, "Actions2KOMO_Translator", "Actions2KOMO_Translator");
+  pybind11::class_<rai::LGP_TAMP_Abstraction, shared_ptr<rai::LGP_TAMP_Abstraction>>(m, "LGP_TAMP_Abstraction", "LGP_TAMP_Abstraction");
 
   pybind11::class_<rai::LGP_Tool, shared_ptr<rai::LGP_Tool>>(m, "LGP_Tool", "Tools to compute things (and solve) a Task-and-Motion Planning problem formulated as Logic-Geometric Program")
 
-      .def(pybind11::init<rai::Configuration&, rai::TAMP_Provider&, rai::Actions2KOMO_Translator&>(), "initialization")
+      .def(pybind11::init<rai::Configuration&, rai::LGP_TAMP_Abstraction&>(), "initialization")
 
       .def("solve", &rai::LGP_Tool::solve, "compute new solution", pybind11::arg("verbose")=1)
       .def("getSolvedPlan", &rai::LGP_Tool::getSolvedPlan, "return list of discrete decisions of current solution")
@@ -36,15 +35,14 @@ void init_LGP(pybind11::module& m) {
 
   ;
 
-  m.def("default_TAMP_Provider", &rai::default_TAMP_Provider, "", pybind11::arg("C"), pybind11::arg("lgp_config_file"));
-  m.def("default_Actions2KOMO_Translator", &rai::default_Actions2KOMO_Translator, "");
+  m.def("default_LGP_TAMP_Abstraction", &rai::default_LGP_TAMP_Abstraction, "", pybind11::arg("C"), pybind11::arg("lgp_config_file"));
 
 }
 
 //===========================================================================
 
-/*struct TAMP_Provider{
-  virtual ~TAMP_Provider() {}
+/*struct LGP_TAMP_Abstraction{
+  virtual ~LGP_TAMP_Abstraction() {}
   virtual Array<StringA> getNewPlan() = 0;
   virtual Configuration& getConfig() = 0;
   virtual StringA explicitCollisions() = 0;

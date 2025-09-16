@@ -72,7 +72,7 @@ case ${lib} in
 	;;
 
     libfranka)
-	if [ -z "$version" ]; then version="0.10.0"; fi #old: 0.7.1
+	if [ -z "$version" ]; then version="0.10.0"; fi #old: 0.8.0 very old: 0.7.1
 	git clone --single-branch -b ${version} --recurse-submodules https://github.com/frankaemika/libfranka
 	cmake -DCMAKE_INSTALL_PREFIX=${pre} -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=OFF ${lib} -B ${lib}/build
 	make -C ${lib}/build install
@@ -203,7 +203,7 @@ case ${lib} in
 	mkdir -p isaac-sim
 	cd isaac-sim
 	unzip
-	
+	;;
 	
 	
     *)

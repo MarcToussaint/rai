@@ -1191,7 +1191,7 @@ void PhysXInterface::pullJointStates(rai::Configuration& C, arr& qDot) {
           if(!!qDot) qDot(f->joint->qIndex) = joint->getJointVelocity(axis) / f->joint->scale;
         }else{
           qInactive(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
-          if(!!qDot){ NIY }
+	  //          if(!!qDot){ NIY }
         }
       }
     }

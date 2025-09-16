@@ -48,8 +48,18 @@ void init_Quaternion(pybind11::module& m) {
       .def("sqrNorm", &rai::Quaternion::sqrNorm, "")
       .def("applyOnPointArray", &rai::Quaternion::applyOnPointArray, "", pybind11::arg("pts"))
 
+      .def_readwrite("w", &rai::Quaternion::w)
+      .def_readwrite("x", &rai::Quaternion::x)
+      .def_readwrite("y", &rai::Quaternion::y)
+      .def_readwrite("z", &rai::Quaternion::z)
+
       .def("__mul__", [](const rai::Quaternion& a, const rai::Quaternion& b){ return a * b; }, pybind11::is_operator(),
            "concatenation (quaternion multiplication) of two transforms")
+
+      .def("__neg__", [](const rai::Quaternion& a){ return -a; }, pybind11::is_operator(),
+           "inverse quaternion")
+
+      .def("__str__", [](const rai::Quaternion& self){ str s;  s <<self;  return std::string(s.p); })
       ;
 
   //===========================================================================

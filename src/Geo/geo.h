@@ -134,16 +134,16 @@ struct Quaternion {
   Quaternion& setInterpolateEmbedded(double t, const Quaternion& from, const Quaternion to);
   Quaternion& setInterpolateProper(double t, const Quaternion& from, const Quaternion to);
   void integrateDiffEq(arr& qdot, double tau);
-  void invert();
-  void flipSign();
+  Quaternion& invert();
+  Quaternion& flipSign();
   void uniqueSign();
-  void normalize();
+  Quaternion& normalize();
   void multiply(double f);
 
   void appendX(double radians);
   void appendY(double radians);
   void appendZ(double radians);
-  void append(const Quaternion& q);
+  Quaternion& append(const Quaternion& q);
 
   double diffZero() const;
   void checkZero() const;

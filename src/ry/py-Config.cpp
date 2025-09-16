@@ -72,6 +72,11 @@ void init_Config(pybind11::module& m) {
       .def("getEvents", &rai::ConfigurationViewer::getEvents, "return accumulated events as list of strings")
       .def("getEventCursor", &rai::ConfigurationViewer::getEventCursor, "return the position and normal of the 'curser': mouse position 3D projected into scene via depth, and 3D normal of depth map -- returned as 6D vector")
       .def("getEventCursorObject", &rai::ConfigurationViewer::getEventCursorObject, "(aka mouse picking) return the frame ID (or -1) that the 'cursor' currently points at")
+
+      .def("getGLFWWindow", [](shared_ptr<rai::ConfigurationViewer>& self) {
+        return (long)self->ensure_gl().window;
+      }, "")
+
       ;
 
   //===========================================================================
@@ -146,14 +151,14 @@ void init_Config(pybind11::module& m) {
 
   .def("getFrames", [](shared_ptr<rai::Configuration>& self) {
     std::vector<shared_ptr<rai::Frame>> F;
-    for(rai::Frame* f:self->frames) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-sense deleter!
+    for(rai::Frame* f:self->frames) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-deleter!
     return F;
   })
 
   .def("getRoots", [](shared_ptr<rai::Configuration>& self) {
     FrameL R = self->getRoots();
     std::vector<shared_ptr<rai::Frame>> F;
-    for(rai::Frame* f:R) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-sense deleter!
+    for(rai::Frame* f:R) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-deleter!
     return F;
   })
 

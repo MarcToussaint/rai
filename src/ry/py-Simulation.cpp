@@ -104,6 +104,13 @@ void init_Simulation(pybind11::module& m) {
     return pybind11::make_tuple(X.time, arr2numpy(X.q), arr2numpy(X.qDot), arr2numpy(X.freePos), arr2numpy(X.freeVel));
   }, "returns a 5-tuple of (time, q, qDot, freePos, freeVel)")
 
+  .def("getFreeFrames", [](std::shared_ptr<rai::Simulation>& self) {
+	FrameL frames = self->getFreeFrames();
+	std::vector<shared_ptr<rai::Frame>> F;
+	for(rai::Frame* f:frames) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-deleter!
+	return F;
+      }, "")
+
   .def("setState", [](std::shared_ptr<rai::Simulation>& self, double time, const arr& q, const arr& qDot, const arr& freePos, const arr& freeVel) {
         self->setState({time, q, qDot, freePos, freeVel});
       }, "",

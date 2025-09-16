@@ -86,7 +86,7 @@ licence.
 
 #else
 /* No CPU specific optimization. */
-#include "liblbfgs_arithmetic_ansi.h"
+#include "liblbfgs_arithmetic_ansi.hxx"
 
 #endif
 

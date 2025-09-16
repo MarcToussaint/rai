@@ -477,10 +477,10 @@ Matrix& operator+=(Matrix& a, const Matrix& b) {
 //==============================================================================
 
 /// inverts the current rotation
-void Quaternion::invert() { x=-x; y=-y; z=-z; } //w=-w; }
+Quaternion& Quaternion::invert() { x=-x; y=-y; z=-z; return *this; } //w=-w; }
 
 /// flips the sign of the quaterion -- which still represents the same rotation
-void Quaternion::flipSign() { w=-w; x=-x; y=-y; z=-z; }
+Quaternion& Quaternion::flipSign() { w=-w; x=-x; y=-y; z=-z; return *this; }
 
 void Quaternion::uniqueSign() {
   if(w<0.) flipSign();
@@ -512,11 +512,12 @@ bool Quaternion::isNormalized() const {
   return fabs(n-1.)<1e-6;
 }
 
-void Quaternion::normalize() {
-  if(isZero) return;
+Quaternion& Quaternion::normalize() {
+  if(isZero) return *this;
   double n=w*w + x*x + y*y + z*z;
   n=sqrt(n);
   w/=n; x/=n; y/=n; z/=n;
+  return *this;
 }
 
 void Quaternion::appendX(double radians) {
@@ -567,8 +568,8 @@ void Quaternion::appendZ(double radians) {
   set(a.w, a.x, a.y, a.z);
 }
 
-void Quaternion::append(const Quaternion& q) {
-  if(q.isZero) return;
+Quaternion& Quaternion::append(const Quaternion& q) {
+  if(q.isZero) return *this;
   double aw = w*q.w;
   double ax = x*q.w;
   double ay = y*q.w;
@@ -577,6 +578,7 @@ void Quaternion::append(const Quaternion& q) {
   if(q.y) { aw -= y*q.y;  ax -= z*q.y;  ay += w*q.y;  az += x*q.y; }
   if(q.z) { aw -= z*q.z;  ax += y*q.z;  ay -= x*q.z;  az += w*q.z; }
   w=aw; x=ax; y=ay; z=az; isZero=false;
+  return *this;
 }
 
 /// set the quad
@@ -918,22 +920,15 @@ double* Quaternion::getMatrixGL(double* m) const {
 }
 
 double Quaternion::getRoll_X() const {
-  double sinr = +2.0 * (w * x + y * z);
-  double cosr = +1.0 - 2.0 * (x * x + y * y);
-  return atan2(sinr, cosr);
+  return atan2(2. * (w * x - y * z), 1. - 2. * (x*x + y*y));
 }
 
 double Quaternion::getPitch_Y() const {
-  double sinp = +2.0 * (w * y - z * x);
-  if(fabs(sinp) >= 1)
-    return copysign(RAI_PI / 2, sinp); // use 90 degrees if out of range
-  return asin(sinp);
+  return asin(2. * (w * y + z * x));
 }
 
 double Quaternion::getYaw_Z() const {
-  double siny = +2.0 * (w * z + x * y);
-  double cosy = +1.0 - 2.0 * (y * y + z * z);
-  return atan2(siny, cosy);
+  return atan2(2. * (w * z - x * y), 1. - 2. * (z*z + y*y));
 }
 
 arr Quaternion::getRollPitchYaw() const {
