@@ -19,13 +19,16 @@ rai::Graph getDescriptor(KOMO& komo, int verbose){
 	str o_name; o_name <<go->feat->typeString() <<'_' <<go->type <<go->feat->order;
 	if(go->feat->target.N) o_name <<'_' <<go->feat->target;
 	if(verbose>1) cout <<"\n  feature:" <<o_name;
-	rai::Node* o_node = G.add(o_name, true);
+	rai::Node* o_node = G.add(o_name, true); // NEW FACTOR
 
 	for(rai::Frame *f: go->frames){
 	  str f_name; f_name <<f->name <<'_' <<f->time;
 	  if(verbose>1) cout <<"\n  frame:" <<f_name;
 	  rai::Node* f_node = G.findNode(f_name);
-	  if(!f_node) f_node = G.add(f_name, true);
+	  if(!f_node){
+	    str label = STRING("{pos:" <<f->getPosition() <<"}");
+	    f_node = G.add<str>(f_name, label); // NEW VARIABLE
+	  }
 	  o_node->addParent(f_node);
 	}
 	if(verbose>1) cout <<endl;
