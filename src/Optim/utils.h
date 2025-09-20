@@ -9,76 +9,33 @@
 #pragma once
 
 #include "NLP.h"
+#include "../Core/util.h"
 
-//===========================================================================
-//
-// lambda expression interfaces
-//
-
-// see function types defined in array.h
-//ScalarFunction
-//VectorFunction
-//fct
-
-struct Conv_ScalarProblem_NLP : NLP {
-  ScalarFunction f;
-  uint xDim;
-  arr bounds_lo, bounds_up;
-  Conv_ScalarProblem_NLP(const ScalarFunction& f, uint xDim): f(f), xDim(xDim) {}
-  void evaluate(arr& phi, arr& J, const arr& x) {
-    double y = f(J, NoArr, x);
-    phi = {y};
-    if(!!J) J.reshape(1, x.N);
+struct Conv_ScalarFunction2NLP : NLP {
+  shared_ptr<ScalarFunction> f;
+  Conv_ScalarFunction2NLP(shared_ptr<ScalarFunction> f);
+  virtual void evaluate(arr& phi, arr& J, const arr& x);
+  virtual void getFHessian(arr& H, const arr& x);
+  virtual void report(ostream& os, int verbose, const char *msg=0){
+    os <<"ScalarFunction of type '" <<rai::niceTypeidName(typeid(*this)) <<"'";
+    if(msg) os <<' ' <<msg;
+    os <<" dimension:" <<f->dim;
   }
-  void getFHessian(arr& H, const arr& x) {
-    f(NoArr, H, x);
-  }
-  void setBounds(double lo, double up) { bounds_lo.resize(xDim) = lo;  bounds_up.resize(xDim) = up; }
 };
 
-struct Conv_NLP_ScalarProblem : ScalarFunction {
+struct Conv_NLP2ScalarProblem : ScalarFunction {
   std::shared_ptr<NLP> P;
-
-  Conv_NLP_ScalarProblem(std::shared_ptr<NLP> _P) : P(_P) {
-    ScalarFunction::operator=([this](arr& g, arr& H, const arr& x) -> double {
-      return this->scalar(g, H, x);
-    });
-  }
-
-  double scalar(arr& g, arr& H, const arr& x);
+  Conv_NLP2ScalarProblem(std::shared_ptr<NLP> _P) : P(_P) { dim = P->dimension; }
+  virtual double f(arr& g, arr& H, const arr& x);
 };
 
 struct Conv_NLP_SlackLeastSquares : NLP {
   std::shared_ptr<NLP> P;
+  Conv_NLP_SlackLeastSquares(std::shared_ptr<NLP> _P);
+  virtual void evaluate(arr& phi, arr& J, const arr& x);
+  virtual void report(ostream& os, int verbose, const char *msg=0){ os <<"SlackLeastSquares of: "; P->report(os, verbose, msg); }
+private:
   uintA pick;
-
-  Conv_NLP_SlackLeastSquares(std::shared_ptr<NLP> _P) : P(_P) {
-    dimension = P->dimension;
-    bounds = P->bounds;
-
-    //pick constraints
-    for(uint i=0; i<P->featureTypes.N; i++) {
-      ObjectiveType f = P->featureTypes(i);
-      if(f==OT_eq || f==OT_ineq) pick.append(i);
-    }
-    featureTypes.resize(pick.N) = OT_sos;
-  }
-
-  virtual void evaluate(arr& phi, arr& J, const arr& x) {
-    arr Pphi, PJ;
-    P->evaluate(Pphi, PJ, x);
-    phi = Pphi.pick(pick);
-    J = PJ.pick(pick);
-    for(uint i=0; i<pick.N; i++) {
-      if(P->featureTypes(pick(i))==OT_ineq) {
-        if(phi(i)<0.) { phi(i)=0.; J[i]=0.; } //ReLu for g
-      } else if(P->featureTypes(pick(i))==OT_eq) {
-        if(phi(i)<0.) { phi(i)*=-1.; J[i]*=-1.; } //make positive
-      } else {
-        NIY;
-      }
-    }
-  }
 };
 
 struct NLP_LinTransformed : NLP {
@@ -89,7 +46,7 @@ struct NLP_LinTransformed : NLP {
 
   virtual arr getInitializationSample();
   virtual void evaluate(arr& phi, arr& J, const arr& x);
-  virtual void report(ostream& os, int verbose, const char* msg=0){ P->report(os, verbose, msg); }
+  virtual void report(ostream& os, int verbose, const char *msg=0){ os <<"LinTransformed of: "; P->report(os, verbose, msg); }
 };
 
 //===========================================================================
@@ -102,25 +59,9 @@ bool checkDirectionalJacobian(const VectorFunction& f, const arr& x, const arr& 
 
 //===========================================================================
 //
-// accumulative constraints
-//
-
-inline void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& JAll) {
-  y.resize(1).setZero();
-  if(!!J) J.resize(1, JAll.d1).setZero();
-
-  for(uint i=0; i<yAll.N; i++) {
-    if(yAll.elem(i)>0.) {
-      y.scalar() += yAll.elem(i);
-      if(!!J && !!JAll) J[0] += JAll[i];
-    }
-  }
-}
-
-//===========================================================================
-//
 // helpers
 //
 
-void displayFunction(const ScalarFunction& f, bool wait=false, double lo=-1.2, double hi=1.2);
+void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& JAll);
+void displayFunction(ScalarFunction& f, bool wait=false, double lo=-1.2, double hi=1.2);
 

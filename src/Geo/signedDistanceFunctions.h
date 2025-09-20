@@ -18,8 +18,7 @@
 
 struct SDF : ScalarFunction {
   SDF(const rai::Transformation& _pose)
-    : ScalarFunction(std::bind(&SDF::f, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
-      pose(_pose) {}
+    : pose(_pose) {}
   ~SDF() {}
   rai::Transformation pose;
   arr lo, up;
@@ -157,4 +156,4 @@ struct PCL2Field {
 
 //===========================================================================
 
-extern ScalarFunction DistanceFunction_SSBox;
+shared_ptr<ScalarFunction> DistanceFunction_SSBox();

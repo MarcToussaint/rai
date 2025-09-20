@@ -4,9 +4,6 @@ extern "C" {
 #include "liblbfgs.h"
 }
 
-
-typedef std::function<double(arr& g, arr& H, const arr& x)> ScalarFunction;
-
 double proc_evaluate(
   void *instance,
   const double *_x,
@@ -18,7 +15,7 @@ double proc_evaluate(
 
   CHECK_EQ(_x, This->x.p, "");
 
-  double f_x = This->f(This->g, NoArr, This->x);
+  double f_x = This->f.f(This->g, NoArr, This->x);
   for(uint i=0;i<This->dimension;i++) _g[i] = This->g.p[i];
   return f_x;
 }
@@ -35,13 +32,13 @@ int proc_progress(
     int k,
     int ls
     ){
-  //OptLBFGS* This = (OptLBFGS*) instance;
-  cout <<"==lbfgs== it:" <<k <<" ls: " <<ls <<" f:" <<fx <<" |g|:" <<gnorm <<" |delta|:" <<step <<endl;
+  OptLBFGS* This = (OptLBFGS*) instance;
+  if(This->opt.verbose>1) cout <<"--lbfgs-- it:" <<k <<" ls: " <<ls <<" f:" <<fx <<" |g|:" <<gnorm <<" |delta|:" <<step <<endl;
   return 0;
 }
 
 
-OptLBFGS::OptLBFGS(arr& x, const ScalarFunction& f, rai::OptOptions o)
+OptLBFGS::OptLBFGS(arr& x, ScalarFunction& f, rai::OptOptions o)
     : f(f), dimension(x.N), x(x), opt(o){
 }
 

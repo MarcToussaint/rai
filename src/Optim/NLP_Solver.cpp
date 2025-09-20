@@ -10,6 +10,7 @@
 
 #include "gradient.h"
 #include "newton.h"
+#include "m_LeastSquaresZeroOrder.h"
 #include "lbfgs.h"
 #include "opt-nlopt.h"
 #include "opt-ipopt.h"
@@ -48,56 +49,83 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
   if(verbose>-100) opt.verbose=verbose;
 
   if(opt.method==M_newton) {
-    Conv_NLP_ScalarProblem P1(P);
+    Conv_NLP2ScalarProblem P1(P);
     OptNewton newton(x, P1, opt);
     newton.run();
+    ret->evals = newton.evals;
     ret->f = newton.fx;
+    ret->feasible = true;
+
   } else if(opt.method==M_slackGN) {
     SlackGaussNewton sgn(P, x);
     ret = sgn.solve();
     x = ret->x;
+
   } else if(opt.method==M_gradientDescent) {
-    Conv_NLP_ScalarProblem P1(P);
-    OptGrad(x, P1).run();
+    Conv_NLP2ScalarProblem P1(P);
+    OptGrad grad(x, P1);
+    grad.run();
+    ret->evals = grad.evals;
+    ret->f = grad.fx;
+    ret->feasible = true;
+
   } else if(opt.method==M_rprop) {
-    Conv_NLP_ScalarProblem P1(P);
-    Rprop().loop(x, P1, opt.stopTolerance, opt.stepInit, opt.stopEvals, opt.verbose);
+    Conv_NLP2ScalarProblem P1(P);
+    Rprop grad;
+    grad.loop(x, P1, opt.stopTolerance, opt.stepInit, opt.stopEvals, opt.verbose);
+    ret->evals = grad.evals;
+    ret->f = grad.fx;
+    ret->feasible = true;
+
+  } else if(opt.method==M_LSZO) {
+    LeastSquaredZeroOrder lszo(P, x);
+    ret = lszo.solve();
+
   } else if(opt.method==M_augmentedLag) {
     opt.set_method(M_augmentedLag);
     optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
-    optCon->run();
+    ret = optCon->run();
+
   } else if(opt.method==M_squaredPenalty) {
     opt.set_method(M_squaredPenalty);
     optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
-    optCon->run();
+    ret = optCon->run();
+
   } else if(opt.method==M_logBarrier) {
     opt.set_method(M_logBarrier);
     optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
-    optCon->run();
+    ret = optCon->run();
+
+  } else if(opt.method==M_slackGN_logBarrier) {
+    SlackGaussNewton sgn(P, x);
+    sgn.opt.interiorPadding = 1e-2;
+    ret = sgn.solve();
+    x = ret->x;
+    ret->feasible = ret->ineq==0. && ret->eq<.1;
+    if(ret->feasible){
+      opt.set_method(M_logBarrier);
+      optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
+      ret = optCon->run();
+    }
   } else if(opt.method==M_NLopt) {
     NLoptInterface nlo(P);
     x = nlo.solve(x);
+
   } else if(opt.method==M_Ipopt) {
     IpoptInterface ipo(P);
     ret = ipo.solve(x);
     x = ret->x;
+
   } else if(opt.method==M_Ceres) {
-    auto P1 = make_shared<Conv_NLP_TrivialFactoreded>(P);
+    auto P1 = make_shared<Conv_NLP2TrivialFactoredNLP>(P);
     CeresInterface ceres(P1);
     x = ceres.solve();
-  } else if(opt.method==M_LBFGS) {
-    Conv_NLP_ScalarProblem P1(P);
-    ret = OptLBFGS(x, P1, opt).solve();
-  } else HALT("solver wrapper not implemented yet for solver ID '" <<Enum<OptMethod>(opt.method) <<"'");
 
-  if(optCon) {
-    arr err = P->summarizeErrors(optCon->L.phi_x);
-    ret->ineq = err(OT_ineq);
-    ret->eq = err(OT_eq);
-    ret->sos = err(OT_sos);
-    ret->f = err(OT_f);
-    ret->feasible = (ret->ineq<.1) && (ret->eq<.1);
-  }
+  } else if(opt.method==M_LBFGS) {
+    Conv_NLP2ScalarProblem P1(P);
+    ret = OptLBFGS(x, P1, opt).solve();
+
+  } else HALT("solver wrapper not implemented yet for solver ID '" <<Enum<OptMethod>(opt.method) <<"'");
 
   //checkJacobianCP(*P, x, 1e-4);
 
@@ -141,7 +169,6 @@ bool NLP_Solver::step() {
       opt.set_method(M_logBarrier);
     }
     optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
-
   }
 
   ret->time -= cpuTime();

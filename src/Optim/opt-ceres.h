@@ -27,12 +27,12 @@ struct CeresInterface {
 
 //===========================================================================
 
-struct Conv_NLP_CeresProblem {
+struct Conv_NLP2Ceres {
   shared_ptr<NLP_Factored> P;
 
   arr x_full, phi_full; //the full linear memory for all decision variables and all features
 
   shared_ptr<ceres::Problem> ceresProblem;
 
-  Conv_NLP_CeresProblem(const shared_ptr<NLP_Factored>& _P);
+  Conv_NLP2Ceres(const shared_ptr<NLP_Factored>& _P);
 };

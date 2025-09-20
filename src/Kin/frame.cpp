@@ -2120,7 +2120,7 @@ void rai::Shape::createMeshes() {
       HALT("shapes should have a type - somehow wrong initialization..."); break;
     } break;
     case rai::ST_box: {
-      CHECK_EQ(size.N, 3, "");
+      CHECK_EQ(size.N, 3, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
       mesh().clear();
       mesh().setBox();
       mesh().scale(size(0), size(1), size(2));
@@ -2128,25 +2128,25 @@ void rai::Shape::createMeshes() {
       sscCore() = mesh().V;
     } break;
     case rai::ST_sphere: {
-      CHECK_EQ(size.N, 1, "");
+      CHECK_EQ(size.N, 1, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
       coll_cvxRadius = size(-1);
       sscCore() = zeros(1,3);
       mesh().setSSCvx(sscCore(), coll_cvxRadius);
     } break;
     case rai::ST_cylinder:
-      CHECK_EQ(size.N, 2, "");
-      CHECK(size(-1)>1e-10, "");
+      CHECK_EQ(size.N, 2, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
+      CHECK(size(-1)>1e-10, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
       mesh().setCylinder(size(-1), size(0));
       break;
     case rai::ST_capsule:
-      CHECK_EQ(size.N, 2, "");
+      CHECK_EQ(size.N, 2, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
       coll_cvxRadius = size(-1);
-      CHECK(coll_cvxRadius>1e-10, "");
+      CHECK(coll_cvxRadius>1e-10, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
       sscCore() = arr({2, 3}, {0., 0., -.5*size(0), 0., 0., .5*size(0)});
       mesh().setSSCvx(sscCore(), coll_cvxRadius);
       break;
     case rai::ST_quad: {
-      CHECK_EQ(size.N, 2, "");
+      CHECK_EQ(size.N, 2, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
       byteA tex = mesh().texImg().img;
       mesh().setQuad(size(0), size(1), tex);
     } break;
@@ -2178,9 +2178,9 @@ void rai::Shape::createMeshes() {
       }
     } break;
     case rai::ST_ssCvx:
-      CHECK_EQ(size.N, 1, "");
+      CHECK_EQ(size.N, 1, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
       coll_cvxRadius = size(-1);
-      CHECK(coll_cvxRadius>1e-10, "");
+      CHECK(coll_cvxRadius>1e-10, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
       if(!sscCore().N) {
         CHECK(mesh().V.N, "mesh or sscCore needs to be loaded");
         sscCore() = mesh().V;
@@ -2188,7 +2188,7 @@ void rai::Shape::createMeshes() {
       mesh().setSSCvx(sscCore(), coll_cvxRadius);
       break;
     case rai::ST_ssBox: {
-      CHECK_EQ(size.N, 4, "");
+      CHECK_EQ(size.N, 4, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
       coll_cvxRadius = size(-1);
       if(coll_cvxRadius<1e-10) {
         mesh().setBox();
@@ -2205,7 +2205,7 @@ void rai::Shape::createMeshes() {
       //      mesh().setSSCvx(sscCore, r);
     } break;
     case rai::ST_ssCylinder: {
-      CHECK(size.N==3, "");
+      CHECK(size.N==3, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
       coll_cvxRadius = size(-1);
       if(coll_cvxRadius<1e-10) {
         mesh().setCylinder(size(1), size(0));
@@ -2220,7 +2220,7 @@ void rai::Shape::createMeshes() {
       mesh().setSSCvx(sscCore(), coll_cvxRadius);
     } break;
     case rai::ST_ssBoxElip: {
-      CHECK_EQ(size.N, 7, "");
+      CHECK_EQ(size.N, 7, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
       coll_cvxRadius = size(-1);
       for(uint i=0; i<3; i++) if(size(i)<2.*coll_cvxRadius) size(i) = 2.*coll_cvxRadius;
       rai::Mesh box;

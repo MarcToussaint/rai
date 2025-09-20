@@ -7,12 +7,12 @@
     --------------------------------------------------------------  */
 
 #include "testProblems_KOMO.h"
-#include "../Optim/utils.h"
 #include "../Optim/testProblems_Opt.h"
 #include "../Kin/frame.h"
 #include "../Kin/F_forces.h"
 #include "../KOMO/komo.h"
 #include "../Kin/F_geometrics.h"
+#include "../Optim/utils.h"
 
 shared_ptr<KOMO> problem_IK(){
   rai::Configuration C;
@@ -35,7 +35,7 @@ shared_ptr<KOMO> problem_IKobstacle(){
   rai::Configuration C;
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
   // #IK (table): {Q:"t(.1 .5 .3)  d(0 0 0 1) d(90 0 1 0)" shape:capsule, size:[.3, .02] }
-  C.addFrame("dot", "table", " {Q:\"t(.2 .5 .3)\", shape:sphere, size:[.02]" );
+  C.addFrame("dot", "table", "Q:\"t(.2 .5 .3)\", shape:sphere, size:[.02]" );
   C.addFrame("obstacle", "table", "Q:[.1 .2 .5], shape: capsule, size:[1. .1], color: [.2] " );
 
   auto manip = make_shared<ManipulationHelper>();
@@ -209,11 +209,20 @@ std::shared_ptr<NLP> KOMO_wrap(std::shared_ptr<KOMO> komo){
 std::shared_ptr<NLP> rai::make_NLP_Problem(str problem){
   if(!problem.N) problem = rai::getParameter<str>("problem");
 
+  int s = problem.find('.', false);
+  uint dim = 2;
+  if(s>0){
+    problem.getSubString(s+1,-1) >>dim;
+    rai::setParameter<uint>("problem/dim", dim);
+    problem = problem.getSubString(0,s-1);
+  }
+
   std::shared_ptr<NLP> nlp;
 
-  if(problem == "quadratic") nlp = make_shared<NLP_Squared>();
+  if(problem == "square") nlp = make_shared<NLP_Squared>(dim);
+  else if(problem == "Rastrigin") nlp = make_shared<Conv_ScalarFunction2NLP>(make_shared<NLP_Rosenbrock>(dim));
+  else if(problem == "Rosenbrock") nlp = make_shared<Conv_ScalarFunction2NLP>(make_shared<NLP_Rosenbrock>(dim));
   else if(problem == "RastriginSOS") nlp = make_shared<NLP_RastriginSOS>();
-  // else if(problem == "Rosenbrock") nlp = make_shared<NLP_Rosenbrock>();
 
   else if(problem == "Box") nlp = make_shared<BoxNLP>();
   else if(problem == "Modes") nlp = make_shared<ModesNLP>();

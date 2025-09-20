@@ -57,7 +57,7 @@ struct KOMO_SubNLP : NLP {
 };
 
 //this treats EACH PART and force-dof as its own variable
-struct Conv_KOMO_FactoredNLP : NLP_Factored {
+struct Conv_KOMO2FactoredNLP : NLP_Factored {
   KOMO& komo;
 
   //redundant to NLP_Factored::variableDims -- but sub can SUBSELECT!; in addition: dofs and names
@@ -75,7 +75,7 @@ struct Conv_KOMO_FactoredNLP : NLP_Factored {
   VariableIndexEntry& vars(uint var_id) { if(subVars.N) return __variableIndex(subVars(var_id)); else return __variableIndex(var_id); }
   FeatureIndexEntry& feats(uint feat_id) { if(subVars.N) return __featureIndex(subFeats(feat_id)); else return __featureIndex(feat_id); }
 
-  Conv_KOMO_FactoredNLP(KOMO& _komo, const rai::Array<DofL>& varDofs);
+  Conv_KOMO2FactoredNLP(KOMO& _komo, const rai::Array<DofL>& varDofs);
 
   virtual void subSelect(const uintA& activeVariables, const uintA& conditionalVariables);
   virtual uint numTotalVariables() { return __variableIndex.N; }

@@ -983,17 +983,17 @@ void scanArrFile(const char* name) {
 #endif
 
 /// numeric (finite difference) computation of the gradient
-arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalytic, double eps) {
+arr finiteDifferenceGradient(ScalarFunction& f, const arr& x, arr& Janalytic, double eps) {
   arr dx, J;
   double y, dy;
-  y=f(Janalytic, NoArr, x);
+  y=f.f(Janalytic, NoArr, x);
 
   J.resize(x.N);
   uint i;
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    dy = f(NoArr, NoArr, dx);
+    dy = f.f(NoArr, NoArr, dx);
     dy = (dy-y)/eps;
     J(i)=dy;
   }
@@ -1027,7 +1027,7 @@ arr finiteDifferenceJacobian(const fct& f, const arr& _x, arr& Janalytic, double
 }
 
 /// numeric (finite difference) check of the gradient of f at x
-bool checkGradient(const ScalarFunction& f,
+bool checkGradient(ScalarFunction& f,
                    const arr& x, double tolerance, bool verbose) {
   arr J;
   arr JJ = finiteDifferenceGradient(f, x, J);
@@ -1050,9 +1050,9 @@ bool checkGradient(const ScalarFunction& f,
   return true;
 }
 
-bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool verbose) {
+bool checkHessian(ScalarFunction& f, const arr& x, double tolerance, bool verbose) {
   arr g, H, dx, dy, Jg;
-  f(g, H, x);
+  f.f(g, H, x);
   if(isRowShifted(H)) H = unpack(H);
 
   Jg.resize(g.N, x.N);
@@ -1061,7 +1061,7 @@ bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool 
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    f(dy, NoArr, dx);
+    f.f(dy, NoArr, dx);
     dy = (dy-g)/eps;
     for(k=0; k<g.N; k++) Jg(k, i)=dy.elem(k);
   }

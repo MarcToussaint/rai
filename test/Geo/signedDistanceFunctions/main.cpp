@@ -39,7 +39,7 @@ void TEST(DistanceFunctions) {
 
       {
         arr g;
-        double d = (*f)(g, NoArr, x);
+        double d = f->f(g, NoArr, x);
         {
           auto lock = gl.data().dataLock(RAI_HERE);
           gl.data().clear().addStandardScene().add().mesh(m);
@@ -50,7 +50,7 @@ void TEST(DistanceFunctions) {
 
       if(!suc){
         arr g,H;
-        (*f)(g,H,x); //set breakpoint here;
+        f->f(g,H,x); //set breakpoint here;
         LOG(-1)  <<"x=" <<x;
       }
     }
@@ -68,11 +68,11 @@ void TEST(DistanceFunctions2) {
     rndUniform(x, -5., 5.);
 
     bool suc=true;
-    suc &= checkGradient(DistanceFunction_SSBox, x, 1e-6);
+    suc &= checkGradient(*DistanceFunction_SSBox(), x, 1e-6);
 //    suc &= checkHessian(SDF_SSBox, x, 1e-6);
     if(!suc){
       arr g,H;
-      cout <<"f=" <<DistanceFunction_SSBox(g,H,x); //set breakpoint here;
+      cout <<"f=" <<DistanceFunction_SSBox()->f(g,H,x); //set breakpoint here;
       HALT("x=" <<x);
     }
   }
@@ -109,7 +109,7 @@ void TEST(SimpleImplicitSurfaces) {
   OpenGL gl;
 
   for(shared_ptr<SDF>& f: fcts){
-    m.setImplicitSurface(*f,-10.,10.,100);
+    m.setImplicitSurface(f->cfunc(),-10.,10.,100);
     gl.data().clear().addStandardScene().add().mesh(m);
     gl.update(true);
   }
@@ -140,7 +140,7 @@ void projectToSurface(){
       checkGradient(*fct, x, 1e-4);
       checkHessian(*fct, x, 1e-4);
       fil <<x.modRaw();
-      fil <<(*fct)(NoArr, NoArr, x) <<endl;
+      fil <<fct->f(NoArr, NoArr, x) <<endl;
     }
 
     m.setImplicitSurfaceBySphereProjection(*fct, 10., 3);

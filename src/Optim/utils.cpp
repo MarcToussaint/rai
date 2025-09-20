@@ -7,13 +7,31 @@
     --------------------------------------------------------------  */
 
 #include "utils.h"
+#include "lagrangian.h"
 #include "../Core/util.h"
 
 #include <math.h>
 
 //===========================================================================
 
-double Conv_NLP_ScalarProblem::scalar(arr& g, arr& H, const arr& x) {
+Conv_ScalarFunction2NLP::Conv_ScalarFunction2NLP(shared_ptr<ScalarFunction> f) : f(f){
+  dimension = f->dim;
+  featureTypes.resize(1) = OT_f;
+}
+
+void Conv_ScalarFunction2NLP::evaluate(arr& phi, arr& J, const arr& x) {
+  double y = f->f(J, NoArr, x);
+  phi = {y};
+  if(!!J) J.reshape(1, x.N);
+}
+
+void Conv_ScalarFunction2NLP::getFHessian(arr& H, const arr& x) {
+  f->f(NoArr, H, x);
+}
+
+//===========================================================================
+
+double Conv_NLP2ScalarProblem::f(arr& g, arr& H, const arr& x) {
   arr phi, J;
   P->evaluate(phi, J, x);
 
@@ -68,6 +86,36 @@ double Conv_NLP_ScalarProblem::scalar(arr& g, arr& H, const arr& x) {
 
 //===========================================================================
 
+Conv_NLP_SlackLeastSquares::Conv_NLP_SlackLeastSquares(std::shared_ptr<NLP> _P) : P(_P) {
+  dimension = P->dimension;
+  bounds = P->bounds;
+
+  //pick constraints
+  for(uint i=0; i<P->featureTypes.N; i++) {
+    ObjectiveType f = P->featureTypes(i);
+    if(f==OT_eq || f==OT_ineq) pick.append(i);
+  }
+  featureTypes.resize(pick.N) = OT_sos;
+}
+
+void Conv_NLP_SlackLeastSquares::evaluate(arr& phi, arr& J, const arr& x) {
+  arr Pphi, PJ;
+  P->evaluate(Pphi, PJ, x);
+  phi = Pphi.pick(pick);
+  J = PJ.pick(pick);
+  for(uint i=0; i<pick.N; i++) {
+    if(P->featureTypes(pick(i))==OT_ineq) {
+      if(phi(i)<0.) { phi(i)=0.; J[i]=0.; } //ReLu for g
+    } else if(P->featureTypes(pick(i))==OT_eq) {
+      if(phi(i)<0.) { phi(i)*=-1.; J[i]*=-1.; } //make positive
+    } else {
+      NIY;
+    }
+  }
+}
+
+//===========================================================================
+
 NLP_LinTransformed::NLP_LinTransformed(std::shared_ptr<NLP> _P, const arr& _A, const arr& _b) : P(_P), A(_A), b(_b) {
   CHECK_EQ(A.d0, P->dimension, "");
   CHECK_EQ(b.N, P->dimension, "");
@@ -90,44 +138,30 @@ void NLP_LinTransformed::evaluate(arr& phi, arr& J, const arr& x) {
   J = J*A;
 }
 
-//===========================================================================
-//
-// checks and converters
-//
-
-//void OptOptions::write(std::ostream& os) const {
-//#define WRT(x) os <<#x <<" = " <<x <<endl;
-//  WRT(verbose);
-////  double *fmin_return);
-//  WRT(stopTolerance);
-//  WRT(stopEvals);
-//  WRT(stopIters);
-//  WRT(stepInit);
-//  WRT(minStep);
-//  WRT(stepMax);
-//  WRT(damping);
-//  WRT(stepInc);
-//  WRT(stepDec);
-//  WRT(dampingInc);
-//  WRT(dampingDec);
-//  WRT(nonStrictSteps);
-//  WRT(allowOverstep);
-//  WRT(constrainedMethod);
-//  WRT(aulaMuInc);
-//#undef WRT
-//}
 
 //===========================================================================
 //
 // helpers
 //
 
-void displayFunction(const ScalarFunction& f, bool wait, double lo, double hi) {
+void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& JAll) {
+  y.resize(1).setZero();
+  if(!!J) J.resize(1, JAll.d1).setZero();
+
+  for(uint i=0; i<yAll.N; i++) {
+    if(yAll.elem(i)>0.) {
+      y.scalar() += yAll.elem(i);
+      if(!!J && !!JAll) J[0] += JAll[i];
+    }
+  }
+}
+
+void displayFunction(ScalarFunction& f, bool wait, double lo, double hi) {
   arr X, Y;
   X = rai::grid(2, lo, hi, 100);
   Y.resize(X.d0);
   for(uint i=0; i<X.d0; i++) {
-    double fx=f(NoArr, NoArr, X[i]);
+    double fx=f.f(NoArr, NoArr, X[i]);
     Y(i) = ((fx==fx && fx<10.)? fx : 10.);
   }
   Y.reshape(101, 101);
@@ -136,51 +170,6 @@ void displayFunction(const ScalarFunction& f, bool wait, double lo, double hi) {
 //  write(LIST<arr>(Y), "z.fct");
   gnuplot("reset; set xlabel 'x'; set ylabel 'y'; splot [-1:1][-1:1] 'z.fct' matrix us ($1/50-1):($2/50-1):3 w l", wait, true);
 }
-
-#if 0
-/// minimizes \f$f(x)\f$ using its gradient only
-uint optGradDescent(arr& x, const ScalarFunction& f, rai::OptOptions o) {
-  uint evals=0;
-  arr y, grad_x, grad_y;
-  double fx, fy;
-  double a=o.stepInit;
-
-  fx = f(grad_x, NoArr, x);  evals++;
-  if(o.verbose>1) cout <<"*** optGradDescent: starting point x=" <<(x.N<20?x:arr()) <<" f(x)=" <<fx <<" a=" <<a <<endl;
-  ofstream fil;
-  if(o.verbose>0) fil.open("z.opt");
-  if(o.verbose>0) fil <<0 <<' ' <<eval_count <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;
-
-  grad_x /= length(grad_x);
-
-  for(uint k=0;; k++) {
-    y = x - a*grad_x;
-    fy = f(grad_y, NoArr, y);  evals++;
-    CHECK_EQ(fy, fy, "cost seems to be NAN: fy=" <<fy);
-    if(o.verbose>1) cout <<"optGradDescent " <<evals <<' ' <<eval_count <<" \tprobing y=" <<(y.N<20?y:arr()) <<" \tf(y)=" <<fy <<" \t|grad|=" <<length(grad_y) <<" \ta=" <<a;
-
-    if(fy <= fx) {
-      if(o.verbose>1) cout <<" - ACCEPT" <<endl;
-      double step=length(x-y);
-      x = y;
-      fx = fy;
-      grad_x = grad_y/length(grad_y);
-      a *= 1.2;
-      if(o.stepMax>0. && a>o.stepMax) a = o.stepMax;
-      if(o.verbose>0) fil <<evals <<' ' <<eval_count <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;
-      if(step<o.stopTolerance) break;
-    } else {
-      if(o.verbose>1) cout <<" - reject" <<endl;
-      a *= .5;
-    }
-    if(o.stopEvals>0 && evals>(uint)o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
-    if(o.stopIters>0 && k>(uint)o.stopIters) break;
-  }
-  if(o.verbose>0) fil.close();
-  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", true);
-  return evals;
-}
-#endif
 
 RUN_ON_INIT_BEGIN(optimization)
 ObjectiveTypeA::memMove=true;

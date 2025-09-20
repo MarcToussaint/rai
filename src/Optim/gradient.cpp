@@ -15,7 +15,7 @@ uint eval_count=0;
 
 //===========================================================================
 
-OptGrad::OptGrad(arr& _x, const ScalarFunction& _f, rai::OptOptions _o):
+OptGrad::OptGrad(arr& _x, ScalarFunction& _f, rai::OptOptions _o):
   x(_x), f(_f), o(_o), it(0), evals(0), numTinySteps(0) {
   alpha = o.stepInit;
 //  if(f) reinit();
@@ -23,7 +23,7 @@ OptGrad::OptGrad(arr& _x, const ScalarFunction& _f, rai::OptOptions _o):
 
 void OptGrad::reinit(const arr& _x) {
   if(!!_x && &_x!=&x) x=_x;
-  fx = f(gx, NoArr, x);  evals++;
+  fx = f.f(gx, NoArr, x);  evals++;
 
   //startup verbose
   if(o.verbose>1) cout <<"*** optGrad: starting point f(x)=" <<fx <<" alpha=" <<alpha <<endl;
@@ -39,7 +39,7 @@ OptGrad::StopCriterion OptGrad::step() {
   if(!evals) reinit();
 
   it++;
-  if(o.verbose>1) cout <<"optGrad it=" <<std::setw(4) <<it <<std::flush;
+  if(o.verbose>1) cout <<"--grad-- it=" <<std::setw(4) <<it <<std::flush;
 
   if(!(fx==fx)) HALT("you're calling a gradient step with initial function value = NAN");
 
@@ -50,7 +50,7 @@ OptGrad::StopCriterion OptGrad::step() {
   uint lineSteps=0;
   for(;; lineSteps++) {
     y = x + alpha*Delta;
-    fy = f(gy, NoArr, y);  evals++;
+    fy = f.f(gy, NoArr, y);  evals++;
     if(o.verbose>2) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<std::flush;
     bool wolfe = (o.wolfe<=0. || fy <= fx + o.wolfe*alpha*scalarProduct(Delta, gx));
@@ -181,15 +181,15 @@ bool sRprop::step(arr& w, const arr& grad, uint* singleI) {
   return max(stepSize) < incr*dMin;
 }
 
-bool Rprop::step(arr& x, const ScalarFunction& f) {
+bool Rprop::step(arr& x, ScalarFunction& f) {
   arr grad;
-  f(grad, NoArr, x);
+  f.f(grad, NoArr, x);
   return self->step(x, grad, nullptr);
 }
 
 //----- the rprop wrapped with stopping criteria
 uint Rprop::loop(arr& _x,
-                 const ScalarFunction& f,
+                 ScalarFunction& f,
                  double stoppingTolerance,
                  double initialStepSize,
                  uint maxEvals,
@@ -197,7 +197,7 @@ uint Rprop::loop(arr& _x,
 
   if(!self->stepSize.N) init(initialStepSize);
   arr x, J(_x.N), x_min, J_min;
-  double fx, fx_min=0;
+  double fx_min=0;
   uint rejects=0, small_steps=0;
   x=_x;
 
@@ -205,15 +205,15 @@ uint Rprop::loop(arr& _x,
   ofstream fil;
   if(verbose>0) fil.open("z.opt");
 
-  uint evals=0;
+  evals=0;
   double diff=0.;
   for(;;) {
     //checkGradient(p, x, stoppingTolerance);
     //compute value and gradient at x
-    fx = f(J, NoArr, x);  evals++;
+    fx = f.f(J, NoArr, x);  evals++;
 
     if(verbose>0) { fil <<evals <<' ' <<eval_count <<' ' << fx <<' ' <<diff <<' ' <<x.modRaw() <<endl; }
-    if(verbose>1) cout <<"optRprop " <<evals <<' ' <<eval_count <<" \tf(x)=" <<fx <<" \tdiff=" <<diff <<" \tx=" <<(x.N<20?x:arr()) <<endl;
+    if(verbose>1) cout <<"--rprop-- " <<evals <<' ' <<eval_count <<" \tf(x)=" <<fx <<" \tdiff=" <<diff <<" \tx=" <<(x.N<20?x:arr()) <<endl;
 
     //infeasible point! undo the previous step
     if(fx!=fx) { //is NAN
@@ -258,5 +258,6 @@ uint Rprop::loop(arr& _x,
   if(verbose>0) fil.close();
 //  if(verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
   _x=x_min;
+  fx = fx_min;
   return evals;
 }

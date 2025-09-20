@@ -15,7 +15,7 @@ PrimalDualProblem::PrimalDualProblem(const arr& x, const shared_ptr<NLP>& P, con
 
   L.mu = L.muLB = 0.;
 
-  L.lagrangian(NoArr, NoArr, x);
+  L.f(NoArr, NoArr, x);
 //  cout <<"x=" <<x <<endl <<"L=" <<Lval <<endl;
 
   n_ineq=P->get_numOfType(OT_ineq);
@@ -24,13 +24,9 @@ PrimalDualProblem::PrimalDualProblem(const arr& x, const shared_ptr<NLP>& P, con
   if(n_eq) x_lambda.append(zeros(n_eq));
   x_lambda.append(ones(n_ineq));
 
-  ScalarFunction::operator=([this](arr& dL, arr& HL, const arr& x) -> double {
-    return this->primalDual(dL, HL, x);
-  });
-
 }
 
-double PrimalDualProblem::primalDual(arr& r, arr& R, const arr& x_lambda) {
+double PrimalDualProblem::f(arr& r, arr& R, const arr& x_lambda) {
 
   ObjectiveTypeA& ot = L.P->featureTypes;
 
@@ -47,7 +43,7 @@ double PrimalDualProblem::primalDual(arr& r, arr& R, const arr& x_lambda) {
   L.muLB = 0.;
 
   arr dL, HL;
-  L.lagrangian(dL, HL, x);
+  L.f(dL, HL, x);
 //  cout <<"x=" <<x <<endl <<"lambda=" <<L.lambda <<endl <<"L=" <<Lval <<endl;
   if(!L.lambda.N) L.lambda = zeros(L.phi_x.N);
 

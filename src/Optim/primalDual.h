@@ -25,7 +25,7 @@ struct PrimalDualProblem : ScalarFunction {
 
   PrimalDualProblem(const arr& x, const shared_ptr<NLP>& P, const rai::OptOptions& opt);
 
-  double primalDual(arr& r, arr& R, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
+  double f(arr& r, arr& R, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
 
   void updateMu();
 };

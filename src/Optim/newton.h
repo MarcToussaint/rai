@@ -11,16 +11,16 @@
 #include "options.h"
 #include "../Core/array.h"
 
-int optNewton(arr& x, const ScalarFunction& f, rai::OptOptions opt=DEFAULT_OPTIONS);
+int optNewton(arr& x, ScalarFunction& f, rai::OptOptions opt=DEFAULT_OPTIONS);
 
 struct OptNewton {
-  ScalarFunction f;
+  ScalarFunction& f;
   arr& x;
   rai::OptOptions opt;
 
   enum StopCriterion { stopNone=0, stopDeltaConverge, stopTinyFSteps, stopTinyXSteps, stopCritEvals, stopStepFailed, stopLineSearchSteps };
 
-  OptNewton(arr& _x, const ScalarFunction& _f, const rai::OptOptions& _opt);
+  OptNewton(arr& _x, ScalarFunction& _f, const rai::OptOptions& _opt);
   ~OptNewton();
   OptNewton& setBounds(const arr& _bounds);
   void reinit(const arr& _x);

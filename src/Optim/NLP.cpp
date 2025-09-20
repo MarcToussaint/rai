@@ -114,13 +114,14 @@ bool NLP::checkHessian(const arr& x, double tolerance) {
     RAI_MSG("no f-term in this KOM problem");
     return true;
   }
-  ScalarFunction F = [this, &phi, &J, i](arr& g, arr& H, const arr& x) -> double{
-    this->evaluate(phi, J, x);
-    this->getFHessian(H, x);
-    g = J[i];
-    return phi(i);
-  };
-  return ::checkHessian(F, x, tolerance);
+  NIY;
+  // ScalarFunction F = [this, &phi, &J, i](arr& g, arr& H, const arr& x) -> double{
+  //   this->evaluate(phi, J, x);
+  //   this->getFHessian(H, x);
+  //   g = J[i];
+  //   return phi(i);
+  // };
+  // return ::checkHessian(F, x, tolerance);
 }
 
 bool NLP::checkBounds(bool strictlyLarger){
@@ -234,7 +235,7 @@ rai::String NLP_Factored::getVariableName(uint var_id) { return STRING("-dummy-"
 
 //===========================================================================
 
-Conv_FactoredNLP_BandedNLP::Conv_FactoredNLP_BandedNLP(const shared_ptr<NLP_Factored>& P, uint _maxBandSize, bool _sparseNotBanded)
+Conv_FactoredNLP2BandedNLP::Conv_FactoredNLP2BandedNLP(const shared_ptr<NLP_Factored>& P, uint _maxBandSize, bool _sparseNotBanded)
   : P(P), maxBandSize(_maxBandSize), sparseNotBanded(_sparseNotBanded) {
   varDimIntegral = integral(P->variableDimensions).prepend(0);
   featDimIntegral = integral(P->featureDimensions).prepend(0);
@@ -242,7 +243,7 @@ Conv_FactoredNLP_BandedNLP::Conv_FactoredNLP_BandedNLP(const shared_ptr<NLP_Fact
 
 //===========================================================================
 
-void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
+void Conv_FactoredNLP2BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
   CHECK_EQ(x.N, varDimIntegral.last(), "");
 
   //set all variables
@@ -401,24 +402,14 @@ void NLP_Viewer::display(double mu, double muLB) {
   Y.resize(X.d0);
 
   //-- transform constrained problem to AugLag scalar function
-  uint n_con = P->get_numOfType(OT_ineq) + P->get_numOfType(OT_eq);
-  shared_ptr<ScalarFunction> f;
   std::shared_ptr<rai::LagrangianProblem> lag = std::dynamic_pointer_cast<rai::LagrangianProblem>(P);
-  if(lag){ //all done
-    f = lag;
-  }else if(!n_con){
-    f = make_shared<Conv_NLP_ScalarProblem>(P);
-  }else{
-    lag = make_shared<rai::LagrangianProblem>(P, DEFAULT_OPTIONS);
-    lag->mu = mu;
-    lag->muLB = muLB;
-    if(muLB>0.) lag->useLB = true;
-    f = lag;
+  if(!lag){
+    lag = make_shared<rai::LagrangianProblem>(P, DEFAULT_OPTIONS, mu, muLB);
   }
 
   //-- evaluate over the grid
   for(uint i=0; i<X.d0; i++) {
-    double fx = (*f)(NoArr, NoArr, X[i]);
+    double fx = lag->f(NoArr, NoArr, X[i]);
     Y(i) = ((fx==fx && fx<10.)? fx : 10.);
   }
   Y.reshape(101, 101);

@@ -43,7 +43,7 @@ struct PairCollision : NonCopyable {
                 const rai::Transformation& t1, const rai::Transformation& t2,
                 double rad1=0., double rad2=0.);
   //sdf-to-sdf
-  PairCollision(ScalarFunction func1, ScalarFunction func2, const arr& seed);
+  PairCollision(ScalarFunction& func1, ScalarFunction& func2, const arr& seed);
 
   ~PairCollision() {}
 

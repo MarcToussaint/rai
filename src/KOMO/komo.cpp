@@ -1959,12 +1959,12 @@ shared_ptr<NLP_Factored> KOMO::nlp_FactoredTime() {
     CHECK(t<int(T), "hmm");
     if(t>=0) dofs(t).append(d);
   }
-  return make_shared<Conv_KOMO_FactoredNLP>(*this, dofs);
+  return make_shared<Conv_KOMO2FactoredNLP>(*this, dofs);
 }
 
 shared_ptr<NLP_Factored> KOMO::nlp_FactoredParts() {
   rai::Array<DofL> dofs = pathConfig.getPartsDofs();
-  return make_shared<Conv_KOMO_FactoredNLP>(*this, dofs);
+  return make_shared<Conv_KOMO2FactoredNLP>(*this, dofs);
 }
 
 StringA KOMO::getCollisionPairs(double belowMargin) {

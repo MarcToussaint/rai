@@ -1,17 +1,16 @@
 base { X: "t(0 0 .2)" shape:box size=[.4 .4 .4] color=[0 0 0]}
 
-stem { X: "t(0 0 1)" shape:capsule size=[2 .1] }
-transRot (base stem){ joint:phiTransXY B: "t(0 0 .6)" } #phiTransXY=12 #transXYPhi=8
+stem (j0){ Q: "t(0 0 .1) t(0 0 1)" shape:capsule size=[2 .1] }
+j0 (base){ joint:phiTransXY } #phiTransXY=12 #transXYPhi=8
 
-arm1 { shape:capsule size=[.3 .1] }
-arm2 { shape:capsule size=[.3 .1] }
-arm3 { shape:capsule size=[.3 .1] }
-arm4 { shape:capsule size=[.3 .1] }
-arm5 { shape:capsule size=[.3 .1] }
+arm1(j1) { shape:capsule Q:"t(0 0 .15)" size=[.3 .1] }
+arm2(j2) { shape:capsule Q:"t(0 0 .15)" size=[.3 .1] }
+arm3(j3) { shape:capsule Q:"t(0 0 .15)" size=[.3 .1] }
+arm4(j4) { shape:capsule Q:"t(0 0 .15)" size=[.3 .1] }
+arm5(j5) { shape:capsule Q:"t(0 0 .15)" size=[.3 .1] }
 
-(stem arm1) { joint:universal A: "t(0 0 1) d(90 1 0 0)" B: "t(0 0 .15)" } #quatBall
-j2(arm1 arm2) { joint:hingeX A: "t(0 0 0.15)" B: "t(0 0 .15)" axis=[0 0 1] }
-(arm2 arm3) { joint:free A: "t(0 0 0.15)" B: "t(0 0 .15)" axis=[1 0 0] } #free
-(arm3 arm4) { joint:hingeX A: "t(0 0 0.15)" B: "t(0 0 .15)" axis=[0 0 -1] mimic=j2 }
-(arm4 arm5) { joint:hingeX A: "t(0 0 0.15)" B: "t(0 0 .15)" axis=[1 0 0] q=.5 }
-
+j1(stem) { joint:universal pre:"t(0 0 1) d(90 1 0 0)" } #quatBall
+j2(arm1) { joint:hingeX pre:"t(0 0 0.15)" }
+j3(arm2) { joint:free pre:"t(0 0 0.15)" } #free
+j4(arm3) { joint:hingeX pre: "t(0 0 0.15)" mimic=j2 }
+j5(arm4) { joint:hingeX pre:"t(0 0 0.15)" q=.5 }

@@ -8,6 +8,7 @@
 
 #include "testProblems_Opt.h"
 #include "lagrangian.h"
+#include "utils.h"
 
 #include <math.h>
 
@@ -46,7 +47,7 @@ template<> const char* rai::Enum<BenchmarkSymbol>::names []= {
 
 //===========================================================================
 
-double _RosenbrockFunction(arr& g, arr& H, const arr& x) {
+double NLP_Rosenbrock::f(arr& g, arr& H, const arr& x) {
   double f=0.;
   for(uint i=1; i<x.N; i++) f += rai::sqr(x(i)-rai::sqr(x(i-1))) + .01*rai::sqr(1-x(i-1));
 //  f = ::log(1.+f);
@@ -76,14 +77,9 @@ double _RosenbrockFunction(arr& g, arr& H, const arr& x) {
   return f;
 }
 
-struct NLP_Rosenbrock : ScalarUnconstrainedProgram {
-  NLP_Rosenbrock(uint dim) { dimension=dim; }
-  virtual double f(arr& g, arr& H, const arr& x) { return _RosenbrockFunction(g, H, x); }
-};
-
 //===========================================================================
 
-double _RastriginFunction(arr& g, arr& H, const arr& x) {
+double NLP_Rastrigin::f(arr& g, arr& H, const arr& x) {
   double A=.5, f=A*x.N;
   for(uint i=0; i<x.N; i++) f += x(i)*x(i) - A*::cos(10.*x(i));
   if(!!g) {
@@ -97,55 +93,46 @@ double _RastriginFunction(arr& g, arr& H, const arr& x) {
   return f;
 }
 
-struct NLP_Rastrigin : ScalarUnconstrainedProgram {
-  NLP_Rastrigin(uint dim) { dimension=dim; }
-  virtual double f(arr& g, arr& H, const arr& x) { return _RastriginFunction(g, H, x); }
+//===========================================================================
+
+struct _SquareFunction : ScalarFunction {
+  double f(arr& g, arr& H, const arr& x) {
+  if(!!g) g=2.*x;
+  if(!!H) H.setDiag(2., x.N);
+  return sumOfSqr(x);
+  }
 };
 
 //===========================================================================
 
-double _SquareFunction(arr& g, arr& H, const arr& x) {
-  if(!!g) g=2.*x;
-  if(!!H) H.setDiag(2., x.N);
-  return sumOfSqr(x);
-}
-
-ScalarFunction SquareFunction() { return _SquareFunction; }
-
-//===========================================================================
-
-double _SumFunction(arr& g, arr& H, const arr& x) {
-  if(!!g) { g.resize(x.N); g=1.; }
-  if(!!H) { H.resize(x.N, x.N); H.setZero(); }
-  return sum(x);
-}
-
-ScalarFunction SumFunction() { return _SumFunction; }
+struct _SumFunction : ScalarFunction {
+  double f(arr& g, arr& H, const arr& x) {
+    if(!!g) { g.resize(x.N); g=1.; }
+    if(!!H) { H.resize(x.N, x.N); H.setZero(); }
+    return sum(x);
+  }
+};
 
 //===========================================================================
 
-double _HoleFunction(arr& g, arr& H, const arr& x) {
-  double f=exp(-sumOfSqr(x));
-  if(!!g) g=2.*f*x;
-  if(!!H) { H.setDiag(2.*f, x.N); H -= 4.*f*(x^x); }
-  f = 1.-f;
-  return f;
-}
-
-ScalarFunction HoleFunction() { return _HoleFunction; }
+struct _HoleFunction : ScalarFunction {
+  double f(arr& g, arr& H, const arr& x) {
+    double f=exp(-sumOfSqr(x));
+    if(!!g) g=2.*f*x;
+    if(!!H) { H.setDiag(2.*f, x.N); H -= 4.*f*(x^x); }
+    f = 1.-f;
+    return f;
+  }
+};
 
 //===========================================================================
 
 struct _ChoiceFunction : ScalarFunction {
   enum Which { none=0, sum, square, hole, rosenbrock, rastrigin } which;
   arr condition;
-  _ChoiceFunction():which(none) {
-    ScalarFunction::operator=(
-      [this](arr& g, arr& H, const arr& x) -> double { return this->fs(g, H, x); }
-    );
-  }
+  _ChoiceFunction():which(none) {}
 
-  double fs(arr& g, arr& H, const arr& x) {
+  double f(arr& g, arr& H, const arr& x) {
     //initialize on first call
     if(which==none) {
       which = (Which) rai::getParameter<double>("fctChoice");
@@ -170,11 +157,11 @@ struct _ChoiceFunction : ScalarFunction {
     arr y = C * x;
     double f;
     switch(which) {
-      case sum: f = _SumFunction(g, H, y); break;
-      case square: f = _SquareFunction(g, H, y); break;
-      case hole: f = _HoleFunction(g, H, y); break;
-      case rosenbrock: f = _RosenbrockFunction(g, H, y); break;
-      case rastrigin: f = _RastriginFunction(g, H, y); break;
+      case sum: f = _SumFunction().f(g, H, y); break;
+      case square: f = _SquareFunction().f(g, H, y); break;
+      case hole: f = _HoleFunction().f(g, H, y); break;
+      case rosenbrock: f = NLP_Rosenbrock(y.N).f(g, H, y); break;
+      case rastrigin: f = NLP_Rastrigin(y.N).f(g, H, y); break;
       default: NIY;
     }
     if(!!g) g = ~C * g;
@@ -186,9 +173,7 @@ struct _ChoiceFunction : ScalarFunction {
   //    return [this](arr& g, arr& H, const arr& x) -> double { return this->fs(g, H, x); };
   //  }
 
-} choice;
-
-ScalarFunction ChoiceFunction() { return (ScalarFunction&)choice; }
+};
 
 //===========================================================================
 
@@ -317,6 +302,8 @@ ChoiceConstraintFunction::ChoiceConstraintFunction() {
   which = (WhichConstraint) rai::getParameter<double>("constraintChoice");
   n = rai::getParameter<uint>("dim", 2);
 
+  f_uc = make_shared<_ChoiceFunction>();
+
   dimension = n;
 
   bounds.resize(2,n);
@@ -360,7 +347,7 @@ void ChoiceConstraintFunction::evaluate(arr& phi, arr& J, const arr& x) {
   CHECK_EQ(x.N, n, "");
   phi.clear();  if(!!J) J.clear();
 
-  phi.append(ChoiceFunction()(J, NoArr, x));
+  phi.append(f_uc->f(J, NoArr, x));
 
   switch(which) {
     case none: HALT("should not be here")
@@ -403,7 +390,7 @@ void ChoiceConstraintFunction::evaluate(arr& phi, arr& J, const arr& x) {
 }
 
 void ChoiceConstraintFunction::getFHessian(arr& H, const arr& x) {
-  ChoiceFunction()(NoArr, H, x);
+  f_uc->f(NoArr, H, x);
 }
 
 std::shared_ptr<NLP> getBenchmarkFromCfg() {
@@ -415,25 +402,25 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
   //-- unconstrained problems
 
   {
-    std::shared_ptr<ScalarUnconstrainedProgram> nlp;
+    std::shared_ptr<ScalarFunction> F;
+    shared_ptr<NLP> nlp;
 
-    if(bs==BS_Rosenbrock) nlp = make_shared<NLP_Rosenbrock>(dim);
-    else if(bs==BS_Rastrigin) nlp = make_shared<NLP_Rastrigin>(dim);
-    else if(forsyth>0.) {
-      shared_ptr<NLP> org;
-      if(bs==BS_Square) org = make_shared<NLP_Squared>(dim, condition, false);
-      else if(bs==BS_RandomSquared) org = make_shared<NLP_Squared>(dim, condition, true);
-      else if(bs==BS_RastriginSOS) org = make_shared<NLP_RastriginSOS>();
-      if(org) {
-        auto lag = make_shared<rai::LagrangianProblem>(org, DEFAULT_OPTIONS); //convert to scalar
-        nlp = make_shared<ScalarUnconstrainedProgram>(lag, dim);
-      }
+    if(bs==BS_Rosenbrock) F = make_shared<NLP_Rosenbrock>(dim);
+    else if(bs==BS_Rastrigin) F = make_shared<NLP_Rastrigin>(dim);
+    else if(bs==BS_Square) nlp = make_shared<NLP_Squared>(dim, condition, false);
+    else if(bs==BS_RandomSquared) nlp = make_shared<NLP_Squared>(dim, condition, true);
+    else if(bs==BS_RastriginSOS) nlp = make_shared<NLP_RastriginSOS>();
+
+    if(F) {
+      nlp = make_shared<Conv_ScalarFunction2NLP>(F); //s rai::LagrangianProblem>(nlp, DEFAULT_OPTIONS); //convert to scalar
+        // F = make_shared<ScalarUnconstrainedProgram>(lag, dim);
+      // }
     }
 
     if(nlp) {
       nlp->bounds = rai::getParameter<arr>("benchmark/bounds", {});
       nlp->bounds.reshape(2,-1);
-      if(forsyth>0.) nlp->forsythAlpha = forsyth;
+      // if(forsyth>0.) F->forsythAlpha = forsyth;
       return nlp;
     }
   }

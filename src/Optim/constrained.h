@@ -29,7 +29,7 @@ struct ConstrainedSolver {
 
   ConstrainedSolver(arr& x, arr& dual, const shared_ptr<NLP>& P, const rai::OptOptions& opt=DEFAULT_OPTIONS);
 
-  uint run();
+  std::shared_ptr<SolverReturn> run();
   bool ministep();
 //  void reinit();
  private:

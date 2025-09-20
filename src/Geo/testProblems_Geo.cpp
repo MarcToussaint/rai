@@ -21,6 +21,8 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
     fitSSBoxProblem(const arr& X):X(X) {}
     virtual void getFeatureTypes(ObjectiveTypeA& tt) { tt.resize(5+X.d0); tt=OT_ineq; tt(0) = OT_f; }
     void evaluate(arr& phi, arr& J, const arr& x) {
+      auto dssbox = DistanceFunction_SSBox();
+
       phi.resize(5+X.d0);
       if(!!J) {  J.resize(5+X.d0, 11); J.setZero(); }
 
@@ -52,7 +54,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
         arr y, Jy;
         y = X[i];
         y.append(x);
-        phi(i+5) = DistanceFunction_SSBox(Jy, NoArr, y);
+        phi(i+5) = dssbox->f(Jy, NoArr, y);
         //      Jy({3,5+1})() *= -1.;
         if(!!J) J[i+5] = Jy({3, -1+1});
       }

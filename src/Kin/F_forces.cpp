@@ -605,7 +605,7 @@ void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F) {
   shared_ptr<ScalarFunction> func = f->shape->functional();
   CHECK(func, "the frame '" <<f->name <<"' needs to have a functional shape");
   arr g;
-  double d = (*func)(g, NoArr, poa);
+  double d = func->f(g, NoArr, poa);
 
   //-- evaluate Jacobian of POA if f1 moves
   arr Jp;
@@ -635,7 +635,7 @@ void F_fex_POASurfaceNormal::phi2(arr& y, arr& J, const FrameL& F) {
   shared_ptr<ScalarFunction> func = f->shape->functional();
   CHECK(func, "");
   arr g, H;
-  (*func)(g, H, poa);
+  func->f(g, H, poa);
 
   //-- evaluate Jacobian of POA if f1 moves
   arr Jp;

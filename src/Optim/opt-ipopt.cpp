@@ -15,15 +15,15 @@
 #include <coin/IpTNLP.hpp>
 #include <coin/IpIpoptApplication.hpp>
 
-struct Conv_MP_Ipopt : Ipopt::TNLP {
+struct Conv_NLP2Ipopt : Ipopt::TNLP {
   shared_ptr<NLP> P;
   arr x, phi_x, J_x;
   intA J_structure;
 
   //-- buffers to avoid recomputing gradients
 
-  Conv_MP_Ipopt(const shared_ptr<NLP>& P, const arr& x_init);
-  virtual ~Conv_MP_Ipopt();
+  Conv_NLP2Ipopt(const shared_ptr<NLP>& P, const arr& x_init);
+  virtual ~Conv_NLP2Ipopt();
 
   void ensure_eval(uint n, const double* _x, bool new_x);
 
@@ -61,7 +61,7 @@ struct Conv_MP_Ipopt : Ipopt::TNLP {
                                  Ipopt::IpoptCalculatedQuantities* ip_cq);
 };
 
-Conv_MP_Ipopt::Conv_MP_Ipopt(const shared_ptr<NLP>& P, const arr& x_init) : P(P), x(x_init) {
+Conv_NLP2Ipopt::Conv_NLP2Ipopt(const shared_ptr<NLP>& P, const arr& x_init) : P(P), x(x_init) {
   if(!P->checkBounds(true)) HALT("IPopt needs strict > bounds");
 
   ensure_eval(x_init.N, x_init.p, true);
@@ -71,9 +71,9 @@ Conv_MP_Ipopt::Conv_MP_Ipopt(const shared_ptr<NLP>& P, const arr& x_init) : P(P)
   J_structure = J_x.sparse().elems;
 }
 
-Conv_MP_Ipopt::~Conv_MP_Ipopt() {}
+Conv_NLP2Ipopt::~Conv_NLP2Ipopt() {}
 
-void Conv_MP_Ipopt::ensure_eval(uint n, const double* _x, bool new_x){
+void Conv_NLP2Ipopt::ensure_eval(uint n, const double* _x, bool new_x){
   if(new_x) {
     CHECK(_x, "");
     CHECK_EQ(x.N, n, "");
@@ -108,7 +108,7 @@ shared_ptr<SolverReturn> IpoptInterface::solve(const arr& x_init) {
   CHECK(ok, "some option could not be set");
 
   //-- create template NLP structure and set x_init
-  Conv_MP_Ipopt* conv = new Conv_MP_Ipopt(P, x_init);
+  Conv_NLP2Ipopt* conv = new Conv_NLP2Ipopt(P, x_init);
   Ipopt::SmartPtr<Ipopt::TNLP> mynlp(conv);
 
   //-- initialize IPopt
@@ -136,7 +136,7 @@ shared_ptr<SolverReturn> IpoptInterface::solve(const arr& x_init) {
   return ret;
 }
 
-bool Conv_MP_Ipopt::get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g, Ipopt::Index& nnz_h_lag, Ipopt::TNLP::IndexStyleEnum& index_style) {
+bool Conv_NLP2Ipopt::get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g, Ipopt::Index& nnz_h_lag, Ipopt::TNLP::IndexStyleEnum& index_style) {
   n = P->dimension;
 
   m=0;
@@ -154,7 +154,7 @@ bool Conv_MP_Ipopt::get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index&
   return true;
 }
 
-bool Conv_MP_Ipopt::get_bounds_info(Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u, Ipopt::Index m, Ipopt::Number* g_l, Ipopt::Number* g_u) {
+bool Conv_NLP2Ipopt::get_bounds_info(Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u, Ipopt::Index m, Ipopt::Number* g_l, Ipopt::Number* g_u) {
   CHECK_EQ(n, (int)P->dimension, "");
 
   for(int i=0; i<n; i++) {
@@ -172,7 +172,7 @@ bool Conv_MP_Ipopt::get_bounds_info(Ipopt::Index n, Ipopt::Number* x_l, Ipopt::N
   return true;
 }
 
-bool Conv_MP_Ipopt::get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Number* _x, bool init_z, Ipopt::Number* z_L, Ipopt::Number* z_U, Ipopt::Index m, bool init_lambda, Ipopt::Number* lambda) {
+bool Conv_NLP2Ipopt::get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Number* _x, bool init_z, Ipopt::Number* z_L, Ipopt::Number* z_U, Ipopt::Index m, bool init_lambda, Ipopt::Number* lambda) {
   CHECK_EQ(init_x, true, "");
   CHECK_EQ(init_z, false, "");
   CHECK_EQ(init_lambda, false, "");
@@ -183,7 +183,7 @@ bool Conv_MP_Ipopt::get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Numbe
   return true;
 }
 
-bool Conv_MP_Ipopt::eval_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number& obj_value) {
+bool Conv_NLP2Ipopt::eval_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number& obj_value) {
 
   double f=0.;
   for(uint i=0; i<phi_x.N; i++) {
@@ -196,7 +196,7 @@ bool Conv_MP_Ipopt::eval_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, 
   return true;
 }
 
-bool Conv_MP_Ipopt::eval_grad_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number* grad_f) {
+bool Conv_NLP2Ipopt::eval_grad_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number* grad_f) {
   ensure_eval(n, _x, new_x);
 
   arr coeff=zeros(phi_x.N);
@@ -216,7 +216,7 @@ bool Conv_MP_Ipopt::eval_grad_f(Ipopt::Index n, const Ipopt::Number* _x, bool ne
   return true;
 }
 
-bool Conv_MP_Ipopt::eval_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Index m, Ipopt::Number* _g) {
+bool Conv_NLP2Ipopt::eval_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Index m, Ipopt::Number* _g) {
   ensure_eval(n, _x, new_x);
 
   arr g;
@@ -230,7 +230,7 @@ bool Conv_MP_Ipopt::eval_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, 
   return true;
 }
 
-bool Conv_MP_Ipopt::eval_jac_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Index m, Ipopt::Index nele_jac, Ipopt::Index* iRow, Ipopt::Index* jCol, Ipopt::Number* values) {
+bool Conv_NLP2Ipopt::eval_jac_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Index m, Ipopt::Index nele_jac, Ipopt::Index* iRow, Ipopt::Index* jCol, Ipopt::Number* values) {
   ensure_eval(n, _x, new_x);
 
   CHECK_EQ(phi_x.N, P->featureTypes.N, ""); //was evaluated
@@ -275,7 +275,7 @@ bool Conv_MP_Ipopt::eval_jac_g(Ipopt::Index n, const Ipopt::Number* _x, bool new
 
 }
 
-bool Conv_MP_Ipopt::eval_h(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number obj_factor, Ipopt::Index m, const Ipopt::Number* lambda, bool new_lambda, Ipopt::Index nele_hess, Ipopt::Index* iRow, Ipopt::Index* jCol, Ipopt::Number* values) {
+bool Conv_NLP2Ipopt::eval_h(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number obj_factor, Ipopt::Index m, const Ipopt::Number* lambda, bool new_lambda, Ipopt::Index nele_hess, Ipopt::Index* iRow, Ipopt::Index* jCol, Ipopt::Number* values) {
   CHECK(!new_x, "");
 
   CHECK_EQ(phi_x.N, P->featureTypes.N, ""); //was evaluated
@@ -323,7 +323,7 @@ bool Conv_MP_Ipopt::eval_h(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, 
   return true;
 }
 
-void Conv_MP_Ipopt::finalize_solution(Ipopt::SolverReturn status, Ipopt::Index n, const Ipopt::Number* _x, const Ipopt::Number* z_L, const Ipopt::Number* z_U, Ipopt::Index m, const Ipopt::Number* g, const Ipopt::Number* lambda, Ipopt::Number obj_value, const Ipopt::IpoptData* ip_data, Ipopt::IpoptCalculatedQuantities* ip_cq) {
+void Conv_NLP2Ipopt::finalize_solution(Ipopt::SolverReturn status, Ipopt::Index n, const Ipopt::Number* _x, const Ipopt::Number* z_L, const Ipopt::Number* z_U, Ipopt::Index m, const Ipopt::Number* g, const Ipopt::Number* lambda, Ipopt::Number obj_value, const Ipopt::IpoptData* ip_data, Ipopt::IpoptCalculatedQuantities* ip_cq) {
   x.setCarray(_x, n);
 }
 

@@ -35,7 +35,7 @@ void dropRandomScene(){
   for(uint t=0; t<300; t++) {
     rai::wait(.01);
     sim.step(.01);
-    sim.pullBodyStates(C);
+    sim.pullFreeStates(C);
     C.view(false, STRING("t="<<t));
   }
 
@@ -73,7 +73,7 @@ void simGfile(){
     Metronome tic(tau);
     for(uint t=0;t<5./tau;t++){
       bull_rai.step(tau);
-      bull_rai.pullBodyStates(C);
+      bull_rai.pullFreeStates(C);
       cout <<C.getJointState() <<endl;
 
       if(tau>glTau || !(t%int(glTau/tau))){

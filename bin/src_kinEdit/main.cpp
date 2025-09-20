@@ -8,6 +8,7 @@ const char *USAGE =
     "\nUsage:  kinEdit <g-filename>"
     "\n"
     "\n  -file <g-file>"
+    "\n  -process         enable all of the below processing steps (are skipped otherwise)"
     "\n  -prune           optimize the tree structure and prune useless frames"
     "\n  -makeConvexHulls   make all meshes convex"
     "\n  -collisions      compute collisions in the scene and report proxies"
@@ -25,7 +26,7 @@ int main(int argc,char **argv){
   if(rai::argc>=2 && rai::argv[1][0]!='-') file=rai::argv[1];
   LOG(0) <<"== file: '" <<file <<"'";
 
-  if(file=="none") return 0;
+  if(file=="none") return 1;
 
   if(rai::checkParameter<bool>("process")){
     //-- load configuration
@@ -41,7 +42,7 @@ int main(int argc,char **argv){
       C.report();
     } catch(std::runtime_error& err) {
       cout <<"line " <<rai::lineCount <<": " <<err.what() <<" -- please check the file and press ENTER" <<endl;
-      return 0;
+      return 1;
     }
 
     C.checkConsistency();

@@ -2,6 +2,7 @@
 
 #include <KOMO/manipTools.h>
 #include <LGP/LGP_SkeletonTool.h>
+#include <LGP/LGP_TAMP_Abstraction.h>
 
 //===========================================================================
 
@@ -14,10 +15,9 @@ int main(int argc,char** argv){
 
   rai::Configuration C;
   C.addFile(problem+".g");
-  auto trans = rai::default_Actions2KOMO_Translator();
-  auto tamp = rai::default_TAMP_Provider(C, problem+".lgp");
+  auto tamp = rai::default_LGP_TAMP_Abstraction(C, problem+".lgp");
 
-  rai::LGP_Tool lgp(tamp->getConfig(), *tamp, *trans);
+  rai::LGP_Tool lgp(tamp->getConfig(), *tamp);
 
   bool fixWaypoints = rai::getParameter<bool>("fixWaypoints", true);
 

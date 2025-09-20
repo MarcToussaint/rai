@@ -14,9 +14,10 @@ namespace rai {
 
 enum OptMethod { M_none=0,
 		 M_gradientDescent, M_rprop, M_LBFGS, M_newton,
-		 M_augmentedLag, M_squaredPenalty, M_logBarrier, M_singleSquaredPenalty,
+		 M_augmentedLag, M_logBarrier, M_slackGN_logBarrier, M_squaredPenalty, M_singleSquaredPenalty,
 		 M_slackGN,
-		 M_NLopt, M_Ipopt, M_Ceres };
+		 M_NLopt, M_Ipopt, M_slackGN_Ipopt, M_Ceres,
+		 M_LSZO};
 
 
 struct OptOptions {

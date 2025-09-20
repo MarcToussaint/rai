@@ -22,14 +22,14 @@ void updateBoundActive(intA& boundActive, const arr& x, const arr& bound_lo, con
 /** @brief Minimizes \f$f(x) = A(x)^T x A^T(x) - 2 a(x)^T x + c(x)\f$. The optional _user arguments specify,
  * if f has already been evaluated at x (another initial evaluation is then omitted
  * to increase performance) and the evaluation of the returned x is also returned */
-int optNewton(arr& x, const ScalarFunction& f, rai::OptOptions o) {
+int optNewton(arr& x, ScalarFunction& f, rai::OptOptions o) {
   OptNewton opt(x, f, o);
   return opt.run();
 }
 
 //===========================================================================
 
-OptNewton::OptNewton(arr& _x, const ScalarFunction& _f, const rai::OptOptions& _opt):
+OptNewton::OptNewton(arr& _x, ScalarFunction& _f, const rai::OptOptions& _opt):
   f(_f), x(_x), opt(_opt) {
   alpha = opt.stepInit;
   beta = opt.damping;
@@ -45,7 +45,7 @@ void OptNewton::reinit(const arr& _x) {
 #ifdef NewtonLazyLineSearchMode
   fx = f(NoArr, NoArr, x);  evals++;
 #else
-  fx = f(gx, Hx, x);  evals++;
+  fx = f.f(gx, Hx, x);  evals++;
 #endif
   timeEval += rai::cpuTime();
 
@@ -193,7 +193,7 @@ OptNewton::StopCriterion OptNewton::step() {
 #ifdef NewtonLazyLineSearchMode
     fy = f(NoArr, NoArr, y);  evals++;
 #else
-    fy = f(gy, Hy, y);  evals++;
+    fy = f.f(gy, Hy, y);  evals++;
 #endif
     timeEval += rai::cpuTime();
     if(opt.verbose>1) cout <<"  evals:" <<std::setw(4) <<evals <<"  f(y):" <<std::setw(11) <<fy <<std::flush;

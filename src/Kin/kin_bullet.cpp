@@ -37,26 +37,26 @@ void btTrans2raiTrans(rai::Transformation& f, const btTransform& pose) {
   f.rot.set(q.w(), q.x(), q.y(), q.z());
 }
 
-btTransform conv_trans_btTrans(const rai::Transformation& X) {
+btTransform conv_trans2btTrans(const rai::Transformation& X) {
   btTransform pose(btQuaternion(X.rot.x, X.rot.y, X.rot.z, X.rot.w),
                    btVector3(X.pos.x, X.pos.y, X.pos.z));
   return pose;
 }
 
-arr conv_btVec3_arr(const btVector3& v) {
+arr conv_btVec2arr(const btVector3& v) {
   return arr{v.x(), v.y(), v.z()};
 }
 
-btVector3 conv_arr_btVec3(const arr& v) {
+btVector3 conv_arr2btVec(const arr& v) {
   CHECK_EQ(v.N, 3, "");
   return btVector3(v.elem(0), v.elem(1), v.elem(2));
 }
 
-btVector3 conv_vec_btVec3(const rai::Vector& v) {
+btVector3 conv_vec2btVec(const rai::Vector& v) {
   return btVector3(v.x, v.y, v.z);
 }
 
-btQuaternion conv_rot_btQuat(const rai::Quaternion& rot) {
+btQuaternion conv_rot2btQuat(const rai::Quaternion& rot) {
   return btQuaternion(rot.x, rot.y, rot.z, rot.w);
 }
 
@@ -181,7 +181,7 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f) {
   btCollisionShape* colShape = createLinkShape(shapes, type, f);
 
   //-- create a bullet body
-  btTransform pose = conv_trans_btTrans(f->ensure_X());
+  btTransform pose = conv_trans2btTrans(f->ensure_X());
   btScalar mass(1.0f);
   btVector3 localInertia(0, 0, 0);
   if(type==rai::BT_dynamic) {
@@ -305,7 +305,7 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
     if(!i) { //base!!
       bool fixedBase = actorTypes(linkMass->ID)!=rai::BT_dynamic;
       multibody = new btMultiBody(links.N-1, mass, localInertia, fixedBase, false);
-      multibody->setBaseWorldTransform(conv_trans_btTrans(linkMass->ensure_X()));
+      multibody->setBaseWorldTransform(conv_trans2btTrans(linkMass->ensure_X()));
     } else { //link
       //get parent and coms
       //rai::Frame* parJoint = links(parents(i));

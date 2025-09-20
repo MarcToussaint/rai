@@ -1111,7 +1111,7 @@ String FileToken::fullPath() const {
 // random number generator
 //
 
-uint rndInt(uint up){ return uint(rnd.uni_int(0, up)); }
+uint rndInt(uint up){ return uint(rnd.uni_int(0, up-1)); }
 
 
 //===========================================================================

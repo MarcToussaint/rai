@@ -198,9 +198,9 @@ PairCollision::PairCollision(const arr& _mesh1, const arr& _mesh2, const rai::Tr
   //in current state, the rad1, rad2, have not been used at all!!
 }
 
-PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const arr& seed) {
+PairCollision::PairCollision(ScalarFunction& func1, ScalarFunction& func2, const arr& seed) {
 
-  ScalarFunction f = [&func1, &func2](arr& g, arr& H, const arr& x) {
+  Conv_cfunc2ScalarFunction f([&func1, &func2](arr& g, arr& H, const arr& x) {
     arr g1, g2, H1, H2;
 #if 0
     double d1 = func1(g1, H1, x);
@@ -215,14 +215,14 @@ PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const a
     g += (2.*d2)*g2;
     return d1*d1+d2*d2;
 #else
-    double d1 = func1(g1, H1, x);
-    double d2 = func2(g2, H2, x);
+    double d1 = func1.f(g1, H1, x);
+    double d2 = func2.f(g2, H2, x);
     double dd = d1 - d2;
     H = H1 + H2 + (2.*dd)*(H1-H2) + 2.*((g1-g2)^(g1-g2));
     g = g1 + g2 + (2.*dd)*(g1-g2);
     return d1+d2+dd*dd;
 #endif
-  };
+  });
 
   arr x = seed;
   CHECK_EQ(x.N, 3, "");
@@ -234,8 +234,8 @@ PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const a
   newton.run();
 
   arr g1, g2;
-  double d1 = func1(g1, NoArr, x);
-  double d2 = func2(g2, NoArr, x);
+  double d1 = func1.f(g1, NoArr, x);
+  double d2 = func2.f(g2, NoArr, x);
 
 //  cout <<"d1^2+d2^2:" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" (g1+g2):" <<sumOfSqr(g1+g2) <<endl;
 

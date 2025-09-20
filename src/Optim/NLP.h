@@ -171,7 +171,7 @@ struct SolverReturn {
   uint evals=0;
   double time=0.;
   bool feasible=false;
-  double sos=-1., f=-1., ineq=-1., eq=-1.;
+  double sos=0., f=0., ineq=0., eq=0.;
   bool done=false;
   void write(ostream& os) const;
 };
@@ -180,11 +180,11 @@ stdOutPipe(SolverReturn)
 //===========================================================================
 // TRIVIAL only header
 
-struct Conv_NLP_TrivialFactoreded : NLP_Factored {
+struct Conv_NLP2TrivialFactoredNLP : NLP_Factored {
   shared_ptr<NLP> P;
   arr x_buffer;
 
-  Conv_NLP_TrivialFactoreded(const shared_ptr<NLP>& P) : P(P) {
+  Conv_NLP2TrivialFactoredNLP(const shared_ptr<NLP>& P) : P(P) {
     copySignature(*P);
     variableDimensions = { dimension };
     featureDimensions = { featureTypes.N };
@@ -199,7 +199,7 @@ struct Conv_NLP_TrivialFactoreded : NLP_Factored {
 
 //===========================================================================
 
-struct Conv_FactoredNLP_BandedNLP : NLP {
+struct Conv_FactoredNLP2BandedNLP : NLP {
   shared_ptr<NLP_Factored> P;
   uint maxBandSize;
   bool sparseNotBanded;
@@ -207,7 +207,7 @@ struct Conv_FactoredNLP_BandedNLP : NLP {
   //buffers
   arrA J_i;
 
-  Conv_FactoredNLP_BandedNLP(const shared_ptr<NLP_Factored>& P, uint _maxBandSize, bool _sparseNotBanded=false);
+  Conv_FactoredNLP2BandedNLP(const shared_ptr<NLP_Factored>& P, uint _maxBandSize, bool _sparseNotBanded=false);
 
   // trivial
   virtual arr  getInitializationSample() { return P->getInitializationSample(); }

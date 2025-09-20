@@ -109,9 +109,16 @@ ConstrainedSolver::ConstrainedSolver(arr& _x, arr& _dual, const shared_ptr<NLP>&
   }
 }
 
-uint ConstrainedSolver::run() {
+std::shared_ptr<SolverReturn> ConstrainedSolver::run() {
   while(!ministep());
-  return newton.evals;
+  std::shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
+  arr err = L.P->summarizeErrors(L.phi_x);
+  ret->ineq = err(OT_ineq);
+  ret->eq = err(OT_eq);
+  ret->sos = err(OT_sos);
+  ret->f = err(OT_f);
+  ret->feasible = (ret->ineq<.1) && (ret->eq<.1);
+  return ret;
 }
 
 bool ConstrainedSolver::ministep() {
@@ -184,7 +191,7 @@ bool ConstrainedSolver::ministep() {
     return true;
   }
 
-  //-- CONTINUE WITH NEXT NEWTON LOOP
+  //-- CONTINUE WITH NEXT ITERATION
   outer_iters++;
 
   //upate Lagrange parameters

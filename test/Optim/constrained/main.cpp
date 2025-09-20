@@ -6,7 +6,7 @@
 #include <Optim/utils.h>
 
 //lecture.cpp:
-void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start=NoArr, uint iters=20);
+// void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start=NoArr, uint iters=20);
 #include "lecture.cpp"
 
 //==============================================================================
@@ -42,7 +42,7 @@ void testPhaseOne(const shared_ptr<NLP>& f, uint dim_x){
   //no need to really minimize
 
   x=x.sub({0,-2+1});
-  lectureDemo(f, x);
+  lectureDemo(f, x, 20);
 }
 
 //==============================================================================
@@ -99,7 +99,7 @@ int main(int argc,char** argv){
 //  RandomLPFunction F;
 //  SimpleConstraintFunction F;
   arr x_init = rai::getParameter<arr>("x_init", {.3,.2});
-  lectureDemo(F.ptr(), x_init);
+  lectureDemo(F.ptr(), x_init, 20);
 //  testConstraint2(F);
 
 //  testCoveringSphere();

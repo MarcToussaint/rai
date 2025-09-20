@@ -25,7 +25,7 @@
 //===========================================================================
 
 arr CeresInterface::solve() {
-  Conv_NLP_CeresProblem cer(P);
+  Conv_NLP2CeresProblem cer(P);
   cer.x_full = P->getInitializationSample();
 
   ceres::Solver::Options options;
@@ -46,8 +46,8 @@ arr CeresInterface::solve() {
 
 //===========================================================================
 
-class Conv_Feature_CostFunction : public ceres::CostFunction {
-  Conv_NLP_CeresProblem& P;
+class Conv_Feature2CostFunction : public ceres::CostFunction {
+  Conv_NLP2CeresProblem& P;
   uint feature_id;
   uint featureDim;
   uintA varIds;
@@ -55,7 +55,7 @@ class Conv_Feature_CostFunction : public ceres::CostFunction {
   uint varTotalDim;
 
  public:
-  Conv_Feature_CostFunction(Conv_NLP_CeresProblem& _P,
+  Conv_Feature2CostFunction(Conv_NLP2CeresProblem& _P,
                             uint _feature_id,
                             const uintA& variableDimensions,
                             const uintA& featureDimensions,
@@ -66,7 +66,7 @@ class Conv_Feature_CostFunction : public ceres::CostFunction {
                         double** jacobians) const;
 };
 
-Conv_Feature_CostFunction::Conv_Feature_CostFunction(Conv_NLP_CeresProblem& _P, uint _feature_id, const uintA& variableDimensions, const uintA& featureDimensions, const uintAA& featureVariables)
+Conv_Feature2CostFunction::Conv_Feature2CostFunction(Conv_NLP2CeresProblem& _P, uint _feature_id, const uintA& variableDimensions, const uintA& featureDimensions, const uintAA& featureVariables)
   : P(_P), feature_id(_feature_id) {
   featureDim = featureDimensions(feature_id);
   varIds = featureVariables(feature_id);
@@ -83,7 +83,7 @@ Conv_Feature_CostFunction::Conv_Feature_CostFunction(Conv_NLP_CeresProblem& _P, 
   set_num_residuals(featureDim);
 }
 
-bool Conv_Feature_CostFunction::Evaluate(const double* const* parameters, double* residuals, double** jacobians) const {
+bool Conv_Feature2CostFunction::Evaluate(const double* const* parameters, double* residuals, double** jacobians) const {
   //set variables individually
   {
     arr x;
@@ -107,7 +107,7 @@ bool Conv_Feature_CostFunction::Evaluate(const double* const* parameters, double
   return true;
 }
 
-Conv_NLP_CeresProblem::Conv_NLP_CeresProblem(const shared_ptr<NLP_Factored>& _P) : P(_P) {
+Conv_NLP2CeresProblem::Conv_NLP2CeresProblem(const shared_ptr<NLP_Factored>& _P) : P(_P) {
   uintA variableDimIntegral, featureDimIntegral;
   arr bounds_lo=bounds[0], bounds_up=bounds[1];
   uint n = P->dimension;
@@ -165,7 +165,7 @@ Conv_NLP_CeresProblem::Conv_NLP_CeresProblem(const shared_ptr<NLP_Factored>& _P)
         if(var>=0) parameter_blocks.push_back(x(var).p);
 //        parameter_blocks(k) = x().p;
       }
-      auto fct = new Conv_Feature_CostFunction(*this, i, P->variableDimensions, P->featureDimensions, P->featureVariables);
+      auto fct = new Conv_Feature2CostFunction(*this, i, P->variableDimensions, P->featureDimensions, P->featureVariables);
       ceresProblem->AddResidualBlock(fct, nullptr, parameter_blocks);
     }
   }
@@ -177,7 +177,7 @@ arr CeresInterface::solve() {
   NICO
 }
 
-Conv_NLP_CeresProblem::Conv_NLP_CeresProblem(const shared_ptr<NLP_Factored>& _P) : P(_P) {
+Conv_NLP2Ceres::Conv_NLP2Ceres(const shared_ptr<NLP_Factored>& _P) : P(_P) {
   NICO
 }
 

@@ -18,7 +18,7 @@
 
 struct OptGrad {
   arr& x;
-  ScalarFunction f;
+  ScalarFunction& f;
   rai::OptOptions o;
 
   enum StopCriterion { stopNone=0, stopCrit1, stopCrit2, stopCritLineSteps, stopCritEvals, stopStepFailed };
@@ -29,14 +29,14 @@ struct OptGrad {
   StopCriterion stopCriterion;
   ofstream fil;
 
-  OptGrad(arr& x, const ScalarFunction& f, rai::OptOptions o=DEFAULT_OPTIONS);
+  OptGrad(arr& x, ScalarFunction& f, rai::OptOptions o=DEFAULT_OPTIONS);
   ~OptGrad();
   StopCriterion step();
   StopCriterion run(uint maxIt = 1000);
   void reinit(const arr& _x=NoArr);
 };
 
-inline int optGrad(arr& x, const ScalarFunction& f, rai::OptOptions opt=DEFAULT_OPTIONS) {
+inline int optGrad(arr& x, ScalarFunction& f, rai::OptOptions opt=DEFAULT_OPTIONS) {
   return OptGrad(x, f, opt).run();
 }
 
@@ -48,14 +48,16 @@ inline int optGrad(arr& x, const ScalarFunction& f, rai::OptOptions opt=DEFAULT_
 /** Rprop, a fast gradient-based minimization */
 struct Rprop {
   unique_ptr<struct sRprop> self;
+  double fx;
+  uint evals;
   Rprop();
   ~Rprop();
   void init(double initialStepSize=1., double minStepSize=1e-6, double stepMaxSize=50.);
-  bool step(arr& x, const ScalarFunction& f);
-  uint loop(arr& x, const ScalarFunction& f, double stoppingTolerance=1e-2, double initialStepSize=1., uint maxIterations=1000, int verbose=0);
+  bool step(arr& x, ScalarFunction& f);
+  uint loop(arr& x, ScalarFunction& f, double stoppingTolerance=1e-2, double initialStepSize=1., uint maxIterations=1000, int verbose=0);
 };
 
-inline uint optRprop(arr& x, const ScalarFunction& f, rai::OptOptions opt=DEFAULT_OPTIONS) {
+inline uint optRprop(arr& x, ScalarFunction& f, rai::OptOptions opt=DEFAULT_OPTIONS) {
   return Rprop().loop(x, f, opt.stopTolerance, opt.stepInit, opt.stopEvals, opt.verbose);
 }
 

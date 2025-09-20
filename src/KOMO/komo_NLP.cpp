@@ -243,7 +243,7 @@ void KOMO_SubNLP::report(std::ostream& os, int verbose, const char* msg) {
 
 //===========================================================================
 
-Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo, const rai::Array<DofL>& varDofs) : komo(_komo) {
+Conv_KOMO2FactoredNLP::Conv_KOMO2FactoredNLP(KOMO& _komo, const rai::Array<DofL>& varDofs) : komo(_komo) {
   komo.pathConfig.jacMode = rai::Configuration::JM_sparse;
   komo.run_prepare(0.);
 
@@ -319,7 +319,7 @@ Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo, const rai::Array<DofL>
   subSelect({}, {});
 }
 
-void Conv_KOMO_FactoredNLP::subSelect(const uintA& activeVariables, const uintA& conditionalVariables) {
+void Conv_KOMO2FactoredNLP::subSelect(const uintA& activeVariables, const uintA& conditionalVariables) {
   uintA subVarsInv(__variableIndex.N);
   subVarsInv = UINT_MAX;
   DofL activeDofs;
@@ -382,7 +382,7 @@ void Conv_KOMO_FactoredNLP::subSelect(const uintA& activeVariables, const uintA&
   }
 }
 
-arr Conv_KOMO_FactoredNLP::getInitializationSample() {
+arr Conv_KOMO2FactoredNLP::getInitializationSample() {
 #if 1
   komo.run_prepare(0.);
   return komo.x; //pathConfig.getJointState();
@@ -417,7 +417,7 @@ arr Conv_KOMO_FactoredNLP::getInitializationSample() {
 #endif
 }
 
-void Conv_KOMO_FactoredNLP::randomizeSingleVariable(uint var_id) {
+void Conv_KOMO2FactoredNLP::randomizeSingleVariable(uint var_id) {
   for(Dof* d:__variableIndex(var_id).dofs) {
     if(d->limits.N && d->dim!=1) { //HACK!!
 #if 1
@@ -441,7 +441,7 @@ void Conv_KOMO_FactoredNLP::randomizeSingleVariable(uint var_id) {
   }
 }
 
-arr Conv_KOMO_FactoredNLP::getSingleVariableInitSample(uint var_id) {
+arr Conv_KOMO2FactoredNLP::getSingleVariableInitSample(uint var_id) {
   arr z;
   for(Dof* d:__variableIndex(var_id).dofs) {
     //if joint, find previous dof:
@@ -464,23 +464,23 @@ arr Conv_KOMO_FactoredNLP::getSingleVariableInitSample(uint var_id) {
   return z;
 }
 
-void Conv_KOMO_FactoredNLP::setSingleVariable(uint var_id, const arr& x) {
+void Conv_KOMO2FactoredNLP::setSingleVariable(uint var_id, const arr& x) {
   CHECK_EQ(vars(var_id).dim, x.N, "");
   komo.pathConfig.setDofState(x, vars(var_id).dofs, true);
 }
 
-void Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) {
+void Conv_KOMO2FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) {
   std::shared_ptr<GroundedObjective>& ob = feats(feat_id).ob;
   phi = ob->feat->eval(ob->frames);
   J = phi.J();
 }
 
-void Conv_KOMO_FactoredNLP::evaluate(arr& phi, arr& J, const arr& x) {
+void Conv_KOMO2FactoredNLP::evaluate(arr& phi, arr& J, const arr& x) {
   NLP_Factored::evaluate(phi, J, x);
   reportAfterPhiComputation(komo);
 }
 
-void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose, const char* msg) {
+void Conv_KOMO2FactoredNLP::report(std::ostream& os, int verbose, const char* msg) {
   if(verbose<=2) { reportDetails(os, verbose, msg); return; }
 
   komo.pathConfig.ensure_q();
@@ -499,7 +499,7 @@ void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose, const char* ms
   if(msg) os <<" *** " <<msg <<" ***"<<endl;
 }
 
-void Conv_KOMO_FactoredNLP::reportDetails(std::ostream& os, int verbose, const char* msg) {
+void Conv_KOMO2FactoredNLP::reportDetails(std::ostream& os, int verbose, const char* msg) {
   os <<"=== NLP_Factored signature:"
      <<"\n  variableDimensions: " <<variableDimensions
      <<"\n  featureDimensions: " <<featureDimensions

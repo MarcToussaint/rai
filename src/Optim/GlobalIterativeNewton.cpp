@@ -10,7 +10,7 @@
 
 bool useNewton=true;
 
-GlobalIterativeNewton::GlobalIterativeNewton(const ScalarFunction& f, const arr& bounds, rai::OptOptions& opt)
+GlobalIterativeNewton::GlobalIterativeNewton(ScalarFunction& f, const arr& bounds, rai::OptOptions& opt)
   : x(.5*(bounds[0]+bounds[1])),
     newton(x, f, opt),
     grad(x, f, opt),

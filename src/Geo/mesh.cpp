@@ -2037,24 +2037,26 @@ double GJK_distance(Mesh& mesh1, Mesh& mesh2,
 
 #ifdef RAI_Lewiner
 
-void Mesh::setImplicitSurface(const ScalarFunction& f, double lo, double hi, uint res) {
-  setImplicitSurface(f, lo, hi, lo, hi, lo, hi, res);
+void Mesh::setImplicitSurface(std::function<double(const arr& x)> f, double lo, double up, uint res) {
+  setImplicitSurface(f, arr{lo, lo, lo, up, up, up}.reshape(2,3), res);
 }
 
-void Mesh::setImplicitSurface(const ScalarFunction& f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res) {
+void Mesh::setImplicitSurface(std::function<double(const arr& x)> f, const arr& bounds, uint res){
   MarchingCubes mc(res, res, res);
   mc.init_all() ;
 
   //compute data
   uint k=0, j=0, i=0;
   float x, y, z;
+  float xLo=bounds.elem(0), yLo=bounds.elem(1), zLo=bounds.elem(2);
+  float xUp=bounds.elem(3), yUp=bounds.elem(4), zUp=bounds.elem(5);
   for(k=0; k<res; k++) {
-    z = zLo+k*(zHi-zLo)/res;
+    z = zLo+k*(zUp-zLo)/res;
     for(j=0; j<res; j++) {
-      y = yLo+j*(yHi-yLo)/res;
+      y = yLo+j*(yUp-yLo)/res;
       for(i=0; i<res; i++) {
-        x = xLo+i*(xHi-xLo)/res;
-        mc.set_data(f(NoArr, NoArr, arr{(double)x, (double)y, (double)z}), i, j, k) ;
+        x = xLo+i*(xUp-xLo)/res;
+        mc.set_data(f(arr{(double)x, (double)y, (double)z}), i, j, k) ;
       }
     }
   }
@@ -2067,9 +2069,9 @@ void Mesh::setImplicitSurface(const ScalarFunction& f, double xLo, double xHi, d
   V.resize(mc.nverts(), 3);
   T.resize(mc.ntrigs(), 3);
   for(i=0; i<V.d0; i++) {
-    V(i, 0)=xLo+mc.vert(i)->x*(xHi-xLo)/res;
-    V(i, 1)=yLo+mc.vert(i)->y*(yHi-yLo)/res;
-    V(i, 2)=zLo+mc.vert(i)->z*(zHi-zLo)/res;
+    V(i, 0)=xLo+mc.vert(i)->x*(xUp-xLo)/res;
+    V(i, 1)=yLo+mc.vert(i)->y*(yUp-yLo)/res;
+    V(i, 2)=zLo+mc.vert(i)->z*(zUp-zLo)/res;
   }
   for(i=0; i<T.d0; i++) {
     T(i, 0)=mc.trig(i)->v1;
@@ -2078,13 +2080,13 @@ void Mesh::setImplicitSurface(const ScalarFunction& f, double xLo, double xHi, d
   }
 }
 
-void Mesh::setImplicitSurface(const floatA& gridValues, const arr& lo, const arr& hi) {
+void Mesh::setImplicitSurface(const floatA& gridValues, const arr& lo, const arr& up) {
   arr D;
   copy(D, gridValues);
-  setImplicitSurface(D, lo, hi);
+  setImplicitSurface(D, lo, up);
 }
 
-void Mesh::setImplicitSurface(const arr& gridValues, const arr& lo, const arr& hi) {
+void Mesh::setImplicitSurface(const arr& gridValues, const arr& lo, const arr& up) {
   CHECK_EQ(gridValues.nd, 3, "");
 
   MarchingCubes mc(gridValues.d0, gridValues.d1, gridValues.d2);
@@ -2106,9 +2108,9 @@ void Mesh::setImplicitSurface(const arr& gridValues, const arr& lo, const arr& h
   V.resize(mc.nverts(), 3);
   T.resize(mc.ntrigs(), 3);
   for(i=0; i<V.d0; i++) {
-    V(i, 0)=lo(0)+mc.vert(i)->x*(hi(0)-lo(0))/(gridValues.d0-1);
-    V(i, 1)=lo(1)+mc.vert(i)->y*(hi(1)-lo(1))/(gridValues.d1-1);
-    V(i, 2)=lo(2)+mc.vert(i)->z*(hi(2)-lo(2))/(gridValues.d2-1);
+    V(i, 0)=lo(0)+mc.vert(i)->x*(up(0)-lo(0))/(gridValues.d0-1);
+    V(i, 1)=lo(1)+mc.vert(i)->y*(up(1)-lo(1))/(gridValues.d1-1);
+    V(i, 2)=lo(2)+mc.vert(i)->z*(up(2)-lo(2))/(gridValues.d2-1);
   }
   for(i=0; i<T.d0; i++) {
     T(i, 0)=mc.trig(i)->v1;
@@ -2122,20 +2124,21 @@ void Mesh::setImplicitSurface(const ScalarFunction& f, double lo, double hi, uin
 void Mesh::setImplicitSurface(const floatA& gridValues, const arr& lo, const arr& hi) { NICO }
 #endif
 
-void Mesh::setImplicitSurfaceBySphereProjection(const ScalarFunction& f, double rad, uint fineness) {
+void Mesh::setImplicitSurfaceBySphereProjection(ScalarFunction& _f, double rad, uint fineness) {
   setSphere(fineness);
   scale(rad);
 
-  ScalarFunction distSqr = [&f](arr& g, arr& H, const arr& x) {
-    double d = f(g, H, x);
+  Conv_cfunc2ScalarFunction distSqr( [&_f](arr& g, arr& H, const arr& x) {
+    double d = _f.f(g, H, x);
     H *= 2.*d;
     H += 2.*(g^g);
     g *= 2.*d;
     return d*d;
-  };
+  });
 
   for(uint i=0; i<V.d0; i++) {
     arr x = V[i];
+
     OptNewton newton(x, distSqr, OptOptions()
                      .set_verbose(0)
                      .set_stepMax(.5*rad)

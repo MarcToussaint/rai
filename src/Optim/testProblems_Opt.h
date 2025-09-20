@@ -11,17 +11,11 @@
 #include "NLP.h"
 #include "../Core/util.h"
 
-extern ScalarFunction RosenbrockFunction();
-extern ScalarFunction RastriginFunction();
-extern ScalarFunction SquareFunction();
-extern ScalarFunction SumFunction();
-extern ScalarFunction HoleFunction();
-extern ScalarFunction ChoiceFunction();
-
 std::shared_ptr<NLP> getBenchmarkFromCfg();
 
 //===========================================================================
 
+#if 0
 struct ScalarUnconstrainedProgram : NLP {
   double forsythAlpha = -1.;
   shared_ptr<ScalarFunction> S;
@@ -47,9 +41,10 @@ struct ScalarUnconstrainedProgram : NLP {
   }
   virtual double f(arr& g, arr& H, const arr& x) {
     CHECK(S, "no scalar function given in the constructor");
-    return (*S)(g, H, x);
+    return S->f(g, H, x);
   }
 };
+#endif
 
 //===========================================================================
 
@@ -132,6 +127,20 @@ struct NLP_RastriginSOS : NLP {
 
 //===========================================================================
 
+struct NLP_Rastrigin : ScalarFunction {
+  NLP_Rastrigin(uint _dim) { dim=_dim; }
+  virtual double f(arr& g, arr& H, const arr& x);
+};
+
+//===========================================================================
+
+struct NLP_Rosenbrock : ScalarFunction {
+  NLP_Rosenbrock(uint _dim) { dim=_dim; }
+  virtual double f(arr& g, arr& H, const arr& x);
+};
+
+//===========================================================================
+
 /// $f(x) = x^T C x$ where C has eigen values ranging from 1 to 'condition'
 struct NLP_Squared : NLP {
   arr C; /// $A = C^T C $
@@ -150,6 +159,7 @@ struct NLP_Wedge : NLP {
     dimension=2;
     featureTypes = { OT_f };
     featureTypes.append(rai::consts(OT_ineq, 2));
+    bounds = arr{-2.,-2.,2.,2.}.reshape(2,2);
   }
 
   virtual void evaluate(arr& phi, arr& J, const arr& x) {
@@ -168,6 +178,7 @@ struct NLP_HalfCircle : NLP {
     dimension=2;
     featureTypes = { OT_f };
     featureTypes.append(rai::consts(OT_ineq, 2));
+    bounds = arr{-2.,-2.,2.,2.}.reshape(2,2);
   }
 
   virtual void evaluate(arr& phi, arr& J, const arr& x) {
@@ -205,6 +216,7 @@ struct ChoiceConstraintFunction : NLP {
   enum WhichConstraint { none=0, wedge2D=1, halfcircle2D, randomLinear, circleLine2D, boundConstrained, boundConstrainedIneq } which;
   uint n;
   arr randomG;
+  shared_ptr<ScalarFunction> f_uc;
   ChoiceConstraintFunction();
 
   void evaluate(arr& phi, arr& J, const arr& x);

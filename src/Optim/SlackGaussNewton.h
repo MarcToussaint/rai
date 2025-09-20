@@ -16,16 +16,6 @@
 
 namespace rai {
 
-struct SlackGaussNewton_Options {
-  RAI_PARAM("sam/", double, tolerance, .01)
-  RAI_PARAM("sam/", double, margin, .0)
-  RAI_PARAM("sam/", int, verbose, 2)
-
-  RAI_PARAM("sam/", int, maxEvals, 50)
-  RAI_PARAM("sam/", double, stepMax, .1)
-  RAI_PARAM("sam/", double, damping, 1e-2)
-};
-
 struct SlackGaussNewton {
   OptOptions opt;
   std::shared_ptr<NLP> nlp;

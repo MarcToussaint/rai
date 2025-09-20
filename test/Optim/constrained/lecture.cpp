@@ -45,7 +45,7 @@ void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start, uint iters){
 //    checkGradient(lag, x, 1e-4);
 //    checkHessian (lag, x, 1e-4); //will throw errors: no Hessians for g!
 
-    lag->lagrangian(NoArr, NoArr, x);
+    lag->f(NoArr, NoArr, x);
 
 //    optRprop(x, UCP, options);
 //    optGrad(x, lag, options);

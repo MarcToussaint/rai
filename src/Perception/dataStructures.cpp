@@ -41,7 +41,7 @@ void Plane::glDraw() {
 }
 
 void PclCloudView::glDraw() {
-  NIY; //conv_PclCloud_ArrCloud(pts,cols,cloud);
+  NIY; //conv_PclCloud2ArrCloud(pts,cols,cloud);
   NIY; //glDrawPointCloud(pts,cols);
 }
 

@@ -4,12 +4,12 @@
 #include "options.h"
 
 struct OptLBFGS{
-  ScalarFunction f;
+  ScalarFunction& f;
   uint dimension;
   arr& x;
   rai::OptOptions opt;
 
-  OptLBFGS(arr& x, const ScalarFunction& f, rai::OptOptions o=DEFAULT_OPTIONS);
+  OptLBFGS(arr& x, ScalarFunction& f, rai::OptOptions o=DEFAULT_OPTIONS);
 
   std::shared_ptr<SolverReturn> solve();
 

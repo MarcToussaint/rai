@@ -242,11 +242,11 @@ int MAIN(int argc,char** argv){
 
 //  rnd.seed_random();
 
-  // testEasy();
-  // testAlign();
-  // testThin();
-  // testPR2();
-  // testThreading();
+  testEasy();
+  testAlign();
+  testThin();
+  testPR2();
+  testThreading();
   testMobile();
 
   return 0;

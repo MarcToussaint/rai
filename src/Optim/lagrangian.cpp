@@ -25,20 +25,16 @@ double I_lambda_x(uint i, arr& lambda, arr& g) {
 
 //==============================================================================
 
-LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, const OptOptions& opt)
+LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, const OptOptions& opt, double muSquaredPenalty, double muLogBarrier)
   : P(P), muLB(0.), mu(0.), useLB(false) {
 
   CHECK(P, "null problem given");
 
-  ScalarFunction::operator=([this](arr& dL, arr& HL, const arr& x) -> double {
-    return this->lagrangian(dL, HL, x);
-  });
-
   if(opt.method==M_logBarrier) useLB=true;
 
   //switch on penalty terms
-  mu=opt.muInit;
-  muLB=opt.muLBInit;
+  if(muSquaredPenalty<0.)  mu=opt.muInit;  else  mu=muSquaredPenalty;
+  if(muLogBarrier<0.)  muLB=opt.muLBInit;  else{ muLB=muLogBarrier; useLB=true; }
 
   dimension = P->dimension;
   bounds = P->bounds;
@@ -136,7 +132,7 @@ void LagrangianProblem::getFHessian(arr& H, const arr& x) {
 
 }
 
-double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
+double LagrangianProblem::f(arr& dL, arr& HL, const arr& _x) {
 #if 0
   return eval_scalar(dL, HL, _x);
 #else
@@ -411,7 +407,7 @@ void LagrangianProblem::aulaUpdate(const OptOptions& opt, bool anyTimeVariant, d
 
   //-- recompute the Lagrangian with the new parameters (its current value, gradient & hessian)
   if(L_x || !!dL_x || !!HL_x) {
-    double L = lagrangian(dL_x, HL_x, x); //reevaluate gradients and hessian (using buffered info)
+    double L = f(dL_x, HL_x, x); //reevaluate gradients and hessian (using buffered info)
     if(L_x) *L_x = L;
   }
 }

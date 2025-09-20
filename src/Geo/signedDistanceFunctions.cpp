@@ -68,7 +68,7 @@ void SDF::animateSlices(const arr& lo, const arr& hi, double wait) {
 }
 
 arr SDF::projectNewton(const arr& x0, double stepMax, double regularization) {
-  ScalarFunction distSqr = [this, &x0, regularization](arr& g, arr& H, const arr& x) {
+  Conv_cfunc2ScalarFunction distSqr([this, &x0, regularization](arr& g, arr& H, const arr& x) {
     double d = f(g, H, x);
     if(!!H) H *= 2.*d;
     if(!!H) H += 2.*(g^g);
@@ -80,7 +80,7 @@ arr SDF::projectNewton(const arr& x0, double stepMax, double regularization) {
     if(!!H) H += (2.*w)*eye(3);
 
     return d*d + w*sumOfSqr(c);
-  };
+  });
 
   arr y = x0;
 //  checkGradient(distSqr, y, 1e-6);
@@ -318,7 +318,7 @@ double SDF_ssBox::f(arr& g, arr& H, const arr& x) {
 //===========================================================================
 
 double SDF_ssSomething::f(arr& g, arr& H, const arr& x) {
-  return (*something)(g, H, x)-r;
+  return something->f(g, H, x)-r;
 }
 
 //===========================================================================
@@ -635,31 +635,33 @@ double SDF_SuperQuadric::f(arr& g, arr& H, const arr& x) {
 
 //===========================================================================
 
-ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> double{
-  // x{0,2} are box-wall-coordinates, not width!
-  CHECK_EQ(x.N, 14, "query-pt + abcr + pose");
-  rai::Transformation t;
-  t.pos.set(x({7, 9+1}));
-  t.rot.set(x({10, 13+1}));
-  t.rot.normalize();
-  arr closest, signs;
-  closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x({0, 2+1}));
-  arr grad = x({0, 2+1}) - closest;
-  double d = length(grad);
-  grad /= d;
-  d -= x(6);
-  if(!!g) {
-    g.resize(14);
-    g.setZero();
-    g({0, 2+1}) = grad;
-    g({7, 9+1}) = - grad;
-    g({3, 5+1}) = - signs%(rai::Vector(grad) / t.rot).getArr();
-    g(6) = -1.;
-    g({10, 13+1}) = ~grad*crossProduct(t.rot.getJacobian(), (x({0, 2+1})-t.pos.getArr()));
-    g({10, 13+1}) /= -sqrt(sumOfSqr(x({10, 13+1}))); //account for the potential non-normalization of q
-  }
-  return d;
-};
+shared_ptr<ScalarFunction> DistanceFunction_SSBox(){
+  return make_shared<Conv_cfunc2ScalarFunction>([](arr& g, arr& H, const arr& x) -> double{
+    // x{0,2} are box-wall-coordinates, not width!
+    CHECK_EQ(x.N, 14, "query-pt + abcr + pose");
+    rai::Transformation t;
+    t.pos.set(x({7, 9+1}));
+    t.rot.set(x({10, 13+1}));
+    t.rot.normalize();
+    arr closest, signs;
+    closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x({0, 2+1}));
+    arr grad = x({0, 2+1}) - closest;
+    double d = length(grad);
+    grad /= d;
+    d -= x(6);
+    if(!!g) {
+      g.resize(14);
+      g.setZero();
+      g({0, 2+1}) = grad;
+      g({7, 9+1}) = - grad;
+      g({3, 5+1}) = - signs%(rai::Vector(grad) / t.rot).getArr();
+      g(6) = -1.;
+      g({10, 13+1}) = ~grad*crossProduct(t.rot.getJacobian(), (x({0, 2+1})-t.pos.getArr()));
+      g({10, 13+1}) /= -sqrt(sumOfSqr(x({10, 13+1}))); //account for the potential non-normalization of q
+    }
+    return d;
+  });
+}
 
 SDF_Torus::SDF_Torus(double _r1, double _r2) : SDF(0), r1(_r1), r2(_r2) {
   up = arr{ r1+r2, r1+r2, r2 };

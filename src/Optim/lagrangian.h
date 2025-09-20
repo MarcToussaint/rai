@@ -34,13 +34,14 @@ struct LagrangianProblem : ScalarFunction, NLP {
   arr x;               ///< point where P was last evaluated
   arr phi_x, J_x, H_x; ///< features at x
 
-  LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOptions& opt);
+  LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOptions& opt, double muSquaredPenalty=-1., double muLogBarrier=-1.);
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);       //evaluate all features and (optionally) their Jacobians for state x
   virtual void getFHessian(arr& H, const arr& x);              //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
   virtual arr  getInitializationSample() { return P->getInitializationSample(); }
+  virtual void report(ostream &os, int verbose, const char *msg){ P->report(os, verbose, msg); }
 
-  double lagrangian(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
+  double f(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
 
   rai::Graph reportGradients(const StringA& featureNames);
   void reportMatrix(std::ostream& os);

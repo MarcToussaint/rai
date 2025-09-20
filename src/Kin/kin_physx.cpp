@@ -49,7 +49,7 @@ PxTransform Id_PxTrans() {
   return PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(0.f, 0.f, 0.f, 1.f));
 }
 
-arr conv_PxVec3_arr(const PxVec3& v) {
+arr conv_PxVec2arr(const PxVec3& v) {
   return {v.x, v.y, v.z};
 }
 
@@ -724,9 +724,9 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
     // PxRigidBodyExt::updateMassAndInertia(*actor, 1000.f);
     // if(!f->inertia) new rai::Inertia(*f);
     // f->inertia->mass = actor->getMass();
-    // f->inertia->matrix.setDiag(conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()));
-    // f->inertia->com = conv_PxVec3_arr(actor->getCMassLocalPose().p);
-    // //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
+    // f->inertia->matrix.setDiag(conv_PxVec2arr(actor->getMassSpaceInertiaTensor()));
+    // f->inertia->com = conv_PxVec2arr(actor->getCMassLocalPose().p);
+    // //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec2arr(actor->getMassSpaceInertiaTensor()) <<endl;
   }
   if(link->inertia && link->inertia->mass<1e-12) {
     LOG(-1) <<"link '" <<link->name <<"' has zero mass -> making it minimally .001";
@@ -900,7 +900,7 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes
       actor->setMassSpaceInertiaTensor({float(Idiag(0)), float(Idiag(1)), float(Idiag(2))});
       if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding mass " <<f->inertia->mass <<" inertia " <<Idiag <<" trans " <<t <<endl;
     }
-    //      //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec3_arr(actor->getMassSpaceInertiaTensor()) <<endl;
+    //      //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec2arr(actor->getMassSpaceInertiaTensor()) <<endl;
   }
 }
 
@@ -1222,9 +1222,9 @@ void PhysXInterface::pullJointStates(rai::Configuration& C, arr& qDot) {
         n = articulation->getNbLinks();
         for(uint i=0;i<n;i++){
           cout <<"link" <<i;
-          cout <<" exF:" <<conv_PxVec3_arr(cache->externalForces[i].force);
-          // cout <<" vel:" <<conv_PxVec3_arr(cache->linkVelocity[i].linear);
-          // cout <<" acc:" <<conv_PxVec3_arr(cache->linkAcceleration[i].linear);
+          cout <<" exF:" <<conv_PxVec2arr(cache->externalForces[i].force);
+          // cout <<" vel:" <<conv_PxVec2arr(cache->linkVelocity[i].linear);
+          // cout <<" acc:" <<conv_PxVec2arr(cache->linkAcceleration[i].linear);
           cout <<endl;
         }
         cache->release();
@@ -1276,8 +1276,8 @@ void PhysXInterface::pullFreeStates(rai::Configuration& C, arr& frameVelocities)
       f->set_X() = conv_PxTrans2Transformation(a->getGlobalPose());
       if(!!frameVelocities && (a->getType() == PxActorType::eRIGID_DYNAMIC || a->getType() == PxActorType::eARTICULATION_LINK)) {
         PxRigidBody* px_body = (PxRigidBody*)(a);
-        frameVelocities(i, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());
-        frameVelocities(i, 1, {}) = conv_PxVec3_arr(px_body->getAngularVelocity());
+        frameVelocities(i, 0, {}) = conv_PxVec2arr(px_body->getLinearVelocity());
+        frameVelocities(i, 1, {}) = conv_PxVec2arr(px_body->getAngularVelocity());
       }
       //      if(f->parent) LOG(0) <<f->parent->name <<f->ensure_X().pos <<f->parent->ensure_X().pos <<f->get_Q().pos;
     }

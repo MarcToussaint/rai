@@ -47,9 +47,9 @@ void TEST(Solver) {
   if(sid==rai::M_augmentedLag || sid==rai::M_squaredPenalty || sid==rai::M_logBarrier){
     while(!S.step()){
       if(sid==rai::M_logBarrier){
-        NLP_Viewer(nlp, S.P). display(S.optCon->L.mu, S.optCon->L.muLB);
+        NIY;// NLP_Viewer(nlp, S.P). display(S.optCon->L.mu, S.optCon->L.muLB);
       }else{
-        NLP_Viewer(nlp, S.P). display(S.optCon->L.mu);
+        NIY;// NLP_Viewer(nlp, S.P). display(S.optCon->L.mu);
       }
       if(S.opt.verbose>2) rai::wait(.2, true);
     }

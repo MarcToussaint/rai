@@ -16,8 +16,12 @@ OptOptions& globalOptOptions() {
 }
 
 template<> const char* Enum<OptMethod>::names []= {
-  // "noMethod", "squaredPenalty", "augmentedLag", "logBarrier", "anyTimeAula", "squaredPenaltyFixed", nullptr
-  "noMethod", "gradientDescent", "rprop", "LBFGS", "newton", "augmentedLag", "squaredPenalty", "logBarrier", "singleSquaredPenalty", "slackGN", "NLopt", "Ipopt", "Ceres", nullptr
+    "noMethod", "gradientDescent", "rprop", "LBFGS", "newton",
+    "augmentedLag", "logBarrier", "slackGN_logBarrier",  "squaredPenalty", "singleSquaredPenalty",
+    "slackGN",
+    "NLopt", "Ipopt", "slackGN_Ipopt", "Ceres",
+    "LSZO",
+    nullptr
 };
 
 }
