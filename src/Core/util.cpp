@@ -26,6 +26,7 @@
 #  include <poll.h>
 #  include <execinfo.h>
 #  include <cxxabi.h>    // for __cxa_demangle
+#include <wordexp.h>
 #if defined RAI_X11
 #  include <X11/Xlib.h>
 #  include <X11/Xutil.h>
@@ -117,9 +118,14 @@ struct ProcessInfo {
 
   ProcessInfo() {
     raiPath = RAI_ROOT_PATH;
+    raiPath.append("/../rai-robotModels");
     startDir = getcwd_string();
     timerStartTime = cpuTime();
     startTime = std::chrono::system_clock::now();
+
+    char* rp = getenv("RAI_PATH");
+    if(rp) raiPath = rp;
+    else setenv("RAI_PATH", raiPath.c_str(), 1);
   }
 
   ~ProcessInfo() {
@@ -756,6 +762,15 @@ char* String::StringBuf::getIpos() { return gptr(); }
 //-- direct memory operations
 void String::append(char x) { resize(N+1, true); operator()(N-1)=x; }
 
+String& String::append(const char* s){
+  if(!s){  return *this;  }
+  uint ls = strlen(s);
+  if(!ls){ return *this;  }
+  resize(N+ls, true);
+  memmove(p+N-ls, s, ls);
+  return *this;
+}
+
 void String::prepend(const String& s) {
   uint n=N;
   resize(n+s.N, true);
@@ -969,6 +984,15 @@ bool String::endsWith(const char* substring) const {
   return this->endsWith(String(substring));
 }
 
+void String::substituteEnvironmentVariables(){
+  if(!contains('$')) return;
+  wordexp_t p_out;
+  wordexp(p, &p_out, 0);
+  clear();
+  for(int i=0; i<p_out.we_wordc;i++) append(p_out.we_wordv[i]);
+  wordfree( &p_out );
+}
+
 /// deletes all memory and resets all stream flags
 String& String::clear() { resize(0, false); return *this; }
 
@@ -1013,6 +1037,7 @@ FileToken::FileToken() {
 FileToken::FileToken(const char* filename) {
   baseDir = getcwd_string();
   name = filename;
+  name.substituteEnvironmentVariables();
 //  if(!exists()) HALT("file '" <<filename <<"' does not exist");
 }
 

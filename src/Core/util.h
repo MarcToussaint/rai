@@ -184,6 +184,7 @@ struct String : public std::iostream {
   String& printf(const char* format, ...);
   void resize(uint n, bool copy); //low-level resizing the string buffer - with additinal final 0
   void append(char x);
+  String& append(const char* s);
   void prepend(const String& s);
   void replace(uint i, uint n, const char* xp, uint xN);
   void removePrefix(const char* prefix);
@@ -211,6 +212,8 @@ struct String : public std::iostream {
   bool startsWith(const char* substring) const;
   bool endsWith(const String& substring) const;
   bool endsWith(const char* substring) const;
+
+  void substituteEnvironmentVariables();
 
   /// @name I/O
   void write(std::ostream& os) const;

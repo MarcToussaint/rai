@@ -28,7 +28,8 @@ void TEST(Mini){
 
 void TEST(LoadSave){
   rai::Configuration C;
-  C.addFile("../../../../rai-robotModels/panda/panda.g");
+  // C.addFile("../../../../rai-robotModels/panda/panda.g");
+  C.addFile("$RAI_PATH/panda/panda.g");
   cout <<C <<endl;
   C.sortFrames();
   FILE("z.g") <<C;
@@ -69,7 +70,7 @@ void TEST(Viewer){
   C.addFrame("first") ->setShape(rai::ST_marker, {.3}). setPosition({0,0,.5});
   C.view();
 
-  C.addFile(rai::raiPath("../rai-robotModels/panda/panda.g"));
+  C.addFile(("$RAI_PATH/panda/panda.g"));
   C.view();
 
   rai::Frame *f = C.addFrame("changer");
@@ -276,7 +277,7 @@ void TEST(Grid){
   rai::Configuration C;
   auto table = C.addFrame("table");
   table-> setShape(rai::ST_ssBox, {.5, .5, .1, .01}) .setPosition({0,0,1}) .setColor({.5});
-  auto panda = C.addFile(rai::raiPath("../rai-robotModels/panda/panda.g"));
+  auto panda = C.addFile(("$RAI_PATH/panda/panda.g"));
   panda->setParent(table) .setRelativePosition({0,0,.05});
   C.view();
 
@@ -423,7 +424,7 @@ void TEST(Limits){
 //
 
 void testPlaySpline(){
-  rai::Configuration C(rai::raiPath("../rai-robotModels/panda/panda.g"));
+  rai::Configuration C(("$RAI_PATH/panda/panda.g"));
   C.animateSpline(5);
 }
 
@@ -721,7 +722,7 @@ void testTexture(){
 
 void testInertias(){
   rai::Configuration C;
-  C.addFile(rai::raiPath("../rai-robotModels/tests/compound.g"));
+  C.addFile(("$RAI_PATH/tests/compound.g"));
   rai::Frame *obj1 = C.getFrame("obj");
   rai::Frame *obj2 = C.addFrame("obj2");
   rai::Frame *mesh = C.addFrame("mesh", "obj2");
@@ -749,7 +750,7 @@ void testInertias(){
 
 void testMergeSceneMesh(){
   rai::Configuration C;
-  C.addFile(rai::raiPath("../rai-robotModels/robo_casa/kitchen2/kitchen2.g"));
+  C.addFile(("$RAI_PATH/robo_casa/kitchen2/kitchen2.g"));
   C.view(true);
 
   //-- build a mesh which is the union of all convex hulls
