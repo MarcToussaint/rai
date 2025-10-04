@@ -83,7 +83,7 @@ struct RRT_PathFinder : NonCopyable {
   void setExplicitCollisionPairs(const StringA& collisionPairs);
 
   //solve
-  shared_ptr<SolverReturn> solve();
+  shared_ptr<SolverReturn> solve(int verbose);
 
   //output
   void view(bool pause, const char* txt=0, bool play=false);

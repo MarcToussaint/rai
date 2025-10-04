@@ -16,6 +16,7 @@
 struct ManipulationHelper {
   std::shared_ptr<KOMO> komo;
   str info;
+  rai::Configuration *Cviewer=0;
 
   //solver buffers:
   std::shared_ptr<SolverReturn> ret;

@@ -2460,6 +2460,10 @@ void Configuration::view_close() {
   if(self && self->viewer) self->viewer.reset();
 }
 
+void Configuration::view_focus(const char* frameName, double heightAbs){
+  get_viewer()->focus(getFrame(frameName)->getPosition(), heightAbs);
+}
+
 void Configuration::set_viewer(const std::shared_ptr<ConfigurationViewer>& _viewer){
   self->viewer = _viewer;
 }

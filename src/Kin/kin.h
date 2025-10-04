@@ -286,6 +286,7 @@ public:
   void view_close();
   void view_setCameraPose(const arr& pose);
   arr view_getCameraPose();
+  void view_focus(const char* frameName, double heightAbs);
   void set_viewer(const std::shared_ptr<ConfigurationViewer>& _viewer);
   void coll_stepFcl();
   void stepPhysx(double tau);

@@ -39,6 +39,7 @@ void ManipulationHelper::setup_inverse_kinematics(rai::Configuration& C, double 
   if(quaternion_norms) {
     k().addQuaternionNorms();
   }
+  Cviewer = &C;
 }
 
 void ManipulationHelper::setup_sequence(rai::Configuration& C, uint K, double homing_scale, double velocity_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms){
@@ -49,6 +50,7 @@ void ManipulationHelper::setup_sequence(rai::Configuration& C, uint K, double ho
   if(accumulated_collisions) k().addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e0});
   if(joint_limits)           k().addObjective({}, FS_jointLimits, {}, OT_ineq, {1e0});
   if(quaternion_norms)       k().addQuaternionNorms();
+  Cviewer = &C;
 }
 
 void ManipulationHelper::setup_motion(rai::Configuration& C, uint K, uint steps_per_phase, double homing_scale, double acceleration_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms){
@@ -70,6 +72,7 @@ void ManipulationHelper::setup_motion(rai::Configuration& C, uint K, uint steps_
 
   // zero vel at end
   k().addObjective({double(K)}, FS_qItself, {}, OT_eq, {1e0}, {}, 1);
+  Cviewer = &C;
 }
 
 void ManipulationHelper::setup_pick_and_place_waypoints(rai::Configuration& C, const char* gripper, const char* obj, double homing_scale, double velocity_scale, bool accumulated_collisions, bool joint_limits, bool quaternion_norms) {
@@ -450,6 +453,7 @@ void ManipulationHelper::approachPush(const arr& time_interval, const char* grip
 
 std::shared_ptr<SolverReturn> ManipulationHelper::solve(int verbose) {
   CHECK(komo, "komo is not setup");
+  if(verbose>1) komo->set_viewer(Cviewer->get_viewer());
   rai::NLP_Solver sol;
   sol.setProblem(k().nlp());
   sol.opt/*.set_damping(1e-1) */.set_verbose(verbose-1) .set_stopTolerance(1e-3) .set_lambdaMax(100.) .set_stopInners(30) .set_stopEvals(500);
@@ -584,6 +588,7 @@ std::shared_ptr<ManipulationHelper> ManipulationHelper::sub_motion(uint phase, u
 
   std::shared_ptr<ManipulationHelper> manip = make_shared<ManipulationHelper>(STRING("sub_motion"<<phase));
   manip->setup_point_to_point_motion(C, q1, steps_per_phase, homing_scale, acceleration_scale, accumulated_collisions, joint_limits, quaternion_norms);
+  manip->Cviewer = Cviewer;
   return manip;
 }
 

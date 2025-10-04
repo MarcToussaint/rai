@@ -354,7 +354,7 @@ int RRT_PathFinder::stepConnect() {
   return 0;
 }
 
-shared_ptr<SolverReturn> RRT_PathFinder::solve() {
+shared_ptr<SolverReturn> RRT_PathFinder::solve(int verbose) {
   if(!ret) ret = make_shared<SolverReturn>();
   P->useBroadCollisions = opt.useBroadCollisions;
 
@@ -368,6 +368,8 @@ shared_ptr<SolverReturn> RRT_PathFinder::solve() {
   ret->feasible = path.N; //(r==1);
   ret->x = path;
   ret->evals = iters;
+
+  if(verbose>0) view(verbose>1, STRING("RRT solution\n" <<*ret));
 
   return ret;
 }
