@@ -574,6 +574,7 @@ template<class T> uint numberSharedElements(const Array<T>& x, const Array<T>& y
 //
 // special iterators
 
+
 namespace rai {
 
 template<class T>
@@ -676,7 +677,8 @@ template<class T> Array<T>& Array<T>::setNoArr() { special = new SpecialArray(Sp
 
 namespace rai {
 uint product(const uintA& x);
-uint max(const uintA& x);
+template<class T> T& min(const Array<T>& x);
+template<class T> T& max(const Array<T>& x);
 uint sum(const uintA& x);
 float sum(const floatA& x);
 template<class T> Array<T> integral(const Array<T>& x);

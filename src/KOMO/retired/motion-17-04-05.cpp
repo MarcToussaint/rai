@@ -220,7 +220,7 @@ void KOMO::set_x(const arr& x) {
     uint x_dim = dim_x(t); //configurations(s)->getJointStateDimension();
 //    temporallyAlignKinematicSwitchesInConfiguration(t); //this breaks the jacobian check
     if(x_dim) {
-      if(x.nd==1) configurations(s)->setJointState(x({x_count, x_count+x_dim-1+1}));
+      if(x.nd==1) configurations(s)->setJointState(x({x_count, x_count+x_dim}));
       else        configurations(s)->setJointState(x[t]);
       if(useSwift) configurations(s)->stepSwift();
       x_count += x_dim;
@@ -387,7 +387,7 @@ void KOMO::reportFeatures(bool brief, ostream& os) {
           os <<' ' <<task->prec(t);
           if(featureTypes.N) {
             os <<' ' <<featureTypes.scalar().elem(M)
-               <<' ' <<sumOfSqr(featureValues.scalar()({M, M+d-1+1}));
+               <<' ' <<sumOfSqr(featureValues.scalar()({M, M+d}));
           }
           os <<endl;
         }

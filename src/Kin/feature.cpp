@@ -186,7 +186,7 @@ fct Feature::asFct(const FrameL& F) { ///< direct conversion to vector function:
 //    uintA qdim = getKtupleDim(Ctuple);
 //    qdim.prepend(0);
 //    for(uint i=0; i<Ctuple.N; i++){
-//      Ctuple(i)->setJointState(x({qdim(i), qdim(i+1)-1+1}));
+//      Ctuple(i)->setJointState(x({qdim(i), qdim(i+1)}));
 //    }
 //    phi(y, J, Ctuple);
 //  };

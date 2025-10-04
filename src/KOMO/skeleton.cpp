@@ -95,9 +95,9 @@ void Skeleton::setFromStateSequence(const Array<Graph*>& states, const arr& time
 
         Enum<SkeletonSymbol> sym(symstr);
         if(k_end>=states.N-1) {
-          S.append(SkeletonEntry({times(k), times.last(), sym, symbols({1, -1+1})}));
+          S.append(SkeletonEntry({times(k), times.last(), sym, symbols({1,0})}));
         } else {
-          S.append(SkeletonEntry({times(k), times(k_end), sym, symbols({1, -1+1})}));
+          S.append(SkeletonEntry({times(k), times(k_end), sym, symbols({1,0})}));
         }
       }
     }
@@ -295,7 +295,7 @@ void Skeleton::getTwoWaypointProblem(int t2, Configuration& C, arr& q1, arr& q2,
   //  if(opt.verbose>1) LOG(0) <<C.getJointNames();
   q1 = C.getJointState();
   //  FILE("z.g") <<C <<endl;  C.view(true, "JETZT!");
-  C.setFrameState(komoWays.getConfiguration_X(t2), C.frames({0, komoWays.world.frames.N-1+1}));
+  C.setFrameState(komoWays.getConfiguration_X(t2), C.frames({0, komoWays.world.frames.N}));
   q2 = C.getJointState();
   //  C.view(true);
 }
@@ -708,7 +708,7 @@ void Skeleton::read(std::istream& is) {
         LOG(-1) <<"Skeleton error line " <<phase0 <<" literal: " <<*lit <<" err: " <<err.what() <<endl;
       }
 
-      S.append(SkeletonEntry(phase0, phase1, symbol, frames({1, -1+1})));
+      S.append(SkeletonEntry(phase0, phase1, symbol, frames({1,0})));
       //maxPhase=phase0;
     }
     phase0 += 1.;

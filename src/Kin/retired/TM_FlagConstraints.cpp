@@ -112,7 +112,7 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 
           F_qItself q({a->ID}, false);
           q.order=1;
-          q.Feature::eval(y({d, d+jdim-1+1})(), (!!J?J({d, d+jdim-1+1})():NoArr), Ktuple);
+          q.Feature::eval(y({d, d+jdim})(), (!!J?J({d, d+jdim})():NoArr), Ktuple);
 
           d += jdim;
         }
@@ -172,7 +172,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 
           F_qItself q({a->ID}, false);
           q.order=2;
-          q.Feature::eval(y({d, d+jdim-1+1})(), (!!J?J({d, d+jdim-1+1})():NoArr), Ktuple);
+          q.Feature::eval(y({d, d+jdim})(), (!!J?J({d, d+jdim})():NoArr), Ktuple);
 
           d += jdim;
         }
@@ -182,7 +182,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 
           F_qItself q({a->ID}, false);
           q.order=1;
-          q.Feature::eval(y({d, d+jdim-1+1})(), (!!J?J({d, d+jdim-1+1})():NoArr), Ktuple);
+          q.Feature::eval(y({d, d+jdim})(), (!!J?J({d, d+jdim})():NoArr), Ktuple);
 
           d += jdim;
         }

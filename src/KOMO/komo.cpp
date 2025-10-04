@@ -139,7 +139,6 @@ void KOMO::clone(const KOMO& komo, bool deepCopyFeatures) {
   pathConfig.copy(komo.pathConfig, false);
   timeSlices = pathConfig.getFrames(framesToIndices(komo.timeSlices));
 
-
   //copy grounded objectives
   for(const shared_ptr<GroundedObjective>& o:komo.objs) {
     std::shared_ptr<Feature> f = o->feat;
@@ -725,8 +724,9 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
 rai::Frame* KOMO::addContact_WithPoaFrame(double time, str obj, str from, double frictionCone_mu, double init_objMass, double init_POAdist){
   rai::Frame *f_obj = world.getFrame(obj);
   rai::Frame *f_from = world.getFrame(from);
+  CHECK(f_obj != f_from, "");
   //create a stable POA frame as geometric DOF, attached to obj, with z becoming the contact normal
-  str poa_name = STRING("poa_" <<obj <<"_" <<from);
+  str poa_name = STRING("poa_" <<obj <<"_" <<from <<"_" <<time);
   rai::Frame *f_poa = addFrameDof(poa_name, obj, rai::JT_free, true);
   //initialize
   rai::Transformation relOrigin;
@@ -1628,7 +1628,7 @@ void KOMO::getSubProblem(uint phase, Configuration& C, arr& q0, arr& q1) {
     }
   }
   q0 = C.getJointState();
-  C.setFrameState(getConfiguration_X(phase), C.frames({0, world.frames.N-1+1}));
+  C.setFrameState(getConfiguration_X(phase), C.frames({0, world.frames.N}));
   q1 = C.getJointState();
   C.setJointState(q0);
   //  C.view(true);
@@ -1731,7 +1731,7 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
         f->setAutoLimits();
       }
     }
-    f->setShape(ST_marker, {.1});
+    f->setShape(ST_marker, {.01});
     if(!f0) f0=f;
     F.append(f);
   }

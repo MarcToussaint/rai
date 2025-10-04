@@ -116,8 +116,8 @@ void rai::PlotModule::Opengl(bool perspective, double xl, double xh, double yl, 
     NIY; //gl->add(*this);
     gl->clearColor=1.;
   }
-  gl->camera.setPosition(.5*(xh+xl), .5*(yh+yl), 5.);
-  gl->camera.focus(.5*(xh+xl), .5*(yh+yl), .0);
+  gl->camera.setPosition({.5*(xh+xl), .5*(yh+yl), 5.});
+  gl->camera.focus({.5*(xh+xl), .5*(yh+yl), .0});
   gl->camera.setWHRatio((xh-xl)/(yh-yl));
   if(perspective) {
     gl->camera.setHeightAngle(45.);
@@ -276,7 +276,7 @@ void rai::PlotModule::Covariance(const arr& mean, const arr& cov) {
     arr d(101, 2), Cov, U, V, w;
     double phi;
     uint i;
-    if(cov.d0>2) { Cov=cov.sub({0, 1+1},{ 0, 1+1}); } else { Cov.referTo(cov); }
+    if(cov.d0>2) { Cov=cov.sub({0, 1+1},{0, 1+1}); } else { Cov.referTo(cov); }
     for(i=0; i<d.d0; i++) { //standard circle
       phi=RAI_2PI*((double)i)/(d.d0-1);
       d(i, 0)=cos(phi); d(i, 1)=sin(phi);
@@ -318,7 +318,7 @@ void rai::PlotModule::Covariance(const arr& mean, const arr& cov) {
     double phi;
     uint i;
     //x-y
-    Cov=cov.sub({0, 1+1},{ 0, 1+1});
+    Cov=cov.sub({0, 1+1},{0, 1+1});
     for(i=0; i<d.d0; i++) { //standard circle
       phi=RAI_2PI*((double)i)/(d.d0-1);
       d(i, 0)=cos(phi); d(i, 1)=sin(phi);

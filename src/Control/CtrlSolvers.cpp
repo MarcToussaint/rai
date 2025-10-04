@@ -639,7 +639,7 @@ void CtrlProblem_NLP::evaluate(arr& phi, arr& J, const arr& x) {
 
       if(!!J) {
         if(!isSpecial(Jy)) {
-          J.setMatrixBlock(Jy.sub({0, -1+1}, {kdim(-2), kdim(-1)-1+1}), M, 0);
+          J.setMatrixBlock(Jy.sub({0,0}, {kdim(-2), kdim(-1)}), M, 0);
         } else {
           Jy.sparse().reshape(J.d0, J.d1);
           Jy.sparse().colShift(M);

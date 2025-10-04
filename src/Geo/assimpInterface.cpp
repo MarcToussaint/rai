@@ -79,7 +79,7 @@ void AssimpLoader::loadNode(const aiNode* node, const aiScene* scene, arr T, boo
 
   T = T*t;
 
-  arr R = T.sub({0, 2+1},{ 0, 2+1});
+  arr R = T.sub({0, 2+1},{0, 2+1});
   arr p = T.sub({0, 2+1},{ 3, 3+1}).reshape(3);
   arr Rt = ~R;
   arr scales(3);

@@ -149,7 +149,7 @@ std::shared_ptr<SolverReturn> NLP_GraphSolver::solveInOrder(uintA order) {
   if(!order.N) order.setStraightPerm(P->numTotalVariables());
   for(uint i=0; i<order.N; i++) {
 #if 1
-    if(i) Y = order({0, i-1+1});
+    if(i) Y = order({0, i});
     X = {order(i)};
     P->subSelect(X, Y);
 //    P->report(cout, 2);

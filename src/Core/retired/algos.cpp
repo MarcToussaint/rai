@@ -704,8 +704,8 @@ void Kalman::fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr* Rt)
     //jtmp(1:H, 1) = f{t}+BVinv*v{t};
     //jtmp(H+1:2*H, 1) = g{t};
     PP[t] = inverse(J);
-    h1h[t]= PP[t].sub({d, 2*d-1+1},{ 0, d-1+1}) + p[t+1]*~p[t]; //lower-left submatrix
-    hh1[t]= PP[t].sub({0, d-1+1},{ d, 2*d-1+1}) + p[t]*~p[t+1]; //upper-right submatrix
+    h1h[t]= PP[t].sub({d, 2*d},{0, d}) + p[t+1]*~p[t]; //lower-left submatrix
+    hh1[t]= PP[t].sub({0, d},{ d, 2*d}) + p[t]*~p[t+1]; //upper-right submatrix
   }
   for(t=0; t<T; t++) {
     hh[t] = P[t] + p[t]*~p[t];

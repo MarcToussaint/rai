@@ -203,7 +203,7 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
     uint x_dim = dim_x(t);
     if(x_dim) {
       rai::timerRead(true);
-      if(x.nd==1)  configurations(s)->setJointState(x({x_count, x_count+x_dim-1+1}));
+      if(x.nd==1)  configurations(s)->setJointState(x({x_count, x_count+x_dim}));
       else         configurations(s)->setJointState(x[t]);
       timeKinematics += rai::timerRead(true);
       if(computeCollisions) {
@@ -562,7 +562,7 @@ void KOMO::Conv_KOMO_GraphProblem_toBeRetired::getPartialPhi(arr& phi, arrA& J, 
     if(!!phi) phi.resize(dimPhi);
     if(!!J) J.resize(dimPhi);
 
-//    uintA x_index = getKtupleDim(komo.configurations({komo.k_order,-1+1}));
+//    uintA x_index = getKtupleDim(komo.configurations({komo.k_order,0}));
 //    x_index.prepend(0);
 
     arr y, Jy;

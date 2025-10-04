@@ -885,10 +885,10 @@ void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
         x(0) -= double(v->le)*width;
         x(1) -= double(v->bo)*height;
         v->camera.unproject_fromPixelsAndGLDepth(x, (v->ri-v->le)*width, (v->to-v->bo)*height);
-        v->camera.focus(x(0), x(1), x(2));
+        v->camera.focus(x);
       } else {
         cam->unproject_fromPixelsAndGLDepth(x, width, height);
-        cam->focus(x(0), x(1), x(2));
+        cam->focus(x);
       }
       //LOG(1) <<"FOCUS: world coords: " <<x;
     }

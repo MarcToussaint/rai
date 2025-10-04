@@ -925,7 +925,7 @@ void rai::Frame::setAutoLimits() {
   CHECK(joint, "");
   rai::JointType jointType = joint->type;
   rai::Shape* from = parent->shape;
-  if(!from) from = parent->parent->shape;
+  if(!from && parent->parent) from = parent->parent->shape;
   rai::Shape* to = this->shape;
 
   //-- automatic limits
@@ -1025,16 +1025,22 @@ arr rai::Frame::getJointState() const {
 
 /***********************************************************/
 
-rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A) {
+rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A, const char* postfix) {
+
+#if 1
+  Frame *r = C.addFrame(0);
+  r->name <<name <<postfix;
+  if(parent){
+    r->setParent(parent, false);
+    parent->children.removeValue(this);
+    parent=nullptr;
+  }
+  if(!!A && !A.isZero()) r->setRelativePose(A);
+  setParent(r, false);
+  return r;
+#else
   //new frame between: parent -> f -> this
   Frame* f;
-
-  /* TODO: simpler?
-      Frame *r = world.addFrame(STRING(name<<"_origin"));
-      r->setParent(p0, false);
-      r->setRelativePose(rel);
-      f->setParent(r, false);
-  */
 
   if(parent) {
     f = new Frame(parent);
@@ -1042,14 +1048,15 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A) {
   } else {
     f = new Frame(C);
   }
-  f->name <<name <<"_origin";//<<parent->name <<'>' <<name;
+  f->name <<name <<postfix;//<<parent->name <<'>' <<name;
   parent=f;
   parent->children.append(this);
 
-  if(!!A) f->Q=A; else f->Q.setZero();
+  if(!!A && !A.isZero()) f->Q=A; else f->Q.setZero();
   f->_state_updateAfterTouchingQ();
 
   return f;
+#endif
 }
 
 rai::Frame* rai::Frame::insertPostLink(const rai::Transformation& B) {

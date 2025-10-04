@@ -423,7 +423,7 @@ void pca(arr& Y, arr& v, arr& W, const arr& X, uint npc) {
   Y = D * W;
 
   v *= 1./sum(v);
-  v.sub({0, npc-1+1});
+  v.sub({0, npc});
 }
 
 void check_inverse(const arr& Ainv, const arr& A) {
@@ -2779,12 +2779,22 @@ float sum(const floatA& v) {
   return s;
 }
 
-uint max(const uintA& x) {
+template<class T> T& min(const Array<T>& x) {
+  CHECK(x.N, "");
+  uint i, m=0;
+  for(i=1; i<x.N; i++) if(x.p[i]<x.p[m]) m=i;
+  return x.p[m];
+}
+
+template<class T> T& max(const Array<T>& x) {
   CHECK(x.N, "");
   uint i, m=0;
   for(i=1; i<x.N; i++) if(x.p[i]>x.p[m]) m=i;
   return x.p[m];
 }
+
+template uint& max(const Array<uint>&);
+template uint& min(const Array<uint>&);
 
 /// return the integral image, or vector
 template<class T> Array<T> integral(const Array<T>& x) {

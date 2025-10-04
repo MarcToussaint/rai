@@ -255,11 +255,12 @@ struct Camera {
   void setZRange(float znear, float zfar);
   void setWHRatio(float ratio);
   void setFocalLength(float f);
-  void setPosition(float x, float y, float z);
+  void setPosition(const Vector& x);
   void setKinect();
   void setDefault();
 
-  void focus(float x, float y, float z, bool makeUpright=false);
+  void focus(const Vector& x, bool makeUpright=false);
+  void focusAtDist(const Vector& x, double dist);
   void watchDirection(const Vector& d);
   void upright(const Vector& up=Vector(0, 0, 1));
   bool checkFocus();

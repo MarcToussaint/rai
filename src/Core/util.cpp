@@ -989,7 +989,7 @@ void String::substituteEnvironmentVariables(){
   wordexp_t p_out;
   wordexp(p, &p_out, 0);
   clear();
-  for(int i=0; i<p_out.we_wordc;i++) append(p_out.we_wordv[i]);
+  for(size_t i=0; i<p_out.we_wordc;i++) append(p_out.we_wordv[i]);
   wordfree( &p_out );
 }
 

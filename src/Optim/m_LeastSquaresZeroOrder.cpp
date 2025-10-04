@@ -14,14 +14,14 @@ LeastSquaredZeroOrder::LeastSquaredZeroOrder(shared_ptr<NLP> P, const arr& x_ini
 
   J.resize(data_Phi.d1, data_X.d1). setZero();
 
-  sigma = 1e-4;
+  sigma = 1e-2;
   // method="rank1";
   method="linReg";
 }
 
 bool LeastSquaredZeroOrder::step(){
   //noise
-  if(steps>2){
+  if(steps>2 && method=="linReg"){
     sigma = .1*length(x-data_X[-1]);
   }
   x += sigma*randn(P->dimension);
@@ -58,8 +58,8 @@ bool LeastSquaredZeroOrder::step(){
 void LeastSquaredZeroOrder::updateJ_rank1(arr& J, const arr& x, const arr& x_last, const arr& phi, const arr& phi_last){
   arr y = phi - phi_last;
   arr d = x - x_last;
-  double d2 = sumOfSqr(d)+1e-2;
-  double alpha = 1.;
+  double d2 = sumOfSqr(d)+1e-3;
+  double alpha = .5;
   J = J * (eye(J.d1) - (alpha/d2) * (d^d));
   J += (alpha/d2) * (y^d);
 }
@@ -67,18 +67,26 @@ void LeastSquaredZeroOrder::updateJ_rank1(arr& J, const arr& x, const arr& x_las
 void LeastSquaredZeroOrder::updateJ_linReg(arr& J, const arr& Xraw, const arr& Y, double lambdaReg){
   arr X = rai::catCol({ones(Xraw.d0,1), Xraw});
   arr I = eye(X.d1);
-  I(0,0) = 0.;
+  // I(0,0) = 0.;
   arr W=ones(X.d0);
-  if(false){ //get weights
+  if(false && W.N > 2*X.d1){ //get weights
     double quantile=.5;
     W = sum(sqr(data_Phi), 1);
     arr Wcopy = W;
     Wcopy.sort();
-    double W0 = Wcopy(quantile*W.N);
+    // double W0 = Wcopy(quantile*W.N);
+    double W0 = Wcopy(2*X.d1) + 1e-3;
     W = exp(-W/W0);
-    W /= max(W);
+    double Wmax = max(W)+1e-3;
+    cout <<W0 <<' ' <<Wmax <<endl;
+    W /= Wmax;
   }
-  // W = diag(W);
+  if(false){
+    arr D = ~X*(W%X);
+    arr s;
+    lapack_EigenDecomp(D, s, NoArr);
+    cout <<"log(det(data)): " <<sum(log(s))/double(s.N) <<endl;
+  }
   lambdaReg = 1e-2;
   J = ~Y*(W%X) * inverse_SymPosDef(~X*(W%X) + lambdaReg*I);
   J.delColumns(0);

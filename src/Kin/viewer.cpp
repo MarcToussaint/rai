@@ -281,10 +281,10 @@ void ConfigurationViewer::setCamera(Frame* camFrame) {
 void ConfigurationViewer::focus(const arr& position, double heightAbs){
   rai::Camera& cam = displayCamera();
   arr pos = position;
-  cam.focus(pos(0), pos(1), pos(2), true);
+  cam.focus(pos, true);
   double dist = heightAbs * cam.focalLength;
   pos -= dist * cam.X.rot.getZ().getArr();
-  cam.setPosition(pos(0), pos(1), pos(2));
+  cam.setPosition(pos);
 }
 
 void ConfigurationViewer::setCameraPose(const arr& pose){

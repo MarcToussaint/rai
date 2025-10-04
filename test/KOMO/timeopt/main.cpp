@@ -235,7 +235,7 @@ void timeOpt(){
 
   TimeOpt nlp(path, k, 2., 4., 30., 1e1);
   nlp.animate=false;
-//  checkJacobianCP(nlp, tau.sub({k,-1+1}), 1e-6);
+//  checkJacobianCP(nlp, tau.sub({k,0}), 1e-6);
 //  rai::wait();
 
   rai::setParameter<double>("opt/stepMax", 1e-1);
@@ -254,7 +254,7 @@ void timeOpt(){
 //  checkJacobianCP(nlp, ret->x, 1e-6);
   arr tau(path.d0);
   tau=.01;
-  tau({k,-1+1}) = nlp.tau;
+  tau({k,0}) = nlp.tau;
 
   cout <<tau <<endl;
 

@@ -23,8 +23,8 @@ void loadPcl(arr& pts, byteA& color){
   depthData2pointCloud(pts, depth, fxycxy);
 
   uint cL=30, cR=30, cT=30, cB=30;
-  color = color.sub({cT,-cB+1},{cL,-cR+1},{0,-1+1});
-  pts = pts.sub({cT,-cB+1},{cL,-cR+1},{0,-1+1});
+  color = color.sub({cT,-cB+1},{cL,-cR+1},{0,0});
+  pts = pts.sub({cT,-cB+1},{cL,-cR+1},{0,0});
 }
 
 void testPcl(){

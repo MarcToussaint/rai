@@ -44,8 +44,8 @@ struct TimingMPC {
 
   uint nPhases() const { return waypoints.d0; }
   bool done() const { return phase>=nPhases(); }
-  arr getWaypoints() const { if(done()) return waypoints[-1].copy().reshape(1, -1); return waypoints({phase, -1+1}).copy(); }
-  arr getTimes() const { if(done()) return {.1}; return integral(tau({phase, -1+1})); }
+  arr getWaypoints() const { if(done()) return waypoints[-1].copy().reshape(1, -1); return waypoints({phase,0}).copy(); }
+  arr getTimes() const { if(done()) return {.1}; return integral(tau({phase,0})); }
   arr getVels() const;
 
   bool set_progressedTime(double gap, double tauCutoff=0.);
