@@ -34,9 +34,9 @@ H5_Writer::H5_Writer(const char* filename) {
 
 void H5_Writer::addDict(const char* name, const Graph& dict){
   str s;
-  dict.writeYaml(s);
+  dict.writeYaml(s, true);
   charA b;
-  b.referTo(s.p, s.N+1);
+  b.referTo(s.p, s.N);
   add<char>(name, b);
 }
 

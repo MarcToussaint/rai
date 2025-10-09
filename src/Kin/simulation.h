@@ -59,6 +59,8 @@ struct Simulation {
   //-- get state information
   const arr& get_q() { return C.getJointState(); }
   const arr& get_qDot();
+  const arr& get_qRef(); //executed in the LAST step() call
+
   const arr get_frameVelocities();
   double getTimeToSplineEnd();
   double getGripperWidth(const char* gripperFrameName);

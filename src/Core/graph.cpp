@@ -1193,24 +1193,31 @@ void node2yaml(Node* n, YAML::Node& root){
   // }
 }
 
-void Graph::writeYaml(std::ostream& os) const {
+void Graph::writeYaml(std::ostream& os, bool classic) const {
   YAML::Node root;
   for(rai::Node* n:*this) node2yaml(n, root);
 
   YAML::Emitter out;
-  out.SetIndent(2);
-  //  out.SetMapFormat(YAML::Flow);
-  out.SetSeqFormat(YAML::Flow);
-  //  out.SetStringFormat(YAML::DoubleQuoted);
+  if(!classic){
+    out.SetIndent(2);
+    out.SetSeqFormat(YAML::Flow);
+  }else{
+    out.SetMapFormat(YAML::Flow);
+    out.SetSeqFormat(YAML::Flow);
+    out.SetStringFormat(YAML::SingleQuoted);
+  }
   out <<root;
 
   os <<out.c_str();
 }
 
 #else
-void Graph::writeYaml(std::ostream& os) const {
-  //write(os, "\n", "{}", 0, true, false);
-  write(os, "\n", 0, -1, true, false);
+void Graph::writeYaml(std::ostream& os, bool classic) const {
+  if(classic){
+    write(os, "\n", "{}", 0, true, false);
+  }else{
+    write(os, "\n", 0, -1, true, false);
+  }
 }
 #endif
 

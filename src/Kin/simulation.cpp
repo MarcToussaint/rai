@@ -40,6 +40,7 @@ struct Simulation_self {
 
   BSplineCtrlReference ref;
   arr a_ref; //admittance ref
+  arr q_ref;
 
   struct PositionRef{ rai::Dof* dof; arr q_ref; double cap=-1.; double err=0.; uint stall_counter=0; };
   rai::Array<PositionRef> positionRefs;
@@ -254,8 +255,8 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   stepCount ++;
 
   //-- get control references
-  arr q_ref, qDot_ref;
-  _controls2refs(q_ref, qDot_ref, tau, C.getJointState(), u_control, u_mode);
+  arr qDot_ref;
+  _controls2refs(self->q_ref, qDot_ref, tau, C.getJointState(), u_control, u_mode);
 
   //-- imps before physics
   for(shared_ptr<SimulationImp>& imp : imps) imp->modConfiguration(*this, tau);
@@ -268,7 +269,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->physx->pullFreeStates(C);
     self->physx->pullJointStates(C, self->qDot);
   } else if(engine==_bullet) {
-    if(self->bullet->opt().multiBody) self->bullet->setMotorQ(q_ref, qDot_ref);
+    if(self->bullet->opt().multiBody) self->bullet->setMotorQ(self->q_ref, qDot_ref);
     self->bullet->step(tau);
     self->bullet->pullDynamicStates(C); //, self->frameVelocities);
 #ifdef BACK_BRIDGE
@@ -284,9 +285,9 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   if(writeData>0){ // && !(steps%10)){
     if(!dataFile.is_open()) dataFile.open(STRING("z.sim.dat"));
     dataFile <<time <<' '; //single number
-    dataFile <<C.getJointState().modRaw() <<' ' <<q_ref.modRaw() <<' ';
+    dataFile <<C.getJointState().modRaw() <<' ' <<self->q_ref.modRaw() <<' ';
     if(self->a_ref.N){
-      dataFile <<self->a_ref.modRaw() <<' ' <<(q_ref-self->a_ref).modRaw() <<' ';
+      dataFile <<self->a_ref.modRaw() <<' ' <<(self->q_ref-self->a_ref).modRaw() <<' ';
     }
     //self->qDot, qDot_ref
     dataFile <<endl;
@@ -568,6 +569,10 @@ void Simulation::registerNewObjectWithEngine(Frame* f) {
 
 const arr& Simulation::get_qDot() {
   return self->qDot;
+}
+
+const arr& Simulation::get_qRef(){
+  return self->q_ref;
 }
 
 const arr Simulation::get_frameVelocities(){
