@@ -54,16 +54,23 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     m1.resize(1,3).setZero();
   }
 
+  rai::Mesh* m2isPCL = 0;
   if(f2->shape){
     m2.referTo( f2->shape->sscCore() );
     r2=f2->shape->coll_cvxRadius;
+    if(r2<0. && f2->shape->_type==rai::ST_pointCloud){
+      m2isPCL = f2->shape->_mesh.get();
+      r2=0.;
+    }
   }else{
     m2.resize(1,3).setZero();
   }
 
   //if this a point cloud collision? -> different method
-#if 0
-  if((type==_negScalar || type==_vector) && m1.d0==1 && m2.d0>2 && !m2->T.N) {
+  if(m2isPCL){
+    CHECK_EQ(m1.d0, 1, "collision against PCL only work for points (=spheres)");
+    CHECK(!m2isPCL->T.N, "");
+    CHECK(type==_negScalar || type==_vector, "");
     arr Jp1, Jp2, Jx1, Jx2;
     if(!!J) {
       f1->C.jacobian_pos(Jp1, f1, f1->ensure_X().pos);
@@ -71,7 +78,7 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
       f1->C.jacobian_angular(Jx1, f1);
       f2->C.jacobian_angular(Jx2, f2);
     }
-    rai::PclCollision coll(m1->V, m2->ensure_ann(),
+    rai::PclCollision coll(m1, m2isPCL->ensure_ann(),
                            f1->ensure_X(), Jp1, Jx1,
                            f2->ensure_X(), Jp2, Jx2,
                            r1, r2, type==_vector);
@@ -85,7 +92,6 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     if(!!J) checkNan(J);
     return;
   }
-#endif
 
   //compute the collision
   coll.reset();

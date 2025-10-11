@@ -204,7 +204,7 @@ void TEST(GJK_Jacobians3) {
 
   arr q = C.getJointState();
 
-  for(uint t=0;t<100;t++){
+  for(uint t=0;t<10;t++){
     C.setJointState(q);
     C.coll_stepFcl();
 //    C.stepFcl();
@@ -226,6 +226,8 @@ void TEST(GJK_Jacobians3) {
     C.view(false, STRING("t=" <<t <<"  movement along negative contact gradient"));
 
     q -= 1e-2*y.J() + 1e-2*(~y2*y2.J());
+
+    rai::wait(.05);
   }
 
   C.view(true);
@@ -350,17 +352,47 @@ void testSweepingSDFs(){
 
 //===========================================================================
 
+void testPoint2PCL(){
+  rai::Configuration C;
+  C.addFrame("base");
+  C.addFrame("sphere") ->setShape(rai::ST_sphere, {.1}) .setPosition({0.,0.,1.}) .setParent(C.frames(0), true) .setJoint(rai::JT_trans3);
+  C.addFrame("pcl") ->setPointCloud(randn(20,3), {255,255,0}) .setPosition({0.,0.,1.});
+  rai::Frame& m = C.addFrame("marker") ->setShape(rai::ST_marker, {.5});
+  // C.animate();
+  FrameL F = {C.frames(1), C.frames(2)};
+
+  arr q0 = C.getJointState();
+  for(uint t=0;t<20;t++){
+    arr q = q0 + .3*randn(q0.N);
+    C.setJointState(q);
+
+    F_PairCollision coll;
+    auto y = coll.eval(F);
+    cout <<q <<' ' <<y <<endl;
+    checkJacobian(coll.asFct(F), q, 1e-4);
+
+    m.setPosition(q);
+    m.set_X()->rot.setDiff(Vector_x, y.J());
+    C.view(true);
+  }
+
+}
+
+//===========================================================================
+
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
   rnd.seed_random();
 
-  // testGJK_Jacobians();
-  testGJK_Jacobians2();
-  // testGJK_Jacobians3();
+  testPoint2PCL();
 
-  // testFunctional();
-  // testSweepingSDFs();
+  testGJK_Jacobians();
+  testGJK_Jacobians2();
+  testGJK_Jacobians3();
+
+  testFunctional();
+  testSweepingSDFs();
 
   return 0;
 }

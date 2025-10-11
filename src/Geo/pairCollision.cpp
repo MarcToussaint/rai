@@ -973,7 +973,7 @@ PclCollision::PclCollision(const arr& _x, ANN& ann,
 
   arr sqrDists;
   uintA idx;
-  uint K=10;
+  uint K=1;
   ann.getkNN(sqrDists, idx, x.getArr(), K);
 
   arr normal;
