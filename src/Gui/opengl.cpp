@@ -480,6 +480,7 @@ void OpenGL::add(rai::RenderData* c) {
   {
     auto _dataLock = dataLock(RAI_HERE);
     drawers.append(c);
+    if(c->opt.backgroundColor.N) clearColor = convert<float>(c->opt.backgroundColor);
   }
 }
 
@@ -820,14 +821,14 @@ void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
   } else {
     if(!mouseIsDown) return; //the button is already up (another button was pressed...)
     //CHECK(mouseIsDown, "mouse-up event although the mouse is not down???");
-    if(downVec.z<=.0 && mouse_button==-2 && _NONE(downModifiers) && !downVec.isZero) {
-      rai::Vector cz = -cam->X.rot.getY();
-      if(fabs(cz.x)>fabs(cz.y) && fabs(cz.x)>fabs(cz.z)) cam->upright(rai::sign(cz.x)*Vector_x);
-      if(fabs(cz.y)>fabs(cz.x) && fabs(cz.y)>fabs(cz.z)) cam->upright(rai::sign(cz.y)*Vector_y);
-      if(fabs(cz.z)>fabs(cz.x) && fabs(cz.z)>fabs(cz.y)) cam->upright(rai::sign(cz.z)*Vector_z);
-    }
+    // if(downVec.z<=.0 && mouse_button==-2 && _NONE(downModifiers) && !downVec.isZero) {
+    //   rai::Vector cz = -cam->X.rot.getY();
+    //   if(fabs(cz.x)>fabs(cz.y) && fabs(cz.x)>fabs(cz.z)) cam->upright(rai::sign(cz.x)*Vector_x);
+    //   if(fabs(cz.y)>fabs(cz.x) && fabs(cz.y)>fabs(cz.z)) cam->upright(rai::sign(cz.y)*Vector_y);
+    //   if(fabs(cz.z)>fabs(cz.x) && fabs(cz.z)>fabs(cz.y)) cam->upright(rai::sign(cz.z)*Vector_z);
+    // }
+    // needsUpdate=true;
     mouseIsDown=false;
-    needsUpdate=true;
   }
   //store where you've clicked
   downVec=vec;
@@ -974,8 +975,27 @@ void OpenGL::MouseMotion(double _x, double _y) {
   if(!cont) return;
 
 
-  //-- LEFT -> rotation
+  //-- LEFT -> roll-yaw rotation
   if(mouse_button==1 && _NONE(downModifiers) && !downVec.isZero) {
+    rai::Quaternion rel(0);
+    rel.setRadY(-.5*RAI_PI);
+    rai::Quaternion rot = -rel * downRot * rel;
+    arr rpy = rot.getRollPitchYaw();
+    rai::Vector diff = vec - downVec;
+    rpy(2) += 2.*diff.y;
+    rpy(1) = 0.;
+    rpy(0) -= 2.*diff.x;
+    rai::clip(rpy(2), .01, RAI_PI-.01);
+    rot.setRollPitchYaw(rpy);
+    cam->X.rot = rel * rot * -rel;
+    rot = cam->X.rot * -downRot; //interpret rotation relative to current viewing
+    cam->X.pos = downFoc + rot * (downPos - downFoc);   //rotate camera's position
+    cam->checkFocus();
+    needsUpdate=true;
+  }
+
+  //-- ctrl-LEFT -> free rotation
+  if(mouse_button==1 && (!_SHIFT(downModifiers) && _CTRL(downModifiers)) && !downVec.isZero) {
     rai::Quaternion rot;
     if(downVec.z<=.0) {
       //at the margin:
@@ -990,7 +1010,7 @@ void OpenGL::MouseMotion(double _x, double _y) {
     }
     //rotate about focus
     cam->X.rot = downRot * rot;   //rotate camera's direction
-    rot = downRot * rot * -downRot; //interpret rotation relative to current viewing
+    rot = cam->X.rot * -downRot; //interpret rotation relative to current viewing
     cam->X.pos = downFoc + rot * (downPos - downFoc);   //rotate camera's position
     cam->checkFocus();
     needsUpdate=true;

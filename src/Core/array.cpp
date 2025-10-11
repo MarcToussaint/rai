@@ -2793,6 +2793,12 @@ template<class T> T& max(const Array<T>& x) {
   return x.p[m];
 }
 
+template double& max(const Array<double>&);
+template double& min(const Array<double>&);
+
+template float& max(const Array<float>&);
+template float& min(const Array<float>&);
+
 template uint& max(const Array<uint>&);
 template uint& min(const Array<uint>&);
 

@@ -494,8 +494,6 @@ double euclideanDistance(const arr& v, const arr& w);
 double metricDistance(const arr& g, const arr& v, const arr& w);
 
 //min max
-double min(const arr& x);
-double max(const arr& x);
 arr max(const arr& v, uint d);
 arr min(const arr& v, uint d);
 uint argmin(const arr& x);

@@ -779,6 +779,7 @@ rai::Frame& rai::Frame::setTensorShape(const floatA& data, const arr& size) {
   sdf->lo = -.5*size;
   sdf->up = +.5*size;
   sdf->gridData = data;
+  sdf->color = arr{1.,1.,1.};
   // sdf->_densityDisplayData = make_shared<DensityDisplayData>(*sdf);
   getShape().size = size;
   getShape()._sdf = sdf;
@@ -811,23 +812,28 @@ rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, 
 
 rai::Frame& rai::Frame::setColor(const arr& color) {
   C.view_lock(RAI_HERE);
-  if(getShape().mesh().isArrayFormatted){
-#if 1
-    getShape().mesh().C = reshapeColor(color, getShape().mesh().V.d0);
-#else
-    CHECK_EQ(color.nd, 1, "");
-    arr c = color;
-    if(c.N==1){ double g=c.elem(); c = arr{g,g,g,1.}; }
-    if(c.N==2){ double g=c.elem(0); c.prepend(g); c.prepend(g); }
-    if(c.N==3){ c.append(1.); }
-    arr& V = getShape().mesh().V;
-    arr& C = getShape().mesh().C;
-    C = replicate(c, V.d0);
-#endif
+  if(getShape()._type==ST_tensor){
+    auto tensor = std::dynamic_pointer_cast<TensorShape>(shape->_sdf);
+    tensor->color = color;
   }else{
-    getShape().mesh().C = color;
+    if(getShape().mesh().isArrayFormatted){
+#if 1
+      getShape().mesh().C = reshapeColor(color, getShape().mesh().V.d0);
+#else
+      CHECK_EQ(color.nd, 1, "");
+      arr c = color;
+      if(c.N==1){ double g=c.elem(); c = arr{g,g,g,1.}; }
+      if(c.N==2){ double g=c.elem(0); c.prepend(g); c.prepend(g); }
+      if(c.N==3){ c.append(1.); }
+      arr& V = getShape().mesh().V;
+      arr& C = getShape().mesh().C;
+      C = replicate(c, V.d0);
+#endif
+    }else{
+      getShape().mesh().C = color;
+    }
+    getShape().mesh().version++;
   }
-  getShape().mesh().version++;
   C.view_unlock();
   return *this;
 }

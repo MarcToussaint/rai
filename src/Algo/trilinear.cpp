@@ -1,4 +1,7 @@
 #include "trilinear.h"
+#include "../Core/util.h"
+
+#include <math.h>
 
 namespace rai {
 
@@ -19,10 +22,10 @@ double interpolate3D(double v000, double v100, double v010, double v110, double 
 }
 
 template<class T>
-rai::Array<T> trilinear_interpolate(const arr& pts, const rai::Array<T>& grid_values, const arr& grid_res) {
+Array<T> trilinear_interpolate(const arr& pts, const Array<T>& grid_values, const arr& grid_res) {
 
   arr frac(3), idx(3);
-  rai::Array<T> pts_values(pts.d0);
+  Array<T> pts_values(pts.d0);
 
   for (uint i = 0; i < pts.d0; i++) {
     arr idx_float = pts[i] / grid_res;
@@ -60,7 +63,7 @@ rai::Array<T> trilinear_interpolate(const arr& pts, const rai::Array<T>& grid_va
   return pts_values;
 }
 
-template Array<double> trilinear_interpolate(const arr& pts, const rai::Array<double>& grid_values, const arr& grid_res);
-template Array<float> trilinear_interpolate(const arr& pts, const rai::Array<float>& grid_values, const arr& grid_res);
+template Array<double> trilinear_interpolate(const arr& pts, const Array<double>& grid_values, const arr& grid_res);
+template Array<float> trilinear_interpolate(const arr& pts, const Array<float>& grid_values, const arr& grid_res);
 
 } //namespace

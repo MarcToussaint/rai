@@ -1758,7 +1758,7 @@ void Mesh::readPLY(const char* fn) {
   free_ply(ply);
   fclose(fp);
 
-  if(C.N && ::max(C)>1.) C /= 255.;
+  if(C.N && max(C)>1.) C /= 255.;
 }
 
 #else
@@ -2124,8 +2124,9 @@ void Mesh::setImplicitSurface(const floatA& gridValues, const arr& size) {
 }
 
 #else //Lewiner
-void Mesh::setImplicitSurface(const ScalarFunction& f, double lo, double hi, uint res) {  NICO  }
-void Mesh::setImplicitSurface(const floatA& gridValues, const arr& center, const arr& size) { NICO }
+void Mesh::setImplicitSurface(std::function<double(const arr& x)> f, const arr& bounds, uint res) {  NICO  }
+void Mesh::setImplicitSurface(const arr& gridValues, const arr& size) {  NICO  }
+void Mesh::setImplicitSurface(const floatA& gridValues, const arr& size) {  NICO  }
 #endif
 
 void Mesh::setImplicitSurfaceBySphereProjection(ScalarFunction& _f, double rad, uint fineness) {

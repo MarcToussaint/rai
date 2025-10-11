@@ -194,8 +194,8 @@ void RenderData::ensureInitialized(OpenGL &gl){
   if(opt.userShaderFiles){
     id.progTensor = LoadShadersFile("shaderTensor.vs", "shaderTensor.fs");
   }else{
-    id.progTensor = LoadShaders( tensorVS, tensorFS );
-    // id.progTensor = LoadShadersFile(rai::raiPath("src/Gui/shaderTensor.vs"), rai::raiPath("src/Gui/shaderTensor.fs") );
+    // id.progTensor = LoadShaders( tensorVS, tensorFS );
+    id.progTensor = LoadShadersFile(rai::raiPath("../rai/src/Gui/shaderTensor.vs"), rai::raiPath("../rai/src/Gui/shaderTensor.fs") );
   }
   id.progTensor_Projection_W = glGetUniformLocation(id.progTensor, "Projection_W");
   id.progTensor_ModelT_WM = glGetUniformLocation(id.progTensor, "ModelT_WM");
@@ -468,7 +468,7 @@ void RenderData::glDraw(OpenGL& gl){
     if(renderUntil>=_shadow && opt.useShadow) glBindTexture(GL_TEXTURE_2D, 0);
   }
 
-  glDisable(GL_DEPTH_TEST);
+  // glDisable(GL_DEPTH_TEST);
   if(renderUntil>=_tensor) {
     glUseProgram(id.progTensor);
     glUniformMatrix4fv(id.progTensor_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
@@ -476,7 +476,7 @@ void RenderData::glDraw(OpenGL& gl){
     glUniform1i(id.progTensor_tensorTexture, 0);
     renderObjects(id.progTensor_ModelT_WM, sorting, _tensor, id.progTensor_FlatColor, id.progTensor_ModelScale);
   }
-  glEnable(GL_DEPTH_TEST);
+  // glEnable(GL_DEPTH_TEST);
 
   if(renderUntil>=_marker) {
     glUseProgram(id.progMarker);

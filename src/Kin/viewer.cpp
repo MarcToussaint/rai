@@ -93,10 +93,11 @@ void ConfigurationViewer::recopyMeshes(const FrameL& frames) {
         auto tensor = std::dynamic_pointer_cast<TensorShape>(sdf);
         add(f->ensure_X(), _tensor).tensor(tensor->gridData, f->shape->size);
         items(-1)->scale = f->shape->size;
+        items(-1)->flatColor = rai::convert<byte>(255.*tensor->color);
       }else{
         NIY;
       }
-      items(-1)->flatColor = id2color_b(f->ID);
+      // items(-1)->flatColor = id2color_b(f->ID);
     }
   }
   for(Frame* f:frames) if(f->shape && f->shape->type()==ST_marker) {

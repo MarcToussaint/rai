@@ -396,7 +396,7 @@ void ChoiceConstraintFunction::getFHessian(arr& H, const arr& x) {
 std::shared_ptr<NLP> getBenchmarkFromCfg() {
   rai::Enum<BenchmarkSymbol> bs(rai::getParameter<rai::String>("benchmark"));
   uint dim = rai::getParameter<uint>("benchmark/dim", 2);
-  double forsyth = rai::getParameter<double>("benchmark/forsyth", -1.);
+  // double forsyth = rai::getParameter<double>("benchmark/forsyth", -1.);
   double condition = rai::getParameter<double>("benchmark/condition", 10.);
 
   //-- unconstrained problems

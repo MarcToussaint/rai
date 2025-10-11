@@ -109,6 +109,7 @@ struct DensityDisplayData {
 struct TensorShape : SDF {
   floatA gridData;
   shared_ptr<DensityDisplayData> _densityDisplayData;
+  arr color;
 
   TensorShape(const rai::Transformation& _pose, const floatA& _data, const arr& _lo, const arr& _up)
     : SDF(_pose), gridData(_data) {  lo = _lo;  up = _up;  }

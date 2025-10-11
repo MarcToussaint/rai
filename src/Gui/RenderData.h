@@ -39,7 +39,7 @@ struct RenderAsset{
   void mesh(rai::Mesh &mesh, double avgNormalsThreshold=.9);
   void lines(const arr& lines, const arr& color);
   void pointCloud(const arr& points, const arr& color);
-  void tensor(const floatA& vol, const arr& size={1.,1.,1.});
+  void tensor(const floatA& vol, const arr& size);
 
   //engine specific -> should be refactored
   void glInitialize();

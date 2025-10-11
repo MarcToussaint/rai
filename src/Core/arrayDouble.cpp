@@ -583,22 +583,6 @@ double sum(const arr& v) {
   return t;
 }
 
-/// \f$\max_i x_i\f$
-double max(const arr& x) {
-  CHECK(x.N, "");
-  double m(x.p[0]);
-  for(uint i=x.N; --i;) if(x.p[i]>m) m=x.p[i];
-  return m;
-}
-
-/// \f$\min_i x_i\f$
-double min(const arr& x) {
-  CHECK(x.N, "");
-  double m(x.p[0]);
-  for(uint i=x.N; --i;) if(x.p[i]<m) m=x.p[i];
-  return m;
-}
-
 /// get absolute min (using fabs)
 double absMin(const arr& x) {
   CHECK(x.N, "");

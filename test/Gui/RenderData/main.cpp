@@ -89,6 +89,10 @@ void testTensor(){
 
   scene.addStandardScene();
 
+  rai::Mesh m;
+  m.setSSBox(.4, .4, .4, .1, 2);
+  m.C = {1., .5, .5, 1.};
+  scene.add(rai::Transformation("t(0 1. 1.)")).mesh(m, .9);
 
 #if 0
   uint d=5;
@@ -103,24 +107,19 @@ void testTensor(){
 
   double threshold = rai::getParameter<double>("threshold");
   double scale = rai::getParameter<double>("scale");
-  arr data = zeros(density.d2, density.d1, density.d0);
+  floatA data(density.d2, density.d1, density.d0);
   for(uint i=0;i<density.d0;i++) for(uint j=0;j<density.d1;j++) for(uint k=0;k<density.d2;k++){
-        data(k,j,i) = (double(density(i,j,k)) - threshold) / scale;
+        data(k,j,i) = (float(density(i,j,k)) - threshold) * scale;
       }
   arr size = .001*rai::convert<double>(data.dim()) % arr{pixdim(2), pixdim(1), pixdim(0)};
   LOG(0) <<"data size: " <<data.dim() <<" max: " <<max(data) <<" min: " <<min(data) <<" pixdim: " <<pixdim <<" size: " <<size;
-  // arr size=arr{160, 160, 160} / pixdim;
-  // data = data.sub(0,size(2)-1, 0, size(1)-1, 0, size(0)-1);
-  // LOG(0) <<"data size: " <<data.dim() <<" max: " <<max(data) <<" min: " <<min(data) <<" pixdim: " <<pixdim;
-  // for(uint i=0; i<2; i++) {
-  //   data = integral(data);
-  //   data = differencing(data, 3);
-  // }
 #endif
 
-#if 0
+#if 1
   // cout <<data <<endl;
-  scene.add(rai::Transformation("t(0 0 1.)"), rai::_tensor).tensor(data);
+  scene.add(rai::Transformation("t(0 0 1.) q(1 .5 0 0)"), rai::_tensor).tensor(data, 3.*size);
+  scene.items(-1)->scale = 3.*size;
+  scene.items(-1)->flatColor = {128, 255, 255};
 
   OpenGL gl;
   gl.camera.setDefault();
@@ -130,7 +129,8 @@ void testTensor(){
   rai::Configuration C;
   rai::Frame *f = C.addFrame("tensor");
   f->setPosition({0.,0.,1.}) .setQuaternion({1.,.5,0.,0.});
-  f->setTensorShape(rai::convert<float>(data), 3.*size);
+  f->setTensorShape(data, 3.*size);
+  // f->setColor({1.,1.,0.});
   // C.addFrame("box", "tensor") ->setShape(rai::ST_box, 3.*size) .setColor({1.,1.,0.,.2});
   C.view(true);
 #endif
