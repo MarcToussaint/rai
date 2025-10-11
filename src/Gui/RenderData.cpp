@@ -297,6 +297,13 @@ void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs,
     }
 
     obj->asset->glRender();
+
+    if(opt.polygonLines){
+      glUniform4f(idFlatColor, 0.f, 0.f, 0.f, 1.f);
+      glPolygonMode(GL_FRONT, GL_LINE);
+      obj->asset->glRender();
+      glPolygonMode(GL_FRONT, GL_FILL);
+    }
   }
 
   if(type==_marker){
@@ -364,6 +371,7 @@ void RenderData::glDraw(OpenGL& gl){
   //mark transparent
   for(std::shared_ptr<RenderItem>& obj:items) if(obj->type==_solid && obj->asset->isTransparent) obj->type=_transparent;
 
+  //-- SHADOW BEGIN
   if(renderUntil>=_shadow && opt.useShadow){
     // Render to shadowFramebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, id.shadowFramebuffer);
@@ -400,6 +408,7 @@ void RenderData::glDraw(OpenGL& gl){
     tmp = tmp * Pshadow_IW;
     glUniformMatrix4fv(id.prog_ShadowProjection_W, 1, GL_TRUE, rai::convert<float>(tmp).p);
   }
+  //-- SHADOW END
 
   // Render to the screen
   if(gl.offscreen){
@@ -418,8 +427,8 @@ void RenderData::glDraw(OpenGL& gl){
   glEnable(GL_PROGRAM_POINT_SIZE);
   glCullFace(GL_BACK);
 //  if(renderUntil>=_transparent){
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 //  }
 
   arr ViewT_CW = camera.getT_CW();
@@ -549,6 +558,7 @@ void RenderAsset::mesh(rai::Mesh& mesh, double avgNormalsThreshold){
     _texture = mesh._texImg; //().rgb;
     textureDim = 2;
   }
+  mode = GL_TRIANGLES;
 }
 
 void RenderAsset::pointCloud(const arr& points, const arr& color){

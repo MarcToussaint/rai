@@ -159,35 +159,6 @@ public :
 
 
 //-----------------------------------------------------------------------------
-// Exportation
-public :
-  /**
-   * PLY exportation of the generated mesh
-   * \param fn  name of the PLY file to create
-   * \param bin if true, the PLY will be written in binary mode
-   */
-  void writePLY( const char *fn, bool bin = false ) ;
-
-  /**
-   * PLY importation of a mesh
-   * \param fn  name of the PLY file to read from
-   */
-  void readPLY( const char *fn ) ;
-
-  /**
-   * VRML / Open Inventor exportation of the generated mesh
-   * \param fn  name of the IV file to create
-   */
-  void writeIV ( const char *fn ) ;
-
-  /**
-   * ISO exportation of the input grid
-   * \param fn  name of the ISO file to create
-   */
-  void writeISO( const char *fn ) ;
-
-
-//-----------------------------------------------------------------------------
 // Algorithm
 public :
   /**

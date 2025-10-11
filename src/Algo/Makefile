@@ -8,6 +8,7 @@ DEPEND = Core
 
 ANN = 1
 LAPACK = 1
+Lewiner = 1
 
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
 OBJS = $(SRCS:%.cpp=%.o)

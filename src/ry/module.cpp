@@ -8,6 +8,7 @@
 
 #ifdef RAI_PYBIND
 
+#include "py-algo.h"
 #include "py-Config.h"
 #include "py-Feature.h"
 #include "py-Frame.h"
@@ -71,6 +72,7 @@ PYBIND11_MODULE(_robotic, m) {
   m.def("rnd_seed", [](int s) { rnd.seed(s); }, "seed rnd with s", pybind11::arg("s"));
 
   init_params(m);
+  init_algo(m);
   init_Frame(m);
   init_Config(m);
 //  init_Feature(m);

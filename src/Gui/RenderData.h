@@ -16,6 +16,7 @@ struct Render_Options {
   RAI_PARAM("Render/", bool, userShaderFiles, false)
   RAI_PARAM("Render/", bool, flatColors, false)
   RAI_PARAM("Render/", bool, useShadow, true)
+  RAI_PARAM("Render/", bool, polygonLines, false)
   RAI_PARAM("Render/", arr, backgroundColor, {})
   RAI_PARAM("Render/", arr, floorColor, {})
   RAI_PARAM("Render/", arr, lights, {})

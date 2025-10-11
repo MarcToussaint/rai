@@ -803,7 +803,7 @@ rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, 
     LOG(0) <<" uniform resampling resolution: " <<1000.*resample <<"mm  grid size: " <<d;
     sdf.resample(d(0), d(1), d(2));
   }
-  getShape().mesh().setImplicitSurface(sdf.gridData, sdf.lo, sdf.up);
+  getShape().mesh().setImplicitSurface(sdf.gridData, size);
   getShape().mesh().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
   C.view_unlock();
   return *this;
@@ -2165,9 +2165,9 @@ void rai::Shape::createMeshes() {
       if(!mesh().V.N) {
         auto gridSdf = std::dynamic_pointer_cast<TensorShape>(_sdf);
         if(gridSdf && gridSdf->gridData.N) {
-          mesh().setImplicitSurface(gridSdf->gridData, sdf().lo, sdf().up);
+          mesh().setImplicitSurface(gridSdf->gridData, size);
         } else {
-          mesh().setImplicitSurface(sdf().evalGrid(30), sdf().lo, sdf().up);
+          mesh().setImplicitSurface(sdf().evalGrid(30), size);
         }
       }
     } break;

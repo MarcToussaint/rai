@@ -18,7 +18,7 @@
 void TEST(Mini){
   rai::Configuration C;
   C.addFrame("sphere")->setShape(rai::ST_sphere, {.1}).setPosition({0.,0.,.5});
-  C.view(false);
+  C.view(true);
 }
 
 //===========================================================================
@@ -782,7 +782,7 @@ void testMergeSceneMesh(){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  testMini();
+  testMini(); return 0;
   testLoadSave();
   testCopy();
   testGraph();

@@ -72,8 +72,8 @@ struct Mesh {
   void setSSCvx(const arr& core, double r, uint fineness=2);
   void setImplicitSurface(std::function<double (const arr&)> f, double lo=-10., double up=+10., uint res=100);
   void setImplicitSurface(std::function<double(const arr& x)> f, const arr& bounds, uint res);
-  void setImplicitSurface(const arr& gridValues, const arr& lo, const arr& up);
-  void setImplicitSurface(const floatA& gridValues, const arr& lo, const arr& up);
+  void setImplicitSurface(const arr& gridValues, const arr& size);
+  void setImplicitSurface(const floatA& gridValues, const arr& size);
   void setImplicitSurfaceBySphereProjection(ScalarFunction& f, double rad, uint fineness=3);
   Mesh& setRandom(uint vertices=10);
   void setGrid(uint X, uint Y);
