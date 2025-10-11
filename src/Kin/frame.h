@@ -123,7 +123,7 @@ struct Frame : NonCopyable {
   //structural operations
   Frame& setParent(Frame* _parent, bool keepAbsolutePose_and_adaptRelativePose=false, bool checkForLoop=false);
   Frame& unLink();
-  Frame* insertPreLink(const rai::Transformation& A=0);
+  Frame* insertPreLink(const rai::Transformation& A=0, const char* postfix="_origin");
   Frame* insertPostLink(const rai::Transformation& B=0);
   void makeRoot(bool untilPartBreak=true);
 

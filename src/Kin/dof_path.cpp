@@ -72,8 +72,8 @@ void PathDof::getJacobians(arr& Jpos, arr& Jang) const {
   else d = path[-1] - path[-2];
   d *= double(path.d0-1);
   Jpos = d({0, 2+1}).reshape(3, 1);
-  Jang = (fX.rot.getJacobian() * d({3, -1+1})).reshape(3, 1);
-  Jang /= sqrt(sumOfSqr(X({3, -1+1})));  //account for the non-normalization of path or quaternion interpolation
+  Jang = (fX.rot.getJacobian() * d({3,0})).reshape(3, 1);
+  Jang /= sqrt(sumOfSqr(X({3,0})));  //account for the non-normalization of path or quaternion interpolation
 }
 
 String PathDof::name() const {

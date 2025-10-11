@@ -397,17 +397,18 @@ void LagrangianProblem::aulaUpdate(const OptOptions& opt, bool anyTimeVariant, d
     }
   }
 
-  //-- adapt mu as well?
+  //-- mu update
   if(opt.muInc>0.) { mu *= opt.muInc; if(mu>opt.muMax) mu=opt.muMax; }
   if(opt.muLBDec>0. && muLB>1e-8) muLB *= opt.muLBDec;
 
+  //-- lambda clipping
   if(opt.lambdaMax>0.) {
     ::clip(lambda, -opt.lambdaMax, opt.lambdaMax);
   }
 
   //-- recompute the Lagrangian with the new parameters (its current value, gradient & hessian)
   if(L_x || !!dL_x || !!HL_x) {
-    double L = f(dL_x, HL_x, x); //reevaluate gradients and hessian (using buffered info)
+    double L = f(dL_x, HL_x, x); //reevaluate gradients and hessian (without re-evaluating underlying NLP)
     if(L_x) *L_x = L;
   }
 }

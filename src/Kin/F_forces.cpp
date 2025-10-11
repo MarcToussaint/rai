@@ -201,15 +201,6 @@ void F_HingeXTorque::phi2(arr& y, arr& J, const FrameL& F) {
   if(!!J) J = ~y2 * axis.J() + ~axis * J2;
 }
 
-F_TotalForce::F_TotalForce(bool _zeroGravity) {
-  order=0;
-  if(_zeroGravity) {
-    gravity = 0.;
-  } else {
-    gravity = rai::getParameter<double>("gravity", 9.81);
-  }
-}
-
 void F_TotalForce::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 0, "");
 
@@ -219,11 +210,11 @@ void F_TotalForce::phi2(arr& y, arr& J, const FrameL& F) {
   a->C.kinematicsZero(force, Jforce, 3);
   a->C.kinematicsZero(torque, Jtorque, 3);
 
-  if(gravity) {
+  if(gravity.N) {
     CHECK(a->inertia, "can't accumulate gravity force for zero-mass object '" <<a->name <<"'")
     double mass=1.;
     if(a->inertia) mass = a->inertia->mass;
-    force(2) += gravity * mass;
+    force += gravity * mass;
   }
 
   //-- collect contacts and signs FOR ALL shapes attached to this link
@@ -310,7 +301,7 @@ void F_NewtonEuler::phi2(arr& y, arr& J, const FrameL& F) {
 
 #if 1
   //-- collect total contact forces (actually impulse) without gravity
-  arr fo = F_TotalForce(true) // ignore gravity
+  arr fo = F_TotalForce() // ignore gravity
            .eval({F.elem(-2)}); // ! THIS IS THE MID TIME SLICE !
 
   if(useGravity) {
@@ -382,7 +373,7 @@ void F_NewtonEuler_DampedVelocities::phi2(arr& y, arr& J, const FrameL& F) {
   mass_diag({3, 5+1}) = a->inertia->matrix.getDiag();
 
   //collect total contact forces
-  arr fo = F_TotalForce(true)
+  arr fo = F_TotalForce()
            .eval({F.elem(-2)});
 
   double friction = .1;

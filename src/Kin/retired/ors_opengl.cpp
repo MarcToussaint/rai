@@ -273,8 +273,8 @@ void displayTrajectory(const arr& _x, int steps, rai::Configuration& G, const Ki
   }
   arr x, z;
   if(dim_z) {
-    x.referToRange(_x, 0, -dim_z-1+1);
-    z.referToRange(_x, -dim_z, -1+1);
+    x.referToRange(_x, 0, -dim_z);
+    z.referToRange(_x, -dim_z,0);
   } else {
     x.referTo(_x);
   }

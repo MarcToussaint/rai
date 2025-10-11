@@ -555,7 +555,7 @@ void Mesh::addMesh(const Mesh& mesh2, const Transformation& X) {
     _texImg = mesh2._texImg;
   }
   if(!X.isZero()) {
-    X.applyOnPointArray(V({n, -1+1}).noconst());
+    X.applyOnPointArray(V({n,0}).noconst());
   }
 }
 
@@ -1862,8 +1862,8 @@ void Mesh::readPts(std::istream& is) {
     rai::copy(V, pts);
   } else {
     CHECK_EQ(pts.d1, 6, "need only points (3D), or points and normals (6D)");
-    rai::copy(V, pts.sub({0, -1+1},{ 0, 2+1}));
-    rai::copy(Vn, pts.sub({0, -1+1},{ 3, 5+1}));
+    rai::copy(V, pts.sub({0,0},{0, 2+1}));
+    rai::copy(Vn, pts.sub({0,0},{3, 5+1}));
   }
   C = {0., 0., .3};
 }

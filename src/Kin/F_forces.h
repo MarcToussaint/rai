@@ -42,8 +42,8 @@ struct F_HingeXTorque : Feature {
 };
 
 struct F_TotalForce : Feature {
-  double gravity=9.81;
-  F_TotalForce(bool _zeroGravity=false);
+  arr gravity;
+  F_TotalForce(const arr& _gravity={0., 0., 9.81}) : gravity(_gravity) {}
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi(const FrameL& C) { return 6; }
 };

@@ -113,7 +113,7 @@ void readBlender(const char* filename, rai::Mesh& mesh, rai::Configuration& bl) 
     //rai::skip(is);
     n->name=names(i);
     f.pos.set(&frames(i, 3, 0)); f.pos=ROT*f.pos;
-    f.rot.setMatrix(frames[i].sub({0, 2+1},{ 0, 2+1}).p);
+    f.rot.setMatrix(frames[i].sub({0, 2+1},{0, 2+1}).p);
     f.rot.invert();
     f.addRelativeRotationDeg(90, 1, 0, 0);   f.rot=ROT*f.rot;
     t.set(&tailsHeads(i, 0, 0)); t=ROT*t;
@@ -139,7 +139,7 @@ void readBlender(const char* filename, rai::Mesh& mesh, rai::Configuration& bl) 
     e=new rai::Joint(bl, p, n);
     e->type = rai::JT_hingeX;
     f.pos.set(&frames(graph(i, 1), 3, 0));  f.pos=ROT*f.pos;
-    f.rot.setMatrix(frames[graph(i, 1)].sub({0, 2+1},{ 0, 2+1}).p);
+    f.rot.setMatrix(frames[graph(i, 1)].sub({0, 2+1},{0, 2+1}).p);
     f.rot.invert();
     f.addRelativeRotationDeg(90, 1, 0, 0);  f.rot=ROT*f.rot;
 

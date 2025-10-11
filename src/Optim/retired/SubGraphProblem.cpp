@@ -101,7 +101,7 @@ void SubGraphProblem::optim(int verbose) {
   m=0;
   for(uint i:X) {
     uint d = G.V(i).x_dim;
-    if(d) x({m, m+d-1+1}) = G.V(i).value;
+    if(d) x({m, m+d}) = G.V(i).value;
     m+=d;
   }
   CHECK_EQ(m, x.N, "");
@@ -214,7 +214,7 @@ void SubGraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x) {
   uint m=0;
   for(uint i:X) {
     uint d = G.V(i).x_dim;
-    if(d) G.V(i).value = x({m, m+d-1+1});
+    if(d) G.V(i).value = x({m, m+d});
     m += d;
   }
   CHECK_EQ(m, x.N, "");

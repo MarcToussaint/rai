@@ -51,7 +51,7 @@ void RenderData::addLight(const arr& pos, const arr& focus, double heightAbs){
 //  light->setHeightAngle(45.);
   light->setZRange(1., 10.);
   light->X.pos.set(pos); //setPosition(4., -2., 4.);
-  light->focus(focus(0), focus(1), focus(2)); //0.,0.,1.);
+  light->focus(focus); //0.,0.,1.);
   light->upright(); //{0.,1.,0.});
   lights.append(light);
 }

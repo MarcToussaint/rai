@@ -61,7 +61,7 @@ void DirectionDof::kinVec(arr& y, arr& J) const {
   frame->C.jacobian_angular(Jang, frame);
   J = crossProduct(Jang, y);
   if(active){
-    arr q = frame->C.q({qIndex, qIndex+dim-1+1});
+    arr q = frame->C.q({qIndex, qIndex+dim});
     double q_norm2 = sumOfSqr(q);
     arr Jnorm = eye(3) - (q*~q)/q_norm2;
     Jnorm /= 1e-10+sqrt(q_norm2);

@@ -68,8 +68,8 @@ void F_qItself::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
           qidx = jointMatchLists(s, i)->qIndex;
           qdim = jointMatchLists(s, i)->qDim();
           if(qdim) {
-            q_bar_mapped(s).append(q_bar(s)({qidx, qidx+qdim-1+1}));
-            if(!!J) J_bar_mapped(s).append(J_bar(s)({qidx, qidx+qdim-1+1}));
+            q_bar_mapped(s).append(q_bar(s)({qidx, qidx+qdim}));
+            if(!!J) J_bar_mapped(s).append(J_bar(s)({qidx, qidx+qdim}));
           }
         }
       }

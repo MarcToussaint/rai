@@ -59,7 +59,7 @@ void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, 
         phi(m) = x_bar(3, i)-3.*x_bar(2, i)+3.*x_bar(1, i)-x_bar(0, i); //penalize jerk
         if(!!J) { J(m).resize(k+1, n).setZero(); J(m)(3, i) = 1.;  J(m)(2, i) = -3.;  J(m)(1, i) = +3.;  J(m)(0, i) = -1.; }
       }
-      if(!!J && t<k) J(m) = J(m).sub({k-t, -1+1},{ 0, -1+1}); //cut the prefix Jacobians
+      if(!!J && t<k) J(m) = J(m).sub({k-t,0},{0,0}); //cut the prefix Jacobians
       if(!!tt) tt(m) = OT_sos;
       m++;
     }

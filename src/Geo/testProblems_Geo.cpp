@@ -56,7 +56,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
         y.append(x);
         phi(i+5) = dssbox->f(Jy, NoArr, y);
         //      Jy({3,5+1})() *= -1.;
-        if(!!J) J[i+5] = Jy({3, -1+1});
+        if(!!J) J[i+5] = Jy({3,0});
       }
     }
     virtual void getFHessian(arr& H, const arr& x) {
@@ -144,7 +144,7 @@ void computeOptimalSSBox(rai::Mesh& mesh, arr& x_ret, rai::Transformation& t_ret
   rai::Transformation t;
   t.setZero();
   t.pos.set(x({4, 6+1}));
-  t.rot.set(x({7, -1+1}));
+  t.rot.set(x({7,0}));
   t.rot.normalize();
   mesh.setSSBox(x(0), x(1), x(2), x(3));
   t.applyOnPointArray(mesh.V);

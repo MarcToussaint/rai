@@ -85,13 +85,13 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents,
       m += 1;
     }
     if(ctrlCost>0.) {
-      featureTypes({m, m+2*d-1+1}) = OT_sos; //control costs
+      featureTypes({m, m+2*d}) = OT_sos; //control costs
       for(uint i=0; i<d; i++) { featureNames.append(STRING("ctrlCost" <<i)); }
       for(uint i=0; i<d; i++) { featureNames.append(STRING("ctrlCost" <<i)); }
       m += 2*d;
     }
     if(maxVel.N) {
-      featureTypes({m, m+4*d-1+1}) = OT_ineq; //maxVel
+      featureTypes({m, m+4*d}) = OT_ineq; //maxVel
       for(uint i=0; i<d; i++) { featureNames.append(STRING("maxVel" <<i)); }
       for(uint i=0; i<d; i++) { featureNames.append(STRING("maxVel" <<i)); }
       for(uint i=0; i<d; i++) { featureNames.append(STRING("maxVel" <<i)); }
@@ -99,7 +99,7 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents,
       m += 4*d;
     }
     if(maxAcc.N) {
-      featureTypes({m, m+4*d-1+1}) = OT_ineq; //maxAcc
+      featureTypes({m, m+4*d}) = OT_ineq; //maxAcc
       for(uint i=0; i<d; i++) { featureNames.append(STRING("maxAcc" <<i)); }
       for(uint i=0; i<d; i++) { featureNames.append(STRING("maxAcc" <<i)); }
       for(uint i=0; i<d; i++) { featureNames.append(STRING("maxAcc" <<i)); }
@@ -107,18 +107,18 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents,
       m += 4*d;
     }
     if(maxJer.N) {
-      featureTypes({m, m+2*d-1+1}) = OT_ineq; //maxJer
+      featureTypes({m, m+2*d}) = OT_ineq; //maxJer
       for(uint i=0; i<d; i++) { featureNames.append(STRING("maxJer" <<i)); }
       for(uint i=0; i<d; i++) { featureNames.append(STRING("maxJer" <<i)); }
       m += 2*d;
     }
     if(accCont) {
       if(k==0) {
-        featureTypes({m, m+d-1+1}) = OT_eq; //acc continuity
+        featureTypes({m, m+d}) = OT_eq; //acc continuity
         for(uint i=0; i<d; i++) { featureNames.append(STRING("accCont" <<i)); }
         m += d;
       }
-      featureTypes({m, m+d-1+1}) = OT_eq; //acc continuity
+      featureTypes({m, m+d}) = OT_eq; //acc continuity
       for(uint i=0; i<d; i++) { featureNames.append(STRING("accCont" <<i)); }
       m += d;
     }
@@ -141,14 +141,14 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x) {
   uint vIdx=0;
   //tau decision variables
   if(optTau) {
-    tau = x({0, K-1+1}).reshape(tau.N);
+    tau = x({0, K}).reshape(tau.N);
     vIdx = K;
   }
   //vel decision variables
-  v = x({vIdx, vIdx+v.d0*v.d1-1+1}).reshape(v.d0, v.d1);
+  v = x({vIdx, vIdx+v.d0*v.d1}).reshape(v.d0, v.d1);
   //free waypoint decision variables
   if(wayFree.N) {
-    arr xway = x({vIdx+v.d0*v.d1, -1+1});
+    arr xway = x({vIdx+v.d0*v.d1,0});
     xway.reshape(wayFree.N, d);
     for(uint i=0; i<wayFree.N; i++) {
       waypoints[wayFree(i)] = xway[i];

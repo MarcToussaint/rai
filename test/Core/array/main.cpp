@@ -88,7 +88,7 @@ void TEST(Basics){
   double *ap=a.p, *astop=ap+a.N;
   for(; ap!=astop; ap++) *ap=ap-a.p; //assign pointer offsets to entries
   cout <<"\narray filled with pointer offsets (-> memory is linear):\n" <<a <<endl;
-  cout <<"\nsubarray (of the original) [2:4,:] (in MATLAB notation)\n" <<a.sub({2,4+1},{0,-1+1}) <<endl;
+  cout <<"\nsubarray (of the original) [2:4,:] (in MATLAB notation)\n" <<a.sub({2,4+1},{0,0}) <<endl;
   CHECK_EQ(a.elem(-1),a.N-1,"");
 
   //reshape
@@ -124,7 +124,7 @@ void TEST(Basics){
   CHECK_EQ(a[1],a[2],"");
 
   //range access:
-  cout <<"\nall rows:\n" <<a({0,-1+1}) <<endl;
+  cout <<"\nall rows:\n" <<a({0,0}) <<endl;
   cout <<"\nrow 3:\n" <<a({3,3+1}) <<endl;
   cout <<"\nrow 3:\n" <<a(3, {0,-1}) <<endl;
   cout <<"\nrows 1-3:\n" <<a({1,3+1}) <<endl;

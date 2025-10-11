@@ -122,12 +122,12 @@ void BSpline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
 #else
   arr sel_ctrlPoints;
   if(offset<0){
-    if(b.N) b=b.sub({-offset,-1+1});
-    if(db.N) db=db.sub({-offset,-1+1});
-    if(ddb.N) ddb=ddb.sub({-offset,-1+1});
+    if(b.N) b=b.sub({-offset,0});
+    if(db.N) db=db.sub({-offset,0});
+    if(ddb.N) ddb=ddb.sub({-offset,0});
     offset=0;
   }
-  sel_ctrlPoints.referToRange(ctrlPoints, offset, offset+b.N-1+1);
+  sel_ctrlPoints.referToRange(ctrlPoints, offset, offset+b.N);
   if(!!x){ x = ~b * sel_ctrlPoints; x.reshape(-1); }
   if(!!xDot){ xDot = ~db * sel_ctrlPoints; xDot.reshape(-1); }
   if(!!xDDot){ xDDot = ~ddb * sel_ctrlPoints; xDDot.reshape(-1); }

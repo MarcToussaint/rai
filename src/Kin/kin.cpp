@@ -441,7 +441,7 @@ Frame* Configuration::addCopy(const FrameL& F, const DofL& _dofs, const str& pre
     if(f->joint && f->joint->isStable) {
       Frame* f_orig = getFrame(f_new->name); //identify by name!!!
       if(f_orig!=f_new) {
-        CHECK(f_orig->joint, "");
+        CHECK(f_orig->joint, f_new->name <<' ' <<f_orig->name);
         f_new->joint->setMimic(f_orig->joint);
       }
     }
@@ -1320,9 +1320,9 @@ bool Configuration::checkConsistency() const {
         CHECK_EQ(jq.N, j->dim, "");
         arr tmpq;
         if(j->active) {
-          tmpq.referToRange(q, {j->qIndex, j->qIndex+j->dim-1+1});
+          tmpq.referToRange(q, {j->qIndex, j->qIndex+j->dim});
         } else {
-          tmpq.referToRange(qInactive, {j->qIndex, j->qIndex+j->dim-1+1});
+          tmpq.referToRange(qInactive, {j->qIndex, j->qIndex+j->dim});
           //for(uint i=0; i<jq.N; i++) CHECK_ZERO(std::fmod(jq.elem(i) - qInactive.elem(j->qIndex+i), RAI_2PI), 2e-5, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
         }
         if(j->type==JT_circleZ) { op_normalize(tmpq); }
@@ -1748,11 +1748,11 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
         } else if(j->type==JT_transXY) {
           arr R = j->X().rot.getMatrix();
           R *= j->scale;
-          J.setMatrixBlock(R.sub({0, -1+1},{ 0, 1+1}), 0, j_idx);
+          J.setMatrixBlock(R.sub({0,0},{0, 1+1}), 0, j_idx);
         } else if(j->type==JT_transXYPhi) {
           arr R = j->X().rot.getMatrix();
           R *= j->scale;
-          J.setMatrixBlock(R.sub({0, -1+1},{ 0, 1+1}), 0, j_idx);
+          J.setMatrixBlock(R.sub({0,0},{0, 1+1}), 0, j_idx);
           Vector tmp = j->axis ^ (pos_world-j_pos); //(j->X().pos + j->X().rot*a->Q.pos));
           tmp *= j->scale;
           J.elem(0, j_idx+2) += tmp.x;
@@ -1766,7 +1766,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           J.elem(2, j_idx) += tmp.z;
           arr R = (j->X().rot*a->Q.rot).getMatrix();
           R *= j->scale;
-          J.setMatrixBlock(R.sub({0, -1+1},{ 0, 1+1}), 0, j_idx+1);
+          J.setMatrixBlock(R.sub({0,0},{0, 1+1}), 0, j_idx+1);
         }
         if(j->type==JT_generic) {
           arr R = j->frame->parent->get_X().rot.getMatrix();
@@ -2458,6 +2458,10 @@ int Configuration::view(bool pause, const char* txt) {
 
 void Configuration::view_close() {
   if(self && self->viewer) self->viewer.reset();
+}
+
+void Configuration::view_focus(const char* frameName, double heightAbs){
+  get_viewer()->focus(getFrame(frameName)->getPosition(), heightAbs);
 }
 
 void Configuration::set_viewer(const std::shared_ptr<ConfigurationViewer>& _viewer){
@@ -3534,8 +3538,8 @@ void displayTrajectory(const arr& _x, int steps, Configuration& G, const Kinemat
   }
   arr x, z;
   if(dim_z) {
-    x.referToRange(_x, 0, -dim_z-1+1);
-    z.referToRange(_x, -dim_z, -1+1);
+    x.referToRange(_x, 0, -dim_z);
+    z.referToRange(_x, -dim_z,0);
   } else {
     x.referTo(_x);
   }

@@ -533,7 +533,7 @@ void MNode::solvePoseProblem() {
 
   //update the bound
   if(feas) {
-    if(count(level)==1/*&& count({2,-1+1})==0 (also no higher levels)*/ || cost_here<bound) bound=cost_here;
+    if(count(level)==1/*&& count({2,0})==0 (also no higher levels)*/ || cost_here<bound) bound=cost_here;
   }
 
   if(count(level)==1 || cost_here<cost(level)) {
@@ -605,7 +605,7 @@ void MNode::solveSeqProblem(int verbose) {
 
   //update the bound
   if(feas) {
-    if(!count(level)/*actually !count({1,-1+1}) (also no higher levels)*/ || cost_here<bound) bound=cost_here;
+    if(!count(level)/*actually !count({1,0}) (also no higher levels)*/ || cost_here<bound) bound=cost_here;
   }
 
   if(!seq.N || cost_here<cost(level)) {
@@ -667,7 +667,7 @@ void MNode::solvePathProblem(uint microSteps, int verbose) {
 
   //update the bound
   if(feas) {
-    if(!count(level)/*actually !count({1,-1+1}) (also no higher levels)*/ || cost_here<bound) bound=cost_here;
+    if(!count(level)/*actually !count({1,0}) (also no higher levels)*/ || cost_here<bound) bound=cost_here;
   }
 
   if(!path.N || cost_here<cost(level)) {

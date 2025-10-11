@@ -34,9 +34,9 @@ H5_Writer::H5_Writer(const char* filename) {
 
 void H5_Writer::addDict(const char* name, const Graph& dict){
   str s;
-  dict.writeYaml(s);
+  dict.writeYaml(s, true);
   charA b;
-  b.referTo(s.p, s.N+1);
+  b.referTo(s.p, s.N);
   add<char>(name, b);
 }
 
@@ -73,10 +73,14 @@ bool H5_Reader::exists(const char* name) {
 
 template<class T> rai::Array<T> H5_Reader::read(const char* name, bool ifExists) {
   if(ifExists && !exists(name)) return {};
-  H5::DataSet dataset = file->openDataSet(name);
   rai::Array<T> x;
-  x.resize(get_dim(dataset));
-  dataset.read(x.p, get_h5type<T>());
+  try{
+    H5::DataSet dataset = file->openDataSet(name);
+    x.resize(get_dim(dataset));
+    dataset.read(x.p, get_h5type<T>());
+  }catch(...) {
+    HALT("failed to access data '" <<name <<"' in h5-file");
+  }
   return x;
 }
 

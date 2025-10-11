@@ -1824,8 +1824,8 @@ void Transformation::read(std::istream& is) {
 Camera::Camera() {
   setZero();
 
-  setPosition(0., 0., 10.);
-  focus(0., 0., 0.);
+  setPosition({0., 0., 10.});
+  focus({0., 0., 0.});
   setHeightAngle(45.);
 }
 
@@ -1848,9 +1848,15 @@ void Camera::setWHRatio(float ratio) { whRatio=ratio; }
 /// set the width/height ratio of your viewport to see a non-distorted picture
 void Camera::setFocalLength(float f) { heightAbs=0;  focalLength = f; }
 /// the frame's position
-void Camera::setPosition(float x, float y, float z) { X.pos.set(x, y, z); }
+void Camera::setPosition(const Vector& x) { X.pos = x; }
 /// rotate the frame to focus the point given by the vector
-void Camera::focus(float x, float y, float z, bool makeUpright) { foc.set(x, y, z); watchDirection(foc-X.pos); if(makeUpright) upright(); }
+void Camera::focus(const Vector& x, bool makeUpright) { foc = x; watchDirection(foc-X.pos); if(makeUpright) upright(); }
+
+void Camera::focusAtDist(const Vector& x, double dist){
+  foc = x;
+  X.pos = x - X.rot.getZ()*dist;
+}
+
 /// rotate the frame to watch in the direction vector D
 void Camera::watchDirection(const Vector& d) {
   if(d.x==0. && d.y==0.) {
@@ -2148,8 +2154,8 @@ arr Camera::getIntrinsicMatrix(double width, double height) const {
 
 void Camera::setKinect() {
   setZero();
-  setPosition(0., 0., 0.);
-  focus(0., 0., 5.);
+  setPosition({0., 0., 0.});
+  focus({0., 0., 5.});
   setZRange(.1, 50.);
   setFocalLength(580./480.);
   whRatio = 640./480.;
@@ -2158,9 +2164,9 @@ void Camera::setKinect() {
 void Camera::setDefault() {
   setHeightAngle(60.);
   setZRange(.01, 100.);
-  setPosition(2., 5., 1.7);
+  setPosition({2., 5., 1.7});
 //  setPosition(10., -4., 10.);
-  focus(0, .0, 1., true);
+  focus({0, .0, 1.}, true);
 //  focus(.9, 0., 1.3);
 }
 

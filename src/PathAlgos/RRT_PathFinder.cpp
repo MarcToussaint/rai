@@ -147,18 +147,18 @@ bool RRT_PathFinder::growTreeTowardsRandom(RRT_SingleTree& rrt) {
 }
 
 void normalizeSphericalCoordinates(arr& x, const uintA& idx){
-  arr xsub = x({idx(0), idx(0)+idx(1)-1+1});
+  arr xsub = x({idx(0), idx(0)+idx(1)});
   op_normalize(xsub);
 }
 
 void randomSphericalCoordinates(arr& x, const uintA& idx){
-  arr xsub = x({idx(0), idx(0)+idx(1)-1+1});
+  arr xsub = x({idx(0), idx(0)+idx(1)});
   xsub = randn(xsub.N);
   op_normalize(xsub);
 }
 
 void flipSphericalCoordinates(arr& x, const uintA& idx){
-  arr xsub = x({idx(0), idx(0)+idx(1)-1+1});
+  arr xsub = x({idx(0), idx(0)+idx(1)});
   xsub *= -1.;
 }
 
@@ -354,7 +354,7 @@ int RRT_PathFinder::stepConnect() {
   return 0;
 }
 
-shared_ptr<SolverReturn> RRT_PathFinder::solve() {
+shared_ptr<SolverReturn> RRT_PathFinder::solve(int verbose) {
   if(!ret) ret = make_shared<SolverReturn>();
   P->useBroadCollisions = opt.useBroadCollisions;
 
@@ -368,6 +368,8 @@ shared_ptr<SolverReturn> RRT_PathFinder::solve() {
   ret->feasible = path.N; //(r==1);
   ret->x = path;
   ret->evals = iters;
+
+  if(verbose>0) view(verbose>1, STRING("RRT solution\n" <<*ret));
 
   return ret;
 }

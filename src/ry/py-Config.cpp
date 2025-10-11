@@ -54,7 +54,7 @@ void init_Config(pybind11::module& m) {
       .def("setWindow", &rai::ConfigurationViewer::setWindow, "set title, width, and height", pybind11::arg("title"), pybind11::arg("width"), pybind11::arg("height"))
       .def("setCamera", &rai::ConfigurationViewer::setCamera, "set the camera pose to a frame, and check frame attributes for intrinsic parameters (focalLength, width height)", pybind11::arg("camFrame"))
       .def("setCameraPose", &rai::ConfigurationViewer::setCameraPose, "set the camera pose directly", pybind11::arg("pose_7d"))
-      .def("focus", &rai::ConfigurationViewer::focus, "focus at a 3D position; second argument distances camara so that view window has roughly given absHeight around object", pybind11::arg("position_7d"), pybind11::arg("heightAbs")=1.)
+      .def("focus", &rai::ConfigurationViewer::focus, "focus at a 3D position; second argument distances camara so that view window has roughly given absHeight around object", pybind11::arg("position_3d"), pybind11::arg("heightAbs")=1.)
 
       .def("getCamera_pose", &rai::ConfigurationViewer::getCameraPose, "get the camera pose directly")
       .def("getCamera_focalLength", [](shared_ptr<rai::ConfigurationViewer>& self) {

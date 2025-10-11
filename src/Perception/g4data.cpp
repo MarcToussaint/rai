@@ -267,7 +267,7 @@ void G4Rec::load(const char* recdir, bool interpolate) {
 
   // setting quaternions as a continuous path on the 4d sphere
   arr dataquat, dataquatprev;
-  dataquatprev = data[0].sub({0, -1+1},{ 3, -1+1});
+  dataquatprev = data[0].sub({0,0},{ 3,0});
   for(uint f = 1; f < data.d0; f++) {
     for(uint i = 0; i < data.d1; i++) {
       dataquat.referToRange(data(f, i, {}), {3, -1});
@@ -310,8 +310,8 @@ void G4Rec::load(const char* recdir, bool interpolate) {
   // setting up default BAMs
   arr datatmp;
   tensorPermutation(datatmp, data, {1u, 0u, 2u});
-  arr pos = datatmp.sub({0, -1+1},{ 0, -1+1},{ 0, 2+1});
-  arr quat = datatmp.sub({0, -1+1},{ 0, -1+1},{ 3, -1+1});
+  arr pos = datatmp.sub({0,0},{0,0},{0, 2+1});
+  arr quat = datatmp.sub({0,0},{0,0},{3,0});
   arr pose = datatmp;
 
   // organizing data about this dir
