@@ -121,7 +121,7 @@ void init_Simulation(pybind11::module& m) {
       pybind11::arg("freeVel")
       )
 
-  .def("resetTime", &rai::Simulation::resetTime, "")
+  .def("resetTime", &rai::Simulation::resetTime, "", pybind11::arg("time")=1.)
 
   .def("pushConfigurationToSimulator", &rai::Simulation::pushConfigurationToSimulator,
        "set the simulator to the full (frame) state of the configuration",

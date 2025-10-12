@@ -51,8 +51,8 @@ int main(int argc,char **argv){
 
     if(!gl) gl=new OpenGL;
     gl->clear();
-    gl->camera.setPosition(2., -2., 2.);
-    gl->camera.focus(0., 0., 0., true);
+    gl->camera.setPosition({2., -2., 2.});
+    gl->camera.focus({0., 0., 0.}, true);
     gl->clearColor = {.7f, .7f, .7f};
     gl->text = "before operations";
     gl->data().addStandardScene(false).add().mesh(mesh);

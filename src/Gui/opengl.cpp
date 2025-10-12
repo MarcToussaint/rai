@@ -480,7 +480,7 @@ void OpenGL::add(rai::RenderData* c) {
   {
     auto _dataLock = dataLock(RAI_HERE);
     drawers.append(c);
-    if(c->opt.backgroundColor.N) clearColor = convert<float>(c->opt.backgroundColor);
+    if(c->opt.backgroundColor.N) clearColor = rai::convert<float>(c->opt.backgroundColor);
   }
 }
 
@@ -981,6 +981,8 @@ void OpenGL::MouseMotion(double _x, double _y) {
     rel.setRadY(-.5*RAI_PI);
     rai::Quaternion rot = -rel * downRot * rel;
     arr rpy = rot.getRollPitchYaw();
+    if(rpy(2)<0.) rpy(2) += RAI_2PI;
+    rai::clip(rpy(2), .01, RAI_PI-.01);
     rai::Vector diff = vec - downVec;
     rpy(2) += 2.*diff.y;
     rpy(1) = 0.;

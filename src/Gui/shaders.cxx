@@ -202,9 +202,10 @@ void main(){
   vec3 lightDirection = normalize(vec3(1.,0,0));
   float cosTheta = clamp(abs(dot(normal, lightDirection)), 0.f, 1.f);
 
-  float rgb = 1.; // + .5*cosTheta;
-
-  color = vec4(rgb, rgb, rgb, density);
+  color = flatColor;
+  color.a = density;
+  //float rgb = 1.; //flatColor.rgb; //objColor.rgb; // + .5*cosTheta;
+  //color = vec4(rgb, rgb, rgb, density);
 }
 
 

@@ -194,8 +194,8 @@ void RenderData::ensureInitialized(OpenGL &gl){
   if(opt.userShaderFiles){
     id.progTensor = LoadShadersFile("shaderTensor.vs", "shaderTensor.fs");
   }else{
-    // id.progTensor = LoadShaders( tensorVS, tensorFS );
-    id.progTensor = LoadShadersFile(rai::raiPath("../rai/src/Gui/shaderTensor.vs"), rai::raiPath("../rai/src/Gui/shaderTensor.fs") );
+    id.progTensor = LoadShaders( tensorVS, tensorFS );
+    // id.progTensor = LoadShadersFile(rai::raiPath("../rai/src/Gui/shaderTensor.vs"), rai::raiPath("../rai/src/Gui/shaderTensor.fs") );
   }
   id.progTensor_Projection_W = glGetUniformLocation(id.progTensor, "Projection_W");
   id.progTensor_ModelT_WM = glGetUniformLocation(id.progTensor, "ModelT_WM");

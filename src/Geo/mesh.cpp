@@ -2033,10 +2033,12 @@ double GJK_distance(Mesh& mesh1, Mesh& mesh2,
 // Lewiner interface
 //
 
-#ifdef RAI_Lewiner
-
 void Mesh::setImplicitSurface(std::function<double(const arr& x)> f, double lo, double up, uint res) {
-  setImplicitSurface(f, arr{lo, lo, lo, up, up, up}.reshape(2,3), res);
+  arr X = grid(3, lo, up, res);
+  floatA grid_values(X.d0);
+  for(uint i=0;i<X.d0;i++) grid_values(i) = f(X[i]);
+  grid_values.reshape(res+1, res+1, res+1);
+  setImplicitSurface(grid_values, (up-lo)*ones(3));
 }
 
 void Mesh::setImplicitSurface(std::function<double(const arr& x)> f, const arr& bounds, uint res){
@@ -2122,12 +2124,6 @@ void Mesh::setImplicitSurface(const floatA& gridValues, const arr& size) {
   }
 #endif
 }
-
-#else //Lewiner
-void Mesh::setImplicitSurface(std::function<double(const arr& x)> f, const arr& bounds, uint res) {  NICO  }
-void Mesh::setImplicitSurface(const arr& gridValues, const arr& size) {  NICO  }
-void Mesh::setImplicitSurface(const floatA& gridValues, const arr& size) {  NICO  }
-#endif
 
 void Mesh::setImplicitSurfaceBySphereProjection(ScalarFunction& _f, double rad, uint fineness) {
   setSphere(fineness);

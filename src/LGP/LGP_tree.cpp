@@ -234,7 +234,7 @@ void LGP_Tree::updateDisplay() {
 //      dth->gl.addSubView(i, glStandardScene, nullptr);
       dth->gl.addSubView(i, solutions()(i)->viewer.get());
       dth->gl.views(i).camera.setDefault();
-      if(cameraFocus.N) dth->gl.views(i).camera.focus(cameraFocus(0), cameraFocus(1), cameraFocus(2), true);
+      if(cameraFocus.N) dth->gl.views(i).camera.focus(cameraFocus, true);
       //      dth->gl.views(i).camera.focus(.9, 0., 1.3);
     }
     dth->gl.views(i).drawers.last() = solutions()(i)->viewer.get();
