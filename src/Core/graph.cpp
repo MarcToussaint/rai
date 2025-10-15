@@ -1204,7 +1204,7 @@ void Graph::writeYaml(std::ostream& os, bool classic) const {
   }else{
     out.SetMapFormat(YAML::Flow);
     out.SetSeqFormat(YAML::Flow);
-    out.SetStringFormat(YAML::SingleQuoted);
+    //out.SetStringFormat(YAML::DoubleQuoted);
   }
   out <<root;
 

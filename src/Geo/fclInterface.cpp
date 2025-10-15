@@ -79,7 +79,7 @@ FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _exclu
       }else if(shape->type()==ST_box){
         geom = make_shared<fcl::Box>(shape->size(0), shape->size(1), shape->size(2));
       } else {
-        CHECK(shape->sscCore().N, "for FCL broadphase, every shape with 'contact' enabled needs a convex core: " <<shape->frame.name);
+        CHECK(shape->sscCore().N, "for FCL broadphase, every shape with 'contact' enabled needs a convex core"); // <<shape->frame.name);
         CHECK_EQ(shape->radius(), shape->coll_cvxRadius, "should be equal");
         rai::Mesh& mesh = cvx_meshes(i);
         mesh.setSSCvx(shape->sscCore(), shape->coll_cvxRadius*1.05, 1); //make it a little larger... sphere approx

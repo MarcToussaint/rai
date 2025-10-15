@@ -20,4 +20,6 @@ j7(arm6) { joint:hingeX A: "t(0 0 0.2) d(45 0 0 1)" limits:[-2 2] }
 #target { X: "t(.5 -1. 2.) q(.939 0 0 .34)"  shape:box size=[.3 .1 .2] color=[0 .5 0] }
 target { X: "t(.5 -1. 2.) d(-20 0 1 0) d(20 0 0 1)"  shape:box size=[.3 .1 .2] color=[0 .5 0] }
 
+obstacle { X: "t(1. -0.5 .8)"  shape: sphere size=[.5] color=[1 0 0] contact }
+
 endeff(arm7){ shape:marker pose: "t(0 0 .3)" size=[.3] } # a marker shape at the tip of arm7

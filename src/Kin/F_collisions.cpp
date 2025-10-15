@@ -255,8 +255,8 @@ struct SweepingSDFPenetration : ScalarFunction {
   SweepingSDFPenetration(const FrameL& F) {
     CHECK_EQ(F.d0, 2, "");
     CHECK_EQ(F.d1, 2, "");
-    sdf1 = F(0, 0)->shape->functional();
-    sdf2 = F(0, 1)->shape->functional();
+    sdf1 = F(0, 0)->shape->functional(F(0,0)->ensure_X());
+    sdf2 = F(0, 1)->shape->functional(F(0,1)->ensure_X());
     vel1 = F(0, 0)->getPosition() - F(1, 0)->getPosition();
     vel2 = F(0, 1)->getPosition() - F(1, 1)->getPosition();
   }
@@ -355,8 +355,8 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F) {
     rai::Frame* f1 = F.elem(0);
     rai::Frame* f2 = F.elem(1);
     CHECK(f1->shape && f2->shape, "");
-    auto func1=f1->shape->functional();
-    auto func2=f2->shape->functional();
+    auto func1=f1->shape->functional(f1->ensure_X());
+    auto func2=f2->shape->functional(f2->ensure_X());
     CHECK(func1 && func2, "");
 
     Conv_cfunc2ScalarFunction f([&func1, &func2](arr& g, arr& H, const arr& x) {

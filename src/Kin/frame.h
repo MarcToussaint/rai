@@ -97,7 +97,7 @@ struct Frame : NonCopyable {
 
   //attachments to the frame
   Joint* joint=nullptr;          ///< this frame is an articulated joint
-  Shape* shape=nullptr;          ///< this frame has a (collision or visual) geometry
+  shared_ptr<Shape> shape;       ///< this frame has a (collision or visual) geometry
   Inertia* inertia=nullptr;      ///< this frame has inertia (is a mass)
   //TODO have a single list of all attached dofs (also joint)
   Array<ForceExchangeDof*> forces;  ///< this frame exchanges forces with other frames
@@ -329,12 +329,12 @@ stdOutPipe(Inertia)
 
 /// a Frame with Shape is a collision or visual object
 struct Shape : NonCopyable {
-  Frame& frame;
-  Enum<ShapeType> _type;
+  Enum<ShapeType> _type = ST_none;
   arr size;
   shared_ptr<Mesh> _mesh;
   shared_ptr<arr> _sscCore;
   double coll_cvxRadius=-1.;
+  int version = 0;
   shared_ptr<SDF> _sdf;
   char cont=0;           ///< are contacts registered (or filtered in the callback)
 
@@ -345,17 +345,14 @@ struct Shape : NonCopyable {
   SDF& sdf() { if(!_sdf) { if(_type==ST_none) _type=ST_sdf; _sdf = make_shared<TensorShape>(); } return *_sdf; }
   double alpha() { arr& C=mesh().C; if(C.N==4 || C.N==2 || (C.nd==2 && C.d1==4)) return C.elem(-1); return 1.; }
 
-  void createMeshes();
-  shared_ptr<ScalarFunction> functional(bool worldCoordinates=true);
+  void createMeshes(const str& name);
+  shared_ptr<ScalarFunction> functional(const rai::Transformation& pose=0);
 
-  Shape(Frame& f, const Shape* copyShape=nullptr); //new Shape, being added to graph and frame's shape lists
-  virtual ~Shape();
+  bool canCollide(const rai::Frame* f1, const Frame* f2) const;
 
-  bool canCollideWith(const Frame* f) const;
-
-  void read(const Graph& ats);
-  void write(std::ostream& os) const;
-  void write(Graph& g);
+  void read(Frame& frame);
+  void write(std::ostream& os, const Frame& frame) const;
+  void write(Graph& g, const Frame& frame);
 };
 
 //===========================================================================

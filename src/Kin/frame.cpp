@@ -55,7 +55,7 @@ rai::Frame::Frame(Configuration& _C, const Frame* copyFrame)
     name=f.name; Q=f.Q; X=f.X; _state_X_isGood=f._state_X_isGood; tau=f.tau; ats=f.ats;
     //we cannot copy link! because we can't know if the frames already exist. Configuration::copy copies the rel's !!
     if(copyFrame->joint) new Joint(*this, copyFrame->joint);
-    if(copyFrame->shape) new Shape(*this, copyFrame->shape);
+    shape = copyFrame->shape; //if(copyFrame->shape) new Shape(*this, copyFrame->shape);
     if(copyFrame->inertia) new Inertia(*this, copyFrame->inertia);
     if(copyFrame->particleDofs) new ParticleDofs(*this, copyFrame->particleDofs);
     if(copyFrame->pathDof) new PathDof(*this, copyFrame->pathDof);
@@ -76,7 +76,7 @@ rai::Frame::~Frame() {
   if(particleDofs) delete particleDofs;
   if(pathDof) delete pathDof;
   if(dirDof) delete dirDof;
-  if(shape) delete shape;
+  if(shape) shape.reset(); //delete shape;
   if(inertia) delete inertia;
   if(parent) unLink();
   while(children.N) children.last()->unLink();
@@ -258,7 +258,7 @@ FrameL rai::Frame::getPathToUpwardLink(bool untilPartBreak) {
 }
 
 rai::Shape& rai::Frame::getShape() {
-  if(!shape) shape = new Shape(*this);
+  if(!shape) shape = make_shared<Shape>();
   return *shape;
 }
 
@@ -318,7 +318,7 @@ rai::Frame& rai::Frame::convertDecomposedShapeToChildFrames() {
       ch->shape->cont = shape->cont;
     }
   }
-  delete shape;
+  shape.reset();
   return *this;
 }
 
@@ -342,7 +342,7 @@ bool rai::Frame::standardizeInertias(bool recomputeInertias, bool _transformToDi
                               || ch->getShape().alpha()==1.);
       if(!needsInertia && ch->inertia) delete ch->inertia;
       if(needsInertia){
-        if(!ch->shape->_mesh) ch->shape->createMeshes();
+        if(!ch->shape->_mesh) ch->shape->createMeshes(ch->name);
         ch->getInertia().mass = -1.;
         ch->getInertia().defaultInertiaByShape();
       }
@@ -461,7 +461,7 @@ void rai::Frame::read(const Graph& ats) {
 //        f->joint->read(ats);
     }
   }
-  if(ats.findNode("shape") || ats.findNode("mesh") || ats.findNode("mesh_decomp") || ats.findNode("mesh_points") || ats.findNode("sdf")) { shape = new Shape(*this); shape->read(ats); }
+  if(ats.findNode("shape") || ats.findNode("mesh") || ats.findNode("mesh_decomp") || ats.findNode("mesh_points") || ats.findNode("sdf")) { getShape().read(*this); }
   if(ats.findNode("mass")) { inertia = new Inertia(*this); inertia->read(ats); }
 }
 
@@ -484,7 +484,7 @@ void rai::Frame::write(Graph& G) const {
 
   if(joint) joint->write(G);
   if(dirDof) dirDof->write(G);
-  if(shape) shape->write(G);
+  if(shape) shape->write(G, *this);
   if(inertia) inertia->write(G);
 
   StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "joint_scale", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
@@ -533,7 +533,7 @@ void rai::Frame::write(Graph& G) const {
 rai::Frame& rai::Frame::setShape(rai::ShapeType shape, const arr& size) {
   getShape().type() = shape;
   getShape().size = size;
-  getShape().createMeshes();
+  getShape().createMeshes(name);
   return *this;
 }
 
@@ -611,7 +611,7 @@ rai::Frame& rai::Frame::setMesh(const arr& verts, const uintA& tris, const byteA
   if(cvxParts.N) {
     mesh.cvxParts = cvxParts;
   }
-  mesh.version++;
+  shape->version++;
   C.view_unlock();
   return *this;
 }
@@ -642,7 +642,7 @@ rai::Frame& rai::Frame::setMeshFile(str file, double scale){
 rai::Frame& rai::Frame::setTextureFile(str imgFile, const arr& texCoords){
   C.view_lock(RAI_HERE);
   CHECK(shape, "frame needs a shape");
-  if(!shape->_mesh) shape->createMeshes();
+  if(!shape->_mesh) shape->createMeshes(name);
   CHECK(shape->_mesh, "mesh needs to be created before");
   rai::Mesh& mesh = getShape().mesh();
 
@@ -667,7 +667,7 @@ rai::Frame& rai::Frame::setTextureFile(str imgFile, const arr& texCoords){
   }
 
   mesh.texImg(imgFile);
-  mesh.version++;
+  shape->version++;
   getAts().set<FileToken>("texture", rai::FileToken(imgFile));
   C.view_unlock();
   return *this;
@@ -697,7 +697,7 @@ rai::Frame& rai::Frame::setLines(const arr& verts, const byteA& colors, bool sin
     mesh.C /= 255.;
     if(mesh.C.N <= 4) { mesh.C.reshape(-1); }
   }
-  mesh.version++;
+  shape->version++;
   C.view_unlock();
   return *this;
 }
@@ -722,7 +722,7 @@ rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors, co
     mesh.Vn = normals;
     mesh.Vn.reshape(-1, 3);
   }
-  mesh.version++;
+  shape->version++;
   C.view_unlock();
   return *this;
 }
@@ -732,7 +732,6 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
   if(getShape()._sscCore.get()!=&points){
     getShape().sscCore()=points; getShape().sscCore().reshape(-1, 3);
   }
-  getShape().mesh().setSSCvx(getShape().sscCore(), radius);
   if(radius<=0.) {
     getShape().type() = ST_mesh;
     getShape().coll_cvxRadius = 0.;
@@ -742,12 +741,14 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
     getShape().coll_cvxRadius = radius;
     getShape().size = arr{radius};
   }
+  rai::Mesh& mesh = getShape().mesh();
+  mesh.setSSCvx(getShape().sscCore(), radius);
   if(colors.N) {
-    getShape().mesh().C = reshapeColor(convert<double>(colors) /= 255.);
+    mesh.C = reshapeColor(convert<double>(colors) /= 255.);
   }else{
-    getShape().mesh().C.clear();
+    mesh.C.clear();
   }
-  getShape().mesh().version++;
+  shape->version++;
   C.view_unlock();
   return *this;
 }
@@ -755,9 +756,8 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
 rai::Frame& rai::Frame::setMesh2(const rai::Mesh& m) {
   C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
-  int version = getShape().mesh().version;
   getShape().mesh() = m;
-  getShape().mesh().version = version+1; //if(getShape().glListId>0) getShape().glListId *= -1;
+  shape->version++;
   C.view_unlock();
   return *this;
 }
@@ -766,8 +766,8 @@ rai::Frame& rai::Frame::setSdf(std::shared_ptr<SDF>& sdf) {
   C.view_lock(RAI_HERE);
   getShape().type() = ST_sdf;
   getShape()._sdf = sdf;
-  getShape().createMeshes();
-  getShape().mesh().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
+  getShape().createMeshes(name);
+  getShape().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -780,16 +780,9 @@ rai::Frame& rai::Frame::setTensorShape(const floatA& data, const arr& size) {
   sdf->up = +.5*size;
   sdf->gridData = data;
   sdf->color = arr{1.,1.,1.};
-  // sdf->_densityDisplayData = make_shared<DensityDisplayData>(*sdf);
   getShape().size = size;
   getShape()._sdf = sdf;
-  // getShape().createMeshes();
-  // getShape().mesh().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
-  // if(withBox){
-  //   getShape().mesh().clear();
-  //   getShape().mesh().setBox(true);
-  //   getShape().mesh().scale(size(0), size(1), size(2));
-  // }
+  getShape().version++;
   C.view_unlock();
   return *this;
 }
@@ -805,7 +798,7 @@ rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, 
     sdf.resample(d(0), d(1), d(2));
   }
   getShape().mesh().setImplicitSurface(sdf.gridData, size);
-  getShape().mesh().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
+  getShape().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
   C.view_unlock();
   return *this;
 }
@@ -832,7 +825,7 @@ rai::Frame& rai::Frame::setColor(const arr& color) {
     }else{
       getShape().mesh().C = color;
     }
-    getShape().mesh().version++;
+    getShape().version++;
   }
   C.view_unlock();
   return *this;
@@ -858,7 +851,7 @@ rai::Frame& rai::Frame::setJoint(rai::JointType jointType, const arr& limits, do
 
 rai::Frame& rai::Frame::setContact(int cont) {
   getShape().cont = cont;
-  if(!getShape().sscCore().N) getShape().createMeshes();
+  if(!getShape().sscCore().N) getShape().createMeshes(name);
   return *this;
 }
 
@@ -930,9 +923,9 @@ void rai::Frame::makeManipJoint(rai::JointType jointType, rai::Frame* parent, bo
 void rai::Frame::setAutoLimits() {
   CHECK(joint, "");
   rai::JointType jointType = joint->type;
-  rai::Shape* from = parent->shape;
-  if(!from && parent->parent) from = parent->parent->shape;
-  rai::Shape* to = this->shape;
+  rai::Shape* from = parent->shape.get();
+  if(!from && parent->parent) from = parent->parent->shape.get();
+  rai::Shape* to = this->shape.get();
 
   //-- automatic limits
   if(jointType==JT_free) {
@@ -1965,45 +1958,25 @@ void rai::Joint::write(Graph& ats) const {
 // Shape
 //
 
-rai::Shape::Shape(Frame& f, const Shape* copyShape)
-  : frame(f), _type(ST_none) {
-
-  CHECK(!frame.shape, "this frame ('" <<frame.name <<"') already has a shape attached");
-  frame.shape = this;
-  if(copyShape) {
-    const Shape& s = *copyShape;
-    if(s._mesh) _mesh = s._mesh; //shallow shared_ptr copy!
-    if(s._sscCore) _sscCore = s._sscCore; //shallow shared_ptr copy!
-    coll_cvxRadius = s.coll_cvxRadius;
-    if(s._sdf) _sdf = s._sdf; //shallow shared_ptr copy!
-    _type = s._type;
-    size = s.size;
-    cont = s.cont;
-  }
-}
-
-rai::Shape::~Shape() {
-  frame.shape = nullptr;
-}
-
-bool rai::Shape::canCollideWith(const rai::Frame* f) const {
+bool rai::Shape::canCollide(const rai::Frame* f1, const rai::Frame* f2) const {
   if(!cont) return false;
-  if(!f->shape || !f->shape->cont) return false;
-  Frame* a = frame.getUpwardLink();
-  Frame* b = f->getUpwardLink();
+  if(!f2->shape || !f2->shape->cont) return false;
+  Frame* a = f1->getUpwardLink();
+  Frame* b = f2->getUpwardLink();
   if(a==b) return false;
   if(cont<0) if(a->isChildOf(b, -cont)) return false;
-  if(f->shape->cont<0)  if(b->isChildOf(a, -f->shape->cont)) return false;
+  if(f2->shape->cont<0)  if(b->isChildOf(a, -f2->shape->cont)) return false;
   return true;
 }
 
-void rai::Shape::read(const Graph& ats) {
+void rai::Shape::read(Frame& frame) {
 
   double d;
   arr x;
   rai::String str;
   rai::FileToken fil;
 
+  Graph& ats = frame.getAts();
   ats.get(size, "size");
 
   if(ats.get(d, "shape"))        { type()=(ShapeType)(int)d;}
@@ -2093,13 +2066,13 @@ void rai::Shape::read(const Graph& ats) {
     else cont=1;
   }
 
-  createMeshes();
+  createMeshes(frame.name);
 
   //compute the bounding radius
   //if(mesh().V.N) mesh_radius = mesh().getRadius();
 }
 
-void rai::Shape::write(std::ostream& os) const {
+void rai::Shape::write(std::ostream& os, const Frame& frame) const {
   os <<", shape: " <<_type;
   if(_type!=ST_mesh) os <<", size: " <<size;
 
@@ -2112,7 +2085,7 @@ void rai::Shape::write(std::ostream& os) const {
   if(cont) os <<", contact: " <<(int)cont;
 }
 
-void rai::Shape::write(Graph& g) {
+void rai::Shape::write(Graph& g, const Frame& frame) {
   g.add<rai::Enum<ShapeType>>("shape", type());
   if(type()!=ST_mesh) g.add<arr>("size", size);
 
@@ -2126,14 +2099,14 @@ void rai::Shape::write(Graph& g) {
 }
 
 
-void rai::Shape::createMeshes() {
+void rai::Shape::createMeshes(const str& name) {
   //create mesh for basic shapes
   switch(_type) {
     case rai::ST_none: {
       HALT("shapes should have a type - somehow wrong initialization..."); break;
     } break;
     case rai::ST_box: {
-      CHECK_EQ(size.N, 3, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
+      CHECK_EQ(size.N, 3, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
       mesh().clear();
       mesh().setBox();
       mesh().scale(size(0), size(1), size(2));
@@ -2141,25 +2114,25 @@ void rai::Shape::createMeshes() {
       sscCore() = mesh().V;
     } break;
     case rai::ST_sphere: {
-      CHECK_EQ(size.N, 1, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
+      CHECK_EQ(size.N, 1, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
       coll_cvxRadius = size(-1);
       sscCore() = zeros(1,3);
       mesh().setSSCvx(sscCore(), coll_cvxRadius);
     } break;
     case rai::ST_cylinder:
-      CHECK_EQ(size.N, 2, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
-      CHECK(size(-1)>1e-10, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
+      CHECK_EQ(size.N, 2, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
+      CHECK(size(-1)>1e-10, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
       mesh().setCylinder(size(-1), size(0));
       break;
     case rai::ST_capsule:
-      CHECK_EQ(size.N, 2, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
+      CHECK_EQ(size.N, 2, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
       coll_cvxRadius = size(-1);
-      CHECK(coll_cvxRadius>1e-10, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
+      CHECK(coll_cvxRadius>1e-10, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
       sscCore() = arr({2, 3}, {0., 0., -.5*size(0), 0., 0., .5*size(0)});
       mesh().setSSCvx(sscCore(), coll_cvxRadius);
       break;
     case rai::ST_quad: {
-      CHECK_EQ(size.N, 2, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
+      CHECK_EQ(size.N, 2, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
       byteA tex = mesh().texImg().img;
       mesh().setQuad(size(0), size(1), tex);
     } break;
@@ -2186,14 +2159,12 @@ void rai::Shape::createMeshes() {
     } break;
     case rai::ST_tensor: {
       auto gridSdf = std::dynamic_pointer_cast<TensorShape>(_sdf);
-      if(gridSdf && gridSdf->gridData.N) {
-        gridSdf->_densityDisplayData = make_shared<DensityDisplayData>(*gridSdf);
-      }
+      // if(gridSdf && gridSdf->gridData.N) gridSdf->_densityDisplayData = make_shared<DensityDisplayData>(*gridSdf);
     } break;
     case rai::ST_ssCvx:
-      CHECK_EQ(size.N, 1, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
+      CHECK_EQ(size.N, 1, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
       coll_cvxRadius = size(-1);
-      CHECK(coll_cvxRadius>1e-10, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
+      CHECK(coll_cvxRadius>1e-10, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
       if(!sscCore().N) {
         CHECK(mesh().V.N, "mesh or sscCore needs to be loaded");
         sscCore() = mesh().V;
@@ -2201,7 +2172,7 @@ void rai::Shape::createMeshes() {
       mesh().setSSCvx(sscCore(), coll_cvxRadius);
       break;
     case rai::ST_ssBox: {
-      CHECK_EQ(size.N, 4, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
+      CHECK_EQ(size.N, 4, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
       coll_cvxRadius = size(-1);
       if(coll_cvxRadius<1e-10) {
         mesh().setBox();
@@ -2218,7 +2189,7 @@ void rai::Shape::createMeshes() {
       //      mesh().setSSCvx(sscCore, r);
     } break;
     case rai::ST_ssCylinder: {
-      CHECK(size.N==3, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
+      CHECK(size.N==3, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
       coll_cvxRadius = size(-1);
       if(coll_cvxRadius<1e-10) {
         mesh().setCylinder(size(1), size(0));
@@ -2233,7 +2204,7 @@ void rai::Shape::createMeshes() {
       mesh().setSSCvx(sscCore(), coll_cvxRadius);
     } break;
     case rai::ST_ssBoxElip: {
-      CHECK_EQ(size.N, 7, "wrong size attribute for frame '" <<frame.name <<"' of shape " <<_type);
+      CHECK_EQ(size.N, 7, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
       coll_cvxRadius = size(-1);
       for(uint i=0; i<3; i++) if(size(i)<2.*coll_cvxRadius) size(i) = 2.*coll_cvxRadius;
       rai::Mesh box;
@@ -2256,7 +2227,7 @@ void rai::Shape::createMeshes() {
     m.V = mesh().V;
     m.makeConvexHull();
     if(!m.T.N){ //empty mesh -> remove
-      LOG(-1) <<"shape " <<frame.name <<" coll_core is trivial -> removing contact flag";
+      LOG(-1) <<"shape " <<name <<" coll_core is trivial -> removing contact flag";
       cont=0;
     }else{
       coll_cvxRadius=0.;
@@ -2266,16 +2237,14 @@ void rai::Shape::createMeshes() {
 #endif
 
 //  if(_mesh && _mesh->C.nd==2 && _mesh->C.d0==_mesh->V.d0) _mesh->computeFaceColors();
-  mesh().version++; //if(glListId>0) glListId *= -1;
+  version++; //if(glListId>0) glListId *= -1;
 //  auto func = functional(false);
 //  if(func){
 //    mesh().setImplicitSurfaceBySphereProjection(*func, 2.);
 //  }
 }
 
-shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates) {
-  rai::Transformation pose = 0;
-  if(worldCoordinates) pose = frame.ensure_X();
+shared_ptr<ScalarFunction> rai::Shape::functional(const Transformation& pose) {
   //create mesh for basic shapes
   switch(_type) {
     case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;

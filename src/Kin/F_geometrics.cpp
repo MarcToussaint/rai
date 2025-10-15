@@ -73,13 +73,13 @@ void F_InsideBox::phi2(arr& y, arr& J, const FrameL& F) {
 
 void TM_InsideLine::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.N, 2, "");
-  rai::Shape* pnt=F.elem(0)->shape;
-  rai::Shape* box=F.elem(1)->shape;
+  rai::Shape* pnt=F.elem(0)->shape.get();
+  rai::Shape* box=F.elem(1)->shape.get();
   CHECK(pnt && box, "I need shapes!");
   CHECK(box->type()==rai::ST_capsule, "the 2nd shape needs to be a capsule"); //s1 should be the board
 //  arr pos, posJ;
 //  G.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
-  arr pos = F_PositionDiff().eval({&pnt->frame, &box->frame});
+  arr pos = F_PositionDiff().eval(F);
   double range = box->size(-2);
   range *= .5;
   range -= margin;

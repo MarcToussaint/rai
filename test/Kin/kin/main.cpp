@@ -73,10 +73,11 @@ void TEST(Viewer){
   C.addFile(("$RAI_PATH/panda/panda.g"));
   C.view();
 
-  rai::Frame *f = C.addFrame("changer");
-//  f->setShape(rai::ST_mesh, {});
-  f->setConvexMesh({}, {255,0,0}, .05);
-  C.get_viewer()->renderUntil=rai::_marker;
+  rai::Frame *f = C.addFrame("mesh");
+  f->setShape(rai::ST_mesh, {});
+
+  rai::Frame *f2 = C.addFrame("tensor");
+  f2->setTensorShape(rai::convert<float>(.02 * randn({5, 5, 5})), {.2, .2, .2});
   C.view(true);
 
   rai::Configuration C2;
@@ -84,15 +85,14 @@ void TEST(Viewer){
   C2.view();
 
   f->setPosition({.5, .5, 1.});
-  arr pts = .2*randn({10,3});
-  f->setConvexMesh(pts, {255,0,0}, .05);
-  C.view();
+  f2->setPosition({-.2, -.2, .5});
+  C2.frames.elem(-1)->setPosition({-.2, -.2, .5});
 
   for(uint k=0;k<20;k++){
-    arr pts = .2*randn({10,3});
-    f->setConvexMesh(pts, {255,0,0}, .05);
+    f->setConvexMesh(.2*randn({10,3}), {255,0,0}, .05);
+    f2->setTensorShape(rai::convert<float>(.02 * randn({k+2, k+2, k+2})), {.2, .2, .2});
+
     rai::wait(.01);
-//    if(!(k%10))
     C.view(false, STRING(k));
     C2.view(false, STRING(k));
   }
@@ -782,7 +782,7 @@ void testMergeSceneMesh(){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  testMini(); return 0;
+  testMini();
   testLoadSave();
   testCopy();
   testGraph();

@@ -20,8 +20,10 @@
 //helper methods:
 
 void POA_distance(arr& y, arr& J, rai::ForceExchangeDof* ex, bool b_or_a) {
-  rai::Shape* s = ex->a.shape;
-  if(b_or_a) s = ex->b.shape;
+  rai::Frame* f = &ex->a;
+  if(b_or_a) f = &ex->b;
+
+  rai::Shape* s = f->shape.get();
   CHECK(s, "contact object does not have a shape!");
   double r=s->coll_cvxRadius;
   arr m = s->sscCore();
@@ -35,10 +37,10 @@ void POA_distance(arr& y, arr& J, rai::ForceExchangeDof* ex, bool b_or_a) {
   ex->kinPOA(pos, Jpos);
   X0.pos = pos;
 
-  rai::PairCollision coll(M0, m, X0, s->frame.ensure_X(), 0., r);
+  rai::PairCollision coll(M0, m, X0, f->ensure_X(), 0., r);
 
   arr Jp;
-  K.jacobian_pos(Jp, &s->frame, coll.p1);
+  K.jacobian_pos(Jp, f, coll.p1);
 
   coll.kinDistance(y, J, Jpos, Jp);
 }
@@ -593,7 +595,7 @@ void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F) {
 
   //-- evaluate functional
   CHECK(f->shape, "the frame '" <<f->name <<"' needs to have a shape");
-  shared_ptr<ScalarFunction> func = f->shape->functional();
+  shared_ptr<ScalarFunction> func = f->shape->functional(f->ensure_X());
   CHECK(func, "the frame '" <<f->name <<"' needs to have a functional shape");
   arr g;
   double d = func->f(g, NoArr, poa);
@@ -623,7 +625,7 @@ void F_fex_POASurfaceNormal::phi2(arr& y, arr& J, const FrameL& F) {
 
   //-- evaluate functional with Hessian
   CHECK(f->shape, "");
-  shared_ptr<ScalarFunction> func = f->shape->functional();
+  shared_ptr<ScalarFunction> func = f->shape->functional(f->ensure_X());
   CHECK(func, "");
   arr g, H;
   func->f(g, H, poa);
@@ -670,8 +672,8 @@ void F_fex_POAContactDistances::phi2(arr& y, arr& J, const FrameL& F) {
   rai::ForceExchangeDof* ex = getContact(f1, f2);
 
   //-- POA inside objects (eventually on surface!)
-  rai::Shape* s1 = f1->shape;
-  rai::Shape* s2 = f2->shape;
+  rai::Shape* s1 = f1->shape.get();
+  rai::Shape* s2 = f2->shape.get();
   CHECK(s1 && s2, "");
   double r1=s1->coll_cvxRadius;
   double r2=s2->coll_cvxRadius;
@@ -684,8 +686,8 @@ void F_fex_POAContactDistances::phi2(arr& y, arr& J, const FrameL& F) {
   ex->kinPOA(pos, Jpos);
   X0.pos = pos;
 
-  rai::PairCollision coll1(M0, m1, X0, s1->frame.ensure_X(), 0., r1);
-  rai::PairCollision coll2(M0, m2, X0, s2->frame.ensure_X(), 0., r2);
+  rai::PairCollision coll1(M0, m1, X0, f1->ensure_X(), 0., r1);
+  rai::PairCollision coll2(M0, m2, X0, f2->ensure_X(), 0., r2);
 
   arr Jp1, Jp2;
   f1->C.jacobian_pos(Jp1, f1, coll1.p1);

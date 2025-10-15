@@ -44,8 +44,6 @@ struct Mesh {
 
   rai::Transformation glX; ///< transform (only used for drawing! Otherwise use applyOnPoints)  (optional)
 
-  int version = 0;
-
   uint _support_vertex=0;
   bool isArrayFormatted=false;
 

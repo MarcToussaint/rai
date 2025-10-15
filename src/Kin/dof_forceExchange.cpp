@@ -178,14 +178,14 @@ void rai::ForceExchangeDof::kinTorque(arr& y, arr& J) const {
 
 rai::PairCollision* rai::ForceExchangeDof::coll() {
   if(!__coll) {
-    rai::Shape* s1 = a.shape;
-    rai::Shape* s2 = b.shape;
+    rai::Shape* s1 = a.shape.get();
+    rai::Shape* s2 = b.shape.get();
     CHECK(s1 && s2, "");
     double r1=s1->coll_cvxRadius;
     double r2=s2->coll_cvxRadius;
     arr m1 = s1->sscCore();
     arr m2 = s2->sscCore();
-    __coll = new PairCollision(m1, m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
+    __coll = new PairCollision(m1, m2, a.ensure_X(), b.ensure_X(), r1, r2);
   }
   return __coll;
 }

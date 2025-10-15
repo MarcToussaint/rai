@@ -38,7 +38,7 @@ namespace rai {
 //==============================================================================
 
 template<> const char* Enum<ShapeType>::names []= {
-  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "pointCloud", "ssCvx", "ssBox", "ssCylinder", "ssBoxElip", "quad", "camera", "sdf", nullptr
+  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "pointCloud", "ssCvx", "ssBox", "ssCylinder", "ssBoxElip", "quad", "camera", "sdf", "tensor", "lines", nullptr
 };
 
 //==============================================================================

@@ -56,9 +56,9 @@ getQFramesAndScale_Return getCtrlFramesAndScale(const rai::Configuration& C, boo
 
 Shape* getShape(const Configuration& K, const char* name) {
   Frame* f = K.getFrame(name);
-  Shape* s = f->shape;
+  Shape* s = f->shape.get();
   if(!s) {
-    for(Frame* b:f->children) if(b->name==name && b->shape) { s=b->shape; break; }
+    for(Frame* b:f->children) if(b->name==name && b->shape) { s=b->shape.get(); break; }
   }
   return s;
 }
@@ -66,10 +66,10 @@ Shape* getShape(const Configuration& K, const char* name) {
 rai::Transformation relTransformOn(const rai::Configuration& K, const char* name1, const char* name2) {
   rai::Frame* f1 = K.getFrame(name1);
   rai::Frame* f2 = K.getFrame(name2);
-  rai::Shape* s1 = f1->shape;
-  rai::Shape* s2 = f2->shape;
-  if(!s1) { for(rai::Frame* b:f1->children) if(b->name==name1 && b->shape) { s1=b->shape; break; } }
-  if(!s2) { for(rai::Frame* b:f2->children) if(b->name==name2 && b->shape) { s2=b->shape; break; } }
+  rai::Shape* s1 = f1->shape.get();
+  rai::Shape* s2 = f2->shape.get();
+  if(!s1) { for(rai::Frame* b:f1->children) if(b->name==name1 && b->shape) { s1=b->shape.get(); break; } }
+  if(!s2) { for(rai::Frame* b:f2->children) if(b->name==name2 && b->shape) { s2=b->shape.get(); break; } }
   rai::Transformation rel=0;
   CHECK(s1->type()==rai::ST_ssBox, "");
   rel.pos.z += .5*s1->size(2);
@@ -472,7 +472,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       rai::Frame* f = addSwitch(times(0), true, true, JT_free, SWInit_copy, frames(0), frames(1));
       if(f) { //limits?
         double maxsize = 0.;
-        rai::Shape* from = world.getFrame(frames(0))->shape;
+        rai::Shape* from = world.getFrame(frames(0))->shape.get();
         if(from && from->type()!=rai::ST_marker) {
           if(from->type()==rai::ST_sphere || from->type()==rai::ST_cylinder || from->type()==rai::ST_ssCylinder) {
             maxsize += 2.*from->size(0);
@@ -482,7 +482,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
         } else if(from) {
           CHECK_EQ(from->type(), ST_marker, "");
         }
-        rai::Shape* to = world.getFrame(frames(1))->shape;
+        rai::Shape* to = world.getFrame(frames(1))->shape.get();
         if(to && to->type()!=rai::ST_marker) {
           if(to->type()==rai::ST_sphere || to->type()==rai::ST_cylinder || to->type()==rai::ST_ssCylinder) {
             maxsize += 2.*to->size(0);
@@ -512,7 +512,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       //f->joint->setGeneric("xyc");
       if(f) {
         //limits?
-        rai::Shape* on = world.getFrame(frames(0))->shape;
+        rai::Shape* on = world.getFrame(frames(0))->shape.get();
         CHECK_EQ(on->type(), rai::ST_ssBox, "")
         f->joint->limits = {
           -.5*on->size(0), -.5*on->size(1), -RAI_2PI,
@@ -529,7 +529,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       rai::Frame* f = addSwitch(times(0), true, true, JT_transXYPhi, SWInit_zero, frames(0), frames(1), rel);
       if(f) {
         //limits?
-        rai::Shape* on = world.getFrame(frames(0))->shape;
+        rai::Shape* on = world.getFrame(frames(0))->shape.get();
         CHECK_EQ(on->type(), rai::ST_ssBox, "")
         f->joint->limits = {
           -.5*on->size(2), -.5*on->size(1), -RAI_2PI,
@@ -547,7 +547,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       f->joint->setGeneric("xzb");
       if(f) {
         //limits?
-        rai::Shape* on = world.getFrame(frames(1))->shape;
+        rai::Shape* on = world.getFrame(frames(1))->shape.get();
         CHECK_EQ(on->type(), rai::ST_ssBox, "")
         f->joint->limits = {
           -.5*on->size(0), -.5*on->size(2), -RAI_2PI,
@@ -614,7 +614,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
     rai::Frame* f = addSwitch(times(0), true, make_shared<KinematicSwitch>(SW_joint, JT_transXYPhi, frames(0), frames(1), world, SWInit_copy, 0, rel));
     if(f) {
       //limits?
-      rai::Shape* on = world.getFrame(frames(0))->shape;
+      rai::Shape* on = world.getFrame(frames(0))->shape.get();
       if(on->type()==rai::ST_ssBox) {
         f->joint->limits = {
           -.5*on->size(0), -.5*on->size(1), -RAI_2PI,

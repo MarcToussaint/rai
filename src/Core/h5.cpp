@@ -38,6 +38,7 @@ void H5_Writer::addDict(const char* name, const Graph& dict){
   charA b;
   b.referTo(s.p, s.N);
   add<char>(name, b);
+  LOG(0) <<"writing dict len: " <<b.N <<' ' <<s <<endl;
 }
 
 void H5_Writer::addGroup(const char* group) {
@@ -88,6 +89,7 @@ Graph H5_Reader::readDict(const char* name, bool ifExists){
   if(ifExists && !exists(name)) return {};
   charA b = read<char>(name);
   CHECK_GE(b.N, 1, "");
+  LOG(0) <<"reading dict len: " <<b.N <<endl;
   str s(b.p);
   return Graph(s);
 }

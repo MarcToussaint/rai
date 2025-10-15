@@ -83,9 +83,9 @@ auto getCtrlFramesAndScale(const rai::Configuration& C, bool jointPairs) {
 }
 
 double shapeSize(const rai::Frame* f, uint i) {
-  rai::Shape* s = f->shape;
+  rai::Shape* s = f->shape.get();
   if(!s) {
-    for(rai::Frame* b:f->children) if(b->name==f->name && b->shape) { s=b->shape; break; }
+    for(rai::Frame* b:f->children) if(b->name==f->name && b->shape) { s=b->shape.get(); break; }
   }
   if(!s) return 0;
   if(s->type()==rai::ST_marker) return 0.;

@@ -350,7 +350,7 @@ void ManipulationHelper::action_place_straightOn(str action, double time, str ob
 
   if(f){
     //limits
-    rai::Shape* on = targetF->shape;
+    rai::Shape* on = targetF->shape.get();
     CHECK_EQ(on->type(), rai::ST_ssBox, "")
     f->joint->limits = {-.5*on->size(0), -.5*on->size(1), -RAI_2PI,
                         +.5*on->size(0), +.5*on->size(1),  RAI_2PI };

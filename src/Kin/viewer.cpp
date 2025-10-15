@@ -73,11 +73,9 @@ void ConfigurationViewer::recopyMeshes(const FrameL& frames) {
         addShared(o_mimic, f->ensure_X(), o_mimic->type);
       }else if(f->shape->type()==ST_pointCloud){
         add(f->ensure_X(), _marker).pointCloud(mesh->V, mesh->C);
-        items(-1)->asset->version = mesh->version;
       }else if(f->shape->type()==ST_lines){
         if(!mesh->isArrayFormatted) mesh->makeLinesArrayFormatted();
         add(f->ensure_X(), _marker).lines(mesh->V, mesh->C);
-        items(-1)->asset->version = mesh->version;
       }else if(mesh->T.d1==3){
         add(f->ensure_X(), _solid).mesh(*mesh);
       }else if(mesh->T.d1==2){
@@ -85,14 +83,17 @@ void ConfigurationViewer::recopyMeshes(const FrameL& frames) {
       }else{
         NIY
       }
+      items(-1)->asset->version = f->shape->version;
       items(-1)->flatColor = id2color_b(f->ID);
     }
     shared_ptr<SDF> sdf = f->shape->_sdf;
     if(sdf){
+      frame2itemID(f->ID) = items.N;
       if(f->shape->type()==ST_tensor){
         auto tensor = std::dynamic_pointer_cast<TensorShape>(sdf);
         add(f->ensure_X(), _tensor).tensor(tensor->gridData, f->shape->size);
         items(-1)->scale = f->shape->size;
+        items(-1)->asset->version = f->shape->version;
         items(-1)->flatColor = rai::convert<byte>(255.*tensor->color);
       }else{
         NIY;
@@ -105,6 +106,7 @@ void ConfigurationViewer::recopyMeshes(const FrameL& frames) {
     double s = .1;
     if(f->shape->size.N) s = f->shape->size(-1);
     addAxes(s, f->ensure_X());
+    items(frame2itemID(f->ID))->asset->version = f->shape->version;
   }
 }
 
@@ -121,14 +123,17 @@ ConfigurationViewer& ConfigurationViewer::updateConfiguration(const Configuratio
   //-- check if we need to update meshes
   for(Frame *f : C.frames) {
     if(f->ID>=frame2itemID.N){ copyMeshes=true; break; }
+    if(!f->shape) continue;
     int o = frame2itemID(f->ID);
     if(o==-1 && f->shape && f->shape->_mesh && f->shape->_mesh->V.N){ copyMeshes=true; break; }
-    if(o==-1 && f->shape && f->shape->_type==ST_marker){ copyMeshes=true; break; }
+    if(o==-1 && f->shape && (f->shape->_type==ST_marker || f->shape->_type==ST_tensor)){ copyMeshes=true; break; }
     if(o==-1) continue;
-    Shape* s = f->shape;
-    if(!s || !s->_mesh){ copyMeshes=true; break; }
     if((int)items.N<=o){ copyMeshes=true; break; }
-    if(s->_mesh->V.N && items(o)->asset->version != s->_mesh->version) { copyMeshes=true; break; }
+    if(items(o)->asset->version != f->shape->version) {
+      // LOG(1) <<"frame " <<f->name <<" changed it's shape version (" <<f->shape->type() <<"): " <<items(o)->asset->version <<" -> " <<f->shape->version;
+      copyMeshes=true; break;
+    }
+    // else LOG(1) <<"frame " <<f->name <<" has up-to-date shape version (" <<f->shape->type() <<"): " <<" -> " <<f->shape->version;
   }
   if(copyMeshes || forceCopyMeshes) recopyMeshes(frames);
 

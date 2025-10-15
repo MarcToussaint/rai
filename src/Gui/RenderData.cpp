@@ -526,7 +526,6 @@ void RenderData::glDeinitialize(OpenGL& gl){
 
 void RenderAsset::mesh(rai::Mesh& mesh, double avgNormalsThreshold){
   isTransparent = (mesh.C.N==4 || mesh.C.N==2 || mesh.C.d1==4) && mesh.C.elem(-1)<1.;
-  version=mesh.version;
 
   if(!mesh.isArrayFormatted) mesh.makeArrayFormatted(avgNormalsThreshold);
 
@@ -590,6 +589,7 @@ void RenderAsset::lines(const arr& lines, const arr& color){
 }
 
 void RenderAsset::tensor(const floatA& vol, const arr& size){
+  CHECK_EQ(vol.nd, 3, "a tensor shape needs to be 3D");
   CHECK_EQ(size.N, 3, "");
   texture().img.resize(vol.d0, vol.d1, vol.d2);
   for(uint i=0;i<vol.N;i++){

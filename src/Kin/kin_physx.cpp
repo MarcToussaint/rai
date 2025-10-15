@@ -176,9 +176,9 @@ struct PhysXInterface_self {
   void lockJoint(PxD6Joint* joint, rai::Joint* rai_joint);
   void unlockJoint(PxD6Joint* joint, rai::Joint* rai_joint);
 
-  void prepareLinkShapes(ShapeL& shapes, rai::BodyType& type, rai::Frame* link);
-  void addSingleShape(PxRigidActor* actor, rai::Frame* f, rai::Shape* s);
-  void addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes, rai::BodyType type, rai::Frame* f);
+  void prepareLinkShapes(FrameL& shapes, rai::BodyType& type, rai::Frame* link);
+  void addSingleShape(PxRigidActor* actor, rai::Frame* f, rai::Frame* f_shape);
+  void addShapesAndInertia(PxRigidBody* actor, FrameL& shapes, rai::BodyType type, rai::Frame* f);
 
   void syncDebugConfig();
 };
@@ -279,7 +279,7 @@ void PhysXInterface_self::addGround() {
 }
 
 void PhysXInterface_self::addLink(rai::Frame* f) {
-  ShapeL shapes;
+  FrameL shapes;
   rai::BodyType type;
   prepareLinkShapes(shapes, type, f);
 
@@ -290,7 +290,7 @@ void PhysXInterface_self::addLink(rai::Frame* f) {
   if(opt.verbose>0) {
     rai::String str;
     str <<"adding link '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes (";
-    for(rai::Shape* s:shapes) str <<' ' <<s->frame.name;
+    for(rai::Frame* s:shapes) str <<' ' <<s->name;
     str <<")";
     if(f->inertia) str <<" and mass " <<f->inertia->mass;
     LOG(0) <<str;
@@ -522,7 +522,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
     if(i!=0) CHECK(f->joint, "");
     if(opt.verbose>0) cout <<"-- kin_physx.cpp:  adding multibody link '" <<f->name <<"'" <<endl;
 
-    ShapeL shapes;
+    FrameL shapes;
     rai::BodyType type;
     prepareLinkShapes(shapes, type, f);
     if(i>0) type = rai::BT_dynamic;
@@ -562,7 +562,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
     if(opt.verbose>0) {
       rai::String str;
       str <<"    multibody link '" <<f->name <<"' is " <<rai::Enum<rai::BodyType>(type) <<" with " <<shapes.N <<" shapes (";
-      for(rai::Shape* s:shapes) str <<' ' <<s->frame.name;
+      for(rai::Frame* s:shapes) str <<' ' <<s->name;
       str <<")";
       if(f->joint){
         str <<" and joint " <<f->joint->type;
@@ -685,7 +685,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
   }
 }
 
-void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type, rai::Frame* link) {
+void PhysXInterface_self::prepareLinkShapes(FrameL& shapes, rai::BodyType& type, rai::Frame* link) {
   CHECK(!link->parent || link->joint, "this is not a link");
 
   FrameL sub = {link};
@@ -698,9 +698,9 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
       if(ch->shape && ch->getShape().type()!=rai::ST_marker
           && ch->getShape().type()!=rai::ST_camera){ //is a candidate
         if(ch->ats && ch->ats->find<bool>("simulate")){
-          if(ch->ats->get<bool>("simulate")) shapes.append(ch->shape);
+          if(ch->ats->get<bool>("simulate")) shapes.append(ch);
         }else{
-          if(ch->getShape().alpha()==1.) shapes.append(ch->shape);
+          if(ch->getShape().alpha()==1.) shapes.append(ch);
           else{}//transparent and no simulate flag
         }
       }
@@ -741,24 +741,26 @@ void PhysXInterface_self::prepareLinkShapes(ShapeL& shapes, rai::BodyType& type,
   if(link->inertia) type = rai::BT_dynamic;
 }
 
-void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai::Shape* s) {
+void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai::Frame* f_shape) {
   std::shared_ptr<PxGeometry> geometry;
   double paddingRadius=0.;
+
+  rai::Shape* s = f_shape->shape.get();
 
   switch(s->type()) {
     case rai::ST_box: {
       geometry = make_shared<PxBoxGeometry>(.5*s->size(0), .5*s->size(1), .5*s->size(2));
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape box '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
+      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape box '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
     } break;
     case rai::ST_ssBox: {
       double r = s->size(3);
       geometry = make_shared<PxBoxGeometry>(.5*s->size(0)-r, .5*s->size(1)-r, .5*s->size(2)-r);
       paddingRadius = r;
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape ssBox '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
+      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape ssBox '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
     } break;
     case rai::ST_sphere: {
       geometry = make_shared<PxSphereGeometry>(s->size(0));
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape sphere '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
+      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape sphere '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
     } break;
     case rai::ST_capsule: { //GRRRR... capsule are extended along x-axis in physx.. all inconsistent. use explicit mesh
       // geometry = make_shared<PxCapsuleGeometry>(s->size(1), .5*s->size(0));
@@ -768,7 +770,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
           PxConvexFlag::eCOMPUTE_CONVEX);
       meshes.append(triangleMesh);
       geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape capsule '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
+      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape capsule '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
     } break;
     // case rai::ST_cylinder:{
     //   NIY;
@@ -776,7 +778,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     case rai::ST_ssCylinder:
     case rai::ST_ssCvx:
     default: {
-      // CHECK(s->sscCore().N, "physx needs a convex collision shape, frame: " <<s->frame.name <<" (cvxParts are disabled->convert them to child frames)");
+      // CHECK(s->sscCore().N, "physx needs a convex collision shape, frame: " <<shape->name <<" (cvxParts are disabled->convert them to child frames)");
       if(s->sscCore().N){ //has a convex collision core
         floatA Vfloat = rai::convert<float>(s->sscCore());
         PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
@@ -784,23 +786,23 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
             PxConvexFlag::eCOMPUTE_CONVEX);
         geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
         paddingRadius = s->coll_cvxRadius;
-        if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape cvx mesh '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
+        if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape cvx mesh '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
       }else if(s->mesh().V.N){ //a non-convex mesh!
         floatA Vfloat = rai::convert<float>(s->mesh().V);
         uintA& Tri = s->mesh().T;
         PxTriangleMesh* triangleMesh = PxToolkit::createTriangleMesh32(
             *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0, (PxU32*) Tri.p, Tri.d0);
         geometry = make_shared<PxTriangleMeshGeometry>(triangleMesh);
-        if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape non-cvx mesh '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
+        if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape non-cvx mesh '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
       }else NIY;
       } break;
     case rai::ST_sdf:
     // default: {
     //   rai::Mesh& M = s->mesh();
-    //   if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape mesh '" <<s->frame.name <<"' (" <<s->type() <<") as mesh" <<endl;
+    //   if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape mesh '" <<shape->name <<"' (" <<s->type() <<") as mesh" <<endl;
     //   if(M.cvxParts.N) {
     //     floatA Vfloat;
-    //     if(opt.verbose>0) cout <<"-- kin_physx.cpp:    creating " <<M.cvxParts.N <<" convex parts for shape " <<s->frame.name <<endl;
+    //     if(opt.verbose>0) cout <<"-- kin_physx.cpp:    creating " <<M.cvxParts.N <<" convex parts for shape " <<shape->name <<endl;
     //     for(uint i=0; i<M.cvxParts.N; i++) {
     //       Vfloat.clear();
     //       int start = M.cvxParts(i);
@@ -814,10 +816,10 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     //       PxShape* shape = core()->mPhysics->createShape(*geometry, *defaultMaterial);
     //       actor->attachShape(*shape);
     //       if(&s->frame!=f) {
-    //         if(s->frame.parent==f) {
-    //           shape->setLocalPose(conv_Transformation2PxTrans(s->frame.get_Q()));
+    //         if(shape->parent==f) {
+    //           shape->setLocalPose(conv_Transformation2PxTrans(shape->get_Q()));
     //         } else {
-    //           rai::Transformation rel = s->frame.ensure_X() / f->ensure_X();
+    //           rai::Transformation rel = shape->ensure_X() / f->ensure_X();
     //           shape->setLocalPose(conv_Transformation2PxTrans(rel));
     //         }
     //       }
@@ -836,7 +838,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     case rai::ST_camera:
     case rai::ST_pointCloud:
     case rai::ST_marker: {
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    skipping shape '" <<s->frame.name <<"' (" <<s->type() <<")" <<endl;
+      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    skipping shape '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
       geometry = nullptr;
     } break;
     // default:
@@ -847,11 +849,11 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
   if(geometry) {
     //decide/create a specific material
     PxMaterial* mMaterial = defaultMaterial;
-    if(s->frame.ats &&
-        (s->frame.ats->find<double>("friction") || s->frame.ats->find<double>("restitution"))) {
-      double fric=s->frame.ats->get<double>("friction", opt.defaultFriction);
-      double rest=s->frame.ats->get<double>("restitution", opt.defaultRestitution);
-      //LOG(0) <<" shape " <<s->frame.name <<" friction: " <<fric <<" restitution: " <<rest;
+    if(f_shape->ats &&
+        (f_shape->ats->find<double>("friction") || f_shape->ats->find<double>("restitution"))) {
+      double fric=f_shape->ats->get<double>("friction", opt.defaultFriction);
+      double rest=f_shape->ats->get<double>("restitution", opt.defaultRestitution);
+      //LOG(0) <<" shape " <<shape->name <<" friction: " <<fric <<" restitution: " <<rest;
       mMaterial = core()->mPhysics->createMaterial(fric, fric, rest);
     }
 
@@ -861,11 +863,11 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
 
     //attach to actor
     actor->attachShape(*shape);
-    if(&s->frame!=f) {
-      if(s->frame.parent==f) {
-        shape->setLocalPose(conv_Transformation2PxTrans(s->frame.get_Q()));
+    if(f_shape!=f) {
+      if(f_shape->parent==f) {
+        shape->setLocalPose(conv_Transformation2PxTrans(f_shape->get_Q()));
       } else {
-        rai::Transformation rel = s->frame.ensure_X() / f->ensure_X();
+        rai::Transformation rel = f_shape->ensure_X() / f->ensure_X();
         shape->setLocalPose(conv_Transformation2PxTrans(rel));
       }
     }
@@ -879,9 +881,9 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
   }
 }
 
-void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, ShapeL& shapes, rai::BodyType type, rai::Frame* f) {
+void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, FrameL& shapes, rai::BodyType type, rai::Frame* f) {
   //-- add each shape to the actor
-  for(rai::Shape* s: shapes) addSingleShape(actor, f, s);
+  for(rai::Frame* f_shape: shapes) addSingleShape(actor, f, f_shape);
 
   //-- set inertia
   if(type != rai::BT_static) {

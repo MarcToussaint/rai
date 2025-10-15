@@ -133,8 +133,6 @@ double distance_(rai::Frame& A, rai::Frame& B, rai::Vector& Pa, rai::Vector& Pb)
 void TEST(Distance){
   rai::Configuration C;
   rai::Frame A(C), B(C);
-  new rai::Shape(A);
-  new rai::Shape(B);
   A.setShape(rai::ST_ssBox, {1.6, 1.6, .0, .0});
   B.setShape(rai::ST_ssBox, {1.6, 1.6, .0, .0});
   for(uint k=0;k<20;k++){

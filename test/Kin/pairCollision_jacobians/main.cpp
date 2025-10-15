@@ -15,7 +15,7 @@ void TEST(GJK_Jacobians) {
   rai::Configuration C;
   rai::Frame base(C), b1(C), B1(C), b2(C), B2(C);
   rai::Joint j1(base, b1), J1(b1, B1), j2(B1, b2), J2(b2, B2);
-  rai::Shape s1(B1), s2(B2);
+  rai::Shape &s1 = B1.getShape(), &s2 = B2.getShape();
   j1.setType(rai::JT_free);
   j2.setType(rai::JT_free);
   j1.frame->insertPreLink(rai::Transformation(0))->set_Q()->appendRelativeTranslation(1,1,1);
@@ -51,8 +51,8 @@ void TEST(GJK_Jacobians) {
     s1.size = arr{rnd.uni(.01, .3)}; s2.size = arr{rnd.uni(.01, .3)};
     if(rnd.uni()<.2) s1.sscCore() = zeros(1,3);
     if(rnd.uni()<.2) s2.sscCore() = zeros(1,3);
-    s1.createMeshes();
-    s2.createMeshes();
+    s1.createMeshes(B1.name);
+    s2.createMeshes(B2.name);
 
     //randomize poses
     rndGauss(q, .7);
@@ -90,7 +90,7 @@ void TEST(GJK_Jacobians) {
     cout <<k <<" center  ";
     succ &= checkJacobian(distCenter.asFct(F), q, 1e-5);
 
-    rai::PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.ensure_X(), s2.frame.ensure_X(), s1.size(-1), s2.size(-1));
+    rai::PairCollision collInfo(s1.sscCore(), s2.sscCore(), B1.ensure_X(), B2.ensure_X(), s1.size(-1), s2.size(-1));
 
     //    cout <<"distance: " <<y <<" vec=" <<y2 <<" error=" <<length(y2)-fabs(y(0)) <<endl;
     if(!succ) cout <<collInfo;
@@ -122,7 +122,7 @@ void TEST(GJK_Jacobians2) {
     a->setConvexMesh({}, {}, .02 + .1*rnd.uni());
     a->setColor({.5,.5,.8,.6});
     a->shape->sscCore() = rand(10,3);
-    a->shape->createMeshes();
+    a->shape->createMeshes(a->name);
     a->setContact(1);
   }
 
@@ -177,7 +177,7 @@ void TEST(GJK_Jacobians3) {
   rai::Configuration C;
   rai::Frame base(C), B1(C), B2(C);
   rai::Joint J1(base, B1), J2(base, B2);
-  rai::Shape s1(B1), s2(B2);
+  rai::Shape &s1 = B1.getShape(), &s2=B2.getShape();
   J1.setType(rai::JT_free);
   J2.setType(rai::JT_rigid);
 //  B1.set_Q()->setRandom();
@@ -192,10 +192,10 @@ void TEST(GJK_Jacobians3) {
   s1.type() = s2.type() = rai::ST_ssBox;
   s1.size = {.2, .2, .2, .01 };
   s2.size = {.2, .2, .2, .01 };
-  s1.createMeshes();
+  s1.createMeshes(B1.name);
   s1.mesh().C = {.5,.8,.5,.9};
   s2.mesh().C = {.5,.5,.8,.9};
-  s2.createMeshes();
+  s2.createMeshes(B2.name);
 
   C.gl().drawOptions.drawProxies=true;
 
@@ -373,7 +373,7 @@ void testPoint2PCL(){
 
     m.setPosition(q);
     m.set_X()->rot.setDiff(Vector_x, y.J());
-    C.view(true);
+    C.view(false);
   }
 
 }

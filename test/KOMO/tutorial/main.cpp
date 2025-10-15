@@ -32,7 +32,6 @@ void tutorialBasics(){
 
   //in phase-time [1,\infty] quaternion-difference between "endeff" and "target" shall be zero (eq objective)
 //  komo.addObjective({1., -1.}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
-  //I don't aleays recommend setting quaternion tasks! This is only for testing here. As an alternative, one can use alignment tasks as in test/KOMO/komo
 
   //slow down around phase-time 1. (not measured in seconds, but phase)
 //  komo.setSlow(1., -1., 1e1);
@@ -78,7 +77,7 @@ void tutorialInverseKinematics(){
 
   KOMO komo;
 
-  komo.setConfig(G, false);
+  komo.setConfig(G, true);
 
   //-- the timing parameters: 1 phase, 1 time slice, duration 1, order 1
   komo.setTiming(1., 1, 1., 1);
@@ -91,10 +90,15 @@ void tutorialInverseKinematics(){
   komo.addObjective({}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e0});
   komo.addObjective({}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
 
+  //-- basic collision task:
+  // komo.addObjective({}, FS_negDistance, {"arm4", "obstacle"}, OT_ineq, {1e1});
+  // komo.addObjective({}, FS_negDistance, {"arm5", "obstacle"}, OT_ineq, {1e1});
+  komo.add_collision();
+
   //-- call the optimizer
   //  komo.animateOptimization = 1;
   komo.solve();
-  //  komo.checkGradients(); //this checks all gradients of the problem by finite difference
+  komo.checkGradients(); //this checks all gradients of the problem by finite difference
   komo.report(); //true -> plot the cost curves
   komo.view(true, "solution"); //illustrate the solution as an overlayed path
   //  for(uint i=0;i<2;i++) komo.view_play(true); //play the trajectory
@@ -105,7 +109,7 @@ void tutorialInverseKinematics(){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  tutorialBasics();
+  // tutorialBasics();
 
   tutorialInverseKinematics();
 

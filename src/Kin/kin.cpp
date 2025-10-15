@@ -106,7 +106,7 @@ void computeOptimalSSBoxes(FrameL& frames) {
 
 void computeMeshNormals(FrameL& frames, bool force) {
   for(Frame* f: frames) if(f->shape) {
-      Shape* s = f->shape;
+      Shape* s = f->shape.get();
       if(force || s->mesh().V.d0!=s->mesh().Vn.d0 || s->mesh().T.d0!=s->mesh().Tn.d0) s->mesh().computeTriNormals();
       // if(force || s->sscCore().V.d0!=s->sscCore().Vn.d0 || s->sscCore().T.d0!=s->sscCore().Tn.d0) s->sscCore().computeTriNormals();
     }
@@ -114,7 +114,7 @@ void computeMeshNormals(FrameL& frames, bool force) {
 
 void computeMeshGraphs(FrameL& frames, bool force) {
   for(Frame* f: frames) if(f->shape) {
-      Shape* s = f->shape;
+      Shape* s = f->shape.get();
       if(force || s->mesh().V.d0!=s->mesh().graph.N|| s->mesh().T.d0!=s->mesh().Tn.d0) s->mesh().buildGraph();
       // if(force || s->sscCore().V.d0!=s->sscCore().graph.N || s->sscCore().T.d0!=s->sscCore().Tn.d0) s->sscCore().buildGraph();
     }
@@ -265,9 +265,9 @@ Frame* Configuration::addAssimp(const char* filename) {
     Frame* f = frames(Nold+i);
     if(A.meshes(i).N==1) {
       if(A.meshes(i)(0).V.N) {
-        Shape* s = new Shape(*f);
-        s->type() = ST_mesh;
-        s->mesh() = A.meshes(i).scalar();
+        Shape& s = f->getShape();
+        s.type() = ST_mesh;
+        s.mesh() = A.meshes(i).scalar();
       }
     } else if(A.meshes(i).N>1) {
       uint j=0;
@@ -276,9 +276,9 @@ Frame* Configuration::addAssimp(const char* filename) {
           Frame* f1 = addFrame(STRING(f->name<<'_' <<j++));
           f1->setParent(f);
           f1->set_Q()->setZero();
-          Shape* s = new Shape(*f1);
-          s->type() = ST_mesh;
-          s->mesh() = mesh;
+          Shape& s = f1->getShape();
+          s.type() = ST_mesh;
+          s.mesh() = mesh;
         }
       }
     }
@@ -1185,9 +1185,10 @@ void Configuration::pruneInactiveJoints() {
 void Configuration::pruneEmptyShapes() {
   for(Frame* f:frames) if(f->shape) {
       if(f->shape->type()==ST_mesh && !f->shape->mesh().V.N){
-        delete f->shape;
+        f->shape.reset();
+
       }else if(f->shape->type()==ST_ssCvx && !f->shape->sscCore().N){
-        delete f->shape;
+        f->shape.reset();
       }
     }
 }
@@ -1195,16 +1196,15 @@ void Configuration::pruneEmptyShapes() {
 void Configuration::reconnectShapesToParents() {
   reset_q();
   for(Frame* f:frames) if(f->parent && !f->joint && f->shape) {
-    if(!f->parent->shape && f->get_Q().isZero()){
-      new Shape(*f->parent, f->shape);
-      if(f->ats){
-        FileToken *fil=f->ats->find<FileToken>("mesh");
-        if(fil) f->parent->getAts().add("mesh", *fil);
+      if(!f->parent->shape && f->get_Q().isZero()){
+        f->parent->shape = f->shape;
+        if(f->ats){
+          FileToken *fil=f->ats->find<FileToken>("mesh");
+          if(fil) f->parent->getAts().add("mesh", *fil);
+        }
+        f->shape.reset();
       }
-      delete f->shape;
-      f->shape=0;
     }
-  }
 }
 
 void Configuration::reconnectLinksToClosestJoints() {
@@ -1337,7 +1337,6 @@ bool Configuration::checkConsistency() const {
     CHECK_EQ(a, frames.elem(a->ID), "");
     for(Frame* b: a->children) CHECK_EQ(b->parent, a, "");
     if(a->joint) CHECK_EQ(a->joint->frame, a, "");
-    if(a->shape) CHECK_EQ(&a->shape->frame, a, "");
     if(a->inertia) CHECK_EQ(&a->inertia->frame, a, "");
     if(a->ats) a->ats->checkConsistency();
 
@@ -1462,7 +1461,7 @@ uintAA Configuration::getCollisionExcludePairIDs(int verbose) {
     }
     for(Frame* f1: F) if(f1->shape && f1->shape->cont) {
         for(Frame* f2: F) if(f2->ID>f1->ID && f2->shape && f2->shape->cont) {
-            bool canCollide = f1->shape->canCollideWith(f2);
+            bool canCollide = f1->shape->canCollide(f1, f2);
             if(!canCollide) {
               if(verbose) LOG(0) <<"excluding: "  <<f1->ID <<'.' <<f1->name  <<' ' <<f2->ID <<'.' <<f2->name;
               ex(f1->ID).setAppendInSorted(f2->ID);
@@ -1485,7 +1484,7 @@ FrameL Configuration::getCollidablePairs() {
   //shapes within a link
   for(Frame* A:frames) if(A->shape) for(Frame* B:frames) if(B->shape) {
           if(A->ID>=B->ID) continue;
-          if(A->shape->canCollideWith(B)) { coll.append(A); coll.append(B); }
+          if(A->shape->canCollide(A, B)) { coll.append(A); coll.append(B); }
         }
 
   coll.reshape(-1, 2);
@@ -2230,9 +2229,9 @@ std::shared_ptr<FclInterface> Configuration::coll_fcl(int verbose) {
     for(Frame* f:frames) {
       if(f->shape && f->shape->cont) {
         CHECK(f->shape->type()!=rai::ST_marker, "collision object can't be a marker");
-        if(!f->shape->mesh().V.N) f->shape->createMeshes();
+        if(!f->shape->mesh().V.N) f->shape->createMeshes(f->name);
         CHECK(f->shape->mesh().V.N, "collision object with no vertices");
-        geometries(f->ID) = f->shape;
+        geometries(f->ID) = f->shape.get();
         if(verbose>0) LOG(0) <<"  adding to FCL interface: " <<f->name;
       } else {
         if(verbose>0) LOG(0) <<"  SKIPPING from FCL interface: " <<f->name;
