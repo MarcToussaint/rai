@@ -66,6 +66,7 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     m2.resize(1,3).setZero();
   }
 
+
   //if this a point cloud collision? -> different method
   if(m2isPCL){
     CHECK_EQ(m1.d0, 1, "collision against PCL only work for points (=spheres)");
@@ -78,7 +79,7 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
       f1->C.jacobian_angular(Jx1, f1);
       f2->C.jacobian_angular(Jx2, f2);
     }
-    rai::PclCollision coll(m1, m2isPCL->ensure_ann(),
+    rai::PairCollision_PtPcl coll(m1, m2isPCL->ensure_ann(),
                            f1->ensure_X(), Jp1, Jx1,
                            f2->ensure_X(), Jp2, Jx2,
                            r1, r2, type==_vector);
@@ -104,7 +105,13 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     coll=make_shared<PairCollision>(*m1, *m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
   }
 #else
-  coll = make_shared<rai::PairCollision>(m1, m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
+
+  //if 1 is a point, and 2 a decomposed mesh -> different method
+  if(f2->shape->_mesh && f2->shape->_mesh->cvxParts.N){
+    coll = make_shared<rai::PairCollision_CvxDecomp>(m1, *f2->shape->_mesh, f1->ensure_X(), f2->ensure_X(), r1, r2);
+  }else{
+    coll = make_shared<rai::PairCollision_CvxCvx>(m1, m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
+  }
 #endif
 
   if(neglectRadii) coll->rad1=coll->rad2=0.;

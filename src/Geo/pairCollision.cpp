@@ -32,28 +32,25 @@ extern "C" {
 
 namespace rai {
 
-PairCollision::PairCollision(const arr& _mesh1, const arr& _mesh2, const rai::Transformation& _t1, const rai::Transformation& _t2, double rad1, double rad2)
-  : t1(&_t1), t2(&_t2), rad1(rad1), rad2(rad2) {
-
-  CHECK(_mesh1.N, "PairCollision needs non-empty pts");
-  CHECK(_mesh2.N, "PairCollision needs non-empty pts");
+PairCollision_CvxCvx::PairCollision_CvxCvx(const arr& pts1, const arr& pts2, const rai::Transformation& t1, const rai::Transformation& t2, double _rad1, double _rad2) {
+  CHECK(pts1.N, "PairCollision needs non-empty pts");
+  CHECK(pts2.N, "PairCollision needs non-empty pts");
   CHECK_GE(rad1, 0., "PairCollision needs positive radius");
   CHECK_GE(rad2, 0., "PairCollision needs positive radius");
 
-  mesh1.referTo(_mesh1);
-  mesh2.referTo(_mesh2);
-
+  rad1 = _rad1;
+  rad2 = _rad2;
   distance=-1.;
 
   //-- special cases: point to point
-  if(mesh1.d0==1 && mesh2.d0==1) {
-    p1=mesh1; p1.reshape(3); _t1.applyOnPoint(p1);
-    p2=mesh2; p2.reshape(3); _t2.applyOnPoint(p2);
+  if(pts1.d0==1 && pts2.d0==1) {
+    p1=pts1; p1.reshape(3); t1.applyOnPoint(p1);
+    p2=pts2; p2.reshape(3); t2.applyOnPoint(p2);
     normal = p1-p2;
     distance = length(normal);
     if(distance>1e-10) normal /= distance;
-    simplex1=p1; simplex1.reshape(1,3);
-    simplex2=p2; simplex2.reshape(1,3);
+    simp1=p1; simp1.reshape(1,3);
+    simp2=p2; simp2.reshape(1,3);
     return;
   }
 
@@ -152,7 +149,7 @@ PairCollision::PairCollision(const arr& _mesh1, const arr& _mesh2, const rai::Tr
 
   libccd(M1, M2, _ccdGJKIntersect);
 #else
-  GJK_sqrDistance();
+  GJK_sqrDistance(pts1, pts2, t1, t2);
 #endif
 
   CHECK_EQ(distance, distance, "distance is nan");
@@ -163,8 +160,8 @@ PairCollision::PairCollision(const arr& _mesh1, const arr& _mesh2, const rai::Tr
 #ifndef FCLmode
   if(distance<1e-10) { //WARNING: Setting this to zero does not work when using
     //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
-    arr M1(mesh1); if(!t1->isZero()) t1->applyOnPointArray(M1);
-    arr M2(mesh2); if(!t2->isZero()) t2->applyOnPointArray(M2);
+    arr M1(pts1); if(!t1.isZero()) t1.applyOnPointArray(M1);
+    arr M2(pts2); if(!t2.isZero()) t2.applyOnPointArray(M2);
     libccd(M1, M2, _ccdMPRPenetration);
   }
 #else
@@ -198,7 +195,7 @@ PairCollision::PairCollision(const arr& _mesh1, const arr& _mesh2, const rai::Tr
   //in current state, the rad1, rad2, have not been used at all!!
 }
 
-PairCollision::PairCollision(ScalarFunction& func1, ScalarFunction& func2, const arr& seed) {
+PairCollision_CvxCvx::PairCollision_CvxCvx(ScalarFunction& func1, ScalarFunction& func2, const arr& seed) {
 
   Conv_cfunc2ScalarFunction f([&func1, &func2](arr& g, arr& H, const arr& x) {
     arr g1, g2, H1, H2;
@@ -266,8 +263,8 @@ PairCollision::PairCollision(ScalarFunction& func1, ScalarFunction& func2, const
   if(rai::sign(distance) * scalarProduct(normal, p1-p2) < 0.)
     normal *= -1.;
 
-  simplex1 = p1;  simplex1.reshape(1, 3);
-  simplex2 = p2;  simplex2.reshape(1, 3);
+  simp1 = p1;  simp1.reshape(1, 3);
+  simp2 = p2;  simp2.reshape(1, 3);
 }
 
 void PairCollision::write(std::ostream& os) const {
@@ -278,7 +275,7 @@ void PairCollision::write(std::ostream& os) const {
     os <<"  penetration=" <<distance <<endl;
   }
   os <<"  witness points: " <<p1 <<"  " <<p2 <<endl;
-  os <<"  simplex #: " <<simplex1.d0 <<"  " <<simplex2.d0 <<endl;
+  os <<"  simplex #: " <<simp1.d0 <<"  " <<simp2.d0 <<endl;
 //  if(eig1.N || eig2.N) os <<"  EIG #: " <<eig1.d0<<'-' <<eig2.d0 <<endl;
 }
 
@@ -351,7 +348,7 @@ void _getSimplex(arr& S, ccd_vec3_t* simplex, const arr& mean) {
 
 }
 
-void PairCollision::libccd(const arr& m1, const arr& m2, CCDmethod method) {
+void PairCollision_CvxCvx::libccd(const arr& m1, const arr& m2, CCDmethod method) {
   ccd_t ccd;
   CCD_INIT(&ccd); // initialize ccd_t struct
 
@@ -395,12 +392,12 @@ void PairCollision::libccd(const arr& m1, const arr& m2, CCDmethod method) {
     if(distance>-1e-10) return; //minimal penetration -> simplices below are not robust
 
     //grab simplex points
-    if(m1.d0==1) simplex1 = m1; //m1 is a point/sphere
-    else _getSimplex(simplex1, simplex, mean(m1));
-    if(m2.d0==1) simplex2 = m2; //m2 is a point/sphere
-    else _getSimplex(simplex2, simplex+4, mean(m2));
-    if(simplex1.d0>3) simplex1.resizeCopy(3, 3);
-    if(simplex2.d0>3) simplex2.resizeCopy(3, 3);
+    if(m1.d0==1) simp1 = m1; //m1 is a point/sphere
+    else _getSimplex(simp1, simplex, mean(m1));
+    if(m2.d0==1) simp2 = m2; //m2 is a point/sphere
+    else _getSimplex(simp2, simplex+4, mean(m2));
+    if(simp1.d0>3) simp1.resizeCopy(3, 3);
+    if(simp2.d0>3) simp2.resizeCopy(3, 3);
 
   } else if(method==_ccdGJKPenetration) {
     int ret = ccdGJKPenetration(&m1, &m2, &ccd, &_depth, &_dir, &_pos);
@@ -448,10 +445,10 @@ void PairCollision::libccd(const arr& m1, const arr& m2, CCDmethod method) {
 
     //grab simplex points
     arr mean = zeros(3);
-    _getSimplex(simplex1, simplex, mean);
-    _getSimplex(simplex2, simplex+4, mean);
-    if(simplex1.d0>3) simplex1.resizeCopy(3, 3);
-    if(simplex2.d0>3) simplex2.resizeCopy(3, 3);
+    _getSimplex(simp1, simplex, mean);
+    _getSimplex(simp2, simplex+4, mean);
+    if(simp1.d0>3) simp1.resizeCopy(3, 3);
+    if(simp2.d0>3) simp2.resizeCopy(3, 3);
   } else {
     NIY;
   }
@@ -459,35 +456,35 @@ void PairCollision::libccd(const arr& m1, const arr& m2, CCDmethod method) {
   //compute witness points
   double d=0.;
   if(simplexType(1, 1)) {
-    p1=simplex1[0];
-    p2=simplex2[0];
+    p1=simp1[0];
+    p2=simp2[0];
     normal = p1-p2;
     distance = length(normal);
     if(distance>1e-10) normal/=distance;
     d = distance;
   } else if(simplexType(1, 2)) {
     double s;
-    p1 = simplex1[0];
-    d=coll_1on2(p2, normal, s, simplex1, simplex2);
+    p1 = simp1[0];
+    d=coll_1on2(p2, normal, s, simp1, simp2);
   } else if(simplexType(2, 1)) {
     double s;
-    p2 = simplex2[0];
-    d=coll_1on2(p1, normal, s, simplex2, simplex1);
+    p2 = simp2[0];
+    d=coll_1on2(p1, normal, s, simp2, simp1);
   } else if(simplexType(1, 3)) {
-    p1 = simplex1[0];
-    d=coll_1on3(p2, normal, simplex1, simplex2);
+    p1 = simp1[0];
+    d=coll_1on3(p2, normal, simp1, simp2);
   } else if(simplexType(3, 1)) {
-    p2 = simplex2[0];
-    d=coll_1on3(p1, normal, simplex2, simplex1);
+    p2 = simp2[0];
+    d=coll_1on3(p1, normal, simp2, simp1);
   } else if(simplexType(2, 2)) {
-    d=coll_2on2(p1, p2, normal, simplex1, simplex2);
+    d=coll_2on2(p1, p2, normal, simp1, simp2);
   } else if(simplexType(2, 3)) {
-    d=coll_2on3(p1, p2, normal, simplex1, simplex2, arr(_pos.v, 3, true));
+    d=coll_2on3(p1, p2, normal, simp1, simp2, arr(_pos.v, 3, true));
   } else if(simplexType(3, 2)) {
-    d=coll_2on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3, true));
+    d=coll_2on3(p2, p1, normal, simp2, simp1, arr(_pos.v, 3, true));
   } else if(simplexType(3, 3)) {
-    d=coll_3on3(p2, p1, normal, simplex2, simplex1, mean(simplex1)); //arr(_pos.v, 3));
-  } else HALT("simplex types " <<simplex1.d0 <<' ' <<simplex2.d0 <<" not handled");
+    d=coll_3on3(p2, p1, normal, simp2, simp1, mean(simp1)); //arr(_pos.v, 3));
+  } else HALT("simplex types " <<simp1.d0 <<' ' <<simp2.d0 <<" not handled");
   CHECK_EQ(p1.N, 3, "PairCollision failed")
   CHECK_EQ(p2.N, 3, "PairCollision failed")
 
@@ -522,45 +519,45 @@ void PairCollision::libccd(const arr& m1, const arr& m2, CCDmethod method) {
 }
 #endif
 
-void PairCollision::GJK_sqrDistance() {
+void PairCollision_CvxCvx::GJK_sqrDistance(const arr& pts1, const arr& pts2, const Transformation& t1, const Transformation& t2) {
 #ifdef RAI_GJK
   // convert meshes to 'Object_structures'
   Object_structure m1, m2;
-  rai::Array<double*> Vhelp1 = getCarray(mesh1);
-  rai::Array<double*> Vhelp2 = getCarray(mesh2);
-  m1.numpoints = mesh1.d0;  m1.vertices = Vhelp1.p;  m1.rings=nullptr; //TODO: rings would make it faster
-  m2.numpoints = mesh2.d0;  m2.vertices = Vhelp2.p;  m2.rings=nullptr;
+  rai::Array<double*> Vhelp1 = getCarray(pts1);
+  rai::Array<double*> Vhelp2 = getCarray(pts2);
+  m1.numpoints = pts1.d0;  m1.vertices = Vhelp1.p;  m1.rings=nullptr; //TODO: rings would make it faster
+  m2.numpoints = pts2.d0;  m2.vertices = Vhelp2.p;  m2.rings=nullptr;
 
-  // convert transformations to affine matrices
+  // convert transformations to affine matrices as c arrays
   arr T1, T2;
-  rai::Array<double*> Thelp1, Thelp2;
-  if(!!t1) {  T1=t1->getMatrix();  Thelp1 = getCarray(T1);  }
-  if(!!t2) {  T2=t2->getMatrix();  Thelp2 = getCarray(T2);  }
+  rai::Array<double*> T1Carr, T2Carr;
+  if(!t1.isZero()) {  T1=t1.getMatrix();  T1Carr = getCarray(T1);  }
+  if(!t2.isZero()) {  T2=t2.getMatrix();  T2Carr = getCarray(T2);  }
 
   // call GJK
   simplex_point simplex;
   p1.resize(3).setZero();
   p2.resize(3).setZero();
-  gjk_distance(&m1, Thelp1.p, &m2, Thelp2.p, p1.p, p2.p, &simplex, 0);
+  gjk_distance(&m1, T1Carr.p, &m2, T2Carr.p, p1.p, p2.p, &simplex, 0);
 
   normal = p1-p2;
   distance = length(normal);
   if(distance>1e-10) normal /= distance;
 
   //grab simplex points
-  simplex1.resize(0, 3);
-  simplex2.resize(0, 3);
+  simp1.resize(0, 3);
+  simp2.resize(0, 3);
   if(simplex.npts>=1) {
-    simplex1.append(arr(simplex.coords1[0], 3, true));
-    simplex2.append(arr(simplex.coords2[0], 3, true));
+    simp1.append(arr(simplex.coords1[0], 3, true));
+    simp2.append(arr(simplex.coords2[0], 3, true));
   }
   if(simplex.npts>=2) {
-    if(simplex.simplex1[1]!=simplex.simplex1[0]) simplex1.append(arr(simplex.coords1[1], 3, true));
-    if(simplex.simplex2[1]!=simplex.simplex2[0]) simplex2.append(arr(simplex.coords2[1], 3, true));
+    if(simplex.simplex1[1]!=simplex.simplex1[0]) simp1.append(arr(simplex.coords1[1], 3, true));
+    if(simplex.simplex2[1]!=simplex.simplex2[0]) simp2.append(arr(simplex.coords2[1], 3, true));
   }
   if(simplex.npts>=3) {
-    if(simplex.simplex1[2]!=simplex.simplex1[0] && simplex.simplex1[2]!=simplex.simplex1[1]) simplex1.append(arr(simplex.coords1[2], 3, true));
-    if(simplex.simplex2[2]!=simplex.simplex2[0] && simplex.simplex2[2]!=simplex.simplex2[1]) simplex2.append(arr(simplex.coords2[2], 3, true));
+    if(simplex.simplex1[2]!=simplex.simplex1[0] && simplex.simplex1[2]!=simplex.simplex1[1]) simp1.append(arr(simplex.coords1[2], 3, true));
+    if(simplex.simplex2[2]!=simplex.simplex2[0] && simplex.simplex2[2]!=simplex.simplex2[1]) simp2.append(arr(simplex.coords2[2], 3, true));
   }
 #else
   NICO
@@ -585,8 +582,8 @@ void PairCollision::kinNormal(arr& y, arr& J,
     } else if(simplexType(3, 1)) {
       J = crossProduct(Jx1, y);
     } else if(simplexType(2, 2)) {
-      arr a = simplex1[1]-simplex1[0];  a/=length(a);
-      arr b = simplex2[1]-simplex2[0];  b/=length(b);
+      arr a = simp1[1]-simp1[0];  a/=length(a);
+      arr b = simp2[1]-simp2[0];  b/=length(b);
       double ab=scalarProduct(a, b);
       if(1.-ab*ab>1e-8) { //the edges are not colinear
         double nn = ::sqrt(1.-ab*ab);
@@ -597,7 +594,7 @@ void PairCollision::kinNormal(arr& y, arr& J,
       y = p1 - p2;
       J = Jp1 - Jp2;
       normalizeWithJac(y, J);
-      arr a = simplex1[1]-simplex1[0];  a/=length(a);
+      arr a = simp1[1]-simp1[0];  a/=length(a);
       arr aa = a^a;
       J -= aa*J;
       J += aa*crossProduct(Jx1, y);
@@ -605,7 +602,7 @@ void PairCollision::kinNormal(arr& y, arr& J,
       y = p1 - p2;
       J = Jp1 - Jp2;
       normalizeWithJac(y, J);
-      arr b = simplex2[1]-simplex2[0];  b/=length(b);
+      arr b = simp2[1]-simp2[0];  b/=length(b);
       arr bb = b^b;
       J -= bb*J;
       J += bb*crossProduct(Jx2, y);
@@ -643,8 +640,8 @@ void PairCollision::kinVector(arr& y, arr& J,
     }
     if(simplexType(2, 2)) {
       J = (normal^normal)*J;
-      arr a = simplex1[1]-simplex1[0];  a/=length(a);
-      arr b = simplex2[1]-simplex2[0];  b/=length(b);
+      arr a = simp1[1]-simp1[0];  a/=length(a);
+      arr b = simp2[1]-simp2[0];  b/=length(b);
       double ab=scalarProduct(a, b);
       if(1.-ab*ab>1e-8) { //the edges are not colinear
         double nn = ::sqrt(1.-ab*ab);
@@ -653,13 +650,13 @@ void PairCollision::kinVector(arr& y, arr& J,
       }
     }
     if(simplexType(2, 1)) {
-      arr a = simplex1[1]-simplex1[0];  a/=length(a);
+      arr a = simp1[1]-simp1[0];  a/=length(a);
       arr aa = a^a;
       J -= aa*J;
       J += aa*crossProduct(Jx1, p1-p2);
     }
     if(simplexType(1, 2)) {
-      arr b = simplex2[1]-simplex2[0];  b/=length(b);
+      arr b = simp2[1]-simp2[0];  b/=length(b);
       arr bb = b^b;
       J -= bb*J;
       J += bb*crossProduct(Jx2, p1-p2);
@@ -692,8 +689,8 @@ void PairCollision::kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
       J += crossProduct(Jx1, p1-p2);
     }
     if(simplexType(2, 2)) {
-      arr a = simplex1[1]-simplex1[0];  a/=length(a);
-      arr b = simplex2[1]-simplex2[0];  b/=length(b);
+      arr a = simp1[1]-simp1[0];  a/=length(a);
+      arr b = simp2[1]-simp2[0];  b/=length(b);
       double ab=scalarProduct(a, b);
 
       J = Jp1;
@@ -709,7 +706,7 @@ void PairCollision::kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
       }
     }
     if(simplexType(2, 1)) {
-      arr a = simplex1[1]-simplex1[0];  a/=length(a);
+      arr a = simp1[1]-simp1[0];  a/=length(a);
       arr aa = a^a;
       J += aa*(Jp2-Jp1);
       J += aa*crossProduct(Jx1, p1-p2);
@@ -737,8 +734,8 @@ void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
       J += crossProduct(Jx2, p2-p1);
     }
     if(simplexType(2, 2)) {
-      arr a = simplex2[1]-simplex2[0];  a/=length(a);
-      arr b = simplex1[1]-simplex1[0];  b/=length(b);
+      arr a = simp2[1]-simp2[0];  a/=length(a);
+      arr b = simp1[1]-simp1[0];  b/=length(b);
       double ab=scalarProduct(a, b);
 
       J = Jp2;
@@ -754,7 +751,7 @@ void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
       }
     }
     if(simplexType(1, 2)) {
-      arr b = simplex2[1]-simplex2[0];  b/=length(b);
+      arr b = simp2[1]-simp2[0];  b/=length(b);
       arr bb = b^b;
       J += bb*(Jp1-Jp2);
       J += bb*crossProduct(Jx2, p2-p1);
@@ -781,6 +778,7 @@ void PairCollision::kinCenter(arr& y, arr& J, const arr& Jp1, const arr& Jp2, co
   if(!!J) J = .5 * (JP1 + JP2);
 }
 
+#if 0
 void PairCollision::nearSupportAnalysis(double eps) {
   arr M1(mesh1); t1->applyOnPointArray(M1);
   arr M2(mesh2); t2->applyOnPointArray(M2);
@@ -829,6 +827,7 @@ void PairCollision::nearSupportAnalysis(double eps) {
     polyNorm[i] = norm/length(norm);
   }
 }
+#endif
 
 //===========================================================================
 
@@ -958,7 +957,38 @@ double coll_3on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2
 
 //===========================================================================
 
-PclCollision::PclCollision(const arr& _x, ANN& ann,
+PairCollision_CvxDecomp::PairCollision_CvxDecomp(const arr& x, Mesh& mesh, const Transformation& t1, const Transformation& t2, double _rad1, double _rad2) {
+  CHECK_GE(rad1, 0., "PairCollision needs positive radius");
+  CHECK_GE(rad2, 0., "PairCollision needs positive radius");
+  CHECK(mesh.cvxParts.N, "mesh needs to be cvx decomposed");
+
+  rad1 = _rad1;
+  rad2 = _rad2;
+  distance=-1.;
+
+
+  shared_ptr<PairCollision_CvxCvx> coll;
+  double dmin=-1.;
+
+  //LOG(0) <<_mesh2.cvxParts <<_mesh2.d0 <<endl;
+  for(uint i=0; i<mesh.cvxParts.N; i++) {
+    int start = mesh.cvxParts(i);
+    int end = i+1<mesh.cvxParts.N ? mesh.cvxParts(i+1) : mesh.V.d0;
+    CHECK_LE(start+2, end, "each part needs at least two vertices");
+    arr pts = mesh.V({start, end});
+
+    shared_ptr<PairCollision_CvxCvx> coll_i = make_shared<PairCollision_CvxCvx>(x, pts, t1, t2, rad1, rad2);
+
+    //LOG(0) <<" part " <<i <<" d:" <<coll->distance <<endl;
+    if(coll_i->distance < dmin || dmin<0.) { coll=coll_i; dmin=coll->distance; }
+  }
+
+  PairCollision::operator =(*coll);
+}
+
+//===========================================================================
+
+PairCollision_PtPcl::PairCollision_PtPcl(const arr& _x, ANN& ann,
                            const rai::Transformation& t1, const arr& Jp1, const arr& Jx1,
                            const rai::Transformation& t2, const arr& Jp2, const arr& Jx2,
                            double _rad1, double _rad2, bool returnVector) {

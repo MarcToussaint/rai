@@ -608,19 +608,19 @@ void argmax(uint& i, uint& j, const arr& x) { CHECK_EQ(x.nd, 2, "needs 2D array"
 void argmax(uint& i, uint& j, uint& k, const arr& x) { CHECK_EQ(x.nd, 3, "needs 3D array"); k=argmax(x); i=k/(x.d1*x.d2); k=k%(x.d1*x.d2); j=k/x.d2; k=k%x.d2; }
 
 /// \f$\max_i x_i\f$
-arr max(const arr& v, uint d) {
-  CHECK(d<v.nd, "array doesn't have this dimension");
+arr max(const arr& v, uint axis) {
+  CHECK(axis<v.nd, "array doesn't have this dimension");
   arr x;
   x.referTo(v);
   arr M;
   uint i, j;
-  if(d==v.nd-1) {  //max over last index - contiguous in memory
+  if(axis==v.nd-1) {  //max over last index - contiguous in memory
     x.reshape(x.N/x.dim(x.nd-1), x.dim(x.nd-1));
     M.resize(x.d0);
     for(i=0; i<x.d0; i++) M(i) = max(x[i]);
     return M;
   }
-  if(d==0) {  //max over first index
+  if(axis==0) {  //max over first index
     x.reshape(x.d0, x.N/x.d0);
     M = x[0]; //first row
     for(i=1; i<x.d0; i++) for(j=0; j<x.d1; j++)
@@ -631,19 +631,19 @@ arr max(const arr& v, uint d) {
 }
 
 /// \f$\max_i x_i\f$
-arr min(const arr& v, uint d) {
-  CHECK(v.nd>d, "array doesn't have this dimension");
+arr min(const arr& v, uint axis) {
+  CHECK(v.nd>axis, "array doesn't have this dimension");
   arr x;
   x.referTo(v);
   arr M;
   uint i, j;
-  if(d==v.nd-1) {  //max over last index - contiguous in memory
+  if(axis==v.nd-1) {  //max over last index - contiguous in memory
     x.reshape(x.N/x.dim(x.nd-1), x.dim(x.nd-1));
     M.resize(x.d0);
     for(i=0; i<x.d0; i++) M(i) = min(x[i]);
     return M;
   }
-  if(d==0) {  //sum over first index
+  if(axis==0) {  //sum over first index
     x.reshape(x.d0, x.N/x.d0);
     M = x[0]; //first row
     for(i=1; i<x.d0; i++) for(j=0; j<x.d1; j++)
@@ -654,19 +654,19 @@ arr min(const arr& v, uint d) {
 }
 
 /// \f$\sum_i x_i\f$
-arr sum(const arr& v, uint d) {
-  CHECK(v.nd>d, "array doesn't have this dimension");
+arr sum(const arr& v, uint axis) {
+  CHECK(v.nd>axis, "array doesn't have this dimension");
   arr x;
   x.referTo(v);
   arr S;
   uint i, j, k;
-  if(d==v.nd-1) {  //sum over last index - contiguous in memory
+  if(axis==v.nd-1) {  //sum over last index - contiguous in memory
     x.reshape(x.N/x.dim(x.nd-1), x.dim(x.nd-1));
     S.resize(x.d0);  S.setZero();
     for(i=0; i<x.d0; i++) for(j=0; j<x.d1; j++) S(i) += x(i, j);
     return S;
   }
-  if(d==0) {  //sum over first index
+  if(axis==0) {  //sum over first index
     x.reshape(x.d0, x.N/x.d0);
     S.resize(x.d1);  S.setZero();
     for(i=0; i<x.d0; i++) for(j=0; j<x.d1; j++) S(j) += x(i, j);
@@ -678,7 +678,7 @@ arr sum(const arr& v, uint d) {
   dimV = v.dim();
   dimS.resize(dimV.N-1);
   for(i = 0, j = 0; i < dimS.N; i++, j++) {
-    if(i == d) j++;
+    if(i == axis) j++;
     dimS(i) = dimV(j);
   }
   x.referTo(v);
@@ -688,7 +688,7 @@ arr sum(const arr& v, uint d) {
   for(k = 0; k < x.N; k++) {
     IV = getIndexTuple(k, v.dim());
     for(i = 0, j = 0; i < IS.N; i++, j++) {
-      if(i == d) j++;
+      if(i == axis) j++;
       IS(i) = IV(j);
     }
     S.elem(IS) += x(k);
@@ -723,24 +723,21 @@ double length(const arr& x) { return std::sqrt(sumOfSqr(x)); }
 
 double var(const arr& x) { double m=sum(x)/x.N; return sumOfSqr(x)/x.N-m*m; }
 
-arr mean(const arr& X) { CHECK_EQ(X.nd, 2, ""); return sum(X, 0)/double(X.d0); }
+arr mean(const arr& X, uint axis) { return sum(X, axis)/double(X.d[axis]); }
 
 arr covar(const arr& X) { arr m=mean(X); return ((~X)*X)/double(X.d0)-m*~m; }
 
-arr stdDev(const arr& v) {
-  CHECK(v.d0 > 1, "empirical standard deviation makes sense only for N>1")
-  arr m = sum(v, 0);
-  arr vX;
-  vX.referTo(v);
-  vX.reshape(vX.d0, vX.N/vX.d0);
-  arr x = zeros(vX.d1);
-  for(uint i = 0; i < v.d0; i++) {
-    for(uint j = 0; j < vX.d1; j++) {
-      x(j) += rai::sqr(vX(i, j)-m(j)/vX.d0)/(vX.d0-1);
+arr vardiag(const arr& X) {
+  CHECK_EQ(X.nd, 2, "");
+  arr m = mean(X);
+  arr v = zeros(X.d1);
+  for(uint i = 0; i < X.d0; i++) {
+    for(uint j = 0; j < X.d1; j++) {
+      v(j) += rai::sqr(X(i, j)-m(j));
     }
   }
-  x = sqrt(x);
-  return x;
+  v /= double(X.d0-1);
+  return v;
 }
 
 /// \f$\sum_i x_{ii}\f$

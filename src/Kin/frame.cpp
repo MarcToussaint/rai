@@ -599,6 +599,7 @@ rai::Frame& rai::Frame::setMesh(const arr& verts, const uintA& tris, const byteA
   C.view_lock(RAI_HERE);
   getShape().type() = ST_mesh;
   rai::Mesh& mesh = getShape().mesh();
+  mesh.clear();
   mesh.V = verts;
   mesh.V.reshape(-1, 3);
   mesh.T = tris;
@@ -627,6 +628,7 @@ rai::Frame& rai::Frame::setMeshFile(str file, double scale){
     getShape()._mesh = *p;
   }else{
     rai::Mesh& mesh = getShape().mesh();
+    mesh.clear();
     params()->add<shared_ptr<rai::Mesh>>(file, getShape()._mesh);
     if(cd_into_mesh_files) fil.cd_file();
     mesh.read(fil, file.getLastN(3).p, fil.name.p);
@@ -677,6 +679,7 @@ rai::Frame& rai::Frame::setLines(const arr& verts, const byteA& colors, bool sin
   C.view_lock(RAI_HERE);
   getShape().type() = ST_lines;
   rai::Mesh& mesh = getShape().mesh();
+  mesh.clear();
   if(!singleConnectedLine){
     mesh.V = verts;
     mesh.V.reshape(-1, 3);
@@ -711,6 +714,7 @@ rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors, co
     return *this;
   }
   rai::Mesh& mesh = getShape().mesh();
+  mesh.clear();
   mesh.V = points;
   mesh.V.reshape(-1, 3);
   if(colors.N) {
@@ -742,6 +746,7 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
     getShape().size = arr{radius};
   }
   rai::Mesh& mesh = getShape().mesh();
+  mesh.clear();
   mesh.setSSCvx(getShape().sscCore(), radius);
   if(colors.N) {
     mesh.C = reshapeColor(convert<double>(colors) /= 255.);

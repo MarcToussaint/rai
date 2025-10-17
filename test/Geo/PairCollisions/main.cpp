@@ -32,7 +32,7 @@ void TEST(PairCollision){
   D.setZero();
   rai::timerStart();
   for(uint i=0;i<n;i++) for(uint j=i+1;j<n;j++){
-    rai::PairCollision pc(meshes(i).V, meshes(j).V, 0, 0);
+    rai::PairCollision_CvxCvx pc(meshes(i).V, meshes(j).V, 0, 0);
     D(i,j)=pc.distance;
 #if 1 //turn off for timing
     cout <<pc <<endl;

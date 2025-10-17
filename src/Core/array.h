@@ -679,6 +679,8 @@ namespace rai {
 uint product(const uintA& x);
 template<class T> T& min(const Array<T>& x);
 template<class T> T& max(const Array<T>& x);
+template<class T> std::tuple<T&,uint> min_arg(const Array<T>& x);
+template<class T> std::tuple<T&,uint> max_arg(const Array<T>& x);
 uint sum(const uintA& x);
 float sum(const floatA& x);
 template<class T> Array<T> integral(const Array<T>& x);

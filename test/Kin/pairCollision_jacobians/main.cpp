@@ -90,7 +90,7 @@ void TEST(GJK_Jacobians) {
     cout <<k <<" center  ";
     succ &= checkJacobian(distCenter.asFct(F), q, 1e-5);
 
-    rai::PairCollision collInfo(s1.sscCore(), s2.sscCore(), B1.ensure_X(), B2.ensure_X(), s1.size(-1), s2.size(-1));
+    rai::PairCollision_CvxCvx collInfo(s1.sscCore(), s2.sscCore(), B1.ensure_X(), B2.ensure_X(), s1.size(-1), s2.size(-1));
 
     //    cout <<"distance: " <<y <<" vec=" <<y2 <<" error=" <<length(y2)-fabs(y(0)) <<endl;
     if(!succ) cout <<collInfo;

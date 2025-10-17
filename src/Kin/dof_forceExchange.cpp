@@ -176,7 +176,7 @@ void rai::ForceExchangeDof::kinTorque(arr& y, arr& J) const {
   } else NIY;
 }
 
-rai::PairCollision* rai::ForceExchangeDof::coll() {
+rai::PairCollision_CvxCvx* rai::ForceExchangeDof::coll() {
   if(!__coll) {
     rai::Shape* s1 = a.shape.get();
     rai::Shape* s2 = b.shape.get();
@@ -185,7 +185,7 @@ rai::PairCollision* rai::ForceExchangeDof::coll() {
     double r2=s2->coll_cvxRadius;
     arr m1 = s1->sscCore();
     arr m2 = s2->sscCore();
-    __coll = new PairCollision(m1, m2, a.ensure_X(), b.ensure_X(), r1, r2);
+    __coll = new PairCollision_CvxCvx(m1, m2, a.ensure_X(), b.ensure_X(), r1, r2);
   }
   return __coll;
 }

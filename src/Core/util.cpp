@@ -1375,7 +1375,7 @@ void gnuplot(const char* command, bool pause, bool persist, const char* PDFfile)
   //  if(pauseMouse) cmd <<"\n pause mouse key" <<endl;
   gnuplotServer()->send(cmd.p, persist);
 
-  if(pause) rai::wait(1., true);
+  if(pause) rai::wait(.3, true);
 
   if(!rai::getInteractivity()) {
     rai::wait(.05);

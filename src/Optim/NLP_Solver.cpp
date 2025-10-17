@@ -11,6 +11,8 @@
 #include "gradient.h"
 #include "newton.h"
 #include "m_LeastSquaresZeroOrder.h"
+#include "m_LocalGreedy.h"
+#include "m_NelderMead.h"
 #include "lbfgs.h"
 #include "opt-nlopt.h"
 #include "opt-ipopt.h"
@@ -78,8 +80,13 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     ret->feasible = true;
 
   } else if(opt.method==M_LSZO) {
-    LeastSquaredZeroOrder lszo(P, x);
-    ret = lszo.solve();
+    ret = LeastSquaredZeroOrder(P, x). solve();
+
+  } else if(opt.method==M_NelderMead) {
+    ret = NelderMead(P, x). solve();
+
+  } else if(opt.method==M_greedy) {
+    ret = LocalGreedy(P, x). solve();
 
   } else if(opt.method==M_augmentedLag) {
     opt.set_method(M_augmentedLag);

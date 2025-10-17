@@ -42,7 +42,7 @@ void rai::Proxy::calc_coll() {
   arr& m2 = s2->sscCore();
 
   if(collision) collision.reset();
-  collision = make_shared<PairCollision>(m1, m2, a->ensure_X(), b->ensure_X(), r1, r2);
+  collision = make_shared<PairCollision_CvxCvx>(m1, m2, a->ensure_X(), b->ensure_X(), r1, r2);
 
   d = collision->distance-collision->rad1-collision->rad2;
   normal = collision->normal;

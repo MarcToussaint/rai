@@ -37,7 +37,7 @@ void POA_distance(arr& y, arr& J, rai::ForceExchangeDof* ex, bool b_or_a) {
   ex->kinPOA(pos, Jpos);
   X0.pos = pos;
 
-  rai::PairCollision coll(M0, m, X0, f->ensure_X(), 0., r);
+  rai::PairCollision_CvxCvx coll(M0, m, X0, f->ensure_X(), 0., r);
 
   arr Jp;
   K.jacobian_pos(Jp, f, coll.p1);
@@ -686,8 +686,8 @@ void F_fex_POAContactDistances::phi2(arr& y, arr& J, const FrameL& F) {
   ex->kinPOA(pos, Jpos);
   X0.pos = pos;
 
-  rai::PairCollision coll1(M0, m1, X0, f1->ensure_X(), 0., r1);
-  rai::PairCollision coll2(M0, m2, X0, f2->ensure_X(), 0., r2);
+  rai::PairCollision_CvxCvx coll1(M0, m1, X0, f1->ensure_X(), 0., r1);
+  rai::PairCollision_CvxCvx coll2(M0, m2, X0, f2->ensure_X(), 0., r2);
 
   arr Jp1, Jp2;
   f1->C.jacobian_pos(Jp1, f1, coll1.p1);

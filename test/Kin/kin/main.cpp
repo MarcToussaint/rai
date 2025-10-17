@@ -89,7 +89,7 @@ void TEST(Viewer){
   C2.frames.elem(-1)->setPosition({-.2, -.2, .5});
 
   for(uint k=0;k<20;k++){
-    f->setConvexMesh(.2*randn({10,3}), {255,0,0}, .05);
+    f->setConvexMesh(.2*randn({rnd.uni_int(5,10),3}), {255,0,0}, .05);
     f2->setTensorShape(rai::convert<float>(.02 * randn({k+2, k+2, k+2})), {.2, .2, .2});
 
     rai::wait(.01);
@@ -781,6 +781,8 @@ void testMergeSceneMesh(){
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
+
+  testViewer(); return 0;
 
   testMini();
   testLoadSave();

@@ -370,6 +370,7 @@ inline arr range(double lo, double hi, uint steps) { return rai::grid(1, lo, hi,
 //inline uintA range(uint n) { uintA r;  r.setStraightPerm(n);  return r; }
 
 arr repmat(const arr& A, uint m, uint n);
+arr match(const arr& A, const uintA& shape);
 
 //inline uintA randperm(uint n) {  uintA z;  z.setRandomPerm(n);  return z; }
 inline arr linspace(double base, double limit, uint n) {  return rai::grid(1, base, limit, n).reshape(-1); }
@@ -494,8 +495,8 @@ double euclideanDistance(const arr& v, const arr& w);
 double metricDistance(const arr& g, const arr& v, const arr& w);
 
 //min max
-arr max(const arr& v, uint d);
-arr min(const arr& v, uint d);
+arr max(const arr& v, uint axis);
+arr min(const arr& v, uint axis);
 uint argmin(const arr& x);
 uint argmax(const arr& x);
 void argmax(uint& i, uint& j, const arr& x);
@@ -505,7 +506,7 @@ double absMax(const arr& x);
 double absMin(const arr& x);
 
 double sum(const arr& v);
-arr sum(const arr& v, uint d);
+arr sum(const arr& v, uint axis);
 double sumOfAbs(const arr& v);
 double sumOfPos(const arr& v);
 double sumOfSqr(const arr& v);
@@ -514,9 +515,9 @@ double product(const arr& v);
 
 double trace(const arr& v);
 double var(const arr& v);
-arr mean(const arr& v);
+arr mean(const arr& v, uint axis=0);
 arr covar(const arr& X);
-arr stdDev(const arr& v);
+arr vardiag(const arr& X);
 void clip(const arr& x, double lo, double hi);
 
 void op_transpose(arr& x, const arr& y);

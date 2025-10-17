@@ -13,7 +13,7 @@
 
 namespace rai {
 
-struct PairCollision;
+struct PairCollision_CvxCvx;
 
 //===========================================================================
 
@@ -26,7 +26,7 @@ struct ForceExchangeDof : Dof, NonCopyable {
   double scale=1.;
   double force_to_torque = 0.;
  private:
-  PairCollision* __coll=0;
+  PairCollision_CvxCvx* __coll=0;
  public:
 
   arr poa; //in world coordinates!
@@ -50,7 +50,7 @@ struct ForceExchangeDof : Dof, NonCopyable {
   virtual void kinForce(arr& y, arr& J) const;
   virtual void kinTorque(arr& y, arr& J) const;
 
-  PairCollision* coll();
+  PairCollision_CvxCvx* coll();
 
   virtual void write(ostream& os) const;
 };

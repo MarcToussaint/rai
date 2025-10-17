@@ -272,6 +272,21 @@ arr repmat(const arr& A, uint m, uint n) {
       z.setMatrixBlock(B, i*B.d0, j*B.d1);
   return z;
 }
+arr match(const arr& A, const uintA& shape){
+  CHECK(A.nd==1 || A.nd==2, "");
+  arr B;
+  B.referTo(A);
+  if(B.nd==1) B.reshape(B.N, 1);
+  arr z;
+  z.resize(shape);
+  CHECK(!(z.d0%B.d0), "target shape" <<shape <<" needs to be multiple of block shape " <<A.dim());
+  CHECK(!(z.d1%B.d1), "target shape" <<shape <<" needs to be multiple of block shape " <<A.dim());
+  for(uint i=0; i<z.d0; i+=B.d0)
+    for(uint j=0; j<z.d1; j+=B.d1)
+      z.setMatrixBlock(B, i, j);
+  return z;
+}
+
 arr rand(const uintA& d) {  arr z;  z.resize(d);  rndUniform(z, false); return z;  }
 arr randn(const uintA& d) {  arr z;  z.resize(d);  rndGauss(z, 1., false);  return z;  }
 
@@ -2801,6 +2816,21 @@ template float& min(const Array<float>&);
 
 template uint& max(const Array<uint>&);
 template uint& min(const Array<uint>&);
+
+template<class T> std::tuple<T&,uint> min_arg(const Array<T>& x){
+  CHECK(x.N, "");
+  uint i, m=0;
+  for(i=1; i<x.N; i++) if(x.p[i]<x.p[m]) m=i;
+  return std::tuple<T&,uint>(x.p[m], m);
+}
+template<class T> std::tuple<T&,uint> max_arg(const Array<T>& x){
+  CHECK(x.N, "");
+  uint i, m=0;
+  for(i=1; i<x.N; i++) if(x.p[i]>x.p[m]) m=i;
+  return std::tuple<T&,uint>(x.p[m], m);
+}
+template std::tuple<double&,uint> min_arg(const Array<double>&);
+template std::tuple<double&,uint> max_arg(const Array<double>&);
 
 /// return the integral image, or vector
 template<class T> Array<T> integral(const Array<T>& x) {

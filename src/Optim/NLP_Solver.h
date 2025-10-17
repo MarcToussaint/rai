@@ -48,7 +48,7 @@ struct NLP_Solver : NonCopyable {
   arr getTrace_evals();
   rai::Graph reportLagrangeGradients(const StringA& featureNames);
   void gnuplot_costs() {
-    FILE("z.opt.trace") <<getTrace_costs();
+    FILE("z.opt.trace") <<getTrace_costs().modRaw();
     gnuplot("plot 'z.opt.trace' us 0:1 t 'f', '' us 0:2 t 'sos', '' us 0:3 t 'ineq', '' us 0:4 t 'eq'");
   }
 };

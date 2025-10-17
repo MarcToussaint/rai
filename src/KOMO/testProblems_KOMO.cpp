@@ -58,7 +58,7 @@ shared_ptr<KOMO> problem_IKtorus(){
   rai::Mesh decomp = M.decompose();
   C.addFrame("coll_torus", "torus") ->setMesh2(decomp) .setColor({1.,.1}); //, "shape: ssCylinder, size:[.04 .23 .02], color:[1 .1] " );
   // C.addFrame("coll_torus", "torus", "shape: ssCylinder, size:[.04 .23 .02], color:[1 .1] " );
-  C.view(true);
+  // C.view(true);
 
   rai::Frame* torus = C.getFrame("torus");
   torus->set_X()->rot.setRandom();
@@ -67,25 +67,27 @@ shared_ptr<KOMO> problem_IKtorus(){
   komo->setConfig(C, false);
   komo->setTiming(1., 1, 1., 0);
   komo->addControlObjective({}, 0, 1e-1);
-  //    komo->add_jointLimits();
+  komo->add_jointLimits();
   komo->addObjective({}, make_shared<F_TorusGraspEq>(.2, .02), {"l_gripper", "torus"}, OT_eq, {1e1});
   // komo->addObjective({}, FS_negDistance, {"l_palm", "coll_torus"}, OT_ineq, {1e1});
 
   auto manip = make_shared<ManipulationHelper>(komo);
   manip->no_collisions({}, {"l_panda_coll1", "table",
-                           "l_panda_coll2", "table",
-                           "l_panda_coll3", "table",
-                           "l_panda_coll4", "table",
-                           "l_panda_coll5", "table",
-                           "l_panda_coll6", "table",
-                           "l_panda_coll7", "table",
-                           "l_palm", "coll_torus"}, .0);
+                            "l_panda_coll2", "table",
+                            "l_panda_coll3", "table",
+                            "l_panda_coll4", "table",
+                            "l_panda_coll5", "table",
+                            "l_panda_coll6", "table",
+                            "l_panda_coll7", "table",
+                            "l_palm", "coll_torus"}, .0);
 
-  // manip->no_collision({}, {"l_panda_coll3", "coll_torus",
-  //                          "l_panda_coll4", "coll_torus",
-  //                          "l_panda_coll5", "coll_torus",
-  //                          "l_panda_coll6", "coll_torus",
-  //                          "l_panda_coll7", "coll_torus"}, .0, 1e-0);
+#if 0
+  manip->no_collisions({}, {"l_panda_coll3", "coll_torus",
+                            "l_panda_coll4", "coll_torus",
+                            "l_panda_coll5", "coll_torus",
+                            "l_panda_coll6", "coll_torus",
+                            "l_panda_coll7", "coll_torus"}, .0, 1e-0);
+#endif
 
   return komo;
 }
