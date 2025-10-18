@@ -2140,10 +2140,10 @@ void Mesh::setImplicitSurfaceBySphereProjection(ScalarFunction& _f, double rad, 
   for(uint i=0; i<V.d0; i++) {
     arr x = V[i];
 
-    OptNewton newton(x, distSqr, OptOptions()
-                     .set_verbose(0)
-                     .set_stepMax(.5*rad)
-                     .set_damping(1e-10));
+    OptNewton newton(x, distSqr);
+    newton.opt->set_verbose(0)
+        .set_stepMax(.5*rad)
+        .set_damping(1e-10);
     newton.run();
   }
 }

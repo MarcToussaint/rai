@@ -62,45 +62,45 @@ void PhaseOneProblem::evaluate(arr& meta_phi, arr& meta_J, const arr& meta_x) {
 // Solvers
 //
 
-ConstrainedSolver::ConstrainedSolver(arr& _x, arr& _dual, const shared_ptr<NLP>& P, const OptOptions& _opt)
+ConstrainedSolver::ConstrainedSolver(arr& _x, arr& _dual, const shared_ptr<NLP>& P, shared_ptr<OptOptions> _opt)
   : L(P, _opt), newton(_x, L, _opt), dual(_dual), opt(_opt) {
 
   if(!!_dual && _dual.N) L.lambda = _dual;
 
-  if(opt.boundedNewton) {
+  if(opt->boundedNewton) {
     if(P->bounds.N) newton.setBounds(P->bounds);
   }
 
-  if(opt.method==M_logBarrier) {
+  if(opt->method==M_LogBarrier) {
     L.useLB=true;
   }
 
-  newton.opt.verbose = MAX(opt.verbose-1, 0);
+  newton.opt->verbose = MAX(opt->verbose-1, 0);
 
-  if(opt.verbose>0){
+  if(opt->verbose>0){
     cout <<"====nlp===="
         <<" problem-dim: " <<P->dimension <<'/' <<P->featureTypes.N
-         <<" method:" <<Enum<OptMethod>(opt.method)
-      <<" bounded: " <<(opt.boundedNewton?"yes":"no") <<endl;
+         <<" method:" <<Enum<OptMethod>(opt->method)
+      <<" bounded: " <<(opt->boundedNewton?"yes":"no") <<endl;
   }
 
   //check for no constraints
   if(P->get_numOfType(OT_ineq)==0 && P->get_numOfType(OT_ineqB)==0 && P->get_numOfType(OT_eq)==0) {
-    if(opt.verbose>0) cout <<"==nlp== NO CONSTRAINTS -> run just Newton once" <<endl;
-    opt.method=M_singleSquaredPenalty;
+    if(opt->verbose>0) cout <<"==nlp== NO CONSTRAINTS -> run just Newton once" <<endl;
+    opt->method=M_singleSquaredPenalty;
   }
 
   //in first iteration, if not squaredPenaltyFixed, increase stop tolerance
-  org_stopTol = opt.stopTolerance;
-  org_stopGTol = opt.stopGTolerance;
-  if(!outer_iters && opt.method!=M_singleSquaredPenalty) {
-    newton.opt.stopTolerance = 3.*org_stopTol;
-    newton.opt.stopGTolerance = 3.*org_stopGTol;
+  org_stopTol = opt->stopTolerance;
+  org_stopGTol = opt->stopGTolerance;
+  if(!outer_iters && opt->method!=M_singleSquaredPenalty) {
+    newton.opt->stopTolerance = 3.*org_stopTol;
+    newton.opt->stopGTolerance = 3.*org_stopGTol;
   }
 
   x_beforeNewton = newton.x;
 
-  if(opt.verbose>0) {
+  if(opt->verbose>0) {
     cout <<"==nlp== it:" <<outer_iters
          <<" evals:" <<newton.evals
          <<" mu:" <<L.mu <<" nu:" <<L.mu <<" muLB:" <<L.muLB;
@@ -139,7 +139,7 @@ bool ConstrainedSolver::ministep() {
     numBadSteps=0;
   }
 
-  if(opt.verbose>0) {
+  if(opt->verbose>0) {
     //END of old Newton loop
     cout <<"==nlp== it:" <<std::setw(4) <<outer_iters
          <<"  evals:" <<std::setw(4) <<newton.evals
@@ -152,24 +152,24 @@ bool ConstrainedSolver::ministep() {
     if(numBadSteps) cout <<" (bad:" <<numBadSteps <<")";
     if(newton.x.N<5) cout <<" \tx:" <<newton.x;
     cout <<endl;
-    if(opt.verbose>4) L.P->report(cout, opt.verbose, STRING("evals:" <<newton.evals));
+    if(opt->verbose>4) L.P->report(cout, opt->verbose, STRING("evals:" <<newton.evals));
   }
 
   //-- STOPPING CRITERIA
 
   //check for squaredPenaltyFixed method
-  if(opt.method==M_singleSquaredPenalty) {
-    if(opt.verbose>0) cout <<"==nlp== squaredPenaltyFixed stops after one outer iteration" <<endl;
+  if(opt->method==M_singleSquaredPenalty) {
+    if(opt->verbose>0) cout <<"==nlp== squaredPenaltyFixed stops after one outer iteration" <<endl;
     return true;
   }
 
   //main stopping criteron: convergence
-  if(outer_iters>=1 && step < opt.stopTolerance) {
-    if(opt.verbose>0) cout <<"==nlp== StoppingCriterion Delta<" <<opt.stopTolerance <<endl;
-    if(opt.stopGTolerance<0. || err(OT_ineq)+err(OT_eq)<opt.stopGTolerance) {
+  if(outer_iters>=1 && step < opt->stopTolerance) {
+    if(opt->verbose>0) cout <<"==nlp== StoppingCriterion Delta<" <<opt->stopTolerance <<endl;
+    if(opt->stopGTolerance<0. || err(OT_ineq)+err(OT_eq)<opt->stopGTolerance) {
       return true; //good: small step in last loop and err small
     } else {
-      if(opt.verbose>0) cout <<"               -- but err too large " <<err(OT_ineq)+err(OT_eq) <<'>' <<opt.stopGTolerance <<endl;
+      if(opt->verbose>0) cout <<"               -- but err too large " <<err(OT_ineq)+err(OT_eq) <<'>' <<opt->stopGTolerance <<endl;
       if(numBadSteps>6) {
         cout <<"               -- but numBadSteps > 6" <<endl;
         return true;
@@ -177,17 +177,17 @@ bool ConstrainedSolver::ministep() {
     }
   }
 
-  if(opt.stopEvals>0 && newton.evals>=opt.stopEvals) {
-    if(opt.verbose>0) cout <<"==nlp== StoppingCriterion MAX EVALS" <<endl;
+  if(opt->stopEvals>0 && newton.evals>=opt->stopEvals) {
+    if(opt->verbose>0) cout <<"==nlp== StoppingCriterion MAX EVALS" <<endl;
     return true;
   }
-  if(opt.stopInners>0 && newton.inner_iters>=opt.stopInners) {
-    if(opt.verbose>0) cout <<"==nlp== inner aborted" <<endl;
+  if(opt->stopInners>0 && newton.inner_iters>=opt->stopInners) {
+    if(opt->verbose>0) cout <<"==nlp== inner aborted" <<endl;
     newton.inner_iters=0;
 //    return true;
   }
-  if(opt.stopOuters>0 && outer_iters>=opt.stopOuters) {
-    if(opt.verbose>0) cout <<"==nlp== StoppingCriterion MAX OUTERS" <<endl;
+  if(opt->stopOuters>0 && outer_iters>=opt->stopOuters) {
+    if(opt->verbose>0) cout <<"==nlp== StoppingCriterion MAX OUTERS" <<endl;
     return true;
   }
 
@@ -196,10 +196,10 @@ bool ConstrainedSolver::ministep() {
 
   //upate Lagrange parameters
   // double L_x_before = newton.fx;
-  L.autoUpdate(opt, &newton.fx, newton.gx, newton.Hx);
+  L.autoUpdate(&newton.fx, newton.gx, newton.Hx);
   if(!!dual) dual=L.lambda;
 
-  if(opt.verbose>0) {
+  if(opt->verbose>0) {
     //START of new Newton loop
     cout <<"==nlp== it:" <<std::setw(4) <<outer_iters
          <<"  evals:" <<std::setw(4) <<newton.evals
@@ -214,7 +214,7 @@ bool ConstrainedSolver::ministep() {
   //add noise!?
   // rndGauss(newton.x, 1e-3, true);
   newton.reinit(newton.x);
-  if(opt.verbose>0) {
+  if(opt->verbose>0) {
     //START of new Newton loop
     cout <<"==nlp== it:" <<std::setw(4) <<its
          <<"  evals:" <<std::setw(4) <<newton.evals
@@ -232,8 +232,8 @@ bool ConstrainedSolver::ministep() {
 
   if(L.lambda.N) CHECK_EQ(L.lambda.N, L.phi_x.N, "");
 
-  newton.opt.stopTolerance = org_stopTol;
-  newton.opt.stopGTolerance = org_stopGTol;
+  newton.opt->stopTolerance = org_stopTol;
+  newton.opt->stopGTolerance = org_stopGTol;
 
   return false;
 }

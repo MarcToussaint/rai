@@ -88,10 +88,10 @@ arr SDF::projectNewton(const arr& x0, double stepMax, double regularization) {
 //  checkGradient(*this, y, 1e-6);
 //  checkHessian(*this, y, 1e-6);
 
-  OptNewton newton(y, distSqr, rai::OptOptions()
-                   .set_verbose(0)
-                   .set_stepMax(stepMax)
-                   .set_damping(1e-10));
+  rai::OptNewton newton(y, distSqr);
+  newton.opt->set_verbose(0)
+      .set_stepMax(stepMax)
+      .set_damping(1e-10);
   newton.run();
 
   checkGradient(distSqr, y, 1e-4);

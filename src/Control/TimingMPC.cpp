@@ -41,7 +41,7 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
   }
   S.setOptions(opt)
   .setProblem(nlp.ptr())
-  .setSolver(rai::M_augmentedLag);
+  .setSolver(rai::M_AugmentedLag);
 
   auto ret = S.solve();
 

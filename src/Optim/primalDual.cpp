@@ -10,8 +10,10 @@
 
 #include <math.h>
 
-PrimalDualProblem::PrimalDualProblem(const arr& x, const shared_ptr<NLP>& P, const rai::OptOptions& opt)
-  : L(P, opt), mu(opt.muLBInit) {
+namespace rai {
+
+PrimalDualProblem::PrimalDualProblem(const arr& x, const shared_ptr<NLP>& P, std::shared_ptr<OptOptions> opt)
+  : L(P, opt), mu(opt->muLBInit) {
 
   L.mu = L.muLB = 0.;
 
@@ -96,8 +98,8 @@ double PrimalDualProblem::f(arr& r, arr& R, const arr& x_lambda) {
   //-- Jacobian
   if(!!R) {
     bool sparse=isSparseMatrix(HL);
-    rai::SparseMatrix* Rsparse=0;
-    rai::SparseMatrix* LJx_sparse=0;
+    SparseMatrix* Rsparse=0;
+    SparseMatrix* LJx_sparse=0;
 
     if(!sparse) {
       R.resize(r.N, r.N).setZero();
@@ -203,19 +205,19 @@ void PrimalDualProblem::updateMu() {
 
 //==============================================================================
 
-OptPrimalDual::OptPrimalDual(arr& x, arr& dual, const shared_ptr<NLP>& P, const rai::OptOptions& opt)
-  : x(x), PD(x, P, opt), newton(PD.x_lambda, PD, opt), opt(opt) {
+OptPrimalDual::OptPrimalDual(arr& x, arr& dual, const shared_ptr<NLP>& P, std::shared_ptr<OptOptions> _opt)
+  : x(x), PD(x, P, opt), newton(PD.x_lambda, PD, opt), opt(_opt) {
 
   if(!!dual && dual.N) PD.L.lambda = dual;
 
-  newton.opt.verbose = rai::MAX(opt.verbose-1, 0);
+  newton.opt->verbose = MAX(opt->verbose-1, 0);
 
   newton.rootFinding = true;
   newton.bounds.resize(2, newton.x.N).setZero();
   newton.bounds[1] = -1.;
   for(uint i=x.N+PD.n_eq; i<newton.x.N; i++) newton.bounds(1,i) = 1e10;
 
-  if(opt.verbose>0) cout <<"***** OptPrimalDual" <<endl;
+  if(opt->verbose>0) cout <<"***** OptPrimalDual" <<endl;
 }
 
 uint OptPrimalDual::run(uint maxIt) {
@@ -226,7 +228,7 @@ uint OptPrimalDual::run(uint maxIt) {
 
     arr err = PD.L.P->summarizeErrors(PD.L.phi_x);
     if(PD.primalFeasible) {
-      if(opt.stopGTolerance<0. || err(OT_ineq) + err(OT_eq) < opt.stopGTolerance) {
+      if(opt->stopGTolerance<0. || err(OT_ineq) + err(OT_eq) < opt->stopGTolerance) {
         if(newton.stopCriterion==newton.stopStepFailed) continue;
         if(newton.stopCriterion>=newton.stopDeltaConverge) break;
       }
@@ -238,7 +240,7 @@ uint OptPrimalDual::run(uint maxIt) {
 
     x = newton.x({0, x.N});
 
-    if(opt.verbose>0) {
+    if(opt->verbose>0) {
       cout <<"** optPrimalDual it=" <<its
            <<' ' <<newton.evals
            <<" mu=" <<PD.mu
@@ -256,3 +258,4 @@ uint OptPrimalDual::run(uint maxIt) {
 OptPrimalDual::~OptPrimalDual() {
 }
 
+} //namespace

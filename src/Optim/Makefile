@@ -2,9 +2,9 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-#OPTIM = debug
+OPTIM = debug
 
-DEPEND = Core Algo
+DEPEND = Core Algo extern_CMA extern_liblbfgs
 
 CERES = 1
 NLOPT = 1

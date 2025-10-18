@@ -12,6 +12,8 @@
 #include "newton.h"
 #include "lagrangian.h"
 
+namespace rai {
+
 struct PrimalDualProblem : ScalarFunction {
   rai::LagrangianProblem L;
 
@@ -23,7 +25,7 @@ struct PrimalDualProblem : ScalarFunction {
   double dualityMeasure=1.;
   bool primalFeasible=false;
 
-  PrimalDualProblem(const arr& x, const shared_ptr<NLP>& P, const rai::OptOptions& opt);
+  PrimalDualProblem(const arr& x, const shared_ptr<NLP>& P, std::shared_ptr<OptOptions> opt);
 
   double f(arr& r, arr& R, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
 
@@ -39,10 +41,12 @@ struct OptPrimalDual {
   arr& x;
   PrimalDualProblem PD;
   OptNewton newton;
-  const rai::OptOptions& opt;
+  std::shared_ptr<OptOptions> opt;
   uint its=0;
 
-  OptPrimalDual(arr& x, arr& dual, const shared_ptr<NLP>& P, const rai::OptOptions& opt);
+  OptPrimalDual(arr& x, arr& dual, const shared_ptr<NLP>& P, std::shared_ptr<OptOptions> _opt);
   ~OptPrimalDual();
   uint run(uint maxIt=1000);
 };
+
+} //namespace

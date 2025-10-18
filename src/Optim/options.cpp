@@ -10,17 +10,18 @@
 
 namespace rai {
 
-OptOptions& globalOptOptions() {
-  static OptOptions opt;
+std::shared_ptr<OptOptions> globalOptOptions() {
+  static std::shared_ptr<OptOptions> opt;
+  if(!opt) opt=std::make_shared<OptOptions>();
   return opt;
 }
 
 template<> const char* Enum<OptMethod>::names []= {
-    "noMethod", "gradientDescent", "rprop", "LBFGS", "newton",
-    "augmentedLag", "logBarrier", "slackGN_logBarrier",  "squaredPenalty", "singleSquaredPenalty",
+    "noMethod", "GradientDescent", "Rprop", "LBFGS", "Newton", "LBFGS_FD", "Newton_FD",
+    "AugmentedLag", "LogBarrier", "slackGN_logBarrier",  "squaredPenalty", "singleSquaredPenalty",
     "slackGN",
     "NLopt", "Ipopt", "slackGN_Ipopt", "Ceres",
-    "LSZO", "greedy", "NelderMead",
+    "LSZO", "greedy", "NelderMead", "CMA",
     nullptr
 };
 

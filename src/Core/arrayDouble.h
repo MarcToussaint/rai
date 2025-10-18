@@ -438,6 +438,8 @@ arr reshapeColor(const arr& col, int d0=-1);
 
 void scanArrFile(const char* name);
 
+arr finiteDifference_gradient(std::function<double(const arr& x)> f, const arr& x0, double y0, double eps=1e-8);
+arr finiteDifference_jacobian(std::function<void(arr&, const arr&)> f, const arr& x0, const arr& y0, double eps=1e-8);
 arr finiteDifferenceGradient(ScalarFunction& f, const arr& x, arr& Janalytic=NoArr, double eps=1e-8);
 arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janalytic=NoArr, double eps=1e-8);
 bool checkGradient(ScalarFunction& f, const arr& x, double tolerance, bool verbose=false);

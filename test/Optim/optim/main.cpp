@@ -28,7 +28,7 @@ void TEST(Solver) {
   std::shared_ptr<NLP> nlp = getBenchmarkFromCfg();
 
   rai::Enum<rai::OptMethod> sid (rai::getParameter<rai::String>("solver"));
-  if(sid==rai::M_logBarrier){
+  if(sid==rai::M_LogBarrier){
     NLP_Viewer(nlp).display(1., 1.);
   }else{
     NLP_Viewer(nlp).display(1., -1.);
@@ -44,9 +44,9 @@ void TEST(Solver) {
   S.setSolver(sid);
   S.setProblem(nlp);
   if(x_init.N) S.setInitialization(x_init);
-  if(sid==rai::M_augmentedLag || sid==rai::M_squaredPenalty || sid==rai::M_logBarrier){
+  if(sid==rai::M_AugmentedLag || sid==rai::M_squaredPenalty || sid==rai::M_LogBarrier){
     while(!S.step()){
-      if(sid==rai::M_logBarrier){
+      if(sid==rai::M_LogBarrier){
         NIY;// NLP_Viewer(nlp, S.P). display(S.optCon->L.mu, S.optCon->L.muLB);
       }else{
         NIY;// NLP_Viewer(nlp, S.P). display(S.optCon->L.mu);
@@ -88,7 +88,7 @@ void testSpherePacking(){
   S.setInitialization(retSam->x);
   // S.getProblem()->checkJacobian(S.x, 1e-6);
   // S.setSolver(NLPS_Ipopt);
-  S.setSolver(rai::M_logBarrier);
+  S.setSolver(rai::M_LogBarrier);
   // S.setSolver(NLPS_augmentedLag);
   S.opt.set_muMax(1e6) .set_stopEvals(5000) .set_muLBInit(1e-3) .set_muInit(1e3);
   auto ret = S.solve(-1, 2);

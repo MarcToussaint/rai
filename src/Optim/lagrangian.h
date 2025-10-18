@@ -23,6 +23,7 @@ namespace rai {
 
 struct LagrangianProblem : ScalarFunction, NLP {
   shared_ptr<NLP> P;
+  shared_ptr<OptOptions> opt;
 
   //-- parameters of the inner problem (Lagrangian, unconstrained problem)
   double muLB;       ///< log barrier mu
@@ -34,7 +35,7 @@ struct LagrangianProblem : ScalarFunction, NLP {
   arr x;               ///< point where P was last evaluated
   arr phi_x, J_x, H_x; ///< features at x
 
-  LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOptions& opt, double muSquaredPenalty=-1., double muLogBarrier=-1.);
+  LagrangianProblem(const shared_ptr<NLP>& P, std::shared_ptr<OptOptions> _opt, double muSquaredPenalty=-1., double muLogBarrier=-1.);
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);       //evaluate all features and (optionally) their Jacobians for state x
   virtual void getFHessian(arr& H, const arr& x);              //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
@@ -46,8 +47,8 @@ struct LagrangianProblem : ScalarFunction, NLP {
   rai::Graph reportGradients(const StringA& featureNames);
   void reportMatrix(std::ostream& os);
 
-  void aulaUpdate(const rai::OptOptions& opt, bool anyTimeVariant, double lambdaStepsize=1., double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
-  void autoUpdate(const rai::OptOptions& opt, double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
+  void aulaUpdate(bool anyTimeVariant, double lambdaStepsize=1., double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
+  void autoUpdate(double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
 
   //private: used gpenalty function
   double gpenalty(double g);

@@ -25,16 +25,16 @@ double I_lambda_x(uint i, arr& lambda, arr& g) {
 
 //==============================================================================
 
-LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, const OptOptions& opt, double muSquaredPenalty, double muLogBarrier)
-  : P(P), muLB(0.), mu(0.), useLB(false) {
+LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, std::shared_ptr<OptOptions> _opt, double muSquaredPenalty, double muLogBarrier)
+    : P(P), opt(_opt), muLB(0.), mu(0.), useLB(false) {
 
   CHECK(P, "null problem given");
 
-  if(opt.method==M_logBarrier) useLB=true;
+  if(opt->method==M_LogBarrier) useLB=true;
 
   //switch on penalty terms
-  if(muSquaredPenalty<0.)  mu=opt.muInit;  else  mu=muSquaredPenalty;
-  if(muLogBarrier<0.)  muLB=opt.muLBInit;  else{ muLB=muLogBarrier; useLB=true; }
+  if(muSquaredPenalty<0.)  mu=opt->muInit;  else  mu=muSquaredPenalty;
+  if(muLogBarrier<0.)  muLB=opt->muLBInit;  else{ muLB=muLogBarrier; useLB=true; }
 
   dimension = P->dimension;
   bounds = P->bounds;
@@ -329,7 +329,7 @@ void LagrangianProblem::reportMatrix(std::ostream& os) {
 
 }
 
-void LagrangianProblem::aulaUpdate(const OptOptions& opt, bool anyTimeVariant, double lambdaStepsize, double* L_x, arr& dL_x, arr& HL_x) {
+void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, double* L_x, arr& dL_x, arr& HL_x) {
   if(!lambda.N) lambda=zeros(phi_x.N);
 
   //-- lambda update
@@ -398,12 +398,12 @@ void LagrangianProblem::aulaUpdate(const OptOptions& opt, bool anyTimeVariant, d
   }
 
   //-- mu update
-  if(opt.muInc>0.) { mu *= opt.muInc; if(mu>opt.muMax) mu=opt.muMax; }
-  if(opt.muLBDec>0. && muLB>1e-8) muLB *= opt.muLBDec;
+  if(opt->muInc>0.) { mu *= opt->muInc; if(mu>opt->muMax) mu=opt->muMax; }
+  if(opt->muLBDec>0. && muLB>1e-8) muLB *= opt->muLBDec;
 
   //-- lambda clipping
-  if(opt.lambdaMax>0.) {
-    ::clip(lambda, -opt.lambdaMax, opt.lambdaMax);
+  if(opt->lambdaMax>0.) {
+    ::clip(lambda, -opt->lambdaMax, opt->lambdaMax);
   }
 
   //-- recompute the Lagrangian with the new parameters (its current value, gradient & hessian)
@@ -413,16 +413,16 @@ void LagrangianProblem::aulaUpdate(const OptOptions& opt, bool anyTimeVariant, d
   }
 }
 
-void LagrangianProblem::autoUpdate(const OptOptions& opt, double* L_x, arr& dL_x, arr& HL_x) {
-  switch(opt.method) {
-//  case squaredPenalty: UCP.mu *= opt.muInc;  break;
-    case M_squaredPenalty: aulaUpdate(opt, false, -1., L_x, dL_x, HL_x);  break;
-    case M_augmentedLag:   aulaUpdate(opt, false, 1., L_x, dL_x, HL_x);  break;
-    // case M_anyTimeAula:    aulaUpdate(opt, true,  1., L_x, dL_x, HL_x);  break;
-    case M_logBarrier:     aulaUpdate(opt, false, -1., L_x, dL_x, HL_x);  break;
+void LagrangianProblem::autoUpdate(double* L_x, arr& dL_x, arr& HL_x) {
+  switch(opt->method) {
+//  case squaredPenalty: UCP.mu *= opt->muInc;  break;
+    case M_squaredPenalty: aulaUpdate(false, -1., L_x, dL_x, HL_x);  break;
+    case M_AugmentedLag:   aulaUpdate(false, 1., L_x, dL_x, HL_x);  break;
+    // case M_anyTimeAula:    aulaUpdate(true,  1., L_x, dL_x, HL_x);  break;
+    case M_LogBarrier:     aulaUpdate(false, -1., L_x, dL_x, HL_x);  break;
     case M_singleSquaredPenalty: HALT("you should not be here"); break;
     case M_none: HALT("need to set method before");  break;
-    default: HALT("unknown method: " <<rai::Enum<rai::OptMethod>(opt.method));
+    default: HALT("unknown method: " <<rai::Enum<rai::OptMethod>(opt->method));
   }
 }
 

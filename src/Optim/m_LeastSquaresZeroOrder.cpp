@@ -87,12 +87,12 @@ bool LeastSquaredZeroOrder::step(){
 
   //-- reject
   if(phi2_y>=phi2_x){
-    rejectSteps++;
+    rejectedSteps++;
     alpha *= .5;
     if(alpha<alpha_min) alpha = alpha_min;
     cout <<" -- reject (alpha: " <<alpha <<")" <<endl;
   }else{
-    rejectSteps=0;
+    rejectedSteps=0;
     if(length(x-y)<1e-3) tinySteps++; else tinySteps=0;
     x = y;
     phi_x = phi_y;
@@ -103,7 +103,7 @@ bool LeastSquaredZeroOrder::step(){
   }
 
   if(steps>500) return true;
-  if(rejectSteps>3*x.N) return true;
+  if(rejectedSteps>3*x.N) return true;
   if(tinySteps>5) return true;
   return false;
 }

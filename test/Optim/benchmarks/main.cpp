@@ -74,7 +74,7 @@ void test(str problemName={}, int initUniform=-1){
         }
       }
 
-      if(S.opt.method==rai::M_logBarrier){
+      if(S.opt.method==rai::M_LogBarrier){
         LOG(0) <<"PHASE ONE";
         S.setSolver(rai::M_slackGN);
         auto ret = S.solve();
@@ -83,7 +83,7 @@ void test(str problemName={}, int initUniform=-1){
           continue;
         }
         LOG(0) <<"PHASE ONE: " <<*ret;
-        S.setSolver(rai::M_logBarrier);
+        S.setSolver(rai::M_LogBarrier);
       }
 
       // P.komo->view(true);

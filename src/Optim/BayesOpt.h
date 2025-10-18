@@ -11,6 +11,11 @@
 #include "GlobalIterativeNewton.h"
 #include "../Core/array.h"
 
+struct KernelRidgeRegression;
+struct DefaultKernelFunction;
+
+namespace rai {
+
 struct BayesOpt {
   ScalarFunction& f;
   arr bounds;
@@ -18,18 +23,18 @@ struct BayesOpt {
   arr data_X;
   arr data_y;
 
-  struct KernelRidgeRegression* f_now;
-  struct KernelRidgeRegression* f_smaller;
+  KernelRidgeRegression* f_now;
+  KernelRidgeRegression* f_smaller;
 
   GlobalIterativeNewton alphaMinima_now;
   GlobalIterativeNewton alphaMinima_smaller;
 
-  struct DefaultKernelFunction* kernel_now;
-  struct DefaultKernelFunction* kernel_smaller;
+  DefaultKernelFunction* kernel_now;
+  DefaultKernelFunction* kernel_smaller;
   double lengthScale;
 
   //lengthScale is always relative to hi-lo
-  BayesOpt(ScalarFunction& f, const arr& bounds, rai::OptOptions& opt, double init_lengthScale=1., double prior_var=1.);
+  BayesOpt(ScalarFunction& f, const arr& bounds, shared_ptr<OptOptions> opt, double init_lengthScale=1., double prior_var=1.);
   ~BayesOpt();
 
   void step();
@@ -42,3 +47,5 @@ struct BayesOpt {
   arr pickNextPoint();
   void reduceLengthScale();
 };
+
+} //namespace

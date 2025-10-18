@@ -9,24 +9,25 @@
 #pragma once
 
 #include "options.h"
+#include "NLP.h"
 #include "../Core/array.h"
 
-int optNewton(arr& x, ScalarFunction& f, rai::OptOptions opt=DEFAULT_OPTIONS);
+namespace rai {
 
 struct OptNewton {
   ScalarFunction& f;
+  shared_ptr<rai::OptOptions> opt;
   arr& x;
-  rai::OptOptions opt;
 
   enum StopCriterion { stopNone=0, stopDeltaConverge, stopTinyFSteps, stopTinyXSteps, stopCritEvals, stopStepFailed, stopLineSearchSteps };
 
-  OptNewton(arr& _x, ScalarFunction& _f, const rai::OptOptions& _opt);
+  OptNewton(arr& _x, ScalarFunction& _f, std::shared_ptr<OptOptions> _opt = make_shared<OptOptions>());
   ~OptNewton();
   OptNewton& setBounds(const arr& _bounds);
   void reinit(const arr& _x);
 
   StopCriterion step();
-  StopCriterion run(uint maxIt = 1000);
+  shared_ptr<SolverReturn> run(uint maxIt = 1000);
 
  public:
   arr bounds;
@@ -38,3 +39,5 @@ struct OptNewton {
   bool rootFinding=false;
   double timeNewton=0., timeEval=0.;
 };
+
+} //namespace

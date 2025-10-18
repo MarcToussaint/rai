@@ -10,14 +10,16 @@
 #include <iomanip>
 #include <math.h>
 
+namespace rai {
+
 // function evaluation counter (used only for performance meassurements, global for simplicity)
 uint eval_count=0;
 
 //===========================================================================
 
-OptGrad::OptGrad(arr& _x, ScalarFunction& _f, rai::OptOptions _o):
-  x(_x), f(_f), o(_o), it(0), evals(0), numTinySteps(0) {
-  alpha = o.stepInit;
+OptGrad::OptGrad(arr& _x, ScalarFunction& _f, shared_ptr<OptOptions> _opt):
+  x(_x), f(_f), opt(_opt), it(0), evals(0), numTinySteps(0) {
+  alpha = opt->stepInit;
 //  if(f) reinit();
 }
 
@@ -26,10 +28,10 @@ void OptGrad::reinit(const arr& _x) {
   fx = f.f(gx, NoArr, x);  evals++;
 
   //startup verbose
-  if(o.verbose>1) cout <<"*** optGrad: starting point f(x)=" <<fx <<" alpha=" <<alpha <<endl;
-  if(o.verbose>2) cout <<"             x=" <<x <<endl;
-  if(o.verbose>0) fil.open("z.opt");
-  if(o.verbose>0) { fil <<0 <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;  if(x.N<=5) fil <<x.modRaw();  fil <<endl; }
+  if(opt->verbose>1) cout <<"*** optGrad: starting point f(x)=" <<fx <<" alpha=" <<alpha <<endl;
+  if(opt->verbose>2) cout <<"             x=" <<x <<endl;
+  if(opt->verbose>0) fil.open("z.opt");
+  if(opt->verbose>0) { fil <<0 <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;  if(x.N<=5) fil <<x.modRaw();  fil <<endl; }
 }
 
 OptGrad::StopCriterion OptGrad::step() {
@@ -39,7 +41,7 @@ OptGrad::StopCriterion OptGrad::step() {
   if(!evals) reinit();
 
   it++;
-  if(o.verbose>1) cout <<"--grad-- it=" <<std::setw(4) <<it <<std::flush;
+  if(opt->verbose>1) cout <<"--grad-- it=" <<std::setw(4) <<it <<std::flush;
 
   if(!(fx==fx)) HALT("you're calling a gradient step with initial function value = NAN");
 
@@ -51,49 +53,49 @@ OptGrad::StopCriterion OptGrad::step() {
   for(;; lineSteps++) {
     y = x + alpha*Delta;
     fy = f.f(gy, NoArr, y);  evals++;
-    if(o.verbose>2) cout <<" \tprobing y=" <<y;
-    if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<std::flush;
-    bool wolfe = (o.wolfe<=0. || fy <= fx + o.wolfe*alpha*scalarProduct(Delta, gx));
+    if(opt->verbose>2) cout <<" \tprobing y=" <<y;
+    if(opt->verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<std::flush;
+    bool wolfe = (opt->wolfe<=0. || fy <= fx + opt->wolfe*alpha*scalarProduct(Delta, gx));
     if(fy==fy && wolfe) { //fy==fy is for NAN?
       //accept new point
-      if(o.verbose>1) cout <<" - ACCEPT" <<endl;
-      if(fx-fy<o.stopFTolerance || alpha<o.stopTolerance) numTinySteps++; else numTinySteps=0;
+      if(opt->verbose>1) cout <<" - ACCEPT" <<endl;
+      if(fx-fy<opt->stopFTolerance || alpha<opt->stopTolerance) numTinySteps++; else numTinySteps=0;
       x = y;
       fx = fy;
       gx = gy;
-      alpha *= o.stepInc;
+      alpha *= opt->stepInc;
       break;
     } else {
       //reject new point
-      if(o.verbose>1) cout <<" - reject" <<std::flush;
-      if(o.stopLineSteps>0 && lineSteps>(uint)o.stopLineSteps) break;
-      if(o.stopEvals>0 && evals>(uint)o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
-      if(o.verbose>1) cout <<"\n  (line search)" <<std::flush;
-      alpha *= o.stepDec;
+      if(opt->verbose>1) cout <<" - reject" <<std::flush;
+      if(opt->stopLineSteps>0 && lineSteps>(uint)opt->stopLineSteps) break;
+      if(opt->stopEvals>0 && evals>(uint)opt->stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
+      if(opt->verbose>1) cout <<"\n  (line search)" <<std::flush;
+      alpha *= opt->stepDec;
     }
   }
 
-  if(o.verbose>0) { fil <<evals <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;  if(x.N<=5) fil <<x.modRaw();  fil <<endl; }
+  if(opt->verbose>0) { fil <<evals <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;  if(x.N<=5) fil <<x.modRaw();  fil <<endl; }
 
   //stopping criteria
-#define STOPIF(expr, code, ret) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
+#define STOPIF(expr, code, ret) if(expr){ if(opt->verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
   //  STOPIF(absMax(Delta)<o.stopTolerance, , stopCrit1);
-  STOPIF(numTinySteps>(uint)o.stopTinySteps, numTinySteps=0, stopCrit2);
+  STOPIF(numTinySteps>(uint)opt->stopTinySteps, numTinySteps=0, stopCrit2);
   //  STOPIF(alpha<1e-3*o.stopTolerance, stopCrit2);
-  STOPIF(lineSteps>=(uint)o.stopLineSteps,, stopCritLineSteps);
-  STOPIF(evals>=(uint)o.stopEvals,, stopCritEvals);
-  STOPIF(it>=(uint)o.stopInners,, stopCritEvals);
+  STOPIF(lineSteps>=(uint)opt->stopLineSteps,, stopCritLineSteps);
+  STOPIF(evals>=(uint)opt->stopEvals,, stopCritEvals);
+  STOPIF(it>=(uint)opt->stopInners,, stopCritEvals);
 #undef STOPIF
 
   return stopCriterion=stopNone;
 }
 
 OptGrad::~OptGrad() {
-  if(o.verbose>0) fil.close();
+  if(opt->verbose>0) fil.close();
 #ifndef RAI_MSVC
 //  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
 #endif
-  if(o.verbose>1) cout <<"--- OptGradStop: f(x)=" <<fx <<endl;
+  if(opt->verbose>1) cout <<"--- OptGradStop: f(x)=" <<fx <<endl;
 }
 
 OptGrad::StopCriterion OptGrad::run(uint maxIt) {
@@ -261,3 +263,5 @@ uint Rprop::loop(arr& _x,
   fx = fx_min;
   return evals;
 }
+
+} //namespace

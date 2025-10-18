@@ -173,7 +173,7 @@ void rai::PlotModule::FunctionPoints(const arr& x, const arr& f) {
 void rai::PlotModule::Function(const arr& x, const arr& f) {
   CHECK_EQ(x.d0, f.d0, "Domain and image of function have different size!")
   CHECK_EQ(f.nd, 1, "Function image should be 1D")
-  CHECK(x.d[x.nd-1]<3, "Can handle up to 2D domains")
+  CHECK(x._shape[x.nd-1]<3, "Can handle up to 2D domains")
   arr X(x.d0, x.d1+1);
   uint i, j;
   for(i=0; i<X.d0; i++) {
@@ -186,7 +186,7 @@ void rai::PlotModule::Function(const arr& x, const arr& f) {
 void rai::PlotModule::FunctionPrecision(const arr& x, const arr& f, const arr& h, const arr& l) {
   CHECK_EQ(x.d0, f.d0, "Domain and image of function have different size!")
   CHECK(f.nd==1&&h.nd==1&&l.nd==1, "Function image should be 1D")
-  CHECK(x.d[x.nd-1]<2, "Can handle up to 1D domains")
+  CHECK(x._shape[x.nd-1]<2, "Can handle up to 1D domains")
   arr X(x.d0, x.d1+3);
   uint i, j;
   for(i=0; i<X.d0; i++) {

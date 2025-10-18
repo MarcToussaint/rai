@@ -41,7 +41,7 @@ template<class T> Array<T>::Array()
     N(0),
     nd(0),
     d0(0), d1(0), d2(0),
-    d(&d0),
+    _shape(&d0),
     isReference(false),
     M(0),
     special(0) {
@@ -72,17 +72,18 @@ template<class T> Array<T>::Array(Array<T>&& a)
     N(a.N),
     nd(a.nd),
     d0(a.d0), d1(a.d1), d2(a.d2),
-    d(&d0),
+    _shape(&d0),
     isReference(a.isReference),
     M(a.M),
     special(a.special) {
   if constexpr(std::is_same_v<T, double>){
     if(a.jac) jac = std::move(a.jac);
   }
-  // CHECK_EQ(a.d, &a.d0, "NIY for larger tensors");
-  if(a.d!=&a.d0) { d=a.d; a.d=&a.d0; }
+  // CHECK_EQ(a.shape, &a.d0, "NIY for larger tensors");
+  if(a._shape!=&a.d0) { _shape=a._shape; a._shape=&a.d0; }
   a.p=NULL;
   a.N=a.nd=a.d0=a.d1=a.d2=0;
+  a.resetShape();
   a.isReference=false;
   a.special=NULL;
 }
@@ -109,7 +110,7 @@ template<class T> Array<T>::~Array() {
   clear();
 #else //faster (leaves members non-zeroed..)
   if(special) { delete special; special=NULL; }
-  if(d!=&d0) { delete[] d; }
+  if(_shape!=&d0) { delete[] _shape; }
   if(M) {
     globalMemoryTotal -= M*sizeT;
     if(memMove==1) free(p); else delete[] p;
@@ -125,57 +126,56 @@ template<class T> Array<T>&  Array<T>::clear() {
 }
 
 /// resize 1D array, discard the previous contents
-template<class T> Array<T>& Array<T>::resize(uint D0) { nd=1; d0=D0; resetD(); resizeMEM(d0, false); return *this; }
+template<class T> Array<T>& Array<T>::resize(uint D0) { nd=1; d0=D0; resetShape(); resizeMEM(d0, false); return *this; }
 
 /// resize but copy the previous contents
-template<class T> Array<T>& Array<T>::resizeCopy(uint D0) { nd=1; d0=D0; resetD(); resizeMEM(d0, true); return *this; }
+template<class T> Array<T>& Array<T>::resizeCopy(uint D0) { nd=1; d0=D0; resetShape(); resizeMEM(d0, true); return *this; }
 
 /// reshape the dimensionality (e.g. from 2D to 1D); throw an error if this actually requires to resize the memory
 template<class T> Array<T>& Array<T>::reshape(int D0) {
   if(D0<0) D0=N;
   CHECK_EQ((int)N, D0, "reshape must preserve total memory size");
-  nd=1; d0=D0; d1=d2=0; resetD();
+  nd=1; d0=D0; d1=d2=0; resetShape();
   return *this;
 }
 
 /// same for 2D ...
-template<class T> Array<T>& Array<T>::resize(uint D0, uint D1) { nd=2; d0=D0; d1=D1; resetD(); resizeMEM(d0*d1, false); return *this; }
+template<class T> Array<T>& Array<T>::resize(uint D0, uint D1) { nd=2; d0=D0; d1=D1; resetShape(); resizeMEM(d0*d1, false); return *this; }
 
 /// ...
-template<class T> Array<T>& Array<T>::resizeCopy(uint D0, uint D1) { nd=2; d0=D0; d1=D1; resetD(); resizeMEM(d0*d1, true); return *this; }
+template<class T> Array<T>& Array<T>::resizeCopy(uint D0, uint D1) { nd=2; d0=D0; d1=D1; resetShape(); resizeMEM(d0*d1, true); return *this; }
 
 /// ...
 template<class T> Array<T>& Array<T>::reshape(int D0, int D1) {
   if(D0<0) D0=N/D1; else if(D1<0) D1=N/D0;
   CHECK_EQ((int)N, D0*D1, "reshape must preserve total memory size");
   nd=2; d0=D0; d1=D1; d2=0;
-  resetD();
+  resetShape();
   return *this;
 }
 
 /// same for 3D ...
-template<class T> Array<T>& Array<T>::resize(uint D0, uint D1, uint D2) { nd=3; d0=D0; d1=D1; d2=D2; resetD(); resizeMEM(d0*d1*d2, false); return *this; }
+template<class T> Array<T>& Array<T>::resize(uint D0, uint D1, uint D2) { nd=3; d0=D0; d1=D1; d2=D2; resetShape(); resizeMEM(d0*d1*d2, false); return *this; }
 
 /// ...
-template<class T> Array<T>& Array<T>::resizeCopy(uint D0, uint D1, uint D2) { nd=3; d0=D0; d1=D1; d2=D2; resetD(); resizeMEM(d0*d1*d2, true); return *this; }
+template<class T> Array<T>& Array<T>::resizeCopy(uint D0, uint D1, uint D2) { nd=3; d0=D0; d1=D1; d2=D2; resetShape(); resizeMEM(d0*d1*d2, true); return *this; }
 
 /// ...
 template<class T> Array<T>& Array<T>::reshape(int D0, int D1, int D2) {
   if(D0<0) D0=N/(D1*D2); else if(D1<0) D1=N/(D0*D2); else if(D2<0) D2=N/(D0*D1);
   CHECK_EQ((int)N, D0*D1*D2, "reshape must preserve total memory size");
   nd=3; d0=D0; d1=D1; d2=D2;
-  resetD();
+  resetShape();
   return *this;
 }
 
 /// resize to multi-dimensional tensor
 template<class T> Array<T>& Array<T>::resize(uint ND, uint* dim) {
-  nd=ND; d0=d1=d2=0; resetD();
-  uint j;
-  for(j=0; j<nd && j<3; j++) {(&d0)[j]=dim[j]; }
-  if(nd>3) { d=new uint[nd];  memmove(d, dim, nd*sizeof(uint)); }
-  uint64_t S;
-  for(S=1, j=0; j<nd; j++) S*=dim[j];
+  nd=ND; d0=d1=d2=0;
+  if(nd>0){ d0=dim[0]; if(nd>1){ d1=dim[1]; if(nd>2){ d2=dim[2]; } } }
+  resetShape(dim);
+  uint64_t S=(nd>0?1:0);
+  for(uint j=0; j<nd; j++) S*=dim[j];
   if(S>=(1ull <<32)) HALT("Array #elements " <<(S>>30) <<"G is >= 2^32");
   resizeMEM((uint)S, false);
   return *this;
@@ -183,12 +183,11 @@ template<class T> Array<T>& Array<T>::resize(uint ND, uint* dim) {
 
 /// resize to multi-dimensional tensor
 template<class T> Array<T>& Array<T>::resizeCopy(uint ND, uint* dim) {
-  nd=ND; d0=d1=d2=0; resetD();
-  uint j;
-  for(j=0; j<nd && j<3; j++) {(&d0)[j]=dim[j]; }
-  if(nd>3) { d=new uint[nd];  memmove(d, dim, nd*sizeof(uint)); }
-  uint64_t S;
-  for(S=1, j=0; j<nd; j++) S*=dim[j];
+  nd=ND; d0=d1=d2=0;
+  if(nd>0){ d0=dim[0]; if(nd>1){ d1=dim[1]; if(nd>2){ d2=dim[2]; } } }
+  resetShape(dim);
+  uint64_t S=(nd>0?1:0);
+  for(uint j=0; j<nd; j++) S*=dim[j];
   if(S>=(1ull <<32)) HALT("Array #elements " <<(S>>30) <<"G is >= 2^32");
   resizeMEM((uint)S, true);
   return *this;
@@ -196,19 +195,10 @@ template<class T> Array<T>& Array<T>::resizeCopy(uint ND, uint* dim) {
 
 /// resize to multi-dimensional tensor
 template<class T> Array<T>& Array<T>::reshape(uint ND, uint* dim) {
-  nd=ND; d0=d1=d2=0; resetD();
-  if(nd>0){
-    d0=dim[0];
-    if(nd>1){
-      d1=dim[1];
-      if(nd>2){
-        d2=dim[2];
-        if(nd>3) { d=new uint[nd];  memmove(d, dim, nd*sizeof(uint)); }
-      }
-    }
-  }
-  //for(uint j=0; j<nd && j<3; j++) {(&d0)[j]=dim[j]; }
-  uint S=(nd>0?1:0);
+  nd=ND; d0=d1=d2=0;
+  if(nd>0){ d0=dim[0]; if(nd>1){ d1=dim[1]; if(nd>2){ d2=dim[2]; } } }
+  resetShape(dim);
+  uint64_t S=(nd>0?1:0);
   for(uint j=0; j<nd; j++) S*=dim[j];
   CHECK_EQ(N, S, "reshape must preserve total memory size");
   return *this;
@@ -229,8 +219,7 @@ template<class T> Array<T>& Array<T>::resizeAs(const Array<T>& a) {
   CHECK(this!=&a, "never do this!!!");
   if(isReference) CHECK_EQ(N, a.N, "resize of a reference (e.g. subarray) is not allowed! (only a resize without changing memory size)");
   nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2;
-  resetD();
-  if(nd>3) { d=new uint[nd];  memmove(d, a.d, nd*sizeof(uint)); }
+  resetShape(a._shape);
   resizeMEM(a.N, false);
   return *this;
 }
@@ -238,8 +227,8 @@ template<class T> Array<T>& Array<T>::resizeAs(const Array<T>& a) {
 /// make it the same size as \c a and copy previous content
 template<class T> Array<T>& Array<T>::resizeCopyAs(const Array<T>& a) {
   CHECK(this!=&a, "never do this!!!");
-  nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2; resetD();
-  if(nd>3) { d=new uint[nd];  memmove(d, a.d, nd*sizeof(uint)); }
+  nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2;
+  resetShape(a._shape);
   resizeMEM(a.N, true);
   return *this;
 }
@@ -247,15 +236,15 @@ template<class T> Array<T>& Array<T>::resizeCopyAs(const Array<T>& a) {
 template<class T> Array<T>& Array<T>::reshapeAs(const Array<T>& a) {
   CHECK(this!=&a, "never do this!!!");
   CHECK_EQ(N, a.N, "reshape must preserve total memory size");
-  nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2; resetD();
-  if(nd>3) { d=new uint[nd];  memmove(d, a.d, nd*sizeof(uint)); }
+  nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2;
+  resetShape(a._shape);
   return *this;
 }
 
 /// return the k-th dimensionality
 template<class T> uint Array<T>::dim(uint k) const {
   CHECK(k<nd, "dimensionality range check error: " <<k <<"!<" <<nd);
-  if(!d && k<3) return (&d0)[k]; else return d[k];
+  if(!_shape && k<3) return (&d0)[k]; else return _shape[k];
 }
 
 #ifdef RAI_CLANG
@@ -363,10 +352,9 @@ template<class T> void Array<T>::freeMEM() {
     M=0;
   }
 #endif
-  if(d && d!=&d0) { delete[] d; d=NULL; }
+  if(_shape!=&d0) { delete[] _shape; _shape=&d0; }
   p=NULL;
   N=nd=d0=d1=d2=0;
-  d=&d0;
   isReference=false;
 }
 
@@ -386,9 +374,13 @@ template<class T> Array<T>& Array<T>::dereference() {
 }
 
 /// reset the dimensionality pointer d to point to &d0
-template<class T> void Array<T>::resetD() {
-  if(d && d!=&d0) { delete[] d; d=NULL; }
-  d=&d0;
+template<class T> void Array<T>::resetShape(uint* dim) {
+  if(_shape!=&d0) { delete[] _shape; _shape=&d0; }
+  if(nd>3) {
+    CHECK(dim, "need shape tuple");
+    _shape=new uint[nd];
+    memmove(_shape, dim, nd*sizeof(uint));
+  }
 }
 
 //***** append, insert & remove
@@ -688,7 +680,7 @@ template<class T> void Array<T>::resizeDim(uint k, uint dk) {
 /// return a uint-Array that contains (acutally refers to) the dimensions of 'this'
 template<class T> Array<uint> Array<T>::dim() const {
   Array<uint> dims;
-  dims.setCarray(d, nd);
+  dims.setCarray(_shape, nd);
   return dims;
 }
 
@@ -1340,8 +1332,8 @@ template<class T> void Array<T>::referToDim(const Array<T>& a, int i) {
   } else if(a.nd>3) {
     uint n=a.N/a.d0;
     referTo(a.p+i*n, n);
-    nd=a.nd-1;  d0=a.d1;  d1=a.d2;  d2=a.d[3];
-    if(nd>3) { d=new uint[nd];  memmove(d, a.d+1, nd*sizeof(uint)); }
+    nd=a.nd-1;  d0=a.d1;  d1=a.d2;  d2=a._shape[3];
+    resetShape(a._shape+1);
   }
 }
 
@@ -1363,14 +1355,14 @@ template<class T> void Array<T>::referToDim(const Array<T>& a, uint i, uint j, u
   CHECK(i<a.d0 && j<a.d1 && k<a.d2, "SubDim range error (" <<i <<"<" <<a.d0 <<", " <<j <<"<" <<a.d1 <<", " <<k <<"<" <<a.d2 << ")");
 
   if(a.nd==4) {
-    referTo(&a(i, j, k), a.d[3]);
+    referTo(&a(i, j, k), a._shape[3]);
   } else if(a.nd==5) {
     NIY;
 //    nd=2; d0=a.d[3]; d1=a.d[4]; d2=0; N=d0*d1;
   } else if(a.nd>5) {
     NIY;
 //    nd=a.nd-3; d0=a.d[3]; d1=a.d[4]; d2=a.d[5]; N=a.N/(a.d0*a.d1*a.d2);
-//    resetD();
+//    resetShape();
 //    if(nd>3) { d=new uint[nd];  memmove(d, a.d+3, nd*sizeof(uint)); }
   }
 //  p=a.p+(i*a.N+(j*a.N+(k*a.N/a.d2))/a.d1)/a.d0;
@@ -1383,6 +1375,7 @@ template<class T> void Array<T>::takeOver(Array<T>& a) {
   freeMEM();
   memMove=a.memMove;
   N=a.N; nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2;
+  resetShape(a._shape);
   p=a.p; M=a.M;
   special=a.special;
 #if 0 //a remains reference on this
@@ -1391,7 +1384,7 @@ template<class T> void Array<T>::takeOver(Array<T>& a) {
 #else //a is cleared
   a.p=NULL;
   a.M=a.N=a.nd=a.d0=a.d1=a.d2=0;
-  if(a.d && a.d!=&a.d0) { delete[] a.d; a.d=NULL; }
+  a.resetShape();
   a.special=0;
   a.isReference=false;
 #endif
@@ -1611,10 +1604,10 @@ template<class T> void Array<T>::write(std::ostream& os, const char* ELEMSEP, co
         }
       }
     if(nd>3) {
-      CHECK(d && d!=&d0, "");
+      CHECK(_shape && _shape!=&d0, "");
       for(i=0; i<N; i++) {
-        if(i && !(i%d[nd-1])) os <<LINESEP;
-        if(nd>1 && !(i%(d[nd-2]*d[nd-1]))) os <<LINESEP;
+        if(i && !(i%_shape[nd-1])) os <<LINESEP;
+        if(nd>1 && !(i%(_shape[nd-2]*_shape[nd-1]))) os <<LINESEP;
         os <<(i?ELEMSEP:"") <<elem(i);
       }
     }

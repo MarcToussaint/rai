@@ -223,11 +223,11 @@ PairCollision_CvxCvx::PairCollision_CvxCvx(ScalarFunction& func1, ScalarFunction
 
   arr x = seed;
   CHECK_EQ(x.N, 3, "");
-  OptNewton newton(x, f, rai::OptOptions()
-                   .set_verbose(0)
-                   .set_stopTolerance(1e-4)
-                   .set_stepMax(1.)
-                   .set_damping(1e-10));
+  OptNewton newton(x, f);
+  newton.opt->set_verbose(0)
+      .set_stopTolerance(1e-4)
+      .set_stepMax(1.)
+      .set_damping(1e-10);
   newton.run();
 
   arr g1, g2;

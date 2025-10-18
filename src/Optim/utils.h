@@ -23,10 +23,29 @@ struct Conv_ScalarFunction2NLP : NLP {
   }
 };
 
+struct NLP_FiniteDifference : NLP {
+  std::shared_ptr<NLP> P;
+  NLP_FiniteDifference(std::shared_ptr<NLP> _P) : P(_P) { copySignature(*P); }
+  virtual void evaluate(arr& phi, arr& J, const arr& x0);
+  virtual void report(ostream& os, int verbose, const char *msg=0){ os <<"FiniteDifference version of: "; P->report(os, verbose, msg); }
+};
+
 struct Conv_NLP2ScalarProblem : ScalarFunction {
   std::shared_ptr<NLP> P;
-  Conv_NLP2ScalarProblem(std::shared_ptr<NLP> _P) : P(_P) { dim = P->dimension; }
-  virtual double f(arr& g, arr& H, const arr& x);
+  bool useFiniteDifference=false;
+  Conv_NLP2ScalarProblem(std::shared_ptr<NLP> _P, bool useFiniteDifference=false) : P(_P), useFiniteDifference(useFiniteDifference) { dim = P->dimension; }
+  virtual double f(arr& g, arr& H, const arr& x){
+    double f_x;
+    if(!useFiniteDifference){
+      f_x = P->eval_scalar(g, H, x);
+    }else{
+      CHECK(!H, "");
+      CHECK(!!g, "");
+      f_x = P->eval_scalar(NoArr, NoArr, x);
+      g = finiteDifference_gradient([this](const arr& x){ return this->P->eval_scalar(NoArr, NoArr, x); }, x, f_x, 1e-6);
+    }
+    return f_x;
+  }
 };
 
 struct Conv_NLP_SlackLeastSquares : NLP {

@@ -1249,7 +1249,7 @@ void KOMO::reset() {
   timeTotal=timeCollisions=timeKinematics=timeNewton=timeFeatures=0.;
 }
 
-std::shared_ptr<SolverReturn> KOMO::solve(double addInitializationNoise, int splineKnots, const OptOptions& options) {
+std::shared_ptr<SolverReturn> KOMO::solve(double addInitializationNoise, int splineKnots, const rai::OptOptions& options) {
   run_prepare(addInitializationNoise);
 
   if(opt.verbose>1) cout <<"===KOMO::optimize===\n" <<report(true, false, false) <<endl; //reportProblem();
@@ -1266,7 +1266,7 @@ std::shared_ptr<SolverReturn> KOMO::solve(double addInitializationNoise, int spl
   }
   sol.setOptions(options);
   // sol.setSolver(NLPS_Ipopt);
-  sol.opt.set_verbose(rai::MAX(opt.verbose-2, 0));
+  sol.opt->set_verbose(rai::MAX(opt.verbose-2, 0));
 
   timeTotal -= rai::cpuTime();
   std::shared_ptr<SolverReturn> ret = sol.solve();

@@ -11,6 +11,8 @@
 #include "newton.h"
 #include "gradient.h"
 
+namespace rai {
+
 struct GlobalIterativeNewton {
   arr x;
   OptNewton newton;
@@ -21,7 +23,7 @@ struct GlobalIterativeNewton {
   rai::Array<LocalMinimum> localMinima;
   LocalMinimum* best;
 
-  GlobalIterativeNewton(ScalarFunction& f, const arr& bounds, rai::OptOptions& opt);
+  GlobalIterativeNewton(ScalarFunction& f, const arr& bounds, std::shared_ptr<OptOptions> opt);
   ~GlobalIterativeNewton();
 
   void step();
@@ -30,3 +32,5 @@ struct GlobalIterativeNewton {
 
   void reOptimizeAllPoints();
 };
+
+} //namespace

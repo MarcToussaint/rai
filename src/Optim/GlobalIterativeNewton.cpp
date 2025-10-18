@@ -8,16 +8,18 @@
 
 #include "GlobalIterativeNewton.h"
 
+namespace rai {
+
 bool useNewton=true;
 
-GlobalIterativeNewton::GlobalIterativeNewton(ScalarFunction& f, const arr& bounds, rai::OptOptions& opt)
+GlobalIterativeNewton::GlobalIterativeNewton(ScalarFunction& f, const arr& bounds, std::shared_ptr<OptOptions> opt)
   : x(.5*(bounds[0]+bounds[1])),
     newton(x, f, opt),
     grad(x, f, opt),
     bounds(bounds),
     best(nullptr) {
   newton.setBounds(bounds);
-  newton.opt.verbose = 0;
+  newton.opt->verbose = 0;
 }
 
 GlobalIterativeNewton::~GlobalIterativeNewton() {
@@ -52,24 +54,24 @@ void addRun(GlobalIterativeNewton& gin, const arr& x, double fx, double tol) {
   if(found->fx<gin.best->fx) gin.best=found;
   gin.newton.x = gin.best->x;
   gin.newton.fx = gin.best->fx;
-  if(gin.newton.opt.verbose>1) cout <<"***** optGlobalIterativeNewton: local minimum: " <<found->hits <<' ' <<found->fx <<' ' <<found->x <<endl;
+  if(gin.newton.opt->verbose>1) cout <<"***** optGlobalIterativeNewton: local minimum: " <<found->hits <<' ' <<found->fx <<' ' <<found->x <<endl;
 }
 
 void addRunFrom(GlobalIterativeNewton& gin, const arr& x) {
   if(useNewton) {
     gin.newton.reinit(x);
     gin.newton.run();
-    addRun(gin, gin.newton.x, gin.newton.fx, 3.*gin.newton.opt.stopTolerance);
+    addRun(gin, gin.newton.x, gin.newton.fx, 3.*gin.newton.opt->stopTolerance);
   } else {
     gin.grad.reinit(x);
     gin.grad.run();
-    addRun(gin, gin.grad.x, gin.grad.fx, 3.*gin.grad.o.stopTolerance);
+    addRun(gin, gin.grad.x, gin.grad.fx, 3.*gin.grad.opt->stopTolerance);
   }
 }
 
 void GlobalIterativeNewton::step() {
   arr x = bounds[0] + (bounds[1]-bounds[0]) % rand(bounds.d1);
-  if(newton.opt.verbose>1) cout <<"***** optGlobalIterativeNewton: new iteration from x=" <<x <<endl;
+  if(newton.opt->verbose>1) cout <<"***** optGlobalIterativeNewton: new iteration from x=" <<x <<endl;
   addRunFrom(*this, x);
 }
 
@@ -96,3 +98,5 @@ void GlobalIterativeNewton::reOptimizeAllPoints() {
   localMinima.clear();
   for(uint i=0; i<X.d0; i++) addRunFrom(*this, X[i]);
 }
+
+} //namespace

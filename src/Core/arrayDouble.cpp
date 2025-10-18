@@ -723,7 +723,7 @@ double length(const arr& x) { return std::sqrt(sumOfSqr(x)); }
 
 double var(const arr& x) { double m=sum(x)/x.N; return sumOfSqr(x)/x.N-m*m; }
 
-arr mean(const arr& X, uint axis) { return sum(X, axis)/double(X.d[axis]); }
+arr mean(const arr& X, uint axis) { return sum(X, axis)/double(X._shape[axis]); }
 
 arr covar(const arr& X) { arr m=mean(X); return ((~X)*X)/double(X.d0)-m*~m; }
 
@@ -1401,9 +1401,9 @@ void tensorEquation_doesntWorkLikeThat(arr& X, const arr& A, const uintA& pickA,
 
   //dimensionalities: left-sum-right
   uint ldim=1, sdim=1, rdim=1;
-  for(i=0; i<Aperm.nd-sum; i++) { ldim *= Aperm.d[i]; }
-  for(i=0; i<sum; i++) { j = Aperm.d[sum+i]; CHECK_EQ(j, Bperm.d[i], ""); sdim*=j; }
-  for(i=0; i<Bperm.nd-sum; i++) { rdim *= Bperm.d[sum+i]; }
+  for(i=0; i<Aperm.nd-sum; i++) { ldim *= Aperm._shape[i]; }
+  for(i=0; i<sum; i++) { j = Aperm._shape[sum+i]; CHECK_EQ(j, Bperm._shape[i], ""); sdim*=j; }
+  for(i=0; i<Bperm.nd-sum; i++) { rdim *= Bperm._shape[sum+i]; }
   DEBUG_TENSOR(cout <<"ldim=" <<ldim <<" sdim=" <<sdim <<" rdim=" <<rdim <<endl;)
 
   //reshape to matrices
@@ -1472,7 +1472,7 @@ void tensorMarginal(arr& Y, const arr& X, const uintA& Yid) {
     CHECK_EQ(II, I, "not equal: " <<II <<uintA(I, X.nd));
 #endif
     Y.p[Ycount] += X.p[Xcount];
-    multiDimIncrement(Ycount, I, X.d, Yinc, Ydec, X.nd);
+    multiDimIncrement(Ycount, I, X._shape, Yinc, Ydec, X.nd);
   }
 }
 
@@ -1493,7 +1493,7 @@ void tensorMaxMarginal(arr& Y, const arr& X, const uintA& Yid) {
   //loop
   for(Xcount=0, Ycount=0; Xcount<X.N; Xcount++) {
     if(X.p[Xcount]>Y.p[Ycount]) Y.p[Ycount] = X.p[Xcount];
-    multiDimIncrement(Ycount, I, X.d, Yinc, Ydec, X.nd);
+    multiDimIncrement(Ycount, I, X._shape, Yinc, Ydec, X.nd);
   }
 }
 
@@ -1517,7 +1517,7 @@ void tensorAdd_old(arr& X, const arr& Y, const uintA& Yid) {
   //loop
   for(Xcount=0, Ycount=0; Xcount<X.N; Xcount++) {
     X.p[Xcount] += Y.p[Ycount];
-    multiDimIncrement(Ycount, I, X.d, Yinc, Ydec, X.nd);
+    multiDimIncrement(Ycount, I, X._shape, Yinc, Ydec, X.nd);
   }
 }
 
@@ -1560,7 +1560,7 @@ void tensorMultiply(arr& X, const arr& Y, const uintA& Yid) {
   //loop
   for(Xcount=0, Ycount=0; Xcount<X.N; Xcount++) {
     X.p[Xcount] *= Y.p[Ycount];
-    multiDimIncrement(Ycount, I, X.d, Yinc, Ydec, X.nd);
+    multiDimIncrement(Ycount, I, X._shape, Yinc, Ydec, X.nd);
   }
 }
 
@@ -1584,7 +1584,7 @@ void tensorDivide(arr& X, const arr& Y, const uintA& Yid) {
   for(Xcount=0, Ycount=0; Xcount<X.N; Xcount++) {
     // TODO division by zero??
     X.p[Xcount] = rai::DIV(X.p[Xcount], Y.p[Ycount]);
-    multiDimIncrement(Ycount, I, X.d, Yinc, Ydec, X.nd);
+    multiDimIncrement(Ycount, I, X._shape, Yinc, Ydec, X.nd);
   }
 }
 
@@ -1604,7 +1604,7 @@ void tensorAdd(arr& X, const arr& Y, const uintA& Yid) {
   //loop
   for(Xcount=0, Ycount=0; Xcount<X.N; Xcount++) {
     X.p[Xcount] += Y.p[Ycount];
-    multiDimIncrement(Ycount, I, X.d, Yinc, Ydec, X.nd);
+    multiDimIncrement(Ycount, I, X._shape, Yinc, Ydec, X.nd);
   }
 }
 

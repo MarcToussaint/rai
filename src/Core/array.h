@@ -67,7 +67,7 @@ template<class T> struct Array {
   uint N;   ///< number of elements
   uint nd;  ///< number of dimensions
   uint d0, d1, d2; ///< 0th, 1st, 2nd dim
-  uint* d;  ///< pointer to dimensions (for nd<=3 points to d0)
+  uint* _shape;  ///< pointer to dimensions (for nd<=3 points to d0)
   bool isReference; ///< true if this refers to memory of another array
   uint M;   ///< memory allocated (>=N)
   SpecialArray* special=0; ///< auxiliary data, e.g. if this is a sparse matrics, depends on special type
@@ -95,24 +95,30 @@ template<class T> struct Array {
   Array<T>& operator=(const Array<T>& a);
 
   /// @name iterators
-  struct iterator {
-    using reference = T&;
-    T* p;
-    T& operator()() { return *p; } //access to value by user
-    void operator++() { p++; }
-    reference operator*() { return *p; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
-    friend bool operator!=(const iterator& i, const iterator& j) { return i.p!=j.p; }
-    T& operator->() { return *p; }
-  };
-  struct const_iterator {
-    using reference = const T&;
-    const T* p;
-    const T& operator()() { return *p; } //access to value by user
-    void operator++() { p++; }
-    reference operator*() { return *p; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
-    friend bool operator!=(const const_iterator& i, const const_iterator& j) { return i.p!=j.p; }
-    const T& operator->() { return *p; }
-  };
+  using iterator = T*;
+  using const_iterator = const T*;
+  // struct iterator {
+  //   using reference = T&;
+  //   T* p;
+  //   T& operator()() { return *p; } //access to value by user
+  //   void operator++() { p++; }
+  //   reference operator*() { return *p; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
+  //   friend bool operator!=(const iterator& i, const iterator& j) { return i.p!=j.p; }
+  //   friend long int operator-(const iterator& i, const iterator& j) { return (long int)(i.p-j.p); }
+  //   friend iterator operator+(const iterator& i, int j) { return iterator{i.p+j}; }
+  //   friend iterator operator-(const iterator& i, int j) { return iterator{i.p-j}; }
+  //   friend reference operator*(const iterator& i, int j) { return i.p[j]; }
+  //   T& operator->() { return *p; }
+  // };
+  // struct const_iterator {
+  //   using reference = const T&;
+  //   const T* p;
+  //   const T& operator()() { return *p; } //access to value by user
+  //   void operator++() { p++; }
+  //   reference operator*() { return *p; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
+  //   friend bool operator!=(const const_iterator& i, const const_iterator& j) { return i.p!=j.p; }
+  //   const T& operator->() { return *p; }
+  // };
 
   iterator begin() { return iterator{p}; }
   const_iterator begin() const { return const_iterator{p}; }
@@ -304,7 +310,7 @@ template<class T> struct Array {
   void resizeMEM(uint n, bool copy, int Mforce=-1);
   void reserveMEM(uint Mforce) { resizeMEM(N, true, Mforce); if(!nd) nd=1; }
   void freeMEM();
-  void resetD();
+  void resetShape(uint* dim=0);
 
   /// @name serialization
   uint serial_size();
@@ -447,8 +453,8 @@ template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b
 namespace rai {
 template<class T, class S> void resizeAs(Array<T>& x, const Array<S>& a) {
   x.nd=a.nd; x.d0=a.d0; x.d1=a.d1; x.d2=a.d2;
-  x.resetD();
-  if(x.nd>3) { x.d=new uint[x.nd];  memmove(x.d, a.d, x.nd*sizeof(uint)); }
+  x.resetShape();
+  if(x.nd>3) { x._shape=new uint[x.nd];  memmove(x._shape, a._shape, x.nd*sizeof(uint)); }
   x.resizeMEM(a.N, false);
 }
 template<class T, class S> void resizeCopyAs(Array<T>& x, const Array<S>& a);

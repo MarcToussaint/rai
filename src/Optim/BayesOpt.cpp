@@ -11,14 +11,16 @@
 //#include "../Gui/plot.h"
 //#include "../Algo/MLcourse.h"
 
-BayesOpt::BayesOpt(ScalarFunction& _f, const arr& _bounds, rai::OptOptions& opt, double init_lengthScale, double prior_var)
+namespace rai {
+
+BayesOpt::BayesOpt(ScalarFunction& _f, const arr& _bounds, shared_ptr<OptOptions> opt, double init_lengthScale, double prior_var)
   : f(_f),
     bounds(_bounds),
     f_now(nullptr), f_smaller(nullptr),
     alphaMinima_now(f, _bounds, opt),
     alphaMinima_smaller(f, _bounds, opt) {
 
-  init_lengthScale *= sum(bounds[1] - bounds[0])/bounds.d1;
+  init_lengthScale *= ::sum(bounds[1] - bounds[0])/bounds.d1;
 
   kernel_now = new DefaultKernelFunction();
   kernel_smaller = new DefaultKernelFunction();
@@ -64,7 +66,7 @@ void BayesOpt::report(bool display, ScalarFunction& f) {
   cout <<"mean=" <<f_now->mu <<" var=" <<kernel_now->hyperParam2.scalar() <<endl;
 
   arr X_grid, s_grid;
-  X_grid = rai::grid(data_X.d1, 0., 1., (data_X.d1==1?500:30));
+  X_grid = grid(data_X.d1, 0., 1., (data_X.d1==1?500:30));
   X_grid = X_grid % (bounds[1]-bounds[0]);
   X_grid += repmat(bounds[0], X_grid.d0, 1);
   arr y_grid = f_now->evaluate(X_grid, s_grid);
@@ -112,7 +114,7 @@ void BayesOpt::addDataPoint(const arr& x, double y) {
   data_X.append(x);  data_X.reshape(data_X.N/x.N, x.N);
   data_y.append(y);
 
-  double fmean = sum(data_y)/data_y.N;
+  double fmean = ::sum(data_y)/data_y.N;
   if(data_y.N>2) {
     kernel_now->hyperParam2 = 2.*var(data_y);
     kernel_smaller->hyperParam2 = kernel_now->hyperParam2;
@@ -153,3 +155,5 @@ void BayesOpt::reduceLengthScale() {
   kernel_now->hyperParam1 = kernel_smaller->hyperParam1;
   kernel_smaller->hyperParam1 /= 2.;
 }
+
+} //namespace

@@ -997,6 +997,30 @@ void scanArrFile(const char* name) {
 #  define CHECK_EPS 1e-8
 #endif
 
+arr finiteDifference_gradient(std::function<double (const arr&)> f, const arr& x0, double y0, double eps){
+  arr x, g(x0.N);
+  double y;
+  for(uint i=0; i<x0.N; i++) {
+    x = x0;
+    x.elem(i) += eps;
+    y = f(x);
+    g(i) = (y-y0)/eps;
+  }
+  return g;
+}
+
+/// numeric (finite difference) computation of the gradient
+arr finiteDifference_jacobian(std::function<void(arr&, const arr&)> f, const arr& x0, const arr& y0, double eps) {
+  arr x, y, J(y0.N, x0.N);
+  for(uint i=0; i<x0.N; i++) {
+    x = x0;
+    x.elem(i) += eps;
+    f(y, x);
+    for(uint k=0; k<y.N; k++) J(k, i) = (y.elem(k)-y0.elem(k))/eps;
+  }
+  return J;
+}
+
 /// numeric (finite difference) computation of the gradient
 arr finiteDifferenceGradient(ScalarFunction& f, const arr& x, arr& Janalytic, double eps) {
   arr dx, J;
@@ -1014,6 +1038,7 @@ arr finiteDifferenceGradient(ScalarFunction& f, const arr& x, arr& Janalytic, do
   }
   return J;
 }
+
 
 /// numeric (finite difference) computation of the gradient
 arr finiteDifferenceJacobian(const fct& f, const arr& _x, arr& Janalytic, double eps) {
@@ -2940,7 +2965,7 @@ void tensorPermutation(Array<T>& Y, const Array<T>& X, const uintA& Yid) {
   //loop
   for(Xcount=0, Ycount=0; Xcount<X.N; Xcount++) {
     Y.p[Ycount] = X.p[Xcount];
-    multiDimIncrement(Ycount, I, X.d, Yinc, Ydec, X.nd);
+    multiDimIncrement(Ycount, I, X._shape, Yinc, Ydec, X.nd);
   }
 }
 

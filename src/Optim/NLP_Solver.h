@@ -19,17 +19,17 @@ struct ConstrainedSolver;
 /** User Interface: Meta class to call several different solvers in a unified manner. */
 struct NLP_Solver : NonCopyable {
   arr x, dual; //owner of decision variables, which are passed by reference to lower level solvers
-  rai::OptOptions opt; //owner of options, which are passed by reference to lower level solvers
+  std::shared_ptr<OptOptions> opt; //owner of options, which are passed by reference to lower level solvers
   std::shared_ptr<SolverReturn> ret;
   std::shared_ptr<ConstrainedSolver> optCon;
   std::shared_ptr<NLP_Traced> P;
 
   NLP_Solver();
-  NLP_Solver(const shared_ptr<NLP>& _P, int verbose=-100) { setProblem(_P); if(verbose>-100) opt.verbose=verbose; }
+  NLP_Solver(const shared_ptr<NLP>& _P, int verbose=-100) : NLP_Solver() { setProblem(_P); if(verbose>-100) opt->verbose=verbose; }
 
-  NLP_Solver& setSolver(OptMethod _method) { opt.method=_method; return *this; }
+  NLP_Solver& setSolver(OptMethod _method) { opt->method=_method; return *this; }
   NLP_Solver& setProblem(const shared_ptr<NLP>& _P);
-  NLP_Solver& setOptions(const rai::OptOptions& _opt) { opt = _opt; return *this; }
+  NLP_Solver& setOptions(const rai::OptOptions& _opt) { *opt = _opt; return *this; }
   NLP_Solver& setInitialization(const arr& _x) { x=_x; return *this; }
   NLP_Solver& setWarmstart(const arr& _x, const arr& _dual) { x=_x; dual=_dual; return *this; }
   NLP_Solver& setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J) { P->setTracing(trace_x, trace_costs, trace_phi, trace_J); return *this; }

@@ -456,7 +456,7 @@ std::shared_ptr<SolverReturn> ManipulationHelper::solve(int verbose) {
   if(verbose>1) komo->set_viewer(Cviewer->get_viewer());
   rai::NLP_Solver sol;
   sol.setProblem(k().nlp());
-  sol.opt/*.set_damping(1e-1) */.set_verbose(verbose-1) .set_stopTolerance(1e-3) .set_lambdaMax(100.) .set_stopInners(30) .set_stopEvals(500);
+  sol.opt/*.set_damping(1e-1) */->set_verbose(verbose-1) .set_stopTolerance(1e-3) .set_lambdaMax(100.) .set_stopInners(30) .set_stopEvals(500);
   ret = sol.solve();
   if(ret->feasible) {
     path = k().getPath_qOrg();

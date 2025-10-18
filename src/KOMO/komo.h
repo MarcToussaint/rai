@@ -165,7 +165,7 @@ struct KOMO : rai::NonCopyable {
   void updateAndShiftPrefix(const rai::Configuration& C);
 
   //-- calling a solver
-  std::shared_ptr<SolverReturn> solve(double addInitializationNoise=.01, int splineKnots=-1, const rai::OptOptions& options=DEFAULT_OPTIONS);  ///< run the solver (same as run_prepare(); run(); )
+  std::shared_ptr<SolverReturn> solve(double addInitializationNoise=.01, int splineKnots=-1, const rai::OptOptions& options=*DEFAULT_OPTIONS);  ///< run the solver (same as run_prepare(); run(); )
   void reset();                          ///< reset the dual variables and feature value buffers (always needed when adding/changing objectives before continuing an optimization)
 
   //advanced

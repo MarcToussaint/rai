@@ -24,10 +24,10 @@ struct ConstrainedSolver {
   LagrangianProblem L;
   OptNewton newton;
   arr& dual;
-  rai::OptOptions opt;
+  shared_ptr<OptOptions> opt;
   int outer_iters=0, numBadSteps=0;
 
-  ConstrainedSolver(arr& x, arr& dual, const shared_ptr<NLP>& P, const rai::OptOptions& opt=DEFAULT_OPTIONS);
+  ConstrainedSolver(arr& x, arr& dual, const shared_ptr<NLP>& P, shared_ptr<OptOptions> _opt=make_shared<OptOptions>());
 
   std::shared_ptr<SolverReturn> run();
   bool ministep();

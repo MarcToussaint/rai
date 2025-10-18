@@ -94,14 +94,13 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
     F.checkHessian(x, 1e-4);
   }
 
-  rai::ConstrainedSolver opt(x, NoArr, F.ptr(), rai::OptOptions()
-                     .set_stopTolerance(1e-4)
-                     .set_stopFTolerance(1e-3)
-                     .set_damping(1)
-                     .set_stepMax(-1)
-                     .set_method(rai::M_augmentedLag)
-                     .set_muInc(1.1)
-                    );
+  rai::ConstrainedSolver opt(x, NoArr, F.ptr());
+  opt.opt->set_stopTolerance(1e-4)
+      .set_stopFTolerance(1e-3)
+      .set_damping(1)
+      .set_stepMax(-1)
+      .set_method(rai::M_AugmentedLag)
+      .set_muInc(1.1);
   opt.run();
 
   if(verbose>1) {
@@ -259,15 +258,14 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
     P.checkHessian(x, 1e-4);
   }
 
-  rai::ConstrainedSolver opt(x, NoArr, P.ptr(), rai::OptOptions()
-                     .set_stopTolerance(1e-4)
-                     .set_stopFTolerance(1e-3)
-                     .set_damping(1.)
-                     .set_stepMax(.1)
-                     .set_method(rai::M_augmentedLag)
-                     .set_muInc(1.1)
-                     .set_verbose(3)
-                    );
+  rai::ConstrainedSolver opt(x, NoArr, P.ptr());
+  opt.opt->set_stopTolerance(1e-4)
+      .set_stopFTolerance(1e-3)
+      .set_damping(1.)
+      .set_stepMax(.1)
+      .set_method(rai::M_AugmentedLag)
+      .set_muInc(1.1)
+      .set_verbose(3);
   opt.run();
 
   if(verbose>0) {
@@ -442,7 +440,8 @@ double sphereReduceConvex(rai::Mesh& M, double radius, int verbose) {
     arr x = M.V[i];
     arr c = -M.Vn[i];
     LinearProgram LP(c, G, g);
-    rai::ConstrainedSolver opt(x, NoArr, LP.ptr(), rai::OptOptions().set_stopTolerance(1e-4).set_stopGTolerance(1e-4));
+    rai::ConstrainedSolver opt(x, NoArr, LP.ptr());
+    opt.opt ->set_stopTolerance(1e-4) .set_stopGTolerance(1e-4);
     opt.run();
   }
 
@@ -587,22 +586,20 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
   }
 
 #if 1
-  rai::ConstrainedSolver opt(x, NoArr, F, rai::OptOptions()
-                     .set_stopTolerance(1e-4)
-                     .set_stopFTolerance(1e-3)
-                     .set_damping(1)
-                     .set_stepMax(-1)
-                     .set_method(rai::M_augmentedLag)
-                     .set_muInc(1.1)
-                    );
+  rai::ConstrainedSolver opt(x, NoArr, F);
+  opt.opt->set_stopTolerance(1e-4)
+      .set_stopFTolerance(1e-3)
+      .set_damping(1)
+      .set_stepMax(-1)
+      .set_method(rai::M_AugmentedLag)
+      .set_muInc(1.1);
 #else
-  OptPrimalDual opt(x, NoArr, F, rai::OptOptions()
-                    .set_stopTolerance(1e-5)
-                    .set_stopFTolerance(1e-5)
-                    .set_damping(1e-0)
-                    .set_stepMax(-1)
-                    .set_muLBInit(1e1)
-                   );
+  OptPrimalDual opt(x, NoArr, F);
+  opt.opt->set_stopTolerance(1e-5)
+      .set_stopFTolerance(1e-5)
+      .set_damping(1e-0)
+      .set_stepMax(-1)
+      .set_muLBInit(1e1);
 #endif
 
   opt.run();

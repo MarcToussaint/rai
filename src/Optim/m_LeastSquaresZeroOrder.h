@@ -10,8 +10,8 @@ struct LeastSquaredZeroOrder{
   //-- parameters
   str method="rank1";
   double alpha = .5;
-  RAI_PARAM("LSZO/", double, alpha_min, .001);
-  RAI_PARAM("LSZO/", double, damping, 1e-2);
+  RAI_PARAM("LSZO/", double, alpha_min, .001)
+  RAI_PARAM("LSZO/", double, damping, 1e-2)
 
   //-- state and data
   arr x;               ///< point where P was last evaluated
@@ -20,7 +20,7 @@ struct LeastSquaredZeroOrder{
   double phi2_x=-1.;
   arr data_X, data_Phi;
 
-  uint steps=0, tinySteps=0, rejectSteps=0;
+  uint steps=0, tinySteps=0, rejectedSteps=0;
 
   LeastSquaredZeroOrder(shared_ptr<NLP> P, const arr& x_init={});
 
