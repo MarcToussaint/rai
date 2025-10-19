@@ -228,7 +228,7 @@ void TEST(Mobile){
   // komo.opt.animateOptimization=1;
   rai::NLP_Solver sol;
   sol.setProblem(komo.nlp());
-  sol.opt.set_verbose(2);
+  sol.opt->set_verbose(2);
   sol.solve();
   cout <<komo.report(false, true, true) <<endl;
   komo.view(true);

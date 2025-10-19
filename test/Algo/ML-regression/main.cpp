@@ -143,9 +143,9 @@ void testKernelGradients() {
   DefaultKernelFunction kernel;
 
   arr x1, x2;
-  Conv_cfunc2ScalarFunction f([&kernel, &x2](arr& g, arr& H, const arr& x)->double{
+  auto f = [&kernel, &x2](arr& g, arr& H, const arr& x)->double{
     return kernel.k(x, x2, g, H);
-  });
+  };
 
   for(uint i=0;i<10;i++){
     x1 = .1*randn(3);
@@ -182,17 +182,18 @@ void testKernelReg(const char *datafile=nullptr) {
     //-- test gradients
     for(uint k=0;k<1;k++){
       arr x = 1.*randn(X.d1);
-      checkGradient(*f.getF(1.), x, 1e-4);
-      checkHessian(*f.getF(1.), x, 1e-4);
+      checkGradient(f.getF(1.), x, 1e-4);
+      checkHessian(f.getF(1.), x, 1e-4);
     }
 
     arr bounds(2, X.d1);
     bounds[0]=-2.;
     bounds[1]=+2.;
-    GlobalIterativeNewton opt(*f.getF(-1.), bounds, rai::OptOptions().set_verbose(1) .set_stopTolerance(1e-3));
+    rai::GlobalIterativeNewton opt(f.getF(-1.), bounds);
+    opt.newton.opt->set_verbose(1) .set_stopTolerance(1e-3);
     opt.run(10);
     opt.report();
-    cout <<"optimum at x=" <<opt.x <<' ' <<f.getF(-1.)->f(NoArr, NoArr, opt.x) <<endl;
+    cout <<"optimum at x=" <<opt.x <<' ' <<f.getF(-1.)(NoArr, NoArr, opt.x) <<endl;
     arr fx,sig;
     fx = f.evaluate(opt.x.reshape(1,opt.x.N), sig);
     cout <<fx << ' ' <<fx - sqrt(sig) <<endl;
@@ -460,7 +461,7 @@ int main(int argc, char *argv[]) {
 
   plotDev = rai::getParameter<bool>("plotDev", true);
 
-  int mode = rai::getParameter<int>("mode",1);
+  int mode = rai::getParameter<int>("mode", 1);
 
 //  for(mode=1;mode<=8;mode++)
   switch(mode) {

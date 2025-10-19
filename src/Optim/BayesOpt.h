@@ -17,7 +17,7 @@ struct DefaultKernelFunction;
 namespace rai {
 
 struct BayesOpt {
-  ScalarFunction& f;
+  ScalarFunction f;
   arr bounds;
 
   arr data_X;
@@ -34,12 +34,12 @@ struct BayesOpt {
   double lengthScale;
 
   //lengthScale is always relative to hi-lo
-  BayesOpt(ScalarFunction& f, const arr& bounds, shared_ptr<OptOptions> opt, double init_lengthScale=1., double prior_var=1.);
+  BayesOpt(ScalarFunction f, const arr& bounds, shared_ptr<OptOptions> opt, double init_lengthScale=1., double prior_var=1.);
   ~BayesOpt();
 
   void step();
   void run(uint maxIt=10);
-  void report(bool display, ScalarFunction& f);
+  void report(bool display, ScalarFunction f);
 
  private:
   void addDataPoint(const arr& x, double y); //and update the regressions

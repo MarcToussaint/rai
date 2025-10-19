@@ -100,11 +100,11 @@ void TEST(ConvexHull) {
   X.resize(N,D);
   origin.resize(D);
 
-  Conv_cfunc2ScalarFunction f ([&origin, &X](arr& g, arr& H, const arr& x) -> double {
+  auto f = [&origin, &X](arr& g, arr& H, const arr& x) -> double {
     double d=distanceToConvexHull(X, origin);
     if(!!g) distanceToConvexHullGradient(g, X, origin);
     return d;
-  });
+  };
 
   for(uint k=0;k<20;k++){
     rndUniform(origin, -1.2, 1.2, false);
@@ -165,9 +165,9 @@ void TEST(ForceClosure) {
 
     FCtest::center=center;
     FCtest::Xn=Xn;
-    Conv_cfunc2ScalarFunction f ([&](arr& g, arr& H, const arr& x) -> double {
+    auto f = [&](arr& g, arr& H, const arr& x) -> double {
       return FCtest::f(&g, x, 0);
-    });
+    };
     checkGradient(f, X, 1e-4);
   }
 }

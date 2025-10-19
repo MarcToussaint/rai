@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "kin_bullet.h"
+#include "i_Bullet.h"
 
 #ifdef RAI_BULLET
 

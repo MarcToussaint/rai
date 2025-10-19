@@ -13,7 +13,7 @@
 
 namespace rai {
 
-BayesOpt::BayesOpt(ScalarFunction& _f, const arr& _bounds, shared_ptr<OptOptions> opt, double init_lengthScale, double prior_var)
+BayesOpt::BayesOpt(ScalarFunction _f, const arr& _bounds, shared_ptr<OptOptions> opt, double init_lengthScale, double prior_var)
   : f(_f),
     bounds(_bounds),
     f_now(nullptr), f_smaller(nullptr),
@@ -49,7 +49,7 @@ void BayesOpt::step() {
     x = pickNextPoint();
   }
 
-  double fx = f.f(NoArr, NoArr, x);
+  double fx = f(NoArr, NoArr, x);
 //  report();
 
   addDataPoint(x, fx);
@@ -61,7 +61,7 @@ void BayesOpt::run(uint maxIt) {
   for(uint i=0; i<maxIt; i++) step();
 }
 
-void BayesOpt::report(bool display, ScalarFunction& f) {
+void BayesOpt::report(bool display, ScalarFunction f) {
   if(!f_now) return;
   cout <<"mean=" <<f_now->mu <<" var=" <<kernel_now->hyperParam2.scalar() <<endl;
 
@@ -73,7 +73,7 @@ void BayesOpt::report(bool display, ScalarFunction& f) {
   s_grid = sqrt(s_grid);
 
   arr f_grid(X_grid.d0);
-  /*if(f)*/ for(uint i=0; i<X_grid.d0; i++) f_grid(i) = f.f(NoArr, NoArr, X_grid[i]);
+  /*if(f)*/ for(uint i=0; i<X_grid.d0; i++) f_grid(i) = f(NoArr, NoArr, X_grid[i]);
 
   arr s2_grid;
   arr y2_grid = f_smaller->evaluate(X_grid, s2_grid);

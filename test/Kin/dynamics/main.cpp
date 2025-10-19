@@ -1,5 +1,5 @@
 #include <Kin/kin.h>
-#include <Kin/kin_ode.h>
+#include <Kin/i_Ode.h>
 #include <Algo/spline.h>
 #include <Algo/rungeKutta.h>
 #include <Gui/opengl.h>

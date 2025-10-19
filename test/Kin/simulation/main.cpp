@@ -4,7 +4,7 @@
 #include <Kin/simulation.h>
 #include <Kin/viewer.h>
 #include <Kin/F_geometrics.h>
-#include <Kin/kin_physx.h>
+#include <Kin/i_Physx.h>
 
 #include <Geo/depth2PointCloud.h>
 #include <Geo/signedDistanceFunctions.h>

@@ -1,6 +1,6 @@
 #include <Kin/frame.h>
-#include <Kin/kin_bullet.h>
-#include <Kin/kin_physx.h>
+#include <Kin/i_Bullet.h>
+#include <Kin/i_Physx.h>
 #include <Kin/viewer.h>
 #include <Core/thread.h>
 

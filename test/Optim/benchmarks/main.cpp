@@ -60,7 +60,7 @@ void test(str problemName={}, int initUniform=-1){
       rai::NLP_Solver S;
       S.setProblem(nlp);
 
-      LOG(0) <<"problem: " <<problemName <<" method: " <<rai::Enum<rai::OptMethod>(S.opt.method) <<" initUniform: " <<initUniform;
+      LOG(0) <<"problem: " <<problemName <<" method: " <<rai::Enum<rai::OptMethod>(S.opt->method) <<" initUniform: " <<initUniform;
 
       KOMO *komo = (KOMO*)(nlp->obj.get());
 
@@ -74,7 +74,7 @@ void test(str problemName={}, int initUniform=-1){
         }
       }
 
-      if(S.opt.method==rai::M_LogBarrier){
+      if(S.opt->method==rai::M_LogBarrier){
         LOG(0) <<"PHASE ONE";
         S.setSolver(rai::M_slackGN);
         auto ret = S.solve();

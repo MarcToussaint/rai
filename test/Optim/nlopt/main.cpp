@@ -1,4 +1,4 @@
-#include <Optim/opt-nlopt.h>
+#include <Optim/i_NLopt.h>
 #include <Optim/testProblems_Opt.h>
 #include <Optim/constrained.h>
 

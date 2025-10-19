@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "opt-ipopt.h"
+#include "i_Ipopt.h"
 
 #ifdef RAI_IPOPT
 

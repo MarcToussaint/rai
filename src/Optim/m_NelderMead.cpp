@@ -255,17 +255,15 @@ nelder_mead_result nelder_mead(
 
 // ====================================== end of original ======================================
 
-NelderMead::NelderMead(shared_ptr<NLP> P, const arr& x_init) : P(P){
-  if(x_init.N) x=x_init;
-  else x=P->getInitializationSample();
-  CHECK_EQ(x.N, P->dimension, "");
+NelderMead::NelderMead(ScalarFunction _f, const arr& x_init) : f(_f){
+  x=x_init;
 }
 
 shared_ptr<SolverReturn> NelderMead::solve(){
-  uint n = P->dimension;
+  uint n = x.N;
 
   auto f = [this](const arr& x) {
-    return this->P->eval_scalar(NoArr, NoArr, x);
+    return this->f(NoArr, NoArr, x);
   };
 
   arr step(n);

@@ -332,10 +332,10 @@ double KernelRidgeRegression::evaluate(const arr& x, arr& g, arr& H, double plus
   return fx;
 }
 
-shared_ptr<ScalarFunction> KernelRidgeRegression::getF(double plusSigma) {
-  return make_shared<Conv_cfunc2ScalarFunction>([this, plusSigma](arr& g, arr& H, const arr& x) -> double{
+ScalarFunction KernelRidgeRegression::getF(double plusSigma) {
+  return [this, plusSigma](arr& g, arr& H, const arr& x) -> double{
     return this->evaluate(x, g, H, plusSigma, false);
-  });
+  };
 }
 
 //===========================================================================

@@ -663,10 +663,10 @@ arr solve_optim(CtrlSolver& CP) {
   auto nlp = make_shared<CtrlProblem_NLP>(CP);
 
   arr x = CP.komo.world.getJointState();
-  rai::OptOptions opt;
-  opt.stopTolerance = 1e-4;
-  opt.stopGTolerance = 1e-4;
-  opt.stopInners = 10;
+  auto opt = make_shared<rai::OptOptions>();
+  opt->stopTolerance = 1e-4;
+  opt->stopGTolerance = 1e-4;
+  opt->stopInners = 10;
 //  opt.nonStrictSteps=-1;
   rai::ConstrainedSolver O(x, NoArr, nlp, opt);
   O.newton.bounds = nlp->bounds;

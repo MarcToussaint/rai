@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "newton.h"
+#include "m_Newton.h"
 
 #include <iomanip>
 
@@ -23,7 +23,7 @@ void updateBoundActive(intA& boundActive, const arr& x, const arr& bound_lo, con
 
 //===========================================================================
 
-OptNewton::OptNewton(arr& _x, ScalarFunction& _f, std::shared_ptr<OptOptions> _opt):
+OptNewton::OptNewton(arr& _x, ScalarFunction _f, std::shared_ptr<OptOptions> _opt):
   f(_f), opt(_opt), x(_x) {
   alpha = opt->stepInit;
   beta = opt->damping;
@@ -39,7 +39,7 @@ void OptNewton::reinit(const arr& _x) {
 #ifdef NewtonLazyLineSearchMode
   fx = f(NoArr, NoArr, x);  evals++;
 #else
-  fx = f.f(gx, Hx, x);  evals++;
+  fx = f(gx, Hx, x);  evals++;
 #endif
   timeEval += cpuTime();
 
@@ -187,7 +187,7 @@ OptNewton::StopCriterion OptNewton::step() {
 #ifdef NewtonLazyLineSearchMode
     fy = f(NoArr, NoArr, y);  evals++;
 #else
-    fy = f.f(gy, Hy, y);  evals++;
+    fy = f(gy, Hy, y);  evals++;
 #endif
     timeEval += cpuTime();
     if(opt->verbose>1) cout <<"  evals:" <<std::setw(4) <<evals <<"  f(y):" <<std::setw(11) <<fy <<std::flush;

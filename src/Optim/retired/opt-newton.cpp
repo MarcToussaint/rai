@@ -9,7 +9,7 @@
 //this is the old implementation of optNewton as single function
 //the class should be 100% equivalent
 
-uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr* addRegularizer, double* fx_user, arr* gx_user, arr* Hx_user) {
+uint optNewton(arr& x, ScalarFunction f,  OptOptions o, arr* addRegularizer, double* fx_user, arr* gx_user, arr* Hx_user) {
   double alpha = 1.;
   double lambda = o.damping;
   double fx, fy;

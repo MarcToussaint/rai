@@ -25,7 +25,7 @@ struct LocalModelBasedOptim {
 //  Gradient::StopCriterion stopCriterion;
   ofstream fil;
 
-  LocalModelBasedOptim(arr& x, const ScalarFunction& f, OptOptions o=NOOPT);
+  LocalModelBasedOptim(arr& x, ScalarFunction f, OptOptions o=NOOPT);
   ~LocalModelBasedOptim();
   void step();
   void run(uint maxIt = 1000);

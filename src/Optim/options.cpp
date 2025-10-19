@@ -17,7 +17,7 @@ std::shared_ptr<OptOptions> globalOptOptions() {
 }
 
 template<> const char* Enum<OptMethod>::names []= {
-    "noMethod", "GradientDescent", "Rprop", "LBFGS", "Newton", "LBFGS_FD", "Newton_FD",
+    "noMethod", "GradientDescent", "Rprop", "LBFGS", "Newton",
     "AugmentedLag", "LogBarrier", "slackGN_logBarrier",  "squaredPenalty", "singleSquaredPenalty",
     "slackGN",
     "NLopt", "Ipopt", "slackGN_Ipopt", "Ceres",

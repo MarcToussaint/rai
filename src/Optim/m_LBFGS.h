@@ -6,11 +6,11 @@
 namespace rai {
 
 struct LBFGS{
-  shared_ptr<NLP> P;
+  ScalarFunction f;
   shared_ptr<rai::OptOptions> opt;
   arr x;
 
-  LBFGS(std::shared_ptr<NLP> _P, const arr& x_init, std::shared_ptr<OptOptions> _opt);
+  LBFGS(ScalarFunction _f, const arr& x_init, std::shared_ptr<OptOptions> _opt);
 
   std::shared_ptr<SolverReturn> solve();
 

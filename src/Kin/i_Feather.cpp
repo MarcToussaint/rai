@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "kin_feather.h"
+#include "i_Feather.h"
 #include "frame.h"
 #include "kin.h"
 

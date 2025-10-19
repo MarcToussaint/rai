@@ -74,7 +74,7 @@ struct KernelRidgeRegression {
   arr evaluate(const arr& X, arr& bayesSigma2=NoArr); ///< returns f(x) and \s^2(x) for a set of points X
 
   double evaluate(const arr& x, arr& df_x, arr& H, double plusSigma, bool onlySigma); ///< returns f(x) + coeff*\sigma(x) and its gradient and Hessian
-  shared_ptr<ScalarFunction> getF(double plusSigma);
+  ScalarFunction getF(double plusSigma);
 };
 
 struct KernelLogisticRegression {

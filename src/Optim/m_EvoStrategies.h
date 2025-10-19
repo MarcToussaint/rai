@@ -33,12 +33,12 @@ namespace rai {
 //===========================================================================
 
 struct EvolutionStrategy {
-  shared_ptr<NLP> P;
+  ScalarFunction f;
   arr x;
   double f_x=1e10;
   uint steps=0, rejectedSteps=0, tinySteps=0;
 
-  EvolutionStrategy(std::shared_ptr<NLP> _P): P(_P) {}
+  EvolutionStrategy(ScalarFunction _f): f(_f) {}
 
   virtual arr generateNewSamples() = 0;
   virtual void update(const arr& samples, const arr& values) = 0;
@@ -58,7 +58,7 @@ struct CMAES : EvolutionStrategy {
   RAI_PARAM("CMA/", int, lambda, 20)
   RAI_PARAM("CMA/", double, sigmaInit, .1)
 
-  CMAES(shared_ptr<NLP> P, const arr& x_init={});
+  CMAES(ScalarFunction f, const arr& x_init={});
   ~CMAES();
 
   virtual arr generateNewSamples();
@@ -76,7 +76,7 @@ struct ES_mu_plus_lambda : EvolutionStrategy {
   RAI_PARAM("ES/", uint, lambda, 20)
   RAI_PARAM("ES/", uint, mu, 5)
 
-  ES_mu_plus_lambda(shared_ptr<NLP> P, const arr& x_init={}) : EvolutionStrategy(P) {}
+  ES_mu_plus_lambda(ScalarFunction f, const arr& x_init={}) : EvolutionStrategy(f) {}
 
   virtual arr generateNewSamples(){
     arr X = replicate(mean, lambda);

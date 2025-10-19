@@ -2,11 +2,11 @@
 #include <functional>
 #include <Optim/NLP_Solver.h>
 // #include <Optim/NLP_Sampler.h>
-#include <Optim/SlackGaussNewton.h>
+#include <Optim/m_SlackGaussNewton.h>
 #include <Optim/lagrangian.h>
 #include <Optim/constrained.h>
 #include <Core/arrayDouble.h>
-#include <Optim/opt-ipopt.h>
+#include <Optim/i_Ipopt.h>
 #include <KOMO/testProblems_KOMO.h>
 
 // #include <Kin/kin.h>
@@ -44,14 +44,14 @@ void TEST(Solver) {
   S.setSolver(sid);
   S.setProblem(nlp);
   if(x_init.N) S.setInitialization(x_init);
-  if(sid==rai::M_AugmentedLag || sid==rai::M_squaredPenalty || sid==rai::M_LogBarrier){
+  if(sid==rai::M_AugmentedLag || sid==rai::M_SquaredPenalty || sid==rai::M_LogBarrier){
     while(!S.step()){
       if(sid==rai::M_LogBarrier){
         NIY;// NLP_Viewer(nlp, S.P). display(S.optCon->L.mu, S.optCon->L.muLB);
       }else{
         NIY;// NLP_Viewer(nlp, S.P). display(S.optCon->L.mu);
       }
-      if(S.opt.verbose>2) rai::wait(.2, true);
+      if(S.opt->verbose>2) rai::wait(.2, true);
     }
   }else{
     S.solve();
@@ -90,7 +90,7 @@ void testSpherePacking(){
   // S.setSolver(NLPS_Ipopt);
   S.setSolver(rai::M_LogBarrier);
   // S.setSolver(NLPS_augmentedLag);
-  S.opt.set_muMax(1e6) .set_stopEvals(5000) .set_muLBInit(1e-3) .set_muInit(1e3);
+  S.opt->set_muMax(1e6) .set_stopEvals(5000) .set_muLBInit(1e-3) .set_muInit(1e3);
   auto ret = S.solve(-1, 2);
   // S.getProblem()->checkJacobian(ret->x, 1e-5);
   std::cout <<*ret <<std::endl;

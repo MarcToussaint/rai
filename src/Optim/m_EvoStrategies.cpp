@@ -13,7 +13,7 @@ bool EvolutionStrategy::step(){
   arr samples = generateNewSamples();
   arr y = zeros(samples.d0);
   for(uint i=0;i<samples.d0;i++){
-    y(i) = P->eval_scalar(NoArr, NoArr, samples[i]);
+    y(i) = f(NoArr, NoArr, samples[i]);
   }
   uint i; double f_y;
   std::tie(f_y, i) = rai::min_arg(y);
@@ -62,12 +62,11 @@ struct CMA_self {
   cmaes_t evo;
 };
 
-CMAES::CMAES(std::shared_ptr<NLP> P, const arr& x_init) : EvolutionStrategy(P) {
+CMAES::CMAES(ScalarFunction f, const arr& x_init) : EvolutionStrategy(f) {
   self = make_unique<CMA_self>();
   x = x_init;
-  CHECK_EQ(x_init.N, P->dimension, "");
-  arr startDev = rai::consts<double>(sigmaInit, P->dimension);
-  cmaes_init(&self->evo, P->dimension, x_init.p, startDev.p, 1, lambda, nullptr);
+  arr startDev = rai::consts<double>(sigmaInit, x.N);
+  cmaes_init(&self->evo, x_init.N, x_init.p, startDev.p, 1, lambda, nullptr);
 
   cout <<"--cmaes-- " <<steps <<std::endl;
 }

@@ -10,7 +10,7 @@
 
 namespace rai {
 
-void rk4(arr& x1, const arr& x0, const fct& f, double dt) {
+void rk4(arr& x1, const arr& x0, VectorFunction f, double dt) {
   arr k1 = f(x0);
   arr k2 = f(x0 + 0.5*dt*k1);
   arr k3 = f(x0 + 0.5*dt*k2);

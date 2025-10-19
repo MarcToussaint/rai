@@ -302,7 +302,7 @@ ChoiceConstraintFunction::ChoiceConstraintFunction() {
   which = (WhichConstraint) rai::getParameter<double>("constraintChoice");
   n = rai::getParameter<uint>("dim", 2);
 
-  f_uc = make_shared<_ChoiceFunction>();
+  f_uc = _ChoiceFunction();
 
   dimension = n;
 
@@ -347,7 +347,7 @@ void ChoiceConstraintFunction::evaluate(arr& phi, arr& J, const arr& x) {
   CHECK_EQ(x.N, n, "");
   phi.clear();  if(!!J) J.clear();
 
-  phi.append(f_uc->f(J, NoArr, x));
+  phi.append(f_uc(J, NoArr, x));
 
   switch(which) {
     case none: HALT("should not be here")
@@ -390,7 +390,7 @@ void ChoiceConstraintFunction::evaluate(arr& phi, arr& J, const arr& x) {
 }
 
 void ChoiceConstraintFunction::getFHessian(arr& H, const arr& x) {
-  f_uc->f(NoArr, H, x);
+  f_uc(NoArr, H, x);
 }
 
 std::shared_ptr<NLP> getBenchmarkFromCfg() {
@@ -402,20 +402,13 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
   //-- unconstrained problems
 
   {
-    std::shared_ptr<ScalarFunction> F;
     shared_ptr<NLP> nlp;
 
-    if(bs==BS_Rosenbrock) F = make_shared<NLP_Rosenbrock>(dim);
-    else if(bs==BS_Rastrigin) F = make_shared<NLP_Rastrigin>(dim);
+    if(bs==BS_Rosenbrock) nlp = make_shared<NLP_Rosenbrock>(dim);
+    else if(bs==BS_Rastrigin) nlp = make_shared<NLP_Rastrigin>(dim);
     else if(bs==BS_Square) nlp = make_shared<NLP_Squared>(dim, condition, false);
     else if(bs==BS_RandomSquared) nlp = make_shared<NLP_Squared>(dim, condition, true);
     else if(bs==BS_RastriginSOS) nlp = make_shared<NLP_RastriginSOS>();
-
-    if(F) {
-      nlp = make_shared<Conv_ScalarFunction2NLP>(F); //s rai::LagrangianProblem>(nlp, DEFAULT_OPTIONS); //convert to scalar
-        // F = make_shared<ScalarUnconstrainedProgram>(lag, dim);
-      // }
-    }
 
     if(nlp) {
       nlp->bounds = rai::getParameter<arr>("benchmark/bounds", {});

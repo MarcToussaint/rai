@@ -6,22 +6,22 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#include "NLP.h"
 #include "NLP_Solver.h"
+#include "utils.h"
 
-#include "gradient.h"
-#include "newton.h"
+#include "m_Gradient.h"
+#include "m_Newton.h"
 #include "m_LeastSquaresZeroOrder.h"
+#include "m_SlackGaussNewton.h"
 #include "m_LocalGreedy.h"
 #include "m_NelderMead.h"
 #include "m_EvoStrategies.h"
 #include "m_LBFGS.h"
-#include "opt-nlopt.h"
-#include "opt-ipopt.h"
-#include "opt-ceres.h"
-#include "NLP.h"
+#include "i_NLopt.h"
+#include "i_Ipopt.h"
+#include "i_Ceres.h"
 #include "constrained.h"
-#include "utils.h"
-#include "SlackGaussNewton.h"
 
 namespace rai {
 
@@ -51,97 +51,88 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
 
   if(verbose>-100) opt->verbose=verbose;
 
-  if(opt->method==M_Newton) {
-    Conv_NLP2ScalarProblem P1(P);
-    OptNewton newton(x, P1, opt);
-    ret = newton.run();
+  std::shared_ptr<NLP> Phere = P;
+  if(opt->finiteDifference){
+    Phere = make_shared<NLP_FiniteDifference>(P);
+  }
 
-  } else if(opt->method==M_Newton_FD) {
-    auto P1 = make_shared<NLP_FiniteDifference>(P);
-    auto P2 = make_shared<Conv_NLP2ScalarProblem>(P1);
-    OptNewton newton(x, *P2, opt);
+  if(opt->method==M_Newton) {
+    // Conv_NLP2ScalarProblem P1(Phere);
+    OptNewton newton(x, Phere->f_scalar(), opt);
     ret = newton.run();
 
   } else if(opt->method==M_slackGN) {
-    SlackGaussNewton sgn(P, x);
+    SlackGaussNewton sgn(Phere, x);
     ret = sgn.solve();
     x = ret->x;
 
   } else if(opt->method==M_GradientDescent) {
-    Conv_NLP2ScalarProblem P1(P);
-    OptGrad grad(x, P1, opt);
+    // Conv_NLP2ScalarProblem P1(Phere);
+    OptGrad grad(x, Phere->f_scalar(), opt);
     grad.run();
     ret->evals = grad.evals;
-    ret->f = grad.fx;
+    ret->f = grad.f_x;
     ret->feasible = true;
 
   } else if(opt->method==M_Rprop) {
-    Conv_NLP2ScalarProblem P1(P);
+    // Conv_NLP2ScalarProblem P1(Phere);
     Rprop grad;
-    grad.loop(x, P1, opt->stopTolerance, opt->stepInit, opt->stopEvals, opt->verbose);
+    grad.loop(x, Phere->f_scalar(), opt->stopTolerance, opt->stepInit, opt->stopEvals, opt->verbose);
     ret->evals = grad.evals;
     ret->f = grad.fx;
     ret->feasible = true;
 
   } else if(opt->method==M_LSZO) {
-    ret = LeastSquaredZeroOrder(P, x). solve();
+    ret = LeastSquaredZeroOrder(Phere, x). solve();
 
   } else if(opt->method==M_NelderMead) {
-    ret = NelderMead(P, x). solve();
+    ret = NelderMead(Phere->f_scalar(), x). solve();
 
   } else if(opt->method==M_CMA) {
-    ret = rai::CMAES(P, x). solve();
+    ret = rai::CMAES(Phere->f_scalar(), x). solve();
 
   } else if(opt->method==M_greedy) {
-    ret = LocalGreedy(P, x). solve();
+    ret = LocalGreedy(Phere->f_scalar(), x). solve();
 
   } else if(opt->method==M_AugmentedLag) {
-    opt->set_method(M_AugmentedLag);
-    optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
+    optCon = make_shared<ConstrainedSolver>(x, dual, Phere, opt);
     ret = optCon->run();
 
-  } else if(opt->method==M_squaredPenalty) {
-    opt->set_method(M_squaredPenalty);
-    optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
+  } else if(opt->method==M_SquaredPenalty) {
+    optCon = make_shared<ConstrainedSolver>(x, dual, Phere, opt);
     ret = optCon->run();
 
   } else if(opt->method==M_LogBarrier) {
-    opt->set_method(M_LogBarrier);
-    optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
+    optCon = make_shared<ConstrainedSolver>(x, dual, Phere, opt);
     ret = optCon->run();
 
   } else if(opt->method==M_slackGN_logBarrier) {
-    SlackGaussNewton sgn(P, x);
+    SlackGaussNewton sgn(Phere, x);
     sgn.opt.interiorPadding = 1e-2;
     ret = sgn.solve();
     x = ret->x;
     ret->feasible = ret->ineq==0. && ret->eq<.1;
     if(ret->feasible){
       opt->set_method(M_LogBarrier);
-      optCon = make_shared<ConstrainedSolver>(x, dual, P, opt);
+      optCon = make_shared<ConstrainedSolver>(x, dual, Phere, opt);
       ret = optCon->run();
     }
   } else if(opt->method==M_NLopt) {
-    NLoptInterface nlo(P);
+    NLoptInterface nlo(Phere);
     x = nlo.solve(x);
 
   } else if(opt->method==M_Ipopt) {
-    IpoptInterface ipo(P);
+    IpoptInterface ipo(Phere);
     ret = ipo.solve(x);
     x = ret->x;
 
   } else if(opt->method==M_Ceres) {
-    auto P1 = make_shared<Conv_NLP2TrivialFactoredNLP>(P);
+    auto P1 = make_shared<Conv_NLP2TrivialFactoredNLP>(Phere);
     CeresInterface ceres(P1);
     x = ceres.solve();
 
   } else if(opt->method==M_LBFGS) {
-    ret = LBFGS(P, x, opt).solve();
-
-  } else if(opt->method==M_LBFGS_FD) {
-    // ret = LBFGS(P, x, opt).solve();
-    auto P1 = make_shared<NLP_FiniteDifference>(P);
-    ret = LBFGS(P1, x, opt).solve();
+    ret = LBFGS(Phere->f_scalar(), x, opt).solve();
 
   } else HALT("solver wrapper not implemented yet for solver ID '" <<Enum<OptMethod>(opt->method) <<"'");
 
@@ -165,7 +156,7 @@ shared_ptr<SolverReturn> NLP_Solver::solveStepping(int resampleInitialization, i
 
 bool NLP_Solver::step() {
   CHECK(opt->method==M_AugmentedLag
-        || opt->method==M_squaredPenalty
+        || opt->method==M_SquaredPenalty
         || opt->method==M_LogBarrier, "stepping only implemented for these");
 
   if(!optCon) { //first step -> initialize
@@ -181,8 +172,8 @@ bool NLP_Solver::step() {
 
     if(opt->method==M_AugmentedLag) {
       opt->set_method(M_AugmentedLag);
-    } else if(opt->method==M_squaredPenalty) {
-      opt->set_method(M_squaredPenalty);
+    } else if(opt->method==M_SquaredPenalty) {
+      opt->set_method(M_SquaredPenalty);
     } else if(opt->method==M_LogBarrier) {
       opt->set_method(M_LogBarrier);
     }

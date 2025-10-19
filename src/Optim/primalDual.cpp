@@ -17,7 +17,7 @@ PrimalDualProblem::PrimalDualProblem(const arr& x, const shared_ptr<NLP>& P, std
 
   L.mu = L.muLB = 0.;
 
-  L.f(NoArr, NoArr, x);
+  L.eval_scalar(NoArr, NoArr, x);
 //  cout <<"x=" <<x <<endl <<"L=" <<Lval <<endl;
 
   n_ineq=P->get_numOfType(OT_ineq);
@@ -45,7 +45,7 @@ double PrimalDualProblem::f(arr& r, arr& R, const arr& x_lambda) {
   L.muLB = 0.;
 
   arr dL, HL;
-  L.f(dL, HL, x);
+  L.eval_scalar(dL, HL, x);
 //  cout <<"x=" <<x <<endl <<"lambda=" <<L.lambda <<endl <<"L=" <<Lval <<endl;
   if(!L.lambda.N) L.lambda = zeros(L.phi_x.N);
 
@@ -206,7 +206,7 @@ void PrimalDualProblem::updateMu() {
 //==============================================================================
 
 OptPrimalDual::OptPrimalDual(arr& x, arr& dual, const shared_ptr<NLP>& P, std::shared_ptr<OptOptions> _opt)
-  : x(x), PD(x, P, opt), newton(PD.x_lambda, PD, opt), opt(_opt) {
+  : x(x), PD(x, P, opt), newton(PD.x_lambda, PD.f_scalar(), opt), opt(_opt) {
 
   if(!!dual && dual.N) PD.L.lambda = dual;
 

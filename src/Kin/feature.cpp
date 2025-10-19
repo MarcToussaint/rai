@@ -168,7 +168,7 @@ rai::String Feature::shortTag(const rai::Configuration& C) {
 //  };
 //}
 
-fct Feature::asFct(const FrameL& F) { ///< direct conversion to vector function: use to check gradient or evaluate
+VectorFunction Feature::asFct(const FrameL& F) { ///< direct conversion to vector function: use to check gradient or evaluate
   return [this, &F](const arr& x) -> arr {
     F.first()->C.setJointState(x);
 //    auto jacMode = F.first()->C.jacMode;

@@ -53,7 +53,7 @@ struct PairCollision_CvxCvx : PairCollision, NonCopyable {
                     const rai::Transformation& t1, const rai::Transformation& t2,
                     double rad1=0., double rad2=0.);
   //sdf-to-sdf -- TODO: own class!
-  PairCollision_CvxCvx(ScalarFunction& func1, ScalarFunction& func2, const arr& seed);
+  PairCollision_CvxCvx(ScalarFunction func1, ScalarFunction func2, const arr& seed);
 
 
   // void nearSupportAnalysis(double eps=1e-6); ///< analyses not only closest obj support (the simplex) but all points within a margin

@@ -1,7 +1,7 @@
 #include <Kin/kin.h>
 #include <Kin/frame.h>
 #include <Kin/viewer.h>
-#include <Kin/kin_ode.h>
+#include <Kin/i_Ode.h>
 #include <Algo/spline.h>
 #include <Algo/rungeKutta.h>
 #include <Gui/opengl.h>
@@ -126,7 +126,7 @@ void TEST(Kinematics){
         //if(!!J) cout <<"\nJ=" <<J <<endl;
       } );
     }
-    VectorFunction& operator()(){ return *this; }
+    VectorFunction operator()(){ return *this; }
   };
 
 //  rai::Configuration G("arm7.g");

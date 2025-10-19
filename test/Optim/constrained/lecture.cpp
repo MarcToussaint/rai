@@ -12,7 +12,7 @@
 //
 
 void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start, uint iters){
-  rai::OptOptions opt;
+  auto opt = make_shared<rai::OptOptions>();
   auto traced = make_shared<NLP_Traced>(P);
   auto lag = make_shared<rai::LagrangianProblem>(traced, opt);
 
@@ -20,12 +20,12 @@ void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start, uint iters){
     auto lag = make_shared<rai::LagrangianProblem>(P, opt);
     lag->useLB = false;
     lag->mu = 1e5;
-    displayFunction(*lag);
+    displayFunction(lag->f_scalar());
     rai::wait();
   }
   { //initial display
     auto lag = make_shared<rai::LagrangianProblem>(P, opt);
-    displayFunction(*lag);
+    displayFunction(lag->f_scalar());
     rai::wait();
   }
 
@@ -45,13 +45,13 @@ void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start, uint iters){
 //    checkGradient(lag, x, 1e-4);
 //    checkHessian (lag, x, 1e-4); //will throw errors: no Hessians for g!
 
-    lag->f(NoArr, NoArr, x);
+    lag->eval_scalar(NoArr, NoArr, x);
 
 //    optRprop(x, UCP, options);
 //    optGrad(x, lag, options);
 //    system("cat z.opt >> z.opt_all");
 
-    OptNewton newton(x, *lag, opt);
+    rai::OptNewton newton(x, lag->f_scalar(), opt);
     newton.bounds = lag->bounds;
     newton.reinit(x);
     newton.run();
@@ -68,7 +68,7 @@ void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start, uint iters){
     // }
 
     //upate unconstraint problem parameters
-    lag->autoUpdate(opt, &newton.fx, newton.gx, newton.Hx);
+    lag->autoUpdate(&newton.fx, newton.gx, newton.Hx);
 
     err = P->summarizeErrors(lag->phi_x);
     cout <<k <<' ' <<evals <<" f:" <<err(OT_f)+err(OT_sos)

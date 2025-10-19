@@ -16,14 +16,16 @@
 // analytic distance functions
 //
 
-struct SDF : ScalarFunction {
+struct SDF {
   SDF(const rai::Transformation& _pose)
-    : pose(_pose) {}
+      : pose(_pose) {}
   ~SDF() {}
   rai::Transformation pose;
   arr lo, up;
   virtual double f(arr& g, arr& H, const arr& x);
   virtual double f_raw(arr& g, arr& H, const arr& x) { NIY; }
+
+  ScalarFunction f_scalar(){ return [this](arr& g, arr& H, const arr& x){ return this->f(g, H, x); }; }
 
   arr eval(const arr& samples);
   floatA evalFloat(const arr& samples);
@@ -157,4 +159,4 @@ struct PCL2Field {
 
 //===========================================================================
 
-shared_ptr<ScalarFunction> DistanceFunction_SSBox();
+ScalarFunction DistanceFunction_SSBox();

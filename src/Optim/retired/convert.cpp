@@ -10,8 +10,8 @@
 #include "KOMO_Problem.h"
 
 //the Convert is essentially only a ``garbage collector'', creating all the necessary conversion objects and then deleting them on destruction
-Convert::Convert(const ScalarFunction& p) : cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr), cpm(nullptr) { sf=p; }
-Convert::Convert(const VectorFunction& p) : cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr), cpm(nullptr) { vf=p; }
+Convert::Convert(ScalarFunction p) : cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr), cpm(nullptr) { sf=p; }
+Convert::Convert(VectorFunction p) : cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr), cpm(nullptr) { vf=p; }
 //Convert::Convert(KOrderMarkovFunction& p):kom(&p), cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr) { }
 Convert::Convert(double(*fs)(arr*, const arr&, void*), void* data) : cstyle_fs(fs), cstyle_fv(nullptr), data(data), cpm(nullptr) {  }
 Convert::Convert(void (*fv)(arr&, arr*, const arr&, void*), void* data) : cstyle_fs(nullptr), cstyle_fv(fv), data(data), cpm(nullptr) {  }
@@ -90,7 +90,7 @@ VectorFunction conv_cstylefv2VectorFunction(void (*fv)(arr&, arr*, const arr&, v
   };
 }
 
-ScalarFunction conv_VectorFunction2ScalarFunction(const VectorFunction& f) {
+ScalarFunction conv_VectorFunction2ScalarFunction(VectorFunction f) {
   return [&f](arr& g, arr& H, const arr& x) -> double {
     return conv_VectorFunction_ScalarFunction(f, g, H, x);
   };

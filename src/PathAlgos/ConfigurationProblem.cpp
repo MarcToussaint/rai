@@ -9,7 +9,7 @@
 #include "../Kin/proxy.h"
 #include "../Kin/feature.h"
 #include "../Optim/constrained.h"
-#include "../Geo/fclInterface.h"
+#include "../Geo/i_fcl.h"
 
 #include "ConfigurationProblem.h"
 

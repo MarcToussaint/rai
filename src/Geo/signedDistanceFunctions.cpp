@@ -9,7 +9,7 @@
 #include "signedDistanceFunctions.h"
 
 #include "../Gui/opengl.h"
-#include "../Optim/newton.h"
+#include "../Optim/m_Newton.h"
 #include "../Core/graph.h"
 
 #include <math.h>
@@ -68,7 +68,7 @@ void SDF::animateSlices(const arr& lo, const arr& hi, double wait) {
 }
 
 arr SDF::projectNewton(const arr& x0, double stepMax, double regularization) {
-  Conv_cfunc2ScalarFunction distSqr([this, &x0, regularization](arr& g, arr& H, const arr& x) {
+  auto distSqr = [this, &x0, regularization](arr& g, arr& H, const arr& x) {
     double d = f(g, H, x);
     if(!!H) H *= 2.*d;
     if(!!H) H += 2.*(g^g);
@@ -80,7 +80,7 @@ arr SDF::projectNewton(const arr& x0, double stepMax, double regularization) {
     if(!!H) H += (2.*w)*eye(3);
 
     return d*d + w*sumOfSqr(c);
-  });
+  };
 
   arr y = x0;
 //  checkGradient(distSqr, y, 1e-6);
@@ -635,8 +635,8 @@ double SDF_SuperQuadric::f(arr& g, arr& H, const arr& x) {
 
 //===========================================================================
 
-shared_ptr<ScalarFunction> DistanceFunction_SSBox(){
-  return make_shared<Conv_cfunc2ScalarFunction>([](arr& g, arr& H, const arr& x) -> double{
+ScalarFunction DistanceFunction_SSBox(){
+  return [](arr& g, arr& H, const arr& x) -> double{
     // x{0,2} are box-wall-coordinates, not width!
     CHECK_EQ(x.N, 14, "query-pt + abcr + pose");
     rai::Transformation t;
@@ -660,7 +660,7 @@ shared_ptr<ScalarFunction> DistanceFunction_SSBox(){
       g({10, 13+1}) /= -sqrt(sumOfSqr(x({10, 13+1}))); //account for the potential non-normalization of q
     }
     return d;
-  });
+  };
 }
 
 SDF_Torus::SDF_Torus(double _r1, double _r2) : SDF(0), r1(_r1), r2(_r2) {

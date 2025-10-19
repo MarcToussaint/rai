@@ -15,13 +15,13 @@
 namespace rai {
 
 struct OptNewton {
-  ScalarFunction& f;
+  ScalarFunction f;
   shared_ptr<rai::OptOptions> opt;
   arr& x;
 
   enum StopCriterion { stopNone=0, stopDeltaConverge, stopTinyFSteps, stopTinyXSteps, stopCritEvals, stopStepFailed, stopLineSearchSteps };
 
-  OptNewton(arr& _x, ScalarFunction& _f, std::shared_ptr<OptOptions> _opt = make_shared<OptOptions>());
+  OptNewton(arr& _x, ScalarFunction _f, std::shared_ptr<OptOptions> _opt = make_shared<OptOptions>());
   ~OptNewton();
   OptNewton& setBounds(const arr& _bounds);
   void reinit(const arr& _x);

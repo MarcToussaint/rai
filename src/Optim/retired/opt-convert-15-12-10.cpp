@@ -9,8 +9,8 @@
 #include "convert.h"
 
 //the Convert is essentially only a ``garbage collector'', creating all the necessary conversion objects and then deleting them on destruction
-Convert::Convert(const ScalarFunction& p):kom(nullptr), cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr) { sf=p; }
-Convert::Convert(const VectorFunction& p):kom(nullptr), cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr) { vf=p; }
+Convert::Convert(ScalarFunction p):kom(nullptr), cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr) { sf=p; }
+Convert::Convert(VectorFunction p):kom(nullptr), cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr) { vf=p; }
 //Convert::Convert(QuadraticFunction& p){ sf=&p; }
 //Convert::Convert(VectorChainFunction& p) { vcf=&p; }
 //Convert::Convert(QuadraticChainFunction& p) { qcf=&p; }
@@ -90,7 +90,7 @@ VectorFunction convert_cstylefv_VectorFunction(void (*fv)(arr&, arr*, const arr&
   };
 }
 
-ScalarFunction convert_VectorFunction_ScalarFunction(const VectorFunction& f) {
+ScalarFunction convert_VectorFunction_ScalarFunction(VectorFunction f) {
   return [&f](arr& g, arr& H, const arr& x) -> double {
     arr y, J;
     f(y, (!!g?J:NoArr), x);

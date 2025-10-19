@@ -1,7 +1,7 @@
 #include <KOMO/komo.h>
 #include <Optim/NLP_Solver.h>
 #include <PathAlgos/RRT_PathFinder.h>
-#include <Geo/fclInterface.h>
+#include <Geo/i_fcl.h>
 #include <Kin/proxy.h>
 
 // =============================================================================

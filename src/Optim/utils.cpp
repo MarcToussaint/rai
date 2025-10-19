@@ -14,24 +14,7 @@
 
 //===========================================================================
 
-Conv_ScalarFunction2NLP::Conv_ScalarFunction2NLP(shared_ptr<ScalarFunction> f) : f(f){
-  dimension = f->dim;
-  featureTypes.resize(1) = OT_f;
-}
-
-void Conv_ScalarFunction2NLP::evaluate(arr& phi, arr& J, const arr& x) {
-  double y = f->f(J, NoArr, x);
-  phi = {y};
-  if(!!J) J.reshape(1, x.N);
-}
-
-void Conv_ScalarFunction2NLP::getFHessian(arr& H, const arr& x) {
-  f->f(NoArr, H, x);
-}
-
-//===========================================================================
-
-Conv_NLP_SlackLeastSquares::Conv_NLP_SlackLeastSquares(std::shared_ptr<NLP> _P) : P(_P) {
+NLP_SlackLeastSquares::NLP_SlackLeastSquares(std::shared_ptr<NLP> _P) : P(_P) {
   dimension = P->dimension;
   bounds = P->bounds;
 
@@ -43,7 +26,7 @@ Conv_NLP_SlackLeastSquares::Conv_NLP_SlackLeastSquares(std::shared_ptr<NLP> _P) 
   featureTypes.resize(pick.N) = OT_sos;
 }
 
-void Conv_NLP_SlackLeastSquares::evaluate(arr& phi, arr& J, const arr& x) {
+void NLP_SlackLeastSquares::evaluate(arr& phi, arr& J, const arr& x) {
   arr Pphi, PJ;
   P->evaluate(Pphi, PJ, x);
   phi = Pphi.pick(pick);
@@ -87,7 +70,7 @@ void NLP_LinTransformed::evaluate(arr& phi, arr& J, const arr& x) {
 
 void NLP_FiniteDifference::evaluate(arr& phi0, arr& J, const arr& x0){
   P->evaluate(phi0, NoArr, x0);
-  if(!!J) J = finiteDifference_jacobian([this](arr& phi, const arr& x){ this->P->evaluate(phi, NoArr, x); }, x0, phi0, 1e-6);
+  if(!!J) J = finiteDifference_jacobian([this](const arr& x) -> arr{ arr phi; this->P->evaluate(phi, NoArr, x); return phi; }, x0, phi0, 1e-6);
 }
 
 //===========================================================================
@@ -107,12 +90,12 @@ void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& JAll) {
   }
 }
 
-void displayFunction(ScalarFunction& f, bool wait, double lo, double hi) {
+void displayFunction(ScalarFunction f, bool wait, double lo, double hi) {
   arr X, Y;
   X = rai::grid(2, lo, hi, 100);
   Y.resize(X.d0);
   for(uint i=0; i<X.d0; i++) {
-    double fx=f.f(NoArr, NoArr, X[i]);
+    double fx=f(NoArr, NoArr, X[i]);
     Y(i) = ((fx==fx && fx<10.)? fx : 10.);
   }
   Y.reshape(101, 101);

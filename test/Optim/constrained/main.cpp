@@ -78,7 +78,8 @@ void TEST(NLP){
   //Conv_NLP_ConstrainedProblem F(P);
   P->checkJacobian(x, 1e-4);
 
-  rai::ConstrainedSolver opt(x, NoArr, P, rai::OptOptions().set_verbose(6));
+  rai::ConstrainedSolver opt(x, NoArr, P);
+  opt.opt->set_verbose(6);
   opt.newton.bounds = P->bounds;
   opt.run();
 

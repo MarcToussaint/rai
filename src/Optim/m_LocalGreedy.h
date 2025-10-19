@@ -6,7 +6,7 @@
 struct LocalGreedy {
   RAI_PARAM("LocalGreedy/", double, sigma, .1)
 
-  shared_ptr<NLP> P;
+  ScalarFunction f;
 
 
   //-- buffers to avoid re-evaluating points
@@ -16,7 +16,7 @@ struct LocalGreedy {
   //-- counters
   uint steps=0, tinySteps=0, maxSteps=300;
 
-  LocalGreedy(shared_ptr<NLP> P, const arr& x_init={});
+  LocalGreedy(ScalarFunction _f, const arr& x_init={});
 
   shared_ptr<SolverReturn> solve(){
     while(!step()){}

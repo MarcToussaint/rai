@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "gradient.h"
+#include "m_Gradient.h"
 #include <iomanip>
 #include <math.h>
 
@@ -17,7 +17,7 @@ uint eval_count=0;
 
 //===========================================================================
 
-OptGrad::OptGrad(arr& _x, ScalarFunction& _f, shared_ptr<OptOptions> _opt):
+OptGrad::OptGrad(arr& _x, ScalarFunction _f, shared_ptr<OptOptions> _opt):
   x(_x), f(_f), opt(_opt), it(0), evals(0), numTinySteps(0) {
   alpha = opt->stepInit;
 //  if(f) reinit();
@@ -25,13 +25,13 @@ OptGrad::OptGrad(arr& _x, ScalarFunction& _f, shared_ptr<OptOptions> _opt):
 
 void OptGrad::reinit(const arr& _x) {
   if(!!_x && &_x!=&x) x=_x;
-  fx = f.f(gx, NoArr, x);  evals++;
+  f_x = f(g_x, NoArr, x);  evals++;
 
   //startup verbose
-  if(opt->verbose>1) cout <<"*** optGrad: starting point f(x)=" <<fx <<" alpha=" <<alpha <<endl;
+  if(opt->verbose>1) cout <<"*** optGrad: starting point f(x)=" <<f_x <<" alpha=" <<alpha <<endl;
   if(opt->verbose>2) cout <<"             x=" <<x <<endl;
   if(opt->verbose>0) fil.open("z.opt");
-  if(opt->verbose>0) { fil <<0 <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;  if(x.N<=5) fil <<x.modRaw();  fil <<endl; }
+  if(opt->verbose>0) { fil <<0 <<' ' <<eval_count <<' ' <<f_x <<' ' <<alpha;  if(x.N<=5) fil <<x.modRaw();  fil <<endl; }
 }
 
 OptGrad::StopCriterion OptGrad::step() {
@@ -43,26 +43,26 @@ OptGrad::StopCriterion OptGrad::step() {
   it++;
   if(opt->verbose>1) cout <<"--grad-- it=" <<std::setw(4) <<it <<std::flush;
 
-  if(!(fx==fx)) HALT("you're calling a gradient step with initial function value = NAN");
+  if(!(f_x==f_x)) HALT("you're calling a gradient step with initial function value = NAN");
 
   //compute Delta
-  Delta = gx / (-length(gx));
+  Delta = g_x / (-length(g_x));
 
   //line search
   uint lineSteps=0;
   for(;; lineSteps++) {
     y = x + alpha*Delta;
-    fy = f.f(gy, NoArr, y);  evals++;
+    fy = f(gy, NoArr, y);  evals++;
     if(opt->verbose>2) cout <<" \tprobing y=" <<y;
     if(opt->verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<std::flush;
-    bool wolfe = (opt->wolfe<=0. || fy <= fx + opt->wolfe*alpha*scalarProduct(Delta, gx));
+    bool wolfe = (opt->wolfe<=0. || fy <= f_x + opt->wolfe*alpha*scalarProduct(Delta, g_x));
     if(fy==fy && wolfe) { //fy==fy is for NAN?
       //accept new point
       if(opt->verbose>1) cout <<" - ACCEPT" <<endl;
-      if(fx-fy<opt->stopFTolerance || alpha<opt->stopTolerance) numTinySteps++; else numTinySteps=0;
+      if(f_x-fy<opt->stopFTolerance || alpha<opt->stopTolerance) numTinySteps++; else numTinySteps=0;
       x = y;
-      fx = fy;
-      gx = gy;
+      f_x = fy;
+      g_x = gy;
       alpha *= opt->stepInc;
       break;
     } else {
@@ -75,7 +75,7 @@ OptGrad::StopCriterion OptGrad::step() {
     }
   }
 
-  if(opt->verbose>0) { fil <<evals <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;  if(x.N<=5) fil <<x.modRaw();  fil <<endl; }
+  if(opt->verbose>0) { fil <<evals <<' ' <<eval_count <<' ' <<f_x <<' ' <<alpha;  if(x.N<=5) fil <<x.modRaw();  fil <<endl; }
 
   //stopping criteria
 #define STOPIF(expr, code, ret) if(expr){ if(opt->verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
@@ -95,7 +95,7 @@ OptGrad::~OptGrad() {
 #ifndef RAI_MSVC
 //  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
 #endif
-  if(opt->verbose>1) cout <<"--- OptGradStop: f(x)=" <<fx <<endl;
+  if(opt->verbose>1) cout <<"--- OptGradStop: f(x)=" <<f_x <<endl;
 }
 
 OptGrad::StopCriterion OptGrad::run(uint maxIt) {
@@ -183,15 +183,15 @@ bool sRprop::step(arr& w, const arr& grad, uint* singleI) {
   return max(stepSize) < incr*dMin;
 }
 
-bool Rprop::step(arr& x, ScalarFunction& f) {
+bool Rprop::step(arr& x, ScalarFunction f) {
   arr grad;
-  f.f(grad, NoArr, x);
+  f(grad, NoArr, x);
   return self->step(x, grad, nullptr);
 }
 
 //----- the rprop wrapped with stopping criteria
 uint Rprop::loop(arr& _x,
-                 ScalarFunction& f,
+                 ScalarFunction f,
                  double stoppingTolerance,
                  double initialStepSize,
                  uint maxEvals,
@@ -212,7 +212,7 @@ uint Rprop::loop(arr& _x,
   for(;;) {
     //checkGradient(p, x, stoppingTolerance);
     //compute value and gradient at x
-    fx = f.f(J, NoArr, x);  evals++;
+    fx = f(J, NoArr, x);  evals++;
 
     if(verbose>0) { fil <<evals <<' ' <<eval_count <<' ' << fx <<' ' <<diff <<' ' <<x.modRaw() <<endl; }
     if(verbose>1) cout <<"--rprop-- " <<evals <<' ' <<eval_count <<" \tf(x)=" <<fx <<" \tdiff=" <<diff <<" \tx=" <<(x.N<20?x:arr()) <<endl;

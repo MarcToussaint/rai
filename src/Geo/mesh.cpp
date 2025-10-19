@@ -8,12 +8,12 @@
 
 #include "mesh.h"
 #include "qhull.h"
-#include "assimpInterface.h"
+#include "i_assimp.h"
 #include "stbImage.h"
 
 #include "../Algo/ann.h"
 #include "../Algo/marching_cubes.h"
-#include "../Optim/newton.h"
+#include "../Optim/m_Newton.h"
 #include "../Core/graph.h"
 #include "../Core/h5.h"
 
@@ -2033,52 +2033,16 @@ double GJK_distance(Mesh& mesh1, Mesh& mesh2,
 // Lewiner interface
 //
 
-void Mesh::setImplicitSurface(std::function<double(const arr& x)> f, double lo, double up, uint res) {
+void Mesh::setImplicitSurface(ScalarFunction f, double lo, double up, uint res) {
   arr X = grid(3, lo, up, res);
   floatA grid_values(X.d0);
-  for(uint i=0;i<X.d0;i++) grid_values(i) = f(X[i]);
+  for(uint i=0;i<X.d0;i++) grid_values(i) = f(NoArr, NoArr, X[i]);
   grid_values.reshape(res+1, res+1, res+1);
   setImplicitSurface(grid_values, (up-lo)*ones(3));
 }
 
 void Mesh::setImplicitSurface(std::function<double(const arr& x)> f, const arr& bounds, uint res){
   NIY;
-  // MarchingCubes mc(res, res, res);
-  // mc.init_all() ;
-
-  // //compute data
-  // uint k=0, j=0, i=0;
-  // float x, y, z;
-  // float xLo=bounds.elem(0), yLo=bounds.elem(1), zLo=bounds.elem(2);
-  // float xUp=bounds.elem(3), yUp=bounds.elem(4), zUp=bounds.elem(5);
-  // for(k=0; k<res; k++) {
-  //   z = zLo+k*(zUp-zLo)/res;
-  //   for(j=0; j<res; j++) {
-  //     y = yLo+j*(yUp-yLo)/res;
-  //     for(i=0; i<res; i++) {
-  //       x = xLo+i*(xUp-xLo)/res;
-  //       mc.set_data(f(arr{(double)x, (double)y, (double)z}), i, j, k) ;
-  //     }
-  //   }
-  // }
-
-  // mc.run();
-  // mc.clean_temps();
-
-  // //convert to Mesh
-  // clear();
-  // V.resize(mc.nverts(), 3);
-  // T.resize(mc.ntrigs(), 3);
-  // for(i=0; i<V.d0; i++) {
-  //   V(i, 0)=xLo+mc.vert(i)->x*(xUp-xLo)/res;
-  //   V(i, 1)=yLo+mc.vert(i)->y*(yUp-yLo)/res;
-  //   V(i, 2)=zLo+mc.vert(i)->z*(zUp-zLo)/res;
-  // }
-  // for(i=0; i<T.d0; i++) {
-  //   T(i, 0)=mc.trig(i)->v1;
-  //   T(i, 1)=mc.trig(i)->v2;
-  //   T(i, 2)=mc.trig(i)->v3;
-  // }
 }
 
 void Mesh::setImplicitSurface(const arr& gridValues, const arr& size) {
@@ -2089,53 +2053,21 @@ void Mesh::setImplicitSurface(const arr& gridValues, const arr& size) {
 
 void Mesh::setImplicitSurface(const floatA& gridValues, const arr& size) {
   CHECK_EQ(gridValues.nd, 3, "");
-
-#if 1
   clear();
   std::tie(V, T) = rai::marching_cubes(gridValues, size);
-#else
-  MarchingCubes mc(gridValues.d0, gridValues.d1, gridValues.d2);
-  mc.init_all() ;
-  uint k=0, j=0, i=0;
-  for(k=0; k<gridValues.d2; k++) {
-    for(j=0; j<gridValues.d1; j++) {
-      for(i=0; i<gridValues.d0; i++) {
-        mc.set_data(gridValues(i, j, k), i, j, k) ;
-      }
-    }
-  }
-
-  mc.run();
-  mc.clean_temps();
-
-  //convert to Mesh
-  clear();
-  V.resize(mc.nverts(), 3);
-  T.resize(mc.ntrigs(), 3);
-  for(i=0; i<V.d0; i++) {
-    V(i, 0)=lo(0)+mc.vert(i)->x*(up(0)-lo(0))/(gridValues.d0-1);
-    V(i, 1)=lo(1)+mc.vert(i)->y*(up(1)-lo(1))/(gridValues.d1-1);
-    V(i, 2)=lo(2)+mc.vert(i)->z*(up(2)-lo(2))/(gridValues.d2-1);
-  }
-  for(i=0; i<T.d0; i++) {
-    T(i, 0)=mc.trig(i)->v1;
-    T(i, 1)=mc.trig(i)->v2;
-    T(i, 2)=mc.trig(i)->v3;
-  }
-#endif
 }
 
-void Mesh::setImplicitSurfaceBySphereProjection(ScalarFunction& _f, double rad, uint fineness) {
+void Mesh::setImplicitSurfaceBySphereProjection(ScalarFunction _f, double rad, uint fineness) {
   setSphere(fineness);
   scale(rad);
 
-  Conv_cfunc2ScalarFunction distSqr( [&_f](arr& g, arr& H, const arr& x) {
-    double d = _f.f(g, H, x);
+  auto distSqr = [&_f](arr& g, arr& H, const arr& x) {
+    double d = _f(g, H, x);
     H *= 2.*d;
     H += 2.*(g^g);
     g *= 2.*d;
     return d*d;
-  });
+  };
 
   for(uint i=0; i<V.d0; i++) {
     arr x = V[i];

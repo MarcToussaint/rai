@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "opt-nlopt.h"
+#include "i_NLopt.h"
 #include "NLP_Solver.h"
 #include "utils.h"
 

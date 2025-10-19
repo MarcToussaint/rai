@@ -167,7 +167,7 @@ void testJacobian(){
 
   //-- test w.r.t. knots
   double teval, time;
-  fct evalFromKnots = [&S, &teval](const arr& knots) -> arr {
+  VectorFunction evalFromKnots = [&S, &teval](const arr& knots) -> arr {
     S.knots = knots;
     arr y;
     S.eval3(y, NoArr, NoArr, teval, NoArr, y.J());
@@ -189,7 +189,7 @@ void testJacobian(){
   cout <<"time: " <<time <<endl;
 
   //-- test w.r.t. ctrl points
-  fct evalFromCtrlPoints= [&S, &teval](const arr& ctrlPoints) -> arr {
+  VectorFunction evalFromCtrlPoints= [&S, &teval](const arr& ctrlPoints) -> arr {
     S.ctrlPoints = ctrlPoints;
     arr y;
     S.eval3(y, NoArr, NoArr, teval, y.J(), NoArr);
@@ -211,7 +211,7 @@ void testJacobian(){
   cout <<"time: " <<time <<endl;
 
   //-- test time derivatives along spline
-  fct evalFromTime = [&S](const arr& t) -> arr {
+  VectorFunction evalFromTime = [&S](const arr& t) -> arr {
     arr y;
     y = S.eval(t.elem(), 1);
     y.J() = ~S.eval(t.elem(), 2);

@@ -127,15 +127,15 @@ struct NLP_RastriginSOS : NLP {
 
 //===========================================================================
 
-struct NLP_Rastrigin : ScalarFunction {
-  NLP_Rastrigin(uint _dim) { dim=_dim; }
+struct NLP_Rastrigin : NLP_Scalar {
+  NLP_Rastrigin(uint _dim) { dimension=_dim; }
   virtual double f(arr& g, arr& H, const arr& x);
 };
 
 //===========================================================================
 
-struct NLP_Rosenbrock : ScalarFunction {
-  NLP_Rosenbrock(uint _dim) { dim=_dim; }
+struct NLP_Rosenbrock : NLP_Scalar {
+  NLP_Rosenbrock(uint _dim) { dimension=_dim; }
   virtual double f(arr& g, arr& H, const arr& x);
 };
 
@@ -216,7 +216,7 @@ struct ChoiceConstraintFunction : NLP {
   enum WhichConstraint { none=0, wedge2D=1, halfcircle2D, randomLinear, circleLine2D, boundConstrained, boundConstrainedIneq } which;
   uint n;
   arr randomG;
-  shared_ptr<ScalarFunction> f_uc;
+  ScalarFunction f_uc;
   ChoiceConstraintFunction();
 
   void evaluate(arr& phi, arr& J, const arr& x);

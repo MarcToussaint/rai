@@ -3,7 +3,7 @@
 #include <Gui/opengl.h>
 #include <Gui/RenderData.h>
 
-#include <Optim/newton.h>
+#include <Optim/m_Newton.h>
 
 //===========================================================================
 
@@ -27,15 +27,15 @@ void TEST(DistanceFunctions) {
   fcts.append(f2);
 
   for(shared_ptr<SDF>& f: fcts){
-    m.setImplicitSurfaceBySphereProjection(*f, 3.);
+    m.setImplicitSurfaceBySphereProjection(f->f_scalar(), 3.);
 
     //-- check hessian and gradient
     for(uint i=0;i<10;i++){
       arr x(3);
       rndUniform(x, -1., 1.);
       bool suc=true;
-      suc &= checkGradient(*f, x, 1e-6);
-      suc &= checkHessian(*f, x, 1e-6);
+      suc &= checkGradient(f->f_scalar(), x, 1e-6);
+      suc &= checkHessian(f->f_scalar(), x, 1e-6);
 
       {
         arr g;
@@ -68,11 +68,11 @@ void TEST(DistanceFunctions2) {
     rndUniform(x, -5., 5.);
 
     bool suc=true;
-    suc &= checkGradient(*DistanceFunction_SSBox(), x, 1e-6);
+    suc &= checkGradient(DistanceFunction_SSBox(), x, 1e-6);
 //    suc &= checkHessian(SDF_SSBox, x, 1e-6);
     if(!suc){
       arr g,H;
-      cout <<"f=" <<DistanceFunction_SSBox()->f(g,H,x); //set breakpoint here;
+      cout <<"f=" <<DistanceFunction_SSBox()(g,H,x); //set breakpoint here;
       HALT("x=" <<x);
     }
   }
@@ -109,7 +109,7 @@ void TEST(SimpleImplicitSurfaces) {
   OpenGL gl;
 
   for(shared_ptr<SDF>& f: fcts){
-    m.setImplicitSurface(f->cfunc(),-10.,10.,100);
+    m.setImplicitSurface(f->f_scalar(),-10.,10.,100);
     gl.data().clear().addStandardScene().add().mesh(m);
     gl.update(true);
   }
@@ -121,7 +121,7 @@ void projectToSurface(){
   rai::Transformation pose;
   pose.setRandom();
 
-  rai::Array<shared_ptr<ScalarFunction>> fcts = {
+  rai::Array<shared_ptr<SDF>> fcts = {
     make_shared<SDF_Sphere>(pose, 1.),
     make_shared<SDF_ssBox>(pose, arr{1., 2., 3.}, .2),
     make_shared<SDF_Cylinder>(pose, 2., .2),
@@ -133,17 +133,17 @@ void projectToSurface(){
 
   ofstream fil("z.obj");
 
-  for(shared_ptr<ScalarFunction>& fct:fcts){
+  for(shared_ptr<SDF>& fct:fcts){
     for(uint k=0;k<1000;k++){
       arr x = randn(3);
       x += pose.pos.getArr();
-      checkGradient(*fct, x, 1e-4);
-      checkHessian(*fct, x, 1e-4);
+      checkGradient(fct->f_scalar(), x, 1e-4);
+      checkHessian(fct->f_scalar(), x, 1e-4);
       fil <<x.modRaw();
       fil <<fct->f(NoArr, NoArr, x) <<endl;
     }
 
-    m.setImplicitSurfaceBySphereProjection(*fct, 10., 3);
+    m.setImplicitSurfaceBySphereProjection(fct->f_scalar(), 10., 3);
 
     gl.data().clear().addStandardScene().add().mesh(m);
     gl.update(true);

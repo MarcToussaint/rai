@@ -21,7 +21,7 @@ namespace rai {
 // that can include lagrange terms, penalties, log barriers, and augmented lagrangian terms
 //
 
-struct LagrangianProblem : ScalarFunction, NLP {
+struct LagrangianProblem : NLP {
   shared_ptr<NLP> P;
   shared_ptr<OptOptions> opt;
 
@@ -42,7 +42,7 @@ struct LagrangianProblem : ScalarFunction, NLP {
   virtual arr  getInitializationSample() { return P->getInitializationSample(); }
   virtual void report(ostream &os, int verbose, const char *msg){ P->report(os, verbose, msg); }
 
-  double f(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
+  virtual double eval_scalar(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
 
   rai::Graph reportGradients(const StringA& featureNames);
   void reportMatrix(std::ostream& os);

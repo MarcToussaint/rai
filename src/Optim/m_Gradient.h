@@ -20,18 +20,18 @@ namespace rai {
 
 struct OptGrad {
   arr& x;
-  ScalarFunction& f;
+  ScalarFunction f;
   shared_ptr<OptOptions> opt;
 
   enum StopCriterion { stopNone=0, stopCrit1, stopCrit2, stopCritLineSteps, stopCritEvals, stopStepFailed };
-  double fx;
-  arr gx;
+  double f_x;
+  arr g_x;
   double alpha;
   uint it, evals, numTinySteps;
   StopCriterion stopCriterion;
   ofstream fil;
 
-  OptGrad(arr& x, ScalarFunction& f, std::shared_ptr<OptOptions> _opt);
+  OptGrad(arr& x, ScalarFunction f, std::shared_ptr<OptOptions> _opt);
   ~OptGrad();
   StopCriterion step();
   StopCriterion run(uint maxIt = 1000);
@@ -51,11 +51,11 @@ struct Rprop {
   Rprop();
   ~Rprop();
   void init(double initialStepSize=1., double minStepSize=1e-6, double stepMaxSize=50.);
-  bool step(arr& x, ScalarFunction& f);
-  uint loop(arr& x, ScalarFunction& f, double stoppingTolerance=1e-2, double initialStepSize=1., uint maxIterations=1000, int verbose=0);
+  bool step(arr& x, ScalarFunction f);
+  uint loop(arr& x, ScalarFunction f, double stoppingTolerance=1e-2, double initialStepSize=1., uint maxIterations=1000, int verbose=0);
 };
 
-inline uint optRprop(arr& x, ScalarFunction& f, shared_ptr<OptOptions> opt) {
+inline uint optRprop(arr& x, ScalarFunction f, shared_ptr<OptOptions> opt) {
   return Rprop().loop(x, f, opt->stopTolerance, opt->stepInit, opt->stopEvals, opt->verbose);
 }
 

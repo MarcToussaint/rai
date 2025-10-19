@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "assimpInterface.h"
+#include "i_assimp.h"
 #include "stbImage.h"
 #include "../Core/util.h"
 

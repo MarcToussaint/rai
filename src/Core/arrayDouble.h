@@ -284,22 +284,23 @@ arr& getNoArr();
 /// @{
 
 /// a generic vector-valued function \f$f:~x\mapsto y\in\mathbb{R}^d\f$, where return value may have Jacobian attached
-typedef std::function<arr(const arr& x)> fct;
+// typedef std::function<arr(const arr& x)> fct;
 typedef std::function<arr(const arr& x)> VectorFunction;
+typedef std::function<double(arr& g, arr& H, const arr& x)> ScalarFunction;
 
-/// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
-struct ScalarFunction {
-  uint dim;
-  virtual double f(arr& g, arr& H, const arr& x) = 0;
-  virtual ~ScalarFunction() {}
-  std::function<double(const arr& x)> cfunc(){ return [this](const arr& x){ return this->f(NoArr, NoArr, x); }; }
-};
+// /// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
+// struct ScalarFunction {
+//   uint dim;
+//   virtual double f(arr& g, arr& H, const arr& x) = 0;
+//   virtual ~ScalarFunction() {}
+//   std::function<double(const arr& x)> cfunc(){ return [this](const arr& x){ return this->f(NoArr, NoArr, x); }; }
+// };
 
-struct Conv_cfunc2ScalarFunction : ScalarFunction {
-  std::function<double(arr& g, arr& H, const arr& x)> cfunc;
-  Conv_cfunc2ScalarFunction(std::function<double(arr& g, arr& H, const arr& x)> _cfunc) : cfunc(_cfunc) {}
-  double f(arr& g, arr& H, const arr& x){ return cfunc(g, H, x); }
-};
+// struct Conv_cfunc2ScalarFunction : ScalarFunction {
+//   std::function<double(arr& g, arr& H, const arr& x)> cfunc;
+//   Conv_cfunc2ScalarFunction(std::function<double(arr& g, arr& H, const arr& x)> _cfunc) : cfunc(_cfunc) {}
+//   double f(arr& g, arr& H, const arr& x){ return cfunc(g, H, x); }
+// };
 
 /// a kernel function
 struct KernelFunction {
@@ -438,13 +439,13 @@ arr reshapeColor(const arr& col, int d0=-1);
 
 void scanArrFile(const char* name);
 
-arr finiteDifference_gradient(std::function<double(const arr& x)> f, const arr& x0, double y0, double eps=1e-8);
-arr finiteDifference_jacobian(std::function<void(arr&, const arr&)> f, const arr& x0, const arr& y0, double eps=1e-8);
-arr finiteDifferenceGradient(ScalarFunction& f, const arr& x, arr& Janalytic=NoArr, double eps=1e-8);
-arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janalytic=NoArr, double eps=1e-8);
-bool checkGradient(ScalarFunction& f, const arr& x, double tolerance, bool verbose=false);
-bool checkHessian(ScalarFunction& f, const arr& x, double tolerance, bool verbose=false);
-bool checkJacobian(const VectorFunction& f, const arr& x, double tolerance, bool verbose=false, const StringA& featureNames= {});
+arr finiteDifference_gradient(ScalarFunction f, const arr& x0, double y0, double eps=1e-8);
+arr finiteDifference_jacobian(VectorFunction f, const arr& x0, const arr& y0, double eps=1e-8);
+// arr finiteDifferenceGradient(ScalarFunction f, const arr& x, arr& Janalytic=NoArr, double eps=1e-8);
+// arr finiteDifferenceJacobian(VectorFunction f, const arr& _x, arr& Janalytic=NoArr, double eps=1e-8);
+bool checkGradient(ScalarFunction f, const arr& x, double tolerance, bool verbose=false);
+bool checkHessian(ScalarFunction f, const arr& x, double tolerance, bool verbose=false);
+bool checkJacobian(VectorFunction f, const arr& x, double tolerance, bool verbose=false, const StringA& featureNames= {});
 void boundClip(arr& y, const arr& bounds);
 bool boundCheck(const arr& x, const arr& bounds, double eps=1e-3, bool verbose=true);
 

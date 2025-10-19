@@ -62,7 +62,8 @@ struct NLP : rai::NonCopyable {
 
   //-- utilities
   shared_ptr<NLP> ptr() { return shared_ptr<NLP>(this, [](NLP*) {}); }
-  double eval_scalar(arr& g, arr& H, const arr& x);
+  virtual double eval_scalar(arr& g, arr& H, const arr& x);
+  ScalarFunction f_scalar(){ return [this](arr& g, arr& H, const arr& x){ return this->eval_scalar(g, H, x); }; }
   bool checkJacobian(const arr& x, double tolerance, const StringA& featureNames= {});
   bool checkHessian(const arr& x, double tolerance);
   bool checkBounds(bool strictlyLarger);
@@ -79,6 +80,19 @@ struct NLP : rai::NonCopyable {
 };
 
 //===========================================================================
+
+struct NLP_Scalar : NLP {
+  arr x, H_x;
+  NLP_Scalar() { featureTypes.resize(1) = OT_f; }
+  virtual double f(arr& g, arr& H, const arr& x) = 0;
+  void evaluate(arr& phi, arr& J, const arr& _x){
+    x = _x;
+    double f_x = f(J, H_x, x);
+    phi.resize(1) = f_x;
+    if(!!J) J.reshape(1, x.N);
+  }
+  void getFHessian(arr& H, const arr& _x) {  CHECK_EQ(_x, x, "");  H = H_x;  }
+};
 
 struct NLP_Factored : NLP {
   //-- problem factorization: needs to be defined in the constructor or a derived class

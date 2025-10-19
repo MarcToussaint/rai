@@ -9,7 +9,7 @@
 #pragma once
 
 #include "lagrangian.h"
-#include "newton.h"
+#include "m_Newton.h"
 
 namespace rai {
 

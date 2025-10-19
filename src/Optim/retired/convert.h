@@ -14,7 +14,7 @@
 //-- basic converters
 ScalarFunction     conv_cstylefs2ScalarFunction(double(*fs)(arr*, const arr&, void*), void* data);
 VectorFunction     conv_cstylefv2VectorFunction(void (*fv)(arr&, arr*, const arr&, void*), void* data);
-ScalarFunction     conv_VectorFunction2ScalarFunction(const VectorFunction& f);
+ScalarFunction     conv_VectorFunction2ScalarFunction(VectorFunction f);
 //NLP conv_KOMO2NLP(struct KOMO_Problem& f);
 
 /// this takes a constrained problem over $x$ and re-represents it over $z$ where $x=Bz$
@@ -37,8 +37,8 @@ struct Convert {
   VectorFunction vf;
   NLP* cpm;
 
-  Convert(const ScalarFunction&);
-  Convert(const VectorFunction&);
+  Convert(ScalarFunction);
+  Convert(VectorFunction);
   Convert(struct KOMO_Problem&);
   Convert(double(*fs)(arr*, const arr&, void*), void* data);
   Convert(void (*fv)(arr&, arr*, const arr&, void*), void* data);

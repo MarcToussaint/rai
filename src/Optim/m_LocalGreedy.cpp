@@ -1,18 +1,15 @@
 #include "m_LocalGreedy.h"
 #include "../Core/util.h"
 
-LocalGreedy::LocalGreedy(shared_ptr<NLP> P, const arr& x_init) : P(P){
-  if(x_init.N) x=x_init;
-  else x=P->getInitializationSample();
-  CHECK_EQ(x.N, P->dimension, "");
-
-  f_x = P->eval_scalar(NoArr, NoArr, x);
+LocalGreedy::LocalGreedy(ScalarFunction _f, const arr& x_init) : f(_f){
+  x=x_init;
+  f_x = f(NoArr, NoArr, x);
   cout <<"--greedy-- " <<steps <<" f: " <<f_x <<endl;
 }
 
 bool LocalGreedy::step(){
-  arr y = x + sigma*randn(P->dimension);
-  double f_y = P->eval_scalar(NoArr, NoArr, y);
+  arr y = x + sigma*randn(x.N);
+  double f_y = f(NoArr, NoArr, y);
   bool accept = (f_y <= f_x);
 
   steps++;

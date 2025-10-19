@@ -595,7 +595,7 @@ void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F) {
 
   //-- evaluate functional
   CHECK(f->shape, "the frame '" <<f->name <<"' needs to have a shape");
-  shared_ptr<ScalarFunction> func = f->shape->functional(f->ensure_X());
+  shared_ptr<SDF> func = f->shape->functional(f->ensure_X());
   CHECK(func, "the frame '" <<f->name <<"' needs to have a functional shape");
   arr g;
   double d = func->f(g, NoArr, poa);
@@ -625,7 +625,7 @@ void F_fex_POASurfaceNormal::phi2(arr& y, arr& J, const FrameL& F) {
 
   //-- evaluate functional with Hessian
   CHECK(f->shape, "");
-  shared_ptr<ScalarFunction> func = f->shape->functional(f->ensure_X());
+  shared_ptr<SDF> func = f->shape->functional(f->ensure_X());
   CHECK(func, "");
   arr g, H;
   func->f(g, H, poa);

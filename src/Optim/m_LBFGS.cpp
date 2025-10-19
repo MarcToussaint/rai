@@ -16,8 +16,9 @@ double proc_evaluate(
   LBFGS* This = (LBFGS*) instance;
   CHECK_EQ(_x, This->x.p, "");
 
-  double f_x = This->P->eval_scalar(This->g, NoArr, This->x);
-  for(uint i=0;i<This->P->dimension;i++) _g[i] = This->g.p[i];
+  double f_x = This->f(This->g, NoArr, This->x);
+  CHECK_EQ(This->g.N, This->x.N, "");
+  for(uint i=0;i<This->x.N;i++) _g[i] = This->g.p[i];
   return f_x;
 }
 
@@ -39,14 +40,13 @@ int proc_progress(
 }
 
 
-LBFGS::LBFGS(std::shared_ptr<NLP> _P, const arr& x_init, std::shared_ptr<OptOptions> _opt)
-    : P(_P), opt(_opt), x(x_init) {
-  CHECK_EQ(x.N, P->dimension, "")
+LBFGS::LBFGS(ScalarFunction _f, const arr& x_init, std::shared_ptr<OptOptions> _opt)
+    : f(_f), opt(_opt), x(x_init) {
 }
 
 std::shared_ptr<SolverReturn> LBFGS::solve(){
   double f_x;
-  int retval = lbfgs(P->dimension, x.p, &f_x, proc_evaluate, proc_progress, this, 0);
+  int retval = lbfgs(x.N, x.p, &f_x, proc_evaluate, proc_progress, this, 0);
   if(retval){
     LOG(-2) <<"LBFGS returned error " <<retval;
   }

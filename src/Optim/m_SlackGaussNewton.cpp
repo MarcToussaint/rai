@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "SlackGaussNewton.h"
+#include "m_SlackGaussNewton.h"
 
 #include <Core/util.h>
 #include <math.h>

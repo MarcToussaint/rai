@@ -2,7 +2,7 @@
 
 #include <Core/util.h>
 #include <Kin/kin.h>
-#include <Kin/kin_physx.h>
+#include <Kin/i_Physx.h>
 
 struct ShapenetGrasps_Options {
   RAI_PARAM("ShapenetGrasps/", int, verbose, 1)

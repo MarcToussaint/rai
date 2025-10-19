@@ -2249,7 +2249,7 @@ void rai::Shape::createMeshes(const str& name) {
 //  }
 }
 
-shared_ptr<ScalarFunction> rai::Shape::functional(const Transformation& pose) {
+shared_ptr<SDF> rai::Shape::functional(const Transformation& pose) {
   //create mesh for basic shapes
   switch(_type) {
     case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
@@ -2274,9 +2274,9 @@ shared_ptr<ScalarFunction> rai::Shape::functional(const Transformation& pose) {
         _sdf->pose = pose;
         return _sdf;
       }
-      return shared_ptr<ScalarFunction>();
+      return shared_ptr<SDF>();
     default:
-      return shared_ptr<ScalarFunction>();
+      return shared_ptr<SDF>();
   }
 }
 

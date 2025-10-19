@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "kin_ode.h"
+#include "i_Ode.h"
 
 #ifdef RAI_ODE
 

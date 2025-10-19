@@ -49,7 +49,7 @@ struct Feature {
 //  Value eval(const FrameL& F) { arr y, J; eval(y, J, F); return Value(y, J); }
   arr eval(const rai::Configuration& C) { return eval(getFrames(C)); }
   uint dim(const FrameL& F) { uint d=dim_phi(F); return applyLinearTrans_dim(d); }
-  fct asFct(const FrameL& F);
+  VectorFunction asFct(const FrameL& F);
 
   virtual const char* typeString() { return rai::niceTypeidName(typeid(*this)); }
   virtual rai::String shortTag(const rai::Configuration& C);

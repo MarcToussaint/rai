@@ -54,7 +54,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
         arr y, Jy;
         y = X[i];
         y.append(x);
-        phi(i+5) = dssbox->f(Jy, NoArr, y);
+        phi(i+5) = dssbox(Jy, NoArr, y);
         //      Jy({3,5+1})() *= -1.;
         if(!!J) J[i+5] = Jy({3,0});
       }

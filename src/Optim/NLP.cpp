@@ -409,7 +409,7 @@ void NLP_Viewer::display(double mu, double muLB) {
 
   //-- evaluate over the grid
   for(uint i=0; i<X.d0; i++) {
-    double fx = lag->f(NoArr, NoArr, X[i]);
+    double fx = lag->eval_scalar(NoArr, NoArr, X[i]);
     Y(i) = ((fx==fx && fx<10.)? fx : 10.);
   }
   Y.reshape(101, 101);

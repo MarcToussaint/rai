@@ -63,7 +63,7 @@ void PhaseOneProblem::evaluate(arr& meta_phi, arr& meta_J, const arr& meta_x) {
 //
 
 ConstrainedSolver::ConstrainedSolver(arr& _x, arr& _dual, const shared_ptr<NLP>& P, shared_ptr<OptOptions> _opt)
-  : L(P, _opt), newton(_x, L, _opt), dual(_dual), opt(_opt) {
+  : L(P, _opt), newton(_x, L.f_scalar(), _opt), dual(_dual), opt(_opt) {
 
   if(!!_dual && _dual.N) L.lambda = _dual;
 

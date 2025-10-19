@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "opt-ceres.h"
+#include "i_Ceres.h"
 
 #ifdef RAI_CERES
 

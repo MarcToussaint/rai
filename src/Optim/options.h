@@ -13,8 +13,8 @@
 namespace rai {
 
 enum OptMethod { M_none=0,
-		 M_GradientDescent, M_Rprop, M_LBFGS, M_Newton, M_LBFGS_FD, M_Newton_FD,
-		 M_AugmentedLag, M_LogBarrier, M_slackGN_logBarrier, M_squaredPenalty, M_singleSquaredPenalty,
+		 M_GradientDescent, M_Rprop, M_LBFGS, M_Newton,
+		 M_AugmentedLag, M_LogBarrier, M_slackGN_logBarrier, M_SquaredPenalty, M_singleSquaredPenalty,
 		 M_slackGN,
 		 M_NLopt, M_Ipopt, M_slackGN_Ipopt, M_Ceres,
 		 M_LSZO, M_greedy, M_NelderMead, M_CMA };
@@ -46,9 +46,8 @@ struct OptOptions {
   RAI_PARAM("opt/", double, interiorPadding, 1e-2)
   RAI_PARAM("opt/", bool,   boundedNewton, true)
   RAI_PARAM_ENUM("opt/", OptMethod, method, M_AugmentedLag)
-//  void write(std::ostream& os) const;
+  RAI_PARAM("opt/", bool,   finiteDifference, false)
 };
-//stdOutPipe(OptOptions)
 
 std::shared_ptr<OptOptions> globalOptOptions();
 

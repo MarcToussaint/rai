@@ -346,7 +346,7 @@ struct Shape : NonCopyable {
   double alpha() { arr& C=mesh().C; if(C.N==4 || C.N==2 || (C.nd==2 && C.d1==4)) return C.elem(-1); return 1.; }
 
   void createMeshes(const str& name);
-  shared_ptr<ScalarFunction> functional(const rai::Transformation& pose=0);
+  shared_ptr<SDF> functional(const rai::Transformation& pose=0);
 
   bool canCollide(const rai::Frame* f1, const Frame* f2) const;
 

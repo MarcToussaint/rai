@@ -132,9 +132,9 @@ void LagrangianProblem::getFHessian(arr& H, const arr& x) {
 
 }
 
-double LagrangianProblem::f(arr& dL, arr& HL, const arr& _x) {
+double LagrangianProblem::eval_scalar(arr& dL, arr& HL, const arr& _x) {
 #if 0
-  return eval_scalar(dL, HL, _x);
+  return NLP::eval_scalar(dL, HL, _x);
 #else
   //-- evaluate constrained problem and buffer
   if(_x!=x) {
@@ -408,7 +408,7 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
 
   //-- recompute the Lagrangian with the new parameters (its current value, gradient & hessian)
   if(L_x || !!dL_x || !!HL_x) {
-    double L = f(dL_x, HL_x, x); //reevaluate gradients and hessian (without re-evaluating underlying NLP)
+    double L = eval_scalar(dL_x, HL_x, x); //reevaluate gradients and hessian (without re-evaluating underlying NLP)
     if(L_x) *L_x = L;
   }
 }
@@ -416,7 +416,7 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
 void LagrangianProblem::autoUpdate(double* L_x, arr& dL_x, arr& HL_x) {
   switch(opt->method) {
 //  case squaredPenalty: UCP.mu *= opt->muInc;  break;
-    case M_squaredPenalty: aulaUpdate(false, -1., L_x, dL_x, HL_x);  break;
+    case M_SquaredPenalty: aulaUpdate(false, -1., L_x, dL_x, HL_x);  break;
     case M_AugmentedLag:   aulaUpdate(false, 1., L_x, dL_x, HL_x);  break;
     // case M_anyTimeAula:    aulaUpdate(true,  1., L_x, dL_x, HL_x);  break;
     case M_LogBarrier:     aulaUpdate(false, -1., L_x, dL_x, HL_x);  break;

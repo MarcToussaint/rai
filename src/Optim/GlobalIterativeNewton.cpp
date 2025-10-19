@@ -12,7 +12,7 @@ namespace rai {
 
 bool useNewton=true;
 
-GlobalIterativeNewton::GlobalIterativeNewton(ScalarFunction& f, const arr& bounds, std::shared_ptr<OptOptions> opt)
+GlobalIterativeNewton::GlobalIterativeNewton(ScalarFunction f, const arr& bounds, std::shared_ptr<OptOptions> opt)
   : x(.5*(bounds[0]+bounds[1])),
     newton(x, f, opt),
     grad(x, f, opt),
@@ -65,7 +65,7 @@ void addRunFrom(GlobalIterativeNewton& gin, const arr& x) {
   } else {
     gin.grad.reinit(x);
     gin.grad.run();
-    addRun(gin, gin.grad.x, gin.grad.fx, 3.*gin.grad.opt->stopTolerance);
+    addRun(gin, gin.grad.x, gin.grad.f_x, 3.*gin.grad.opt->stopTolerance);
   }
 }
 

@@ -3,7 +3,7 @@
 #include "../Kin/frame.h"
 #include "../KOMO/komo.h"
 #include "../Optim/NLP_Solver.h"
-#include "../Kin/kin_physx.h"
+#include "../Kin/i_Physx.h"
 #include "../Core/h5.h"
 #include "../Kin/viewer.h"
 

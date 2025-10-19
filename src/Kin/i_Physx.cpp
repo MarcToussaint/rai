@@ -23,7 +23,7 @@
 #include <extensions/PxSimpleFactory.h>
 #pragma GCC diagnostic pop
 
-#include "kin_physx.h"
+#include "i_Physx.h"
 #include "frame.h"
 #include "../Gui/opengl.h"
 

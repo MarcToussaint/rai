@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "fclInterface.h"
+#include "i_fcl.h"
 
 #ifdef RAI_FCL
 

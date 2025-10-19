@@ -42,7 +42,7 @@ struct BayesOpt {
   KernelRidgeRegression* model;
   arr X, y;
 
-  BayesOpt(arr& x, const ScalarFunction& f, OptOptions o=NOOPT);
+  BayesOpt(arr& x, ScalarFunction f, OptOptions o=NOOPT);
   ~BayesOpt();
 
   void step();

@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "newton.h"
-#include "gradient.h"
+#include "m_Newton.h"
+#include "m_Gradient.h"
 
 namespace rai {
 
@@ -23,7 +23,7 @@ struct GlobalIterativeNewton {
   rai::Array<LocalMinimum> localMinima;
   LocalMinimum* best;
 
-  GlobalIterativeNewton(ScalarFunction& f, const arr& bounds, std::shared_ptr<OptOptions> opt);
+  GlobalIterativeNewton(ScalarFunction f, const arr& bounds, std::shared_ptr<OptOptions> opt=make_shared<OptOptions>());
   ~GlobalIterativeNewton();
 
   void step();

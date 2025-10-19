@@ -11,7 +11,7 @@
 #include "skeletonSymbol.h"
 
 #include "../Gui/opengl.h"
-#include "../Geo/fclInterface.h"
+#include "../Geo/i_fcl.h"
 
 #include "../Kin/frame.h"
 //#include "../KOMO/switch.h"

@@ -1,7 +1,7 @@
 #include <Kin/kin.h>
 #include <Gui/opengl.h>
 #include <KOMO/komo.h>
-#include <Optim/opt-nlopt.h>
+#include <Optim/i_NLopt.h>
 #include <Kin/viewer.h>
 
 //===========================================================================

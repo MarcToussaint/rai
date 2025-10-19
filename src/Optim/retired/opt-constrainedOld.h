@@ -41,7 +41,7 @@ struct LagrangianProblem {
 
   ScalarFunction Lag; ///< the unconstrained problem, typically the (augmented) Lagrangian with given lambda, mu, etc
 
-//  operator const ScalarFunction&(){ return Lag; }
+//  operator ScalarFunction(){ return Lag; }
 
   void aulaUpdate(double lambdaStepsize=1., double muInc=1., double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
   void anyTimeAulaUpdate(double lambdaStepsize=1., double muInc=1., double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);

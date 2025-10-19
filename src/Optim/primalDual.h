@@ -9,12 +9,12 @@
 #pragma once
 
 #include "options.h"
-#include "newton.h"
+#include "m_Newton.h"
 #include "lagrangian.h"
 
 namespace rai {
 
-struct PrimalDualProblem : ScalarFunction {
+struct PrimalDualProblem : NLP_Scalar {
   rai::LagrangianProblem L;
 
   //duality gap parameter (log barrier parameter) of the primal dual equation system

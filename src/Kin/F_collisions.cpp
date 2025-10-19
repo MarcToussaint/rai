@@ -12,7 +12,7 @@
 #include "dof_forceExchange.h"
 
 #include "../Geo/pairCollision.h"
-#include "../Optim/newton.h"
+#include "../Optim/m_Newton.h"
 #include "../Gui/opengl.h"
 
 //===========================================================================
@@ -249,10 +249,10 @@ arr block(const Array<T>& A, const Array<T>& B, const Array<T>& C, const Array<T
 }
 }
 
-struct SweepingSDFPenetration : ScalarFunction {
+struct SweepingSDFPenetration : NLP_Scalar {
   //inputs
-  shared_ptr<ScalarFunction> sdf1;
-  shared_ptr<ScalarFunction> sdf2;
+  shared_ptr<SDF> sdf1;
+  shared_ptr<SDF> sdf2;
   arr vel1, vel2;
   //query outputs
   arr x, g1, g2, z1, z2, y1, y2;
@@ -313,7 +313,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F) {
   if(order==1) {
     P.reset();
     P = make_shared<SweepingSDFPenetration>(F);
-    ScalarFunction& f = *P;
+    ScalarFunction f = P->f_scalar();
 
     arr seed = .25*(F(0, 0)->getPosition() + F(0, 1)->getPosition() +
                     F(1, 0)->getPosition() + F(1, 1)->getPosition());
@@ -366,7 +366,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F) {
     auto func2=f2->shape->functional(f2->ensure_X());
     CHECK(func1 && func2, "");
 
-    Conv_cfunc2ScalarFunction f([&func1, &func2](arr& g, arr& H, const arr& x) {
+    auto f = [&func1, &func2](arr& g, arr& H, const arr& x) {
       arr g1, g2, H1, H2;
       double b = 1e1;
       //double c = 1e2;
@@ -376,7 +376,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F) {
       if(!!H) H = H1 + H2 + (2.*b*dd)*(H1-H2) + (2.*b)*((g1-g2)^(g1-g2));
       if(!!g) g = g1 + g2 + (2.*b*dd)*(g1-g2); // + (2*c)*(d1*H1+(g1^g1)+ d2*H2+(g2^g2))*(d1*g1+d2*g2);
       return d1 + d2 + b*dd*dd; // + c*sumOfSqr(d1*g1+d2*g2);
-    });
+    };
 
     arr seed = .5*(f1->getPosition()+f2->getPosition());
     rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1), false);
