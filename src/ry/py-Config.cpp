@@ -13,13 +13,13 @@
 
 #include "../Kin/kin.h"
 //#include "../Kin/forceExchange.h"
-#include "../Kin/kin_bullet.h"
-#include "../Kin/kin_physx.h"
+#include "../Kin/i_Bullet.h"
+#include "../Kin/i_Physx.h"
 #include "../Kin/proxy.h"
 #include "../Kin/viewer.h"
 #include "../Kin/cameraview.h"
 #include "../Kin/simulation.h"
-#include "../Geo/fclInterface.h"
+#include "../Geo/i_fcl.h"
 #include "../LGP/LGP_tree.h"
 #include "../Geo/depth2PointCloud.h"
 

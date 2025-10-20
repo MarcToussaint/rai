@@ -57,7 +57,6 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
   }
 
   if(opt->method==M_Newton) {
-    // Conv_NLP2ScalarProblem P1(Phere);
     OptNewton newton(x, Phere->f_scalar(), opt);
     ret = newton.run();
 
@@ -67,7 +66,6 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     x = ret->x;
 
   } else if(opt->method==M_GradientDescent) {
-    // Conv_NLP2ScalarProblem P1(Phere);
     OptGrad grad(x, Phere->f_scalar(), opt);
     grad.run();
     ret->evals = grad.evals;
@@ -75,7 +73,6 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     ret->feasible = true;
 
   } else if(opt->method==M_Rprop) {
-    // Conv_NLP2ScalarProblem P1(Phere);
     Rprop grad;
     grad.loop(x, Phere->f_scalar(), opt->stopTolerance, opt->stepInit, opt->stopEvals, opt->verbose);
     ret->evals = grad.evals;

@@ -25,9 +25,13 @@ struct PyNLP : NLP {
   pybind11::object py_nlp; //the python object implementing the NLP
   
   PyNLP(pybind11::object py_nlp) : py_nlp(py_nlp){
-    dimension = py_nlp.attr("getDimension")().cast<int>();
-    featureTypes = rai::convert<ObjectiveType>( list2arr<int>(py_nlp.attr("getFeatureTypes")()) );
-    bounds = numpy2arr<double>(py_nlp.attr("getBounds")());
+    if(!pybind11::hasattr(py_nlp, "dimension")) { HALT("PyNLP needs a dimension member (integer), defining the dimension of the decision variable"); }
+    if(!pybind11::hasattr(py_nlp, "featureTypes")) { HALT("PyNLP needs a featureTypes member (list of OT), defining the ObjectiveTypes of each NLP feature"); }
+    if(!pybind11::hasattr(py_nlp, "bounds")) { HALT("PyNLP needs a bounds member (2*n matrix), defining the lower and upper bounds of the decision variable"); }
+
+    dimension = py_nlp.attr("dimension").cast<int>();
+    featureTypes = rai::convert<ObjectiveType>( list2arr<int>( py_nlp.attr("featureTypes").cast<pybind11::list>() ) );
+    bounds = numpy2arr<double>(py_nlp.attr("bounds").cast<pybind11::array_t<double>>());
   }
 
   virtual void evaluate(arr& phi, arr& J, const arr& x){
@@ -42,16 +46,24 @@ struct PyNLP : NLP {
   }
 
   virtual void getFHessian(arr& H, const arr& x) {
-    pybind11::object _H = py_nlp.attr("getFHessian")(arr2numpy(x));
-    H = numpy2arr(_H.cast<pybind11::array_t<double>>());
+    if(pybind11::hasattr(py_nlp, "getFHessian")){
+      pybind11::object _H = py_nlp.attr("getFHessian")(arr2numpy(x));
+      H = numpy2arr(_H.cast<pybind11::array_t<double>>());
+    }
+    H.clear();
   }
 
   virtual arr getInitializationSample(){
-    pybind11::object _x = py_nlp.attr("getInitializationSample")();
-    return numpy2arr(_x.cast<pybind11::array_t<double>>());
+    if(pybind11::hasattr(py_nlp, "getInitializationSample")){
+      pybind11::object _x = py_nlp.attr("getInitializationSample")();
+      return numpy2arr(_x.cast<pybind11::array_t<double>>());
+    }
+    LOG(-1) <<"no getInitializationSample implemented -- using default fallback";
+    return NLP::getInitializationSample();
   }
 
   virtual void report(ostream& os, int verbose, const char* nomsg=0){
+    LOG(0) <<"here";
     NLP::report(os, verbose, "(binding in py-Optim.cpp:52)");
     pybind11::object _msg = py_nlp.attr("report")(verbose);
     auto msg = _msg.cast<std::string>();
@@ -380,7 +392,7 @@ void init_Optim(pybind11::module& m) {
   MEMBER(bool,   finiteDifference, false)
 #undef MEMBER
   ) {
-#define MEMBER(type, name, x) self->opt-> name = x;
+#define MEMBER(type, name, x) self->opt-> name = name;
   MEMBER(int, verbose, 1)
   MEMBER(double, stopTolerance, 1e-2)
   MEMBER(double, stopFTolerance, -1.)

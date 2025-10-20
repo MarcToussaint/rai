@@ -13,7 +13,7 @@
 
 #include "../DataGen/shapenetGrasps.h"
 #include "../DataGen/rndStableConfigs.h"
-#include "../Kin/kin_physx.h"
+#include "../Kin/i_Physx.h"
 
 void init_DataGen(pybind11::module& m) {
 

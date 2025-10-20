@@ -54,7 +54,7 @@ nelder_mead_result nelder_mead(
   const double ccoeff = 0.5;
   double del = 1.;
   const double ecoeff = 2.0;
-  const double eps = 0.001;
+  //const double eps = 0.001;
   const double rcoeff = 1.0;
   double y2star;
   double ystar;
