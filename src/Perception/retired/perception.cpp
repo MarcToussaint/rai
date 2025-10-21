@@ -197,7 +197,7 @@ void OpencvCamera::open() {
   self->capture.open(0);
   for(std::map<int, double>::const_iterator i = properties.begin(); i != properties.end(); ++i) {
     if(!self->capture.set(i->first, i->second)) {
-      cerr << "could not set property " << i->first << " to value " << i->second << endl;
+      cout << "could not set property " << i->first << " to value " << i->second << endl;
     }
   }
   //    capture.set(CV_CAP_PROP_CONVERT_RGB, 1);

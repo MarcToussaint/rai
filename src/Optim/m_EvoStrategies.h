@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NLP.h"
+#include "options.h"
 #include "../Core/util.h"
 
 /*
@@ -34,9 +35,10 @@ namespace rai {
 
 struct EvolutionStrategy {
   ScalarFunction f;
+  shared_ptr<OptOptions> opt;
   arr x;
   double f_x=1e10;
-  uint steps=0, rejectedSteps=0, tinySteps=0;
+  int evals=0, steps=0, rejectedSteps=0, tinySteps=0;
 
   EvolutionStrategy(ScalarFunction _f): f(_f) {}
 
@@ -58,7 +60,7 @@ struct CMAES : EvolutionStrategy {
   RAI_PARAM("CMA/", int, lambda, 20)
   RAI_PARAM("CMA/", double, sigmaInit, .1)
 
-  CMAES(ScalarFunction f, const arr& x_init={});
+  CMAES(ScalarFunction f, const arr& x_init={}, shared_ptr<OptOptions> _opt = make_shared<OptOptions>());
   ~CMAES();
 
   virtual arr generateNewSamples();

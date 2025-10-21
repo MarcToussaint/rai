@@ -52,8 +52,8 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
   if(verbose>-100) opt->verbose=verbose;
 
   std::shared_ptr<NLP> Phere = P;
-  if(opt->finiteDifference){
-    Phere = make_shared<NLP_FiniteDifference>(P);
+  if(opt->finiteDifference>0.){
+    Phere = make_shared<NLP_FiniteDifference>(P, opt->finiteDifference);
   }
 
   if(opt->method==M_Newton) {
@@ -81,15 +81,19 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
 
   } else if(opt->method==M_LSZO) {
     ret = LeastSquaredZeroOrder(Phere, x). solve();
+    x = ret->x;
 
   } else if(opt->method==M_NelderMead) {
     ret = NelderMead(Phere->f_scalar(), x). solve();
+    x = ret->x;
 
   } else if(opt->method==M_CMA) {
     ret = rai::CMAES(Phere->f_scalar(), x). solve();
+    x = ret->x;
 
   } else if(opt->method==M_greedy) {
     ret = LocalGreedy(Phere->f_scalar(), x). solve();
+    x = ret->x;
 
   } else if(opt->method==M_AugmentedLag) {
     optCon = make_shared<ConstrainedSolver>(x, dual, Phere, opt);
@@ -114,6 +118,7 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
       optCon = make_shared<ConstrainedSolver>(x, dual, Phere, opt);
       ret = optCon->run();
     }
+
   } else if(opt->method==M_NLopt) {
     NLoptInterface nlo(Phere);
     x = nlo.solve(x);
@@ -130,6 +135,7 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
 
   } else if(opt->method==M_LBFGS) {
     ret = LBFGS(Phere->f_scalar(), x, opt).solve();
+    x = ret->x;
 
   } else HALT("solver wrapper not implemented yet for solver ID '" <<Enum<OptMethod>(opt->method) <<"'");
 

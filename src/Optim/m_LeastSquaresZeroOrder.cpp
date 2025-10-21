@@ -55,8 +55,9 @@ bool LeastSquaredZeroOrder::step(){
 
   //noise
   if(method=="linReg"){
-    double sigma = .2*alpha*length(delta);
+    double sigma = noiseRatio*alpha*length(delta);
     // sigma *= 1./(1.+rai::sqr(.001*steps));
+    sigma += noiseAbs;
     y += sigma*randn(P->dimension);
   }else if(method=="rank1"){
     // double sigma = .2*alpha*length(delta);
@@ -75,6 +76,17 @@ bool LeastSquaredZeroOrder::step(){
   data_X.append(y);
   data_Phi.append(phi_y);
 
+  if(pruneData){
+    uint n=data_X.d0;
+    uint N = dataRatio*data_X.d1;
+    if(n > N){
+      data_X.delRows(0, n-N);
+      data_Phi.delRows(0, n-N);
+      CHECK_EQ(data_X.d0, N, "");
+      CHECK_EQ(data_Phi.d0, N, "");
+    }
+  }
+
   if(steps>2){
     if(method=="rank1"){
       updateJ_rank1(J, x, data_X[-2], phi_x, data_Phi[-2]);
@@ -88,22 +100,22 @@ bool LeastSquaredZeroOrder::step(){
   //-- reject
   if(phi2_y>=phi2_x){
     rejectedSteps++;
-    alpha *= .5;
+    alpha *= stepDec;
     if(alpha<alpha_min) alpha = alpha_min;
     cout <<" -- reject (alpha: " <<alpha <<")" <<endl;
   }else{
     rejectedSteps=0;
-    if(length(x-y)<1e-3) tinySteps++; else tinySteps=0;
+    if(length(x-y)<1e-6) tinySteps++; else tinySteps=0;
     x = y;
     phi_x = phi_y;
     phi2_x = phi2_y;
-    alpha *= 1.2;
+    alpha *= stepInc;
     if(alpha>1.) alpha=1.;
     cout <<" -- accept (alpha: " <<alpha <<")" <<endl;
   }
 
-  if(steps>500) return true;
-  if(rejectedSteps>3*x.N) return true;
+  if((int)steps>maxIters) return true;
+  // if(rejectedSteps>3*x.N) return true;
   if(tinySteps>5) return true;
   return false;
 }
@@ -123,7 +135,7 @@ void LeastSquaredZeroOrder::updateJ_linReg(arr& J, const arr& Xraw, const arr& Y
   arr I = eye(d+1);
   arr W = ones(n);
   if(true){
-    double K = 1.;
+    double K = dataRatio;
     if(n > K*d){ //get weights
       W = data_X - match(~x, data_X.dim());
       W = sum(sqr(W), 1);

@@ -31,8 +31,8 @@ bool sphereDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::N
   seg.setInputNormals(inCloudNormal);
   // Obtain the plane inliers and coefficients
   seg.segment(*outInliersPlane, *outCoefficients);
-  std::cerr << "Sphere coefficients: " << *outCoefficients << std::endl;
-  //std::cerr << "inCloud->points.size()"<<inCloud->points.size() <<"  "<< outInliersPlane->indices.size();
+  std::cout << "Sphere coefficients: " << *outCoefficients << std::endl;
+  //std::cout << "inCloud->points.size()"<<inCloud->points.size() <<"  "<< outInliersPlane->indices.size();
   if(inCloud->points.size()<=0)
     return false;
   else if((double)outInliersPlane->indices.size()/(double)inCloud->points.size() < 0.5)
@@ -55,9 +55,9 @@ bool cylinderDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl:
   seg.setInputNormals(inCloudNormal);
   // Obtain the plane inliers and coefficients
   seg.segment(*outInliersPlane, *outCoefficients);
-  std::cerr << "Cylinder coefficients: " << *outCoefficients << std::endl;
+  std::cout << "Cylinder coefficients: " << *outCoefficients << std::endl;
 
-  std::cerr << "inCloud->points.size()"<<inCloud->points.size() <<"  "<< outInliersPlane->indices.size();
+  std::cout << "inCloud->points.size()"<<inCloud->points.size() <<"  "<< outInliersPlane->indices.size();
 
   if(inCloud->points.size()<=0)
     return false;

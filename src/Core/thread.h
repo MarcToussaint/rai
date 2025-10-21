@@ -140,7 +140,7 @@ struct Var_data : Var_base {
 
   Var_data(const char* name=0) : Var_base(name), data() {} // default constructor for value always initializes, also primitive types 'bool' or 'int'
   ~Var_data() {
-    if(rwlock.isLocked()) { cerr << "can't destroy a variable when it is currently accessed!" <<endl; exit(1); }
+    if(rwlock.isLocked()) { cout << "can't destroy a variable when it is currently accessed!" <<endl; exit(1); }
   }
 };
 

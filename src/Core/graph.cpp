@@ -796,12 +796,12 @@ void writeFromStream(std::ostream& os, std::istream& is, istream::pos_type beg, 
 }
 
 #define PARSERR(x, pinfo) { \
-    cerr <<"[[error in parsing Graph file (line=" <<lineCount <<"): " <<x <<":\n  \""; \
-    writeFromStream(cerr, is, pinfo.beg, is.tellg()); \
-    cerr <<"<<<\"  ]]" <<endl; \
+    cout <<"[[error in parsing Graph file (line=" <<lineCount <<"): " <<x <<":\n  \""; \
+    writeFromStream(cout, is, pinfo.beg, is.tellg()); \
+    cout <<"<<<\"  ]]" <<endl; \
     is.clear(); }
 
-//  if(node) cerr <<"  (node='" <<*node <<"')" <<endl;
+//  if(node) cout <<"  (node='" <<*node <<"')" <<endl;
 
 // void readNodeParents(Graph& G, std::istream& is, NodeL& parents, ParseInfo& pinfo) {
 //   String str;
@@ -1051,9 +1051,9 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo) {
   }
 
   if(!node) {
-    cerr <<"FAILED reading node with keys ";
-    //tags.write(cerr, " ", nullptr, "()");
-    //cerr <<" and parents " <<parents.modList() <<endl;
+    cout <<"FAILED reading node with keys ";
+    //tags.write(cout, " ", nullptr, "()");
+    //cout <<" and parents " <<parents.modList() <<endl;
   }
 
   /*

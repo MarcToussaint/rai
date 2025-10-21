@@ -65,7 +65,7 @@ struct TreeSearchDomain {
   virtual const Handle get_stateCopy() = 0;
 
   /// Get the current state
-  virtual void set_state(const Handle& stateCopy) { std::cerr <<"not implemented for world of type " <<typeid(this).name() <<std::endl; exit(-1); }
+  virtual void set_state(const Handle& stateCopy) { std::cout <<"not implemented for world of type " <<typeid(this).name() <<std::endl; exit(-1); }
 
   /// Return whether the current state is a terminal state
   virtual bool is_terminal_state() const = 0;
@@ -81,7 +81,7 @@ struct TreeSearchDomain {
   virtual bool get_info(InfoTag tag) const = 0;
   virtual double get_info_value(InfoTag tag) const = 0;
 
-  virtual void write(std::ostream& os) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
+  virtual void write(std::ostream& os) const { std::cout <<"NOT OVERLOADED!" <<std::endl; }
 };
 inline std::ostream& operator<<(std::ostream& os, const TreeSearchDomain& E) { E.write(os); return os; }
 inline std::ostream& operator<<(std::ostream& os, const TreeSearchDomain::SAO& x) { x.write(os); return os; }

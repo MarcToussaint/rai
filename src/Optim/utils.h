@@ -13,7 +13,8 @@
 
 struct NLP_FiniteDifference : NLP {
   std::shared_ptr<NLP> P;
-  NLP_FiniteDifference(std::shared_ptr<NLP> _P) : P(_P) { copySignature(*P); }
+  double eps;
+  NLP_FiniteDifference(std::shared_ptr<NLP> _P, double eps=1e-6) : P(_P), eps(eps) { copySignature(*P); }
   virtual void evaluate(arr& phi, arr& J, const arr& x0);
   virtual void report(ostream& os, int verbose, const char *msg=0){ os <<"FiniteDifference version of: "; P->report(os, verbose, msg); }
 };

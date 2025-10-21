@@ -42,7 +42,7 @@ struct TreeSearchNode {
 
   //I/O
   virtual void write(std::ostream& os) const { os <<name; }
-  virtual void report(std::ostream& os, int verbose) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
+  virtual void report(std::ostream& os, int verbose) const { std::cout <<"NOT OVERLOADED!" <<std::endl; }
   virtual void data(Graph& g) const {}
 };
 inline std::ostream& operator<<(std::ostream& os, const TreeSearchNode& D) { D.write(os); return os; }

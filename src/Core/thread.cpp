@@ -42,7 +42,7 @@ RWLock::RWLock() {
 
 RWLock::~RWLock() {
   if(rwCount) {
-    cerr << "Destroying locked RWLock" <<endl;
+    cout << "Destroying locked RWLock" <<endl;
     exit(1);
   }
 }
@@ -385,7 +385,7 @@ Thread::Thread(const char* _name, double beatIntervalSec)
 
 Thread::~Thread() {
   if(thread) {
-    cerr << "Call 'threadClose()' in the destructor of the DERIVED class! \
+    cout << "Call 'threadClose()' in the destructor of the DERIVED class! \
            That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
            in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
            pure virtual while you're trying to call ~Thread.";
@@ -499,10 +499,10 @@ void Thread::main() {
       open(); //virtual open routine
     } catch(const std::exception& ex) {
       event.setStatus(tsFAILURE);
-      cerr <<"*** open() of Thread'" <<name <<"'failed: " <<ex.what() <<" -- closing it again" <<endl;
+      cout <<"*** open() of Thread'" <<name <<"'failed: " <<ex.what() <<" -- closing it again" <<endl;
     } catch(...) {
       event.setStatus(tsFAILURE);
-      cerr <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
+      cout <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
       return;
     }
   }
@@ -552,7 +552,7 @@ Signaler* moduleShutdown() { return &_moduleShutdown; }
 
 void signalhandler(int s) {
   int calls = moduleShutdown()->incrementStatus();
-  cerr <<"\n*** System received signal " <<s <<" -- count=" <<calls <<endl;
+  cout <<"\n*** System received signal " <<s <<" -- count=" <<calls <<endl;
   if(calls==1) {
     LOG(0) <<" -- waiting for main loop to break on moduleShutdown()->getStatus()";
   }

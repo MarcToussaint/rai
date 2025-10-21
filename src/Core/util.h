@@ -22,7 +22,6 @@
 #include <random>
 
 using std::cout;
-using std::cerr;
 using std::endl;
 
 namespace rai {

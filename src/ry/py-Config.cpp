@@ -63,9 +63,8 @@ void init_Config(pybind11::module& m) {
       }, "return the focal length of the view camera (only intrinsic parameter)")
 
       .def("getCamera_fxycxy", [](shared_ptr<rai::ConfigurationViewer>& self) {
-        OpenGL& gl = self->ensure_gl();
         rai::Camera& cam = self->displayCamera();
-        return cam.getFxycxy(gl.width, gl.height);
+        return cam.getFxycxy();
       }, "return (fx, fy, cx, cy): the focal length and image center in PIXEL UNITS")
 
       .def("setupEventHandler", &rai::ConfigurationViewer::setupEventHandler, "setup callbacks to grab window events and return them with methods below", pybind11::arg("blockDefaultHandler"))

@@ -706,10 +706,10 @@ LogToken::~LogToken() {
       }
 #endif
 
-      if(log_level==-1) { if(useCout) cout <<"-- WARNING:" <<errString() <<endl; return; }
-      else if(log_level==-2) { if(useCout) cerr <<"== ERROR:" <<errString() <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
+      if(log_level==-1) { if(useCout) cout <<"-- WARNING:" <<errString() <<endl; }
+      else if(log_level==-2) { if(useCout) cout <<"== ERROR:" <<errString() <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
       //INSERT BREAKPOINT HERE (before and after this line)
-      else if(log_level<=-3) { if(useCout) cerr <<"== HARD EXIT! " <<errString() <<endl;  exit(1); }
+      else if(log_level<=-3) { if(useCout) cout <<"== HARD EXIT! " <<errString() <<endl;  exit(1); }
 //      if(log_level<=-3) raise(SIGABRT);
     }
   }
@@ -1225,7 +1225,7 @@ Mutex::Mutex() {
 
 Mutex::~Mutex() {
   if(state) {
-    cerr << "Mutex destroyed without unlocking first" <<endl;
+    cout << "Mutex destroyed without unlocking first" <<endl;
     exit(1);
   }
 }
@@ -1234,7 +1234,7 @@ void Mutex::lock(const char* _lockInfo) {
   mutex.lock();
   int pid = getpid();
   if(!true) {
-    cerr <<"could not lock mutex by process " <<pid <<" -- is blocked with info '" <<lockInfo <<"' by process " <<state <<endl;
+    cout <<"could not lock mutex by process " <<pid <<" -- is blocked with info '" <<lockInfo <<"' by process " <<state <<endl;
     exit(1);
   }
   lockInfo = _lockInfo;

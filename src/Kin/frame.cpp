@@ -709,7 +709,7 @@ rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors, co
   C.view_lock(RAI_HERE);
   getShape().type() = ST_pointCloud;
   if(!points.N) {
-    cerr <<"given point cloud has zero size" <<endl;
+    cout <<"given point cloud has zero size" <<endl;
     C.view_unlock();
     return *this;
   }

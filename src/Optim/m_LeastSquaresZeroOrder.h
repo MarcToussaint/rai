@@ -12,6 +12,13 @@ struct LeastSquaredZeroOrder{
   double alpha = .5;
   RAI_PARAM("LSZO/", double, alpha_min, .001)
   RAI_PARAM("LSZO/", double, damping, 1e-2)
+  RAI_PARAM("LSZO/", double, noiseRatio, .2)
+  RAI_PARAM("LSZO/", double, noiseAbs, .0)
+  RAI_PARAM("LSZO/", int, maxIters, 500)
+  RAI_PARAM("LSZO/", double, dataRatio, 1.)
+  RAI_PARAM("LSZO/", bool, pruneData, false)
+  RAI_PARAM("LSZO/", double, stepInc, 1.5)
+  RAI_PARAM("LSZO/", double, stepDec, .5)
 
   //-- state and data
   arr x;               ///< point where P was last evaluated

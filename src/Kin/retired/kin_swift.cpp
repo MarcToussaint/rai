@@ -243,7 +243,7 @@ uintA SwiftInterface::pullFromSwift(bool dumpReport) {
     scene->Query_Tolerance_Verification(false, cutoff, np, &oids);
 //    scene->Query_Intersection(false, np, &oids);
   } catch(const char* msg) {
-    cerr <<"... catching error '" <<msg <<"' -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
+    cout <<"... catching error '" <<msg <<"' -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
     return uintA();
   } catch(std::exception& e) {
     cout <<"... catching error '" <<e.what() <<"' -- SWIFT failed! .. no proxies for this posture!!..." <<endl;

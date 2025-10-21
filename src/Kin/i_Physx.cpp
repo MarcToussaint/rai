@@ -243,7 +243,7 @@ void PhysXInterface_self::initPhysics() {
   if(!sceneDesc.cpuDispatcher) {
     defaultCpuDispatcher = PxDefaultCpuDispatcherCreate(1);
     if(!defaultCpuDispatcher) {
-      cerr << "PxDefaultCpuDispatcherCreate failed!" << endl;
+      cout << "PxDefaultCpuDispatcherCreate failed!" << endl;
     }
     sceneDesc.cpuDispatcher = defaultCpuDispatcher;
   }
@@ -253,7 +253,7 @@ void PhysXInterface_self::initPhysics() {
 
   gScene = core()->mPhysics->createScene(sceneDesc);
   if(!gScene) {
-    cerr << "createScene failed!" << endl;
+    cout << "createScene failed!" << endl;
   }
 
   gScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0);

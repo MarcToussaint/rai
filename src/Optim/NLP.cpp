@@ -45,8 +45,10 @@ double NLP::eval_scalar(arr& g, arr& H, const arr& x) {
   evaluate(phi, J, x);
 
   CHECK_EQ(phi.N, featureTypes.N, "");
-  CHECK_EQ(phi.N, J.d0, "");
-  CHECK_EQ(x.N, J.d1, "");
+  if(J.N){
+    CHECK_EQ(phi.N, J.d0, "");
+    CHECK_EQ(x.N, J.d1, "");
+  }
 
   double f=0.;
   for(uint i=0; i<phi.N; i++) {

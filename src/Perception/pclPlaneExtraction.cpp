@@ -65,7 +65,7 @@ void passthroughFilter(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<Poi
   pass.setFilterFieldName("z");
   pass.setFilterLimits(minLimit, maxLimit);
   pass.filter(*outCloud);
-  //cerr << "PointCloud after passthroughFilter: " << outCloud->points.size () << " data points." << endl;
+  //cout << "PointCloud after passthroughFilter: " << outCloud->points.size () << " data points." << endl;
 }
 
 void normalEstimator(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::Normal>::Ptr outNormal, int knn) {
@@ -76,7 +76,7 @@ void normalEstimator(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::
   ne.setInputCloud(inCloud);
   ne.setKSearch(knn);
   ne.compute(*outNormal);
-  //cerr << "Normal estimation completed" << endl;
+  //cout << "Normal estimation completed" << endl;
 }
 
 void planeDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane)
@@ -93,7 +93,7 @@ void planeDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::ModelCoefficients:
   seg.setInputCloud(inCloud);
   // Obtain the plane inliers and coefficients
   seg.segment(*outInliersPlane, *outCoefficients);
-  //cerr << "Plane coefficients: " << *outCoefficients << endl;
+  //cout << "Plane coefficients: " << *outCoefficients << endl;
 }
 
 void planeDetectorWithNormals(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane)
@@ -112,7 +112,7 @@ void planeDetectorWithNormals(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCl
   seg.setInputNormals(inCloudNormal);
   // Obtain the plane inliers and coefficients
   seg.segment(*outInliersPlane, *outCoefficients);
-  //cerr << "Plane coefficients: " << *outCoefficients << endl;
+  //cout << "Plane coefficients: " << *outCoefficients << endl;
 }
 
 void substractPlane(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointIndices::Ptr inInliersPlane, pcl::PointCloud<PointT>::Ptr outCloud) {

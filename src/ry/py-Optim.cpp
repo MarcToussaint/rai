@@ -389,10 +389,10 @@ void init_Optim(pybind11::module& m) {
   MEMBER(double, lambdaMax, -1.)
   MEMBER(double, interiorPadding, 1e-2)
   MEMBER(bool,   boundedNewton, true)
-  MEMBER(bool,   finiteDifference, false)
+  MEMBER(double, finiteDifference, -1.)
 #undef MEMBER
   ) {
-#define MEMBER(type, name, x) self->opt-> name = name;
+#define MEMBER(type, name, x) self->opt->name = name;
   MEMBER(int, verbose, 1)
   MEMBER(double, stopTolerance, 1e-2)
   MEMBER(double, stopFTolerance, -1.)
@@ -417,7 +417,7 @@ void init_Optim(pybind11::module& m) {
   MEMBER(double, lambdaMax, -1.)
   MEMBER(double, interiorPadding, 1e-2)
   MEMBER(bool,   boundedNewton, true)
-  MEMBER(bool,   finiteDifference, false)
+  MEMBER(double, finiteDifference, -1.)
 #undef MEMBER
     ;
     return self;
@@ -447,7 +447,7 @@ void init_Optim(pybind11::module& m) {
   MEMBER(double, lambdaMax, -1.)
   MEMBER(double, interiorPadding, 1e-2)
   MEMBER(bool,   boundedNewton, true)
-  MEMBER(bool,   finiteDifference, false)
+  MEMBER(double, finiteDifference, -1.)
 #undef MEMBER
       )
 

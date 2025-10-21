@@ -14,6 +14,7 @@ bool EvolutionStrategy::step(){
   arr y = zeros(samples.d0);
   for(uint i=0;i<samples.d0;i++){
     y(i) = f(NoArr, NoArr, samples[i]);
+    evals++;
   }
   uint i; double f_y;
   std::tie(f_y, i) = rai::min_arg(y);
@@ -30,7 +31,7 @@ bool EvolutionStrategy::step(){
 
   update(samples, y);
 
-  if(steps>500) return true;
+  if(evals>opt->stopEvals) return true;
   if(rejectedSteps>3*x.N) return true;
   if(tinySteps>5) return true;
   return false;
@@ -62,13 +63,14 @@ struct CMA_self {
   cmaes_t evo;
 };
 
-CMAES::CMAES(ScalarFunction f, const arr& x_init) : EvolutionStrategy(f) {
+CMAES::CMAES(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> _opt) : EvolutionStrategy(f) {
+  opt = _opt;
   self = make_unique<CMA_self>();
   x = x_init;
   arr startDev = rai::consts<double>(sigmaInit, x.N);
   cmaes_init(&self->evo, x_init.N, x_init.p, startDev.p, 1, lambda, nullptr);
 
-  cout <<"--cmaes-- " <<steps <<std::endl;
+  cout <<"--cmaes-- " <<evals <<std::endl;
 }
 
 CMAES::~CMAES() {
@@ -79,7 +81,7 @@ arr CMAES::generateNewSamples(){
   arr samples(self->evo.sp.lambda, self->evo.sp.N);
   double* const* rgx = cmaes_SamplePopulation(&self->evo);
   for(uint i=0; i<samples.d0; i++) samples[i].setCarray(rgx[i], samples.d1);
-  cout <<"--cmaes-- " <<steps <<std::flush;
+  cout <<"--cmaes-- " <<evals <<std::flush;
   return samples;
 }
 

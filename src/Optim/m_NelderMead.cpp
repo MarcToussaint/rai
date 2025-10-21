@@ -4,6 +4,8 @@ using std::tie;
 using rai::min_arg;
 using rai::max_arg;
 
+namespace rai {
+
 // =========================== original: https://github.com/develancer/nelder-mead =========================
 
 #ifndef PTR_NELDER_MEAD_H
@@ -107,7 +109,7 @@ nelder_mead_result nelder_mead(
 
       // Calculate PBAR, the centroid of the simplex vertices
       // excepting the vertex with Y value YNEWLO.
-      pbar = sum(p, 0);
+      pbar = ::sum(p, 0);
       pbar -= p[ihi];
       pbar /= n;
 
@@ -202,8 +204,8 @@ nelder_mead_result nelder_mead(
         if(z <= reqmin) break;
       }
 #endif
-      double sig = sqrt(sum(vardiag(p)));
-      cout <<"--nelderMead-- std dev: " <<sig <<" reqmin=" <<reqmin <<endl;
+      double sig = sqrt(::sum(vardiag(p)));
+      // cout <<"--nelderMead-- std dev: " <<sig <<" reqmin=" <<reqmin <<endl;
       if(sig<reqmin) break;
     }
     // Factorial tests to check that YNEWLO is a local minimum.
@@ -255,8 +257,7 @@ nelder_mead_result nelder_mead(
 
 // ====================================== end of original ======================================
 
-NelderMead::NelderMead(ScalarFunction _f, const arr& x_init) : f(_f){
-  x=x_init;
+NelderMead::NelderMead(ScalarFunction _f, const arr& x_init, shared_ptr<OptOptions> opt) : f(_f), opt(opt), x(x_init){
 }
 
 shared_ptr<SolverReturn> NelderMead::solve(){
@@ -267,12 +268,12 @@ shared_ptr<SolverReturn> NelderMead::solve(){
   };
 
   arr step(n);
-  step = .1;
+  step = 10.*opt->stopTolerance;
 
   nelder_mead_result result = nelder_mead(
       f,
       x,
-      1e-2, // the terminating limit for the variance of function values
+      opt->stopTolerance, // the terminating limit for the variance of points
       step
       );
 
@@ -284,3 +285,4 @@ shared_ptr<SolverReturn> NelderMead::solve(){
   return ret;
 }
 
+} //namespace

@@ -70,7 +70,7 @@ void NLP_LinTransformed::evaluate(arr& phi, arr& J, const arr& x) {
 
 void NLP_FiniteDifference::evaluate(arr& phi0, arr& J, const arr& x0){
   P->evaluate(phi0, NoArr, x0);
-  if(!!J) J = finiteDifference_jacobian([this](const arr& x) -> arr{ arr phi; this->P->evaluate(phi, NoArr, x); return phi; }, x0, phi0, 1e-6);
+  if(!!J) J = finiteDifference_jacobian([this](const arr& x) -> arr{ arr phi; this->P->evaluate(phi, NoArr, x); return phi; }, x0, phi0, eps);
 }
 
 //===========================================================================
