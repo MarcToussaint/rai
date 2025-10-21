@@ -143,7 +143,7 @@ void init_Simulation(pybind11::module& m) {
 
   ;
 
-  pybind11::class_<rai::CameraView::Sensor, std::shared_ptr<rai::CameraView::Sensor>>(m, "CameraViewSensor");
+  pybind11::class_<rai::CameraView::CameraFrame, std::shared_ptr<rai::CameraView::CameraFrame>>(m, "CameraViewSensor");
 
 }
 

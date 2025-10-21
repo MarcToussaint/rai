@@ -244,8 +244,8 @@ struct Camera {
 
   float heightAbs;
   float focalLength;
-  float whRatio;
   float zNear, zFar;
+  float width=640., height=480.;
 
   Camera();
 
@@ -253,8 +253,8 @@ struct Camera {
   void setHeightAngle(float a);
   void setHeightAbs(float h);
   void setZRange(float znear, float zfar);
-  void setWHRatio(float ratio);
   void setFocalLength(float f);
+  void setWidthHeight(float w, float h);
   void setPosition(const Vector& x);
   void setKinect();
   void setDefault();
@@ -274,12 +274,12 @@ struct Camera {
   arr getInverseProjectionMatrix() const;
   double glConvertToTrueDepth(double d) const;
   double glConvertToLinearDepth(double d) const;
-  void project2PixelsAndTrueDepth(arr& x, double width, double height) const;
-  void unproject_fromPixelsAndTrueDepth(arr& x, double width, double height) const;
-  void unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) const;
+  void project2PixelsAndTrueDepth(arr& x) const;
+  void unproject_fromPixelsAndTrueDepth(arr& x) const;
+  void unproject_fromPixelsAndGLDepth(arr& x) const;
 
-  arr getFxycxy(double width, double height);
-  arr getIntrinsicMatrix(double width, double height) const;
+  arr getFxycxy();
+  arr getIntrinsicMatrix() const;
 
   //retired
   void setCameraProjectionMatrix(const arr& P); //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this

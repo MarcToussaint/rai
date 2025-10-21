@@ -10,40 +10,34 @@
 #include "frame.h"
 #include "../Geo/depth2PointCloud.h"
 
+namespace rai {
+
 //===========================================================================
 
-rai::CameraView::CameraView(const rai::Configuration& _C, bool _offscreen) {
+CameraView::CameraView(const Configuration& _C, bool _offscreen) {
   updateConfiguration(_C);
   gl = make_shared<OpenGL>("CameraView", 640, 480, _offscreen);
   gl->camera.setDefault();
   gl->add(this);
 }
 
-rai::CameraView::Sensor& rai::CameraView::addSensor(rai::Frame* frame, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile) {
-  Sensor& sen = sensors.append();
-  sen.name = frame->name;
-  sen.frame = frame;
-  rai::Camera& cam = sen.cam;
-  sen.width=width;
-  sen.height=height;
+CameraView::CameraFrame& CameraView::setCamera(Frame* frame, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile) {
+  currentCamera = make_shared<CameraFrame>(*frame);
+  cameras.append(currentCamera);
+  Camera& cam = currentCamera->cam;
 
   cam.setZero();
+  cam.setWidthHeight(width, height);
   if(zRange.N) cam.setZRange(zRange(0), zRange(1));
   if(focalLength>0.) cam.setFocalLength(focalLength);
   if(orthoAbsHeight>0.) cam.setHeightAbs(orthoAbsHeight);
 
-  cam.setWHRatio((double)width/height);
-
-  if(sen.frame) cam.X = sen.frame->ensure_X();
-
-  //also select sensor
-  gl->resize(sen.width, sen.height);
-  currentSensor=&sen;
-
-  return sen;
+  cam.X = currentCamera->frame.ensure_X();
+  gl->resize(cam.width, cam.height);
+  return *currentCamera;
 }
 
-rai::CameraView::Sensor& rai::CameraView::addSensor(rai::Frame* frame) {
+CameraView::CameraFrame& CameraView::setCamera(Frame* frame) {
   CHECK(frame, "frame is not defined");
 
   double width=400., height=200.;
@@ -58,39 +52,36 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(rai::Frame* frame) {
   frame->ats->get<double>(width, "width");
   frame->ats->get<double>(height, "height");
 
-  return addSensor(frame, width, height, focalLength, orthoAbsHeight, zRange);
+  return setCamera(frame, width, height, focalLength, orthoAbsHeight, zRange);
 }
 
-rai::CameraView::Sensor& rai::CameraView::selectSensor(Frame *frame) {
+CameraView::CameraFrame& CameraView::selectSensor(Frame *frame) {
   CHECK(frame, "you need to specify a frame, nullptr not allowed");
-  Sensor* sen=0;
-  for(Sensor& s:sensors) if(s.frame==frame) { sen=&s; break; }
-  if(!sen) {
-//    LOG(0) <<"can't find that sensor: " <<sensorName <<" -- trying to add it";
-    return addSensor(frame);
+  bool found=false;
+  for(shared_ptr<CameraFrame>& c:cameras) if(&c->frame==frame) { currentCamera=c; found=true; break; }
+  if(!found) {
+    return setCamera(frame);
   }
-
-  gl->resize(sen->width, sen->height);
-  currentSensor=sen;
-  return *sen;
+  gl->resize(currentCamera->cam.width, currentCamera->cam.height);
+  return *currentCamera;
 }
 
 #if 0
-void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
+void CameraView::updateConfiguration(const Configuration& newC) {
   auto _dataLock = gl->dataLock(RAI_HERE);
   if(newC.frames.N==C.frames.N) {
 #if 0
     C.setFrameState(newC.getFrameState());
 #else
     for(uint i=0; i<C.frames.N; i++) {
-      rai::Frame* f = newC.frames.elem(i);
+      Frame* f = newC.frames.elem(i);
       if(f->shape) C.frames.elem(i)->set_X() = f->ensure_X();
     }
 #endif
   } else {
     C.copy(newC);
     //deep copy meshes!
-    for(rai::Frame* f:C.frames) if(f->shape) {
+    for(Frame* f:C.frames) if(f->shape) {
         if(f->shape->_mesh) {
           shared_ptr<Mesh> org = f->shape->_mesh;
           f->shape->_mesh = make_shared<Mesh> (*org.get());
@@ -99,7 +90,7 @@ void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
       }
     if(renderMode==seg) { //update frameIDmap
       frameIDmap.resize(C.frames.N).setZero();
-      for(rai::Frame* f:C.frames) {
+      for(Frame* f:C.frames) {
         int* label=f->ats->find<int>("label");
         if(label) frameIDmap(f->ID) = *label;
       }
@@ -108,7 +99,7 @@ void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
 }
 #endif
 
-void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
+void CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
   updateCamera();
   if(renderMode==visuals) renderUntil=_shadow;
 //  else if(renderMode==all) renderUntil=_all;
@@ -139,7 +130,7 @@ void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
   }
 }
 
-byteA rai::CameraView::computeSegmentationImage() {
+byteA CameraView::computeSegmentationImage() {
   updateCamera();
   renderFlatColors=true;
   gl->renderInBack();
@@ -149,7 +140,7 @@ byteA rai::CameraView::computeSegmentationImage() {
   return seg;
 }
 
-uintA rai::CameraView::computeSegmentationID() {
+uintA CameraView::computeSegmentationID() {
   byteA seg = computeSegmentationImage();
   uintA segmentation(seg.d0, seg.d1);
   for(uint i=0; i<segmentation.N; i++) {
@@ -158,19 +149,17 @@ uintA rai::CameraView::computeSegmentationID() {
   return segmentation;
 }
 
-void rai::CameraView::updateCamera() {
-  for(Sensor& sen:sensors) {
-    if(sen.frame) sen.cam.X = sen.frame->ensure_X();
+void CameraView::updateCamera() {
+  for(shared_ptr<CameraFrame>& cam:cameras){
+    cam->cam.X = cam->frame.ensure_X();
+    if(!cam->offset.isZero) cam->cam.X.appendRelativeTranslation(cam->offset);
   }
-
-  if(currentSensor) {
-    gl->camera = currentSensor->cam;
-  }
+  if(currentCamera) gl->camera = currentCamera->cam;
 }
 
 //===========================================================================
 
-rai::Sim_CameraView::Sim_CameraView(Var<rai::Configuration>& _kin,
+Sim_CameraView::Sim_CameraView(Var<Configuration>& _kin,
                                     Var<byteA> _color,
                                     Var<floatA> _depth,
                                     double beatIntervalSec, const char* _cameraFrameName, bool _idColors, const byteA& _frameIDmap)
@@ -180,8 +169,8 @@ rai::Sim_CameraView::Sim_CameraView(Var<rai::Configuration>& _kin,
     depth(this, _depth),
     V(model.get()()) {
   if(_cameraFrameName) {
-    rai::Frame* f = model.get()->getFrame(_cameraFrameName);
-    V.addSensor(f);
+    Frame* f = model.get()->getFrame(_cameraFrameName);
+    V.setCamera(f);
     V.selectSensor(f);
   }
   if(_idColors) {
@@ -198,11 +187,11 @@ rai::Sim_CameraView::Sim_CameraView(Var<rai::Configuration>& _kin,
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
-rai::Sim_CameraView::~Sim_CameraView() {
+Sim_CameraView::~Sim_CameraView() {
   threadClose();
 }
 
-void rai::Sim_CameraView::step() {
+void Sim_CameraView::step() {
   byteA img;
   floatA dep;
   V.updateConfiguration(model.get());
@@ -211,7 +200,9 @@ void rai::Sim_CameraView::step() {
   depth.set() = dep;
 }
 
-arr rai::Sim_CameraView::getFxycxy() {
-  auto sen = V.currentSensor;
-  return arr{sen->cam.focalLength* sen->height, sen->cam.focalLength* sen->height, .5*(sen->width-1.), .5*(sen->height-1.)};
+arr Sim_CameraView::getFxycxy() {
+  auto& c = V.currentCamera;
+  return arr{c->cam.focalLength* c->cam.height, c->cam.focalLength* c->cam.height, .5*(c->cam.width-1.), .5*(c->cam.height-1.)};
 }
+
+} //namespace

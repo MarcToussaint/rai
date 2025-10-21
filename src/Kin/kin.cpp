@@ -3981,7 +3981,9 @@ void Configuration::watchFile(const char* filename) {
         if(d<.01 || d==1.) {
           cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<gl.camera.glConvertToTrueDepth(d) <<endl;
         } else {
-          gl.camera.unproject_fromPixelsAndGLDepth(x, gl.width, gl.height);
+          CHECK_EQ(uint(gl.camera.width), gl.width, "");
+          CHECK_EQ(uint(gl.camera.height), gl.height, "");
+          gl.camera.unproject_fromPixelsAndGLDepth(x);
         }
         cout <<"SELECTION id: " <<id <<" world coords:" <<x <<endl;
         if(id<frames.N) cout <<frames.elem(id)->name <<": {" <<*frames.elem(id) <<"}" <<endl;

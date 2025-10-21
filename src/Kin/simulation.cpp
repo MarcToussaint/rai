@@ -1149,7 +1149,7 @@ bool TeleopCallbacks::hoverCallback(OpenGL& gl) {
   }
   if(grab) {
     arr x = {double(gl.mouseposx), double(gl.mouseposy), mouseDepth};
-    gl.camera.unproject_fromPixelsAndGLDepth(x, gl.width, gl.height);
+    gl.camera.unproject_fromPixelsAndGLDepth(x);
 
     if(oldx.N) {
       arr del = x-oldx;

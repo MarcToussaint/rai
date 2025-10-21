@@ -465,7 +465,7 @@ OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen, bool _fullscre
   clearColor= {1., 1., 1.};
   if(width%4) width = 4*(width/4);
   if(height%2) height = 2*(height/2);
-  camera.setWHRatio((double)width/height);
+  camera.setWidthHeight(width, height);
 }
 
 OpenGL::~OpenGL() {
@@ -723,16 +723,18 @@ arr OpenGL::get3dMousePos(arr& normal) {
     if(!!normal) normal.clear();
   } else {
     x = {mouseposx, mouseposy, d};
-    camera.unproject_fromPixelsAndGLDepth(x, width, height);
+    CHECK_EQ(uint(camera.width), width, "");
+    CHECK_EQ(uint(camera.height), height, "");
+    camera.unproject_fromPixelsAndGLDepth(x);
     if(!!normal) {
       arr x1 = {mouseposx-1., mouseposy, captureDepth(mouseposy, mouseposx-1.)};
-      camera.unproject_fromPixelsAndGLDepth(x1, width, height);
+      camera.unproject_fromPixelsAndGLDepth(x1);
       arr x2 = {mouseposx+1., mouseposy, captureDepth(mouseposy, mouseposx+1.)};
-      camera.unproject_fromPixelsAndGLDepth(x2, width, height);
+      camera.unproject_fromPixelsAndGLDepth(x2);
       arr y1 = {mouseposx, mouseposy-1., captureDepth(mouseposy-1., mouseposx)};
-      camera.unproject_fromPixelsAndGLDepth(y1, width, height);
+      camera.unproject_fromPixelsAndGLDepth(y1);
       arr y2 = {mouseposx, mouseposy+1., captureDepth(mouseposy+1., mouseposx)};
-      camera.unproject_fromPixelsAndGLDepth(y2, width, height);
+      camera.unproject_fromPixelsAndGLDepth(y2);
 
       normal = crossProduct(x2-x1, y2-y1);
       normal /= length(normal);
@@ -761,8 +763,8 @@ void OpenGL::Reshape(int _width, int _height) {
   height=_height;
   if(width%4) width = 4*(width/4);
   if(height%2) height = 2*(height/2);
-  camera.setWHRatio((double)width/height);
-  for(uint v=0; v<views.N; v++) views(v).camera.setWHRatio((views(v).ri-views(v).le)*width/((views(v).to-views(v).bo)*height));
+  camera.setWidthHeight(width, height);
+  for(uint v=0; v<views.N; v++) views(v).camera.setWidthHeight((views(v).ri-views(v).le)*width, ((views(v).to-views(v).bo)*height));
 
   if(!offscreen) {
     postRedrawEvent(true);
@@ -858,7 +860,7 @@ void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
       if(d<.01 || d==1.) {
         cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
       } else {
-        camera.unproject_fromPixelsAndGLDepth(x, width, height);
+        camera.unproject_fromPixelsAndGLDepth(x);
       }
       selectID = color2id(&captureImage(mouseposy, mouseposx, 0));
       LOG(1) <<"SELECTION: ID: " <<selectID
@@ -885,10 +887,11 @@ void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {
       if(v) {
         x(0) -= double(v->le)*width;
         x(1) -= double(v->bo)*height;
-        v->camera.unproject_fromPixelsAndGLDepth(x, (v->ri-v->le)*width, (v->to-v->bo)*height);
+        v->camera.setWidthHeight((v->ri-v->le)*width, (v->to-v->bo)*height);
+        v->camera.unproject_fromPixelsAndGLDepth(x);
         v->camera.focus(x);
       } else {
-        cam->unproject_fromPixelsAndGLDepth(x, width, height);
+        cam->unproject_fromPixelsAndGLDepth(x);
         cam->focus(x);
       }
       //LOG(1) <<"FOCUS: world coords: " <<x;

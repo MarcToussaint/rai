@@ -1944,15 +1944,9 @@ template<class T> void operator+=(Array<T>& x, const Array<T>& y) {
       else x.J() = *y.jac;
     }
   }
-  // CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")");
-  // T* xp=x.p, *xstop=xp+x.N;
-  // const T* yp=y.p;
-  // for(; xp!=xstop; xp++, yp++) *xp += *yp;
 }
 template<class T> void operator+=(Array<T>& x, const T& y) {
   UpdateOperator_MS(+=);
-  // T* xp=x.p, *xstop=xp+x.N;
-  // for(; xp!=xstop; xp++) *xp += y;
 }
 template<class T> void operator-=(Array<T>& x, const Array<T>& y) {
   UpdateOperator_MM(-=);
@@ -1962,23 +1956,21 @@ template<class T> void operator-=(Array<T>& x, const Array<T>& y) {
       else x.J() = -(*y.jac);
     }
   }
-  // CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")");
-  // T* xp=x.p, *xstop=xp+x.N;
-  // const T* yp=y.p;
-  // for(; xp!=xstop; xp++, yp++) *xp -= *yp;
 }
 template<class T> void operator-=(Array<T>& x, const T& y) {
   UpdateOperator_MS(-=);
-  // T* xp=x.p, *xstop=xp+x.N;
-  // for(; xp!=xstop; xp++) *xp -= y;
 }
 template<class T> void operator*=(Array<T>& x, const T& y) {
   if constexpr(std::is_same_v<T, double>){
     if(x.jac) *x.jac *= y;
   }
   UpdateOperator_MS(*=);
-  // T* xp=x.p, *xstop=xp+x.N;
-  // for(; xp!=xstop; xp++) *xp *= y;
+}
+template<class T> void operator/=(Array<T>& x, const T& y) {
+  if constexpr(std::is_same_v<T, double>){
+    if(x.jac) *x.jac /= y;
+  }
+  UpdateOperator_MS(/=);
 }
 
 #undef UpdateOperator_MM

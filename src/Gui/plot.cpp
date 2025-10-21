@@ -118,7 +118,7 @@ void rai::PlotModule::Opengl(bool perspective, double xl, double xh, double yl, 
   }
   gl->camera.setPosition({.5*(xh+xl), .5*(yh+yl), 5.});
   gl->camera.focus({.5*(xh+xl), .5*(yh+yl), .0});
-  gl->camera.setWHRatio((xh-xl)/(yh-yl));
+  gl->camera.setWidthHeight(xh-xl ,yh-yl);
   if(perspective) {
     gl->camera.setHeightAngle(45.);
   } else {

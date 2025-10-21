@@ -335,6 +335,7 @@ template<class T> void operator+=(Array<T>& x, const T& y);
 template<class T> void operator-=(Array<T>& x, const Array<T>& y);
 template<class T> void operator-=(Array<T>& x, const T& y);
 template<class T> void operator*=(Array<T>& x, const T& y);
+template<class T> void operator/=(Array<T>& x, const T& y);
 
 template<class T> Array<T> operator+(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x+=z; return x; }
 template<class T> Array<T> operator+(const Array<T>& y, T z) {                Array<T> x(y); x+=z; return x; }
