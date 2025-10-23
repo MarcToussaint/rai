@@ -1,7 +1,15 @@
 #include "m_LeastSquaresZeroOrder.h"
 #include "../Core/util.h"
 
-LeastSquaredZeroOrder::LeastSquaredZeroOrder(shared_ptr<NLP> P, const arr& x_init) : P(P){
+/* ideas:
+
+stepMax
+covariant noise
+*/
+
+namespace rai {
+
+LeastSquaredZeroOrder::LeastSquaredZeroOrder(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt) : P(P), opt(_opt){
   if(x_init.N) x=x_init;
   else x=P->getInitializationSample();
   CHECK_EQ(x.N, P->dimension, "");
@@ -40,27 +48,57 @@ auto decompose(const arr& phi, const arr& J, ObjectiveTypeA featureTypes){
 bool LeastSquaredZeroOrder::step(){
   steps++;
 
-  //-- propose step
+  //-- compute delta
   arr delta;
+  arr Hinv = inverse_SymPosDef(~J*J + damping*eye(J.d1));
   if(!hasLinTerms){
-    delta = inverse_SymPosDef(~J*J + damping*eye(J.d1)) * (~J * phi_x);
+    delta = Hinv * (~J * phi_x);
   }else{
     arr phi_sos, phi_f, Jsos, Jf;
     std::tie(phi_sos, phi_f, Jsos, Jf) = decompose(phi_x, J, P->featureTypes);
-    delta = inverse_SymPosDef(~Jsos*Jsos + damping*eye(Jsos.d1)) * (~Jsos * phi_sos + 0.5 * sum(Jf,0));
+    delta = Hinv * (~Jsos * phi_sos + 0.5 * ::sum(Jf,0));
   }
-  // delta /= length(delta);
 
-  arr y = x - alpha*delta;
+  //noise directly on delta
+#if 0
+  arr C;
+  lapack_cholesky(C, Hinv);
+  arr z = C * randn(P->dimension);
+  delta += noiseRatio*z;
+#endif
 
-  //noise
+  delta *= -alpha;
+
+  //-- restrict stepsize
+  double maxDelta = absMax(delta);
+  if(opt->stepMax>0. && maxDelta>opt->stepMax) {
+    delta *= opt->stepMax/maxDelta;
+    maxDelta = opt->stepMax;
+  }
+
+  //-- proposed step
+  arr y = x + delta;
+
+  //-- add noise
   if(method=="linReg"){
-    double sigma = noiseRatio*alpha*length(delta);
+    arr z;
+    if(covariantNoise){
+      arr C;
+      double Hsig2 = trace(Hinv)/double(Hinv.d0);
+      lapack_cholesky(C, Hinv);
+      z = C * randn(P->dimension);
+      // z *= noiseRatio/sqrt(Hsig2)*length(delta);
+      z *= noiseRatio * length(delta);
+      // z *= noiseRatio * alpha;
+    }else{
+      z = randn(x.N);
+      z *= noiseRatio*length(delta);
+    }
     // sigma *= 1./(1.+rai::sqr(.001*steps));
-    sigma += noiseAbs;
-    y += sigma*randn(P->dimension);
+    // sigma += noiseAbs;
+    y += z;
   }else if(method=="rank1"){
-    // double sigma = .2*alpha*length(delta);
+    // double sigma = .2*length(delta);
     double sigma = 1e-2;
     y += sigma*randn(P->dimension);
   }
@@ -105,7 +143,7 @@ bool LeastSquaredZeroOrder::step(){
     cout <<" -- reject (alpha: " <<alpha <<")" <<endl;
   }else{
     rejectedSteps=0;
-    if(length(x-y)<1e-6) tinySteps++; else tinySteps=0;
+    if(length(x-y)<1e-4) tinySteps++; else tinySteps=0;
     x = y;
     phi_x = phi_y;
     phi2_x = phi2_y;
@@ -115,7 +153,7 @@ bool LeastSquaredZeroOrder::step(){
   }
 
   if((int)steps>maxIters) return true;
-  // if(rejectedSteps>3*x.N) return true;
+  if(rejectedSteps>3*x.N) return true;
   if(tinySteps>5) return true;
   return false;
 }
@@ -138,7 +176,7 @@ void LeastSquaredZeroOrder::updateJ_linReg(arr& J, const arr& Xraw, const arr& Y
     double K = dataRatio;
     if(n > K*d){ //get weights
       W = data_X - match(~x, data_X.dim());
-      W = sum(sqr(W), 1);
+      W = ::sum(::sqr(W), 1);
       arr Wcopy = W;
       double W0 = Wcopy.nthElement_nonConst(K*d) + 1e-6;
       W = exp(-W/W0);
@@ -148,9 +186,11 @@ void LeastSquaredZeroOrder::updateJ_linReg(arr& J, const arr& Xraw, const arr& Y
     arr D = ~X*(W%X);
     arr s;
     lapack_EigenDecomp(D, s, NoArr);
-    cout <<" [log(det(data)): " <<sum(log(s))/double(s.N) <<']' <<std::flush;
+    cout <<" [log(det(data)): " <<::sum(log(s))/double(s.N) <<']' <<std::flush;
   }
   double lambdaReg = 1e-6;
   J = ~Y*(W%X) * inverse_SymPosDef(~X*(W%X) + lambdaReg*I);
   J.delColumns(0);
 }
+
+} //namespace

@@ -730,13 +730,17 @@ arr covar(const arr& X) { arr m=mean(X); return ((~X)*X)/double(X.d0)-m*~m; }
 arr vardiag(const arr& X) {
   CHECK_EQ(X.nd, 2, "");
   arr m = mean(X);
+#if 0
   arr v = zeros(X.d1);
   for(uint i = 0; i < X.d0; i++) {
     for(uint j = 0; j < X.d1; j++) {
       v(j) += rai::sqr(X(i, j)-m(j));
     }
   }
-  v /= double(X.d0-1);
+  v /= double(X.d0);
+#else
+  arr v = sum(sqr(X), 0)/double(X.d0)-sqr(m);
+#endif
   return v;
 }
 

@@ -20,7 +20,7 @@ bool EvolutionStrategy::step(){
   std::tie(f_y, i) = rai::min_arg(y);
   if(f_y<f_x){
     rejectedSteps=0;
-    if(length(x-samples[i])<1e-3) tinySteps++; else tinySteps=0;
+    if(x.N && length(x-samples[i])<1e-3) tinySteps++; else tinySteps=0;
     f_x = f_y;
     x = samples[i];
     cout <<" f:" <<f_x <<" -- accept" <<endl;
@@ -37,11 +37,11 @@ bool EvolutionStrategy::step(){
   return false;
 }
 
-arr EvolutionStrategy::select(const arr& samples, const arr& y, uint mu){
+arr EvolutionStrategy::select(const arr& samples, const arr& values, uint mu){
   uintA ranking;
-  ranking.setStraightPerm(y.N);
+  ranking.setStraightPerm(values.N);
   std::sort(ranking.begin(), ranking.end(),
-                   [&y](size_t i1, size_t i2) {return y.p[i1] < y.p[i2];});
+                   [&values](size_t i1, size_t i2) {return values.p[i1] < values.p[i2];});
 
   arr X(mu, samples.d1);
   for(uint i=0;i<mu;i++) X[i] = samples[ranking(i)];
@@ -63,10 +63,8 @@ struct CMA_self {
   cmaes_t evo;
 };
 
-CMAES::CMAES(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> _opt) : EvolutionStrategy(f) {
-  opt = _opt;
+CMAES::CMAES(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> opt) : EvolutionStrategy(f, x_init, opt) {
   self = make_unique<CMA_self>();
-  x = x_init;
   arr startDev = rai::consts<double>(sigmaInit, x.N);
   cmaes_init(&self->evo, x_init.N, x_init.p, startDev.p, 1, lambda, nullptr);
 
@@ -85,7 +83,7 @@ arr CMAES::generateNewSamples(){
   return samples;
 }
 
-void CMAES::update(const arr& samples, const arr& values){
+void CMAES::update(arr& samples, const arr& values){
   cmaes_UpdateDistribution(&self->evo, values.p);
 }
 
@@ -98,5 +96,68 @@ arr CMAES::getCurrentMean() {
 }
 
 //===========================================================================
+
+arr ES_mu_plus_lambda::generateNewSamples(){
+  arr X = replicate(mean, lambda);
+
+  double sig = sigma;
+  if(sigmaDecay>0.){
+    // plot [0:1000] 1/(1+(.01*x)**2), exp(-(.01*x)**2), exp(-.01*x), 1/(1+.01*x)
+    sig *= 1./(1.+rai::sqr(sigmaDecay*steps));
+    // sig *= 1./(1.+sigmaDecay*steps);
+    // sig *= ::exp(-sigmaDecay*steps);
+  }
+  rndGauss(X, sig, true);
+  cout <<"--es-- " <<evals <<std::flush;
+  return X;
+}
+
+void ES_mu_plus_lambda::update(arr& X, const arr& y){
+  if(elite.N) X.append(elite);
+  arr Y = select(X, y, mu);
+  mean = ::mean(Y);
+  elite = Y;
+}
+
+//===========================================================================
+
+GaussEDA::GaussEDA(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> opt)
+    : EvolutionStrategy(f, x_init, opt){
+  mean = x;
+  cov = rai::sqr(sigmaInit)*eye(x.N);
+}
+
+arr GaussEDA::generateNewSamples(){
+  arr C;
+  lapack_cholesky(C, cov);
+  arr z = randn(lambda, x.N) * ~C;
+
+  if(sigmaDecay>0.){
+    z *= 1./(1.+rai::sqr(sigmaDecay*steps));
+  }
+
+  arr X = replicate(mean, lambda);
+  X += z;
+  // cout <<"--GaussEDA-- " <<evals <<std::flush;
+  return X;
+}
+
+void GaussEDA::update(arr& X, const arr& y){
+  if(elite.N) X.append(elite);
+
+  arr Y = select(X, y, mu);
+  elite = Y;
+  arr meanY = ::mean(Y);
+
+  mean = meanY + .5*(meanY-mean);
+
+  arr covY = covar(Y);
+  cov = (1.-beta)*cov + beta*covY;
+  for(uint i=0;i<cov.d0;i++) cov(i,i) += sigma2Min/cov.d0;
+
+  double sig2 = trace(cov);
+
+  cout <<"--GaussEDA-- " <<evals <<" sig2: " <<sig2 <<std::flush;
+}
 
 } //namespace

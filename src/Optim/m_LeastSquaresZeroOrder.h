@@ -1,10 +1,14 @@
 #pragma once
 
 #include "NLP.h"
+#include "options.h"
 #include "../Core/util.h"
+
+namespace rai {
 
 struct LeastSquaredZeroOrder{
   shared_ptr<NLP> P;
+  std::shared_ptr<OptOptions> opt;
   bool hasLinTerms=false;
 
   //-- parameters
@@ -17,6 +21,7 @@ struct LeastSquaredZeroOrder{
   RAI_PARAM("LSZO/", int, maxIters, 500)
   RAI_PARAM("LSZO/", double, dataRatio, 1.)
   RAI_PARAM("LSZO/", bool, pruneData, false)
+  RAI_PARAM("LSZO/", bool, covariantNoise, false)
   RAI_PARAM("LSZO/", double, stepInc, 1.5)
   RAI_PARAM("LSZO/", double, stepDec, .5)
 
@@ -29,7 +34,7 @@ struct LeastSquaredZeroOrder{
 
   uint steps=0, tinySteps=0, rejectedSteps=0;
 
-  LeastSquaredZeroOrder(shared_ptr<NLP> P, const arr& x_init={});
+  LeastSquaredZeroOrder(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt=make_shared<OptOptions>());
 
   shared_ptr<SolverReturn> solve(){
     while(!step()){}
@@ -50,3 +55,5 @@ struct LeastSquaredZeroOrder{
 
   void updateJ_linReg(arr& J, const arr& Xraw, const arr& Y);
 };
+
+} //namespace

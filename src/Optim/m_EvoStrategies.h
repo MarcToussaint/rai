@@ -40,16 +40,18 @@ struct EvolutionStrategy {
   double f_x=1e10;
   int evals=0, steps=0, rejectedSteps=0, tinySteps=0;
 
-  EvolutionStrategy(ScalarFunction _f): f(_f) {}
+  EvolutionStrategy(ScalarFunction _f, const arr& x_init, shared_ptr<OptOptions> _opt): f(_f), opt(_opt), x(x_init) {}
 
+  //virtuals that define a method
   virtual arr generateNewSamples() = 0;
-  virtual void update(const arr& samples, const arr& values) = 0;
+  virtual void update(arr& samples, const arr& values) = 0;
 
+  //generic stepping & looping
   bool step();
-
   shared_ptr<SolverReturn> solve();
 
-  arr select(const arr& samples, const arr& y, uint mu);
+  //helper
+  arr select(const arr& samples, const arr& values, uint mu);
 
 };
 
@@ -60,11 +62,11 @@ struct CMAES : EvolutionStrategy {
   RAI_PARAM("CMA/", int, lambda, 20)
   RAI_PARAM("CMA/", double, sigmaInit, .1)
 
-  CMAES(ScalarFunction f, const arr& x_init={}, shared_ptr<OptOptions> _opt = make_shared<OptOptions>());
+  CMAES(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> opt = make_shared<OptOptions>());
   ~CMAES();
 
   virtual arr generateNewSamples();
-  virtual void update(const arr& samples, const arr& values);
+  virtual void update(arr& samples, const arr& values);
 
   arr getBestEver();
   arr getCurrentMean();
@@ -74,23 +76,38 @@ struct CMAES : EvolutionStrategy {
 
 struct ES_mu_plus_lambda : EvolutionStrategy {
   arr mean;
+  arr elite;
   RAI_PARAM("ES/", double, sigma, .1)
+  RAI_PARAM("ES/", double, sigmaDecay, .001)
   RAI_PARAM("ES/", uint, lambda, 20)
   RAI_PARAM("ES/", uint, mu, 5)
 
-  ES_mu_plus_lambda(ScalarFunction f, const arr& x_init={}) : EvolutionStrategy(f) {}
+  ES_mu_plus_lambda(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> opt = make_shared<OptOptions>())
+      : EvolutionStrategy(f, x_init, opt) { mean = x_init; }
 
-  virtual arr generateNewSamples(){
-    arr X = replicate(mean, lambda);
-//    for(uint i=0;i<X.d0;i++) X[i] = X[i] % (0.5 + 1.*rand(X.d1));
-    rndGauss(X, sigma, true);
-    return X;
-  }
+  virtual arr generateNewSamples();
 
-  virtual void update(const arr& X, const arr& y){
-    arr Y = select(X, y, mu);
-    mean = ::mean(Y);
-  }
+  virtual void update(arr& X, const arr& y);
+};
+
+//===========================================================================
+
+struct GaussEDA : EvolutionStrategy {
+  arr mean;
+  arr cov;
+  arr elite;
+  RAI_PARAM("GaussEDA/", double, sigmaInit, .1)
+  RAI_PARAM("GaussEDA/", double, sigma2Min, .001)
+  RAI_PARAM("GaussEDA/", double, beta, .1)
+  RAI_PARAM("ES/", double, sigmaDecay, .001)
+  RAI_PARAM("ES/", uint, lambda, 20)
+  RAI_PARAM("ES/", uint, mu, 5)
+
+  GaussEDA(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> opt = make_shared<OptOptions>());
+
+  virtual arr generateNewSamples();
+
+  virtual void update(arr& X, const arr& y);
 };
 
 } //namespace

@@ -155,7 +155,7 @@ OptNewton::StopCriterion OptNewton::step() {
     }
   }
 
-  //restrict stepsize
+  //-- restrict stepsize
   double maxDelta = absMax(Delta);
   if(opt->stepMax>0. && maxDelta>opt->stepMax) {
     Delta *= opt->stepMax/maxDelta;
@@ -178,7 +178,7 @@ OptNewton::StopCriterion OptNewton::step() {
   uint lineSearchSteps=0;
   for(;; lineSearchSteps++) {
     if(alpha>1.) alpha=1.;
-    if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit;
+    if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit; //TODO: is this really right? seems to cap it twice?
     if(opt->verbose>1) cout <<"  alpha:" <<std::setw(11) <<alpha <<std::flush;
     y = x + alpha*Delta;
     if(opt->verbose>5) cout <<"  y:" <<y;

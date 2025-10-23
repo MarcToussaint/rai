@@ -17,7 +17,8 @@ enum OptMethod { M_none=0,
 		 M_AugmentedLag, M_LogBarrier, M_slackGN_logBarrier, M_SquaredPenalty, M_singleSquaredPenalty,
 		 M_slackGN,
 		 M_NLopt, M_Ipopt, M_slackGN_Ipopt, M_Ceres,
-		 M_LSZO, M_greedy, M_NelderMead, M_CMA };
+		 M_LSZO, M_greedy, M_NelderMead,
+		 M_CMA, M_ES };
 
 
 struct OptOptions {

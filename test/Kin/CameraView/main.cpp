@@ -145,9 +145,9 @@ void TEST(NoisyDepth){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  // testCameraView();
+  testCameraView();
 
-  testNoisyDepth();
+  // testNoisyDepth();
 
   return 0;
 }
