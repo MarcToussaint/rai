@@ -132,11 +132,51 @@ void testKinematics(bool withCollisions, uint N=100000){
 
 // =============================================================================
 
+void Config_null_deleter(rai::Configuration*) {}
+
+void testRRTwPCL(){
+  rai::Configuration C;
+    C.addFrame("base") ->setPosition({0,0,1});
+
+    C.addFrame("ego", "base") \
+        ->setJoint(rai::JT_transXY, {-10.,-10.,10.,10.})
+        .setRelativePosition({-1, 0, 0})
+        .setShape(rai::ST_sphere, {.05})
+        .setColor({0, 1., 1.})
+        .setContact(1);
+
+    arr pcl = .3*randn(1000, 3);
+    C.addFrame("obstacle", "base")
+        ->setPointCloud(pcl)
+        .setContact(1);
+
+    C.addFrame("goal") ->setPosition({1, 0, 1}) .setShape(rai::ST_sphere, {.05}) .setColor({0, 1., 0, .9});
+
+    C.view(true);
+
+    arr q0 = C.getJointState();
+    arr qT = C.getFrame("goal") ->getPosition();
+    qT.resizeCopy(2);
+
+    rai::RRT_PathFinder rrt;
+    rrt.opt. set_stepsize(.01) .set_useBroadCollisions(false);
+    rrt.setProblem(shared_ptr<rai::Configuration>(&C, &Config_null_deleter));
+    rrt.setExplicitCollisionPairs({"ego", "obstacle"});
+    rrt.setStartGoal(q0, qT);
+    auto ret = rrt.solve();
+    cout <<*ret <<endl;
+    rrt.view(true);
+}
+
+// =============================================================================
+
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
 //  rnd.seed_random();
   // test_minimalistic(); return 0;
+
+  testRRTwPCL(); return 0;
 
   cout <<"=== RRT test" <<endl;
   testRRT();

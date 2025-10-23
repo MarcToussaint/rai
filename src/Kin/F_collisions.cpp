@@ -67,35 +67,11 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   }
 
 
-  //if this a point cloud collision? -> different method
-  if(m2isPCL){
-    CHECK_EQ(m1.d0, 1, "collision against PCL only work for points (=spheres)");
-    CHECK(!m2isPCL->T.N, "");
-    CHECK(type==_negScalar || type==_vector, "");
-    arr Jp1, Jp2, Jx1, Jx2;
-    if(!!J) {
-      f1->C.jacobian_pos(Jp1, f1, f1->ensure_X().pos);
-      f2->C.jacobian_pos(Jp2, f2, f2->ensure_X().pos);
-      f1->C.jacobian_angular(Jx1, f1);
-      f2->C.jacobian_angular(Jx2, f2);
-    }
-    rai::PairCollision_PtPcl coll(m1, m2isPCL->ensure_ann(),
-                           f1->ensure_X(), Jp1, Jx1,
-                           f2->ensure_X(), Jp2, Jx2,
-                           r1, r2, type==_vector);
-    if(type==_negScalar) {
-      y = -coll.y;
-      if(!!J) J = -coll.J;
-    } else if(type==_vector) {
-      y = coll.y;
-      if(!!J) J = coll.J;
-    } else NIY;
-    if(!!J) checkNan(J);
-    return;
-  }
 
   //compute the collision
   coll.reset();
+
+
 #if 0 //use functionals!
   auto func1=f1->shape->functional();
   auto func2=f2->shape->functional();
@@ -106,10 +82,16 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   }
 #else
 
-  //if 1 is a point, and 2 a decomposed mesh -> different method
-  if(f2->shape->_mesh && f2->shape->_mesh->cvxParts.N){
+  //if this a point cloud collision? -> different method
+  if(m2isPCL){
+    CHECK_EQ(m1.d0, 1, "collision against PCL only work for points (=spheres)");
+    CHECK(!m2isPCL->T.N, "");
+    coll = make_shared<rai::PairCollision_PtPcl>(m1, m2isPCL->ensure_ann(), f1->ensure_X(), f2->ensure_X(), r1, r2);
+    //if 1 is a point, and 2 a decomposed mesh -> different method
+  }else if(f2->shape->_mesh && f2->shape->_mesh->cvxParts.N){
     coll = make_shared<rai::PairCollision_CvxDecomp>(m1, *f2->shape->_mesh, f1->ensure_X(), f2->ensure_X(), r1, r2);
   }else{
+
     coll = make_shared<rai::PairCollision_CvxCvx>(m1, m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
   }
 #endif

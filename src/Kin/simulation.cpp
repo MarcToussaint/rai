@@ -664,7 +664,7 @@ void Simulation::addImp(Simulation::ImpType type, const StringA& frames, const a
 void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
   cameraview().updateConfiguration(C);
   cameraview().renderMode = CameraView::visuals;
-  cameraview().computeImageAndDepth(image, depth);
+  cameraview().computeImageAndDepth(image, depth, simulateDepthNoise);
 
   if(self->display) self->updateDisplayData(image, depth);
 }

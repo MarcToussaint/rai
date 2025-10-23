@@ -47,7 +47,7 @@ struct OptOptions {
   RAI_PARAM("opt/", double, interiorPadding, 1e-2)
   RAI_PARAM("opt/", bool,   boundedNewton, true)
   RAI_PARAM_ENUM("opt/", OptMethod, method, M_AugmentedLag)
-  RAI_PARAM("opt/", double,   finiteDifference, -1.)
+  RAI_PARAM("opt/", double, finiteDifference, -1.)
 };
 
 std::shared_ptr<OptOptions> globalOptOptions();

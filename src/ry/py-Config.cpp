@@ -402,18 +402,18 @@ reloads, displays and animates the configuration whenever the file is changed"
       .def("setCamera", &rai::CameraView::selectSensor, "select a camera, typically a frame that has camera info attributes",
            pybind11::arg("cameraFrameName"))
 
-  .def("computeImageAndDepth", [](rai::CameraView& self, const rai::Configuration& C, bool visualsOnly) {
+  .def("computeImageAndDepth", [](rai::CameraView& self, const rai::Configuration& C, bool simulateDepthNoise, bool visualsOnly) {
     byteA img;
     floatA depth;
     self.updateConfiguration(C);
     if(visualsOnly) self.renderMode = rai::CameraView::visuals;
     else self.renderMode = rai::CameraView::all;
-    self.computeImageAndDepth(img, depth);
-    return pybind11::make_tuple(Array2numpy<byte>(img),
-                                Array2numpy<float>(depth));
+    self.computeImageAndDepth(img, depth, simulateDepthNoise);
+    return pybind11::make_tuple(Array2numpy<byte>(img), Array2numpy<float>(depth));
   },
   "returns image and depth from a camera sensor; the 'config' argument needs to be the same configuration as in the constructor, but in new state",
   pybind11::arg("config"),
+  pybind11::arg("simulateDepthNoise") = false,
   pybind11::arg("visualsOnly") = true)
 
   .def("getFxycxy", &rai::CameraView::getFxycxy, "return the camera intrinsics f_x, f_y, c_x, c_y")

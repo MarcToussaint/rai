@@ -30,6 +30,7 @@ struct Simulation {
   uint stepCount=0;
   Engine engine;
   Array<shared_ptr<SimulationImp>> imps; ///< list of (adversarial) imps doing things/perturbations/noise in addition to clean physics engine
+  bool simulateDepthNoise=false;
   int verbose;
   int writeData=0;
   ofstream dataFile;
@@ -78,6 +79,7 @@ struct Simulation {
     return cameraview().setCamera(f, width, height, focalLength, orthoAbsHeight, zRange);
   }
   rai::CameraView::CameraFrame&  selectSensor(const char* name) { return cameraview().selectSensor(C.getFrame(name)); }
+  void  setSimulateDepthNoise(bool _simulateDepthNoise) { simulateDepthNoise=_simulateDepthNoise; }
   byteA getScreenshot();
 
   //== ground truth interface

@@ -13,7 +13,6 @@ void TEST(CameraView){
   C.view();
 
   rai::CameraView V(C, true);
-
   V.setCamera(C["cameraWrist"]);
 
   byteA image;
@@ -21,7 +20,7 @@ void TEST(CameraView){
   byteA segmentation;
   arr pts;
 
-  V.computeImageAndDepth(image, depth);
+  V.computeImageAndDepth(image, depth, false);
   segmentation = V.computeSegmentationImage();
   depthData2pointCloud(pts, depth, V.getFxycxy());
 
@@ -45,56 +44,6 @@ void TEST(CameraView){
   rai::wait();
 }
 
-//===========================================================================
-
-void simulateDepthNoise(floatA& depth, const floatA& depth2, double offset, const arr& fxycxy){
-  //-- wierd noise
-  floatA noise = rai::convert<float>(4.*randn(depth.d0, depth.d1));
-  //smooth noise
-  for(uint k=0;k<3;k++){
-    noise = rai::integral(noise);
-    noise = rai::differencing(noise, 20);
-  }
-  //local noise
-  noise += rai::convert<float>(.4*randn(depth.d0, depth.d1));
-  for(uint k=0;k<3;k++){
-    noise = rai::integral(noise);
-    noise = rai::differencing(noise, 3);
-  }
-  //fine noise
-  noise += rai::convert<float>(.04*randn(depth.d0, depth.d1));
-
-  // { OpenGL gl;  noise *= 255.f;  gl.watchImage(noise, true); }
-
-  //-- smoothed depth
-  for(uint k=0;k<1;k++){
-    depth = rai::integral(depth);
-    depth = rai::differencing(depth, 5);
-  }
-
-  //-- shadows
-  byteA shadowImg(depth.d0, depth.d1);
-  shadowImg = 255;
-  for(uint i=0;i<depth.d0;i++){
-    for(uint j=0;j<depth.d1; j++){
-      float& d = depth(i,j);
-      int i2 = int(i) + fxycxy(0)*d*offset;
-      bool shadow=false;
-      if(i2>=depth.d0) shadow=true;
-      else if(fabs(depth2(i2,j) - d)>.05) shadow=true;
-
-      d += .05*noise(i,j);
-
-      if(shadow){
-        d=-1.;
-        shadowImg(i,j) = 0;
-      }
-    }
-  }
-
-  // { OpenGL gl;  gl.watchImage(shadowImg, true); }
-}
-
 // =============================================================================
 
 void TEST(NoisyDepth){
@@ -114,15 +63,21 @@ void TEST(NoisyDepth){
   rai::Configuration Cdisp;
   Cdisp.addFile("$RAI_PATH/scenarios/pandaSingle.g");
   Cdisp.addFrame("pcl1", "cameraWrist");
+  Cdisp.addFrame("pcl2", "cameraWrist");
+
+  auto opt = make_shared<rai::DepthNoiseOptions>();
 
   for(uint t=0;t<100;t++){
+    //the same method is now integrated in computeImageAndDepth -- this is only to allow debugging
     auto& cam = V.setCamera(C["cameraWrist"]);
     V.computeImageAndDepth(image1, depth1);
 
     cam.offset.set(.05, .0, .0);
     V.computeImageAndDepth(image2, depth2);
 
-    simulateDepthNoise(depth1, depth2, cam.offset.x, V.getFxycxy());
+    // opt->noise_all = .02;
+    // opt->depth_smoothing = 0;
+    rai::simulateDepthNoise(depth1, depth2, cam.offset.x, V.getFxycxy(), opt);
 
     depthData2pointCloud(pts1, depth1, V.getFxycxy());
     depthData2pointCloud(pts2, depth2, V.getFxycxy());
@@ -131,9 +86,11 @@ void TEST(NoisyDepth){
 
     {
       Cdisp.getFrame("pcl1") ->setPointCloud(pts1, {255, 200, 100});
+      Cdisp.getFrame("pcl2") ->setPointCloud(pts2, {200, 255, 100});
       int key = Cdisp.view(false);
       if(key=='q') break;
       rai::wait(.05);
+      // rai::wait();
     }
 
   }
@@ -145,9 +102,9 @@ void TEST(NoisyDepth){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  testCameraView();
+  // testCameraView();
 
-  // testNoisyDepth();
+  testNoisyDepth();
 
   return 0;
 }

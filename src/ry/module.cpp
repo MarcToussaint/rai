@@ -46,8 +46,8 @@ bool logCallback(const char* str, int log_level) {
 }
 
 void init_LogToPythonConsole() {
-  rai::_log.callback = pybind11::logCallback;
-  LOG(0) <<"initializing ry log callback";
+  // rai::_log.callback = pybind11::logCallback;
+  // LOG(0) <<"initializing ry log callback";
 }
 
 void init_enums(pybind11::module& m);

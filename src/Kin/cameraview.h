@@ -14,6 +14,15 @@
 
 namespace rai {
 
+struct DepthNoiseOptions {
+  RAI_PARAM("DepthNoise/", double, binocular_baseline, .05)
+  RAI_PARAM("DepthNoise/", int, depth_smoothing, 1)
+  RAI_PARAM("DepthNoise/", double, noise_all, .05)
+  RAI_PARAM("DepthNoise/", double, noise_wide, 4.)
+  RAI_PARAM("DepthNoise/", double, noise_local, .4)
+  RAI_PARAM("DepthNoise/", double, noise_pixel, .04)
+};
+
 struct CameraView : ConfigurationViewer {
 
   /*! a camera attached (and defined by the attributes of) a Frame */
@@ -33,6 +42,7 @@ struct CameraView : ConfigurationViewer {
   shared_ptr<CameraFrame> currentCamera;
   RenderMode renderMode=all;
   byteA frameIDmap;
+  shared_ptr<DepthNoiseOptions> opt;
 
   //-- evaluation outputs
   CameraView(const rai::Configuration& _C, bool _offscreen=true);
@@ -43,7 +53,7 @@ struct CameraView : ConfigurationViewer {
   CameraFrame& setCamera(rai::Frame* frame); //read everything from the frame attributes
   CameraFrame& selectSensor(rai::Frame* frame); //set the OpenGL sensor
 
-  void computeImageAndDepth(byteA& image, floatA& depth);
+  void computeImageAndDepth(byteA& image, floatA& depth, bool _simulateDepthNoise=false);
   byteA computeSegmentationImage();
   uintA computeSegmentationID();
 
@@ -75,5 +85,9 @@ struct Sim_CameraView : Thread {
 
   arr getFxycxy();
 };
+
+//===========================================================================
+
+void simulateDepthNoise(floatA& depth, const floatA& depth2, double offset, const arr& fxycxy, shared_ptr<DepthNoiseOptions> opt);
 
 }

@@ -42,7 +42,14 @@ void rai::Proxy::calc_coll() {
   arr& m2 = s2->sscCore();
 
   if(collision) collision.reset();
-  collision = make_shared<PairCollision_CvxCvx>(m1, m2, a->ensure_X(), b->ensure_X(), r1, r2);
+  if(s2->_type==rai::ST_pointCloud){
+    CHECK_EQ(m1.d0, 1, "collision against PCL only work for points (=spheres)");
+    Mesh* m2isPCL = b->shape->_mesh.get();
+    r2=0.;
+    collision = make_shared<rai::PairCollision_PtPcl>(m1, m2isPCL->ensure_ann(), a->ensure_X(), b->ensure_X(), r1, r2);
+  }else{
+    collision = make_shared<PairCollision_CvxCvx>(m1, m2, a->ensure_X(), b->ensure_X(), r1, r2);
+  }
 
   d = collision->distance-collision->rad1-collision->rad2;
   normal = collision->normal;

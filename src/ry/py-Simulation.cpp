@@ -93,6 +93,7 @@ void init_Simulation(pybind11::module& m) {
        pybind11::arg("orthoAbsHeight") = -1.,
        pybind11::arg("zRange") = std::vector<double>()
       )
+  .def("setSimulateDepthNoise", &rai::Simulation::setSimulateDepthNoise, "specify (boolean) on whether to simulate noise", pybind11::arg("_setSimulateDepthNoise"))
   .def("selectSensor",  &rai::Simulation::selectSensor,
        "",
        pybind11::arg("sensorName")

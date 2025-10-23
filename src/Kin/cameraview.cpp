@@ -66,40 +66,7 @@ CameraView::CameraFrame& CameraView::selectSensor(Frame *frame) {
   return *currentCamera;
 }
 
-#if 0
-void CameraView::updateConfiguration(const Configuration& newC) {
-  auto _dataLock = gl->dataLock(RAI_HERE);
-  if(newC.frames.N==C.frames.N) {
-#if 0
-    C.setFrameState(newC.getFrameState());
-#else
-    for(uint i=0; i<C.frames.N; i++) {
-      Frame* f = newC.frames.elem(i);
-      if(f->shape) C.frames.elem(i)->set_X() = f->ensure_X();
-    }
-#endif
-  } else {
-    C.copy(newC);
-    //deep copy meshes!
-    for(Frame* f:C.frames) if(f->shape) {
-        if(f->shape->_mesh) {
-          shared_ptr<Mesh> org = f->shape->_mesh;
-          f->shape->_mesh = make_shared<Mesh> (*org.get());
-          f->shape->glListId = 0;
-        }
-      }
-    if(renderMode==seg) { //update frameIDmap
-      frameIDmap.resize(C.frames.N).setZero();
-      for(Frame* f:C.frames) {
-        int* label=f->ats->find<int>("label");
-        if(label) frameIDmap(f->ID) = *label;
-      }
-    }
-  }
-}
-#endif
-
-void CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
+void CameraView::computeImageAndDepth(byteA& image, floatA& depth, bool _simulateDepthNoise) {
   updateCamera();
   if(renderMode==visuals) renderUntil=_shadow;
 //  else if(renderMode==all) renderUntil=_all;
@@ -120,13 +87,23 @@ void CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
     image = seg;
     image.reshape(gl->height, gl->width);
   }
-  if(true) { //(!!depth) {
+  {
     depth = gl->captureDepth;
     flip_image(depth);
     for(float& d:depth) {
       if(d==1.f || d==0.f) d=-1.f;
       else d = gl->camera.glConvertToTrueDepth(d);
     }
+  }
+
+  if(_simulateDepthNoise){
+    CHECK(currentCamera, "depth noise only works for a frame-attached camera -- use setCamera")
+    if(!opt) opt = make_shared<DepthNoiseOptions>();
+    currentCamera->offset.set(opt->binocular_baseline, .0, .0);
+    byteA image2;
+    floatA depth2;
+    computeImageAndDepth(image2, depth2, false);
+    rai::simulateDepthNoise(depth, depth2, currentCamera->offset.x, currentCamera->cam.getFxycxy(), opt);
   }
 }
 
@@ -158,6 +135,58 @@ void CameraView::updateCamera() {
 }
 
 //===========================================================================
+
+void simulateDepthNoise(floatA& depth, const floatA& depth2, double offset, const arr& fxycxy, shared_ptr<DepthNoiseOptions> opt){
+  //-- wierd noise
+  floatA noise = rai::convert<float>(opt->noise_wide*randn(depth.d0, depth.d1));
+  //smooth noise
+  for(uint k=0;k<3;k++){
+    noise = rai::integral(noise);
+    noise = rai::differencing(noise, 20); //PARAMETER
+  }
+  //local noise
+  noise += rai::convert<float>(opt->noise_local*randn(depth.d0, depth.d1));
+  for(uint k=0;k<3;k++){
+    noise = rai::integral(noise);
+    noise = rai::differencing(noise, 3); //PARAMETER
+  }
+  //pixel noise
+  noise += rai::convert<float>(opt->noise_pixel*randn(depth.d0, depth.d1));
+
+  // { OpenGL gl;  noise *= 255.f;  gl.watchImage(noise, true); }
+
+  //-- smoothed depth
+  for(int k=0;k<opt->depth_smoothing;k++){
+    depth = rai::integral(depth);
+    depth = rai::differencing(depth, 5); //PARAMETER
+  }
+
+  //-- shadows
+  // byteA shadowImg(depth.d0, depth.d1);
+  // shadowImg = 255;
+  for(uint i=0;i<depth.d0;i++){
+    for(uint j=0;j<depth.d1; j++){
+      float& d = depth(i,j);
+      int j2 = int(j) - fxycxy(0)*d*offset;
+      bool shadow=false;
+      if(j2<0) shadow=true;
+      if(j2>=int(depth.d1)) shadow=true;
+      else if(fabs(depth2(i, j2) - d)>.05) shadow=true;  //PARAMETER
+
+      d += opt->noise_all*noise(i,j);
+
+      if(shadow){
+        d=-1.;
+        // shadowImg(i,j) = 0;
+      }
+    }
+  }
+
+  // { OpenGL gl;  gl.watchImage(shadowImg, true); }
+}
+
+//===========================================================================
+
 
 Sim_CameraView::Sim_CameraView(Var<Configuration>& _kin,
                                     Var<byteA> _color,

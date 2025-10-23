@@ -966,7 +966,6 @@ PairCollision_CvxDecomp::PairCollision_CvxDecomp(const arr& x, Mesh& mesh, const
   rad2 = _rad2;
   distance=-1.;
 
-
   shared_ptr<PairCollision_CvxCvx> coll;
   double dmin=-1.;
 
@@ -989,57 +988,35 @@ PairCollision_CvxDecomp::PairCollision_CvxDecomp(const arr& x, Mesh& mesh, const
 //===========================================================================
 
 PairCollision_PtPcl::PairCollision_PtPcl(const arr& _x, ANN& ann,
-                           const rai::Transformation& t1, const arr& Jp1, const arr& Jx1,
-                           const rai::Transformation& t2, const arr& Jp2, const arr& Jx2,
-                           double _rad1, double _rad2, bool returnVector) {
+					 const rai::Transformation& t1,
+					 const rai::Transformation& t2,
+					 double _rad1, double _rad2) {
+  rad1=_rad1;
+  rad2=_rad2;
+  distance=-1.;
 
-  Vector x(_x);
-
-  //-- transform x only relative to pcl
-  if(!t1.isZero() || !t2.isZero()) {
-    rai::Transformation T = t1 / t2;
-    x = T * x;
-  }
-
-  arr sqrDists;
+  //query nearest point
   uintA idx;
-  uint K=1;
-  ann.getkNN(sqrDists, idx, x.getArr(), K);
-
-  arr normal;
-  double y_dist=0;
-  Vector y_vec(0);
-  arr J_dist, J_vec;
-  x = t2.rot * x; //relative to center2, but in world axes!
-  for(uint k=0; k<K; k++) {
-    Vector z = ann.X[idx(k)];
-    z = t2.rot*z;
-    Vector del = x - z;
-    double d = del.length();
-    normal = del.getArr();
-    if(d>1e-10) normal /= d;
-    if(!J_dist.N) {
-      J_dist = ~normal * (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
-      J_vec = (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
-    } else {
-      J_dist += ~normal * (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
-      J_vec += (Jp1 - Jp2 - crossProduct(Jx2, z.getArr()));
+  {
+    //-- transform x only relative to pcl
+    Vector x(_x);
+    if(!t1.isZero() || !t2.isZero()) {
+      rai::Transformation T = t1 / t2;
+      x = T * x;
     }
-    y_dist += d;
-    y_vec += del;
-  }
-  y_dist /= double(K);
-  y_vec /= double(K);
-  J_dist /= double(K);
-  J_vec /= double(K);
 
-  if(!returnVector) {
-    y = arr{y_dist-_rad1-_rad2};
-    if(!!J) J = J_dist;
-  } else {
-    y = y_vec.getArr();
-    if(!!J) J = J_vec;
+    arr sqrDists;
+    uint K=1;
+    ann.getkNN(sqrDists, idx, x.getArr(), K);
   }
+
+  p1=_x; p1.reshape(3); t1.applyOnPoint(p1);
+  p2=ann.X[idx(0)]; p2.reshape(3); t2.applyOnPoint(p2);
+  normal = p1-p2;
+  distance = length(normal);
+  if(distance>1e-10) normal /= distance;
+  simp1=p1; simp1.reshape(1,3);
+  simp2=p2; simp2.reshape(1,3);
 }
 
 } //namespace

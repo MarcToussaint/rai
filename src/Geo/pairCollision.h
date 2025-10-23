@@ -75,15 +75,11 @@ struct PairCollision_CvxDecomp : PairCollision, NonCopyable {
 
 //===========================================================================
 
-struct PairCollision_PtPcl {
-  //OUTPUTS
-  arr y, J;
-
+struct PairCollision_PtPcl : PairCollision, NonCopyable {
   PairCollision_PtPcl(const arr& x, ANN& ann,
-               const rai::Transformation& t1, const arr& Jp1, const arr& Jx1,
-               const rai::Transformation& t2, const arr& Jp2, const arr& Jx2,
-               double rad1=0., double rad2=0.,
-               bool returnVector=false);
+               const rai::Transformation& t1,
+               const rai::Transformation& t2,
+               double rad1=0., double rad2=0.);
 };
 
 //===========================================================================
