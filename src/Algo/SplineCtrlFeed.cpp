@@ -43,8 +43,7 @@ void BSplineCtrlReference::append(const arr& x, const arr& t, double ctrlTime) {
 
 void BSplineCtrlReference::overwriteSmooth(const arr& x, const arr& t, double ctrlTime) {
   CHECK(t.first()>.001, "that's too harsh!");
-  if(!spline.get()->knots.N) { //not yet initialized
-    HALT("are you every here?");
+  if(!spline.get()->knots.N) { //not yet initialized (the bot.home() method might call this case)
     append(x, t, ctrlTime);
     return;
   }
