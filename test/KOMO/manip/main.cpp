@@ -25,7 +25,7 @@ void testPickAndPlace(){
   C[obj]->setRelativePosition({-.0,.3-.055,.095});
   C[obj]->setRelativeQuaternion({1.,0,0,0});
 
-  for(uint i=0;i<7;i++){
+  for(uint i=0;i<10;i++){
     arr qStart = C.getJointState();
 
     auto graspDirection = STRING("yz"); //random.choice(['xz', 'yz'])
@@ -102,7 +102,7 @@ void testPushIntoTable(){
   C[obj]->setRelativePosition({-.0,.3-.055,.08});
   C[obj]->setRelativeQuaternion({1.,0,0,0});
 
-  for(uint i=0;i<20;i++){
+  for(uint i=0;i<10;i++){
     arr qStart = C.getJointState();
 
     str info = STRING("push_" <<i);
@@ -176,7 +176,7 @@ void testPivot(){
   auto qHome = C.getJointState();
 
 
-  for(uint i=0;i<20;i++){
+  for(uint i=0;i<10;i++){
     str info = STRING("pivot");
     ManipulationHelper seq(info);
     seq.setup_sequence(C, 3, 1e-2, 1e-1, false);

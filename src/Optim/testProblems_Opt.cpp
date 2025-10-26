@@ -433,6 +433,9 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
 
   arr B = rai::getParameter<arr>("benchmark/bounds", {});
   if(B.N){
+    if(B.nd==1 && B.N==2){
+      B = repmat(B, 1, nlp->dimension);
+    }
     nlp->bounds = B.reshape(2, nlp->dimension);
   }
 

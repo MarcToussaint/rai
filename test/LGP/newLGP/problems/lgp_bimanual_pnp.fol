@@ -56,7 +56,7 @@ REWARD {
 
 #####################################################################
 
-DecisionRule pick {
+DecisionRule pick_touch {
   Obj, From, Hand, 
   { (is_gripper Hand) (is_object Obj) (on From Obj) (is_place From) (busy Hand)! }
   { (on From Obj)! (above Obj From)! (touch Obj From)! (stable From Obj)! (stableOn From Obj)!  #deletes
@@ -67,7 +67,7 @@ DecisionRule pick {
 
 #####################################################################
 
-DecisionRule place {
+DecisionRule place_straightOn {
   Obj, Hand, To,
   { (is_gripper Hand) (is_object Obj) (on Hand Obj) (is_place To) (busy Obj)! }
   { (busy Hand)! (on Hand Obj)! (stable Hand Obj)! (touch Hand Obj)! (movable Obj)!  #deletes

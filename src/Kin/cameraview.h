@@ -65,29 +65,6 @@ struct CameraView : ConfigurationViewer {
 
 //===========================================================================
 
-struct Sim_CameraView : Thread {
-  Var<rai::Configuration> model;
-
-  //-- outputs
-  Var<byteA> color;
-  Var<floatA> depth;
-
-  //-- internal
-  CameraView V;
-
-  Sim_CameraView(Var<rai::Configuration>& _kin,
-                 Var<byteA> _color,
-                 Var<floatA> _depth,
-                 double beatIntervalSec=-1., const char* _cameraFrameName=nullptr, bool _idColors=false, const byteA& _frameIDmap= {});
-  ~Sim_CameraView();
-
-  void step();
-
-  arr getFxycxy();
-};
-
-//===========================================================================
-
 void simulateDepthNoise(floatA& depth, const floatA& depth2, double offset, const arr& fxycxy, shared_ptr<DepthNoiseOptions> opt);
 
 }

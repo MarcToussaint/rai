@@ -10,6 +10,8 @@
 
 #include "NLP.h"
 
+namespace rai {
+
 struct NLoptInterface {
   shared_ptr<NLP> P;
   arr x, phi_x, J_x;
@@ -28,3 +30,5 @@ struct NLoptInterface {
   static double _g(const std::vector<double>& _x, std::vector<double>& _grad, void* f_data);
   static double _h(const std::vector<double>& _x, std::vector<double>& _grad, void* f_data);
 };
+
+} //namespace

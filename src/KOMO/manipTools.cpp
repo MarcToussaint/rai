@@ -327,12 +327,16 @@ void ManipulationHelper::action_pick(str action, double time, str gripper, str o
 
   if(action=="pick_touch"){
     komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_eq, {1e2});
+  }else if(action=="handover"){
+    komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_eq, {1e2});
   } else if(action=="pick_box"){
     str palm;
     if(gripper.endsWith("_gripper")){  palm = gripper.getFirstN(gripper.N-8); palm <<"_palm";  }
     grasp_box(time, gripper, obj, palm, "y");
     komo->addObjective({time}, FS_negDistance, {obj, gripper}, OT_ineq, {-1e1});
-  } else NIY;
+  } else {
+    HALT("action " <<action <<" not implemented!")
+  }
 }
 
 void ManipulationHelper::action_place_straightOn(str action, double time, str obj, str table){

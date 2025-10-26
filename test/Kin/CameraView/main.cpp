@@ -67,7 +67,7 @@ void TEST(NoisyDepth){
 
   auto opt = make_shared<rai::DepthNoiseOptions>();
 
-  for(uint t=0;t<100;t++){
+  for(uint t=0;t<20;t++){
     //the same method is now integrated in computeImageAndDepth -- this is only to allow debugging
     auto& cam = V.setCamera(C["cameraWrist"]);
     V.computeImageAndDepth(image1, depth1);

@@ -10,7 +10,7 @@ void TEST(NLOpt){
   arr x_init = nlp->getInitializationSample();
 
   {
-    NLoptInterface nlo(traced);
+    rai::NLoptInterface nlo(traced);
     nlo.solve(x_init);
   }
 

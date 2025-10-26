@@ -27,6 +27,8 @@ enum NLopt_SolverOption { _NLopt_LD_SLSQP,
 			  _NLopt_LD_TNEWTON_PRECOND_RESTART,
 			  };
 
+namespace rai{
+
 template<> const char* Enum<NLopt_SolverOption>::names []= {
     "LD_SLSQP",
     "LD_MMA",
@@ -47,8 +49,8 @@ struct FuncCallData {
 };
 
 nlopt::algorithm getSolverEnum(const char* param, bool& needsSubsolver, int verbose) {
-  rai::Enum<NLopt_SolverOption> sol;
-  sol = rai::getParameter<rai::String>(param);
+  Enum<NLopt_SolverOption> sol;
+  sol = getParameter<String>(param);
   if(verbose) {
     cout <<"NLopt option: " <<param <<": " <<sol <<endl;
   }
@@ -81,30 +83,30 @@ arr NLoptInterface::solve(const arr& x_init) {
   }
 
   //-- get and check bounds, clip x
-  arr bounds_lo=bounds[0], bounds_up=bounds[1];
+  arr bounds_lo=P->bounds[0], bounds_up=P->bounds[1];
   CHECK_EQ(x.N, bounds_up.N, "NLOpt requires bounds");
   CHECK_EQ(x.N, bounds_lo.N, "NLOpt requires bounds");
   for(uint i=0; i<bounds_lo.N; i++) CHECK(bounds_lo.elem(i)<bounds_up.elem(i), "NLOpt requires bounds");
-  P->boundClip(x);
+  boundClip(x, P->bounds);
 
   //-- create NLopt solver
   bool needsSubsolver;
   nlopt::opt opt(getSolverEnum("NLopt_solver", needsSubsolver, verbose), x.N);
-  opt.set_xtol_abs(rai::getParameter<double>("NLopt_xtol", 1e-4));
+  opt.set_xtol_abs(getParameter<double>("NLopt_xtol", 1e-4));
   //  opt.set_ftol_abs(1e-3);
   if(needsSubsolver) {
     nlopt::opt subopt(getSolverEnum("NLopt_subSolver", needsSubsolver, verbose), x.N);
-    subopt.set_xtol_abs(rai::getParameter<double>("NLopt_xtol", 1e-4));
+    subopt.set_xtol_abs(getParameter<double>("NLopt_xtol", 1e-4));
     opt.set_local_optimizer(subopt);
   }
 
   //-- set bounds
-  if(bounds_lo.N==x.N) opt.set_lower_bounds(bounds_lo.vec());
-  if(bounds_up.N==x.N) opt.set_upper_bounds(bounds_up.vec());
+  if(bounds_lo.N==x.N) opt.set_lower_bounds(as_vector<double>(bounds_lo));
+  if(bounds_up.N==x.N) opt.set_upper_bounds(as_vector<double>(bounds_up));
 
   //-- set cost and add constraints
   opt.set_min_objective(_f, this);
-  rai::Array<FuncCallData> funcCallData(P->featureTypes.N);
+  Array<FuncCallData> funcCallData(P->featureTypes.N);
   for(uint i=0; i<P->featureTypes.N; i++) {
     FuncCallData& d = funcCallData.elem(i);
     d.I = this;
@@ -116,10 +118,10 @@ arr NLoptInterface::solve(const arr& x_init) {
   //-- optimize
   double fval;
   try {
-    std::vector<double> x_vec = x.vec();
+    std::vector<double> x_vec = as_vector(x);
     //nlopt::result R =
-    opt.solve(x_vec, fval);
-    x = x_vec;
+    opt.optimize(x_vec, fval);
+    x = as_arr<double>(x_vec, false);
   } catch(const std::runtime_error& err) {
     cout <<"NLOPT terminated with " <<err.what() <<endl;
   }
@@ -159,27 +161,31 @@ double NLoptInterface::h(const arr& _x, arr& _grad, uint feature) {
 }
 
 double NLoptInterface::_f(const std::vector<double>& _x, std::vector<double>& _grad, void* f_data) {
-  arr x(_x, true);
-  arr grad(_grad, true);
+  arr x = as_arr(_x, true);
+  arr grad = as_arr(_grad, true);
   return ((NLoptInterface*)f_data) -> f(x, grad);
 }
 
 double NLoptInterface::_g(const std::vector<double>& _x, std::vector<double>& _grad, void* f_data) {
-  arr x(_x, true);
-  arr grad(_grad, true);
+  arr x = as_arr(_x, true);
+  arr grad = as_arr(_grad, true);
   FuncCallData* d = (FuncCallData*)f_data;
   return d->I->g(x, grad, d->feature);
 }
 
 double NLoptInterface::_h(const std::vector<double>& _x, std::vector<double>& _grad, void* f_data) {
-  arr x(_x, true);
-  arr grad(_grad, true);
+  arr x = as_arr(_x, true);
+  arr grad = as_arr(_grad, true);
   FuncCallData* d = (FuncCallData*)f_data;
   return d->I->h(x, grad, d->feature);
 }
 
 #else
 
+namespace rai{
+
 arr NLoptInterface::solve(const arr& x_init) { NICO; return arr(); }
 
 #endif
+
+} //namespace

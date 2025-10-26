@@ -25,7 +25,7 @@ void init_PathAlgos(pybind11::module& m) {
       .def("view", &rai::RRT_PathFinder::view, "", pybind11::arg("pause"), pybind11::arg("message")=nullptr, pybind11::arg("play")=false)
 
       .def("setOptions", [](std::shared_ptr<rai::RRT_PathFinder>& self
-#undef RAI_PARAMS
+#undef RAI_PARAM
 #define RAI_PARAM(scope, type, name, Default) , type name
 			    RAI_PARAM("rrt/", int, verbose, 0)
 			    RAI_PARAM("rrt/", double, stepsize, .1)

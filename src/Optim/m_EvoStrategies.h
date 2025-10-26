@@ -98,6 +98,7 @@ struct GaussEDA : EvolutionStrategy {
   arr elite;
   RAI_PARAM("GaussEDA/", double, sigmaInit, .1)
   RAI_PARAM("GaussEDA/", double, sigma2Min, .001)
+  RAI_PARAM("GaussEDA/", double, momentum, 1.)
   RAI_PARAM("GaussEDA/", double, beta, .1)
   RAI_PARAM("ES/", double, sigmaDecay, .001)
   RAI_PARAM("ES/", uint, lambda, 20)

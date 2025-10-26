@@ -32,7 +32,7 @@ bool EvolutionStrategy::step(){
   update(samples, y);
 
   if(evals>opt->stopEvals) return true;
-  if(rejectedSteps>3*x.N) return true;
+  if(rejectedSteps>int(3*x.N)) return true;
   if(tinySteps>5) return true;
   return false;
 }
@@ -115,7 +115,8 @@ arr ES_mu_plus_lambda::generateNewSamples(){
 void ES_mu_plus_lambda::update(arr& X, const arr& y){
   if(elite.N) X.append(elite);
   arr Y = select(X, y, mu);
-  mean = ::mean(Y);
+  arr meanY =  ::mean(Y);
+  mean = meanY + .5*(meanY-mean);
   elite = Y;
 }
 
@@ -148,12 +149,15 @@ void GaussEDA::update(arr& X, const arr& y){
   arr Y = select(X, y, mu);
   elite = Y;
   arr meanY = ::mean(Y);
-
-  mean = meanY + .5*(meanY-mean);
-
   arr covY = covar(Y);
+
+  arr delta = meanY-mean;
+
+  mean = meanY + momentum*delta;
+
   cov = (1.-beta)*cov + beta*covY;
-  for(uint i=0;i<cov.d0;i++) cov(i,i) += sigma2Min/cov.d0;
+  cov += .1 * (delta*~delta);
+  // for(uint i=0;i<cov.d0;i++) cov(i,i) += sigma2Min/cov.d0;
 
   double sig2 = trace(cov);
 

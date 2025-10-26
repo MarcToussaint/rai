@@ -87,12 +87,12 @@ bool LeastSquaredZeroOrder::step(){
       double Hsig2 = trace(Hinv)/double(Hinv.d0);
       lapack_cholesky(C, Hinv);
       z = C * randn(P->dimension);
-      // z *= noiseRatio/sqrt(Hsig2)*length(delta);
-      z *= noiseRatio * length(delta);
+      z *= noiseRatio/sqrt(Hsig2)*length(delta);
+      // z *= noiseRatio * length(delta);
       // z *= noiseRatio * alpha;
     }else{
       z = randn(x.N);
-      z *= noiseRatio*length(delta);
+      z *= noiseRatio * length(delta);
     }
     // sigma *= 1./(1.+rai::sqr(.001*steps));
     // sigma += noiseAbs;
@@ -135,7 +135,7 @@ bool LeastSquaredZeroOrder::step(){
 
   }
 
-  //-- reject
+  //-- reject?
   if(phi2_y>=phi2_x){
     rejectedSteps++;
     alpha *= stepDec;

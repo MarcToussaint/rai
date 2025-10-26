@@ -493,7 +493,7 @@ void init_Optim(pybind11::module& m) {
     ENUMVAL(AugmentedLag) ENUMVAL(LogBarrier) ENUMVAL(slackGN_logBarrier) ENUMVAL(SquaredPenalty) ENUMVAL(singleSquaredPenalty)
     ENUMVAL(slackGN)
     ENUMVAL(NLopt) ENUMVAL(Ipopt) ENUMVAL(slackGN_Ipopt) ENUMVAL(Ceres)
-    ENUMVAL(LSZO) ENUMVAL(greedy) ENUMVAL(NelderMead) ENUMVAL(CMA)
+    ENUMVAL(LSZO) ENUMVAL(greedy) ENUMVAL(NelderMead) ENUMVAL(CMA) ENUMVAL(ES)
   ;
 #undef ENUMVAL
 
