@@ -17,10 +17,10 @@ namespace rai {
 struct DepthNoiseOptions {
   RAI_PARAM("DepthNoise/", double, binocular_baseline, .05)
   RAI_PARAM("DepthNoise/", int, depth_smoothing, 1)
-  RAI_PARAM("DepthNoise/", double, noise_all, .05)
-  RAI_PARAM("DepthNoise/", double, noise_wide, 4.)
-  RAI_PARAM("DepthNoise/", double, noise_local, .4)
-  RAI_PARAM("DepthNoise/", double, noise_pixel, .04)
+  RAI_PARAM("DepthNoise/", double, noise_all, .025)
+  RAI_PARAM("DepthNoise/", double, noise_wide, 0) // omit?
+  RAI_PARAM("DepthNoise/", double, noise_local, 2)
+  RAI_PARAM("DepthNoise/", double, noise_pixel, .01)
 };
 
 struct CameraView : ConfigurationViewer {

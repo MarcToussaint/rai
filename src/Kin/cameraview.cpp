@@ -149,7 +149,7 @@ void simulateDepthNoise(floatA& depth, const floatA& depth2, double offset, cons
   noise += rai::convert<float>(opt->noise_local*randn(depth.d0, depth.d1));
   for(uint k=0;k<3;k++){
     noise = rai::integral(noise);
-    noise = rai::differencing(noise, 3); //PARAMETER
+    noise = rai::differencing(noise, 10); //PARAMETER
   }
   //pixel noise
   noise += rai::convert<float>(opt->noise_pixel*randn(depth.d0, depth.d1));
@@ -174,12 +174,16 @@ void simulateDepthNoise(floatA& depth, const floatA& depth2, double offset, cons
       if(j2>=int(depth.d1)) shadow=true;
       else if(fabs(depth2(i, j2) - d)>.05) shadow=true;  //PARAMETER
 
-      d += opt->noise_all*noise(i,j);
+
+      float quadratic_noise_coeff = depth(i, j)*depth(i, j)+1;
+      // cout << "depth noise coeff: " << quadratic_noise_coeff << endl;
+      d += opt->noise_all*quadratic_noise_coeff*noise(i,j);
 
       if(shadow){
         d=-1.;
         // shadowImg(i,j) = 0;
       }
+
     }
   }
 
