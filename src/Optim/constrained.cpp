@@ -87,13 +87,13 @@ ConstrainedSolver::ConstrainedSolver(arr& _x, arr& _dual, const shared_ptr<NLP>&
   //check for no constraints
   if(P->get_numOfType(OT_ineq)==0 && P->get_numOfType(OT_ineqB)==0 && P->get_numOfType(OT_eq)==0) {
     if(opt->verbose>0) cout <<"==nlp== NO CONSTRAINTS -> run just Newton once" <<endl;
-    opt->method=M_singleSquaredPenalty;
+    opt->method=M_Newton;
   }
 
   //in first iteration, if not squaredPenaltyFixed, increase stop tolerance
   org_stopTol = opt->stopTolerance;
   org_stopGTol = opt->stopGTolerance;
-  if(!outer_iters && opt->method!=M_singleSquaredPenalty) {
+  if(!outer_iters && opt->method!=M_Newton) {
     newton.opt->stopTolerance = 3.*org_stopTol;
     newton.opt->stopGTolerance = 3.*org_stopGTol;
   }
@@ -158,7 +158,7 @@ bool ConstrainedSolver::ministep() {
   //-- STOPPING CRITERIA
 
   //check for squaredPenaltyFixed method
-  if(opt->method==M_singleSquaredPenalty) {
+  if(opt->method==M_Newton) {
     if(opt->verbose>0) cout <<"==nlp== squaredPenaltyFixed stops after one outer iteration" <<endl;
     return true;
   }
