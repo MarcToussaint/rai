@@ -93,7 +93,8 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
 
   } else if(opt->method==M_ES) {
     // ret = rai::ES_mu_plus_lambda(Phere->f_scalar(), x). solve();
-    ret = rai::GaussEDA(Phere->f_scalar(), x). solve();
+    // ret = rai::GaussEDA(Phere->f_scalar(), x). solve();
+    ret = rai::LSGaussEDA(Phere, x). solve();
     x = ret->x;
 
   } else if(opt->method==M_greedy) {

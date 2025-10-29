@@ -174,7 +174,7 @@ int main(int argc,char **argv){
         arr path = X.sub({0,0},{f->ID,f->ID+1},{0,0});
         FILE(pathFile) <<path;
         rai::Frame *g = C.addFrame(f->name+"_guide");
-        if(!g->shape) g->shape = new rai::Shape(*g, f->shape); //copy shap
+        if(!g->shape) g->shape = f->shape; //copy shape
         if(!g->pathDof) g->pathDof = new rai::PathDof(*g);
         g->pathDof->path = path;
         if(!g->ats) g->ats = make_shared<rai::Graph>();

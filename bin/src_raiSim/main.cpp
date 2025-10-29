@@ -1,5 +1,5 @@
 #include <Kin/frame.h>
-#include <Kin/kin_bullet.h>
+#include <Kin/i_Bullet.h>
 #include <Kin/viewer.h>
 #include <Core/thread.h>
 

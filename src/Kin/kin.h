@@ -96,7 +96,7 @@ struct Configuration {
   Frame* addFrame(const char* name, const char* parent=nullptr, const char* args=nullptr, bool warnDuplicateName=true);
   Frame* addFile(const char* filename, const char* namePrefix=0);
   Frame& addDict(const Graph& G);
-  Frame* addAssimp(const char* filename);
+  Frame* addAssimp(const char* filename, bool mergeNodeMeshes=false, int verbose=0);
   Frame* addH5Object(const char* framename, const char* filename, int verbose);
   Frame* addCopy(const FrameL& F, const DofL& _dofs, const str& prefix= {});
   Frame* addConfigurationCopy(const Configuration& C, const str& prefix= {}, double tau=1.);

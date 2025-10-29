@@ -31,6 +31,9 @@ Twiddle
 
 namespace rai {
 
+std::tuple<arr, arr> select_best_mu(const arr& samples, const arr& values, uint mu);
+uintA pick_best_mu(const arr& samples, const arr& values, uint mu);
+
 //===========================================================================
 
 struct EvolutionStrategy {
@@ -44,15 +47,11 @@ struct EvolutionStrategy {
 
   //virtuals that define a method
   virtual arr generateNewSamples() = 0;
-  virtual void update(arr& samples, const arr& values) = 0;
+  virtual void update(arr& samples, arr& values) = 0;
 
   //generic stepping & looping
   bool step();
   shared_ptr<SolverReturn> solve();
-
-  //helper
-  arr select(const arr& samples, const arr& values, uint mu);
-
 };
 
 //===========================================================================
@@ -66,7 +65,7 @@ struct CMAES : EvolutionStrategy {
   ~CMAES();
 
   virtual arr generateNewSamples();
-  virtual void update(arr& samples, const arr& values);
+  virtual void update(arr& samples, arr& values);
 
   arr getBestEver();
   arr getCurrentMean();
@@ -76,7 +75,7 @@ struct CMAES : EvolutionStrategy {
 
 struct ES_mu_plus_lambda : EvolutionStrategy {
   arr mean;
-  arr elite;
+  arr elite_X, elite_y;
   RAI_PARAM("ES/", double, sigma, .1)
   RAI_PARAM("ES/", double, sigmaDecay, .001)
   RAI_PARAM("ES/", uint, lambda, 20)
@@ -87,7 +86,7 @@ struct ES_mu_plus_lambda : EvolutionStrategy {
 
   virtual arr generateNewSamples();
 
-  virtual void update(arr& X, const arr& y);
+  virtual void update(arr& X, arr& y);
 };
 
 //===========================================================================
@@ -95,10 +94,9 @@ struct ES_mu_plus_lambda : EvolutionStrategy {
 struct GaussEDA : EvolutionStrategy {
   arr mean;
   arr cov;
-  arr elite;
+  arr elite_X, elite_y;
   RAI_PARAM("GaussEDA/", double, sigmaInit, .1)
-  RAI_PARAM("GaussEDA/", double, sigma2Min, .001)
-  RAI_PARAM("GaussEDA/", double, momentum, 1.)
+  RAI_PARAM("GaussEDA/", double, momentum, .5)
   RAI_PARAM("GaussEDA/", double, beta, .1)
   RAI_PARAM("ES/", double, sigmaDecay, .001)
   RAI_PARAM("ES/", uint, lambda, 20)
@@ -108,7 +106,7 @@ struct GaussEDA : EvolutionStrategy {
 
   virtual arr generateNewSamples();
 
-  virtual void update(arr& X, const arr& y);
+  virtual void update(arr& X, arr& y);
 };
 
 } //namespace

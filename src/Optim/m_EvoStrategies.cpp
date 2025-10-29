@@ -37,15 +37,27 @@ bool EvolutionStrategy::step(){
   return false;
 }
 
-arr EvolutionStrategy::select(const arr& samples, const arr& values, uint mu){
+std::tuple<arr, arr> select_best_mu(const arr& samples, const arr& values, uint mu){
+  CHECK_EQ(samples.d0, values.N, "");
   uintA ranking;
   ranking.setStraightPerm(values.N);
-  std::sort(ranking.begin(), ranking.end(),
+  std::stable_sort(ranking.begin(), ranking.end(),
                    [&values](size_t i1, size_t i2) {return values.p[i1] < values.p[i2];});
 
   arr X(mu, samples.d1);
-  for(uint i=0;i<mu;i++) X[i] = samples[ranking(i)];
-  return X;
+  arr y(mu);
+  for(uint i=0;i<mu;i++){ X[i] = samples[ranking(i)]; y(i) = values(ranking(i)); }
+  return std::tuple(X, y);
+}
+
+uintA pick_best_mu(const arr& samples, const arr& values, uint mu){
+  CHECK_EQ(samples.d0, values.N, "");
+  uintA ranking;
+  ranking.setStraightPerm(values.N);
+  std::stable_sort(ranking.begin(), ranking.end(),
+                   [&values](size_t i1, size_t i2) {return values.p[i1] < values.p[i2];});
+  ranking.resizeCopy(mu);
+  return ranking;
 }
 
 std::shared_ptr<SolverReturn> EvolutionStrategy::solve(){
@@ -83,7 +95,7 @@ arr CMAES::generateNewSamples(){
   return samples;
 }
 
-void CMAES::update(arr& samples, const arr& values){
+void CMAES::update(arr& samples, arr& values){
   cmaes_UpdateDistribution(&self->evo, values.p);
 }
 
@@ -112,12 +124,14 @@ arr ES_mu_plus_lambda::generateNewSamples(){
   return X;
 }
 
-void ES_mu_plus_lambda::update(arr& X, const arr& y){
-  if(elite.N) X.append(elite);
-  arr Y = select(X, y, mu);
-  arr meanY =  ::mean(Y);
-  mean = meanY + .5*(meanY-mean);
-  elite = Y;
+void ES_mu_plus_lambda::update(arr& X, arr& y){
+  if(elite_X.N){ X.append(elite_X); y.append(elite_y); }
+  std::tie(X,y) = select_best_mu(X, y, mu);
+  arr meanX =  ::mean(X);
+  mean = meanX + .5*(meanX-mean);
+
+  elite_X = X;
+  elite_y = y;
 }
 
 //===========================================================================
@@ -143,21 +157,22 @@ arr GaussEDA::generateNewSamples(){
   return X;
 }
 
-void GaussEDA::update(arr& X, const arr& y){
-  if(elite.N) X.append(elite);
+void GaussEDA::update(arr& X, arr& y){
+  if(elite_X.N){ X.append(elite_X); y.append(elite_y); }
 
-  arr Y = select(X, y, mu);
-  elite = Y;
-  arr meanY = ::mean(Y);
-  arr covY = covar(Y);
+  std::tie(X,y) = select_best_mu(X, y, mu);
+  elite_X = X;
+  elite_y = y;
 
-  arr delta = meanY-mean;
+  arr meanX = ::mean(X);
+  arr covY = covar(X);
 
-  mean = meanY + momentum*delta;
+  arr delta = meanX-mean;
+
+  mean = meanX + momentum*delta;
 
   cov = (1.-beta)*cov + beta*covY;
-  cov += .1 * (delta*~delta);
-  // for(uint i=0;i<cov.d0;i++) cov(i,i) += sigma2Min/cov.d0;
+  cov += .4 * (delta*~delta);
 
   double sig2 = trace(cov);
 

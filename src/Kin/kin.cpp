@@ -241,8 +241,8 @@ Frame* Configuration::addFile(const char* filename, const char* namePrefix) {
   return frames.elem(n); //returns 1st frame of added file
 }
 
-Frame* Configuration::addAssimp(const char* filename) {
-  AssimpLoader A(filename, true, true);
+Frame* Configuration::addAssimp(const char* filename, bool mergeNodeMeshes, int verbose) {
+  AssimpLoader A(filename, true, true, verbose);
   //-- create all frames
   uint Nold = frames.N;
   for(uint i=0; i<A.names.N; i++) {
@@ -268,18 +268,28 @@ Frame* Configuration::addAssimp(const char* filename) {
         Shape& s = f->getShape();
         s.type() = ST_mesh;
         s.mesh() = A.meshes(i).scalar();
+        params()->add<shared_ptr<rai::Mesh>>(f->name+".ply", s._mesh);
       }
     } else if(A.meshes(i).N>1) {
-      uint j=0;
-      for(auto& mesh:A.meshes(i)) {
-        if(mesh.V.N) {
-          Frame* f1 = addFrame(STRING(f->name<<'_' <<j++));
-          f1->setParent(f);
-          f1->set_Q()->setZero();
-          Shape& s = f1->getShape();
-          s.type() = ST_mesh;
-          s.mesh() = mesh;
+      if(!mergeNodeMeshes){
+        uint j=0;
+        for(auto& mesh:A.meshes(i)) {
+          if(mesh.V.N) {
+            Frame* f1 = addFrame(STRING(f->name<<'_' <<j++));
+            f1->setParent(f);
+            f1->set_Q()->setZero();
+            Shape& s = f1->getShape();
+            s.type() = ST_mesh;
+            s.mesh() = mesh;
+          }
         }
+      } else {
+        Shape& s = f->getShape();
+        s.type() = ST_mesh;
+        for(auto& mesh:A.meshes(i)) {
+          s.mesh().addMesh(mesh);
+        }
+        params()->add<shared_ptr<rai::Mesh>>(f->name+".ply", s._mesh);
       }
     }
   }
@@ -2832,7 +2842,7 @@ void Configuration::writeMeshes(str pathPrefix, bool copyTextures, bool enumerat
     }
   }
   if(true){
-    auto P =params();
+    auto P = params();
     NodeL meshes = P->findNodesOfType(typeid(shared_ptr<rai::Mesh>));
     uint meshCount=0;
     for(Node* n:meshes) {
@@ -2841,19 +2851,21 @@ void Configuration::writeMeshes(str pathPrefix, bool copyTextures, bool enumerat
       fil.name.resize(fil.name.find('.',true), true);
       fil.decomposeFilename();
       str newfilename = pathPrefix;
-      if(enumerateAssets) newfilename <<meshCount++ <<'_' <<fil.name <<".h5";
-      else newfilename <<fil.name <<".h5";
+      str ext = ".ply"; //".h5"
+      if(enumerateAssets) newfilename <<meshCount++ <<'_' <<fil.name <<ext;
+      else newfilename <<fil.name <<ext;
       if(!FileToken(newfilename).exists()){
         if(m->C.d0==m->V.d0 && m->_texImg && m->texCoords.N){ m->C.clear(); }
-        m->writeH5(newfilename, "mesh");
+        if(ext==".h5") m->writeH5(newfilename, "mesh");
+        else m->writePLY(newfilename.p);
       }
       for(Frame* f:frames) {
         if(f->shape && f->shape->_mesh && f->shape->_mesh.get() == m.get()){
           Node *n;
-          n = f->ats->findNode("mesh"); if(n) delete n;
-          n = f->ats->findNode("texture"); if(n) delete n;
-          n = f->ats->findNode("meshscale"); if(n) delete n;
-          f->ats->getNew<FileToken>("mesh").name = newfilename;
+          n = f->getAts().findNode("mesh"); if(n) delete n;
+          n = f->getAts().findNode("texture"); if(n) delete n;
+          n = f->getAts().findNode("meshscale"); if(n) delete n;
+          f->getAts().getNew<FileToken>("mesh").name = newfilename;
         }
       }
     }

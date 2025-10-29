@@ -1,4 +1,5 @@
 #include "m_LeastSquaresZeroOrder.h"
+#include "m_EvoStrategies.h"
 #include "../Core/util.h"
 
 /* ideas:
@@ -9,29 +10,9 @@ covariant noise
 
 namespace rai {
 
-LeastSquaredZeroOrder::LeastSquaredZeroOrder(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt) : P(P), opt(_opt){
-  if(x_init.N) x=x_init;
-  else x=P->getInitializationSample();
-  CHECK_EQ(x.N, P->dimension, "");
-
-  for(auto& ot: P->featureTypes){
-    if(ot==OT_f) hasLinTerms=true;
-    else CHECK_EQ(ot, OT_sos, "");
-  }
-
-  data_X.resize(0, P->dimension);
-  data_Phi.resize(0, P->featureTypes.N);
-
-  J.resize(data_Phi.d1, data_X.d1). setZero();
-
-  alpha = .5;
-  // method="rank1";
-  method="linReg";
-
-  //evaluate
-  P->evaluate(phi_x, NoArr, x);
-  phi2_x = sumOfSqr(phi_x);
-  cout <<"--lszo-- " <<steps <<" f: " <<phi2_x <<std::endl;
+void zero_non_sos_objectives(const ObjectiveTypeA& featureTypes, arr& phi){
+  CHECK_EQ(featureTypes.N, phi.N, "");
+  for(uint i=0;i<phi.N;i++) if(featureTypes.elem(i)!=OT_sos) phi.elem(i)=0.;
 }
 
 auto decompose(const arr& phi, const arr& J, ObjectiveTypeA featureTypes){
@@ -45,27 +26,50 @@ auto decompose(const arr& phi, const arr& J, ObjectiveTypeA featureTypes){
   return std::tuple(phi_sos,phi_f, Jsos, Jf);
 }
 
-bool LeastSquaredZeroOrder::step(){
-  steps++;
+LeastSquaredZeroOrder::LeastSquaredZeroOrder(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt)
+ : P(P), opt(_opt){
+  if(x_init.N) x=x_init;
+  else x=P->getInitializationSample();
+  CHECK_EQ(x.N, P->dimension, "");
+
+  // for(auto& ot: P->featureTypes){
+  //   if(ot==OT_f) hasLinTerms=true;
+  //   else CHECK_EQ(ot, OT_sos, "");
+  // }
+
+  data_X.resize(0, P->dimension);
+  data_Phi.resize(0, P->featureTypes.N);
+
+  J.resize(data_Phi.d1, data_X.d1). setZero();
+  phi0.resize(data_Phi.d1) .setZero();
+  Hinv.setId(P->dimension);
+  Hinv /= damping;
+
+  alpha = .5;
+  // method="rank1";
+  method="linReg";
+
+  //evaluate
+  P->evaluate(phi_x, NoArr, x);
+  phi2_x = sumOfSqr(phi_x);
+  cout <<"--lszo-- " <<steps <<" f: " <<phi2_x <<std::endl;
+}
+
+arr LeastSquaredZeroOrder::generateNewSamples(){
+#if 0
+  if(elite_X.d0){
+    uint pick = rnd.uni_int(0,elite_X.d0-1);
+    pick = 0;
+    x = elite_X[pick];
+    phi_x = elite_Phi[pick];
+    // phi2_x = sumOfSqr(phi_x);
+  }
+#endif
 
   //-- compute delta
   arr delta;
-  arr Hinv = inverse_SymPosDef(~J*J + damping*eye(J.d1));
-  if(!hasLinTerms){
-    delta = Hinv * (~J * phi_x);
-  }else{
-    arr phi_sos, phi_f, Jsos, Jf;
-    std::tie(phi_sos, phi_f, Jsos, Jf) = decompose(phi_x, J, P->featureTypes);
-    delta = Hinv * (~Jsos * phi_sos + 0.5 * ::sum(Jf,0));
-  }
-
-  //noise directly on delta
-#if 0
-  arr C;
-  lapack_cholesky(C, Hinv);
-  arr z = C * randn(P->dimension);
-  delta += noiseRatio*z;
-#endif
+  Hinv = inverse_SymPosDef(~J*J + damping*eye(J.d1));
+  delta = Hinv * (~J * phi_x); //(phi0+J*x));
 
   delta *= -alpha;
 
@@ -77,46 +81,53 @@ bool LeastSquaredZeroOrder::step(){
   }
 
   //-- proposed step
-  arr y = x + delta;
+  arr y_mean = x + delta;
 
-  //-- add noise
-  if(method=="linReg"){
-    arr z;
-    if(covariantNoise){
-      arr C;
-      double Hsig2 = trace(Hinv)/double(Hinv.d0);
-      lapack_cholesky(C, Hinv);
-      z = C * randn(P->dimension);
-      z *= noiseRatio/sqrt(Hsig2)*length(delta);
-      // z *= noiseRatio * length(delta);
-      // z *= noiseRatio * alpha;
-    }else{
-      z = randn(x.N);
+  arr X(lambda, y_mean.N);
+
+  for(uint k=0;k<lambda;k++){
+    arr y = X[k];
+    y = y_mean;
+
+    //-- add noise
+    if(method=="linReg"){
+      arr z;
+      if(covariantNoise){
+        arr C;
+        double Hsig2 = trace(Hinv)/double(Hinv.d0);
+        lapack_cholesky(C, Hinv);
+        z = C * randn(P->dimension);
+        z *= noiseRatio/sqrt(Hsig2)*length(delta);
+        // z *= noiseRatio * length(delta);
+        // z *= noiseRatio * alpha;
+      }else{
+        z = randn(x.N);
       z *= noiseRatio * length(delta);
+      }
+      // sigma *= 1./(1.+sqr(.001*steps));
+      // sigma += noiseAbs;
+      y += z;
+    }else if(method=="rank1"){
+      // double sigma = .2*length(delta);
+      double sigma = 1e-2;
+      y += sigma*randn(P->dimension);
     }
-    // sigma *= 1./(1.+rai::sqr(.001*steps));
-    // sigma += noiseAbs;
-    y += z;
-  }else if(method=="rank1"){
-    // double sigma = .2*length(delta);
-    double sigma = 1e-2;
-    y += sigma*randn(P->dimension);
   }
 
-  //-- evaluate
-  arr phi_y;
-  P->evaluate(phi_y, NoArr, y);
-  double phi2_y = sumOfSqr(phi_y);
+  return X;
+}
 
-  cout <<"--lszo-- " <<steps <<" f: " <<phi2_y <<std::flush;
+void LeastSquaredZeroOrder::update(arr& X, arr& Phi){
+  for(uint i=0;i<Phi.d0;i++) zero_non_sos_objectives(P->featureTypes, Phi[i].noconst());
 
   //store
-  data_X.append(y);
-  data_Phi.append(phi_y);
+  data_X.append(X);
+  data_Phi.append(Phi);
 
+  //prune data
   if(pruneData){
-    uint n=data_X.d0;
-    uint N = dataRatio*data_X.d1;
+    uint n = data_X.d0;
+    uint N = 2.*dataRatio*data_X.d1;
     if(n > N){
       data_X.delRows(0, n-N);
       data_Phi.delRows(0, n-N);
@@ -125,17 +136,40 @@ bool LeastSquaredZeroOrder::step(){
     }
   }
 
+  //update J
   if(steps>2){
     if(method=="rank1"){
       updateJ_rank1(J, x, data_X[-2], phi_x, data_Phi[-2]);
 
     }else if(method=="linReg"){
-      updateJ_linReg(J, data_X, data_Phi);
+      std::tie(J, phi0) = updateJ_linReg(data_X, data_Phi, x, dataRatio);
     }
-
   }
 
-  //-- reject?
+  //update Hinv
+  // if(steps>2){
+  //   arr Hinv_now = inverse_SymPosDef(~J*J + damping*eye(J.d1));
+  //   if(steps<20){
+  //     Hinv = Hinv_now;
+  //   }else{
+  //     double beta=.1;
+  //     Hinv = (1.-beta) * Hinv + beta*Hinv_now;
+  //   }
+  // }
+
+  if(elite_X.N){ X.append(elite_X); Phi.append(elite_Phi); }
+
+  arr Phi2 = ::sum(::sqr(Phi), 1);
+  uintA picks = pick_best_mu(X, Phi2, mu);
+  elite_X = X.pick(picks);
+  elite_Phi = Phi.pick(picks);
+
+  arr y = elite_X[0];
+  arr phi_y = elite_Phi[0];
+  double phi2_y = sumOfSqr(phi_y);
+  cout <<"--lszo-- " <<steps <<" f: " <<phi2_y <<std::flush;
+
+  //-- update x (reject?)
   if(phi2_y>=phi2_x){
     rejectedSteps++;
     alpha *= stepDec;
@@ -151,6 +185,20 @@ bool LeastSquaredZeroOrder::step(){
     if(alpha>1.) alpha=1.;
     cout <<" -- accept (alpha: " <<alpha <<")" <<endl;
   }
+}
+
+bool LeastSquaredZeroOrder::step(){
+  steps++;
+
+  arr X = generateNewSamples();
+
+  //-- evaluate
+  arr Phi(lambda, P->featureTypes.N);
+  for(uint k=0;k<X.d0;k++){
+    P->evaluate(Phi[k].noconst(), NoArr, X[k]);
+  }
+
+  update(X, Phi);
 
   if((int)steps>maxIters) return true;
   if(rejectedSteps>3*x.N) return true;
@@ -167,15 +215,15 @@ void LeastSquaredZeroOrder::updateJ_rank1(arr& J, const arr& x, const arr& x_las
   J += (alpha/d2) * (y^d);
 }
 
-void LeastSquaredZeroOrder::updateJ_linReg(arr& J, const arr& Xraw, const arr& Y){
+std::tuple<arr,arr> updateJ_linReg(const arr& Xraw, const arr& Y, const arr& x_now, double dataRatio){
   uint n=Xraw.d0, d=Xraw.d1;
-  arr X = rai::catCol({ones(n,1), Xraw});
-  arr I = eye(d+1);
+  arr X = catCol({ones(n,1), Xraw});
+  arr I = eye(d+1);// I(0,0)=0.;
   arr W = ones(n);
   if(true){
     double K = dataRatio;
     if(n > K*d){ //get weights
-      W = data_X - match(~x, data_X.dim());
+      W = Xraw - match(~x_now, Xraw.dim());
       W = ::sum(::sqr(W), 1);
       arr Wcopy = W;
       double W0 = Wcopy.nthElement_nonConst(K*d) + 1e-6;
@@ -189,8 +237,98 @@ void LeastSquaredZeroOrder::updateJ_linReg(arr& J, const arr& Xraw, const arr& Y
     cout <<" [log(det(data)): " <<::sum(log(s))/double(s.N) <<']' <<std::flush;
   }
   double lambdaReg = 1e-6;
-  J = ~Y*(W%X) * inverse_SymPosDef(~X*(W%X) + lambdaReg*I);
+  arr J = ~Y*(W%X) * inverse_SymPosDef(~X*(W%X) + lambdaReg*I);
+  arr phi0 = J.col(0);
   J.delColumns(0);
+  return std::tuple(J, phi0);
 }
 
+//===========================================================================
+
+LSGaussEDA::LSGaussEDA(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt)
+    : P(P), opt(_opt){
+
+  mean = x_init;
+  CHECK_EQ(mean.N, P->dimension, "");
+
+  cov = rai::sqr(sigmaInit)*eye(mean.N);
+}
+
+arr LSGaussEDA::generateNewSamples(){
+  arr C;
+  lapack_cholesky(C, cov);
+  arr z = randn(lambda, mean.N) * ~C;
+
+  arr X = replicate(mean, lambda);
+  X += z;
+  return X;
+}
+
+void LSGaussEDA::update(arr& X, arr& Phi){
+  for(uint i=0;i<Phi.d0;i++) zero_non_sos_objectives(P->featureTypes, Phi[i].noconst());
+
+  if(elite_X.N){ X.append(elite_X); Phi.append(elite_y); }
+
+  arr Phi2 = ::sum(::sqr(Phi), 1);
+  uintA picks = pick_best_mu(X, Phi2, mu);
+  elite_X = X.pick(picks);
+  elite_y = Phi.pick(picks);
+
+  //linreg:
+  arr J, phi0;
+  std::tie(J, phi0) = updateJ_linReg(X, Phi, mean, 10.);
+
+  //update GN-mu
+  arr H = ~J*J;
+  arr Hinv = inverse_SymPosDef(H + 1e-3*eye(H.d0));
+  arr mu_GN = - Hinv * (~J * phi0);
+
+#if 1
+  mean += .1 * (mu_GN - mean);
+  cov = (1-beta) * cov + beta * Hinv;
+#else
+  //update cov
+  arr H = inverse_SymPosDef(cov);
+  double beta2=.5;
+  H += beta2*(~J*J);
+  cov = inverse_SymPosDef(H);
+
+  X = elite_X;
+
+  arr meanX = ::mean(X);
+  arr covY = covar(X);
+
+  arr delta = meanX-mean;
+
+  if(length(delta)<1e-4) tinySteps++; else tinySteps=0;
+
+  mean = meanX + momentum*delta;
+
+  cov = (1.-beta)*cov + beta*covY;
+  cov += .4 * (delta*~delta);
+#endif
+
+  double sig2 = trace(cov);
+
+  cout <<"--GaussEDA-- " <<steps <<" sig2: " <<sig2 <<endl;
+}
+
+bool LSGaussEDA::step(){
+  steps++;
+
+  arr X = generateNewSamples();
+
+  //-- evaluate
+  arr Phi(lambda, P->featureTypes.N);
+  for(uint k=0;k<X.d0;k++){
+    P->evaluate(Phi[k].noconst(), NoArr, X[k]);
+  }
+
+  update(X, Phi);
+
+  if((int)steps*lambda>1000) return true;
+  if(rejectedSteps>3*mean.N) return true;
+  if(tinySteps>5) return true;
+  return false;
+}
 } //namespace
