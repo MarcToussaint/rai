@@ -221,6 +221,8 @@ struct Transformation {
   void appendTransformation(const Transformation& f);     // this = this * f
   void appendInvTransformation(const Transformation& f);     // this = this * f^{-1}
 
+  Transformation inv() const{ Transformation X; X.setInverse(*this); return X; }
+
   double* getMatrix(double* m) const;         // 4x4 matrix with 3x3=rotation and right-column=translation
   arr getMatrix() const;                      // 4x4 matrix with 3x3=rotation and right-column=translation
   double* getInverseMatrix(double* m) const;  // 4x4 matrix with 3x3=R^{-1}   and bottom-row=R^{-1}*translation

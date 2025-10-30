@@ -58,8 +58,8 @@ LeastSquaredZeroOrder::LeastSquaredZeroOrder(shared_ptr<NLP> P, const arr& x_ini
 arr LeastSquaredZeroOrder::generateNewSamples(){
 #if 0
   if(elite_X.d0){
-    uint pick = rnd.uni_int(0,elite_X.d0-1);
-    pick = 0;
+    //uint pick = rnd.uni_int(0,elite_X.d0-1);
+    uint pick = 0;
     x = elite_X[pick];
     phi_x = elite_Phi[pick];
     // phi2_x = sumOfSqr(phi_x);

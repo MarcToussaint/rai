@@ -103,7 +103,7 @@ void CameraView::computeImageAndDepth(byteA& image, floatA& depth, bool _simulat
     byteA image2;
     floatA depth2;
     computeImageAndDepth(image2, depth2, false);
-    rai::simulateDepthNoise(depth, depth2, currentCamera->offset.x, currentCamera->cam.getFxycxy(), opt);
+    rai::simulateDepthNoise(depth, depth2, currentCamera->cam.getFxycxy(), opt);
     currentCamera->offset.setZero();
   }
 }
@@ -137,13 +137,13 @@ void CameraView::updateCamera() {
 
 //===========================================================================
 
-void simulateDepthNoise(floatA& depth, const floatA& depth2, double offset, const arr& fxycxy, shared_ptr<DepthNoiseOptions> opt){
+void simulateDepthNoise(floatA& depth, const floatA& depth2, const arr& fxycxy, shared_ptr<DepthNoiseOptions> opt){
   //-- wierd noise
   floatA noise = rai::convert<float>(opt->noise_wide*randn(depth.d0, depth.d1));
   //smooth noise
   for(uint k=0;k<3;k++){
     noise = rai::integral(noise);
-    noise = rai::differencing(noise, 20); //PARAMETER
+    noise = rai::differencing(noise, 10); //PARAMETER
   }
   //local noise
   noise += rai::convert<float>(opt->noise_local*randn(depth.d0, depth.d1));
@@ -156,31 +156,35 @@ void simulateDepthNoise(floatA& depth, const floatA& depth2, double offset, cons
 
   // { OpenGL gl;  noise *= 255.f;  gl.watchImage(noise, true); }
 
-  //-- smoothed depth
+  //-- fix ininite depth (no objects in opengl)
+  for(float& d:depth){ if(d<0.) d=3.; }
+  for(float& d:depth2){ if(d<0.) d=4.; }
+
+  //-- shadows
+  boolA shadow(depth.d0, depth.d1);
+  for(uint i=0;i<depth.d0;i++){
+    for(uint j=0;j<depth.d1; j++){
+      const float& d = depth(i,j);
+      int j2 = int(j) - fxycxy(0)*d*opt->binocular_baseline;
+      byte& s = shadow(i,j);
+      if(j2<0) s=true;
+      else if(j2>=int(depth.d1)) s=true;
+      else if(fabs(depth2(i, j2) - d)>.05) s=true;
+      else s=false;
+    }
+  }
+
+  //-- depth smoothing
   for(int k=0;k<opt->depth_smoothing;k++){
     depth = rai::integral(depth);
     depth = rai::differencing(depth, 5); //PARAMETER
   }
 
-  //-- shadows
-  // byteA shadowImg(depth.d0, depth.d1);
-  // shadowImg = 255;
-  for(uint i=0;i<depth.d0;i++){
-    for(uint j=0;j<depth.d1; j++){
-      float& d = depth(i,j);
-      int j2 = int(j) - fxycxy(0)*d*offset;
-      bool shadow=false;
-      if(j2<0) shadow=true;
-      if(j2>=int(depth.d1)) shadow=true;
-      else if(fabs(depth2(i, j2) - d)>.05) shadow=true;  //PARAMETER
-
-      d += opt->noise_all*noise(i,j);
-
-      if(shadow){
-        d=-1.;
-        // shadowImg(i,j) = 0;
-      }
-    }
+  //-- apply noise and shadow
+  for(uint i=0;i<depth.N;i++){
+    float &d = depth.p[i];
+    if(shadow.p[i]) d=-1.;
+    else d += opt->noise_all*d*d*noise.p[i];
   }
 
   // { OpenGL gl;  gl.watchImage(shadowImg, true); }

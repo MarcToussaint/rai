@@ -138,7 +138,7 @@ struct RenderData {
   void addDistMarker(const arr& a, const arr& b, int s=-1, double size=.1, const arr& color=arr{1.,0.,1.});
   void addText(const char* text, float x, float y, float size);
   void setText(const char* text);
-  void addQuad(const byteA& img, float x, float y, float w, float h);
+  int setQuad(int id, const byteA& img, float x, float y, float h);
 
   RenderData& addStandardScene(bool addFloor=true);
   RenderData& clear();

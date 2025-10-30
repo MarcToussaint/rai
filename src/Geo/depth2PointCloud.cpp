@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "depth2PointCloud.h"
+#include "../Gui/color.h"
 
 #include <math.h>
 
@@ -97,3 +98,21 @@ void depthData2point(arr& pt, const arr& fxycxy) {
   depthData2point(pt.p, fxycxy.p);
 }
 
+
+void depth2depthImage(byteA& img, const floatA& depth, float maxDepth){
+  img.resize(depth.d0, depth.d1, 3);
+  float x;
+  rai::Color c;
+  for(uint i=0; i<depth.N; i++) {
+#if 0
+    x = scale * depth.p[i]; //this means that the RGB values are cm distance (up to 255cm distance)
+    if(x<0.f) x=0.f;
+    if(x>255.f) x=255.f;
+    for(uint j=0;j<3;j++)
+      img.p[3*i+j] = x;
+#else
+    c.setTemp(depth.p[i]/maxDepth);
+    c.getRgb(img.p[3*i+0], img.p[3*i+1], img.p[3*i+2]);
+#endif
+  }
+}

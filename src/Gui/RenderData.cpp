@@ -489,18 +489,25 @@ void RenderData::glDraw(OpenGL& gl){
     renderObjects(id.prog_ModelT_WM, sorting, _transparent, id.prog_FlatColor, -1, id.prog_textureDim);
   }
 
+  glDisable(GL_DEPTH_TEST);
   if(renderUntil>=_text) {
-
     glUseProgram(id.progText);
-    glUniform1i(id.progText_useTexColor, 0);
-    glm::mat4 projection = glm::ortho(0.0f, float(gl.width), 0.0f, float(gl.height));
-    glUniformMatrix4fv(glGetUniformLocation(id.progText, "projection"), 1, GL_FALSE, &projection[0][0]);
+    {
+      glUniform1i(id.progText_useTexColor, 1);
+      glm::mat4 projection = glm::ortho(0.0f, float(gl.width)/float(gl.height), 1.f, 0.0f);
+      glUniformMatrix4fv(glGetUniformLocation(id.progText, "projection"), 1, GL_FALSE, &projection[0][0]);
+      for(auto &quad:quads) quad->glRender();
+    }
 
-    for(auto &txt:texts) txt->glRender(id.progText_color, id.font, gl.height);
+    {
+      glUniform1i(id.progText_useTexColor, 0);
+      glm::mat4 projection = glm::ortho(0.0f, float(gl.width), 0.0f, float(gl.height));
+      glUniformMatrix4fv(glGetUniformLocation(id.progText, "projection"), 1, GL_FALSE, &projection[0][0]);
+      for(auto &txt:texts) txt->glRender(id.progText_color, id.font, gl.height);
+    }
 
-    glUniform1i(id.progText_useTexColor, 1);
-    for(auto &quad:quads) quad->glRender();
   }
+  glEnable(GL_DEPTH_TEST);
 
   renderCount++;
 }
@@ -847,20 +854,23 @@ void RenderData::setText(const char* text){
   }
 }
 
-void RenderData::addQuad(const byteA& img, float x, float y, float w, float h){
-  std::shared_ptr<RenderQuad> quad = make_shared<RenderQuad>();
-  quads.append(quad);
+int RenderData::setQuad(int id, const byteA& img, float x, float y, float h){
+  if(id<0) id = quads.N;
+  CHECK_GE(quads.N, uint(id), "when setting quad " <<id <<" no quad " <<id-1 <<" exists")
+  if(quads.N==uint(id)) quads.append(make_shared<RenderQuad>());
+
+
+  std::shared_ptr<RenderQuad>& quad = quads(id);
   quad->img = img;
+  float w = h/img.d0*img.d1;
+  quad->vertices = {x,     y,      0.0f, 0.0f ,
+                    x,     y + h,  0.0f, 1.0f ,
+                    x + w, y + h,  1.0f, 1.0f ,
+                    x,     y,      0.0f, 0.0f ,
+                    x + w, y + h,  1.0f, 1.0f ,
+                    x + w, y,      1.0f, 0.0f };
 
-  if(w<0.) w=h/img.d0*img.d1;
-  if(h<0.) h=w/img.d1*img.d0;
-  quad->vertices = { x,     y + h,   0.0f, 0.0f ,
-                     x,     y,       0.0f, 1.0f ,
-                     x + w, y,       1.0f, 1.0f ,
-                     x,     y + h,   0.0f, 0.0f ,
-                     x + w, y,       1.0f, 1.0f ,
-                     x + w, y + h,   1.0f, 0.0f };
-
+  return id;
 }
 
 RenderData& RenderData::addStandardScene(bool addFloor){
@@ -888,7 +898,7 @@ RenderData& RenderData::addStandardScene(bool addFloor){
 RenderData& RenderData::clear(){
   items.clear();
   texts.clear();
-  quads.clear();
+  // quads.clear();
   distMarkers.markerObj=-1;
   distMarkers.pos.clear();
   distMarkers.color.clear();
@@ -1013,7 +1023,7 @@ void RenderQuad::glInitialize(){
 
   glGenBuffers(1, &vertexBuffer);
   glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, vertices.p, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, vertices.p, GL_DYNAMIC_DRAW);
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);

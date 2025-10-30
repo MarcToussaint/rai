@@ -306,6 +306,11 @@ void ConfigurationViewer::_resetPressedKey() {
   gl->pressedkey=0;
 }
 
+int ConfigurationViewer::setQuad(int id, const byteA& rgb, float x, float y, float h){
+  auto lock = dataLock(RAI_HERE);
+  return RenderData::setQuad(id, rgb, x, y, h);
+}
+
 void ConfigurationViewer::raiseWindow() {
   ensure_gl();
   gl->raiseWindow();

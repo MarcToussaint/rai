@@ -36,8 +36,8 @@ void rai::Color::setHsv(int hue, byte sat, byte val) {
 
 void rai::Color::setTemp(float temp) {
   Color hot(1., 0., 0.), middle(1., 1., 0.), cold(0., 0., 1.);
-  if(temp>1.) temp=1.;
-  if(temp<0.) temp=0.;
+  if(temp>1.){ setRgb(1.,1.,1.); return; } //temp=1.;
+  if(temp<0.){ setRgb(0.,0.,0.); return; } //temp=0.;
   if(temp>.5) { temp=2.f*temp-1.f; *this=temp*hot + (1.-temp)*middle; } else { temp=2.f*temp; *this=temp*middle + (1.f-temp)*cold; }
 }
 

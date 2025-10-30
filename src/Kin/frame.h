@@ -185,10 +185,10 @@ struct Frame : NonCopyable {
   void makeManipJoint(JointType jointType, Frame* parent, bool autoLimits); //create an articulated joint, automatically adding relative transform frame if necessary, automatically setting limits
   void setAutoLimits();
 
-  arr getPose() { return ensure_X().getArr7d(); }
-  arr getPosition() { return ensure_X().pos.getArr(); }
-  arr getQuaternion() { return ensure_X().rot.getArr(); }
-  arr getTransform() { return ensure_X().getMatrix(); }
+  arr getPose(Frame* relativeTo=0) { if(!relativeTo) return ensure_X().getArr7d(); return (relativeTo->ensure_X().inv() * ensure_X()).getArr7d(); }
+  arr getPosition(Frame* relativeTo=0) { if(!relativeTo) return ensure_X().pos.getArr();  return (relativeTo->ensure_X().inv() * ensure_X()).pos.getArr(); }
+  arr getQuaternion(Frame* relativeTo=0) { if(!relativeTo) return ensure_X().rot.getArr();  return (relativeTo->ensure_X().inv() * ensure_X()).rot.getArr(); }
+  arr getTransform(Frame* relativeTo=0) { if(!relativeTo) return ensure_X().getMatrix();   return (relativeTo->ensure_X().inv() * ensure_X()).getMatrix(); }
   arr getRelativePose() const { return get_Q().getArr7d(); }
   arr getRelativePosition() const { return get_Q().pos.getArr(); }
   arr getRelativeQuaternion() const { return get_Q().rot.getArr(); }

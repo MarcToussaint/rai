@@ -56,6 +56,8 @@ struct ConfigurationViewer : RenderData {
   //mimic a OpenGL, directly calling the same methods in its gl
   void _resetPressedKey();
 
+  int setQuad(int id, const byteA& rgb, float x, float y, float h);
+
 private://draw data
   arr motion;
   bool abortPlay;

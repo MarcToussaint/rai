@@ -15,6 +15,7 @@
 #include "F_collisions.h"
 #include "../Gui/opengl.h"
 #include "../Algo/SplineCtrlFeed.h"
+#include "../Geo/depth2PointCloud.h"
 
 #include <iomanip>
 //#define BACK_BRIDGE
@@ -736,24 +737,12 @@ struct Simulation_DisplayThread : Thread, ConfigurationViewer {
     mux.lock(RAI_HERE);
 
     if(image.N && depth.N) {
-      resizeAs(depthImage, image);
-      float x;
-      for(uint i=0; i<depth.N; i++) {
-        x = 100.f * depth.p[i]; //this means that the RGB values are cm distance (up to 255cm distance)
-        if(x<0.f) x=0.f;
-        if(x>255.f) x=255.f;
-        for(uint j=0;j<3;j++)
-          depthImage.p[3*i+j] = x;
-      }
+      depth2depthImage(depthImage, depth);
 
-      if(!quads.N){
-        float w = .3*float(gl.width);
-        addQuad(image, 10, 10, w, -1);
-        addQuad(depthImage, gl.width-w-10, 10, w, -1);
-      }else{
-        quads(0)->img = image;
-        quads(1)->img = depthImage;
-      }
+      float w = .98f - .2f*float(depth.d0)/float(gl.width);
+      cout <<w <<endl;
+      RenderData::setQuad(0, image, .02, .78, .2);
+      RenderData::setQuad(1, depthImage, w, .78, .2);
     }
 
     ConfigurationViewer::glDraw(gl);

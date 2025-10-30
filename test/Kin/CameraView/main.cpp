@@ -67,17 +67,18 @@ void TEST(NoisyDepth){
 
   auto opt = make_shared<rai::DepthNoiseOptions>();
 
+
   for(uint t=0;t<2000;t++){
     //the same method is now integrated in computeImageAndDepth -- this is only to allow debugging
     auto& cam = V.setCamera(C["cameraWrist"]);
     V.computeImageAndDepth(image1, depth1);
 
-    cam.offset.set(.05, .0, .0);
+    cam.offset.set(opt->binocular_baseline, .0, .0);
     V.computeImageAndDepth(image2, depth2);
 
     // opt->noise_all = .02;
     // opt->depth_smoothing = 0;
-    rai::simulateDepthNoise(depth1, depth2, cam.offset.x, V.getFxycxy(), opt);
+    rai::simulateDepthNoise(depth1, depth2, V.getFxycxy(), opt);
 
     depthData2pointCloud(pts1, depth1, V.getFxycxy());
     depthData2pointCloud(pts2, depth2, V.getFxycxy());
@@ -85,8 +86,12 @@ void TEST(NoisyDepth){
     for(uint i=0;i<pts2.d0;i++) pts2[i] += cam.offset.getArr();
 
     {
+      byteA depthImage;
+      depth2depthImage(depthImage, depth1);
       Cdisp.getFrame("pcl1") ->setPointCloud(pts1, {255, 200, 100});
       Cdisp.getFrame("pcl2") ->setPointCloud(pts2, {200, 255, 100});
+      Cdisp.get_viewer()->setQuad(0, image1, .02, .02, .3);
+      Cdisp.get_viewer()->setQuad(1, depthImage, .02, .34, .3);
       int key = Cdisp.view(false);
       if(key=='q') break;
       rai::wait(.05);

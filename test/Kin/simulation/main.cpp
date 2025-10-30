@@ -652,9 +652,9 @@ void testResetState(){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  // testMotors();
-  // testPassive(rai::raiPath("../rai-robotModels/g1/g1.g"), true);
-  testPassive("../../../../rai-robotModels/scenarios/pendulum.g"); return 0;
+  testMotors();
+  testPassive(rai::raiPath("../rai-robotModels/g1/g1.g"), true);
+  testPassive("../../../../rai-robotModels/scenarios/pendulum.g");
   testComplexObjects();
   testNonconvexObjects();
   testRndScene();

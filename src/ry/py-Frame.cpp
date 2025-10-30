@@ -95,11 +95,11 @@ void init_Frame(pybind11::module& m) {
     for(rai::Frame* f:self->children) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-sense deleter!
     return F;
   })
-  .def("getPose", &rai::Frame::getPose, "")
-  .def("getPosition", &rai::Frame::getPosition, "")
-  .def("getQuaternion", &rai::Frame::getQuaternion, "")
+  .def("getPose", &rai::Frame::getPose, "", pybind11::arg("relativeTo")=(rai::Frame*)0)
+  .def("getPosition", &rai::Frame::getPosition, "", pybind11::arg("relativeTo")=(rai::Frame*)0)
+  .def("getQuaternion", &rai::Frame::getQuaternion, "", pybind11::arg("relativeTo")=(rai::Frame*)0)
   .def("getRotationMatrix", [](shared_ptr<rai::Frame>& self) { return self->ensure_X().rot.getMatrix(); }, "")
-  .def("getTransform", &rai::Frame::getTransform, "")
+  .def("getTransform", &rai::Frame::getTransform, "", pybind11::arg("relativeTo")=(rai::Frame*)0)
   .def("getRelativePose", &rai::Frame::getRelativePose, "")
   .def("getRelativePosition", &rai::Frame::getRelativePosition, "")
   .def("getRelativeQuaternion", &rai::Frame::getRelativeQuaternion, "")

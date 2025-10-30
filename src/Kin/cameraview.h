@@ -15,9 +15,9 @@
 namespace rai {
 
 struct DepthNoiseOptions {
-  RAI_PARAM("DepthNoise/", double, binocular_baseline, .05)
+  RAI_PARAM("DepthNoise/", double, binocular_baseline, .03)
   RAI_PARAM("DepthNoise/", int, depth_smoothing, 1)
-  RAI_PARAM("DepthNoise/", double, noise_all, .05)
+  RAI_PARAM("DepthNoise/", double, noise_all, .02)
   RAI_PARAM("DepthNoise/", double, noise_wide, 4.)
   RAI_PARAM("DepthNoise/", double, noise_local, .4)
   RAI_PARAM("DepthNoise/", double, noise_pixel, .04)
@@ -65,6 +65,6 @@ struct CameraView : ConfigurationViewer {
 
 //===========================================================================
 
-void simulateDepthNoise(floatA& depth, const floatA& depth2, double offset, const arr& fxycxy, shared_ptr<DepthNoiseOptions> opt);
+void simulateDepthNoise(floatA& depth, const floatA& depth2, const arr& fxycxy, shared_ptr<DepthNoiseOptions> opt);
 
 }

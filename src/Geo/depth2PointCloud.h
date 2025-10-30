@@ -38,3 +38,5 @@ void depthData2point(arr& pt, const arr& fxycxy);
 void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, float cx, float cy);
 void depthData2pointCloud(arr& pts, const floatA& depth, const arr& fxycxy);
 void point2depthData(double* pt, double* fxycxy);
+
+void depth2depthImage(byteA& img, const floatA& depth, float maxDepth=2.f);
