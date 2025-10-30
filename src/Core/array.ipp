@@ -1240,7 +1240,7 @@ template<class T> Array<T>& Array<T>::setCarray(const T* buffer, uint D0) {
 }
 
 /// 'this' becomes a copy (not reference to!) of the 2D C array
-template<class T> Array<T>& Array<T>::setCarray(const T** buffer, uint D0, uint D1) {
+template<class T> Array<T>& Array<T>::setCarray(T* const* buffer, uint D0, uint D1) {
   resize(D0, D1);
   uint i, j;
   for(i=0; i<d0; i++) {

@@ -10,12 +10,16 @@ namespace rai {
 
 bool EvolutionStrategy::step(){
   steps++;
+
   arr samples = generateNewSamples();
-  arr y = zeros(samples.d0);
+
+  //-- evaluate
+  arr y(samples.d0);
   for(uint i=0;i<samples.d0;i++){
     y(i) = f(NoArr, NoArr, samples[i]);
     evals++;
   }
+
   uint i; double f_y;
   std::tie(f_y, i) = rai::min_arg(y);
   if(f_y<f_x){
@@ -88,14 +92,28 @@ CMAES::~CMAES() {
 }
 
 arr CMAES::generateNewSamples(){
-  arr samples(self->evo.sp.lambda, self->evo.sp.N);
+  CHECK_EQ(x.N, uint(self->evo.sp.N), "")
   double* const* rgx = cmaes_SamplePopulation(&self->evo);
-  for(uint i=0; i<samples.d0; i++) samples[i].setCarray(rgx[i], samples.d1);
+
+  // arr samples(self->evo.sp.lambda, self->evo.sp.N);
+  // for(uint i=0; i<samples.d0; i++) samples[i].setCarray(rgx[i], samples.d1);
+
+  arr samples;
+  samples.setCarray(rgx, self->evo.sp.lambda, self->evo.sp.N);
+
   cout <<"--cmaes-- " <<evals <<std::flush;
   return samples;
 }
 
+void CMAES::overwriteSamples(const arr& Xnew, arr& Xold){
+  double **sam = self->evo.rgrgx;
+  for(uint i=0;i<Xnew.d0;i++){
+    for(uint j=0;j<Xnew.d1;j++){ sam[i][j] = Xnew(i,j);  Xold(i,j)=Xnew(i,j); }
+  }
+}
+
 void CMAES::update(arr& samples, arr& values){
+  CHECK_EQ(values.N, self->evo.sp.lambda, "")
   cmaes_UpdateDistribution(&self->evo, values.p);
 }
 
@@ -106,6 +124,7 @@ arr CMAES::getBestEver() {
 arr CMAES::getCurrentMean() {
   return arr(self->evo.rgxmean, self->evo.sp.N, false);
 }
+
 
 //===========================================================================
 
@@ -124,13 +143,13 @@ arr ES_mu_plus_lambda::generateNewSamples(){
   return X;
 }
 
-void ES_mu_plus_lambda::update(arr& X, arr& y){
-  if(elite_X.N){ X.append(elite_X); y.append(elite_y); }
-  std::tie(X,y) = select_best_mu(X, y, mu);
-  arr meanX =  ::mean(X);
+void ES_mu_plus_lambda::update(arr& Xnew, arr& y){
+  if(elite_X.N){ Xnew.append(elite_X); y.append(elite_y); }
+  std::tie(Xnew,y) = select_best_mu(Xnew, y, mu);
+  arr meanX =  ::mean(Xnew);
   mean = meanX + .5*(meanX-mean);
 
-  elite_X = X;
+  elite_X = Xnew;
   elite_y = y;
 }
 
@@ -157,15 +176,15 @@ arr GaussEDA::generateNewSamples(){
   return X;
 }
 
-void GaussEDA::update(arr& X, arr& y){
-  if(elite_X.N){ X.append(elite_X); y.append(elite_y); }
+void GaussEDA::update(arr& Xnew, arr& y){
+  if(elite_X.N){ Xnew.append(elite_X); y.append(elite_y); }
 
-  std::tie(X,y) = select_best_mu(X, y, mu);
-  elite_X = X;
+  std::tie(Xnew,y) = select_best_mu(Xnew, y, mu);
+  elite_X = Xnew;
   elite_y = y;
 
-  arr meanX = ::mean(X);
-  arr covY = covar(X);
+  arr meanX = ::mean(Xnew);
+  arr covY = covar(Xnew);
 
   arr delta = meanX-mean;
 

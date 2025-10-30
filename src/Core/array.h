@@ -170,7 +170,7 @@ template<class T> struct Array {
   void setReversePerm(int n=-1);
   void setRandomPerm(int n=-1);
   Array<T>& setCarray(const T* buffer, uint D0);
-  Array<T>& setCarray(const T** buffer, uint D0, uint D1);
+  Array<T>& setCarray(T* const* buffer, uint D0, uint D1);
   Array<T>& referTo(const T* buffer, uint n);
   void referTo(const Array<T>& a);
   void referToRange(const Array<T>& a, std::pair<int, int> I);

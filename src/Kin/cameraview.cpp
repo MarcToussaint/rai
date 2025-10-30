@@ -158,7 +158,7 @@ void simulateDepthNoise(floatA& depth, const floatA& depth2, const arr& fxycxy, 
 
   //-- fix ininite depth (no objects in opengl)
   for(float& d:depth){ if(d<0.) d=3.; }
-  for(float& d:depth2){ if(d<0.) d=4.; }
+  // for(float& d:depth2){ if(d<0.) d=4.; } //not necessary, will be shadowed anyway
 
   //-- shadows
   boolA shadow(depth.d0, depth.d1);
@@ -169,7 +169,7 @@ void simulateDepthNoise(floatA& depth, const floatA& depth2, const arr& fxycxy, 
       byte& s = shadow(i,j);
       if(j2<0) s=true;
       else if(j2>=int(depth.d1)) s=true;
-      else if(fabs(depth2(i, j2) - d)>.05) s=true;
+      else if(fabs(depth2(i, j2) - d)>.05) s=true; //key decision: do the depth values in both images differ >5cm
       else s=false;
     }
   }

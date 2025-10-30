@@ -80,7 +80,7 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     ret->feasible = true;
 
   } else if(opt->method==M_LSZO) {
-    ret = LeastSquaredZeroOrder(Phere, x). solve();
+    ret = LeastSquaresDerivativeFree(Phere, x). solve();
     x = ret->x;
 
   } else if(opt->method==M_NelderMead) {
@@ -94,7 +94,7 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
   } else if(opt->method==M_ES) {
     // ret = rai::ES_mu_plus_lambda(Phere->f_scalar(), x). solve();
     // ret = rai::GaussEDA(Phere->f_scalar(), x). solve();
-    ret = rai::LSGaussEDA(Phere, x). solve();
+    ret = rai::LS_CMA(Phere, x). solve();
     x = ret->x;
 
   } else if(opt->method==M_greedy) {

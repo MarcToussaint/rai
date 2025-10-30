@@ -336,7 +336,6 @@ Frame* Configuration::addH5Object(const char* framename, const char* filename, i
   if(H.exists("decomp/")){
     arr pts = H.read<double>("decomp/vertices");
     uintA faces = H.read<uint>("decomp/faces");
-    byteA colors = H.read<byte>("decomp/colors");
     uintA parts = H.read<uint>("decomp/parts");
 
     rai::Frame *objDecomp = addFrame(STRING(framename<<"_decomp"));
@@ -353,9 +352,11 @@ Frame* Configuration::addH5Object(const char* framename, const char* filename, i
     objDecomp->convertDecomposedShapeToChildFrames();
 
     // CHECK_EQ(parts.N, objDecomp->children.N, "couldn't create parts");
+    uint i=0;
     for(rai::Frame *ch:objDecomp->children){
       ch->getAts().add<bool>("simulate", true);
-      ch->setColor({1., 1., 0., .5});
+      // ch->setColor({1., 1., 0., .5});
+      ch->setColor(id2color(i++));
     }
 
     if(verbose>0) LOG(0) <<"added " <<objDecomp->children.N <<" convex-decomposed shapes in subframes";

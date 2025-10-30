@@ -26,7 +26,7 @@ auto decompose(const arr& phi, const arr& J, ObjectiveTypeA featureTypes){
   return std::tuple(phi_sos,phi_f, Jsos, Jf);
 }
 
-LeastSquaredZeroOrder::LeastSquaredZeroOrder(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt)
+LeastSquaresDerivativeFree::LeastSquaresDerivativeFree(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt)
  : P(P), opt(_opt){
   if(x_init.N) x=x_init;
   else x=P->getInitializationSample();
@@ -52,14 +52,14 @@ LeastSquaredZeroOrder::LeastSquaredZeroOrder(shared_ptr<NLP> P, const arr& x_ini
   //evaluate
   P->evaluate(phi_x, NoArr, x);
   phi2_x = sumOfSqr(phi_x);
-  cout <<"--lszo-- " <<steps <<" f: " <<phi2_x <<std::endl;
+  cout <<"--lszo-- " <<evals <<" f: " <<phi2_x <<std::endl;
 }
 
-arr LeastSquaredZeroOrder::generateNewSamples(){
+arr LeastSquaresDerivativeFree::generateNewSamples(uint lambda){
 #if 0
   if(elite_X.d0){
-    //uint pick = rnd.uni_int(0,elite_X.d0-1);
-    uint pick = 0;
+    uint pick = rnd.uni_int(0,elite_X.d0-1);
+    // pick = 0;
     x = elite_X[pick];
     phi_x = elite_Phi[pick];
     // phi2_x = sumOfSqr(phi_x);
@@ -69,7 +69,7 @@ arr LeastSquaredZeroOrder::generateNewSamples(){
   //-- compute delta
   arr delta;
   Hinv = inverse_SymPosDef(~J*J + damping*eye(J.d1));
-  delta = Hinv * (~J * phi_x); //(phi0+J*x));
+  delta = Hinv * (~J * (phi0+J*x)); //phi_x
 
   delta *= -alpha;
 
@@ -117,7 +117,7 @@ arr LeastSquaredZeroOrder::generateNewSamples(){
   return X;
 }
 
-void LeastSquaredZeroOrder::update(arr& X, arr& Phi){
+void LeastSquaresDerivativeFree::update(arr& X, arr& Phi){
   for(uint i=0;i<Phi.d0;i++) zero_non_sos_objectives(P->featureTypes, Phi[i].noconst());
 
   //store
@@ -167,7 +167,7 @@ void LeastSquaredZeroOrder::update(arr& X, arr& Phi){
   arr y = elite_X[0];
   arr phi_y = elite_Phi[0];
   double phi2_y = sumOfSqr(phi_y);
-  cout <<"--lszo-- " <<steps <<" f: " <<phi2_y <<std::flush;
+  cout <<"--lszo-- " <<evals <<" f: " <<phi2_y <<std::flush;
 
   //-- update x (reject?)
   if(phi2_y>=phi2_x){
@@ -187,26 +187,27 @@ void LeastSquaredZeroOrder::update(arr& X, arr& Phi){
   }
 }
 
-bool LeastSquaredZeroOrder::step(){
+bool LeastSquaresDerivativeFree::step(){
   steps++;
 
-  arr X = generateNewSamples();
+  arr X = generateNewSamples(lambda);
 
   //-- evaluate
   arr Phi(lambda, P->featureTypes.N);
   for(uint k=0;k<X.d0;k++){
     P->evaluate(Phi[k].noconst(), NoArr, X[k]);
+    evals++;
   }
 
   update(X, Phi);
 
-  if((int)steps>maxIters) return true;
+  if((int)evals>opt->stopEvals) return true;
   if(rejectedSteps>3*x.N) return true;
   if(tinySteps>5) return true;
   return false;
 }
 
-void LeastSquaredZeroOrder::updateJ_rank1(arr& J, const arr& x, const arr& x_last, const arr& phi, const arr& phi_last){
+void LeastSquaresDerivativeFree::updateJ_rank1(arr& J, const arr& x, const arr& x_last, const arr& phi, const arr& phi_last){
   arr y = phi - phi_last;
   arr d = x - x_last;
   double d2 = sumOfSqr(d)+1e-3;
@@ -245,90 +246,59 @@ std::tuple<arr,arr> updateJ_linReg(const arr& Xraw, const arr& Y, const arr& x_n
 
 //===========================================================================
 
-LSGaussEDA::LSGaussEDA(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt)
-    : P(P), opt(_opt){
-
-  mean = x_init;
-  CHECK_EQ(mean.N, P->dimension, "");
-
-  cov = rai::sqr(sigmaInit)*eye(mean.N);
+LS_CMA::LS_CMA(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt)
+    : P(P), opt(_opt), cma(P->f_scalar(), x_init, _opt), lsdf(P, x_init, _opt){
 }
 
-arr LSGaussEDA::generateNewSamples(){
-  arr C;
-  lapack_cholesky(C, cov);
-  arr z = randn(lambda, mean.N) * ~C;
+arr LS_CMA::generateNewSamples(){
+  arr X = cma.generateNewSamples();
+  arr Xlsdf = lsdf.generateNewSamples(ls_lambda);
 
-  arr X = replicate(mean, lambda);
-  X += z;
+  cma.overwriteSamples(Xlsdf, X);
+
   return X;
 }
 
-void LSGaussEDA::update(arr& X, arr& Phi){
+void LS_CMA::update(arr& X, arr& Phi){
   for(uint i=0;i<Phi.d0;i++) zero_non_sos_objectives(P->featureTypes, Phi[i].noconst());
 
-  if(elite_X.N){ X.append(elite_X); Phi.append(elite_y); }
-
   arr Phi2 = ::sum(::sqr(Phi), 1);
-  uintA picks = pick_best_mu(X, Phi2, mu);
-  elite_X = X.pick(picks);
-  elite_y = Phi.pick(picks);
 
-  //linreg:
-  arr J, phi0;
-  std::tie(J, phi0) = updateJ_linReg(X, Phi, mean, 10.);
+  cma.update(X, Phi2);
+  lsdf.update(X, Phi);
 
-  //update GN-mu
-  arr H = ~J*J;
-  arr Hinv = inverse_SymPosDef(H + 1e-3*eye(H.d0));
-  arr mu_GN = - Hinv * (~J * phi0);
-
-#if 1
-  mean += .1 * (mu_GN - mean);
-  cov = (1-beta) * cov + beta * Hinv;
-#else
-  //update cov
-  arr H = inverse_SymPosDef(cov);
-  double beta2=.5;
-  H += beta2*(~J*J);
-  cov = inverse_SymPosDef(H);
-
-  X = elite_X;
-
-  arr meanX = ::mean(X);
-  arr covY = covar(X);
-
-  arr delta = meanX-mean;
-
-  if(length(delta)<1e-4) tinySteps++; else tinySteps=0;
-
-  mean = meanX + momentum*delta;
-
-  cov = (1.-beta)*cov + beta*covY;
-  cov += .4 * (delta*~delta);
-#endif
-
-  double sig2 = trace(cov);
-
-  cout <<"--GaussEDA-- " <<steps <<" sig2: " <<sig2 <<endl;
+  lsdf.x = cma.getCurrentMean();
 }
 
-bool LSGaussEDA::step(){
+bool LS_CMA::step(){
   steps++;
 
   arr X = generateNewSamples();
 
   //-- evaluate
-  arr Phi(lambda, P->featureTypes.N);
+  arr Phi(cma.lambda, P->featureTypes.N);
   for(uint k=0;k<X.d0;k++){
     P->evaluate(Phi[k].noconst(), NoArr, X[k]);
+    evals++;
+  }
+
+
+  {
+    arr Phi2 = ::sum(::sqr(Phi), 1);
+    uint i_best = argmin(Phi2);
+    x_best = X[i_best];
+    phi_best = Phi[i_best];
+    cout <<" f:" <<Phi2(i_best) <<endl;
   }
 
   update(X, Phi);
 
-  if((int)steps*lambda>1000) return true;
-  if(rejectedSteps>3*mean.N) return true;
+  if((int)evals>opt->stopEvals) return true;
+  if(rejectedSteps>3*P->dimension) return true;
   if(tinySteps>5) return true;
   return false;
 }
+
+//===========================================================================
+
 } //namespace
