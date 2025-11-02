@@ -20,6 +20,7 @@ struct PhysX_Options {
   RAI_PARAM("physx/", double, defaultRestitution, .1) //restitution=1 should be elastic...
   RAI_PARAM("physx/", double, motorKp, 1000.)
   RAI_PARAM("physx/", double, motorKd, 100.)
+  RAI_PARAM("physx/", double, motorLimit, 1e8)
 };
 }//namespace
 
@@ -48,6 +49,8 @@ struct PhysXInterface {
   void disableGravity(rai::Frame* f, bool disable=true);
   void addForce(rai::Vector& force, rai::Frame* b);
   void addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos);
+
+  void reportOnMotors();
 
   rai::Configuration& getDebugConfig();
   rai::PhysX_Options& opt();

@@ -269,6 +269,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->physx->step(tau);
     self->physx->pullFreeStates(C);
     self->physx->pullJointStates(C, self->qDot);
+//    self->physx->reportOnMotors();
   } else if(engine==_bullet) {
     if(self->bullet->opt().multiBody) self->bullet->setMotorQ(self->q_ref, qDot_ref);
     self->bullet->step(tau);

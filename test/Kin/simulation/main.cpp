@@ -156,7 +156,7 @@ void testOpenClose(){
   RealWorld.addFile(rai::raiPath("../rai-robotModels/scenarios/liftRing.g"));
 //  RealWorld["box"]->set_Q()->setText("<t(.3 -.1 .25) d(40 1 1 0)>");
 //  RealWorld["stick"]->set_Q()->setText("<t(-.3 .6 1.1) d(90 1 0 0) d(20 1 1 0)>");
-  rai::Simulation S(RealWorld, S._physx, 2);
+  rai::Simulation S(RealWorld, S._physx, 4);
 
   rai::Configuration C;
 //  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
@@ -592,7 +592,7 @@ void testSplineMode(){
   arr q = repmat(~q0, T, 1);
   q += .5 * randn(q.d0, q.d1);
   //move command requires total time or explicit times for each control point
-  double time = 10;
+  double time = 2.;
   S.setSplineRef(q, {time});
 
   for(uint t=0;t<time/tau;t++){

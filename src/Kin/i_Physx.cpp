@@ -57,21 +57,27 @@ arr conv_PxVec2arr(const PxVec3& v) {
 //stuff from Samples/PxToolkit
 
 namespace PxToolkit {
-PxConvexMesh* createConvexMesh(PxPhysics& physics, PxCooking& cooking, const PxVec3* verts, PxU32 vertCount, PxConvexFlags flags) {
-  PxConvexMeshDesc convexDesc;
-  convexDesc.points.count     = vertCount;
-  convexDesc.points.stride    = sizeof(PxVec3);
-  convexDesc.points.data      = verts;
-  convexDesc.flags            = flags;
+PxConvexMesh* createConvexMesh(PxPhysics& physics, /*PxCooking& cooking,*/ const PxVec3* verts, PxU32 vertCount, PxConvexFlags flags) {
+  PxConvexMeshDesc desc;
+  desc.points.count     = vertCount;
+  desc.points.stride    = sizeof(PxVec3);
+  desc.points.data      = verts;
+  desc.flags            = flags;
 
-  return cooking.createConvexMesh(convexDesc); //, physics.getPhysicsInsertionCallback());
-//  PxDefaultMemoryOutputStream buf;
-//  if(!cooking.cookConvexMesh(convexDesc, buf)) return nullptr;
-//  PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
-//  return physics.createConvexMesh(input);
+#if 0
+  return cooking.createConvexMesh(desc); //, physics.getPhysicsInsertionCallback());
+#else
+  PxCookingParams params(physics.getTolerancesScale());
+  PxDefaultMemoryOutputStream outStream;
+  bool res = PxCookConvexMesh(params, desc, outStream);
+  PX_UNUSED(res);
+  PX_ASSERT(res);
+  PxDefaultMemoryInputData inStream(outStream.getData(), outStream.getSize());
+  return physics.createConvexMesh(inStream);
+#endif
 }
 
-PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, const PxVec3* verts, PxU32 vertCount, const PxU32* indices32, PxU32 triCount) {
+PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, /*PxCooking& cooking,*/ const PxVec3* verts, PxU32 vertCount, const PxU32* indices32, PxU32 triCount) {
   PxTriangleMeshDesc meshDesc;
   meshDesc.points.count     = vertCount;
   meshDesc.points.stride    = 3*sizeof(float);
@@ -113,7 +119,7 @@ PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, con
 struct PhysXInterface_Engine {
   PxFoundation* mFoundation = nullptr;
   PxPhysics* mPhysics = nullptr;
-  PxCooking* mCooking = nullptr;
+  // PxCooking* mCooking = nullptr;
   PxDefaultErrorCallback gDefaultErrorCallback;
   PxDefaultAllocator gDefaultAllocatorCallback;
   PxSimulationFilterShader gDefaultFilterShader=PxDefaultSimulationFilterShader;
@@ -124,17 +130,17 @@ struct PhysXInterface_Engine {
     // scale.length = .1;
     // scale.speed = .1;
     mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, scale);
-    PxCookingParams cookParams(mPhysics->getTolerancesScale());
+    // PxCookingParams cookParams(mPhysics->getTolerancesScale());
     //    cookParams.skinWidth = .001f;
-    mCooking = PxCreateCooking(PX_PHYSICS_VERSION, *mFoundation, cookParams);
-    if(!mCooking) HALT("PxCreateCooking failed!");
+    // mCooking = PxCreateCooking(PX_PHYSICS_VERSION, *mFoundation, cookParams);
+    // if(!mCooking) HALT("PxCreateCooking failed!");
     if(!mPhysics) HALT("Error creating PhysX3 device.");
     //if(!PxInitExtensions(*mPhysics)) HALT("PxInitExtensions failed!");
   }
 
   ~PhysXInterface_Engine() {
     mPhysics->release();
-    mCooking->release();
+    // mCooking->release();
     mFoundation->release();
   }
 };
@@ -148,6 +154,7 @@ struct PhysXInterface_self {
   ~PhysXInterface_self();
 
   FrameL freeFrames;
+  FrameL articulationRoots;
   FrameL articulationJoints;
 
   PxScene* gScene = nullptr;
@@ -480,6 +487,8 @@ void PhysXInterface_self::unlockJoint(PxD6Joint* joint, rai::Joint* rai_joint) {
 void PhysXInterface_self::addMultiBody(rai::Frame* base) {
   //CHECK(!base->parent || (base->joint && base->joint->type==rai::JT_rigid) || (base->joint && base->inertia), "base needs to be either rigid or with inertia");
 
+  articulationRoots.append(base);
+
   //multibody options
   bool multibody_fixedBase = base->getAts().get<bool>("multibody_fixedBase", true);
   bool multibody_gravity = base->getAts().get<bool>("multibody_gravity", false);
@@ -513,6 +522,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
   PxArticulationReducedCoordinate* articulation = core()->mPhysics->createArticulationReducedCoordinate();
   articulation->setArticulationFlag(PxArticulationFlag::eFIX_BASE, multibody_fixedBase);
   articulation->setArticulationFlag(PxArticulationFlag::eDISABLE_SELF_COLLISION, true);
+  articulation->setArticulationFlag(PxArticulationFlag::eDRIVE_LIMITS_ARE_FORCES, true);
   //articulation->setSolverIterationCounts(minPositionIterations, minVelocityIterations);
   //articulation->setMaxCOMLinearVelocity(maxCOMLinearVelocity);
 
@@ -544,6 +554,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
     bool noMotor = ats->get<bool>("noMotor", false);
     double motorKp = ats->get<double>("motorKp", opt.motorKp);
     double motorKd = ats->get<double>("motorKd", opt.motorKd);
+    double motorLimit = ats->get<double>("motorLimit", opt.motorLimit);
     double motorLambda =  ats->get<double>("motorLambda", -1.);
     if(motorLambda>0.){
       double motorMass =  ats->get<double>("motorMass", f->inertia->mass);
@@ -567,7 +578,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
       if(f->joint){
         str <<" and joint " <<f->joint->type;
         if(noMotor) str <<" (no motor!)";
-        else str <<" (Kp=" <<motorKp <<" Kd=" <<motorKd <<")";
+        else str <<" (Kp:" <<motorKp <<" Kd:" <<motorKd <<" Klimit:" <<motorLimit <<")";
         if(f->joint->limits.N) str <<" limits: " <<f->joint->limits;
         if(!f->joint->active) str <<"(inactive)";
       }
@@ -665,10 +676,10 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 
       if(!noMotor && axis!=PxArticulationAxis::eCOUNT) { //only 1D joints have drives!
         PxArticulationDrive posDrive;
-        posDrive.stiffness = motorKp;                      // the spring constant driving the joint to a target position
-        posDrive.damping = motorKd;                        // the damping coefficient driving the joint to a target velocity
-        posDrive.maxForce = PX_MAX_F32; //1e10f;                              // force limit for the drive
-        posDrive.driveType = PxArticulationDriveType::eFORCE;  // make the drive output be a force/torque (default)
+        posDrive.stiffness = motorKp;                         // the spring constant driving the joint to a target position
+        posDrive.damping = motorKd;                           // the damping coefficient driving the joint to a target velocity
+        posDrive.maxForce = motorLimit;                       // force limit for the drive
+        posDrive.driveType = PxArticulationDriveType::eFORCE; // make the drive output be a force/torque (default)
         joint->setDriveParams(axis, posDrive);
         joint->setDriveVelocity(axis, 0.);
         joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
@@ -766,7 +777,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       // geometry = make_shared<PxCapsuleGeometry>(s->size(1), .5*s->size(0));
       floatA Vfloat = rai::convert<float>(s->mesh().V);
       PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
-          *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
+          *core()->mPhysics, /**core()->mCooking,*/ (PxVec3*)Vfloat.p, Vfloat.d0,
           PxConvexFlag::eCOMPUTE_CONVEX);
       meshes.append(triangleMesh);
       geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
@@ -782,7 +793,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
       if(s->sscCore().N){ //has a convex collision core
         floatA Vfloat = rai::convert<float>(s->sscCore());
         PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
-            *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
+            *core()->mPhysics, /**core()->mCooking,*/ (PxVec3*)Vfloat.p, Vfloat.d0,
             PxConvexFlag::eCOMPUTE_CONVEX);
         geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
         paddingRadius = s->coll_cvxRadius;
@@ -791,7 +802,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
         floatA Vfloat = rai::convert<float>(s->mesh().V);
         uintA& Tri = s->mesh().T;
         PxTriangleMesh* triangleMesh = PxToolkit::createTriangleMesh32(
-            *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0, (PxU32*) Tri.p, Tri.d0);
+            *core()->mPhysics, /**core()->mCooking,*/ (PxVec3*)Vfloat.p, Vfloat.d0, (PxU32*) Tri.p, Tri.d0);
         geometry = make_shared<PxTriangleMeshGeometry>(triangleMesh);
         if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape non-cvx mesh '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
       }else NIY;
@@ -935,45 +946,40 @@ void PhysXInterface_self::syncDebugConfig() {
 
 	  //cout <<"drawing shape " <<body->name <<endl;
 	  rai::Transformation Q = conv_PxTrans2Transformation(shape->getLocalPose());
-	  switch(shape->getGeometryType()) {
+	  const PxGeometry* _g = &shape->getGeometry();
+	  switch(_g->getType()) {
 	    case PxGeometryType::eBOX: {
-	      PxBoxGeometry g;
-	      shape->getBoxGeometry(g);
-	      //glutSolidCube(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
+	      const PxBoxGeometry* g = (const PxBoxGeometry*)_g;
 	      rai::Mesh m;
 	      m.setBox();
-	      m.scale(g.halfExtents.x*2, g.halfExtents.y*2, g.halfExtents.z*2);
+	      m.scale(g->halfExtents.x*2, g->halfExtents.y*2, g->halfExtents.z*2);
 	      if(!Q.isZero()) m.transform(Q);
 	      mesh.addMesh(m);
 	    } break;
 	    case PxGeometryType::eSPHERE: {
-	      PxSphereGeometry g;
-	      shape->getSphereGeometry(g);
-	      // glutSolidSphere(g.radius, 10, 10);
+	      const PxSphereGeometry* g = (const PxSphereGeometry*)_g;
 	      rai::Mesh m;
 	      m.setSphere();
-	      m.scale(g.radius);
+	      m.scale(g->radius);
 	      if(!Q.isZero()) m.transform(Q);
 	      mesh.addMesh(m);
 	    } break;
 	    case PxGeometryType::eCAPSULE: {
-	      PxCapsuleGeometry g;
-	      shape->getCapsuleGeometry(g);
-	      // glDrawCappedCylinder(g.radius, g.halfHeight*2);
+	      const PxCapsuleGeometry* g = (const PxCapsuleGeometry*)_g;
+	      // glDrawCappedCylinder(g->radius, g->halfHeight*2);
 	      rai::Mesh m;
-	      m.setCapsule(g.radius, g.halfHeight*2.);
+	      m.setCapsule(g->radius, g->halfHeight*2.);
 	      if(!Q.isZero()) m.transform(Q);
 	      mesh.addMesh(m);
 	    } break;
 	    case PxGeometryType::eCONVEXMESH: {
 #if 1
-	      PxConvexMeshGeometry g;
-	      shape->getConvexMeshGeometry(g);
+	      const PxConvexMeshGeometry* g = (const PxConvexMeshGeometry*)_g;
 	      floatA Vfloat;
-	      Vfloat.referTo((float*)g.convexMesh->getVertices(), 3*g.convexMesh->getNbVertices()); //reference!
+	      Vfloat.referTo((float*)g->convexMesh->getVertices(), 3*g->convexMesh->getNbVertices()); //reference!
 	      rai::Mesh m;
 	      copy(m.V, Vfloat);
-	      m.V.reshape(g.convexMesh->getNbVertices(), 3);
+	      m.V.reshape(g->convexMesh->getNbVertices(), 3);
 	      m.makeConvexHull();
 	      if(!Q.isZero()) m.transform(Q);
 	      mesh.addMesh(m);
@@ -982,18 +988,17 @@ void PhysXInterface_self::syncDebugConfig() {
 #endif
 	    } break;
 	    case PxGeometryType::eTRIANGLEMESH: {
-	      PxTriangleMeshGeometry g;
-	      shape->getTriangleMeshGeometry(g);
+	      const PxTriangleMeshGeometry* g = (const PxTriangleMeshGeometry*)_g;
 	      floatA Vfloat;
-	      Vfloat.referTo((float*)g.triangleMesh->getVertices(), 3*g.triangleMesh->getNbVertices()).reshape(-1, 3);
+	      Vfloat.referTo((float*)g->triangleMesh->getVertices(), 3*g->triangleMesh->getNbVertices()).reshape(-1, 3);
 	      rai::Mesh m;
 	      m.V = rai::convert<double>(Vfloat);
-	      if(g.triangleMesh->getTriangleMeshFlags()&PxTriangleMeshFlag::e16_BIT_INDICES) {
+	      if(g->triangleMesh->getTriangleMeshFlags()&PxTriangleMeshFlag::e16_BIT_INDICES) {
 		rai::Array<uint16_t> T16;
-		T16.referTo((uint16_t*)g.triangleMesh->getTriangles(), 3*g.triangleMesh->getNbTriangles()).reshape(-1, 3);
+		T16.referTo((uint16_t*)g->triangleMesh->getTriangles(), 3*g->triangleMesh->getNbTriangles()).reshape(-1, 3);
 		m.T = rai::convert<uint>(T16);
 	      } else {
-		m.T.setCarray((uint*)g.triangleMesh->getTriangles(), 3*g.triangleMesh->getNbTriangles()).reshape(-1, 3);
+		m.T.setCarray((uint*)g->triangleMesh->getTriangles(), 3*g->triangleMesh->getNbTriangles()).reshape(-1, 3);
 	      }
 	      if(!Q.isZero()) m.transform(Q);
 	      mesh.addMesh(m);
@@ -1152,11 +1157,13 @@ void PhysXInterface::postAddObject(rai::Frame* f) {
 void PhysXInterface::pushJointTargets(const rai::Configuration& C, const arr& qDot_ref, bool setStatesInstantly) {
   // for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)) {
   for(rai::Frame *f:self->articulationJoints){
-      PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
-      CHECK(actor,""); if(!actor) continue;
-      PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
-      CHECK(joint,""); if(!joint) continue;
+    PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
+    CHECK(actor,""); if(!actor) continue;
+    PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
+    CHECK(joint,""); if(!joint) continue;
 
+    // if(f->joint->active) //e.g. when closing the finger: these need to be set!!
+    {
       auto axis = self->jointAxis(f->ID);
       if(axis!=PxArticulationAxis::eCOUNT){ //only joints with drive
         if(setStatesInstantly) joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
@@ -1171,6 +1178,7 @@ void PhysXInterface::pushJointTargets(const rai::Configuration& C, const arr& qD
 	}
       }
     }
+  }
 }
 
 void PhysXInterface::pullJointStates(rai::Configuration& C, arr& qDot) {
@@ -1181,11 +1189,12 @@ void PhysXInterface::pullJointStates(rai::Configuration& C, arr& qDot) {
 
   // for(rai::Frame* f:C.frames) if(f->joint && self->actors(f->ID)) { //f->joint->active &&
   for(rai::Frame *f:self->articulationJoints){
-      PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
+    PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
     CHECK(actor,""); if(!actor) continue;
-      PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
+    PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
     CHECK(joint,""); if(!joint) continue;
 
+    {
       auto axis = self->jointAxis(f->ID);
       if(axis!=PxArticulationAxis::eCOUNT){ //only joints with drive
         if(f->joint->active){
@@ -1195,44 +1204,73 @@ void PhysXInterface::pullJointStates(rai::Configuration& C, arr& qDot) {
           qInactive(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
           f->joint->setDofs(qInactive, f->joint->qIndex);
 	  //          if(!!qDot){ NIY }
-        }
+	}
       }
     }
+  }
   C.qInactive = qInactive;
   C.setJointState(q);
+}
+
+void PhysXInterface::reportOnMotors(){
+  for(rai::Frame *f:self->articulationJoints){
+    PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
+    CHECK(actor,""); if(!actor) continue;
+    PxArticulationJointReducedCoordinate* joint = actor->getInboundJoint();
+    CHECK(joint,""); if(!joint) continue;
+
+    auto axis = self->jointAxis(f->ID);
+    if(axis!=PxArticulationAxis::eCOUNT){ //only joints with drive
+      LOG(0) <<"--- joint " <<f->name <<" " <<f->joint->type;
+
+      PxArticulationDrive drive = joint->getDriveParams(axis);
+      cout <<"   drive params: stiffness: " <<drive.stiffness <<" damping: " <<drive.damping <<" maxForce: " <<drive.maxForce <<" driveType: " <<drive.driveType <<endl;
+
+      PxReal pos, vel, pos_ref, vel_ref;
+      pos = joint->getJointPosition(axis);
+      vel = joint->getJointVelocity(axis);
+      pos_ref = joint->getDriveTarget(axis);
+      vel_ref = joint->getDriveVelocity(axis);
+
+      // PD law
+      PxReal torque = drive.stiffness * (pos_ref - pos) + drive.damping * (vel_ref - vel);
+
+      cout <<"   drive: force: " <<torque <<" pos_err,ref: " <<(pos-pos_ref) <<"," <<pos_ref <<" vel_err,ref: " <<(vel-vel_ref) <<"," <<vel_ref <<endl;
+    }
+  }
 
 #if 0
   //articulation joint torques
-  for(rai::Frame* f:C.frames) if(self->actors(f->ID)) {
-      PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
-      if(!actor) continue;
-      if(actor->getLinkIndex()==0){ //root of an articulation
-        LOG(0) <<"articulation: " <<f->name;
-        PxArticulationReducedCoordinate* articulation = &actor->getArticulation();
-        PxArticulationCache* cache = articulation->createCache();
-        articulation->copyInternalStateToCache(*cache, PxArticulationCacheFlag::eALL);
-        // articulation->computeJointForce(cache);
-        uint n = articulation->getDofs();
-        for(uint i=0;i<n;i++){
-          cout <<"joint" <<i;
-          // cout <<" pos:" <<cache->jointPosition[i];
-          // cout <<" vel:" <<cache->jointVelocity[i];
-          cout <<" acc:" <<cache->jointAcceleration[i];
-          cout <<" frc:" <<cache->jointForce[i];
-          cout <<" sof:" <<cache->jointSolverForces[i];
-          cout <<endl;
-        }
-        n = articulation->getNbLinks();
-        for(uint i=0;i<n;i++){
-          cout <<"link" <<i;
-          cout <<" exF:" <<conv_PxVec2arr(cache->externalForces[i].force);
-          // cout <<" vel:" <<conv_PxVec2arr(cache->linkVelocity[i].linear);
-          // cout <<" acc:" <<conv_PxVec2arr(cache->linkAcceleration[i].linear);
-          cout <<endl;
-        }
-        cache->release();
-      }
+  for(rai::Frame *f:self->articulationRoots){
+    PxArticulationLink* actor = self->actors(f->ID)->is<PxArticulationLink>();
+    CHECK(actor,""); if(!actor) continue;
+    CHECK(actor->getLinkIndex()==0, "");
+
+    LOG(0) <<"articulation: " <<f->name;
+    PxArticulationReducedCoordinate* articulation = &actor->getArticulation();
+    PxArticulationCache* cache = articulation->createCache();
+    articulation->copyInternalStateToCache(*cache, PxArticulationCacheFlag::eALL);
+    articulation->computeJointForce(*cache);
+    uint n = articulation->getDofs();
+    for(uint i=0;i<n;i++){
+      cout <<"joint" <<i;
+      // cout <<" pos:" <<cache->jointPosition[i];
+      // cout <<" vel:" <<cache->jointVelocity[i];
+      cout <<" acc:" <<cache->jointAcceleration[i];
+      cout <<" frc:" <<cache->jointForce[i];
+      cout <<" sof:" <<cache->jointSolverForces[i];
+      cout <<endl;
     }
+    n = articulation->getNbLinks();
+    for(uint i=0;i<n;i++){
+      cout <<"link" <<i;
+      cout <<" exF:" <<conv_PxVec2arr(cache->externalForces[i].force);
+      // cout <<" vel:" <<conv_PxVec2arr(cache->linkVelocity[i].linear);
+      // cout <<" acc:" <<conv_PxVec2arr(cache->linkAcceleration[i].linear);
+      cout <<endl;
+    }
+    cache->release();
+  }
 #endif
 }
 

@@ -1927,9 +1927,10 @@ void Camera::read(Graph& ats) {
 }
 
 void Camera::report(std::ostream& os) {
-  os <<"camera pose X=" <<X <<endl;
-  os <<"camera focal length=" <<focalLength <<endl;
-  os <<"intrinsic matrix=\n" <<getIntrinsicMatrix() <<endl;
+  os <<"camera pose X: " <<X <<endl;
+  os <<"width: " <<width <<" height: " <<height <<endl;
+  os <<"focalLength: " <<focalLength <<endl;
+  os <<"intrinsic matrix:\n" <<getIntrinsicMatrix() <<endl;
 }
 
 arr Camera::getT_IC() const{
