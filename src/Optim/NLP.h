@@ -187,6 +187,7 @@ struct SolverReturn {
   bool feasible=false;
   double sos=0., f=0., ineq=0., eq=0.;
   bool done=false;
+  void setFeasible(double tol=.1){ feasible = (ineq<tol) && (eq<tol); }
   void write(ostream& os) const;
 };
 stdOutPipe(SolverReturn)

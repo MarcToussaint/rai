@@ -54,10 +54,10 @@ int main(int argc,char **argv){
     }
 
     //-- sort frames
-    //  if(rai::checkParameter<bool>("sort")){
-    LOG(0) <<"SORTING FRAMES";
-    C.sortFrames();
-    //  }
+     if(rai::checkParameter<bool>("sort")){
+      LOG(0) <<"SORTING FRAMES";
+      C.sortFrames();
+     }
 
     //    C.processStructure(false, false, false);
     C.ensure_q();
@@ -94,7 +94,7 @@ int main(int argc,char **argv){
       C.writeCollada("z.dae");
       rai::Graph G;
       C.write(G);
-      G.writeYaml(FILE("z.yml"));
+      G.writeYaml(FILE("z.yml"), false);
     }
 
     if(rai::checkParameter<double>("scale")){

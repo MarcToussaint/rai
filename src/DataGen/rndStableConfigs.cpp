@@ -43,15 +43,17 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
     // komo.view(true, STRING("init with supports: " <<supp));
 
 #if 1
-    auto ret = rai::NLP_Solver(komo.nlp())
-               .setOptions(rai::OptOptions().set_stopEvals(100))
-               .solve();
+    auto ret = rai::NLP_Solver(komo.nlp(), opt.verbose)
+                   // .setOptions(rai::OptOptions().set_stopEvals(100))
+                   .solve();
     //      komo.nlp()->checkJacobian(ret->x, 1e-4, komo.featureNames);
 #else
     auto ret = rai::NLP_Sampler(komo.nlp())
                .setOptions(NLP_Sampler_Options().set_slackMaxStep(.2). set_downhillMaxSteps(100). set_slackRegLambda(.1) .set_tolerance(.01))
                .sample();
 #endif
+
+    ret->setFeasible(1e-2);
 
     if(opt.verbose>0) LOG(0) <<*ret;
     //    cout <<komo.report() <<endl;
@@ -78,5 +80,5 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
 }
 
 void RndStableConfigs::report(){
-  LOG(0) <<"TOTAL SUCC: " <<totalSucc <<"\n   evals/succ: " <<double(totalEvals)/double(totalSucc) <<endl;
+  LOG(0) <<"TOTAL SUCC: " <<totalSucc <<"   evals/succ: " <<double(totalEvals)/double(totalSucc);
 }

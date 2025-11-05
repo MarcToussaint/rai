@@ -38,7 +38,7 @@ void H5_Writer::addDict(const char* name, const Graph& dict){
   charA b;
   b.referTo(s.p, s.N);
   add<char>(name, b);
-  LOG(0) <<"writing dict len: " <<b.N <<' ' <<s <<endl;
+  // LOG(0) <<"writing dict len: " <<b.N <<' ' <<s <<endl;
 }
 
 void H5_Writer::addGroup(const char* group) {

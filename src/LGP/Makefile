@@ -2,9 +2,9 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-DEPEND = Logic KOMO PathAlgos Search
+#OPTIM = debug
 
-OPTIM = debug
+DEPEND = Logic KOMO PathAlgos Search
 
 LAPACK = 1
 GL = 1

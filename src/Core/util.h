@@ -171,7 +171,7 @@ struct String : public std::iostream {
   char& operator()(int i) const;
   std::iostream& stream();            ///< explicitly returns this as an std::iostream&
   String& operator()();               ///< explicitly return this as a (non-const!) String&
-  String getSubString(int start, int end) const;
+  String sub(int start, int end) const;
   String getFirstN(uint n) const;
   String getLastN(uint n) const;
 

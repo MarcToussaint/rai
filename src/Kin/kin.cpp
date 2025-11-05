@@ -226,7 +226,8 @@ Frame* Configuration::addFile(const char* filename, const char* namePrefix) {
   uint n=frames.N;
   FileToken file(filename);
   file.cd_file();
-  Graph G(file);
+  Graph G;
+  G.read(file, false, file.name.endsWith("yml"));
   if(namePrefix && namePrefix[0]) {
     for(Node* n:G) {
       n->key.prepend(namePrefix);
@@ -3867,7 +3868,7 @@ void Configuration::watchFile(const char* filename) {
       Graph G;
       try {
         lineCount=1;
-        G.read(file);
+        G.read(file, false, file.name.endsWith("yml"));
         G.checkConsistency();
       } catch(std::runtime_error& err) {
         LOG(0) <<"g-File Synax Error line " <<lineCount <<": " <<err.what();

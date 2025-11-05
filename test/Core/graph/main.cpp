@@ -1,8 +1,5 @@
 #include <Core/graph.h>
 
-//const char *filename="/home/mtoussai/git/3rdHand/documents/USTT/14-meeting3TUD/box.g";
-const char *filename=nullptr;
-
 //===========================================================================
 
 void TEST(Read){
@@ -10,21 +7,13 @@ void TEST(Read){
 
   G.checkConsistency();
   cout <<"\n** reading graph..." <<std::flush;
-  G.read(FILE(filename?filename:"example.g"), true); //including parse info
+  // G.read("example.g", true); //including parse info
+  G.read(FILE("example.yml"), true, true); //including parse info
   cout <<G <<endl;
   G.checkConsistency();
   cout <<"\ndone" <<endl;
-  G.writeParseInfo(cout);
   cout <<"read graph=\n--------------------\n" <<G <<"\n--------------------" <<endl;
 
-  //  Node *m = G["modify"];
-  //  G.merge(m);
-  //  cout <<"'k modify' merged with 'k':" <<*G["k"] <<endl;
-
-  //  rai::Node *n = G.first();
-
-  G.checkConsistency();
-  if(filename) return; //below only for "example.g"
   cout <<"\n** access to individual items:" <<endl;
   cout <<G.findNode("k") <<endl;
   cout <<G.findNode("k")->graph() <<endl;
@@ -32,7 +21,10 @@ void TEST(Read){
   cout <<G.findNode("k")->graph().findNode("z")->as<rai::String>() <<endl;
   cout <<"DONE" <<endl;
 
-  G.writeHtml(FILE("z.html"), FILE("example.g"));
+  cout <<"\n---- as yaml ------\n" <<endl;
+
+  G.checkUniqueKeys(true);
+  G.writeYaml(cout, true);
 }
 
 //===========================================================================
@@ -134,7 +126,7 @@ void TEST(Random){
 
 void TEST(Dot){
   rai::Graph G;
-  G <<FILE(filename?filename:"coffee_shop.fg");
+  G <<FILE("coffee_shop.fg");
   G.checkConsistency();
   //  G.sortByDotOrder();
   //  G.checkConsistency();
@@ -164,10 +156,8 @@ void TEST(Manual){
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-  if(argc>1 && argv[1][0]!='-') filename=argv[1];
-
-  testRandom();
-  testRead();
+  // testRandom();
+  testRead(); return 0;
   testInit();
   testDot();
 

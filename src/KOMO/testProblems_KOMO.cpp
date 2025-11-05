@@ -214,9 +214,9 @@ std::shared_ptr<NLP> rai::make_NLP_Problem(str problem){
   int s = problem.find('.', false);
   uint dim = 2;
   if(s>0){
-    problem.getSubString(s+1,-1) >>dim;
+    problem.sub(s+1,-1) >>dim;
     rai::setParameter<uint>("problem/dim", dim);
-    problem = problem.getSubString(0,s-1);
+    problem = problem.sub(0,s-1);
   }
 
   std::shared_ptr<NLP> nlp;
