@@ -294,15 +294,14 @@ public:
   void stepDynamics(arr& qdot, const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);
 
   /// @name I/O
+  Graph asDict() const;
   void write(std::ostream& os, bool explicitlySorted=false) const;
-  void write(Graph& G) const;
   void writeURDF(std::ostream& os, const char* robotName="myrobot") const;
   void writeCollada(const char* filename, const char* format="collada") const;
   void writeMeshes(str pathPrefix="meshes/", bool copyTextures=false, bool enumerateAssets=false) const;
   void writeMesh(const char* filename="z.ply") const;
   void read(std::istream& is);
-  Graph getGraph() const;
-  void displayDot();
+  void displayDot() const;
 
   void watchFile(const char* filename);
   int animate(struct Inotify* ino=nullptr);

@@ -23,8 +23,9 @@ void TEST(Read){
 
   cout <<"\n---- as yaml ------\n" <<endl;
 
-  G.checkUniqueKeys(true);
-  G.writeYaml(cout, true);
+  // G.checkUniqueKeys(true);
+  cout <<"---" <<G.asYaml(true) <<"---" <<endl;
+  cout <<"---" <<G.asYaml(false) <<"---" <<endl;
 }
 
 //===========================================================================

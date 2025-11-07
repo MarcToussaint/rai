@@ -762,12 +762,12 @@ char* String::StringBuf::getIpos() { return gptr(); }
 //-- direct memory operations
 void String::append(char x) { resize(N+1, true); operator()(N-1)=x; }
 
-String& String::append(const char* s){
+String& String::append(const char* s, int len){
   if(!s){  return *this;  }
-  uint ls = strlen(s);
-  if(!ls){ return *this;  }
-  resize(N+ls, true);
-  memmove(p+N-ls, s, ls);
+  if(len==-1) len = strlen(s);
+  if(!len){ return *this;  }
+  resize(N+len, true);
+  memmove(p+N-len, s, len);
   return *this;
 }
 

@@ -33,9 +33,9 @@ LIBS     += `pkg-config --libs jsoncpp`
 endif
 
 ifeq ($(YAML),1)
-DEPEND_UBUNTU += libyaml-cpp-dev
+DEPEND_UBUNTU += libyaml-dev
 CXXFLAGS += -DRAI_YAML
-LIBS += -lyaml-cpp
+LIBS += -lyaml
 endif
 
 ifeq ($(H5),1)

@@ -18,7 +18,7 @@
 #endif
 
 #ifdef RAI_YAML
-#  include <yaml-cpp/yaml.h>
+#  include <yaml.h>
 #endif
 
 #define DEBUG(x) //x
@@ -170,6 +170,7 @@ str writeNode_name(const Node* n) {
     }
     s <<')';
   }
+  if(!s.N) s <<"()";
   return s;
 }
 
@@ -1192,152 +1193,240 @@ void Graph::readJson(std::istream& is) {
 
 #ifdef RAI_YAML
 
-void yaml2graph(Graph& G, const YAML::Node& node, str& namePrefix){
-  CHECK(node.IsMap(), "");
+struct LibYamlReadHelper{
+  yaml_parser_t parser;
+  yaml_event_t event;
+  str namePrefix;
 
-  uint Nbefore = G.N;
+  LibYamlReadHelper(const str& s){
+    yaml_parser_initialize(&parser);
+    // yaml_parser_set_input_file(&parser, file);
+    yaml_parser_set_input_string(&parser, (const unsigned char*)s.p, s.N);
+  }
+  ~LibYamlReadHelper(){
+    yaml_parser_delete(&parser);
+  }
 
-  for(YAML::Node::const_iterator it = node.begin(); it != node.end(); ++it) {
+  void _map(Graph& G){
+    uint Nbefore = G.N;
+    while(true) {
+      if (!yaml_parser_parse(&parser, &event)) HALT("Failed to parse event " <<event.type <<": " <<parser.problem);
+      if(event.type == YAML_MAPPING_END_EVENT){ yaml_event_delete(&event); break; }
 
-    rai::Node *gnode=0;
-    const char* key = it->first.Scalar().c_str();
-    const YAML::Node& val = it->second;
-    // LOG(0) <<key <<"==" <<val;
+      CHECK_EQ(event.type, YAML_SCALAR_EVENT, "")
+      str key((char*)event.data.scalar.value);
+      yaml_event_delete(&event);
 
-    if (val.IsMap()) {
-      Graph& sub = G.addSubgraph(key);
-      yaml2graph(sub, val, namePrefix);
-      gnode = sub.isNodeOfGraph;
+      if (!yaml_parser_parse(&parser, &event))  HALT("Failed to parse event " <<event.type <<": " <<parser.problem);
+      _value(G, key);
+    }
+    readGraph_postprocess(G, Nbefore);
+  }
 
-    } else if (val.IsSequence()) {
-      //-- first copy to str array
-      strA values(val.size());
+  strA _seq(){
+    strA S;
+    while(true) {
+      if (!yaml_parser_parse(&parser, &event)) HALT("Failed to parse event " <<event.type <<": " <<parser.problem);
+      if(event.type == YAML_SEQUENCE_END_EVENT){ yaml_event_delete(&event); break; }
+
+      CHECK_EQ(event.type, YAML_SCALAR_EVENT, "")
+      S.append().set((char*)event.data.scalar.value, event.data.scalar.length);
+      yaml_event_delete(&event);
+    }
+    return S;
+  }
+
+  void _value(Graph &G, const str& key){
+    char* p;
+
+    Node* gnode=0;
+    if(event.type == YAML_MAPPING_START_EVENT){
+      yaml_event_delete(&event);
+      Graph& s = G.addSubgraph(key);
+      _map(s);
+      gnode = s.isNodeOfGraph;
+
+    } else if(event.type == YAML_SEQUENCE_START_EVENT){
+      yaml_event_delete(&event);
+      strA S = _seq();
+
+      //try double
+      arr x(S.N);
       uint i=0;
-      for(YAML::Node::const_iterator list_it = val.begin(); list_it != val.end(); ++list_it) {
-        if(i==values.N) break; //if(list_it->IsNull()) break;
-        values(i++) = list_it->Scalar();
+      for(str &v: S){  x(i) = strtod(v.p, &p);  if(*p) break;  i++; }
+      if(i==x.N){
+        gnode = G.add<arr>(key, x);
+      } else { //fall back to str
+        gnode = G.add<strA>(key, S);
       }
-      CHECK_EQ(values.N, i, "something is wrong");
+    } else if(event.type == YAML_SCALAR_EVENT){
+      str val;
+      val.set((char*)event.data.scalar.value, event.data.scalar.length);
 
-      //-- not interpret using old-fashioned C
-      char* p;
-      { //try int
-        // intA x(values.N);
-        // i=0;
-        // for(str &v: values){  x(i) = strtol(v.p, &p, 10);  if(*p) break;  i++; }
-        // if(i==x.N){
-        //   gnode = G.add<intA>(key, x);
-        // } else
-        { //try double
-          arr x(values.N);
-          i=0;
-          for(str &v: values){  x(i) = strtod(v.p, &p);  if(*p) break;  i++; }
-          if(i==x.N){
-            gnode = G.add<arr>(key, x);
-          } else { //fall back to str
-            gnode = G.add<strA>(key, values);
+      if(val=="" || val=="~" || val=="true" || val=="True") gnode = G.add<bool>(key, true);
+      else if(val=="false" || val=="False") gnode = G.add<bool>(key, false);
+      else{
+        int x = strtol(val.p, &p, 10); //try int
+        if(!*p) gnode = G.add<int>(key, x); else {
+          double x = strtod(val.p, &p); //try double
+          if(!*p) gnode = G.add<double>(key, x); else {
+            gnode = G.add<str>(key, val); //fall back to str
           }
         }
       }
-
-    } else if (val.IsScalar()) {
-      if (bool x; YAML::convert<bool>::decode(val, x)) {
-        gnode = G.add<bool>(key, x);
-      }
-      else if (int x; YAML::convert<int>::decode(val, x)) {
-        gnode = G.add<int>(key, x);
-      }
-      else if (double x; YAML::convert<double>::decode(val, x)) {
-        gnode = G.add<double>(key, x);
-      }
-      else {
-        gnode = G.add<str>(key, val.Scalar().c_str());
-      }
-
-    } else if (val.IsNull()) {
-      gnode = G.add<bool>(key, true);
-    } else {
-      HALT("undefined yaml value type " <<val.Type());
+      yaml_event_delete(&event);
     }
 
-    //------------------
-
-    if(gnode){
-      readNode_postprocess(gnode, namePrefix, false);
-    }
+    CHECK(gnode, "");
+    readNode_postprocess(gnode, namePrefix, false);
   }
-
-  readGraph_postprocess(G, Nbefore);
-}
+};
 
 void Graph::readYaml(istream& is){
-  YAML::Node node = YAML::Load(is);
-  String namePrefix;
-  yaml2graph(*this, node, namePrefix);
+  str s(is);
+  LibYamlReadHelper Y(s);
+
+  while(true) {
+    if (!yaml_parser_parse(&Y.parser, &Y.event))  HALT("Failed to emit event " <<Y.event.type <<": " <<Y.parser.problem);
+
+    if(Y.event.type == YAML_STREAM_END_EVENT){ yaml_event_delete(&Y.event); break; }
+
+    if(Y.event.type == YAML_MAPPING_START_EVENT){
+      yaml_event_delete(&Y.event);
+      Y._map(*this);
+    } else {
+      yaml_event_delete(&Y.event);
+    }
+  }
   index();
   DEBUG(LOG(0) <<*this;)
 }
 
-void node2yaml(Node* n, YAML::Node& root){
-  auto y = root[std::string(writeNode_name(n))];
-  if(n->is<Graph>()){
-    Graph& g = n->graph();
-    g.checkUniqueKeys(true);
-    // for(Node* p:n->parents) y["parent"].push_back(p->key.p);
-    if(g.N){
-      for(Node *ch:g) node2yaml(ch, y);
-    }else{
-      y["force"] = 3;
-      y.remove("force");
-    }
-  } else if(n->is<String>()) { y = n->as<String>().p;
-  } else if(n->is<FileToken>()) { y = std::string(n->as<FileToken>().autoPath().p);
-  } else if(n->is<arr>()) { for(double& x:n->as<arr>()) y.push_back(x);
-  } else if(n->is<floatA>()) { for(float& x:n->as<floatA>()) y.push_back(x);
-  } else if(n->is<uintA>()) { for(uint& x:n->as<uintA>()) y.push_back(x);
-  } else if(n->is<intA>()) { for(int& x:n->as<intA>()) y.push_back(x);
-  } else if(n->is<byteA>()) { for(byte& x:n->as<byteA>()) y.push_back(x);
-  } else if(n->is<intAA>()) {
-    NIY;//n->as<intAA>()->write(os, ", ", nullptr, "[]");
-  } else if(n->is<StringA>()) { for(String& x:n->as<StringA>()) y.push_back(x.p);
-  } else if(n->is<NodeL>()) { for(Node* x:n->as<NodeL>()) y.push_back(x->key.p);
-  } else if(n->is<bool>()) { y = n->as<bool>();
-  } else if(n->is<int>()) { y = n->as<int>();
-  } else if(n->is<uint>()) { y = n->as<uint>();
-  } else if(n->is<float>()) { y = n->as<float>();
-  } else if(n->is<double>()) { y = n->as<double>();
-  } else {
-    str tmp;
-    n->writeValue(tmp);
-    y = tmp.p;
-  }
-  // } else{
-  //   THROW("type conversion not implemented: " <<rai::niceTypeidName(n->type))
-  //   NIY;
-  // }
-}
 
-void Graph::writeYaml(std::ostream& os, bool serial) const {
-  YAML::Node root;
-  for(rai::Node* n:*this) node2yaml(n, root);
+struct LibYamlWriteHelper{
+  yaml_emitter_t emitter;
+  yaml_event_t event;
+  char buffer[64];
+  str output;
 
-  if(serial){
-    YAML::Emitter out;
-    // out.SetIndent(2);
-    // out.SetMapFormat(YAML::Flow);
-    // out.SetSeqFormat(YAML::Flow);
-    //out.SetStringFormat(YAML::DoubleQuoted);
-    out <<YAML::EMITTER_MANIP::Flow <<YAML::Precision(3) <<root;
-    os <<out.c_str() <<endl;
-  }else{
-    for(YAML::Node::const_iterator it = root.begin(); it != root.end(); ++it) {
-      YAML::Emitter out;
-      out.SetDoublePrecision(2);
-      out.SetFloatPrecision(2);
-      out <<YAML::EMITTER_MANIP::Flow <<it->second;
-      os <<it->first.Scalar() <<": " <<out.c_str() <<endl;
+  static int write_handler(void *ext, unsigned char *buffer, size_t size) {
+    str& s = *(str*)(ext);
+    s.append((char*)buffer, size);
+    return 1;
+  }
+
+  LibYamlWriteHelper(FILE* file){
+    yaml_emitter_initialize(&emitter);
+    // yaml_emitter_set_output_file(&emitter, file);
+    yaml_emitter_set_output(&emitter, write_handler, &output);
+    yaml_emitter_set_width(&emitter, 120);
+
+    yaml_stream_start_event_initialize(&event, YAML_UTF8_ENCODING);
+    if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
+
+    yaml_document_start_event_initialize(&event, NULL, NULL, NULL, 1);
+    if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
+  }
+
+  void finish(){
+    yaml_document_end_event_initialize(&event, 1);
+    if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
+
+    yaml_stream_end_event_initialize(&event);
+    if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
+
+    yaml_emitter_delete(&emitter);
+  }
+
+  void map_start(bool flow=true){
+    yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
+                                        1, (flow?YAML_FLOW_MAPPING_STYLE:YAML_BLOCK_MAPPING_STYLE));
+    if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
+  }
+  void map_end(){
+    yaml_mapping_end_event_initialize(&event);
+    if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
+  }
+  void seq_start(bool flow=true){
+    yaml_sequence_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_SEQ_TAG,
+                                         1, (flow?YAML_FLOW_SEQUENCE_STYLE:YAML_BLOCK_SEQUENCE_STYLE));
+    if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
+  }
+  void seq_end(){
+    yaml_sequence_end_event_initialize(&event);
+    if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
+  }
+
+  void _str(const str& s){
+    yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_STR_TAG,
+                                 (yaml_char_t *)s.p, s.N, 1, 0, YAML_PLAIN_SCALAR_STYLE);
+    if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
+  }
+  void _bool(bool b){
+    yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_BOOL_TAG,
+                                 (yaml_char_t *)(b?"true":"false"), (b?4:5), 1, 0, YAML_PLAIN_SCALAR_STYLE);
+    if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
+  }
+  void _float(double x){
+    sprintf(buffer, "%g", x);
+    yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_FLOAT_TAG,
+                                 (yaml_char_t *)buffer, strlen(buffer), 1, 0, YAML_PLAIN_SCALAR_STYLE);
+    if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
+  }
+  void _int(int x){
+    sprintf(buffer, "%d", x);
+    yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_INT_TAG,
+                                 (yaml_char_t *)buffer, strlen(buffer), 1, 0, YAML_PLAIN_SCALAR_STYLE);
+    if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
+  }
+
+
+  void writeNode(Node *n){
+
+    _str(writeNode_name(n));
+
+    if(n->is<Graph>()){
+      map_start();
+      Graph& g = n->graph();
+      // g.checkUniqueKeys(true);
+      for(Node *ch:g) writeNode(ch);
+      map_end();
+    } else if(n->is<String>()) { _str(n->as<String>());
+    } else if(n->is<FileToken>()) { _str(STRING("<" <<n->as<FileToken>().autoPath() <<">"));
+    } else if(n->is<arr>()) { seq_start(); for(double& x:n->as<arr>()) _float(x); seq_end();
+    } else if(n->is<floatA>()) { seq_start(); for(float& x:n->as<floatA>()) _float(x); seq_end();
+    } else if(n->is<intA>()) { seq_start(); for(int& x:n->as<intA>()) _int(x); seq_end();
+    } else if(n->is<uintA>()) { seq_start(); for(uint& x:n->as<uintA>()) _int(x); seq_end();
+    } else if(n->is<byteA>()) { seq_start(); for(byte& x:n->as<byteA>()) _int(x); seq_end();
+    } else if(n->is<StringA>()) { seq_start(); for(String& x:n->as<StringA>()) _str(x); seq_end();
+    } else if(n->is<StringAA>()) { seq_start(); for(StringA& x:n->as<StringAA>()){ seq_start(); for(String& s:x) _str(s); seq_end(); } seq_end();
+    } else if(n->is<Array<Graph>>()) { seq_start(); for(Graph& g:n->as<Array<Graph>>()){ map_start(); for(Node *n:g) writeNode(n); map_end(); } seq_end();
+      // } else if(n->is<intAA>()) {
+      // NIY;//n->as<intAA>()->write(os, ", ", nullptr, "[]");
+      // } else if(n->is<NodeL>()) { for(Node* x:n->as<NodeL>()) push_back(x->kep);
+    } else if(n->is<bool>()) { _bool(n->as<bool>());
+    } else if(n->is<int>()) { _int(n->as<int>());
+    } else if(n->is<uint>()) { _int(n->as<uint>());
+    } else if(n->is<float>()) { _float(n->as<float>());
+    } else if(n->is<double>()) { _float(n->as<double>());
+    } else {
+      str s;
+      n->writeValue(s);
+      _str(s);
     }
   }
+
+};
+
+str Graph::asYaml(bool flow) const {
+
+  LibYamlWriteHelper Y(stdout);
+  Y.map_start(flow);
+  for(rai::Node *n: *this) Y.writeNode(n);
+  Y.map_end();
+  Y.finish();
+
+  return Y.output;
 }
 
 #else

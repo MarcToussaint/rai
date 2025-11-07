@@ -28,7 +28,7 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
   supp.clear();
   for(const str& thing:supports){
     if(rnd.uni()<.5){
-      supp <<' ' <<thing;
+      supp.append(thing);
       // komo.addContact_stick(0.,-1., "obj", thing, opt.frictionCone_mu);
       komo.addContact_WithPoaFrame(1., "obj", thing, opt.frictionCone_mu, .05);
     }
@@ -53,12 +53,14 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
                .sample();
 #endif
 
+    forces = komo.pathConfig.reportForces();
+
     ret->setFeasible(1e-2);
 
     if(opt.verbose>0) LOG(0) <<*ret;
     //    cout <<komo.report() <<endl;
     if(opt.verbose>2){
-      cout <<komo.pathConfig.reportForces() <<endl;
+      cout <<forces <<endl;
     }
     if(!ret->feasible){
       if(opt.verbose>2){

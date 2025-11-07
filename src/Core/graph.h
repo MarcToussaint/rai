@@ -187,7 +187,7 @@ struct Graph : NodeL {
   void writeJson(std::istream& is);
   void write(std::ostream& os=cout, const char* ELEMSEP="\n", const char* BRACKETS=0, int indent=-1, bool yamlMode=false, bool binary=false) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0, int focusIndex=-1, bool subGraphsAsNodes=false);
-  void writeYaml(std::ostream& os, bool serial = false) const;
+  str asYaml(bool flow = false) const;
   void writeParseInfo(std::ostream& os);
 
   void displayDot(Node* highlight=nullptr);

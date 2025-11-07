@@ -1081,9 +1081,9 @@ Graph Configuration::reportForces() {
       Graph& g = G.addSubgraph();
       g.add<String>("onto", STRING(ex->a.name <<'_' <<ex->a.ID));
       g.add<String>("from", STRING(ex->b.name <<'_' <<ex->b.ID));
+      g.add<arr>("poa", ex->poa);
       g.add<arr>("force", ex->force);
       g.add<arr>("torque", ex->torque);
-      g.add<arr>("poa", ex->poa);
     }
   }
   return G;
@@ -2635,18 +2635,18 @@ void Configuration::write(std::ostream& os, bool explicitlySorted) const {
   }
   os <<endl;
 #else
-  Graph G;
-  write(G);
-  G.write(os, "\n", 0, -1, true);
+  asDict().write(os, "\n", 0, -1, true);
 #endif
 }
 
-void Configuration::write(Graph& G) const {
+Graph Configuration::asDict() const {
+  Graph G;
   for(Frame* f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
   for(Frame* f: frames) f->write(G.addSubgraph(f->name));
   for(uint i=0; i<frames.N; i++) if(frames.elem(i)->parent) {
       G.elem(i)->addParent(G.elem(frames.elem(i)->parent->ID));
     }
+  return G;
 }
 
 /// write a URDF file
@@ -2917,55 +2917,6 @@ void Configuration::read(std::istream& is) {
   addDict(G);
 }
 
-Graph Configuration::getGraph() const {
-#if 1
-  Graph G;
-  //first just create nodes
-  for(Frame* f: frames) G.add<bool>({STRING(f->name <<" [" <<f->ID <<']')}, {});
-  for(Frame* f: frames) {
-    Node* n = G.elem(f->ID);
-    if(f->parent) {
-      n->addParent(G.elem(f->parent->ID));
-      n->key = STRING("Q= " <<f->get_Q());
-    }
-    if(f->joint) {
-      n->key = (STRING("joint " <<f->joint->type));
-    }
-    if(f->shape) {
-      n->key = (STRING("shape " <<f->shape->type()));
-    }
-    if(f->inertia) {
-      n->key = (STRING("inertia m=" <<f->inertia->mass));
-    }
-  }
-#else
-  Graph G;
-  //first just create nodes
-  for(Frame* f: frames) G.newSubgraph({f->name}, {});
-
-  for(Frame* f: frames) {
-    Graph& ats = G.elem(f->ID)->graph();
-
-    ats.newNode<Transformation>({"X"}, f->X);
-
-    if(f->shape) {
-      ats.newNode<int>({"shape"}, f->shape->type);
-    }
-
-    if(f->link) {
-      G.elem(f->ID)->addParent(G.elem(f->link->from->ID));
-      if(f->link->joint) {
-        ats.newNode<int>({"joint"}, f->joint()->type);
-      } else {
-        ats.newNode<Transformation>({"Q"}, f->link->Q);
-      }
-    }
-  }
-#endif
-  G.checkConsistency();
-  return G;
-}
-
 struct Link {
   Frame* joint=nullptr;
   FrameL frames;
@@ -2992,8 +2943,27 @@ struct Link {
 //  return links;
 //}
 
-void Configuration::displayDot() {
-  Graph G = getGraph();
+void Configuration::displayDot() const {
+  Graph G;
+  //first just create nodes
+  for(Frame* f: frames) G.add<bool>({STRING(f->name <<" [" <<f->ID <<']')}, {});
+  for(Frame* f: frames) {
+    Node* n = G.elem(f->ID);
+    if(f->parent) {
+      n->addParent(G.elem(f->parent->ID));
+      n->key = STRING("Q= " <<f->get_Q());
+    }
+    if(f->joint) {
+      n->key = (STRING("joint " <<f->joint->type));
+    }
+    if(f->shape) {
+      n->key = (STRING("shape " <<f->shape->type()));
+    }
+    if(f->inertia) {
+      n->key = (STRING("inertia m=" <<f->inertia->mass));
+    }
+  }
+
   G.displayDot();
 }
 
