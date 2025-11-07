@@ -44,7 +44,7 @@ void OptNewton::reinit(const arr& _x) {
   timeEval += cpuTime();
 
   //startup verbose
-  if(opt->verbose>1) cout <<"----newton---- initial point f(x):" <<fx <<" alpha:" <<alpha <<" beta:" <<beta <<endl;
+  if(opt->verbose>0) cout <<"--newton-- initial point f(x):" <<fx <<" alpha:" <<alpha <<" beta:" <<beta <<endl;
   if(opt->verbose>3) { if(x.N<5) cout <<"x:" <<x <<endl; }
 }
 
@@ -248,7 +248,7 @@ OptNewton::~OptNewton() {
 #ifndef RAI_MSVC
 //  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
 #endif
-  if(opt->verbose>1) cout <<"----newton---- final f(x):" <<fx <<endl;
+  if(opt->verbose>0) cout <<"--newton done-- final f(x):" <<fx <<endl;
 }
 
 OptNewton& OptNewton::setBounds(const arr& _bounds) {

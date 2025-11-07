@@ -9,6 +9,7 @@ struct LBFGS{
   ScalarFunction f;
   shared_ptr<rai::OptOptions> opt;
   arr x;
+  uint evals=0;
 
   LBFGS(ScalarFunction _f, const arr& x_init, std::shared_ptr<OptOptions> _opt);
 

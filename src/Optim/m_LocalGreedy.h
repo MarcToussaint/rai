@@ -5,6 +5,7 @@
 
 struct LocalGreedy {
   RAI_PARAM("LocalGreedy/", double, sigma, .1)
+  RAI_PARAM("opt/", int, verbose, 1)
 
   ScalarFunction f;
 
@@ -18,14 +19,7 @@ struct LocalGreedy {
 
   LocalGreedy(ScalarFunction _f, const arr& x_init={});
 
-  shared_ptr<SolverReturn> solve(){
-    while(!step()){}
-    shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
-    ret->x = x;
-    ret->f = f_x;
-    ret->feasible=true;
-    return ret;
-  }
+  shared_ptr<SolverReturn> solve();
 
   bool step();
 };

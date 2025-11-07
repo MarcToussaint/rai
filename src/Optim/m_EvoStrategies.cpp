@@ -27,10 +27,10 @@ bool EvolutionStrategy::step(){
     if(x.N && length(x-samples[i])<1e-3) tinySteps++; else tinySteps=0;
     f_x = f_y;
     x = samples[i];
-    cout <<" f:" <<f_x <<" -- accept" <<endl;
+    if(opt->verbose>1) cout <<" f:" <<f_x <<" -- accept" <<endl;
   }else{
     rejectedSteps++;
-    cout <<" f:" <<f_y <<" -- reject" <<endl;
+    if(opt->verbose>1) cout <<" f:" <<f_y <<" -- reject" <<endl;
   }
 
   update(samples, y);
@@ -66,6 +66,8 @@ uintA pick_best_mu(const arr& samples, const arr& values, uint mu){
 
 std::shared_ptr<SolverReturn> EvolutionStrategy::solve(){
   while(!step()){}
+  if(opt->verbose>0) cout <<"--ES done-- "<< evals <<' ' <<f_x <<std::endl;
+
   shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
   ret->x = x;
   ret->f = f_x;
@@ -84,11 +86,12 @@ CMAES::CMAES(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> opt) : 
   arr startDev = rai::consts<double>(sigmaInit, x.N);
   cmaes_init(&self->evo, x_init.N, x_init.p, startDev.p, 1, lambda, nullptr);
 
-  cout <<"--cmaes-- " <<evals <<std::endl;
+  if(opt->verbose>0) cout <<"--cmaes-- " <<evals <<std::endl;
 }
 
 CMAES::~CMAES() {
   cmaes_exit(&self->evo);
+  rai::system("rm errcmaes.err actparcmaes.par");
 }
 
 arr CMAES::generateNewSamples(){
@@ -101,7 +104,7 @@ arr CMAES::generateNewSamples(){
   arr samples;
   samples.setCarray(rgx, self->evo.sp.lambda, self->evo.sp.N);
 
-  cout <<"--cmaes-- " <<evals <<std::flush;
+  if(opt->verbose>1) cout <<"--cmaes-- " <<evals <<std::flush;
   return samples;
 }
 
@@ -110,6 +113,11 @@ void CMAES::overwriteSamples(const arr& Xnew, arr& Xold){
   for(uint i=0;i<Xnew.d0;i++){
     for(uint j=0;j<Xnew.d1;j++){ sam[i][j] = Xnew(i,j);  Xold(i,j)=Xnew(i,j); }
   }
+}
+
+void CMAES::overwriteMean(const arr& x){
+  arr ref(self->evo.rgxmean, self->evo.sp.N, true);
+  ref = x;
 }
 
 void CMAES::update(arr& samples, arr& values){
@@ -139,7 +147,7 @@ arr ES_mu_plus_lambda::generateNewSamples(){
     // sig *= ::exp(-sigmaDecay*steps);
   }
   rndGauss(X, sig, true);
-  cout <<"--es-- " <<evals <<std::flush;
+  if(opt->verbose>1) cout <<"--es-- " <<evals <<std::flush;
   return X;
 }
 
@@ -195,7 +203,7 @@ void GaussEDA::update(arr& Xnew, arr& y){
 
   double sig2 = trace(cov);
 
-  cout <<"--GaussEDA-- " <<evals <<" sig2: " <<sig2 <<std::flush;
+  if(opt->verbose>1) cout <<"--GaussEDA-- " <<evals <<" sig2: " <<sig2 <<std::flush;
 }
 
 } //namespace

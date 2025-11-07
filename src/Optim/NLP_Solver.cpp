@@ -58,6 +58,7 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
 
   if(opt->method==M_Newton) {
     OptNewton newton(x, Phere->f_scalar(), opt);
+    if(opt->boundedNewton && Phere->bounds.N) newton.setBounds(Phere->bounds);
     ret = newton.run();
 
   } else if(opt->method==M_slackGN) {
@@ -79,7 +80,7 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     ret->f = grad.fx;
     ret->feasible = true;
 
-  } else if(opt->method==M_LSZO) {
+  } else if(opt->method==M_LSDF) {
     ret = LeastSquaresDerivativeFree(Phere, x). solve();
     x = ret->x;
 
@@ -91,7 +92,7 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     ret = rai::CMAES(Phere->f_scalar(), x). solve();
     x = ret->x;
 
-  } else if(opt->method==M_ES) {
+  } else if(opt->method==M_LS_CMA) {
     // ret = rai::ES_mu_plus_lambda(Phere->f_scalar(), x). solve();
     // ret = rai::GaussEDA(Phere->f_scalar(), x). solve();
     ret = rai::LS_CMA(Phere, x). solve();

@@ -78,7 +78,7 @@ ConstrainedSolver::ConstrainedSolver(arr& _x, arr& _dual, const shared_ptr<NLP>&
   newton.opt->verbose = MAX(opt->verbose-1, 0);
 
   if(opt->verbose>0){
-    cout <<"====nlp===="
+    cout <<"==nlp=="
         <<" problem-dim: " <<P->dimension <<'/' <<P->featureTypes.N
          <<" method:" <<Enum<OptMethod>(opt->method)
       <<" bounded: " <<(opt->boundedNewton?"yes":"no") <<endl;

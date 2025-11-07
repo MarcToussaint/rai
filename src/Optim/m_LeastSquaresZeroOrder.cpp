@@ -32,10 +32,13 @@ LeastSquaresDerivativeFree::LeastSquaresDerivativeFree(shared_ptr<NLP> P, const 
   else x=P->getInitializationSample();
   CHECK_EQ(x.N, P->dimension, "");
 
-  // for(auto& ot: P->featureTypes){
-  //   if(ot==OT_f) hasLinTerms=true;
-  //   else CHECK_EQ(ot, OT_sos, "");
-  // }
+  bool hasF=false, hasSos=false;
+  for(auto& ot: P->featureTypes){
+    if(ot==OT_f) hasF=true;
+    if(ot==OT_sos) hasSos=true;
+  }
+  CHECK(hasSos, "problem has NO sos terms -- LSDF no applicable")
+  if(hasF) LOG(-1) <<"problem has f terms -- will be zeroed";
 
   data_X.resize(0, P->dimension);
   data_Phi.resize(0, P->featureTypes.N);
@@ -52,7 +55,21 @@ LeastSquaresDerivativeFree::LeastSquaresDerivativeFree(shared_ptr<NLP> P, const 
   //evaluate
   P->evaluate(phi_x, NoArr, x);
   phi2_x = sumOfSqr(phi_x);
-  cout <<"--lszo-- " <<evals <<" f: " <<phi2_x <<std::endl;
+  if(opt->verbose>0) cout <<"--lsdf-- " <<evals <<" f: " <<phi2_x <<std::endl;
+}
+
+shared_ptr<SolverReturn> LeastSquaresDerivativeFree::solve(){
+  while(!step()){}
+  if(opt->verbose>0) cout <<"--lsdf done-- " <<evals <<" f: " <<phi2_x <<std::endl;
+  shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
+  ret->x = x;
+  arr err = P->summarizeErrors(phi_x);
+  ret->f = err(OT_f);
+  ret->sos = err(OT_sos);
+  ret->eq = err(OT_eq);
+  ret->ineq = err(OT_ineq);
+  ret->feasible=true;
+  return ret;
 }
 
 arr LeastSquaresDerivativeFree::generateNewSamples(uint lambda){
@@ -137,7 +154,7 @@ void LeastSquaresDerivativeFree::update(arr& X, arr& Phi){
   }
 
   //update J
-  if(steps>2){
+  if(data_X.d0>2){
     if(method=="rank1"){
       updateJ_rank1(J, x, data_X[-2], phi_x, data_Phi[-2]);
 
@@ -167,14 +184,14 @@ void LeastSquaresDerivativeFree::update(arr& X, arr& Phi){
   arr y = elite_X[0];
   arr phi_y = elite_Phi[0];
   double phi2_y = sumOfSqr(phi_y);
-  cout <<"--lszo-- " <<evals <<" f: " <<phi2_y <<std::flush;
+  if(opt->verbose>1) cout <<"--lsdf-- " <<evals <<" f: " <<phi2_y <<std::flush;
 
   //-- update x (reject?)
   if(phi2_y>=phi2_x){
     rejectedSteps++;
     alpha *= stepDec;
     if(alpha<alpha_min) alpha = alpha_min;
-    cout <<" -- reject (alpha: " <<alpha <<")" <<endl;
+    if(opt->verbose>1) cout <<" -- reject (alpha: " <<alpha <<")" <<endl;
   }else{
     rejectedSteps=0;
     if(length(x-y)<1e-4) tinySteps++; else tinySteps=0;
@@ -183,17 +200,15 @@ void LeastSquaresDerivativeFree::update(arr& X, arr& Phi){
     phi2_x = phi2_y;
     alpha *= stepInc;
     if(alpha>1.) alpha=1.;
-    cout <<" -- accept (alpha: " <<alpha <<")" <<endl;
+    if(opt->verbose>1) cout <<" -- accept (alpha: " <<alpha <<")" <<endl;
   }
 }
 
 bool LeastSquaresDerivativeFree::step(){
-  steps++;
-
   arr X = generateNewSamples(lambda);
 
   //-- evaluate
-  arr Phi(lambda, P->featureTypes.N);
+  arr Phi(X.d0, P->featureTypes.N);
   for(uint k=0;k<X.d0;k++){
     P->evaluate(Phi[k].noconst(), NoArr, X[k]);
     evals++;
@@ -268,6 +283,7 @@ void LS_CMA::update(arr& X, arr& Phi){
   lsdf.update(X, Phi);
 
   lsdf.x = cma.getCurrentMean();
+  // cma.overwriteMean(lsdf.x);
 }
 
 bool LS_CMA::step(){
@@ -276,19 +292,22 @@ bool LS_CMA::step(){
   arr X = generateNewSamples();
 
   //-- evaluate
-  arr Phi(cma.lambda, P->featureTypes.N);
+  arr Phi(X.d0, P->featureTypes.N);
   for(uint k=0;k<X.d0;k++){
     P->evaluate(Phi[k].noconst(), NoArr, X[k]);
     evals++;
   }
 
 
-  {
+  if(true){
     arr Phi2 = ::sum(::sqr(Phi), 1);
     uint i_best = argmin(Phi2);
     x_best = X[i_best];
     phi_best = Phi[i_best];
-    cout <<" f:" <<Phi2(i_best) <<endl;
+    if(opt->verbose>1) cout <<" f:" <<Phi2(i_best) <<endl;
+  }else{
+    x_best = lsdf.x;
+    phi_best = lsdf.phi_x;
   }
 
   update(X, Phi);
@@ -297,6 +316,20 @@ bool LS_CMA::step(){
   if(rejectedSteps>3*P->dimension) return true;
   if(tinySteps>5) return true;
   return false;
+}
+
+shared_ptr<SolverReturn> LS_CMA::solve(){
+  while(!step()){}
+  if(opt->verbose>0) cout <<"--ls_cma done-- " <<evals <<" f: " <<sumOfSqr(phi_best) <<std::endl;
+  shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
+  ret->x = x_best;
+  arr err = P->summarizeErrors(phi_best);
+  ret->f = err(OT_f);
+  ret->sos = err(OT_sos);
+  ret->eq = err(OT_eq);
+  ret->ineq = err(OT_ineq);
+  ret->feasible=true;
+  return ret;
 }
 
 //===========================================================================

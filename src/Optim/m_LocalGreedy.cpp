@@ -4,7 +4,17 @@
 LocalGreedy::LocalGreedy(ScalarFunction _f, const arr& x_init) : f(_f){
   x=x_init;
   f_x = f(NoArr, NoArr, x);
-  cout <<"--greedy-- " <<steps <<" f: " <<f_x <<endl;
+  if(verbose>0) cout <<"--greedy-- " <<steps <<" f: " <<f_x <<endl;
+}
+
+shared_ptr<SolverReturn> LocalGreedy::solve(){
+  while(!step()){}
+  if(verbose>0) cout <<"--greedy done-- " <<steps <<" f: " <<f_x <<endl;
+  shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
+  ret->x = x;
+  ret->f = f_x;
+  ret->feasible=true;
+  return ret;
 }
 
 bool LocalGreedy::step(){
@@ -14,7 +24,7 @@ bool LocalGreedy::step(){
 
   steps++;
 
-  cout <<"--greedy-- " <<steps <<" f: " <<f_y <<(accept?"":" -- reject") <<endl;
+  if(verbose>1) cout <<"--greedy-- " <<steps <<" f: " <<f_y <<(accept?"":" -- reject") <<endl;
 
   if(accept){
     if(f_x-f_y < 1e-4) tinySteps++; else tinySteps=0;

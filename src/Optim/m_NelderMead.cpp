@@ -48,7 +48,8 @@ nelder_mead_result nelder_mead(
     arr start,
     double reqmin,
     const arr &step,
-    int kcount = INT_MAX
+    int kcount = INT_MAX,
+    int verbose=1
     ) {
 
   uint n=start.N;
@@ -96,7 +97,7 @@ nelder_mead_result nelder_mead(
     uint ilo;
     tie(ylo, ilo) = min_arg(y);
 
-    cout <<"--nelderMead-- " <<result.icount <<" f: " <<ylo <<endl;
+    if(verbose>0) cout <<"--nelderMead-- " <<result.icount <<" f: " <<ylo <<endl;
 
     // Inner loop.
     for (;;) {
@@ -117,14 +118,14 @@ nelder_mead_result nelder_mead(
       pstar = pbar + rcoeff * (pbar - p[ihi]);
       ystar = fn(pstar);
       result.icount++;
-      cout <<"--nelderMead-- " <<result.icount <<" f: " <<ystar <<endl;
+      if(verbose>1) cout <<"--nelderMead-- " <<result.icount <<" f: " <<ystar <<endl;
 
       // Successful reflection, so extension.
       if (ystar < ylo) {
         p2star = pbar + ecoeff * (pstar - pbar);
         y2star = fn(p2star);
         result.icount++;
-        cout <<"--nelderMead-- " <<result.icount <<" f: " <<y2star <<" (extended)" <<endl;
+        if(verbose>1) cout <<"--nelderMead-- " <<result.icount <<" f: " <<y2star <<" (extended)" <<endl;
 
 	// Check extension.
 	if (ystar < y2star) {
@@ -152,7 +153,7 @@ nelder_mead_result nelder_mead(
 	  p2star = pbar + ccoeff * (p[ihi] - pbar);
 	  y2star = fn(p2star);
 	  result.icount++;
-	  cout <<"--nelderMead-- " <<result.icount <<" f: " <<y2star <<" (contracted)" <<endl;
+	  if(verbose>1) cout <<"--nelderMead-- " <<result.icount <<" f: " <<y2star <<" (contracted)" <<endl;
 
 	  // Contract the whole simplex.
 	  if (y(ihi) < y2star) {
@@ -274,10 +275,12 @@ shared_ptr<SolverReturn> NelderMead::solve(){
       f,
       x,
       opt->stopTolerance, // the terminating limit for the variance of points
-      step
+      step,
+      opt->verbose
       );
 
   shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
+  if(opt->verbose>0) cout <<"--nelderMead done-- " <<result.icount <<" f: " <<result.ynewlo <<endl;
   ret->x.setCarray(&result.xmin(0), n);
   ret->f = result.ynewlo;
   ret->evals = result.icount;

@@ -1308,6 +1308,7 @@ struct LibYamlWriteHelper{
   yaml_event_t event;
   char buffer[64];
   str output;
+  bool quoted=false;
 
   static int write_handler(void *ext, unsigned char *buffer, size_t size) {
     str& s = *(str*)(ext);
@@ -1359,24 +1360,24 @@ struct LibYamlWriteHelper{
 
   void _str(const str& s){
     yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_STR_TAG,
-                                 (yaml_char_t *)s.p, s.N, 1, 0, YAML_PLAIN_SCALAR_STYLE);
+                                 (yaml_char_t *)s.p, s.N, 1, 1, (quoted?YAML_DOUBLE_QUOTED_SCALAR_STYLE:YAML_PLAIN_SCALAR_STYLE));
     if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
   }
   void _bool(bool b){
     yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_BOOL_TAG,
-                                 (yaml_char_t *)(b?"true":"false"), (b?4:5), 1, 0, YAML_PLAIN_SCALAR_STYLE);
+                                 (yaml_char_t *)(b?"true":"false"), (b?4:5), 1, 1, YAML_PLAIN_SCALAR_STYLE);
     if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
   }
   void _float(double x){
     sprintf(buffer, "%g", x);
     yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_FLOAT_TAG,
-                                 (yaml_char_t *)buffer, strlen(buffer), 1, 0, YAML_PLAIN_SCALAR_STYLE);
+                                 (yaml_char_t *)buffer, strlen(buffer), 1, 1, YAML_PLAIN_SCALAR_STYLE);
     if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
   }
   void _int(int x){
     sprintf(buffer, "%d", x);
     yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_INT_TAG,
-                                 (yaml_char_t *)buffer, strlen(buffer), 1, 0, YAML_PLAIN_SCALAR_STYLE);
+                                 (yaml_char_t *)buffer, strlen(buffer), 1, 1, YAML_PLAIN_SCALAR_STYLE);
     if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
   }
 
@@ -1418,10 +1419,11 @@ struct LibYamlWriteHelper{
 
 };
 
-str Graph::asYaml(bool flow) const {
+str Graph::asYaml(bool serial) const {
 
   LibYamlWriteHelper Y(stdout);
-  Y.map_start(flow);
+  if(serial) Y.quoted=true;
+  Y.map_start(serial);
   for(rai::Node *n: *this) Y.writeNode(n);
   Y.map_end();
   Y.finish();

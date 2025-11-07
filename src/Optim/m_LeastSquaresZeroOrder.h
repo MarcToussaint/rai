@@ -34,22 +34,11 @@ struct LeastSquaresDerivativeFree{
   double phi2_x=-1.;
   arr data_X, data_Phi;
 
-  uint evals=0, steps=0, tinySteps=0, rejectedSteps=0;
+  uint evals=0, tinySteps=0, rejectedSteps=0;
 
   LeastSquaresDerivativeFree(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt=make_shared<OptOptions>());
 
-  shared_ptr<SolverReturn> solve(){
-    while(!step()){}
-    shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
-    ret->x = x;
-    arr err = P->summarizeErrors(phi_x);
-    ret->f = err(OT_f);
-    ret->sos = err(OT_sos);
-    ret->eq = err(OT_eq);
-    ret->ineq = err(OT_ineq);
-    ret->feasible=true;
-    return ret;
-  }
+  shared_ptr<SolverReturn> solve();
 
   bool step();
 
@@ -85,18 +74,7 @@ struct LS_CMA{
 
   bool step();
 
-  shared_ptr<SolverReturn> solve(){
-    while(!step()){}
-    shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
-    ret->x = x_best;
-    arr err = P->summarizeErrors(phi_best);
-    ret->f = err(OT_f);
-    ret->sos = err(OT_sos);
-    ret->eq = err(OT_eq);
-    ret->ineq = err(OT_ineq);
-    ret->feasible=true;
-    return ret;
-  }
+  shared_ptr<SolverReturn> solve();
 
 };
 

@@ -44,8 +44,8 @@ void H5_Writer::addGroup(const char* group) {
   file->createGroup(group);
 }
 
-template<class T> void H5_Writer::add(const char* name, const rai::Array<T>& x) {
-  rai::Array<hsize_t> dim = rai::convert<hsize_t>(x.dim());
+template<class T> void H5_Writer::add(const char* name, const Array<T>& x) {
+  Array<hsize_t> dim = convert<hsize_t>(x.dim());
   if(!dim.N) dim = {0};
   H5::DataSpace dataspace(dim.N, dim.p);
   H5::DataType h5type = get_h5type<T>();
@@ -62,18 +62,18 @@ H5_Reader::H5_Reader(const char* filename) {
 
 uintA get_dim(H5::DataSet& dataset) {
   H5::DataSpace dataspace = dataset.getSpace();
-  rai::Array<hsize_t> _dim(dataspace.getSimpleExtentNdims());
+  Array<hsize_t> _dim(dataspace.getSimpleExtentNdims());
   dataspace.getSimpleExtentDims(_dim.p, NULL);
-  return rai::convert<uint>(_dim);
+  return convert<uint>(_dim);
 }
 
 bool H5_Reader::exists(const char* name) {
   return file->nameExists(name);
 }
 
-template<class T> rai::Array<T> H5_Reader::read(const char* name, bool ifExists) {
+template<class T> Array<T> H5_Reader::read(const char* name, bool ifExists) {
   if(ifExists && !exists(name)) return {};
-  rai::Array<T> x;
+  Array<T> x;
   try{
     H5::DataSet dataset = file->openDataSet(name);
     x.resize(get_dim(dataset));
@@ -93,8 +93,8 @@ Graph H5_Reader::readDict(const char* name, bool ifExists){
   return Graph(s);
 }
 
-template<class T> void readDatasetToGraph(rai::Graph& G, H5::DataSet& dataset, const uintA& dim, const char* name) {
-  rai::Node_typed<rai::Array<T>>* x = G.add<rai::Array<T>>(name);
+template<class T> void readDatasetToGraph(Graph& G, H5::DataSet& dataset, const uintA& dim, const char* name) {
+  Node_typed<Array<T>>* x = G.add<Array<T>>(name);
   x->value.resize(dim);
   dataset.read(x->value.p, get_h5type<T>());
 }
@@ -142,30 +142,30 @@ void H5_Reader::readAll() {
 
 H5_Writer::H5_Writer(const char* filename) { NICO }
 void H5_Writer::addGroup(const char* group) { NICO }
-template<class T> void H5_Writer::add(const char* name, const rai::Array<T>& x) { NICO }
+template<class T> void H5_Writer::add(const char* name, const Array<T>& x) { NICO }
 H5_Reader::H5_Reader(const char* filename) { NICO }
-template<class T> rai::Array<T> H5_Reader::read(const char* name, bool ifExists) { NICO }
+template<class T> Array<T> H5_Reader::read(const char* name, bool ifExists) { NICO }
 bool H5_Reader::exists(const char* name) { NICO }
 
 #endif
 
 // explicit instantiations
-template void H5_Writer::add<double>(const char* name, const rai::Array<double>& x);
-template void H5_Writer::add<float>(const char* name, const rai::Array<float>& x);
-template void H5_Writer::add<int>(const char* name, const rai::Array<int>& x);
-template void H5_Writer::add<uint>(const char* name, const rai::Array<uint>& x);
-template void H5_Writer::add<int16_t>(const char* name, const rai::Array<int16_t>& x);
-template void H5_Writer::add<uint16_t>(const char* name, const rai::Array<uint16_t>& x);
-template void H5_Writer::add<char>(const char* name, const rai::Array<char>& x);
-template void H5_Writer::add<unsigned char>(const char* name, const rai::Array<unsigned char>& x);
+template void H5_Writer::add<double>(const char* name, const Array<double>& x);
+template void H5_Writer::add<float>(const char* name, const Array<float>& x);
+template void H5_Writer::add<int>(const char* name, const Array<int>& x);
+template void H5_Writer::add<uint>(const char* name, const Array<uint>& x);
+template void H5_Writer::add<int16_t>(const char* name, const Array<int16_t>& x);
+template void H5_Writer::add<uint16_t>(const char* name, const Array<uint16_t>& x);
+template void H5_Writer::add<char>(const char* name, const Array<char>& x);
+template void H5_Writer::add<unsigned char>(const char* name, const Array<unsigned char>& x);
 
-template rai::Array<double> H5_Reader::read<double>(const char* name, bool ifExists);
-template rai::Array<float> H5_Reader::read<float>(const char* name, bool ifExists);
-template rai::Array<int> H5_Reader::read<int>(const char* name, bool ifExists);
-template rai::Array<uint> H5_Reader::read<uint>(const char* name, bool ifExists);
-template rai::Array<int16_t> H5_Reader::read<int16_t>(const char* name, bool ifExists);
-template rai::Array<uint16_t> H5_Reader::read<uint16_t>(const char* name, bool ifExists);
-template rai::Array<char> H5_Reader::read<char>(const char* name, bool ifExists);
-template rai::Array<byte> H5_Reader::read<byte>(const char* name, bool ifExists);
+template Array<double> H5_Reader::read<double>(const char* name, bool ifExists);
+template Array<float> H5_Reader::read<float>(const char* name, bool ifExists);
+template Array<int> H5_Reader::read<int>(const char* name, bool ifExists);
+template Array<uint> H5_Reader::read<uint>(const char* name, bool ifExists);
+template Array<int16_t> H5_Reader::read<int16_t>(const char* name, bool ifExists);
+template Array<uint16_t> H5_Reader::read<uint16_t>(const char* name, bool ifExists);
+template Array<char> H5_Reader::read<char>(const char* name, bool ifExists);
+template Array<byte> H5_Reader::read<byte>(const char* name, bool ifExists);
 
 }//namespace

@@ -28,7 +28,7 @@ void OptGrad::reinit(const arr& _x) {
   f_x = f(g_x, NoArr, x);  evals++;
 
   //startup verbose
-  if(opt->verbose>1) cout <<"*** optGrad: starting point f(x)=" <<f_x <<" alpha=" <<alpha <<endl;
+  if(opt->verbose>0) cout <<"--grad-- " <<evals <<" f: " <<f_x <<endl; //" starting point f(x)=" <<f_x <<" alpha=" <<alpha <<endl;
   if(opt->verbose>2) cout <<"             x=" <<x <<endl;
   if(opt->verbose>0) fil.open("z.opt");
   if(opt->verbose>0) { fil <<0 <<' ' <<eval_count <<' ' <<f_x <<' ' <<alpha;  if(x.N<=5) fil <<x.modRaw();  fil <<endl; }
@@ -95,7 +95,7 @@ OptGrad::~OptGrad() {
 #ifndef RAI_MSVC
 //  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
 #endif
-  if(opt->verbose>1) cout <<"--- OptGradStop: f(x)=" <<f_x <<endl;
+  if(opt->verbose>0) cout <<"--grad done-- " <<evals <<" f: " <<f_x <<endl;
 }
 
 OptGrad::StopCriterion OptGrad::run(uint maxIt) {
@@ -203,7 +203,7 @@ uint Rprop::loop(arr& _x,
   uint rejects=0, small_steps=0;
   x=_x;
 
-  if(verbose>1) cout <<"*** optRprop: starting point x=" <<x <<endl;
+  if(verbose>0) cout <<"--rprop--" <<endl; // starting point x=" <<x <<endl;
   ofstream fil;
   if(verbose>0) fil.open("z.opt");
 
@@ -259,6 +259,7 @@ uint Rprop::loop(arr& _x,
   }
   if(verbose>0) fil.close();
 //  if(verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
+  if(verbose>0) cout <<"--rprop done-- " <<evals <<' ' <<fx_min <<endl;
   _x=x_min;
   fx = fx_min;
   return evals;
