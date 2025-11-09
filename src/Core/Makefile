@@ -2,7 +2,7 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-#OPTIM = debug
+OPTIM = debug
 
 DEPEND_UBUNTU += g++ make gnupg gdb cmake gnuplot
 

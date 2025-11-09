@@ -375,8 +375,12 @@ void Conv_FactoredNLP2BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
 void NLP_Traced::evaluate(arr& phi, arr& J, const arr& x) {
   evals++;
   P->evaluate(phi, J, x);
+  arr errs = summarizeErrors(phi);
+  double E = sum(errs);
+  if(evals==1 || E<best_E) best_E = E;
   if(trace_x) { xTrace.append(x); xTrace.reshape(-1, x.N); }
-  if(trace_costs) { costTrace.append(summarizeErrors(phi)); costTrace.reshape(-1, 4);  }
+  if(trace_errs) { errsTrace.append(errs); errsTrace.reshape(-1, 4);  }
+  if(true) { bestTrace.append(best_E); bestTrace.reshape(-1,1); }
   if(trace_phi && !!phi) { phiTrace.append(phi);  phiTrace.reshape(-1, phi.N); }
   if(trace_J && !!J) { JTrace.append(J);  JTrace.reshape(-1, phi.N, x.N); }
 }
@@ -429,8 +433,8 @@ void NLP_Viewer::display(double mu, double muLB) {
     cmd <<splot <<";";
   } else {
     T->report(cout, 0);
-    if(false && T->costTrace.N) {
-      FILE("z.trace") <<catCol(T->xTrace, T->costTrace.col(0)).modRaw();
+    if(false && T->errsTrace.N) {
+      FILE("z.trace") <<catCol(T->xTrace, T->errsTrace.col(0)).modRaw();
       cmd <<splot <<", 'z.trace' us 1:2:3 w lp; ";
     } else {
       FILE("z.trace") <<T->xTrace.modRaw();
@@ -446,7 +450,7 @@ void NLP_Viewer::display(double mu, double muLB) {
 
 void NLP_Viewer::plotCostTrace() {
   CHECK(T, "");
-  FILE("z.trace") <<T->costTrace.modRaw();
+  FILE("z.trace") <<T->errsTrace.modRaw();
   rai::String cmd;
   cmd <<"reset; set xlabel 'evals'; set ylabel 'objectives'; set style data lines;";
   cmd <<"plot 'z.trace' us ($0+1):1 t 'f', '' us ($0+1):2 t 'sos', '' us ($0+1):3 t 'ineq', '' us ($0+1):4 t 'eq';";

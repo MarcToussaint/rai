@@ -108,10 +108,11 @@ arr CMAES::generateNewSamples(){
   return samples;
 }
 
-void CMAES::overwriteSamples(const arr& Xnew, arr& Xold){
+void CMAES::overwriteSamples(const arr& Xnew){
   double **sam = self->evo.rgrgx;
+  CHECK_EQ(Xnew.d0, self->evo.sp.lambda, "");
   for(uint i=0;i<Xnew.d0;i++){
-    for(uint j=0;j<Xnew.d1;j++){ sam[i][j] = Xnew(i,j);  Xold(i,j)=Xnew(i,j); }
+    for(uint j=0;j<Xnew.d1;j++){ sam[i][j] = Xnew(i,j);  }
   }
 }
 
@@ -131,6 +132,10 @@ arr CMAES::getBestEver() {
 
 arr CMAES::getCurrentMean() {
   return arr(self->evo.rgxmean, self->evo.sp.N, false);
+}
+
+double CMAES::getSigma() {
+  return self->evo.sigma;
 }
 
 

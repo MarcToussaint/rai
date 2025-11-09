@@ -269,7 +269,7 @@ Frame* Configuration::addAssimp(const char* filename, bool mergeNodeMeshes, int 
         Shape& s = f->getShape();
         s.type() = ST_mesh;
         s.mesh() = A.meshes(i).scalar();
-        params()->add<shared_ptr<rai::Mesh>>(f->name+".ply", s._mesh);
+        assets()->add<shared_ptr<rai::Mesh>>(f->name+".ply", s._mesh);
       }
     } else if(A.meshes(i).N>1) {
       if(!mergeNodeMeshes){
@@ -290,7 +290,7 @@ Frame* Configuration::addAssimp(const char* filename, bool mergeNodeMeshes, int 
         for(auto& mesh:A.meshes(i)) {
           s.mesh().addMesh(mesh);
         }
-        params()->add<shared_ptr<rai::Mesh>>(f->name+".ply", s._mesh);
+        assets()->add<shared_ptr<rai::Mesh>>(f->name+".ply", s._mesh);
       }
     }
   }
@@ -2818,7 +2818,7 @@ void Configuration::writeMeshes(str pathPrefix, bool copyTextures, bool enumerat
     }
   }
   if(copyTextures){
-    auto P =params();
+    auto P =assets();
     NodeL texs = P->findNodesOfType(typeid(shared_ptr<SharedTextureImage>));
     uint texCount=0;
     for(Node* n:texs) {
@@ -2844,7 +2844,7 @@ void Configuration::writeMeshes(str pathPrefix, bool copyTextures, bool enumerat
     }
   }
   if(true){
-    auto P = params();
+    auto P = assets();
     NodeL meshes = P->findNodesOfType(typeid(shared_ptr<rai::Mesh>));
     uint meshCount=0;
     for(Node* n:meshes) {

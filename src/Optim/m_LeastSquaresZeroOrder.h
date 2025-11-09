@@ -7,9 +7,32 @@
 
 namespace rai {
 
-struct LeastSquaresDerivativeFree{
+struct GenericDF{
   shared_ptr<NLP> P;
   std::shared_ptr<OptOptions> opt;
+  str method;
+
+  RAI_PARAM("LSZO/", int, lambda, 1)
+
+  arr best_x, best_phi;
+  double best_f=1e20;
+
+  uint evals=0, tinySteps=0, rejectedSteps=0;
+
+  GenericDF(str method, shared_ptr<NLP> _P, std::shared_ptr<OptOptions> _opt) : P(_P), opt(_opt), method(method) {}
+
+  virtual arr generateSamples(uint lambda) = 0;
+  virtual void update(arr& X, arr& Phi) = 0;
+
+  shared_ptr<SolverReturn> solve();
+  arr evaluateSamples(const arr& X);
+  bool step();
+protected:
+  void update_best(const arr& X, const arr& Phi);
+  friend struct LS_CMA;
+};
+
+struct LeastSquaresDerivativeFree : GenericDF{
 
   //-- parameters
   str method="rank1";
@@ -23,29 +46,18 @@ struct LeastSquaresDerivativeFree{
   RAI_PARAM("LSZO/", bool, covariantNoise, false)
   RAI_PARAM("LSZO/", double, stepInc, 1.5)
   RAI_PARAM("LSZO/", double, stepDec, .5)
-  RAI_PARAM("LSZO/", int, lambda, 1)
-  RAI_PARAM("LSZO/", int, mu, 1)
 
   //-- state and data
-  arr x;
-  arr elite_X, elite_Phi;
-  arr J, phi0, Hinv;
-  arr phi_x;
-  double phi2_x=-1.;
+  arr x, J, phi0, Hinv;
   arr data_X, data_Phi;
 
-  uint evals=0, tinySteps=0, rejectedSteps=0;
+  LeastSquaresDerivativeFree(shared_ptr<NLP> _P, const arr& x_init, std::shared_ptr<OptOptions> _opt=make_shared<OptOptions>());
 
-  LeastSquaresDerivativeFree(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt=make_shared<OptOptions>());
+  arr generateSamples(uint lambda);
+  void update(arr& X, arr& Phi);
 
-  shared_ptr<SolverReturn> solve();
-
-  bool step();
-
+private:
   void updateJ_rank1(arr& J, const arr& x, const arr& x_last, const arr& phi, const arr& phi_last);
-
-  arr generateNewSamples(uint lambda);
-  void update(arr& y, arr& Phi);
 };
 
 
@@ -55,27 +67,19 @@ std::tuple<arr,arr> updateJ_linReg(const arr& Xraw, const arr& Y, const arr& x_n
 
 //===========================================================================
 
-struct LS_CMA{
-  shared_ptr<NLP> P;
-  std::shared_ptr<OptOptions> opt;
+struct LS_CMA : GenericDF{
 
   CMAES cma;
   LeastSquaresDerivativeFree lsdf;
-  arr x_best, phi_best;
+
+  arr X_cma, X_lsdf;
 
   RAI_PARAM("LS_CMA/", int, ls_lambda, 1)
 
-  uint evals=0, steps=0, tinySteps=0, rejectedSteps=0;
-
   LS_CMA(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt=make_shared<OptOptions>());
 
-  virtual arr generateNewSamples();
+  virtual arr generateSamples(uint lambda);
   virtual void update(arr& X, arr& Phi);
-
-  bool step();
-
-  shared_ptr<SolverReturn> solve();
-
 };
 
 

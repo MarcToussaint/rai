@@ -15,6 +15,76 @@ void zero_non_sos_objectives(const ObjectiveTypeA& featureTypes, arr& phi){
   for(uint i=0;i<phi.N;i++) if(featureTypes.elem(i)!=OT_sos) phi.elem(i)=0.;
 }
 
+void GenericDF::update_best(const arr& X, const arr& Phi){
+  //-- update best
+  arr F = ::sum(::sqr(Phi), 1);
+  uint best_i = argmin(F);
+  double f_y = F(best_i);
+
+  if(opt->verbose>1) cout <<"--" <<method <<"-- " <<evals <<" f: " <<f_y <<std::flush;
+
+  //-- update x (reject?)
+  if(f_y>=best_f){
+    rejectedSteps++;
+    if(opt->verbose>1) cout <<" -- reject";
+  }else{
+    rejectedSteps=0;
+    if(best_x.N){
+      if(length(best_x-X[best_i])<1e-4) tinySteps++; else tinySteps=0;
+    }
+    best_x = X[best_i];
+    best_phi = Phi[best_i];
+    best_f = F(best_i);
+    if(opt->verbose>1) cout <<" -- accept";
+  }
+}
+
+arr GenericDF::evaluateSamples(const arr& X){
+  arr Phi(X.d0, P->featureTypes.N);
+  for(uint k=0;k<X.d0;k++){
+    P->evaluate(Phi[k].noconst(), NoArr, X[k]);
+    evals++;
+  }
+
+  for(uint i=0;i<Phi.d0;i++) zero_non_sos_objectives(P->featureTypes, Phi[i].noconst());
+
+  update_best(X, Phi);
+
+  return Phi;
+}
+
+bool GenericDF::step(){
+
+  arr X = generateSamples(lambda);
+
+  arr Phi = evaluateSamples(X);
+
+  update(X, Phi);
+
+  if(opt->verbose>1) cout <<endl;
+
+  if((int)evals>opt->stopEvals) return true;
+  if(rejectedSteps>3*P->dimension) return true;
+  if(tinySteps>5) return true;
+  return false;
+}
+
+shared_ptr<SolverReturn> GenericDF::solve(){
+  while(!step()){}
+  if(opt->verbose>0) cout <<"--" <<method <<" done-- " <<evals <<" f: " <<best_f <<std::endl;
+  shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
+  ret->x = best_x;
+  arr err = P->summarizeErrors(best_phi);
+  ret->f = err(OT_f);
+  ret->sos = err(OT_sos);
+  ret->eq = err(OT_eq);
+  ret->ineq = err(OT_ineq);
+  ret->feasible=true;
+  return ret;
+}
+
+//===========================================================================
+
 auto decompose(const arr& phi, const arr& J, ObjectiveTypeA featureTypes){
   uintAA I(OT_sos+1);
   for(uint i=0;i<featureTypes.N;i++) I(featureTypes.elem(i)).append(i);
@@ -26,11 +96,13 @@ auto decompose(const arr& phi, const arr& J, ObjectiveTypeA featureTypes){
   return std::tuple(phi_sos,phi_f, Jsos, Jf);
 }
 
-LeastSquaresDerivativeFree::LeastSquaresDerivativeFree(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt)
- : P(P), opt(_opt){
+LeastSquaresDerivativeFree::LeastSquaresDerivativeFree(shared_ptr<NLP> _P, const arr& x_init, std::shared_ptr<OptOptions> _opt)
+ : GenericDF("lsdf", _P,_opt){
   if(x_init.N) x=x_init;
   else x=P->getInitializationSample();
   CHECK_EQ(x.N, P->dimension, "");
+
+  best_x = x;
 
   bool hasF=false, hasSos=false;
   for(auto& ot: P->featureTypes){
@@ -53,36 +125,12 @@ LeastSquaresDerivativeFree::LeastSquaresDerivativeFree(shared_ptr<NLP> P, const 
   method="linReg";
 
   //evaluate
-  P->evaluate(phi_x, NoArr, x);
-  phi2_x = sumOfSqr(phi_x);
-  if(opt->verbose>0) cout <<"--lsdf-- " <<evals <<" f: " <<phi2_x <<std::endl;
+  P->evaluate(best_phi, NoArr, best_x);
+  best_f = sumOfSqr(best_phi);
+  if(opt->verbose>0) cout <<"--lsdf-- " <<evals <<" f: " <<best_f <<std::endl;
 }
 
-shared_ptr<SolverReturn> LeastSquaresDerivativeFree::solve(){
-  while(!step()){}
-  if(opt->verbose>0) cout <<"--lsdf done-- " <<evals <<" f: " <<phi2_x <<std::endl;
-  shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
-  ret->x = x;
-  arr err = P->summarizeErrors(phi_x);
-  ret->f = err(OT_f);
-  ret->sos = err(OT_sos);
-  ret->eq = err(OT_eq);
-  ret->ineq = err(OT_ineq);
-  ret->feasible=true;
-  return ret;
-}
-
-arr LeastSquaresDerivativeFree::generateNewSamples(uint lambda){
-#if 0
-  if(elite_X.d0){
-    uint pick = rnd.uni_int(0,elite_X.d0-1);
-    // pick = 0;
-    x = elite_X[pick];
-    phi_x = elite_Phi[pick];
-    // phi2_x = sumOfSqr(phi_x);
-  }
-#endif
-
+arr LeastSquaresDerivativeFree::generateSamples(uint lambda){
   //-- compute delta
   arr delta;
   Hinv = inverse_SymPosDef(~J*J + damping*eye(J.d1));
@@ -100,8 +148,8 @@ arr LeastSquaresDerivativeFree::generateNewSamples(uint lambda){
   //-- proposed step
   arr y_mean = x + delta;
 
+  //-- generate lambda noisy versions
   arr X(lambda, y_mean.N);
-
   for(uint k=0;k<lambda;k++){
     arr y = X[k];
     y = y_mean;
@@ -135,13 +183,11 @@ arr LeastSquaresDerivativeFree::generateNewSamples(uint lambda){
 }
 
 void LeastSquaresDerivativeFree::update(arr& X, arr& Phi){
-  for(uint i=0;i<Phi.d0;i++) zero_non_sos_objectives(P->featureTypes, Phi[i].noconst());
-
-  //store
+  //-- store
   data_X.append(X);
   data_Phi.append(Phi);
 
-  //prune data
+  //-- prune data
   if(pruneData){
     uint n = data_X.d0;
     uint N = 2.*dataRatio*data_X.d1;
@@ -153,10 +199,10 @@ void LeastSquaresDerivativeFree::update(arr& X, arr& Phi){
     }
   }
 
-  //update J
+  //-- update J
   if(data_X.d0>2){
     if(method=="rank1"){
-      updateJ_rank1(J, x, data_X[-2], phi_x, data_Phi[-2]);
+      updateJ_rank1(J, x, data_X[-2], best_phi, data_Phi[-2]);
 
     }else if(method=="linReg"){
       std::tie(J, phi0) = updateJ_linReg(data_X, data_Phi, x, dataRatio);
@@ -174,52 +220,19 @@ void LeastSquaresDerivativeFree::update(arr& X, arr& Phi){
   //   }
   // }
 
-  if(elite_X.N){ X.append(elite_X); Phi.append(elite_Phi); }
+  //-- update x
+  x = best_x;
 
-  arr Phi2 = ::sum(::sqr(Phi), 1);
-  uintA picks = pick_best_mu(X, Phi2, mu);
-  elite_X = X.pick(picks);
-  elite_Phi = Phi.pick(picks);
-
-  arr y = elite_X[0];
-  arr phi_y = elite_Phi[0];
-  double phi2_y = sumOfSqr(phi_y);
-  if(opt->verbose>1) cout <<"--lsdf-- " <<evals <<" f: " <<phi2_y <<std::flush;
-
-  //-- update x (reject?)
-  if(phi2_y>=phi2_x){
-    rejectedSteps++;
+  //-- update alpha
+  if(rejectedSteps){
     alpha *= stepDec;
     if(alpha<alpha_min) alpha = alpha_min;
-    if(opt->verbose>1) cout <<" -- reject (alpha: " <<alpha <<")" <<endl;
   }else{
-    rejectedSteps=0;
-    if(length(x-y)<1e-4) tinySteps++; else tinySteps=0;
-    x = y;
-    phi_x = phi_y;
-    phi2_x = phi2_y;
     alpha *= stepInc;
     if(alpha>1.) alpha=1.;
-    if(opt->verbose>1) cout <<" -- accept (alpha: " <<alpha <<")" <<endl;
-  }
-}
-
-bool LeastSquaresDerivativeFree::step(){
-  arr X = generateNewSamples(lambda);
-
-  //-- evaluate
-  arr Phi(X.d0, P->featureTypes.N);
-  for(uint k=0;k<X.d0;k++){
-    P->evaluate(Phi[k].noconst(), NoArr, X[k]);
-    evals++;
   }
 
-  update(X, Phi);
-
-  if((int)evals>opt->stopEvals) return true;
-  if(rejectedSteps>3*x.N) return true;
-  if(tinySteps>5) return true;
-  return false;
+  if(opt->verbose>1) cout <<"(alpha: " <<alpha <<")";
 }
 
 void LeastSquaresDerivativeFree::updateJ_rank1(arr& J, const arr& x, const arr& x_last, const arr& phi, const arr& phi_last){
@@ -262,74 +275,39 @@ std::tuple<arr,arr> updateJ_linReg(const arr& Xraw, const arr& Y, const arr& x_n
 //===========================================================================
 
 LS_CMA::LS_CMA(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt)
-    : P(P), opt(_opt), cma(P->f_scalar(), x_init, _opt), lsdf(P, x_init, _opt){
+    : GenericDF("ls-cma", P, _opt), cma(P->f_scalar(), x_init, _opt), lsdf(P, x_init, _opt){
 }
 
-arr LS_CMA::generateNewSamples(){
-  arr X = cma.generateNewSamples();
-  arr Xlsdf = lsdf.generateNewSamples(ls_lambda);
+arr LS_CMA::generateSamples(uint lambda){
+  X_cma = cma.generateNewSamples();
+  lsdf.opt->stepMax = 1.*cma.getSigma();
+  X_lsdf = lsdf.generateSamples(ls_lambda);
 
-  cma.overwriteSamples(Xlsdf, X);
-
-  return X;
+  return (X_cma, X_lsdf);
 }
 
 void LS_CMA::update(arr& X, arr& Phi){
-  for(uint i=0;i<Phi.d0;i++) zero_non_sos_objectives(P->featureTypes, Phi[i].noconst());
+  // for(uint i=0;i<Phi.d0;i++) zero_non_sos_objectives(P->featureTypes, Phi[i].noconst());
 
-  arr Phi2 = ::sum(::sqr(Phi), 1);
+  arr F = ::sum(::sqr(Phi), 1);
 
-  cma.update(X, Phi2);
+  { //overwrite CMA samples if LSDF better
+    for(uint i=0;i<X_lsdf.d0;i++){
+      uint j = X_cma.d0+i;
+      if(F(j)<F(i)){
+        X_cma[i] = X[j];
+        F(i) = F(j);
+      }
+    }
+    cma.overwriteSamples(X_cma);
+    F.resizeCopy(X_cma.d0);
+    cma.update(X_cma, F);
+  }
+
+  lsdf.update_best(X,Phi);
   lsdf.update(X, Phi);
-
-  lsdf.x = cma.getCurrentMean();
-  // cma.overwriteMean(lsdf.x);
-}
-
-bool LS_CMA::step(){
-  steps++;
-
-  arr X = generateNewSamples();
-
-  //-- evaluate
-  arr Phi(X.d0, P->featureTypes.N);
-  for(uint k=0;k<X.d0;k++){
-    P->evaluate(Phi[k].noconst(), NoArr, X[k]);
-    evals++;
-  }
-
-
-  if(true){
-    arr Phi2 = ::sum(::sqr(Phi), 1);
-    uint i_best = argmin(Phi2);
-    x_best = X[i_best];
-    phi_best = Phi[i_best];
-    if(opt->verbose>1) cout <<" f:" <<Phi2(i_best) <<endl;
-  }else{
-    x_best = lsdf.x;
-    phi_best = lsdf.phi_x;
-  }
-
-  update(X, Phi);
-
-  if((int)evals>opt->stopEvals) return true;
-  if(rejectedSteps>3*P->dimension) return true;
-  if(tinySteps>5) return true;
-  return false;
-}
-
-shared_ptr<SolverReturn> LS_CMA::solve(){
-  while(!step()){}
-  if(opt->verbose>0) cout <<"--ls_cma done-- " <<evals <<" f: " <<sumOfSqr(phi_best) <<std::endl;
-  shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
-  ret->x = x_best;
-  arr err = P->summarizeErrors(phi_best);
-  ret->f = err(OT_f);
-  ret->sos = err(OT_sos);
-  ret->eq = err(OT_eq);
-  ret->ineq = err(OT_ineq);
-  ret->feasible=true;
-  return ret;
+  // lsdf.x = cma.getCurrentMean();
+  cma.overwriteMean(lsdf.x);
 }
 
 //===========================================================================

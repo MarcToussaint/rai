@@ -69,8 +69,9 @@ struct CMAES : EvolutionStrategy {
 
   arr getBestEver();
   arr getCurrentMean();
+  double getSigma();
 
-  void overwriteSamples(const arr& X, arr& Xold);
+  void overwriteSamples(const arr& X);
   void overwriteMean(const arr& x);
 
 };

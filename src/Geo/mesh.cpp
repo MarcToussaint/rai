@@ -49,13 +49,13 @@ template<> const char* Enum<ShapeType>::names []= {
 SharedTextureImage& Mesh::texImg(const char* file){
   if(!_texImg){
     if(file){
-      auto p = params()->find<shared_ptr<SharedTextureImage>>(file);
+      auto p = assets()->find<shared_ptr<SharedTextureImage>>(file);
       if(p) _texImg = *p;
       else{
         _texImg = make_shared<SharedTextureImage>();
         _texImg->img = rai::loadImage(file);
         _texImg->file.setCarray(file, strlen(file)+1);
-        params()->add<shared_ptr<SharedTextureImage>>(file, _texImg);
+        assets()->add<shared_ptr<SharedTextureImage>>(file, _texImg);
       }
     }else{
       _texImg = make_shared<SharedTextureImage>();
@@ -65,9 +65,9 @@ SharedTextureImage& Mesh::texImg(const char* file){
 }
 
 void clearAssetMeshesTextures(){
-  NodeL M = params()->findNodesOfType(typeid(shared_ptr<rai::Mesh>));
+  NodeL M = assets()->findNodesOfType(typeid(shared_ptr<rai::Mesh>));
   for(Node *n:M) delete n;
-  NodeL T = params()->findNodesOfType(typeid(shared_ptr<SharedTextureImage>));
+  NodeL T = assets()->findNodesOfType(typeid(shared_ptr<SharedTextureImage>));
   for(Node *n:T) delete n;
 }
 

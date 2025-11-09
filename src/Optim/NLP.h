@@ -123,23 +123,26 @@ struct NLP_Factored : NLP {
 struct NLP_Traced : NLP {
   shared_ptr<NLP> P;
   uint evals=0;
-  arr xTrace, costTrace, phiTrace, JTrace;
-  bool trace_x=true;
-  bool trace_costs=true;
-  bool trace_phi=false;
-  bool trace_J=false;
+  double best_E = -1.;
+  arr xTrace, errsTrace, bestTrace, phiTrace, JTrace;
+  bool trace_x = true;
+  bool trace_errs = true;
+  bool trace_phi = false;
+  bool trace_J = false;
 
   NLP_Traced(const shared_ptr<NLP>& P) : P(P) {
     copySignature(*P);
   }
 
   void setTracing(bool _trace_x, bool _trace_costs, bool _trace_phi, bool _trace_J) {
-    trace_x=_trace_x; trace_costs=_trace_costs, trace_phi=_trace_phi, trace_J=_trace_J;
+    trace_x=_trace_x; trace_errs=_trace_costs, trace_phi=_trace_phi, trace_J=_trace_J;
   }
   void clear() {
-    evals=0;
+    evals = 0;
+    best_E = -1.;
     xTrace.clear();
-    costTrace.clear();
+    errsTrace.clear();
+    bestTrace.clear();
     phiTrace.clear();
     JTrace.clear();
   }

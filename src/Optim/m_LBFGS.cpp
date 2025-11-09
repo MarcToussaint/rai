@@ -48,10 +48,10 @@ LBFGS::LBFGS(ScalarFunction _f, const arr& x_init, std::shared_ptr<OptOptions> _
 
 std::shared_ptr<SolverReturn> LBFGS::solve(){
   double f_x;
-  lbfgs_parameter_t *param;
-  lbfgs_parameter_init(param);
-  param->max_iterations = opt->stopEvals;
-  int retval = lbfgs(x.N, x.p, &f_x, proc_evaluate, proc_progress, this, 0);
+  lbfgs_parameter_t param;
+  lbfgs_parameter_init(&param);
+  param.max_iterations = opt->stopEvals;
+  int retval = lbfgs(x.N, x.p, &f_x, proc_evaluate, proc_progress, this, &param);
   if(retval){
     LOG(-2) <<"LBFGS returned error " <<retval;
   }

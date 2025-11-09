@@ -57,7 +57,7 @@ void TEST(Solver) {
     S.solve();
   }
 
-  arr path = catCol(S.getTrace_x(), S.getTrace_costs());
+  arr path = catCol(S.getTrace_x(), S.getTrace_errs());
   FILE("z.path") <<path.modRaw();
 
   cout <<"\nRESULT:\n" <<*S.ret <<"\nx: " <<S.ret->x <<"\ndual: " <<S.ret->dual <<endl;

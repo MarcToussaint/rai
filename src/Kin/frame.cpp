@@ -623,13 +623,13 @@ rai::Frame& rai::Frame::setMeshFile(str file, double scale){
   bool cd_into_mesh_files = rai::getParameter<bool>("cd_into_mesh_files", true);
 
   FileToken fil(file);
-  auto p = params()->find<shared_ptr<rai::Mesh>>(file);
+  auto p = assets()->find<shared_ptr<rai::Mesh>>(file);
   if(p){
     getShape()._mesh = *p;
   }else{
     rai::Mesh& mesh = getShape().mesh();
     mesh.clear();
-    params()->add<shared_ptr<rai::Mesh>>(file, getShape()._mesh);
+    assets()->add<shared_ptr<rai::Mesh>>(file, getShape()._mesh);
     if(cd_into_mesh_files) fil.cd_file();
     mesh.read(fil, file.getLastN(3).p, fil.name.p);
     if(cd_into_mesh_files) fil.cd_base();

@@ -1747,10 +1747,18 @@ int distance(NodeL A, NodeL B) {
 // global singleton TypeRegistrationSpace
 //
 
-Singleton<Graph> parameterGraph;
+// Singleton<Graph> parameterGraph;
+Mutex::TypedToken<Graph> params(){
+  static Mutex mutex;
+  static Graph params;
+  return mutex(&params, RAI_HERE);
+  // return parameterGraph();
+}
 
-Mutex::TypedToken<Graph> params() {
-  return parameterGraph();
+Mutex::TypedToken<Graph> assets(){ //singleton pattern
+  static Mutex mutex;
+  static Graph assets;
+  return mutex(&assets, RAI_HERE);
 }
 
 void initParameters(int _argc, char* _argv[], bool forceReload, bool verbose) {
@@ -1758,7 +1766,7 @@ void initParameters(int _argc, char* _argv[], bool forceReload, bool verbose) {
   if(wasInitialized&&!forceReload) return;
   wasInitialized=true;
 
-  auto P = parameterGraph();
+  auto P = params();
   if(forceReload) P->clear();
 
   //-- parse cmd line arguments into graph

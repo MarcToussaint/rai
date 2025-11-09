@@ -258,8 +258,7 @@ nelder_mead_result nelder_mead(
 
 // ====================================== end of original ======================================
 
-NelderMead::NelderMead(ScalarFunction _f, const arr& x_init, shared_ptr<OptOptions> opt) : f(_f), opt(opt), x(x_init){
-}
+NelderMead::NelderMead(ScalarFunction _f, const arr& x_init, shared_ptr<OptOptions> opt) : f(_f), opt(opt), x(x_init){}
 
 shared_ptr<SolverReturn> NelderMead::solve(){
   uint n = x.N;
@@ -269,13 +268,14 @@ shared_ptr<SolverReturn> NelderMead::solve(){
   };
 
   arr step(n);
-  step = 10.*opt->stopTolerance;
+  step = 1e2*opt->stopTolerance;
 
   nelder_mead_result result = nelder_mead(
       f,
       x,
       opt->stopTolerance, // the terminating limit for the variance of points
       step,
+      INT_MAX,
       opt->verbose
       );
 
