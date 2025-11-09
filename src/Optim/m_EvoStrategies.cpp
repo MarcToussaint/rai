@@ -122,7 +122,7 @@ void CMAES::overwriteMean(const arr& x){
 }
 
 void CMAES::update(arr& samples, arr& values){
-  CHECK_EQ(values.N, self->evo.sp.lambda, "")
+  CHECK_EQ((int)values.N, self->evo.sp.lambda, "")
   cmaes_UpdateDistribution(&self->evo, values.p);
 }
 

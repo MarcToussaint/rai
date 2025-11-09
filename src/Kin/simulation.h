@@ -44,12 +44,13 @@ struct Simulation {
 
   //-- step the simulation, optionally send a low-level control, or use the spline reference
   void step(const arr& u_control= {}, double tau=.01, ControlMode u_mode = _spline);
+  void multi_step(double tau_step, double tau_sim){ uint steps = ::lround(tau_step/tau_sim); for(uint i=0;i<steps;i++) step({}, tau_sim, _spline); }
 
   //-- adapt the spline reference to genreate motion (default way)
   void setSplineRef(const arr& _q, const arr& _times, bool append=true);
   void setPositionRef(rai::Dof* dof, const arr&q_ref, double cap=-1.);
   void setForceRef(const arr& f_ref, const arr& Jf, double kf, double cap);
-  void resetSplineRef();
+  void resetSplineRef(double ctrl_time=-1.);
 
   //-- send a gripper command
   void moveGripper(const char* gripperFrameName, double width=.075, double speed=.3);
@@ -58,9 +59,10 @@ struct Simulation {
   bool gripperIsDone(const char* gripperFrameName);
 
   //-- get state information
-  const arr& get_q() { return C.getJointState(); }
-  const arr& get_qDot();
-  const arr& get_qRef(); //executed in the LAST step() call
+  double get_t() const { return time; }
+  const arr& get_q() const { return C.getJointState(); }
+  const arr& get_qDot() const;
+  const arr& get_qRef() const; //executed in the LAST step() call
 
   const arr get_frameVelocities();
   double getTimeToSplineEnd();
@@ -98,11 +100,11 @@ struct Simulation {
   //-- store and reset the state of the simulation
   void resetTime(double t=0.);
   struct State { double time; arr q, qDot, freePos, freeVel; };
-  void getState(State& state);
+  State getState();
   void setState(const State& state);
   FrameL getFreeFrames();
   FrameL getJointFrames();
-  void pushConfigurationToSimulator(const arr& frameVelocities=NoArr, const arr& qDot=NoArr);
+  void pushConfigToSim(const arr& frameVelocities=NoArr, const arr& qDot=NoArr);
 
   //-- post-hoc world manipulations
   void registerNewObjectWithEngine(rai::Frame* f);

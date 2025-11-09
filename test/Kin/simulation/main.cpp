@@ -50,8 +50,7 @@ void testPushes(){
   byteA rgb;
   floatA depth;
 
-  rai::Simulation::State X;
-  S.getState(X);
+  rai::Simulation::State X = S.getState();
 
   for(uint k=0;k<2;k++){
 
@@ -78,7 +77,7 @@ void testPushes(){
         p(2) += .2;
         C["box"]->setPosition(p);
 
-        S.pushConfigurationToSimulator();
+        S.pushConfigToSim();
       }
     }
   }
@@ -502,8 +501,7 @@ void testMotors(){
 
   rai::system("mkdir -p z.vid/; rm -f z.vid/*.ppm");
 
-  rai::Simulation::State X;
-  S.getState(X);
+  rai::Simulation::State X = S.getState();
 
   S.setSplineRef(qT, {1.});
 
@@ -515,7 +513,7 @@ void testMotors(){
     S.step({}, tau, S._spline);
 
     if(!((t+50)%100)){
-      S.getState(X);
+      X = S.getState();
     }
 
     if(!(t%100)){
@@ -524,8 +522,7 @@ void testMotors(){
       S.resetSplineRef();
       S.setSplineRef(qT, {1.});
 
-      rai::Simulation::State _X;
-      S.getState(_X);
+      rai::Simulation::State _X = S.getState();
       cout <<"reset state errors: "
            <<maxDiff(X.q, _X.q) <<' '
            <<maxDiff(X.qDot, _X.qDot) <<' '
@@ -630,15 +627,14 @@ void testResetState(){
 
   double tau = .01;
   rai::Simulation S(C, S._physx, 4);
-  rai::Simulation::State X;
-  S.getState(X);
+  rai::Simulation::State X = S.getState();
   Metronome tic(tau);
   for(int t=0;t<2./tau;t++){
     tic.waitForTic();
     S.step({-10.}, tau, S._velocity);
     C.view();
     if(t==100){
-      S.getState(X);
+      X = S.getState();
       arr A = X.freePos[0].copy();
       X.freePos[0] = X.freePos[4];
       X.freePos[4] = A;

@@ -297,7 +297,12 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   if(self->display) self->updateDisplayData(time, C); //does not update with freq >20hz - see method
 
-  if(engine==_physx && verbose>2){
+  if(verbose>2){
+    C.view(false, STRING('simulation time: ' <<time));
+    rai::wait(tau);
+  }
+
+  if(engine==_physx && verbose>3){
     self->physx->getDebugConfig().view(false, STRING("Simulation physx debug time: " <<time));
   }
 }
@@ -331,8 +336,9 @@ void Simulation::setForceRef(const arr& f_ref, const arr& Jf, double kf, double 
   self->forceRef.cap = cap;
 }
 
-void Simulation::resetSplineRef() {
-  self->ref.initialize(C.getJointState(), NoArr, time);
+void Simulation::resetSplineRef(double ctrl_time) {
+  if(ctrl_time<0.) ctrl_time = time;
+  self->ref.initialize(C.getJointState(), NoArr, ctrl_time);
 }
 
 bool getFingersForGripper(rai::Frame*& gripper, rai::Joint*& joint, rai::Frame*& fing1, rai::Frame*& fing2, rai::Configuration& C, const char* gripperFrameName) {
@@ -504,7 +510,8 @@ bool Simulation::gripperIsDone(const char* gripperFrameName) {
 #endif
 }
 
-void Simulation::getState(State& state) {
+Simulation::State Simulation::getState() {
+  State state;
   state.time = time;
   if(engine==_physx) {
     self->physx->pullFreeStates(C, state.freeVel);
@@ -517,6 +524,7 @@ void Simulation::getState(State& state) {
     NIY;
     state.freePos = C.getFrameState();
   } else NIY;
+  return state;
 }
 
 void Simulation::setState(const State& state) {
@@ -549,7 +557,7 @@ FrameL Simulation::getJointFrames(){
   return {};
 }
 
-void Simulation::pushConfigurationToSimulator(const arr& frameVelocities, const arr& qDot) {
+void Simulation::pushConfigToSim(const arr& frameVelocities, const arr& qDot) {
   C.ensure_q();
   if(engine==_physx) {
     self->physx->pushFreeStates(C, frameVelocities);
@@ -569,11 +577,11 @@ void Simulation::registerNewObjectWithEngine(Frame* f) {
   } else NIY;
 }
 
-const arr& Simulation::get_qDot() {
+const arr& Simulation::get_qDot() const {
   return self->qDot;
 }
 
-const arr& Simulation::get_qRef(){
+const arr& Simulation::get_qRef() const{
   return self->q_ref;
 }
 
@@ -987,8 +995,7 @@ void Imp_ObjectImpulses::modConfiguration(Simulation& S, double tau) {
   vel(0) *= .1;
   vel(1) *= .1;
 
-  rai::Simulation::State X;
-  S.getState(X);
+  rai::Simulation::State X = S.getState();
 
   X.freeVel(obj->ID, 0, {}) = vel;
 

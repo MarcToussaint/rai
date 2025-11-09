@@ -26,13 +26,15 @@ struct SimulationState {
 }
 
 void init_Simulation(pybind11::module& m) {
-  // pybind11::class_<rai::Simulation::State, std::shared_ptr<rai::Simulation::State>>(m, "SimulationState", "")
-  //     .def_readwrite("time", &rai::Simulation::State::time)
-  //     .def_readwrite("q", &rai::Simulation::State::q)
-  //     .def_readwrite("qDot", &rai::Simulation::State::qDot)
-  //     .def_readwrite("freePos", &rai::Simulation::State::freePos)
-  //     .def_readwrite("freeVel", &rai::Simulation::State::freeVel)
-  //     ;
+  pybind11::class_<rai::Simulation::State, std::shared_ptr<rai::Simulation::State>>(m, "SimulationState", "used only for set|getState")
+      .def(pybind11::init<>())
+      .def_readwrite("time", &rai::Simulation::State::time)
+      .def_readwrite("q", &rai::Simulation::State::q)
+      .def_readwrite("qDot", &rai::Simulation::State::qDot)
+      .def_readwrite("freePos", &rai::Simulation::State::freePos)
+      .def_readwrite("freeVel", &rai::Simulation::State::freeVel)
+      .def("__str__", [](std::shared_ptr<rai::Simulation::State>& self) {  str s;  s <<"time: "<< self->time <<", q: " <<self->q <<", qDot: " <<self->qDot <<", freePos: " <<self->freePos <<", freeVel: " <<self->freeVel;  return std::string(s.p); })
+      ;
 
   pybind11::class_<rai::Simulation, std::shared_ptr<rai::Simulation>>(m, "Simulation", "A direct simulation interface to physics engines (Nvidia PhysX, Bullet) -- see https://marctoussaint.github.io/robotics-course/tutorials/simulation.html")
 
@@ -52,6 +54,10 @@ void init_Simulation(pybind11::module& m) {
            pybind11::arg("u_mode") = rai::Simulation::_none
           )
 
+      .def("multi_step", &rai::Simulation::multi_step, "run multiple steps of tau_sim using spline control; tau_step should be multiple of tau_sim",
+           pybind11::arg("tau_step"),
+           pybind11::arg("tau_sim"))
+
       .def("setSplineRef", &rai::Simulation::setSplineRef,
            "set the spline reference to generate motion"
            "\n* path: single configuration, or sequence of spline control points"
@@ -63,12 +69,13 @@ void init_Simulation(pybind11::module& m) {
           )
 
       .def("resetSplineRef", &rai::Simulation::resetSplineRef,
-           "reset the spline reference, i.e., clear the current spline buffer and initialize it to constant spline at current position (to which setSplineRef can append)")
+           "reset the spline reference, i.e., clear the current spline buffer and initialize it to constant spline at current position (to which setSplineRef can append); ctrl_time=-1 means current control time",
+           pybind11::arg("ctrl_time")=-1.)
 
       .def("getTimeToSplineEnd", &rai::Simulation::getTimeToSplineEnd)
 
+      .def("get_t", &rai::Simulation::get_t)
       .def("get_q", &rai::Simulation::get_q)
-
       .def("get_qDot", &rai::Simulation::get_qDot)
       .def("get_frameVelocities", &rai::Simulation::get_frameVelocities)
 
@@ -99,11 +106,7 @@ void init_Simulation(pybind11::module& m) {
        pybind11::arg("sensorName")
       )
 
-  .def("getState", [](std::shared_ptr<rai::Simulation>& self) {
-    rai::Simulation::State X;
-    self->getState(X);
-    return pybind11::make_tuple(X.time, arr2numpy(X.q), arr2numpy(X.qDot), arr2numpy(X.freePos), arr2numpy(X.freeVel));
-  }, "returns a 5-tuple of (time, q, qDot, freePos, freeVel)")
+  .def("getState", &rai::Simulation::getState, "returns struct with 5 fields (time, q, qDot, freePos, freeVel)")
 
   .def("getFreeFrames", [](std::shared_ptr<rai::Simulation>& self) {
 	FrameL frames = self->getFreeFrames();
@@ -112,19 +115,11 @@ void init_Simulation(pybind11::module& m) {
 	return F;
       }, "")
 
-  .def("setState", [](std::shared_ptr<rai::Simulation>& self, double time, const arr& q, const arr& qDot, const arr& freePos, const arr& freeVel) {
-        self->setState({time, q, qDot, freePos, freeVel});
-      }, "",
-      pybind11::arg("time"),
-      pybind11::arg("q"),
-      pybind11::arg("qDot"),
-      pybind11::arg("freePos"),
-      pybind11::arg("freeVel")
-      )
+  .def("setState", &rai::Simulation::setState, "", pybind11::arg("state"))
 
   .def("resetTime", &rai::Simulation::resetTime, "", pybind11::arg("time")=1.)
 
-  .def("pushConfigurationToSimulator", &rai::Simulation::pushConfigurationToSimulator,
+  .def("pushConfigToSim", &rai::Simulation::pushConfigToSim,
        "set the simulator to the full (frame) state of the configuration",
        pybind11::arg("frameVelocities") = NoArr,
        pybind11::arg("jointVelocities") = NoArr
@@ -140,6 +135,7 @@ void init_Simulation(pybind11::module& m) {
     return arr2numpy(points);
   })
 
+  .def("setVerbose", [](std::shared_ptr<rai::Simulation>& self, int verbose) { self->verbose=verbose; }, "", pybind11::arg("verbose"))
   .def("getScreenshot", &rai::Simulation::getScreenshot)
 
   ;
