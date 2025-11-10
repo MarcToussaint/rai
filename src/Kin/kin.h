@@ -295,6 +295,7 @@ public:
 
   /// @name I/O
   Graph asDict() const;
+  str asYaml(bool serial=false) const { return asDict().asYaml(serial); }
   void write(std::ostream& os, bool explicitlySorted=false) const;
   void writeURDF(std::ostream& os, const char* robotName="myrobot") const;
   void writeCollada(const char* filename, const char* format="collada") const;

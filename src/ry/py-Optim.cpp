@@ -346,7 +346,8 @@ void init_Optim(pybind11::module& m) {
 
       .def("getProblem", &rai::NLP_Solver::getProblem, "returns the NLP problem")
       .def("getTrace_x", &rai::NLP_Solver::getTrace_x, "returns steps-times-n array with queries points in each row")
-      .def("getTrace_costs", &rai::NLP_Solver::getTrace_costs, "returns steps-times-3 array with rows (f+sos-costs, ineq, eq)")
+      .def("getTrace_errs", &rai::NLP_Solver::getTrace_errs, "returns steps-times-4 array with rows (f, sos, ineq, eq)")
+      .def("getTrace_best", &rai::NLP_Solver::getTrace_best, "returns steps-times-1 array with the running best of sum(f+sos+ineq+eq)")
       .def("getTrace_phi", &rai::NLP_Solver::getTrace_phi, "")
       .def("getTrace_J", &rai::NLP_Solver::getTrace_J, "")
 

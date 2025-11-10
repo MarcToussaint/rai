@@ -17,7 +17,8 @@ void zero_non_sos_objectives(const ObjectiveTypeA& featureTypes, arr& phi){
 
 void GenericDF::update_best(const arr& X, const arr& Phi){
   //-- update best
-  arr F = ::sum(::sqr(Phi), 1);
+  arr F(Phi.d0);
+  for(uint i=0;i<F.N;i++) F(i) = ::sum(P->summarizeErrors(Phi[i]));
   uint best_i = argmin(F);
   double f_y = F(best_i);
 
@@ -26,27 +27,23 @@ void GenericDF::update_best(const arr& X, const arr& Phi){
   //-- update x (reject?)
   if(f_y>=best_f){
     rejectedSteps++;
-    if(opt->verbose>1) cout <<" -- reject";
+    if(opt->verbose>1) cout <<" f:" <<f_y <<" -- reject";
   }else{
     rejectedSteps=0;
-    if(best_x.N){
-      if(length(best_x-X[best_i])<1e-4) tinySteps++; else tinySteps=0;
-    }
+    if(best_x.N && length(best_x-X[best_i])<1e-4) tinySteps++; else tinySteps=0;
     best_x = X[best_i];
     best_phi = Phi[best_i];
     best_f = F(best_i);
-    if(opt->verbose>1) cout <<" -- accept";
+    if(opt->verbose>1) cout <<" f:" <<best_f <<" -- accept";
   }
 }
 
 arr GenericDF::evaluateSamples(const arr& X){
   arr Phi(X.d0, P->featureTypes.N);
-  for(uint k=0;k<X.d0;k++){
-    P->evaluate(Phi[k].noconst(), NoArr, X[k]);
+  for(uint i=0;i<X.d0;i++){
+    P->evaluate(Phi[i].noconst(), NoArr, X[i]);
     evals++;
   }
-
-  for(uint i=0;i<Phi.d0;i++) zero_non_sos_objectives(P->featureTypes, Phi[i].noconst());
 
   update_best(X, Phi);
 
@@ -64,8 +61,8 @@ bool GenericDF::step(){
   if(opt->verbose>1) cout <<endl;
 
   if((int)evals>opt->stopEvals) return true;
-  if(rejectedSteps>3*P->dimension) return true;
-  if(tinySteps>5) return true;
+  // if(rejectedSteps>3*P->dimension) return true;
+  // if(tinySteps>5) return true;
   return false;
 }
 
@@ -74,11 +71,15 @@ shared_ptr<SolverReturn> GenericDF::solve(){
   if(opt->verbose>0) cout <<"--" <<method <<" done-- " <<evals <<" f: " <<best_f <<std::endl;
   shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
   ret->x = best_x;
+#if 1
   arr err = P->summarizeErrors(best_phi);
   ret->f = err(OT_f);
   ret->sos = err(OT_sos);
   ret->eq = err(OT_eq);
   ret->ineq = err(OT_ineq);
+#else
+  ret->f = best_f;
+#endif
   ret->feasible=true;
   return ret;
 }
@@ -167,7 +168,7 @@ arr LeastSquaresDerivativeFree::generateSamples(uint lambda){
         // z *= noiseRatio * alpha;
       }else{
         z = randn(x.N);
-      z *= noiseRatio * length(delta);
+      z *= noiseRatio * length(delta) + noiseAbs;
       }
       // sigma *= 1./(1.+sqr(.001*steps));
       // sigma += noiseAbs;
@@ -183,6 +184,8 @@ arr LeastSquaresDerivativeFree::generateSamples(uint lambda){
 }
 
 void LeastSquaresDerivativeFree::update(arr& X, arr& Phi){
+  for(uint i=0;i<Phi.d0;i++) zero_non_sos_objectives(P->featureTypes, Phi[i].noconst());
+
   //-- store
   data_X.append(X);
   data_Phi.append(Phi);
@@ -279,35 +282,40 @@ LS_CMA::LS_CMA(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions>
 }
 
 arr LS_CMA::generateSamples(uint lambda){
-  X_cma = cma.generateNewSamples();
-  lsdf.opt->stepMax = 1.*cma.getSigma();
+  X_cma = cma.generateSamples();
+  lsdf.opt->stepMax = 5.*cma.getSigma();
   X_lsdf = lsdf.generateSamples(ls_lambda);
 
   return (X_cma, X_lsdf);
+  //return X_cma;
 }
 
 void LS_CMA::update(arr& X, arr& Phi){
-  // for(uint i=0;i<Phi.d0;i++) zero_non_sos_objectives(P->featureTypes, Phi[i].noconst());
-
-  arr F = ::sum(::sqr(Phi), 1);
+  arr F(Phi.d0);
+  for(uint i=0;i<F.N;i++) F(i) = ::sum(P->summarizeErrors(Phi[i]));
 
   { //overwrite CMA samples if LSDF better
+    bool needsOverwrite=false;
     for(uint i=0;i<X_lsdf.d0;i++){
       uint j = X_cma.d0+i;
       if(F(j)<F(i)){
-        X_cma[i] = X[j];
         F(i) = F(j);
+        X_cma[i] = X[j];
+        needsOverwrite=true;
       }
     }
-    cma.overwriteSamples(X_cma);
+    if(needsOverwrite){
+      cma.overwriteSamples(X_cma);
+    }
     F.resizeCopy(X_cma.d0);
     cma.update(X_cma, F);
   }
 
   lsdf.update_best(X,Phi);
+  lsdf.x = cma.getCurrentMean(); //determines data-weighting in LWR
   lsdf.update(X, Phi);
-  // lsdf.x = cma.getCurrentMean();
-  cma.overwriteMean(lsdf.x);
+  lsdf.x = cma.getCurrentMean();
+  // cma.overwriteMean(lsdf.x);
 }
 
 //===========================================================================

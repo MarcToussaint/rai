@@ -39,19 +39,23 @@ uintA pick_best_mu(const arr& samples, const arr& values, uint mu);
 struct EvolutionStrategy {
   ScalarFunction f;
   shared_ptr<OptOptions> opt;
-  arr x;
-  double f_x=1e10;
+  str method;
+
+  arr best_x;
+  double best_f=1e10;
   int evals=0, steps=0, rejectedSteps=0, tinySteps=0;
 
-  EvolutionStrategy(ScalarFunction _f, const arr& x_init, shared_ptr<OptOptions> _opt): f(_f), opt(_opt), x(x_init) {}
+  EvolutionStrategy(str method, ScalarFunction _f, const arr& x_init, shared_ptr<OptOptions> _opt): f(_f), opt(_opt), method(method), best_x(x_init) {}
 
   //virtuals that define a method
-  virtual arr generateNewSamples() = 0;
+  virtual arr generateSamples() = 0;
   virtual void update(arr& samples, arr& values) = 0;
 
   //generic stepping & looping
   bool step();
   shared_ptr<SolverReturn> solve();
+  arr evaluateSamples(const arr& X);
+  void update_best(const arr& X, const arr& F);
 };
 
 //===========================================================================
@@ -64,7 +68,7 @@ struct CMAES : EvolutionStrategy {
   CMAES(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> opt = make_shared<OptOptions>());
   ~CMAES();
 
-  virtual arr generateNewSamples();
+  virtual arr generateSamples();
   virtual void update(arr& samples, arr& values);
 
   arr getBestEver();
@@ -87,9 +91,9 @@ struct ES_mu_plus_lambda : EvolutionStrategy {
   RAI_PARAM("ES/", uint, mu, 5)
 
   ES_mu_plus_lambda(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> opt = make_shared<OptOptions>())
-      : EvolutionStrategy(f, x_init, opt) { mean = x_init; }
+      : EvolutionStrategy("es_mu_lam", f, x_init, opt) { mean = x_init; }
 
-  virtual arr generateNewSamples();
+  virtual arr generateSamples();
 
   virtual void update(arr& X, arr& y);
 };
@@ -109,7 +113,7 @@ struct GaussEDA : EvolutionStrategy {
 
   GaussEDA(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> opt = make_shared<OptOptions>());
 
-  virtual arr generateNewSamples();
+  virtual arr generateSamples();
 
   virtual void update(arr& X, arr& y);
 };

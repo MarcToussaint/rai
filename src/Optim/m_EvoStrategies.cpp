@@ -8,36 +8,48 @@ namespace rai {
 
 //===========================================================================
 
-bool EvolutionStrategy::step(){
-  steps++;
+void EvolutionStrategy::update_best(const arr& X, const arr& F){
+  uint best_i = argmin(F);
+  double f_y = F(best_i);
 
-  arr samples = generateNewSamples();
+  if(f_y>=best_f){
+    rejectedSteps++;
+    if(opt->verbose>1) cout <<" f:" <<f_y <<" -- reject" <<endl;
+  }else{
+    rejectedSteps=0;
+    if(best_x.N && length(best_x-X[best_i])<1e-4) tinySteps++; else tinySteps=0;
+    best_x = X[best_i];
+    best_f = F(best_i);
+    if(opt->verbose>1) cout <<" f:" <<best_f <<" -- accept" <<endl;
+  }
+}
 
-  //-- evaluate
-  arr y(samples.d0);
-  for(uint i=0;i<samples.d0;i++){
-    y(i) = f(NoArr, NoArr, samples[i]);
+arr EvolutionStrategy::evaluateSamples(const arr& X){
+  arr F(X.d0);
+  for(uint i=0;i<X.d0;i++){
+    F(i) = f(NoArr, NoArr, X[i]);
     evals++;
   }
 
-  uint i; double f_y;
-  std::tie(f_y, i) = rai::min_arg(y);
-  if(f_y<f_x){
-    rejectedSteps=0;
-    if(x.N && length(x-samples[i])<1e-3) tinySteps++; else tinySteps=0;
-    f_x = f_y;
-    x = samples[i];
-    if(opt->verbose>1) cout <<" f:" <<f_x <<" -- accept" <<endl;
-  }else{
-    rejectedSteps++;
-    if(opt->verbose>1) cout <<" f:" <<f_y <<" -- reject" <<endl;
-  }
+  update_best(X, F);
 
-  update(samples, y);
+  return F;
+}
+
+bool EvolutionStrategy::step(){
+  steps++;
+
+  if(opt->verbose>1) cout <<"--" <<method <<"-- " <<evals <<std::flush;
+
+  arr X = generateSamples();
+
+  arr F = evaluateSamples(X);
+
+  update(X, F);
 
   if(evals>opt->stopEvals) return true;
-  if(rejectedSteps>int(3*x.N)) return true;
-  if(tinySteps>5) return true;
+  // if(rejectedSteps>int(3*best_x.N)) return true;
+  // if(tinySteps>5) return true;
   return false;
 }
 
@@ -66,11 +78,11 @@ uintA pick_best_mu(const arr& samples, const arr& values, uint mu){
 
 std::shared_ptr<SolverReturn> EvolutionStrategy::solve(){
   while(!step()){}
-  if(opt->verbose>0) cout <<"--ES done-- "<< evals <<' ' <<f_x <<std::endl;
+  if(opt->verbose>0) cout <<"--" <<method <<" done-- "<< evals <<' ' <<best_f <<std::endl;
 
   shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
-  ret->x = x;
-  ret->f = f_x;
+  ret->x = best_x;
+  ret->f = best_f;
   ret->feasible=true;
   return ret;
 }
@@ -81,10 +93,11 @@ struct CMA_self {
   cmaes_t evo;
 };
 
-CMAES::CMAES(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> opt) : EvolutionStrategy(f, x_init, opt) {
+CMAES::CMAES(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> opt) : EvolutionStrategy("cmaes", f, x_init, opt) {
   self = make_unique<CMA_self>();
-  arr startDev = rai::consts<double>(sigmaInit, x.N);
-  cmaes_init(&self->evo, x_init.N, x_init.p, startDev.p, 1, lambda, nullptr);
+  arr startDev = rai::consts<double>(sigmaInit, best_x.N);
+  int seed = rai::rndInt(1000);
+  cmaes_init(&self->evo, x_init.N, x_init.p, startDev.p, seed, lambda, nullptr);
 
   if(opt->verbose>0) cout <<"--cmaes-- " <<evals <<std::endl;
 }
@@ -94,8 +107,8 @@ CMAES::~CMAES() {
   rai::system("rm errcmaes.err actparcmaes.par");
 }
 
-arr CMAES::generateNewSamples(){
-  CHECK_EQ(x.N, uint(self->evo.sp.N), "")
+arr CMAES::generateSamples(){
+  CHECK_EQ(best_x.N, uint(self->evo.sp.N), "")
   double* const* rgx = cmaes_SamplePopulation(&self->evo);
 
   // arr samples(self->evo.sp.lambda, self->evo.sp.N);
@@ -104,16 +117,13 @@ arr CMAES::generateNewSamples(){
   arr samples;
   samples.setCarray(rgx, self->evo.sp.lambda, self->evo.sp.N);
 
-  if(opt->verbose>1) cout <<"--cmaes-- " <<evals <<std::flush;
   return samples;
 }
 
 void CMAES::overwriteSamples(const arr& Xnew){
   double **sam = self->evo.rgrgx;
-  CHECK_EQ(Xnew.d0, self->evo.sp.lambda, "");
-  for(uint i=0;i<Xnew.d0;i++){
-    for(uint j=0;j<Xnew.d1;j++){ sam[i][j] = Xnew(i,j);  }
-  }
+  CHECK_EQ((int)Xnew.d0, self->evo.sp.lambda, "");
+  for(uint i=0;i<Xnew.d0;i++) for(uint j=0;j<Xnew.d1;j++) sam[i][j] = Xnew(i,j);
 }
 
 void CMAES::overwriteMean(const arr& x){
@@ -141,7 +151,7 @@ double CMAES::getSigma() {
 
 //===========================================================================
 
-arr ES_mu_plus_lambda::generateNewSamples(){
+arr ES_mu_plus_lambda::generateSamples(){
   arr X = replicate(mean, lambda);
 
   double sig = sigma;
@@ -169,15 +179,15 @@ void ES_mu_plus_lambda::update(arr& Xnew, arr& y){
 //===========================================================================
 
 GaussEDA::GaussEDA(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> opt)
-    : EvolutionStrategy(f, x_init, opt){
-  mean = x;
-  cov = rai::sqr(sigmaInit)*eye(x.N);
+    : EvolutionStrategy("gaussEDA", f, x_init, opt){
+  mean = best_x;
+  cov = rai::sqr(sigmaInit)*eye(best_x.N);
 }
 
-arr GaussEDA::generateNewSamples(){
+arr GaussEDA::generateSamples(){
   arr C;
   lapack_cholesky(C, cov);
-  arr z = randn(lambda, x.N) * ~C;
+  arr z = randn(lambda, best_x.N) * ~C;
 
   if(sigmaDecay>0.){
     z *= 1./(1.+rai::sqr(sigmaDecay*steps));

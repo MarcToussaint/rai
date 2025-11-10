@@ -298,7 +298,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   if(self->display) self->updateDisplayData(time, C); //does not update with freq >20hz - see method
 
   if(verbose>2){
-    C.view(false, STRING('simulation time: ' <<time));
+    C.view(false, STRING("simulation time: " <<time));
     rai::wait(tau);
   }
 
