@@ -22,8 +22,9 @@ struct H5_Writer {
 
   H5_Writer(const char* filename);
 
-  template<class T> void add(const char* name, const rai::Array<T>& x);
-  void addDict(const char* name, const Graph& dict);
+  template<class T> void write(const char* name, const Array<T>& x);
+  template<class T> void writeA(const char* name, const Array<Array<T>>& x);
+  void writeDict(const char* name, const Graph& dict);
   void addGroup(const char* group);
 };
 
@@ -36,7 +37,7 @@ struct H5_Reader {
 
   H5_Reader(const char* filename);
   void readAll();
-  template<class T> rai::Array<T> read(const char* name, bool ifExists=false);
+  template<class T> Array<T> read(const char* name, bool ifExists=false);
   Graph readDict(const char* name, bool ifExists=false);
   bool exists(const char* name);
 };

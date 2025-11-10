@@ -1806,14 +1806,14 @@ void Mesh::writeAssimp(const char* filename, const char* format){
 void Mesh::writeH5(const char* filename, const str& group) {
   H5_Writer H(filename);
   H.addGroup(group);
-  H.add(group + "/vertices", convert<float>(V));
-  if(V.d0<65535) H.add(group+"/faces", convert<uint16_t>(T)); else H.add(group+"/faces", T);
-  if(C.N) H.add(group+"/colors", convert<byte>(C*255.));
-  if(cvxParts.N) H.add(group+"/parts", cvxParts);
-  if(texCoords.N) H.add(group+"/textureCoords", convert<float>(texCoords));
+  H.write(group + "/vertices", convert<float>(V));
+  if(V.d0<65535) H.write(group+"/faces", convert<uint16_t>(T)); else H.write(group+"/faces", T);
+  if(C.N) H.write(group+"/colors", convert<byte>(C*255.));
+  if(cvxParts.N) H.write(group+"/parts", cvxParts);
+  if(texCoords.N) H.write(group+"/textureCoords", convert<float>(texCoords));
   if(_texImg){
-    if(_texImg->file.N) H.add<char>(group+"/textureFile", texImg().file);
-    else H.add<byte>(group+"/textureImg", texImg().img);
+    if(_texImg->file.N) H.write<char>(group+"/textureFile", texImg().file);
+    else H.write<byte>(group+"/textureImg", texImg().img);
   }
 }
 

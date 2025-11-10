@@ -32,11 +32,11 @@ H5_Writer::H5_Writer(const char* filename) {
   file = make_shared<H5::H5File>(filename, H5F_ACC_TRUNC);
 }
 
-void H5_Writer::addDict(const char* name, const Graph& dict){
+void H5_Writer::writeDict(const char* name, const Graph& dict){
   str s = dict.asYaml(true);
   charA b;
   b.referTo(s.p, s.N);
-  add<char>(name, b);
+  write<char>(name, b);
   // LOG(0) <<"writing dict len: " <<b.N <<' ' <<s <<endl;
 }
 
@@ -44,13 +44,24 @@ void H5_Writer::addGroup(const char* group) {
   file->createGroup(group);
 }
 
-template<class T> void H5_Writer::add(const char* name, const Array<T>& x) {
+template<class T> void H5_Writer::write(const char* name, const Array<T>& x) {
   Array<hsize_t> dim = convert<hsize_t>(x.dim());
   if(!dim.N) dim = {0};
   H5::DataSpace dataspace(dim.N, dim.p);
   H5::DataType h5type = get_h5type<T>();
   H5::DataSet dataset = file->createDataSet(name, h5type, dataspace);
   dataset.write(x.p, h5type);
+}
+
+template<class T> void H5_Writer::writeA(const char* name, const Array<Array<T> >& x){
+  Array<hsize_t> dim = { x.N };
+  H5::DataSpace dataspace(dim.N, dim.p);
+  H5::DataType h5type = get_h5type<T>();
+  H5::VarLenType h5vlentype = H5::VarLenType(&h5type);
+  H5::DataSet dataset = file->createDataSet(name, h5vlentype, dataspace);
+  Array<hvl_t> data(x.N);
+  for(uint i=0;i<x.N;i++){ data(i).len = x.elem(i).N; data(i).p = x.elem(i).p; }
+  dataset.write(data.p, h5vlentype);
 }
 
 //===========================================================================
@@ -90,7 +101,9 @@ Graph H5_Reader::readDict(const char* name, bool ifExists){
   CHECK_GE(b.N, 1, "");
   LOG(0) <<"reading dict len: " <<b.N <<endl;
   str s(b.p);
-  return Graph(s);
+  Graph G;
+  G.readYaml(s);
+  return G;
 }
 
 template<class T> void readDatasetToGraph(Graph& G, H5::DataSet& dataset, const uintA& dim, const char* name) {
@@ -150,14 +163,17 @@ bool H5_Reader::exists(const char* name) { NICO }
 #endif
 
 // explicit instantiations
-template void H5_Writer::add<double>(const char* name, const Array<double>& x);
-template void H5_Writer::add<float>(const char* name, const Array<float>& x);
-template void H5_Writer::add<int>(const char* name, const Array<int>& x);
-template void H5_Writer::add<uint>(const char* name, const Array<uint>& x);
-template void H5_Writer::add<int16_t>(const char* name, const Array<int16_t>& x);
-template void H5_Writer::add<uint16_t>(const char* name, const Array<uint16_t>& x);
-template void H5_Writer::add<char>(const char* name, const Array<char>& x);
-template void H5_Writer::add<unsigned char>(const char* name, const Array<unsigned char>& x);
+template void H5_Writer::write<double>(const char* name, const Array<double>& x);
+template void H5_Writer::write<float>(const char* name, const Array<float>& x);
+template void H5_Writer::write<int>(const char* name, const Array<int>& x);
+template void H5_Writer::write<uint>(const char* name, const Array<uint>& x);
+template void H5_Writer::write<int16_t>(const char* name, const Array<int16_t>& x);
+template void H5_Writer::write<uint16_t>(const char* name, const Array<uint16_t>& x);
+template void H5_Writer::write<char>(const char* name, const Array<char>& x);
+template void H5_Writer::write<unsigned char>(const char* name, const Array<unsigned char>& x);
+
+template void H5_Writer::writeA<double>(const char* name, const Array<Array<double>>& x);
+template void H5_Writer::writeA<int>(const char* name, const Array<Array<int>>& x);
 
 template Array<double> H5_Reader::read<double>(const char* name, bool ifExists);
 template Array<float> H5_Reader::read<float>(const char* name, bool ifExists);

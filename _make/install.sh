@@ -117,6 +117,13 @@ case ${lib} in
 	make -C ${lib}/build install
 	;;
 
+    libyaml)
+	git clone --single-branch -b 0.2.5 https://github.com/yaml/libyaml.git
+	cd ${lib}; ./bootstrap
+	./configure --prefix=${pre} CFLAGS='-fPIC'
+	make install
+	;;
+
     libpng)
 	git clone --single-branch -b libpng16 https://github.com/glennrp/libpng.git
 	cd ${lib}; ./configure --prefix=${pre} CFLAGS='-fPIC'

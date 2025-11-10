@@ -1089,6 +1089,21 @@ Graph Configuration::reportForces() {
   return G;
 }
 
+std::tuple<intA, arr> Configuration::getForceArrays() {
+  intA pairs;
+  arr forces;
+  for(Dof* dof : otherDofs) {
+    const ForceExchangeDof* ex = dof->fex();
+    if(ex) {
+      pairs.append(ex->a.ID) .append(ex->b.ID);
+      forces.append(ex->poa) .append(ex->force) .append(ex->torque);
+    }
+  }
+  pairs.reshape(-1,2);
+  forces.reshape(pairs.d0,3,3);
+  return std::tuple(pairs,forces);
+}
+
 /// checks if all names of the bodies are disjoint
 bool Configuration::checkUniqueNames(bool makeUnique) {
   for(Frame* a: frames) for(Frame* b: frames) {

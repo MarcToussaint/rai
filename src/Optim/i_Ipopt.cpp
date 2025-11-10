@@ -162,7 +162,7 @@ bool Conv_NLP2Ipopt::get_bounds_info(Ipopt::Index n, Ipopt::Number* x_l, Ipopt::
     x_u[i] = P->bounds(1,i);
   }
 
-  uint j=0;
+  int j=0;
   for(auto t:P->featureTypes) {
     if(t==OT_ineq) { g_l[j]=-1e19; g_u[j]=0.; j++; }
     if(t==OT_eq) { g_l[j]=g_u[j]=0.; j++; }
