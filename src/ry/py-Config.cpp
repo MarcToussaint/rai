@@ -126,6 +126,8 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("tau")=1.
       )
 
+  .def("addDict", &rai::Configuration::addDict, "add frames as described by a dict (e.g. loaded from a yaml)", pybind11::arg("dict"))
+
   .def("processStructure", &rai::Configuration::processStructure, "structurally simplify the Configuration (deleting frames, relinking to minimal tree)",
            pybind11::arg("pruneRigidJoints")=false, pybind11::arg("reconnectToLinks")=true, pybind11::arg("pruneNonContactShapes")=false, pybind11::arg("pruneTransparent")=false )
   .def("processInertias", &rai::Configuration::processInertias, "collect all inertia at root frame of links, optionally reestimate all inertias based on standard surface density, optionally relocate the link frame to the COM with diagonalized I)",
@@ -141,8 +143,8 @@ void init_Config(pybind11::module& m) {
       )
 
   .def("frame", [](shared_ptr<rai::Configuration>& self, uint ID) {
-      rai::Frame* f = self->frames.elem(ID);
-    return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!
+    rai::Frame* f = self->frames.elem(ID);
+    return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a nonsense deleter!
   },
   "get access to a frame by index (< getFrameDimension)",
   pybind11::arg("frameID")

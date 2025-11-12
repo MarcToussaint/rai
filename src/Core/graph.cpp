@@ -564,7 +564,7 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
     }
   } else {
     if(this->isNodeOfGraph) {
-      HALT("You set 'enforceCopySubgraphToNonsubgraph', but this is not a Nonsubgraph");
+      HALT("You set 'enforceCopySubgraphToNonsubgraph', but *this is not a Nonsubgraph; this graph=\n" <<*this);
     }
   }
 
@@ -1365,17 +1365,22 @@ struct LibYamlWriteHelper{
   }
   void _bool(bool b){
     yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_BOOL_TAG,
-                                 (yaml_char_t *)(b?"true":"false"), (b?4:5), 1, 1, YAML_PLAIN_SCALAR_STYLE);
+                                 (yaml_char_t *)(b?"True":"False"), (b?4:5), 1, 1, YAML_PLAIN_SCALAR_STYLE);
     if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
   }
   void _float(double x){
-    sprintf(buffer, "%g", x);
+    double intpart;
+    if(modf(x, &intpart) == 0.0){
+      sprintf(buffer, "%g.", intpart);
+    }else{
+      sprintf(buffer, "%.8g", x);
+    }
     yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_FLOAT_TAG,
                                  (yaml_char_t *)buffer, strlen(buffer), 1, 1, YAML_PLAIN_SCALAR_STYLE);
     if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
   }
   void _int(int x){
-    sprintf(buffer, "%d", x);
+    sprintf(buffer, "%i", x);
     yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_INT_TAG,
                                  (yaml_char_t *)buffer, strlen(buffer), 1, 1, YAML_PLAIN_SCALAR_STYLE);
     if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);

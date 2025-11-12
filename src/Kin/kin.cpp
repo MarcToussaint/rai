@@ -2641,7 +2641,7 @@ void Configuration::write(std::ostream& os, bool explicitlySorted) const {
 
 Graph Configuration::asDict() const {
   Graph G;
-  for(Frame* f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
+  // for(Frame* f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
   for(Frame* f: frames) f->write(G.addSubgraph(f->name));
   for(uint i=0; i<frames.N; i++) if(frames.elem(i)->parent) {
       G.elem(i)->addParent(G.elem(frames.elem(i)->parent->ID));
@@ -2984,7 +2984,7 @@ void Configuration::report(std::ostream& os) const {
   //  os <<" joints=" <<getJointNames() <<endl;
 }
 
-Frame& Configuration::addDict(const Graph& G) {
+void Configuration::addDict(const Graph& G) {
   uint n_prev = frames.N;
 
   FrameL node2frame(G.N);
@@ -3030,8 +3030,10 @@ Frame& Configuration::addDict(const Graph& G) {
       }
     }
 
-    f->getAts().copy(n->graph(), false, true);
-    f->read(n->graph());
+    if(n->graph().N){
+      f->getAts().copy(n->graph(), false, true);
+      f->read(n->graph());
+    }
   }
 
   // mimic joints: if the joint is coupled to another:
@@ -3087,7 +3089,7 @@ Frame& Configuration::addDict(const Graph& G) {
 
   checkConsistency();
 
-  return *frames.elem(n_prev);
+  // return *frames.elem(n_prev);
 }
 
 void Configuration::reportLimits(std::ostream& os) const {

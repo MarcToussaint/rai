@@ -469,7 +469,7 @@ void rai::Frame::write(Graph& G) const {
   //if(parent) G.add<rai::String>("parent", parent->name);
 
   if(parent) {
-    if(!Q.isZero()){
+    if(!Q.isZero() && !joint){
       if(Q.rot.isZero) G.add<arr>("pose", Q.pos.getArr());
       else if(Q.pos.isZero) G.add<arr>("pose", Q.rot.getArr());
       else G.add<arr>("pose", Q.getArr7d());
@@ -1946,6 +1946,8 @@ void rai::Joint::write(Graph& ats) const {
   if(scale!=1.) ats.add<double>("joint_scale", scale);
   if(limits.N) ats.add<arr>("limits", limits.copy().reshape(-1));
   if(mimic) ats.add<rai::String>("mimic", mimic->frame->name);
+  arr q = ((Joint*)this)->getDofState();
+  if(q.N && absMax(q)>1e-10) ats.add<arr>("q", q);
 }
 
 // void rai::Joint::write(std::ostream& os) const {
