@@ -12,7 +12,8 @@ struct RndStableConfigs {
   uint totalEvals=0, totalSucc=0;
   bool savePngs=false;
   strA supp;
-  rai::Graph forces;
+  intA pairs;
+  arr forces;
 
   bool getSample(rai::Configuration& C, const StringA& supports);
   void report();

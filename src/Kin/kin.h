@@ -166,6 +166,7 @@ struct Configuration {
   double getEnergy(const arr& qdot);
   // bool getCollisionFree(); //broken
   Graph reportForces();
+  std::tuple<intA,arr> getForceArrays();
   bool checkUniqueNames(bool makeUnique=false);
   FrameL calc_topSort() const;
   bool check_topSort() const;

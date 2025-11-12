@@ -17,6 +17,14 @@ void write(const char* filename){
   }
 
   {
+    arrA x;
+    x.append(arr{1.,2.,3.});
+    x.append(arr{4.,5.});
+    std::cout <<x <<std::endl;
+    H.addA("arr-array", x);
+  }
+
+  {
     rai::Graph dict = {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", rai::String("BLA")} };
     dict["a"] = 5.; //overwriting with same type
     dict["d"] = arr{{2,1},{1., 2.5}}; //new element

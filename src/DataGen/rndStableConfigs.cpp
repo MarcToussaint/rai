@@ -53,14 +53,15 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
                .sample();
 #endif
 
-    forces = komo.pathConfig.reportForces();
+
+    std::tie(pairs,forces) = komo.pathConfig.getForceArrays();
 
     ret->setFeasible(1e-2);
 
     if(opt.verbose>0) LOG(0) <<*ret;
     //    cout <<komo.report() <<endl;
-    if(opt.verbose>2){
-      cout <<forces <<endl;
+    if(opt.verbose>1){
+      cout <<pairs <<forces <<endl;
     }
     if(!ret->feasible){
       if(opt.verbose>2){
