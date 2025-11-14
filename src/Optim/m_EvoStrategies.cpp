@@ -96,15 +96,15 @@ struct CMA_self {
 CMAES::CMAES(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> opt) : EvolutionStrategy("cmaes", f, x_init, opt) {
   self = make_unique<CMA_self>();
   arr startDev = rai::consts<double>(sigmaInit, best_x.N);
-  int seed = rai::rndInt(1000);
+  int seed = rnd.uni_int(1, INT_MAX);
   cmaes_init(&self->evo, x_init.N, x_init.p, startDev.p, seed, lambda, nullptr);
 
-  if(opt->verbose>0) cout <<"--cmaes-- " <<evals <<std::endl;
+  if(opt->verbose>0) cout <<"--cmaes-- " <<evals <<" (seeded with: " <<seed <<")" <<std::endl;
 }
 
 CMAES::~CMAES() {
   cmaes_exit(&self->evo);
-  rai::system("rm errcmaes.err actparcmaes.par");
+  rai::system("rm -f errcmaes.err actparcmaes.par");
 }
 
 arr CMAES::generateSamples(){

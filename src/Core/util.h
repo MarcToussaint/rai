@@ -423,7 +423,7 @@ public:
   void seed_random(){ e1.seed(r()); ready=true; }
 
  public:/// @name access
-  int uni_int(int lo, int up) { if(!ready) seed(); std::uniform_int_distribution<int> dist(lo, up); return dist(e1); }
+  int uni_int(int lo, int up_included) { if(!ready) seed(); std::uniform_int_distribution<int> dist(lo, up_included); return dist(e1); }
   double uni(double lo=0., double up=1.) { if(!ready) seed(); std::uniform_real_distribution<double> dist(lo, up); return dist(e1); }
   double gauss(double mean=0., double std=1.){ if(!ready) seed(); std::normal_distribution<double> dist(mean, std); return dist(e1); }
 
