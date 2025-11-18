@@ -1408,6 +1408,13 @@ template<class T> Array<T>& Array<T>::sort(ElemCompare comp) {
   return *this;
 }
 
+template<class T> Array<uint> Array<T>::argsort() const{
+  uintA perm;
+  perm.setStraightPerm(N);
+  std::sort(perm.p, perm.p+N, [&](uint a, uint b){ return p[a]<=p[b]; });
+  return perm;
+}
+
 /// check whether list is sorted
 template<class T> bool Array<T>::isSorted(ElemCompare comp) const {
   uint i;

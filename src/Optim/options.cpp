@@ -21,7 +21,7 @@ template<> const char* Enum<OptMethod>::names []= {
     "AugmentedLag", "LogBarrier", "slackGN_logBarrier",  "squaredPenalty", "singleSquaredPenalty",
     "slackGN",
     "NLopt", "Ipopt", "slackGN_Ipopt", "Ceres",
-    "LSDF", "greedy", "NelderMead",
+    "LSBO", "greedy", "NelderMead",
     "CMA", "LS_CMA", "ES",
     nullptr
 };

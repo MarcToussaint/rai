@@ -60,28 +60,6 @@ struct EvolutionStrategy {
 
 //===========================================================================
 
-struct CMAES : EvolutionStrategy {
-  unique_ptr<struct CMA_self> self;
-  RAI_PARAM("CMA/", int, lambda, 20)
-  RAI_PARAM("CMA/", double, sigmaInit, .1)
-
-  CMAES(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> opt = make_shared<OptOptions>());
-  ~CMAES();
-
-  virtual arr generateSamples();
-  virtual void update(arr& samples, arr& values);
-
-  arr getBestEver();
-  arr getCurrentMean();
-  double getSigma();
-
-  void overwriteSamples(const arr& X);
-  void overwriteMean(const arr& x);
-
-};
-
-//===========================================================================
-
 struct ES_mu_plus_lambda : EvolutionStrategy {
   arr mean;
   arr elite_X, elite_y;

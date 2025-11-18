@@ -250,6 +250,7 @@ template<class T> struct Array {
   T median_nonConst(); //this modifies the array!
   T nthElement_nonConst(uint n); //this modifies the array!
   Array<T>& sort(ElemCompare comp=lowerEqual<T>);
+  Array<uint> argsort() const;
   bool isSorted(ElemCompare comp=lowerEqual<T>) const;
   uint rankInSorted(const T& x, ElemCompare comp=lowerEqual<T>, bool rankAfterIfEqual=false) const;
   int findValueInSorted(const T& x, ElemCompare comp=lowerEqual<T>) const;

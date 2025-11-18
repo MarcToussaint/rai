@@ -14,11 +14,11 @@ void read(const char* filename){
 
   //-- output
   FILE("z.g") <<G;
-  G.writeYaml(FILE("z.yaml"));
+  FILE("z.yaml") <<G.asYaml();
   return;
 
   //-- test yaml consistency
-  G.writeYaml(FILE("z1.yaml"));
+  FILE("z1.yaml") <<G.asYaml();
   try {
     YAML::Node yaml = YAML::LoadFile(filename);
     FILE("z2.yaml") <<yaml;

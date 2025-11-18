@@ -131,7 +131,7 @@ int MAIN(int argc,char** argv){
   uint long_int_size=sizeof(long);
   cout <<"double size: " <<double_size <<"\nlong int size: " <<long_int_size <<endl;
 
-  testRnd(); return 0;
+  testRnd();
   testPaths();
   testString();
   testParameter();

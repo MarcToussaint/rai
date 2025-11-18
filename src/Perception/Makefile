@@ -2,7 +2,7 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-#OPTIM=fast
+#OPTIM=debug
 
 DEPEND = Core Geo Gui Kin Algo Control
 

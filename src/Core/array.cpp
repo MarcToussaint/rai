@@ -276,9 +276,12 @@ arr match(const arr& A, const uintA& shape){
   CHECK(A.nd==1 || A.nd==2, "");
   arr B;
   B.referTo(A);
-  if(B.nd==1) B.reshape(B.N, 1);
   arr z;
   z.resize(shape);
+  if(B.nd==1){
+    if(B.N==z.d1) B.reshape(1, B.N);
+    else B.reshape(B.N, 1);
+  }
   CHECK(!(z.d0%B.d0), "target shape" <<shape <<" needs to be multiple of block shape " <<A.dim());
   CHECK(!(z.d1%B.d1), "target shape" <<shape <<" needs to be multiple of block shape " <<A.dim());
   for(uint i=0; i<z.d0; i+=B.d0)

@@ -386,7 +386,7 @@ void ConfigurationViewer::savePng(str saveVideoPath, int count) {
 
   auto lock = gl->dataLock(RAI_HERE);
   if(count>=0) pngCount=count;
-  write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"), true);
+  write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(6)<<std::setfill('0')<<(pngCount++)<<".png"), true);
 }
 
 Camera& ConfigurationViewer::displayCamera() {

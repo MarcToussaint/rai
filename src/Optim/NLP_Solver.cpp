@@ -12,7 +12,7 @@
 
 #include "m_Gradient.h"
 #include "m_Newton.h"
-#include "m_LeastSquaresZeroOrder.h"
+#include "m_LSBO.h"
 #include "m_SlackGaussNewton.h"
 #include "m_LocalGreedy.h"
 #include "m_NelderMead.h"
@@ -80,8 +80,8 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     ret->f = grad.fx;
     ret->feasible = true;
 
-  } else if(opt->method==M_LSDF) {
-    ret = LeastSquaresDerivativeFree(Phere, x). solve();
+  } else if(opt->method==M_LSBO) {
+    ret = LeastSquaresBlackboxOpt(Phere, x). solve();
     x = ret->x;
 
   } else if(opt->method==M_NelderMead) {
@@ -89,7 +89,7 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     x = ret->x;
 
   } else if(opt->method==M_CMA) {
-    ret = rai::CMAES(Phere->f_scalar(), x). solve();
+    ret = rai::CMAES(Phere, x). solve();
     x = ret->x;
 
   } else if(opt->method==M_LS_CMA) {
