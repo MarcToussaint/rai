@@ -63,7 +63,7 @@ void testConfig(){
   byteA img;
   read_ppm(img, "../retired/opengl/box.ppm",false);
   add_alpha_channel(img, 120);
-  scene.addQuad(img, 20, 20, 60, 60);
+  scene.setQuad(0, img, .1, .1, .2);
 
   OpenGL gl;
   gl.camera.setDefault();

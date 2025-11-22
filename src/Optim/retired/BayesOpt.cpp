@@ -8,7 +8,7 @@
 
 #include "BayesOpt.h"
 #include "../Algo/RidgeRegression.h"
-//#include "../Gui/plot.h"
+#include "../Gui/plot.h"
 //#include "../Algo/MLcourse.h"
 
 namespace rai {
@@ -50,7 +50,6 @@ void BayesOpt::step() {
   }
 
   double fx = f(NoArr, NoArr, x);
-//  report();
 
   addDataPoint(x, fx);
 
@@ -61,7 +60,7 @@ void BayesOpt::run(uint maxIt) {
   for(uint i=0; i<maxIt; i++) step();
 }
 
-void BayesOpt::report(bool display, ScalarFunction f) {
+void BayesOpt::report(bool display) {
   if(!f_now) return;
   cout <<"mean=" <<f_now->mu <<" var=" <<kernel_now->hyperParam2.scalar() <<endl;
 
@@ -90,9 +89,6 @@ void BayesOpt::report(bool display, ScalarFunction f) {
     locmin2_y.append(l.fx);
   }
 
-#if 1
-  HALT("dependence on plot deprecated")
-#else
   plot()->Gnuplot();
   plot()->Clear();
   plot()->FunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
@@ -104,7 +100,6 @@ void BayesOpt::report(bool display, ScalarFunction f) {
 //  plot()->Points(locmin_X, locmin_y);
 //  plot()->Points(locmin2_X, locmin2_y);
   plot()->update(false);
-#endif
 }
 
 void BayesOpt::addDataPoint(const arr& x, double y) {
@@ -120,14 +115,14 @@ void BayesOpt::addDataPoint(const arr& x, double y) {
     kernel_smaller->hyperParam2 = kernel_now->hyperParam2;
   }
 
-  f_now = new KernelRidgeRegression(data_X, data_y, *kernel_now, -1., fmean);
-  f_smaller = new KernelRidgeRegression(data_X, data_y, *kernel_smaller, -1., fmean);
+  f_now = new KernelRidgeRegression(data_X, data_y, *kernel_now, lambda, fmean);
+  f_smaller = new KernelRidgeRegression(data_X, data_y, *kernel_smaller, lambda, fmean);
 }
 
 void BayesOpt::reOptimizeAlphaMinima() {
-  NIY;
-  // alphaMinima_now.newton.f = f_now->getF(-2.);
-  // alphaMinima_smaller.newton.f = f_smaller->getF(-2.);
+  // NIY;
+  alphaMinima_now.newton.f = f_now->getF(-2.);
+  alphaMinima_smaller.newton.f = f_smaller->getF(-2.);
 
   alphaMinima_now.reOptimizeAllPoints();
   alphaMinima_now.run(20);
@@ -142,7 +137,7 @@ arr BayesOpt::pickNextPoint() {
   double fx_0 = f_now->evaluate(x_now, NoArr, NoArr, -2., false);
   double fx_1 = f_smaller->evaluate(x_sma, NoArr, NoArr, -1., false);
 
-  if(fx_1 < fx_0) {
+  if(fx_1 <= fx_0) {
     reduceLengthScale();
     return x_sma;
   }

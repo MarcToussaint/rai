@@ -81,7 +81,7 @@ void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start, uint iters){
   cout <<std::setprecision(6) <<"\nf(x):" <<sum(err) <<"\nx_opt:" <<x <<"\nlambda:" <<lag->lambda <<endl;
 
   rai::system("mv z.opt_all z.opt");
-  if(x.N==2) gnuplot("load 'plt'", false, true);
+  if(x.N==2) gnuplot("load 'plt'", true);
 
 //  if(!!x_start) x_start = x;
 }

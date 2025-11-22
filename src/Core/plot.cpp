@@ -7,10 +7,6 @@
     --------------------------------------------------------------  */
 
 #include "plot.h"
-#include "../Geo/geo.h"
-#include "../Geo/mesh.h"
-#include "../Gui/opengl.h"
-#include "../Gui/color.h"
 
 #include <math.h>
 
@@ -32,8 +28,8 @@ struct sPlotModule {
   rai::Array<arr> points;
   rai::Array<arr> lines;
   rai::Array<rai::String> legend;
-  rai::Array<rai::Vector> planes;
-  rai::Mesh mesh;
+  // rai::Array<rai::Vector> planes;
+  // rai::Mesh mesh;
 };
 
 }
@@ -41,7 +37,6 @@ struct sPlotModule {
 rai::PlotModule::PlotModule() {
   self = make_unique<sPlotModule>();
   mode=gnupl;
-  gl=0;
   light=false;
   grid=false;
   colors=true;
@@ -108,6 +103,11 @@ void rai::PlotModule::Clear() {
 
 void rai::PlotModule::Gnuplot() { mode=gnupl; }
 
+void rai::PlotModule::Opengl(bool perspective, double xl, double xh, double yl, double yh, double zl, double zh){
+  NICO;
+}
+
+#if 0
 void rai::PlotModule::Opengl(bool perspective, double xl, double xh, double yl, double yh, double zl, double zh) {
   mode=opengl;
   perspective=perspective;
@@ -126,6 +126,7 @@ void rai::PlotModule::Opengl(bool perspective, double xl, double xh, double yl, 
   }
   gl->update();
 }
+#endif
 
 void rai::PlotModule::Image(const byteA& x) { self->images.append(x); }
 
@@ -477,7 +478,7 @@ void drawGnuplot(rai::sPlotModule& data) {
   gnuplotdata.close();
 
   //call gnuplot
-  gnuplot(gnuplotcmd, false, false, "z.pdf");
+  gnuplot(gnuplotcmd, false, "z.pdf");
 }
 
 /*

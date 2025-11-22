@@ -247,15 +247,15 @@ double DefaultKernelFunction::k(const arr& x1, const arr& x2, arr& gx1, arr& Hx1
     switch(type) {
       case readFromCfg: HALT("???");  break;
       case Gauss:
-        hyperParam1 = arr{rai::sqr(rai::getParameter<double>("ML/KernelWidth"))};
-        hyperParam2 = arr{rai::sqr(rai::getParameter<double>("ML/PriorSdv"))};
+        lengthScaleSqr = rai::sqr(rai::getParameter<double>("ML/KernelWidth"));
+        priorVar = rai::sqr(rai::getParameter<double>("ML/PriorSdv"));
         break;
     }
   }
-  double k = hyperParam2.scalar()*::exp(-sqrDistance(x1, x2)/hyperParam1.scalar());
-  double a = -2.*k/hyperParam1.scalar();
+  double k = priorVar*::exp(-sqrDistance(x1, x2)/lengthScaleSqr);
+  double a = -2.*k/lengthScaleSqr;
   if(!!gx1) gx1 = a * (x1-x2);
-  if(!!Hx1) Hx1 = (-2.*a/hyperParam1.scalar())*((x1-x2)^(x1-x2)) + a*eye(x1.N);
+  if(!!Hx1) Hx1 = (-2.*a/lengthScaleSqr)*((x1-x2)^(x1-x2)) + a*eye(x1.N);
   return k;
 }
 DefaultKernelFunction defaultKernelFunction;
@@ -324,9 +324,12 @@ double KernelRidgeRegression::evaluate(const arr& x, arr& g, arr& H, double plus
     arr Kinv_k = invKernelMatrix_lambda*kappa;
     arr J_Kinv_k = ~Jkappa*Kinv_k;
     double k_Kinv_k = kernel.k(x, x) - scalarProduct(kappa, Kinv_k);
-    fx += plusSigma * ::sqrt(k_Kinv_k);
-    if(!!g) g -= (plusSigma/sqrt(k_Kinv_k)) * J_Kinv_k;
-    if(!!H) H -= (plusSigma/(k_Kinv_k*sqrt(k_Kinv_k))) * (J_Kinv_k^J_Kinv_k) + (plusSigma/sqrt(k_Kinv_k)) * (~Jkappa*invKernelMatrix_lambda*Jkappa + ~Kinv_k*Hkappa);
+    if(k_Kinv_k>1e-10){
+      fx += plusSigma * ::sqrt(k_Kinv_k);
+      if(!(fx==fx)) HALT("NAN!")
+      if(!!g) g -= (plusSigma/sqrt(k_Kinv_k)) * J_Kinv_k;
+      if(!!H) H -= (plusSigma/(k_Kinv_k*sqrt(k_Kinv_k))) * (J_Kinv_k^J_Kinv_k) + (plusSigma/sqrt(k_Kinv_k)) * (~Jkappa*invKernelMatrix_lambda*Jkappa + ~Kinv_k*Hkappa);
+    }
   }
 
   return fx;

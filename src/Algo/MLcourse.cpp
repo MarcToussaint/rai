@@ -92,7 +92,7 @@ void CrossValidation::crossValidateMultipleLambdas(const arr& X, const arr& y, c
 
 void CrossValidation::plot() {
   FILE("z.cv") <<catCol(lambdas, scoreMeans, scoreSDVs, scoreTrains);
-  gnuplot("set log x; set xlabel 'lambda'; set ylabel 'mean squared error'; plot 'z.cv' us 1:2:3 w errorlines title 'cv error','z.cv' us 1:4 w l title 'training error'", true, false, "z.pdf");
+  gnuplot("set log x; set xlabel 'lambda'; set ylabel 'mean squared error'; plot 'z.cv' us 1:2:3 w errorlines title 'cv error','z.cv' us 1:4 w l title 'training error'", true, "z.pdf");
 
 }
 

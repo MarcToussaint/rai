@@ -7,13 +7,13 @@ void write(const char* filename){
     intA x(3,2);
     x.setRandomPerm();
     std::cout <<x <<std::endl;
-    H.add("test", x);
+    H.write("test", x);
   }
 
   {
     arr x = rand({2,3,2});
     std::cout <<x <<std::endl;
-    H.add("testarr", x);
+    H.write("testarr", x);
   }
 
   {
@@ -21,7 +21,7 @@ void write(const char* filename){
     x.append(arr{1.,2.,3.});
     x.append(arr{4.,5.});
     std::cout <<x <<std::endl;
-    H.addA("arr-array", x);
+    H.writeA("arr-array", x);
   }
 
   {
@@ -30,7 +30,7 @@ void write(const char* filename){
     dict["d"] = arr{{2,1},{1., 2.5}}; //new element
     dict["e"] = StringA{"alpha", "beta"};
     cout <<dict <<endl;
-    H.addDict("info", dict);
+    H.writeDict("info", dict);
   }
 }
 

@@ -41,6 +41,7 @@ void OptNewton::reinit(const arr& _x) {
 #else
   fx = f(gx, Hx, x);  evals++;
 #endif
+  if(!(fx==fx)) HALT("NAN!")
   timeEval += cpuTime();
 
   //startup verbose

@@ -32,6 +32,7 @@ struct BayesOpt {
   DefaultKernelFunction* kernel_now;
   DefaultKernelFunction* kernel_smaller;
   double lengthScale;
+  double lambda = 1e-4;
 
   //lengthScale is always relative to hi-lo
   BayesOpt(ScalarFunction f, const arr& bounds, shared_ptr<OptOptions> opt, double init_lengthScale=1., double prior_var=1.);
@@ -39,7 +40,7 @@ struct BayesOpt {
 
   void step();
   void run(uint maxIt=10);
-  void report(bool display, ScalarFunction f);
+  void report(bool display);
 
  private:
   void addDataPoint(const arr& x, double y); //and update the regressions

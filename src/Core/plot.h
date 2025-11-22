@@ -13,7 +13,6 @@
 
 //===========================================================================
 
-struct OpenGL;
 struct Gaussian;
 namespace rai {
 template<class T> struct Array;
@@ -35,7 +34,6 @@ namespace rai {
 struct PlotModule {
   std::unique_ptr<struct sPlotModule> self;
   PlotMode mode;
-  OpenGL* gl;
   bool light, grid, colors, drawBox, drawDots, perspective;
   uint thickLines;//display options
   PlotModule();

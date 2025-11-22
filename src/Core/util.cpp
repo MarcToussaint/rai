@@ -1318,7 +1318,13 @@ const char* niceTypeidName(const std::type_info& type) {
 
 struct GnuplotServer {
   FILE* gp;
-  GnuplotServer():gp(nullptr) {}
+  uint count=0;
+  GnuplotServer():gp(nullptr) {
+    bool persist=false;
+    if(!persist) gp=popen("env gnuplot 2> /dev/null", "w");
+    else         gp=popen("env gnuplot -persist 2> /dev/null", "w");
+    CHECK(gp, "could not open gnuplot pipe");
+  }
   ~GnuplotServer() {
     if(gp) {
       cout <<"Closing Gnuplot" <<endl;
@@ -1327,30 +1333,24 @@ struct GnuplotServer {
     }
   }
 
-  void send(const char* cmd, bool persist) {
-#ifndef RAI_MSVC
-    if(!gp) {
-      if(!persist) gp=popen("env gnuplot 2> /dev/null", "w");
-      else         gp=popen("env gnuplot -persist 2> /dev/null", "w");
-      CHECK(gp, "could not open gnuplot pipe");
-    }
+  void send(const char* cmd) {
     FILE("z.plotcmd") <<cmd; //for debugging..
     fputs(cmd, gp);
     fflush(gp);
-#else
-    NIY;
-#endif
+    if(!count) rai::wait(.5);
+    count++;
   }
 };
 
-rai::Singleton<GnuplotServer> gnuplotServer;
+rai::Mutex::TypedToken<GnuplotServer> gnuplotServer(){
+  static rai::Mutex mutex;
+  static GnuplotServer gp;
+  return mutex(&gp, RAI_HERE);
+}
 
-void gnuplot(const char* command, bool pause, bool persist, const char* PDFfile) {
+void gnuplot(const char* command, bool pause, const char* PDFfile) {
   if(rai::getDisableGui()) return;
-  if(!rai::getInteractivity()) {
-    pause=false;
-    persist=false;
-  }
+  if(!rai::getInteractivity()) pause=false;
 
   rai::String cmd;
   cmd <<"set style data lines\n";
@@ -1373,7 +1373,7 @@ void gnuplot(const char* command, bool pause, bool persist, const char* PDFfile)
   }
 
   //  if(pauseMouse) cmd <<"\n pause mouse key" <<endl;
-  gnuplotServer()->send(cmd.p, persist);
+  gnuplotServer()->send(cmd.p);
 
   if(pause) rai::wait(.3, true);
 

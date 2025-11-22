@@ -673,16 +673,16 @@ uint sampleMultinomial(const arr& p) {
 }
 
 /// calls gnuplot to display the (n, 2) or (n, 3) array (n=number of points of line or surface)
-void gnuplot(const arr& X, bool pauseMouse, bool persist, const char* PDFfile) {
+void gnuplot(const arr& X, bool pauseMouse, const char* PDFfile) {
   rai::arrayBrackets="  ";
   if(X.nd==2 && X.d1!=2) {  //assume array -> splot
     FILE("z.pltX") <<X;
-    gnuplot("splot 'z.pltX' matrix with pm3d, 'z.pltX' matrix with lines", pauseMouse, persist, PDFfile);
+    gnuplot("splot 'z.pltX' matrix with pm3d, 'z.pltX' matrix with lines", pauseMouse, PDFfile);
     return;
   }
   if(X.nd==2 && X.d1==2) {  //assume curve -> plot
     FILE("z.pltX") <<X;
-    gnuplot("plot 'z.pltX' us 1:2", pauseMouse, persist, PDFfile);
+    gnuplot("plot 'z.pltX' us 1:2", pauseMouse, PDFfile);
     return;
   }
   if(X.nd==1) {  //assume curve -> plot
@@ -690,7 +690,7 @@ void gnuplot(const arr& X, bool pauseMouse, bool persist, const char* PDFfile) {
     Y.referTo(X);
     Y.reshape(Y.N, 1);
     FILE("z.pltX") <<Y;
-    gnuplot("plot 'z.pltX' us 1", pauseMouse, persist, PDFfile);
+    gnuplot("plot 'z.pltX' us 1", pauseMouse, PDFfile);
     return;
   }
 }

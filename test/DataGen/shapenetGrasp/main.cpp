@@ -81,8 +81,8 @@ void generateGraspsFiles(uint N=10) {
 
     rai::H5_Writer h5(filename);
     h5.addGroup("grasps");
-    if(Xsucc.N) h5.add("grasps/success", Xsucc);
-    if(Xfail.N) h5.add("grasps/fail", Xfail);
+    if(Xsucc.N) h5.write("grasps/success", Xsucc);
+    if(Xfail.N) h5.write("grasps/fail", Xfail);
   }
 }
 

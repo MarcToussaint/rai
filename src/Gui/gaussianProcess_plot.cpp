@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "plot.h"
+#include "../Core/plot.h"
 
 #include "../Algo/gaussianProcess.h"
 

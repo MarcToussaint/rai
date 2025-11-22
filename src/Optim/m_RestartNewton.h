@@ -13,24 +13,25 @@
 
 namespace rai {
 
-struct GlobalIterativeNewton {
-  arr x;
-  OptNewton newton;
-  OptGrad grad;
+struct RestartNewton {
+  ScalarFunction f;
+  shared_ptr<rai::OptOptions> opt;
   arr bounds;
 
   struct LocalMinimum { arr x; double fx; uint hits; };
   rai::Array<LocalMinimum> localMinima;
-  LocalMinimum* best;
+  LocalMinimum* best=0;
 
-  GlobalIterativeNewton(ScalarFunction f, const arr& bounds, std::shared_ptr<OptOptions> opt=make_shared<OptOptions>());
-  ~GlobalIterativeNewton();
+  RestartNewton(ScalarFunction f, const arr& bounds, std::shared_ptr<OptOptions> opt=make_shared<OptOptions>());
+  ~RestartNewton();
 
   void step();
   void run(uint maxIt=10);
   void report();
 
-  void reOptimizeAllPoints();
+  void reOptimizeLocalMinima();
+private:
+  void addRunFrom(arr& x);
 };
 
 } //namespace

@@ -3,7 +3,7 @@
 #include <Algo/spline.h>
 #include <Algo/rungeKutta.h>
 #include <Gui/opengl.h>
-#include <Gui/plot.h>
+#include <Core/plot.h>
 #include <GL/gl.h>
 
 //===========================================================================

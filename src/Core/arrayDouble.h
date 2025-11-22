@@ -422,7 +422,7 @@ double cofactor(const arr& A, uint i, uint j);
 uintA getIndexTuple(uint i, const uintA& d);  //? that also exists inside of array!
 void lognormScale(arr& P, double& logP, bool force=true);
 
-void gnuplot(const arr& X, bool pauseMouse=false, bool persist=false, const char* PDFfile=nullptr);
+void gnuplot(const arr& X, bool pauseMouse=false, const char* PDFfile=nullptr);
 
 void write_ppm(const byteA& img, const char* file_name, bool swap_rows=true);
 void read_ppm(byteA& img, const char* file_name, bool swap_rows=true);

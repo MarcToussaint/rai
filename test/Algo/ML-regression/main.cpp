@@ -1,6 +1,6 @@
 #include <Algo/MLcourse.h>
-#include <Gui/plot.h>
-#include <Optim/GlobalIterativeNewton.h>
+#include <Core/plot.h>
+#include <Optim/m_RestartNewton.h>
 
 #include <math.h>
 
@@ -59,7 +59,7 @@ void testLinReg(const char *datafile=nullptr) {
     gnuplot(STRING("plot [-3:3] '" <<datafile <<"' us 1:2 w p t 'data',\
                    'z.model' us 1:2 w l t 'mean regression',\
                    'z.model' us 1:3 w l ls 0 t 'upper',\
-                   'z.model' us 1:4 w l ls 0 t 'lower'"), true, false, "z.pdf");
+                   'z.model' us 1:4 w l ls 0 t 'lower'"), true, "z.pdf");
   }
   if(X.d1==2){
     if(plotDev){
@@ -69,11 +69,11 @@ void testLinReg(const char *datafile=nullptr) {
       gnuplot(STRING("splot [-3:3][-3:3] '" <<datafile <<"' w p ps 1 pt 3 t 'data',\
                      'z.model' matrix us ($1/5-3):($2/5-3):3 w l t 'regression',\
                      'z.model_s' matrix us ($1/5-3):($2/5-3):3 w l ls 0 t 'upper',\
-                     'z.model__s' matrix us ($1/5-3):($2/5-3):3 w l ls 0 t 'lower'"), true, false, "z.pdf");
+                     'z.model__s' matrix us ($1/5-3):($2/5-3):3 w l ls 0 t 'lower'"), true, "z.pdf");
     }else{
       FILE("z.model") <<~y_grid.reshape(31,31);
       gnuplot(STRING("splot [-3:3][-3:3] '" <<datafile <<"' w p ps 1 pt 3,\
-                     'z.model' matrix us ($1/5-3):($2/5-3):3 w l"), true, false, "z.pdf");
+                     'z.model' matrix us ($1/5-3):($2/5-3):3 w l"), true, "z.pdf");
     }
   }
 }
@@ -133,7 +133,7 @@ void testRobustRegression(const char *datafile=nullptr) {
     gnuplot(STRING("splot [-3:3][-3:3] '" <<datafile <<"' w p ps 1 pt 3,\
                    'z.model' matrix us ($1/5-3):($2/5-3):3 w l,\
                    'z.model_s' matrix us ($1/5-3):($2/5-3):3 w l,\
-                   'z.model__s' matrix us ($1/5-3):($2/5-3):3 w l"), true, false, "z.pdf");
+                   'z.model__s' matrix us ($1/5-3):($2/5-3):3 w l"), true, "z.pdf");
   }
 }
 
@@ -189,13 +189,13 @@ void testKernelReg(const char *datafile=nullptr) {
     arr bounds(2, X.d1);
     bounds[0]=-2.;
     bounds[1]=+2.;
-    rai::GlobalIterativeNewton opt(f.getF(-1.), bounds);
-    opt.newton.opt->set_verbose(1) .set_stopTolerance(1e-3);
+    rai::RestartNewton opt(f.getF(-1.), bounds);
+    opt.opt->set_verbose(1) .set_stopTolerance(1e-3);
     opt.run(10);
     opt.report();
-    cout <<"optimum at x=" <<opt.x <<' ' <<f.getF(-1.)(NoArr, NoArr, opt.x) <<endl;
+    cout <<"optimum at x=" <<opt.best->x <<' ' <<f.getF(-1.)(NoArr, NoArr, opt.best->x) <<endl;
     arr fx,sig;
-    fx = f.evaluate(opt.x.reshape(1,opt.x.N), sig);
+    fx = f.evaluate(opt.best->x.reshape(1,opt.best->x.N), sig);
     cout <<fx << ' ' <<fx - sqrt(sig) <<endl;
 
 //    OptGrad(x, f.getF(1.), OPT(verbose=2)).run();
@@ -215,7 +215,7 @@ void testKernelReg(const char *datafile=nullptr) {
     gnuplot(STRING("plot [-3:3] '" <<datafile <<"' us 1:2 w p t 'data',\
                    'z.model' us 1:2 w l t 'mean regression',\
                    'z.model' us 1:3 w l ls 0 t 'upper',\
-                   'z.model' us 1:4 w l ls 0 t 'lower'"), true, false, "z.pdf");
+                   'z.model' us 1:4 w l ls 0 t 'lower'"), true, "z.pdf");
 
   }
   if(X.d1==2){
@@ -225,7 +225,7 @@ void testKernelReg(const char *datafile=nullptr) {
     gnuplot(STRING("splot [-3:3][-3:3] '" <<datafile <<"' w p ps 2 pt 4,\
                    'z.model' matrix us ($1/5-3):($2/5-3):3 w l,\
                    'z.model_s' matrix us ($1/5-3):($2/5-3):3 w l,\
-                   'z.model__s' matrix us ($1/5-3):($2/5-3):3 w l"), true, false, "z.pdf");
+                   'z.model__s' matrix us ($1/5-3):($2/5-3):3 w l"), true, "z.pdf");
   }
 }
 
@@ -267,13 +267,13 @@ void test2Class() {
 //  if(X.d1==1){
 //    FILE("z.train") <<catCol(X, y).modRaw();
 //    FILE("z.model") <<catCol(X_grid, p_grid).modRaw();
-//    gnuplot(STRING("plot [-3:3] 'z.train' us 1:2 w p,'z.model' us 1:2 w l"), true, false, "z.pdf");
+//    gnuplot(STRING("plot [-3:3] 'z.train' us 1:2 w p,'z.model' us 1:2 w l"), true, "z.pdf");
 //  }
   if(X.d1==2){
     FILE("z.train") <<catCol(X, y).modRaw();
     FILE("z.model") <<p_grid.reshape(51,51);
-    gnuplot("load 'plt.contour'", true, false, "z.pdf");
-    gnuplot("load 'plt.contour2'", true, false, "z.pdf");
+    gnuplot("load 'plt.contour'", true, "z.pdf");
+    gnuplot("load 'plt.contour2'", true, "z.pdf");
   }
 }
 
@@ -304,8 +304,8 @@ void testKernelLogReg(){
     rai::arrayBrackets="  ";
     FILE("z.train") <<catCol(X, y).modRaw();
     FILE("z.model") <<~p_grid.reshape(51,51);
-    gnuplot("load 'plt.contour'", true, false, "z.pdf");
-    gnuplot("load 'plt.contour2'", true, false, "z.pdf");
+    gnuplot("load 'plt.contour'", true, "z.pdf");
+    gnuplot("load 'plt.contour2'", true, "z.pdf");
   }
   rai::wait();
 }
@@ -343,14 +343,14 @@ void testMultiClass(){
   FILE("z.model2") <<p_grid[1];
   if(y.d1==3){
     FILE("z.model3") <<p_grid[2];
-    gnuplot("load 'plt.contourMulti'", true, false, "z.pdf");
-    gnuplot("load 'plt.contourMulti2'", true, false, "z.pdf");
+    gnuplot("load 'plt.contourMulti'", true, "z.pdf");
+    gnuplot("load 'plt.contourMulti2'", true, "z.pdf");
   }
   if(y.d1==4){
     FILE("z.model3") <<p_grid[2];
     FILE("z.model4") <<p_grid[3];
-    gnuplot("load 'plt.contourM4'", true, false, "z.pdf");
-    gnuplot("load 'plt.contourM4_2'", true, false, "z.pdf");
+    gnuplot("load 'plt.contourM4'", true, "z.pdf");
+    gnuplot("load 'plt.contourM4_2'", true, "z.pdf");
   }
 }
 
@@ -406,10 +406,10 @@ void exercise1() {
   FILE("z.train") <<catCol(X, y).modRaw();
   if(X.d1==1) {
     FILE("z.model") <<catCol(X_grid, y_grid).modRaw();
-    gnuplot("plot 'z.train' us 1:2 w p,'z.model' us 1:2 w l", true, false, "z.pdf");
+    gnuplot("plot 'z.train' us 1:2 w p,'z.model' us 1:2 w l", true, "z.pdf");
   } else {
     FILE("z.model") <<~y_grid.reshape(31,31);
-    gnuplot("splot [-3:3][-3:3] 'z.train' w p, 'z.model' matrix us ($1/5-3):($2/5-3):3 w l", true, false, "z.pdf");
+    gnuplot("splot [-3:3][-3:3] 'z.train' w p, 'z.model' matrix us ($1/5-3):($2/5-3):3 w l", true, "z.pdf");
   }
 }
 

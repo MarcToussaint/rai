@@ -1,5 +1,5 @@
 #include <Algo/minimalSpanningTree.h>
-#include <Gui/plot.h>
+#include <Core/plot.h>
 #include <Algo/ann.h>
 #include <math.h>
 

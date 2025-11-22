@@ -102,7 +102,7 @@ void displayFunction(ScalarFunction f, bool wait, double lo, double hi) {
   FILE("z.fct") <<(~Y).modRaw();
 //  plot()->Gnuplot();  plot()->Surface(Y);  plot()->update(true);
 //  write(LIST<arr>(Y), "z.fct");
-  gnuplot("reset; set xlabel 'x'; set ylabel 'y'; splot [-1:1][-1:1] 'z.fct' matrix us ($1/50-1):($2/50-1):3 w l", wait, true);
+  gnuplot("reset; set xlabel 'x'; set ylabel 'y'; splot [-1:1][-1:1] 'z.fct' matrix us ($1/50-1):($2/50-1):3 w l", wait);
 }
 
 RUN_ON_INIT_BEGIN(optimization)

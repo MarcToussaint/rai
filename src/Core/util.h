@@ -399,22 +399,9 @@ inline bool operator==(const FileToken&, const FileToken&) { return false; }
 /** @brief A random number generator. An global instantiation \c
   rnd of a \c Rnd object is created. Use this one object to get
   random numbers.*/
-class Rnd {
- private:
-  bool ready;
-  int32_t rpoint;     /* Feldindex    */
-  int32_t rfield[256];   /* Schieberegisterfeld  */
-public:
-  std::minstd_rand e1;
-  std::random_device r;
-
- public:
-  /// ...
-  Rnd() { ready=false; }
-
- public:/// @name initialization
+struct Rnd {
   /// initialize with a specific seed
-   void seed(int s){ e1.seed(s); ready=true; }
+  void seed(int s){ e1.seed(s); ready=true; }
 
   /// use Parameter<uint>("seed") as seed
   void seed(){ e1.seed(getParameter<uint32_t>("seed", 0)); ready=true; }
@@ -422,13 +409,16 @@ public:
   /// uses the internal clock to generate a seed
   void seed_random(){ e1.seed(r()); ready=true; }
 
- public:/// @name access
   int uni_int(int lo, int up_included) { if(!ready) seed(); std::uniform_int_distribution<int> dist(lo, up_included); return dist(e1); }
   double uni(double lo=0., double up=1.) { if(!ready) seed(); std::uniform_real_distribution<double> dist(lo, up); return dist(e1); }
   double gauss(double mean=0., double std=1.){ if(!ready) seed(); std::normal_distribution<double> dist(mean, std); return dist(e1); }
 
   uint operator()(uint up) { return uint(uni_int(0, up-1)); }
 
+private:
+  bool ready = false;
+  std::minstd_rand e1;
+  std::random_device r;
 };
 
 //===========================================================================
@@ -604,7 +594,7 @@ template<class T> std::shared_ptr<T> _shared(T& x){ return std::shared_ptr<T>(&x
 // gnuplot calls
 //
 
-void gnuplot(const char* command, bool pause=false, bool persist=false, const char* PDFfile=nullptr);
+void gnuplot(const char* command, bool pause=false, const char* PDFfile=0);
 void gnuplotClose();
 
 //===========================================================================

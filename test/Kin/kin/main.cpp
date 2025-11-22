@@ -5,7 +5,7 @@
 #include <Algo/spline.h>
 #include <Algo/rungeKutta.h>
 #include <Gui/opengl.h>
-#include <Gui/plot.h>
+#include <Core/plot.h>
 #include <GL/gl.h>
 #include <Kin/feature.h>
 #include <Kin/dof_direction.h>
@@ -171,14 +171,14 @@ void TEST(Graph){
 
   C.prefixNames();
   {
-    rai::Graph G = C.getGraph();
+    rai::Graph G = C.asDict();
     G.displayDot();
     rai::wait(.5);
   }
 
   C.processStructure();
   {
-    rai::Graph G = C.getGraph();
+    rai::Graph G = C.asDict();
     G.displayDot();
     rai::wait(.5);
   }

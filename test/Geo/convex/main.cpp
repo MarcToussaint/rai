@@ -1,6 +1,6 @@
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
-#include <Gui/plot.h>
+#include <Core/plot.h>
 #include <Geo/qhull.h>
 
 #ifdef RAI_QHULL8

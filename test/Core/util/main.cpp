@@ -16,7 +16,7 @@ void TEST(Rnd){
   for (int n = 0; n != 10000; ++n)
     ++hist[std::round(rnd.gauss(2, 3))];
 
-  std::cout << "Normal distribution around " << mean << ":\n"
+  std::cout << "Normal distribution around 2:\n"
             << std::fixed << std::setprecision(1);
   for (auto [x, y] : hist)
     std::cout << std::setw(2) << x << ' ' << std::string(y / 100, '*') << '\n';

@@ -1,5 +1,5 @@
 #include <Algo/spline.h>
-#include <Gui/plot.h>
+#include <Core/plot.h>
 #include <Kin/kin.h>
 
 //==============================================================================
