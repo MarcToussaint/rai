@@ -64,6 +64,8 @@ struct NLP_Sampler {
   NLP_Sampler_Options opt;
   std::shared_ptr<NLP> nlp;
 
+  uint evals=0;
+
   NLP_Sampler(const shared_ptr<NLP>& _nlp) : nlp(_nlp) {}
 
   NLP_Sampler& setOptions(const NLP_Sampler_Options& _opt) { opt = _opt; return *this; }
@@ -87,7 +89,6 @@ private:
   } ev;
 
   //counters
-  uint evals=0;
   Eval ev_stored;
 
   void initialize(const arr& _x) { x=_x; ev.phi.clear(); ev.x.clear(); }

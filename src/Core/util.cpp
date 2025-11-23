@@ -867,12 +867,12 @@ char& String::operator()(int i) const {
 /// return the substring from 'start' to (exclusive) 'end'.
 String String::sub(int start, int end) const {
   if(start<0) start+=N;
-  if(end<0) end+=N;
+  if(end<=0) end+=N;
   CHECK_GE(start, 0, "start < 0");
   CHECK_LE(end, (int)N, "end out of range");
-  CHECK_LE(start,  end, "end before start");
+  CHECK_LE(start,  end-1, "end equals or before start");
   String tmp;
-  tmp.set(p+start, 1+end-start);
+  tmp.set(p+start, end-start);
 //  for(int i = start; i < end; i++) tmp.append((*this)(i));
   return tmp;
 }
@@ -884,7 +884,7 @@ String String::sub(int start, int end) const {
 String String::getLastN(uint n) const {
   CHECK_LE(n, N, "");
   if(n==N) return *this;
-  return sub(-int(n), -1);
+  return sub(-int(n), N);
 }
 
 /**
@@ -892,7 +892,7 @@ String String::getLastN(uint n) const {
  * @param n number of chars to return.
  */
 String String::getFirstN(uint n) const {
-  return sub(0, n-1);
+  return sub(0, n);
 }
 
 /// copy operator

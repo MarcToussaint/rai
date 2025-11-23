@@ -67,14 +67,17 @@ struct KernelRidgeRegression {
   arr kernelMatrix_lambda; ///< X X^T + lambda I
   arr invKernelMatrix_lambda; ///< (X X^T + lambda I)^-1
   arr alpha; ///< (X X^T + lambda I)^-1 y
+  arr mu; ///< the model bias (y-value offset)
   double sigmaSqr; ///< mean squared error on training data; estimate of noise
-  double mu; ///< fixed global bias (default=0)
+  bool muEqualsMean; ///< let bias mu always be the mean data (default=0)
   KernelFunction& kernel;
-  KernelRidgeRegression(const arr& X, const arr& y, KernelFunction& kernel=defaultKernelFunction, double lambda=-1., double mu=0.);
+  KernelRidgeRegression(const arr& X, const arr& y, KernelFunction& kernel=defaultKernelFunction, double lambda=-1., bool muEqualsMean=false);
   arr evaluate(const arr& X, arr& bayesSigma2=NoArr); ///< returns f(x) and \s^2(x) for a set of points X
 
   double evaluate(const arr& x, arr& df_x, arr& H, double plusSigma, bool onlySigma); ///< returns f(x) + coeff*\sigma(x) and its gradient and Hessian
+  double evaluateSquare(const arr& x, arr& g, arr& H, double plusSigma, bool onlySigma);
   ScalarFunction getF(double plusSigma);
+  ScalarFunction getFSquare(double plusSigma);
 };
 
 struct KernelLogisticRegression {

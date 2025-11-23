@@ -638,7 +638,7 @@ void readNode_postprocess(Node* n, str& namePrefix, bool parseInfo){
   if(n->is<String>()){
     str& s = n->as<String>();
     if(s(0)=='<' && s(-1)=='>'){ //FileToken
-      s = s.sub(1,-2);
+      s = s.sub(1,-1);
       Node *new_node = 0;
       try {
         new_node = G.add<FileToken>(n->key, FileToken(s));
@@ -718,7 +718,7 @@ void readNode_postprocess(Node* n, str& namePrefix, bool parseInfo){
       }
       if(j==n->key.N || n->key(j)=='(') break;
 
-      n->graph().add<bool>(STRING('%' <<n->key.sub(0, i-1)), true);
+      n->graph().add<bool>(STRING('%' <<n->key.sub(0, i)), true);
       n->key.replace(0, j, 0, 0);
     }
   }
@@ -734,7 +734,7 @@ void readGraph_postprocess(Graph& G, uint Nbefore){
     int stop = n->key.find(')', true);
     if(start>=0 && stop>=0) {
       if(stop-1>=start+1) {
-        parentTags(n->index) = n->key.sub(start+1, stop-1);
+        parentTags(n->index) = n->key.sub(start+1, stop);
       }
       n->key.replace(start, stop-start+1, 0, 0);
       while(n->key.N && n->key(-1)==' ') n->key.resize(n->key.N-1, true);
@@ -917,8 +917,8 @@ Node* readNode(Graph& G, std::istream& is, bool verbose, bool parseInfo) {
     str.read(is, " \t", ":\t\n\r,;[{})<=!~\'#", false);
     while(str.N && str(-1)==' ') str.resize(str.N-1, true);
     if(str.N) {
-      if(str(0)=='"' && str(-1)=='"') str = str.sub(1, -2);
-      if(str(0)=='\'' && str(-1)=='\'') str = str.sub(1, -2);
+      if(str(0)=='"' && str(-1)=='"') str = str.sub(1, -1);
+      if(str(0)=='\'' && str(-1)=='\'') str = str.sub(1, -1);
     }
     pinfo.keys_end=is.tellg();
   }
@@ -990,7 +990,7 @@ Node* readNode(Graph& G, std::istream& is, bool verbose, bool parseInfo) {
           //check a dedicated type string (json
           rai::String typetag;
           typetag.read(is, " \t", " \t\n\r,", false);
-          if(typetag(0)=='"' && typetag(-1)=='"') typetag = typetag.sub(1, -2);
+          if(typetag(0)=='"' && typetag(-1)=='"') typetag = typetag.sub(1, -1);
           if(typetag==rai::atomicTypeidName(typeid(double))) G.add<arr>(key)->as<arr>().readJson(is, true);
           else if(typetag==rai::atomicTypeidName(typeid(float))) G.add<floatA>(key)->as<floatA>().readJson(is, true);
           else if(typetag==rai::atomicTypeidName(typeid(uint))) G.add<uintA>(key)->as<uintA>().readJson(is, true);

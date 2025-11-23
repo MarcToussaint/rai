@@ -24,6 +24,7 @@ struct BayesOpt : GenericBO {
   shared_ptr<DefaultKernelFunction> kernel;
   RestartNewton alphaMinima;
 
+  bool leastSquaresCase=false;
   double lengthScale;
   double lambda = 1e-6;
 
@@ -37,7 +38,7 @@ struct BayesOpt : GenericBO {
   void report();
 
  private:
-  void addDataPoint(const arr& x, double y); //and update the regressions
+  void addDataPoint(const arr& x, const arr& y); //and update the regressions
 };
 
 } //namespace

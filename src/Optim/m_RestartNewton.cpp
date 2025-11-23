@@ -26,9 +26,9 @@ void RestartNewton::addRunFrom(arr& x) {
   //-- run Newton
   OptNewton newton(x, f, make_shared<OptOptions>(*opt));
   newton.setBounds(bounds);
-  newton.opt->verbose = 0;
-  // checkGradient(newton.f, x, 1e-6, true);
-  // checkHessian(newton.f, x, 1e-6, true);
+  newton.opt->verbose = 10;
+  checkGradient(newton.f, x, 1e-6, true);
+  checkHessian(newton.f, x, 1e-6, true);
   newton.run();
 
   //-- check if we already have this local optimum

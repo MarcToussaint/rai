@@ -360,8 +360,8 @@ bool NLP_Sampler::run_downhill(){
 }
 
 void NLP_Sampler::run_interior(arr& data, uintA& dataEvals){
-  if(opt.interiorBurnInSteps<0) opt.interiorBurnInSteps=0;
-  if(opt.interiorSampleSteps<1) opt.interiorSampleSteps=1; //at least 1 interior sample
+  CHECK_GE(opt.interiorBurnInSteps, 0, "")
+  CHECK_GE(opt.interiorSampleSteps, 1, "one needs at least 1 interior sample")
   int interiorSteps = opt.interiorBurnInSteps + opt.interiorSampleSteps - 1;
 
   shared_ptr<ANN> ann;

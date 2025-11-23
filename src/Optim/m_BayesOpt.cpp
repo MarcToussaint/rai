@@ -19,14 +19,10 @@ BayesOpt::BayesOpt(shared_ptr<NLP> P, shared_ptr<OptOptions> opt, double init_le
 
   lengthScale = init_lengthScale * length(P->bounds[1] - P->bounds[0]);
 
-  kernel = make_shared<DefaultKernelFunction>();
-
-  kernel->type = DefaultKernelFunction::Gauss; //TODO: ugly!!
+  kernel = make_shared<DefaultKernelFunction>(DefaultKernelFunction::Gauss);
 
   kernel->lengthScaleSqr = rai::sqr(lengthScale);
   kernel->priorVar = prior_var;
-
-  lambda = 1e-9;
 }
 
 arr BayesOpt::generateSamples(){
@@ -42,10 +38,19 @@ arr BayesOpt::generateSamples(){
 void BayesOpt::update(arr& X, arr& Phi, arr& F){
   //-- add data and recompute GP
   kernel->lengthScaleSqr = rai::sqr(lengthScale);
-  addDataPoint(X[0], F.elem());
+  CHECK_EQ(X.d0, 1, "");
+  if(!leastSquaresCase){
+    addDataPoint(X[0], F);
+  }else{
+    addDataPoint(X[0], Phi[0]);
+  }
 
   //-- reoptimize local minima
-  alphaMinima.f = gp_model->getF(-2.);
+  if(!leastSquaresCase){
+    alphaMinima.f = gp_model->getF(-2.);
+  }else{
+    alphaMinima.f = gp_model->getFSquare(-2.);
+  }
   alphaMinima.reOptimizeLocalMinima();
 
   //-- add more local minima
@@ -73,7 +78,12 @@ void BayesOpt::report() {
   X_grid = X_grid % (P->bounds[1]-P->bounds[0]);
   X_grid += repmat(P->bounds[0], X_grid.d0, 1);
   arr y_grid = gp_model->evaluate(X_grid, s_grid);
+  // for(uint i=0; i<X_grid.d0; i++) y_grid(i) = gp_model->evaluateSquare(X_grid[i], NoArr, NoArr,+2., false);
   for(double &s:s_grid) if(s>1e-10) s=2.*sqrt(s);
+
+  if(leastSquaresCase){
+    y_grid = ::sum(::sqr(y_grid),1);
+  }
 
   arr f_grid(X_grid.d0);
   for(uint i=0; i<X_grid.d0; i++) f_grid(i) = P->eval_scalar(NoArr, NoArr, X_grid[i]);
@@ -89,26 +99,37 @@ void BayesOpt::report() {
 
   plot()->Gnuplot();
   plot()->Clear();
+  // plot()->Function(X_grid, y_grid);
   plot()->FunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
   // plot()->Function(X_grid, y_grid-2.*s_grid);
   plot()->Function(X_grid, a_grid);
   plot()->Function(X_grid, f_grid);
-  plot()->Points(data_X, data_y);
+  if(!leastSquaresCase){
+    plot()->Points(data_X, data_y);
+  }else{
+    arr Y = ::sum(::sqr(data_y),1);
+    plot()->Points(data_X,Y);
+  }
   plot()->Points(locmin_X, locmin_y);
   plot()->update(false);
 }
 
-void BayesOpt::addDataPoint(const arr& x, double y) {
+void BayesOpt::addDataPoint(const arr& x, const arr& y) {
 
-  data_X.append(x);  data_X.reshape(data_X.N/x.N, x.N);
+  data_X.append(x);  data_X.reshape(-1, x.N);
   data_y.append(y);
+  if(leastSquaresCase) data_y.reshape(-1, y.N);
 
-  double fmean = ::sum(data_y)/data_y.N;
-  if(data_y.N>4) {
-    kernel->priorVar = 2.*var(data_y);
+  double fmean = 0.;
+
+  if(!leastSquaresCase){
+    fmean = ::sum(data_y)/data_y.N;
+    if(data_y.N>4) {
+      kernel->priorVar = 2.*var(data_y);
+    }
   }
 
-  gp_model = make_shared<KernelRidgeRegression>(data_X, data_y, *kernel, lambda, fmean);
+  gp_model = make_shared<KernelRidgeRegression>(data_X, data_y, *kernel, lambda, true);
 }
 
 } //namespace
