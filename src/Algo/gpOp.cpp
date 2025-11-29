@@ -69,7 +69,7 @@ void GaussianProcessOptimized::recompute() {
       }
       G(i, i) += obsVar;
     }
-    lapack_cholesky(L, G);
+    L = lapack_cholesky(G);
     GinvY = lapack_Ainv_b_symPosDef_givenCholesky(L, Y-m);
   }
 }

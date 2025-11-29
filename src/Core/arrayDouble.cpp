@@ -2134,10 +2134,19 @@ arr& operator<<(arr& x, const arr& y) { x.append(y); return x; }
   for(; xp!=xstop; xp++) *xp op y;
 
 arr& operator+=(arr& x, const arr& y) {
-  UpdateOperator_MM(+=);
-  if(y.jac) {
-    if(x.jac) *x.jac += *y.jac;
-    else x.J() = *y.jac;
+  if(x.N==y.N){
+    UpdateOperator_MM(+=);
+    if(y.jac) {
+      if(x.jac) *x.jac += *y.jac;
+      else x.J() = *y.jac;
+    }
+  }else if(x.nd==y.nd+1 && x.N==x.d0*y.N){
+    if(y.jac) NIY;
+    arr xi;
+    for(uint i=0;i<x.d0;i++){
+      xi.referToDim(x, i);
+      xi += y;
+    }
   }
   return x;
 }

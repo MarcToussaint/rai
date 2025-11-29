@@ -22,7 +22,10 @@ struct BayesOpt : GenericBO {
 
   shared_ptr<KernelRidgeRegression> gp_model;
   shared_ptr<DefaultKernelFunction> kernel;
+  bool thompsonMethod=false;
   RestartNewton alphaMinima;
+  arr thompsonSampleX, thompsonSampleF;
+  struct LocalMinimum { arr x; double fx; } thompsonMinima;
 
   bool leastSquaresCase=false;
   double lengthScale;
@@ -37,8 +40,10 @@ struct BayesOpt : GenericBO {
   void run(uint maxIt=10);
   void report();
 
- private:
+private:
   void addDataPoint(const arr& x, const arr& y); //and update the regressions
+  void updateAlphaMinima();
+  void updateThompsonMinima();
 };
 
 } //namespace

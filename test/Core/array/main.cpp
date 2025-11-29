@@ -812,7 +812,7 @@ void TEST(RowShifted){
     arr H = comp_A_At(Y);
     addDiag(H, 1.);
     arr Hchol;
-    lapack_choleskySymPosDef(Hchol, H);
+    Hchol = lapack_choleskySymPosDef(H);
     CHECK_ZERO(maxDiff(comp_At_A(Hchol), H), 1e-10, "");
     CHECK_ZERO(maxDiff(unpack(comp_At_A(Hchol)), unpack(H)), 1e-10, "");
   }

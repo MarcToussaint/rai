@@ -352,7 +352,8 @@ inline arr rand(uint n) { return rand(uintA{n}); }
 /// return array with uniform random numbers in [0, 1]
 inline arr rand(uint d0, uint d1) { return rand(uintA{d0, d1}); }
 
-inline arr rand(const arr& lo, const arr& up) { return lo + (up-lo)%rand(uintA{lo.N}); }
+inline arr rand(const uintA& d, const arr& B){ return rand(d)%(B[1]-B[0]) + B[0]; }
+// inline arr rand(const arr& lo, const arr& up) { return lo + (up-lo)%rand(uintA{lo.N}); }
 
 /// return tensor of c's
 inline const double& random(const arr& range) { return range.rndElem(); }
@@ -588,7 +589,7 @@ void blas_MsymMsym(arr& X, const arr& A, const arr& B);
 void blas_A_At(arr& X, const arr& A);
 void blas_At_A(arr& X, const arr& A);
 
-void lapack_cholesky(arr& C, const arr& A);
+arr lapack_cholesky(const arr& A);
 uint lapack_SVD(arr& U, arr& d, arr& Vt, const arr& A);
 void lapack_mldivide(arr& X, const arr& A, const arr& B);
 void lapack_LU(arr& LU, const arr& A);
@@ -597,7 +598,7 @@ void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs);
 arr  lapack_kSmallestEigenValues_sym(const arr& A, uint k);
 bool lapack_isPositiveSemiDefinite(const arr& symmA);
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A);
-void lapack_choleskySymPosDef(arr& Achol, const arr& A);
+arr lapack_choleskySymPosDef(const arr& A);
 double lapack_determinantSymPosDef(const arr& A);
 inline arr lapack_inverseSymPosDef(const arr& A) { arr Ainv; lapack_inverseSymPosDef(Ainv, A); return Ainv; }
 arr lapack_Ainv_b_sym(const arr& A, const arr& b);

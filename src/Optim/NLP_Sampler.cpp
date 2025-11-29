@@ -249,8 +249,7 @@ bool NLP_Sampler::step_noise_covariant(double sig, double penaltyMu, double lamb
   CHECK(sig>0., "");
 
   arr Hinv = lapack_inverseSymPosDef(((2.*penaltyMu)*~ev.Js)*ev.Js+lambda*eye(x.N));
-  arr C;
-  lapack_cholesky(C, Hinv);
+  arr C = lapack_cholesky(Hinv);
 //  arr cov =  2. * ~ev.Js*ev.Js+lambda*eye(x.N);
   arr z = C * randn(x.N);
 

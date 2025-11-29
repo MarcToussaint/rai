@@ -295,15 +295,22 @@ KernelRidgeRegression::KernelRidgeRegression(const arr& X, const arr& y, KernelF
   sigmaSqr = sumOfSqr(kernelMatrix*alpha-y)/double(y.N/*-beta.N*/); //beta.N are the degrees of freedom that we substract (=1 for const model)
 }
 
-arr KernelRidgeRegression::evaluate(const arr& Z, arr& bayesSigma2) {
+arr KernelRidgeRegression::evaluate(const arr& Z, arr& bayesSigma2, bool returnCovarianceMatrix) {
   arr kappa(Z.d0, X.d0);
   for(uint i=0; i<Z.d0; i++) for(uint j=0; j<X.d0; j++) kappa(i, j) = kernel.k(Z[i], X[j]);
   if(!!bayesSigma2) {
     if(!invKernelMatrix_lambda.N) invKernelMatrix_lambda = inverse_SymPosDef(kernelMatrix_lambda);
-    bayesSigma2.resize(Z.d0);
-    for(uint i=0; i<Z.d0; i++) {
-      bayesSigma2(i) = kernel.k(Z[i], Z[i]);
-      bayesSigma2(i) -= scalarProduct(kappa[i], invKernelMatrix_lambda*kappa[i]);
+    if(!returnCovarianceMatrix){
+      bayesSigma2.resize(Z.d0);
+      for(uint i=0; i<Z.d0; i++) {
+        bayesSigma2(i) = kernel.k(Z[i], Z[i]) - scalarProduct(kappa[i], invKernelMatrix_lambda*kappa[i]);
+      }
+    }else{
+      bayesSigma2.resize(Z.d0, Z.d0).setZero();
+      for(uint i=0; i<Z.d0; i++) for(uint j=0; j<=i; j++){
+          double cov_ij = kernel.k(Z[i], Z[j]) - scalarProduct(kappa[i], invKernelMatrix_lambda*kappa[j]);
+          bayesSigma2(i, j) = bayesSigma2(j, i) = cov_ij;
+        }
     }
   }
   arr y = kappa * alpha;

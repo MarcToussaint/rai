@@ -1125,27 +1125,27 @@ bool lapack_isPositiveSemiDefinite(const arr& symmA) {
   return true;
 }
 
+const char* potrf_ERR="\n\
+			*  INFO    (output) INTEGER\n\
+			*          = 0:  successful exit\n\
+			*          < 0:  if INFO = -i, the i-th argument had an illegal value\n\
+			*          > 0:  if INFO = i, the leading minor of order i is not\n\
+			*                positive definite, and the factorization could not be\n\
+			*                completed.\n";
+
 /// A=C^T C (C is upper triangular!)
-void lapack_cholesky(arr& C, const arr& A) {
+arr lapack_cholesky(const arr& A) {
   CHECK_EQ(A.d0, A.d1, "");
-  integer n=A.d0;
-  integer info;
-  C=A;
+  arr C=A;
+  integer N=A.d0, LDAB=A.d1, INFO;
   //compute cholesky
-  dpotrf_((char*)"L", &n, C.p, &n, &info);
-  CHECK(!info, "LAPACK Cholesky decomp error info = " <<info);
+  dpotrf_((char*)"L", &N, C.p, &LDAB, &INFO);
+  CHECK(!INFO, "LAPACK Cholesky decomp error info = " <<INFO <<potrf_ERR);
   //clear the lower triangle:
   uint i, j;
   for(i=0; i<C.d0; i++) for(j=0; j<i; j++) C(i, j)=0.;
+  return C;
 }
-
-const char* potrf_ERR="\n\
-*  INFO    (output) INTEGER\n\
-*          = 0:  successful exit\n\
-*          < 0:  if INFO = -i, the i-th argument had an illegal value\n\
-*          > 0:  if INFO = i, the leading minor of order i is not\n\
-*                positive definite, and the factorization could not be\n\
-*                completed.\n";
 
 void lapack_mldivide(arr& X, const arr& A, const arr& B) {
   if(isSparseMatrix(A)) {
@@ -1170,22 +1170,23 @@ void lapack_mldivide(arr& X, const arr& A, const arr& B) {
   else X = ~X;
 }
 
-void lapack_choleskySymPosDef(arr& Achol, const arr& A) {
+arr lapack_choleskySymPosDef(const arr& A) {
+  arr C;
   if(isRowShifted(A)) {
     rai::RowShifted* Aaux = dynamic_cast<rai::RowShifted*>(A.special);
     if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
     for(uint i=0; i<A.d0; i++) if(Aaux->rowShift(i)!=i) HALT("this is not shifted as an upper triangle");
 
-    Achol=A;
+    C=A;
     integer N=A.d0, KD=A.d1-1, LDAB=A.d1, INFO;
 
-    dpbtrf_((char*)"L", &N, &KD, Achol.p, &LDAB, &INFO);
+    dpbtrf_((char*)"L", &N, &KD, C.p, &LDAB, &INFO);
     CHECK(!INFO, "LAPACK Cholesky decomp error info = " <<INFO);
 
   } else {
     NIY;
   }
-
+  return C;
 }
 
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A) {
@@ -1202,8 +1203,7 @@ void lapack_inverseSymPosDef(arr& Ainv, const arr& A) {
 }
 
 double lapack_determinantSymPosDef(const arr& A) {
-  arr C;
-  lapack_cholesky(C, A);
+  arr C = lapack_cholesky(A);
   double det=1.;
   for(uint i=0; i<C.d0; i++) det *= C(i, i)*C(i, i);
   return det;

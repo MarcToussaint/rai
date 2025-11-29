@@ -119,8 +119,7 @@ GaussEDA::GaussEDA(ScalarFunction f, const arr& x_init, shared_ptr<OptOptions> o
 }
 
 arr GaussEDA::generateSamples(){
-  arr C;
-  lapack_cholesky(C, cov);
+  arr C = lapack_cholesky(cov);
   arr z = randn(lambda, best_x.N) * ~C;
 
   if(sigmaDecay>0.){
