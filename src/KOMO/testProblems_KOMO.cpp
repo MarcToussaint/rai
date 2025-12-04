@@ -221,7 +221,8 @@ std::shared_ptr<NLP> rai::make_NLP_Problem(str problem){
 
   std::shared_ptr<NLP> nlp;
 
-  if(problem == "square") nlp = make_shared<NLP_Squared>(dim);
+  if(problem == "square") nlp = make_shared<NLP_Squared>(dim, 1.);
+  else if(problem == "Rugged") nlp = make_shared<NLP_Rugged>(dim);
   else if(problem == "Rastrigin") nlp = make_shared<NLP_Rosenbrock>(dim);
   else if(problem == "Rosenbrock") nlp = make_shared<NLP_Rosenbrock>(dim);
   else if(problem == "RastriginSOS") nlp = make_shared<NLP_RastriginSOS>();

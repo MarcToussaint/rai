@@ -18,7 +18,8 @@ enum OptMethod { M_none=0,
 		 M_slackGN,
 		 M_NLopt, M_Ipopt, M_slackGN_Ipopt, M_Ceres,
 		 M_LSBO, M_greedy, M_NelderMead,
-		 M_CMA, M_LS_CMA, M_ES };
+		 M_CMA, M_LS_CMA, M_ES,
+		 M_GPOpt, M_LSGPOpt };
 
 
 struct OptOptions {

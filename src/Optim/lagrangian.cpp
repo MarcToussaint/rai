@@ -64,7 +64,7 @@ void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
   }
 
   CHECK(x.N, "zero-dim optimization variables!");
-  CHECK_EQ(phi_x.N, J_x.d0, "Jacobian size inconsistent");
+  if(!!J) CHECK_EQ(phi_x.N, J_x.d0, "Jacobian size inconsistent");
   CHECK_EQ(phi_x.N, P->featureTypes.N, "termType array size inconsistent");
 
   //-- construct unconstrained problem

@@ -68,6 +68,26 @@ struct PlotModule {
   void Image(const byteA& x);
 };
 
+struct Gnuplot {
+  str cmd;
+  uint data_count=0;
+  arr B;
+
+
+  void plot(const arr& bounds={});
+  void splot(const arr& bounds, bool contour=false);
+
+  void function(const arr& X, const arr& f, const char* style="");
+  void functionConfidence(const arr& X, const arr& f, const arr& low, const arr& up, const char* style="");
+  void heightField(const arr& Z, const char* style="");
+  void points(const arr& X, const char* style="");
+
+  void show();
+
+private:
+  str dump(const arr& X);
+};
+
 }
 
 extern rai::Singleton<rai::PlotModule> plot;

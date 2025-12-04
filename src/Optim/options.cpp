@@ -23,6 +23,7 @@ template<> const char* Enum<OptMethod>::names []= {
     "NLopt", "Ipopt", "slackGN_Ipopt", "Ceres",
     "LSBO", "greedy", "NelderMead",
     "CMA", "LS_CMA", "ES",
+    "GPOpt", "LSGPOpt",
     nullptr
 };
 

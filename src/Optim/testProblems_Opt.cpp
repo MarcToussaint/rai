@@ -9,6 +9,7 @@
 #include "testProblems_Opt.h"
 #include "lagrangian.h"
 #include "utils.h"
+#include "../Algo/ann.h"
 
 #include <math.h>
 
@@ -182,27 +183,32 @@ void generateConditionedRandomProjection(arr& M, uint n, double condition) {
 
 //===========================================================================
 
-NLP_Squared::NLP_Squared(uint _n, double condition, bool random) : n(_n) {
-  dimension = n;
-  featureTypes = rai::consts<ObjectiveType>(OT_sos, n);
+NLP_Squared::NLP_Squared(uint dim, double condition, bool random) {
+  dimension = dim;
+  bounds = (consts(-2., dim), consts(2., dim)).reshape(2,dim);
+  featureTypes = rai::consts<ObjectiveType>(OT_sos, dim);
+
+  x0 = zeros(dim);
 
   //let C be a ortho-normal matrix (=random rotation matrix)
-  C.resize(n, n);
+  C.resize(dim, dim);
 
   if(random) {
     rndUniform(C, -1., 1., false);
     //orthogonalize
-    for(uint i=0; i<n; i++) {
+    for(uint i=0; i<dim; i++) {
       for(uint j=0; j<i; j++) C[i] -= scalarProduct(C[i], C[j])*C[j];
       C[i] /= length(C[i]);
     }
     //we condition each column of M with powers of the condition
-    for(uint i=0; i<n; i++) C[i] *= pow(condition, double(i) / (2.*double(n - 1)));
+    for(uint i=1; i<dim; i++) C[i] *= pow(condition, double(i) / (2.*double(dim - 1)));
+
+    x0 = .5 * rand({dim}, bounds);
 
   } else {
-    arr cond(n);
-    if(n>1) {
-      for(uint i=0; i<n; i++) cond(i) = pow(condition, 0.5*i/(n-1));
+    arr cond(dim);
+    if(dim>1) {
+      for(uint i=1; i<dim; i++) cond(i) = pow(condition, 0.5*i/(dim-1));
     } else {
       cond = 1.;
     }
@@ -211,6 +217,32 @@ NLP_Squared::NLP_Squared(uint _n, double condition, bool random) : n(_n) {
 //    C(0,1) = C(0,0);
 //    C(1,0) = -C(1,1);
   }
+}
+
+//===========================================================================
+
+NLP_Rugged::NLP_Rugged(uint dim, bool sos, uint num_points, int num_features){
+  dimension = dim;
+  featureTypes = rai::consts((sos?OT_sos:OT_f), num_features);
+  bounds = (consts(-1., dimension), consts(1., dimension)). reshape(2,-1);
+
+  pts = rand({num_points, dimension}, bounds);
+  Phi = randn({num_points, num_features});
+  ann = make_shared<ANN>();
+  ann->setX(pts);
+}
+
+void NLP_Rugged::evaluate(arr& phi, arr& J, const arr& x){
+  arr sqrDists;
+  uintA idx;
+  ann->getkNN(sqrDists, idx, x, 2);
+
+  arr phi0 = Phi[idx(0)];
+  arr phi1 = Phi[idx(1)];
+  arr d = ::sqrt(sqrDists);
+  d /= sum(d)+1e-10;
+
+  phi = d(1) * phi0 + d(0) * phi1;
 }
 
 //===========================================================================
@@ -494,3 +526,4 @@ void NLP_RandomLP::evaluate(arr& phi, arr& J, const arr& x) {
   phi.append(randomG * (arr{1.}, x));
   if(!!J) J.append(randomG.sub({0,0},{ 1,0}));
 }
+

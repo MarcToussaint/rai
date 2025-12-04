@@ -13,16 +13,20 @@
 
 namespace rai {
 
-BayesOpt::BayesOpt(shared_ptr<NLP> P, shared_ptr<OptOptions> opt, double init_lengthScale, double prior_var)
+BayesOpt::BayesOpt(shared_ptr<NLP> P, shared_ptr<OptOptions> opt)
     : GenericBO("BayesOpt", P, P->bounds[0] + (P->bounds[1]-P->bounds[0]) % rand(P->bounds.d1), opt),
-    alphaMinima(P->f_scalar(), P->bounds, opt) {
+    alphaMinima(P->f_scalar(), P->bounds, make_shared<OptOptions>(*opt)) {
 
-  lengthScale = init_lengthScale * length(P->bounds[1] - P->bounds[0]);
+  alphaMinima.opt->verbose -= 2;
 
+  // lengthScale = init_lengthScale * length(P->bounds[1] - P->bounds[0]);
+
+}
+
+void BayesOpt::ensure_kernel(){
   kernel = make_shared<DefaultKernelFunction>(DefaultKernelFunction::Gauss);
-
   kernel->lengthScaleSqr = rai::sqr(lengthScale);
-  kernel->priorVar = prior_var;
+  kernel->priorVar = priorVar;
 }
 
 arr BayesOpt::generateSamples(){
@@ -39,15 +43,16 @@ arr BayesOpt::generateSamples(){
 
 void BayesOpt::updateAlphaMinima(){
   if(!leastSquaresCase){
-    alphaMinima.f = gp_model->getF(-2.);
+    alphaMinima.f = gp_model->getF(-2., false);
   }else{
-    alphaMinima.f = gp_model->getFSquare(-2.);
+    alphaMinima.f = gp_model->getF(-2., true);
   }
   alphaMinima.reOptimizeLocalMinima();
 
   //-- add more local minima
   alphaMinima.run(10);
 
+#if 0
   // alphaMinima.report();
   double potentialImprovement = best_f - alphaMinima.best->fx;
   if(opt->verbose>1) cout <<" best: " <<best_f <<" alpha improvement: " <<potentialImprovement <<" #local optima: " <<alphaMinima.localMinima.N;
@@ -55,6 +60,7 @@ void BayesOpt::updateAlphaMinima(){
     lengthScale *= .5;
     cout <<"[new length scale: " <<lengthScale <<"]";
   }
+#endif
 }
 
 void BayesOpt::updateThompsonMinima(){
@@ -76,7 +82,11 @@ void BayesOpt::updateThompsonMinima(){
   // // cout <<Sigma <<endl;
   arr C = lapack_cholesky(Sigma);
 #endif
-  thompsonSampleF = ~C * randn(thompsonSampleX.d0) + mu;
+  if(mu.nd==2){
+    thompsonSampleF = ~C * randn(thompsonSampleX.d0, mu.d1) + mu;
+  }else{
+    thompsonSampleF = ~C * randn(thompsonSampleX.d0) + mu;
+  }
   if(leastSquaresCase){
     thompsonSampleF = ::sum(::sqr(thompsonSampleF), 1);
   }
@@ -87,6 +97,8 @@ void BayesOpt::updateThompsonMinima(){
 }
 
 void BayesOpt::update(arr& X, arr& Phi, arr& F){
+  ensure_kernel();
+
   //-- add data and recompute GP
   kernel->lengthScaleSqr = rai::sqr(lengthScale);
   CHECK_EQ(X.d0, 1, "");
@@ -134,61 +146,79 @@ void BayesOpt::report() {
     for(uint i=0; i<X_grid.d0; i++) a_grid(i) = alphaMinima.f(NoArr, NoArr, X_grid[i]);
   }
 
-  arr locmin_X(0u, data_X.d1), locmin_y;
+  arr minpts;
   for(auto& l:alphaMinima.localMinima) {
-    locmin_X.append(l.x);
-    locmin_y.append(l.fx);
+    minpts.append(l.x);
+    minpts.append(l.fx);
   }
   if(thompsonMethod){
     for(uint i=0;i<thompsonSampleX.d0;i++) {
-      locmin_X.append(thompsonSampleX[i]);
-      locmin_y.append(thompsonSampleF.elem(i));
+      minpts.append(thompsonSampleX[i]);
+      minpts.append(thompsonSampleF.elem(i));
     }
   }
+  minpts.reshape(-1, P->dimension+1);
 
   if(P->dimension==2){
     f_grid.reshape(n_grid+1,n_grid+1);
     y_grid.reshape(n_grid+1,n_grid+1);
 
-
-    FILE("z.fct") <<f_grid.modRaw() <<endl;
-    FILE("z.fcty") <<y_grid.modRaw() <<endl;
-    FILE("z.pts") <<catCol({data_X, data_y.reshape(-1,1)}).modRaw() <<endl;
-    FILE("z.pts2") <<catCol({locmin_X, locmin_y.reshape(-1,1)}).modRaw() <<endl;
-    rai::String cmd;
-    // cmd <<"reset; set contour; set size square; set cntrparam linear; set cntrparam levels incremental 0,.1,10; set xlabel 'x'; set ylabel 'y'; ";
-    cmd <<"reset; set size square; set xlabel 'x'; set ylabel 'y'; ";
-    rai::String splot;
-    arr B = P->bounds;
-    splot <<"splot [" <<B(0,0) <<':' <<B(1,0) <<"][" <<B(0,1) <<':' <<B(1,1) <<"] "
-          <<"'z.fct' matrix us (" <<B(0,0) <<"+(" <<B(1,0)-B(0,0) <<")*$2/"<<n_grid<<"):(" <<B(0,1) <<"+(" <<B(1,1)-B(0,1) <<")*$1/"<<n_grid<<"):3 w l, ";
-    splot <<"'z.fcty' matrix us (" <<B(0,0) <<"+(" <<B(1,0)-B(0,0) <<")*$2/"<<n_grid<<"):(" <<B(0,1) <<"+(" <<B(1,1)-B(0,1) <<")*$1/"<<n_grid<<"):3 w l,";
-    splot <<"'z.pts' w p ps 1 lt -1 pt 7,";
-    splot <<"'z.pts2' w p ps 1 lt 1 pt 6";
-    cmd <<splot <<";";
-    gnuplot(cmd);
-
-    return;
-  }
-
-  plot()->Gnuplot();
-  plot()->Clear();
-  plot()->Function(X_grid, f_grid);
-  // plot()->Function(X_grid, y_grid-2.*s_grid);
-  if(!thompsonMethod){
-    plot()->FunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
-    plot()->Function(X_grid, a_grid);
+    rai::Gnuplot plt;
+    plt.splot(P->bounds);
+    plt.heightField(f_grid);
+    plt.heightField(y_grid);
+    if(!leastSquaresCase){
+      arr datpts = catCol({data_X, data_y});
+      plt.points(datpts, "ps 1 lt -1 pt 7");
+    }else{
+      arr Y = ::sum(::sqr(data_y),1);
+      arr datpts = catCol({data_X, Y});
+      plt.points(datpts, "ps 1 lt -1 pt 7");
+    }
+    plt.points(minpts, "ps 1 lt 1 pt 6");
+    plt.show();
   }else{
-    plot()->Function(X_grid, y_grid);
-  }
-  plot()->Points(locmin_X, locmin_y);
-  if(!leastSquaresCase){
-    plot()->Points(data_X, data_y);
-  }else{
-    arr Y = ::sum(::sqr(data_y),1);
-    plot()->Points(data_X,Y);
-  }
+
+    rai::Gnuplot plt;
+    plt.plot();
+    if(!thompsonMethod){
+      plt.functionConfidence(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
+      // plot()->Function(X_grid, a_grid);
+    }else{
+      plt.function(X_grid, y_grid);
+    }
+    plt.function(X_grid, f_grid);
+    if(!leastSquaresCase){
+      arr datpts = catCol({data_X, data_y});
+      plt.points(datpts);
+    }else{
+      arr Y = ::sum(::sqr(data_y),1);
+      arr datpts = catCol({data_X, Y});
+      plt.points(datpts);
+    }
+    plt.points(minpts);
+
+    plt.show();
+
+  // plot()->Gnuplot();
+  // plot()->Clear();
+  // plot()->Function(X_grid, f_grid);
+  // // plot()->Function(X_grid, y_grid-2.*s_grid);
+  // if(!thompsonMethod){
+  //   plot()->FunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
+  //   plot()->Function(X_grid, a_grid);
+  // }else{
+  //   plot()->Function(X_grid, y_grid);
+  // }
+  // plot()->Points(locmin_X, locmin_y);
+  // if(!leastSquaresCase){
+  //   plot()->Points(data_X, data_y);
+  // }else{
+  //   arr Y = ::sum(::sqr(data_y),1);
+  //   plot()->Points(data_X,Y);
+  // }
   plot()->update(false);
+  }
 }
 
 void BayesOpt::addDataPoint(const arr& x, const arr& y) {
@@ -206,6 +236,7 @@ void BayesOpt::addDataPoint(const arr& x, const arr& y) {
     }
   }
 
+  double lambda = sigmaObsSqr;
   gp_model = make_shared<KernelRidgeRegression>(data_X, data_y, *kernel, lambda, true);
 }
 

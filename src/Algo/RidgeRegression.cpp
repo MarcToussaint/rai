@@ -285,10 +285,11 @@ KernelRidgeRegression::KernelRidgeRegression(const arr& X, const arr& y, KernelF
       y_mu -= mu.elem();
     }else{
       mu = mean(y, 0);
-      y_mu -= match(mu, y.dim());
+      y_mu -= mu;
     }
   }else{
-    mu = zeros(y.dim());
+    if(y.nd==1) mu = zeros(1);
+    else mu = zeros(y.d1);
   }
   alpha = lapack_Ainv_b_sym(kernelMatrix_lambda, y_mu);
 
@@ -315,11 +316,11 @@ arr KernelRidgeRegression::evaluate(const arr& Z, arr& bayesSigma2, bool returnC
   }
   arr y = kappa * alpha;
   if(mu.N==1) y += mu.elem();
-  else y += match(mu, y.dim());
+  else y += mu;
   return y;
 }
 
-double KernelRidgeRegression::evaluate(const arr& x, arr& g, arr& H, double plusSigma, bool onlySigma) {
+double KernelRidgeRegression::evaluate(const arr& x, arr& g, arr& H, double plusSigma, bool onlySigma, bool sos) {
   arr kappa(X.d0);
   arr Jkappa(X.d0, x.N);
   arr Hkappa(X.d0, x.N, x.N);
@@ -330,9 +331,15 @@ double KernelRidgeRegression::evaluate(const arr& x, arr& g, arr& H, double plus
   if(!!H) H = zeros(x.N, x.N);
 
   if(!onlySigma) {
-    fx += mu.elem() + scalarProduct(alpha, kappa);
-    if(!!g) g += ~alpha * Jkappa;
-    if(!!H) H += ~alpha * Hkappa;
+    if(!sos){
+      fx += mu.elem() + scalarProduct(alpha, kappa);
+      if(!!g) g += (~alpha * Jkappa).reshape(x.N);
+      if(!!H) H += (~alpha * Hkappa).reshape(x.N, x.N);
+    }else{
+      fx += sumOfSqr(mu + ~alpha * kappa);
+      if(!!g) g += (2.*(~kappa * alpha + ~mu) * ~alpha * Jkappa).reshape(x.N);
+      if(!!H) H += 2.* ~Jkappa * alpha * ~alpha * Jkappa + (2.*(~kappa * alpha + ~mu) * ~alpha * Hkappa).reshape(x.N, x.N);
+    }
   }
 
   if(plusSigma) {
@@ -350,60 +357,16 @@ double KernelRidgeRegression::evaluate(const arr& x, arr& g, arr& H, double plus
       fx += plusSigma * ::sqrt(k_Kinv_k);
       if(!(fx==fx)) HALT("NAN!")
       if(!!g) g -= (plusSigma/sqrt(k_Kinv_k)) * J_Kinv_k;
-      if(!!H) H -= (plusSigma/(k_Kinv_k*sqrt(k_Kinv_k))) * (J_Kinv_k^J_Kinv_k) + (plusSigma/sqrt(k_Kinv_k)) * (~Jkappa*invKernelMatrix_lambda*Jkappa + ~Kinv_k*Hkappa);
+      if(!!H) H -= (plusSigma/(k_Kinv_k*sqrt(k_Kinv_k))) * (J_Kinv_k^J_Kinv_k) + (plusSigma/sqrt(k_Kinv_k)) * (~Jkappa*invKernelMatrix_lambda*Jkappa + (~Kinv_k*Hkappa).reshape(x.N, x.N));
     }
   }
 
   return fx;
 }
 
-double KernelRidgeRegression::evaluateSquare(const arr& x, arr& g, arr& H, double plusSigma, bool onlySigma) {
-  arr kappa(X.d0);
-  arr Jkappa(X.d0, x.N);
-  arr Hkappa(X.d0, x.N, x.N);
-  for(uint i=0; i<X.d0; i++) kappa(i) = kernel.k(x, X[i], Jkappa[i].noconst(), Hkappa[i].noconst());
-
-  double fx = 0.;
-  if(!!g) g = zeros(x.N);
-  if(!!H) H = zeros(x.N, x.N);
-
-  if(!onlySigma) {
-    fx += sumOfSqr(mu + ~alpha * kappa);
-    if(!!g) g += 2.*(~kappa * alpha + ~mu)* ~alpha * Jkappa;
-    if(!!H) H += 2.* ~Jkappa * alpha * ~alpha * Jkappa + 2.*(~kappa * alpha + ~mu) * ~alpha * Hkappa;
-  }
-
-  if(plusSigma) {
-    //    arr gx, Hx;
-    //    fx += plusSigma * ;
-    ////    if(!!g) g += plusSigma*(gx + g2);
-    ////    if(!!H) H += plusSigma*(gx + g2);
-
-    if(!invKernelMatrix_lambda.N) invKernelMatrix_lambda = inverse_SymPosDef(kernelMatrix_lambda);
-
-    arr Kinv_k = invKernelMatrix_lambda*kappa;
-    arr J_Kinv_k = ~Jkappa*Kinv_k;
-    double k_Kinv_k = kernel.k(x, x) - scalarProduct(kappa, Kinv_k);
-    if(k_Kinv_k>1e-10){
-      fx += plusSigma * ::sqrt(k_Kinv_k);
-      if(!(fx==fx)) HALT("NAN!")
-      if(!!g) g -= (plusSigma/sqrt(k_Kinv_k)) * J_Kinv_k;
-      if(!!H) H -= (plusSigma/(k_Kinv_k*sqrt(k_Kinv_k))) * (J_Kinv_k^J_Kinv_k) + (plusSigma/sqrt(k_Kinv_k)) * (~Jkappa*invKernelMatrix_lambda*Jkappa + ~Kinv_k*Hkappa);
-    }
-  }
-
-  return fx;
-}
-
-ScalarFunction KernelRidgeRegression::getF(double plusSigma) {
-  return [this, plusSigma](arr& g, arr& H, const arr& x) -> double{
-    return this->evaluate(x, g, H, plusSigma, false);
-  };
-}
-
-ScalarFunction KernelRidgeRegression::getFSquare(double plusSigma) {
-  return [this, plusSigma](arr& g, arr& H, const arr& x) -> double{
-    return this->evaluateSquare(x, g, H, plusSigma, false);
+ScalarFunction KernelRidgeRegression::getF(double plusSigma, bool sos) {
+  return [this, plusSigma, sos](arr& g, arr& H, const arr& x) -> double{
+    return this->evaluate(x, g, H, plusSigma, false, sos);
   };
 }
 

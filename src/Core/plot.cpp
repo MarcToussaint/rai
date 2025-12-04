@@ -21,6 +21,51 @@ rai::Singleton<rai::PlotModule> plot;
 
 namespace rai {
 
+void Gnuplot::plot(const arr& bounds){
+  cmd.clear() <<"set xlabel 'x'; set ylabel 'f';\n";
+  cmd <<"plot ";
+}
+
+void Gnuplot::splot(const arr& bounds, bool contour){
+  cmd.clear() <<"set size square; set xlabel 'x'; set ylabel 'y';\n";
+  if(contour) cmd <<"set contour; set cntrparam linear; set cntrparam levels incremental 0,.1,10;\n";
+  B = bounds;
+  cmd <<"splot [" <<B(0,0) <<':' <<B(1,0) <<"][" <<B(0,1) <<':' <<B(1,1) <<"] ";
+}
+
+str Gnuplot::dump(const arr& X){
+  str file;
+  file <<"z." <<data_count++ <<".dat";
+  FILE(file) <<X.modRaw() <<endl;
+  return file;
+}
+
+void Gnuplot::function(const arr& X, const arr& f, const char* style){
+  arr D = catCol({X, f});
+  cmd <<"'" <<dump(D) <<"' w l " <<style <<", ";
+}
+
+void Gnuplot::functionConfidence(const arr& X, const arr& f, const arr& low, const arr& up, const char* style){
+  arr D = catCol({X, f, low, up});
+  cmd <<"'" <<dump(D) <<"' using 1:3:4 with filledcurves fill solid 0.2 lc rgb 'yellow' notitle,\\\n";
+  cmd <<"'' us 1:2 w l " <<style <<",\\\n";
+}
+
+void Gnuplot::heightField(const arr& Z, const char* style){
+  cmd <<"'" <<dump(Z) <<"' matrix us (" <<B(0,0) <<"+(" <<B(1,0)-B(0,0) <<")*$2/"<<Z.d1-1<<"):(" <<B(0,1) <<"+(" <<B(1,1)-B(0,1) <<")*$1/"<<Z.d0-1<<"):3 w l " <<style <<", ";
+}
+
+void Gnuplot::points(const arr& X, const char* style){
+  cmd <<"'" <<dump(X) <<"' w p " <<style <<", ";
+}
+
+void Gnuplot::show(){
+  cmd <<";\n";
+  // cout <<"PLOTTING: " <<cmd <<endl;
+  gnuplot(cmd);
+  cmd.clear();
+}
+
 struct sPlotModule {
   str title;
   rai::Array<arr> array;

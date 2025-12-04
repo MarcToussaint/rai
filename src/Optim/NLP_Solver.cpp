@@ -18,6 +18,7 @@
 #include "m_NelderMead.h"
 #include "m_EvoStrategies.h"
 #include "m_LBFGS.h"
+#include "m_BayesOpt.h"
 #include "i_NLopt.h"
 #include "i_Ipopt.h"
 #include "i_Ceres.h"
@@ -96,6 +97,12 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     // ret = rai::ES_mu_plus_lambda(Phere->f_scalar(), x). solve();
     // ret = rai::GaussEDA(Phere->f_scalar(), x). solve();
     ret = rai::LS_CMA(Phere, x). solve();
+    x = ret->x;
+
+  } else if(opt->method==M_GPOpt) {
+    // ret = rai::ES_mu_plus_lambda(Phere->f_scalar(), x). solve();
+    // ret = rai::GaussEDA(Phere->f_scalar(), x). solve();
+    ret = rai::BayesOpt(Phere). solve();
     x = ret->x;
 
   } else if(opt->method==M_greedy) {
