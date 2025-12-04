@@ -1320,7 +1320,7 @@ struct LibYamlWriteHelper{
     yaml_emitter_initialize(&emitter);
     // yaml_emitter_set_output_file(&emitter, file);
     yaml_emitter_set_output(&emitter, write_handler, &output);
-    yaml_emitter_set_width(&emitter, 120);
+    yaml_emitter_set_width(&emitter, -1);
 
     yaml_stream_start_event_initialize(&event, YAML_UTF8_ENCODING);
     if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);

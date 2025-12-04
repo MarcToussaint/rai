@@ -335,12 +335,14 @@ To get really precise distances and penetrations use the FS.distance feature wit
   }, "returns the list of collisable pairs -- this should help debugging the 'contact' flag settings in a configuration")
 
   .def("view",  &rai::Configuration::view,
-       "open a view window for the configuration",
+       "open a view window for the configuration; when offscreen you can grab/save rgb/depth from viewer",
        pybind11::arg("pause")=false,
-       pybind11::arg("message")=nullptr)
+       pybind11::arg("message")=nullptr,
+       pybind11::arg("offscreen")=false)
+
   .def("view_recopyMeshes", [](shared_ptr<rai::Configuration>& self) {
-    self->get_viewer()->recopyMeshes(self->frames);
-  }, "")
+      self->get_viewer()->recopyMeshes(self->frames);
+    }, "")
 
   .def("view_close", &rai::Configuration::view_close, "close the view")
 

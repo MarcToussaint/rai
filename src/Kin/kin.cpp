@@ -2477,9 +2477,9 @@ bool Configuration::hasView() {
   return !!self->viewer;
 }
 
-int Configuration::view(bool pause, const char* txt) {
+int Configuration::view(bool pause, const char* txt, bool offscreen) {
   for(Frame* f:frames) f->ensure_X();
-  return get_viewer()->updateConfiguration(*this).view(pause, txt);
+  return get_viewer()->updateConfiguration(*this).view(pause, txt, offscreen);
 }
 
 void Configuration::view_close() {
@@ -2650,7 +2650,8 @@ void Configuration::write(std::ostream& os, bool explicitlySorted) const {
   }
   os <<endl;
 #else
-  asDict().write(os, "\n", 0, -1, true);
+  // asDict().write(os, "\n", 0, -1, true);
+  os <<asDict().asYaml(false) <<endl;
 #endif
 }
 

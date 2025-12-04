@@ -321,11 +321,12 @@ void ConfigurationViewer::setWindow(const char* window_title, int w, int h){
   ensure_gl().resize(w, h);
 }
 
-int ConfigurationViewer::view(bool watch, const char* _text) {
+int ConfigurationViewer::view(bool watch, const char* _text, bool offscreen) {
   if(_text) text = _text;
   if(watch && (!text.N || text(-1)!=']')) text <<"\n[press key to continue]";
 
   ensure_gl();
+  if(offscreen){ gl->renderInBack(); return 0; }
   if(watch) gl->raiseWindow();
   return gl->update(watch, nonThreaded);
 }

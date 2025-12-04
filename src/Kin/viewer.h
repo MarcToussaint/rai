@@ -30,7 +30,7 @@ struct ConfigurationViewer : RenderData {
   void setMotion(const uintA& frameIDs, const arr& _motion);
   void setMotion(rai::Configuration& C, const arr& path);
 
-  int view(bool watch=false, const char* _text=0);
+  int view(bool watch=false, const char* _text=0, bool offscreen=false);
   int view_slice(uint t, bool watch=false);
   int view_play(bool watch=true, double delay=1., str saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
 

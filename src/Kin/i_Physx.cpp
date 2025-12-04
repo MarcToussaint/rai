@@ -1380,7 +1380,7 @@ rai::PhysX_Options& PhysXInterface::opt() {
 
 #else //RAI_PHYSX
 
-#include "kin_physx.h"
+#include "i_Physx.h"
 PhysXInterface::PhysXInterface(rai::Configuration& C, int verbose, const rai::PhysX_Options* _opt) { NICO }
 PhysXInterface::~PhysXInterface() { NICO }
 const FrameL& PhysXInterface::getFreeFrames() { NICO }
