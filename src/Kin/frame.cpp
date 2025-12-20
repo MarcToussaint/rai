@@ -63,11 +63,11 @@ rai::Frame::Frame(Configuration& _C, const Frame* copyFrame)
   }
 }
 
-rai::Frame::Frame(Frame* _parent)
+rai::Frame::Frame(Frame* _parent, JointType jointType)
   : Frame(_parent->C) {
   CHECK(_parent, "");
-  _state_X_isGood=false;
   setParent(_parent, false);
+  if(jointType!=JT_none) setJoint(jointType);
 }
 
 rai::Frame::~Frame() {
@@ -2187,7 +2187,8 @@ void rai::Shape::createMeshes(const str& name) {
         sscCore() = mesh().V;
         break;
       }
-      for(uint i=0; i<3; i++) if(size(i)<2.*coll_cvxRadius) size(i) = 2.*coll_cvxRadius;
+      // for(uint i=0; i<3; i++) if(size(i)<) size(i) = 2.*coll_cvxRadius;
+      for(uint i=0; i<3; i++) CHECK(size(i)>1e-6+2.*coll_cvxRadius, "box '" <<name <<"' needs to have positive size (in inner core): " <<size)
       rai::Mesh m;
       m.setBox();
       m.scale(size(0)-2.*coll_cvxRadius, size(1)-2.*coll_cvxRadius, size(2)-2.*coll_cvxRadius);
@@ -2224,7 +2225,7 @@ void rai::Shape::createMeshes(const str& name) {
       mesh().setSSCvx(sscCore(), coll_cvxRadius);
     } break;
     default: {
-      HALT("createMeshes not possible for shape type '" <<_type <<"'");
+      HALT("Meshes not possible for shape type '" <<_type <<"'");
     }
   }
 

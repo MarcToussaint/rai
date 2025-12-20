@@ -179,7 +179,7 @@ OptNewton::StopCriterion OptNewton::step() {
   uint lineSearchSteps=0;
   for(;; lineSearchSteps++) {
     if(alpha>1.) alpha=1.;
-    if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit; //TODO: is this really right? seems to cap it twice?
+    // if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit; //TODO: is this really right? seems to cap it twice?
     if(opt->verbose>1) cout <<"  alpha:" <<std::setw(11) <<alpha <<std::flush;
     y = x + alpha*Delta;
     if(opt->verbose>5) cout <<"  y:" <<y;
@@ -198,7 +198,8 @@ OptNewton::StopCriterion OptNewton::step() {
     if(fy==fy && wolfe) { //fy==fy is for !NAN
       //== accept new point
       if(opt->verbose>1) cout <<"  ACCEPT" <<endl;
-      if(opt->stopFTolerance<0. && fx-fy<opt->stopFTolerance) numTinyFSteps++; else numTinyFSteps=0;
+      double df = fx - fy;
+      if(opt->stopFTolerance>0. && fx-fy<opt->stopFTolerance) numTinyFSteps++; else numTinyFSteps=0;
       if(absMax(y-x)<1e-2*opt->stopTolerance) numTinyXSteps++; else numTinyXSteps=0;
       x = y;
       fx = fy;

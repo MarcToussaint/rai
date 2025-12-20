@@ -423,12 +423,12 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   FrameL fing1close;
   FrameL fing2close;
   for(rai::Proxy& p:C.proxies) {
-    if(!p.collision) p.calc_coll();
+    if(!p.collision) p.calc_coll(C.frames);
     if(p.d<.2) {
-      if(p.a == finger1) fing1close.setAppend(p.b);
-      if(p.b == finger1) fing1close.setAppend(p.a);
-      if(p.a == finger2) fing2close.setAppend(p.b);
-      if(p.b == finger2) fing2close.setAppend(p.a);
+      if(p.A == finger1->ID) fing1close.setAppend(C.frames(p.B));
+      if(p.B == finger1->ID) fing1close.setAppend(C.frames(p.A));
+      if(p.A == finger2->ID) fing2close.setAppend(C.frames(p.B));
+      if(p.B == finger2->ID) fing2close.setAppend(C.frames(p.A));
       //LOG(0) <<"near objects: " <<p;
     }
   }
@@ -1046,14 +1046,16 @@ void Imp_NoPenetrations::modConfiguration(Simulation& S, double tau) {
     // Check penetrations between robot vs. static objects
     S.C.coll_stepFcl();
     for(rai::Proxy& p: S.C.proxies) {
-      if(!(dynamicFrames.contains(p.a->ID) || dynamicFrames.contains(p.b->ID))) {
-        if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01) continue;
-        if(!p.collision) p.calc_coll();
+      if(!(dynamicFrames.contains(p.A) || dynamicFrames.contains(p.B))) {
+        rai::Frame *a = S.C.frames(p.A);
+        rai::Frame *b = S.C.frames(p.B);
+        if(p.d > a->shape->radius() + b->shape->radius() + .01) continue;
+        if(!p.collision) p.calc_coll(S.C.frames);
         if(p.collision->getDistance()>0.) continue;
 
         arr Jp1, Jp2;
-        p.a->C.jacobian_pos(Jp1, p.a, p.collision->p1);
-        p.b->C.jacobian_pos(Jp2, p.b, p.collision->p2);
+        a->C.jacobian_pos(Jp1, a, p.collision->p1);
+        b->C.jacobian_pos(Jp2, b, p.collision->p2);
 
         arr y_dist, J_dist;
         p.collision->kinDistance(y_dist, J_dist, Jp1, Jp2);

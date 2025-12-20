@@ -176,8 +176,6 @@ int MAIN(int argc,char **argv){
 //  rnd.seed_random();
   // test_minimalistic(); return 0;
 
-  testRRTwPCL(); return 0;
-
   cout <<"=== RRT test" <<endl;
   testRRT();
 
@@ -186,6 +184,8 @@ int MAIN(int argc,char **argv){
 
   cout <<"=== kinematics+FCL test" <<endl;
   testKinematics(true, 10000);
+
+  testRRTwPCL();
 
   testMobile();
 

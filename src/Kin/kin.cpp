@@ -23,6 +23,7 @@
 #include "../Core/graph.h"
 #include "../Core/util.h"
 #include "../Geo/i_fcl.h"
+#include "../Geo/i_coal.h"
 #include "../Geo/qhull.h"
 #include "../Geo/i_assimp.h"
 #include "../Gui/opengl.h"
@@ -129,6 +130,7 @@ struct sConfiguration {
   shared_ptr<ConfigurationViewer> viewer;
   //shared_ptr<SwiftInterface> swift;
   shared_ptr<FclInterface> fcl;
+  shared_ptr<CoalInterface> coal;
   unique_ptr<PhysXInterface> physx;
   unique_ptr<OdeInterface> ode;
   unique_ptr<FeatherstoneInterface> fs;
@@ -164,9 +166,10 @@ void Configuration::copy(const Configuration& C, bool referenceFclOnCopy) {
   frames.reshapeAs(C.frames);
 
   //copy proxies; first they point to origin frames; afterwards, let them point to own frames
-  proxies.clear();
-  proxies.resize(C.proxies.N);
-  for(uint i=0; i<proxies.N; i++) proxies(i).copy(*this, C.proxies(i));
+  proxies = C.proxies;
+  // proxies.clear();
+  // proxies.resize(C.proxies.N);
+  // for(uint i=0; i<proxies.N; i++) proxies(i).copy(*this, C.proxies(i));
   //  proxies = K.proxies;
   //  for(Proxy& p:proxies) { p.a = frames.elem(p.a->ID); p.b = frames.elem(p.b->ID);  p.coll.reset(); }
 
@@ -1452,10 +1455,8 @@ bool Configuration::checkConsistency() const {
 
   //check proxies
   for(const Proxy& p : proxies) {
-    CHECK(p.a, "ill defined proxy");
-    CHECK(p.b, "ill defined proxy");
-    CHECK_EQ(this, &p.a->C, "");
-    CHECK_EQ(this, &p.b->C, "");
+    CHECK(p.A<UINT32_MAX, "ill defined proxy");
+    CHECK(p.B<UINT32_MAX, "ill defined proxy");
   }
 
   return true;
@@ -2273,6 +2274,31 @@ void Configuration::coll_fclReset() {
   if(self && self->fcl) self->fcl.reset();
 }
 
+std::shared_ptr<CoalInterface> Configuration::coll_engine(int verbose) {
+  if(!self->coal) {
+    Array<Shape*>::memMove=1;
+    Array<Shape*> geometries(frames.N);
+    geometries.setZero();
+    for(Frame* f:frames) {
+      if(f->shape && f->shape->cont) {
+        CHECK(f->shape->type()!=rai::ST_marker, "collision object can't be a marker");
+        if(!f->shape->mesh().V.N) f->shape->createMeshes(f->name);
+        CHECK(f->shape->mesh().V.N, "collision object with no vertices");
+        geometries(f->ID) = f->shape.get();
+        if(verbose>0) LOG(0) <<"  adding to coal interface: " <<f->name;
+      } else {
+        if(verbose>0) LOG(0) <<"  SKIPPING from coal interface: " <<f->name;
+      }
+    }
+    self->coal = make_shared<CoalInterface>(geometries, getCollisionExcludePairIDs(), CoalInterface::_broadPhaseOnly); //broadphase only -> many proxies, binary, exact margin (slow)
+  }
+  return self->coal;
+}
+
+void Configuration::coll_coalReset() {
+  if(self && self->coal) self->coal.reset();
+}
+
 void Configuration::addProxies(const uintA& collisionPairs) {
   //-- copy them into proxies
   uint j = proxies.N;
@@ -2291,8 +2317,8 @@ void Configuration::addProxies(const uintA& collisionPairs) {
     }
 #endif
     Proxy& p = proxies.elem(j);
-    p.a = f1;
-    p.b = f2;
+    p.A = a;
+    p.B = b;
     p.d = -0.;
     p.posA = f1->getPosition();
     p.posB = f2->getPosition();
@@ -2327,10 +2353,13 @@ void Configuration::coll_stepFcl() {
   }
 #endif
   //-- step fcl
-  coll_fcl()->step(X);
+  // coll_engine()->step(X);
+  coll_engine()->step(X);
   //-- add as proxies
-  proxies.clear();
-  addProxies(coll_fcl()->collisions);
+  // proxies.clear();
+  // addProxies(coll_engine()->collisions);
+  // addProxies(coll_coal()->collisions);
+  proxies = coll_engine()->collisions;
 
   _state_proxies_isGood=true;
 }
@@ -2338,33 +2367,35 @@ void Configuration::coll_stepFcl() {
 
 void Configuration::ensure_proxies(bool fine) {
   if(!_state_proxies_isGood) coll_stepFcl(); //broadphase
-  if(fine) for(Proxy& p: proxies) if(!p.collision) p.calc_coll(); //fine
+  if(fine) for(Proxy& p: proxies) if(!p.collision) p.calc_coll(frames); //fine
 }
 
 
 void Configuration::coll_setActiveColliders(const FrameL& colliders){
-  coll_fcl()->setActiveColliders(rai::framesToIndices(colliders));
+  coll_engine()->setActiveColliders(rai::framesToIndices(colliders));
 }
 
 void Configuration::coll_addExcludePair(uint aID, uint bID){
   if(aID<bID){
-    coll_fcl()->excludes(aID).setAppendInSorted(bID);
+    coll_engine()->excludes(aID).setAppendInSorted(bID);
   }else{
-    coll_fcl()->excludes(bID).setAppendInSorted(aID);
+    coll_engine()->excludes(bID).setAppendInSorted(aID);
   }
 }
 
 /// get the sum of all shape penetrations -- PRECONDITION: proxies have been computed (with stepFcl())
 double Configuration::coll_totalViolation() {
-  coll_fcl()->mode = rai::FclInterface::_broadPhaseOnly;
+  coll_engine()->mode = rai::CoalInterface::_broadPhaseOnly;
   ensure_proxies(true);
 
   double D=0.;
   for(const Proxy& p:proxies) {
     //early check: if proxy is way out of collision, don't bother computing it precise
-    if(p.d > p.a->shape->radius()+p.b->shape->radius()+.01) continue;
+    rai::Frame* a = frames(p.A);
+    rai::Frame* b = frames(p.B);
+    if(p.d > a->shape->radius()+b->shape->radius()+.01) continue;
     //exact computation
-    if(!p.collision)((Proxy*)&p)->calc_coll();
+    if(!p.collision)((Proxy*)&p)->calc_coll(frames);
     double d = p.collision->getDistance();
     if(d<0.) D -= d;
   }
@@ -2375,7 +2406,7 @@ double Configuration::coll_totalViolation() {
 }
 
 bool Configuration::coll_isCollisionFree() {
-  coll_fcl()->mode = rai::FclInterface::_binaryCollisionAll;
+  coll_engine()->mode = rai::CoalInterface::_binaryCollisionAll;
   ensure_proxies(false);
 
   bool feas=true;
@@ -2411,8 +2442,8 @@ StringA Configuration::coll_getProxyPairs(double belowMargin, arr& distances){
   StringA P;
   for(const Proxy& p: proxies) {
     if(p.d<=belowMargin){
-      P.append(p.a->name);
-      P.append(p.b->name);
+      P.append(frames(p.A)->name);
+      P.append(frames(p.B)->name);
       if(!!distances) distances.append(p.d);
     }
   }
@@ -2579,8 +2610,10 @@ void Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double tau, d
 }
 
 void __merge(ForceExchangeDof* c, Proxy* p) {
-  CHECK(&c->a==p->a && &c->b==p->b, "");
-  if(!p->collision) p->calc_coll();
+  NIY;
+  // CHECK(&c->a==p->a && &c->b==p->b, "");
+  // if(!p->collision) p->calc_coll();
+
   //  c->a_rel = c->a.X / Vector(p->coll->p1);
   //  c->b_rel = c->b.X / Vector(p->coll->p2);
   //  c->a_norm = c->a.X.rot / Vector(-p->coll->normal);
@@ -3126,23 +3159,25 @@ void Configuration::reportLimits(std::ostream& os) const {
 }
 
 bool ProxySortComp(const Proxy* a, const Proxy* b) {
-  return (a->a < b->a) || (a->a==b->a && a->b<b->b) || (a->a==b->a && a->b==b->b && a->d < b->d);
+  return (a->A < b->A) || (a->A==b->A && a->B<b->B) || (a->A==b->A && a->B==b->B && a->d < b->d);
 }
 
 void Configuration::kinematicsPenetration(arr& y, arr& J, const Proxy& p, double margin, bool addValues) const {
-  CHECK(p.a->shape, "");
-  CHECK(p.b->shape, "");
+  Frame* a = frames(p.A);
+  Frame* b = frames(p.B);
+  CHECK(a->shape, "");
+  CHECK(b->shape, "");
 
   //early check: if estimate is way out of collision, don't bother computing it precise
-  if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01 + margin) return;
+  if(p.d > a->shape->radius() + b->shape->radius() + .01 + margin) return;
 
-  if(!p.collision)((Proxy*)&p)->calc_coll();
+  if(!p.collision)((Proxy*)&p)->calc_coll(frames);
 
   if(p.collision->getDistance()>margin) return;
 
   arr Jp1, Jp2;
-  jacobian_pos(Jp1, p.a, p.collision->p1);
-  jacobian_pos(Jp2, p.b, p.collision->p2);
+  jacobian_pos(Jp1, a, p.collision->p1);
+  jacobian_pos(Jp2, b, p.collision->p2);
 
   arr y_dist, J_dist;
   p.collision->kinDistance(y_dist, J_dist, Jp1, Jp2);
@@ -3488,8 +3523,8 @@ double forceClosureFromProxies(Configuration& K, uint frameIndex, double distanc
   Vector c, cn;
   arr C, Cn;
   for(const Proxy& p: K.proxies) {
-    int body_a = p.a?p.a->ID:-1;
-    int body_b = p.b?p.b->ID:-1;
+    int body_a = p.A;
+    int body_b = p.B;
     if(p.d<distanceThreshold && (body_a==(int)frameIndex || body_b==(int)frameIndex)) {
       if(body_a==(int)frameIndex) {
         c = p.posA;

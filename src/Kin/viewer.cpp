@@ -174,9 +174,11 @@ ConfigurationViewer& ConfigurationViewer::updateConfiguration(const Configuratio
   if(C.proxies.N) {
     auto lock = dataLock(RAI_HERE);
     for(const Proxy& p: C.proxies){
-      if(p.d<.05){
-        int s=-1;
-        if(timeSlices.N) s = p.a->ID/timeSlices.d1;
+      int s=-1;
+      if(timeSlices.N) s = p.A/timeSlices.d1;
+      if(!p.collision){
+        addDistMarker(C.frames(p.A)->getPosition(), C.frames(p.B)->getPosition(), s, .1);
+      }else if(p.d<.05){
         addDistMarker(p.posA.getArr(), p.posB.getArr(), s, .1);
       }
     }
@@ -440,11 +442,12 @@ void ConfigurationViewer::glDraw(OpenGL& gl) {
       RenderData::slice=drawSlice;
       RenderData::glDraw(gl);
     }else{
-      RenderData::setText(STRING(text <<"\n(motion T:" <<motion.d0 <<", use SHIFT-scroll or SHIFT-RIGHT/LEFT to browse)"));
+      RenderData::setText(0);
       RenderData::slice=-1;
       for(uint t=0;t<motion.d0;t++){
         if(motion.d1>items.N) LOG(-1) <<"motion.d1>items.N" <<motion.d1 <<' ' <<items.N; //CHECK_LE(motion.d1, items.N, "");
         for(uint i=0;i<motion.d1 && items.N;i++) items(i)->X.set(motion(t, i, {}));
+        if(t==motion.d0-1) RenderData::setText(STRING(text <<"\n(motion T:" <<motion.d0 <<", use SHIFT-scroll or SHIFT-RIGHT/LEFT to browse)"));
         RenderData::glDraw(gl);
         //C.glDraw_frames(gl, C.frames, 0);
       }

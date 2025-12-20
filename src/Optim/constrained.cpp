@@ -92,10 +92,13 @@ ConstrainedSolver::ConstrainedSolver(arr& _x, arr& _dual, const shared_ptr<NLP>&
 
   //in first iteration, if not squaredPenaltyFixed, increase stop tolerance
   org_stopTol = opt->stopTolerance;
+  org_stopFTol = opt->stopFTolerance;
   org_stopGTol = opt->stopGTolerance;
   if(!outer_iters && opt->method!=M_Newton) {
     newton.opt->stopTolerance = 3.*org_stopTol;
+    newton.opt->stopFTolerance = 3.*org_stopFTol;
     newton.opt->stopGTolerance = 3.*org_stopGTol;
+    if(newton.opt->stopFTolerance<=0.) newton.opt->stopFTolerance=1e-3;
   }
 
   x_beforeNewton = newton.x;
@@ -233,6 +236,7 @@ bool ConstrainedSolver::ministep() {
   if(L.lambda.N) CHECK_EQ(L.lambda.N, L.phi_x.N, "");
 
   newton.opt->stopTolerance = org_stopTol;
+  newton.opt->stopFTolerance = org_stopFTol;
   newton.opt->stopGTolerance = org_stopGTol;
 
   return false;

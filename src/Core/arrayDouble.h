@@ -353,7 +353,7 @@ inline arr rand(uint n) { return rand(uintA{n}); }
 inline arr rand(uint d0, uint d1) { return rand(uintA{d0, d1}); }
 
 inline arr rand(const uintA& d, const arr& B){ return rand(d)%(B[1]-B[0]) + B[0]; }
-// inline arr rand(const arr& lo, const arr& up) { return lo + (up-lo)%rand(uintA{lo.N}); }
+inline arr rand(const arr& lo, const arr& up) { return lo + (up-lo)%rand(uintA{lo.N}); }
 
 /// return tensor of c's
 inline const double& random(const arr& range) { return range.rndElem(); }

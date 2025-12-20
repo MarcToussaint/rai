@@ -15,11 +15,11 @@ void force(rai::Configuration* world, arr& fR) {
   //world->contactsToForces(100.0);
 
   for(const rai::Proxy& p : world->proxies) {
-    if(p.a->name == "endeffR" && p.b->name == "b") {
+    if(world->frames.elem(p.A)->name == "endeffR" && world->frames(p.B)->name == "b") {
       if(p.d <= 0.0) {
         rai::Vector trans = p.posB - p.posA;
         rai::Vector force = 100.0*trans;
-        rai::Vector torque = (p.posA - p.a->ensure_X().pos) ^ force;
+        rai::Vector torque = (p.posA - world->frames.elem(p.A)->ensure_X().pos) ^ force;
         fR(0) = force(0);
         fR(1) = force(1);
         fR(2) = force(2);
@@ -35,7 +35,7 @@ void force(rai::Configuration* world, arr& fR) {
 void forceSimulateContactOnly(rai::Configuration* world, arr& fR) {
   world->coll_stepFcl();
   for(const rai::Proxy& p : world->proxies) {
-    if(p.a->name == "endeffR" && p.b->name == "b") {
+    if(world->frames.elem(p.A)->name == "endeffR" && world->frames.elem(p.B)->name == "b") {
       if(p.d <= 0.02) {
         fR(2) = -4.0;
       }

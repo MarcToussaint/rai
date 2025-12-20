@@ -12,6 +12,7 @@
 
 #include "../Gui/opengl.h"
 #include "../Geo/i_fcl.h"
+#include "../Geo/i_coal.h"
 
 #include "../Kin/frame.h"
 //#include "../KOMO/switch.h"
@@ -1493,11 +1494,11 @@ str KOMO::info_sliceCollisions(uint t, double belowMargin){
 
   for(const Proxy& p:pathConfig.proxies) {
     if(p.d<belowMargin) {
-      uint ta=p.a->ID / nFrames;
-      uint tb=p.b->ID / nFrames;
+      uint ta=p.A / nFrames;
+      uint tb=p.B / nFrames;
       CHECK_EQ(ta, tb, "collisions across time slices??");
       if(ta==t+k_order || tb==t+k_order){
-        collisions <<p.a->name <<'-' <<p.b->name <<": " <<p.d <<'\n';
+        collisions <<pathConfig.frames.elem(p.A)->name <<'-' <<pathConfig.frames.elem(p.B)->name <<": " <<p.d <<'\n';
       }
     }
   }
@@ -1775,7 +1776,7 @@ void KOMO::addForceExchangeDofs(const arr& times, const char* onto, const char* 
     rai::Frame *a = timeSlices(k_order+s, ontoId);
     rai::Frame *b = timeSlices(k_order+s, fromId);
     rai::ForceExchangeDof* ex = new ForceExchangeDof(*a, *b, type);
-    // ex->scale=2.;
+    ex->scale=10.;
     if(initPoa.N) ex->poa = initPoa;
     if(initForce.N) ex->force = initForce;
     ex->q0 = ex->calcDofsFromConfig();
@@ -1916,21 +1917,23 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
 
   if(computeCollisions) {
     if(!fcl) {
-      fcl = world.coll_fcl();
+      fcl = world.coll_engine();
       fcl->mode = fcl->_broadPhaseOnly;
     }
     timeCollisions -= rai::cpuTime();
     pathConfig.proxies.clear();
     arr X;
-    uintA collisionPairs;
+    rai::Array<rai::Proxy> collisionPairs;
     for(uint s=k_order; s<timeSlices.d0; s++) {
       X = pathConfig.getFrameState(timeSlices[s]);
       {
         fcl->step(X);
         collisionPairs = fcl->collisions;
       }
-      collisionPairs += timeSlices.d1 * s; //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice
-      pathConfig.addProxies(collisionPairs);
+      // collisionPairs += timeSlices.d1 * s; //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice
+      for(rai::Proxy& p: collisionPairs){ p.A += timeSlices.d1 * s; p.B += timeSlices.d1 * s; } //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice
+      // pathConfig.addProxies(collisionPairs);
+      pathConfig.proxies.append(collisionPairs);
     }
     pathConfig._state_proxies_isGood=true;
     pathConfig.ensure_proxies(); //expensive!!
@@ -1975,14 +1978,14 @@ StringA KOMO::getCollisionPairs(double belowMargin) {
 
   for(const Proxy& p:pathConfig.proxies) {
     //early check: if proxy is way out of collision, don't bother computing it precise
-    if(p.d > p.a->shape->radius()+p.b->shape->radius()+.01+belowMargin) continue;
+    if(p.d > pathConfig.frames(p.A)->shape->radius()+pathConfig.frames(p.B)->shape->radius()+.01+belowMargin) continue;
     //exact computation
-    if(!p.collision)((Proxy*)&p)->calc_coll();
+    if(!p.collision)((Proxy*)&p)->calc_coll(pathConfig.frames);
     double d = p.collision->getDistance();
     if(d<belowMargin) {
 //      cout <<"KOMO collision pair: " <<p.a->name <<"--" <<p.b->name <<" : " <<p.d <<endl;
-      uint i=p.a->ID % nFrames;
-      uint j=p.b->ID % nFrames;
+      uint i=p.A % nFrames;
+      uint j=p.B % nFrames;
       if(j<i) { int a=i; i=j; j=a; }
       collisions(i).setAppendInSorted(j);
     }

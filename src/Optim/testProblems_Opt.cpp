@@ -203,7 +203,7 @@ NLP_Squared::NLP_Squared(uint dim, double condition, bool random) {
     //we condition each column of M with powers of the condition
     for(uint i=1; i<dim; i++) C[i] *= pow(condition, double(i) / (2.*double(dim - 1)));
 
-    x0 = .5 * rand({dim}, bounds);
+    x0 = .5 * rand(uintA{dim}, bounds);
 
   } else {
     arr cond(dim);
@@ -221,12 +221,12 @@ NLP_Squared::NLP_Squared(uint dim, double condition, bool random) {
 
 //===========================================================================
 
-NLP_Rugged::NLP_Rugged(uint dim, bool sos, uint num_points, int num_features){
+NLP_Rugged::NLP_Rugged(uint dim, bool sos, uint num_points, uint num_features){
   dimension = dim;
   featureTypes = rai::consts((sos?OT_sos:OT_f), num_features);
   bounds = (consts(-1., dimension), consts(1., dimension)). reshape(2,-1);
 
-  pts = rand({num_points, dimension}, bounds);
+  pts = rand(uintA{num_points, dimension}, bounds);
   Phi = randn({num_points, num_features});
   ann = make_shared<ANN>();
   ann->setX(pts);
@@ -475,10 +475,6 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
 }
 
 NLP_RastriginSOS::NLP_RastriginSOS() {
-  a = rai::getParameter<double>("Rastrigin/a", 4.);
-  condition = rai::getParameter<double>("benchmark/condition", 20.);
-
-  dimension=2;
   featureTypes = rai::consts<ObjectiveType>(OT_sos, 4);
 
   cout <<bounds <<endl;

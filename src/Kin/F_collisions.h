@@ -22,8 +22,6 @@ struct F_PairCollision : Feature {
   Type type;
   bool neglectRadii=false;
 
-  shared_ptr<rai::PairCollision> coll;
-
   F_PairCollision(Type _type=_negScalar, bool _neglectRadii=false)
     : type(_type), neglectRadii(_neglectRadii) {
   }

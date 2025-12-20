@@ -153,7 +153,7 @@ void shapeFunction(double& x, double& dx);
 void F_fex_POA::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0) {  Feature::phi2(y, J, F);  return;  }
   CHECK_GE(F.N, 2, "");
-  rai::ForceExchangeDof* ex = getContact(F.elem(0), F.elem(1));
+  rai::ForceExchangeDof* ex = rai::getContact(F.elem(0), F.elem(1));
   ex->kinPOA(y, J);
 }
 

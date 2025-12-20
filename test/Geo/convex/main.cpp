@@ -78,7 +78,7 @@ void TEST(ConvexHull) {
       line.append(p);
       plot()->Line(line);
     }
-//    plot()->Opengl();
+    plot()->update();
 
     cout
       <<"\ndistance = " <<d
@@ -100,7 +100,7 @@ void TEST(ConvexHull) {
   X.resize(N,D);
   origin.resize(D);
 
-  auto f = [&origin, &X](arr& g, arr& H, const arr& x) -> double {
+  auto f = [&origin](arr& g, arr& H, const arr& X) -> double {
     double d=distanceToConvexHull(X, origin);
     if(!!g) distanceToConvexHullGradient(g, X, origin);
     return d;
@@ -134,7 +134,7 @@ void TEST(ForceClosure) {
 
   Xn=X;  for(i=0;i<N;i++) Xn[i] /= length(Xn[i]);
 
-  plot()->Opengl();
+  // plot()->Opengl();
   plot()->Clear(); plot()->Points(c); plot()->Points(X); plot()->VectorField(X,Xn);
   plot()->update(false);
 
@@ -145,7 +145,7 @@ void TEST(ForceClosure) {
   center.set(c.p);
 
   //gradient descent on force closure
-  for(k=0;k<1000;k++){
+  for(k=0;k<10;k++){
     d=forceClosure(X,Xn,center,.5,10.,&dFdX);
     cout <<"d=" <<d <<endl;
     plot()->Clear(); plot()->Points(c); plot()->Points(X); plot()->VectorField(X,Xn);
@@ -288,8 +288,8 @@ int MAIN(int argc, char *argv[]){
   rai::initCmdLine(argc, argv);
   cout <<"QHull version = " <<qhullVersion() <<endl;
 
-  //testConvexHull();
-  //testForceClosure();
+  testConvexHull();
+  // testForceClosure();
   //testFCinOrs();
 
   testConvConvIntersect();

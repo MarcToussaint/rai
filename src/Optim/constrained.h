@@ -34,7 +34,7 @@ struct ConstrainedSolver {
 //  void reinit();
  private:
   arr x_beforeNewton;
-  double org_stopTol, org_stopGTol;
+  double org_stopTol, org_stopFTol, org_stopGTol;
 };
 
 //==============================================================================

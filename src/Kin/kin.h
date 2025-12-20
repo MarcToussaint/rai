@@ -35,6 +35,7 @@ struct Configuration;
 struct KinematicSwitch;
 
 struct FclInterface;
+struct CoalInterface;
 struct ConfigurationViewer;
 
 } // namespace rai
@@ -268,7 +269,9 @@ public:
   void coll_reportProxies(std::ostream& os=cout, double belowMargin=1., bool brief=true) const;
   StringA coll_getProxyPairs(double belowMargin, arr& distances=NoArr);
   std::shared_ptr<FclInterface> coll_fcl(int verbose=0);
+  std::shared_ptr<CoalInterface> coll_engine(int verbose=0);
   void coll_fclReset();
+  void coll_coalReset();
   void addProxies(const uintA& collisionPairs);
 
   /// @name extensions on demand

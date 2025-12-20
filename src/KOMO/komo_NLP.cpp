@@ -422,7 +422,7 @@ void Conv_KOMO2FactoredNLP::randomizeSingleVariable(uint var_id) {
     if(d->limits.N && d->dim!=1) { //HACK!!
 #if 1
       d->limits.reshape(2, -1);
-      arr q = rand({d->dim}, d->limits);
+      arr q = rand(uintA{d->dim}, d->limits);
 #else
       arr q(d->dim);
       for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions

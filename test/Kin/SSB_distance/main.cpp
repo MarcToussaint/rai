@@ -142,7 +142,7 @@ void TEST(Distance){
     double d2=(Pa-Pb).length();
     cout <<"d=" <<d <<' ' <<d2 <<' ' <<Pa <<Pb <<endl;
     if(d>0.) CHECK_ZERO(d-d2, 1e-4, "NOT EQUAL!");
-    rai::Proxy p; p.a=&A, p.b=&B; p.posA=Pa; p.posB=Pb; p.colorCode=1;
+    rai::Proxy p; p.A=A.ID, p.B=B.ID; p.posA=Pa; p.posB=Pb; p.colorCode=1;
     C.proxies.clear();
     C.proxies.append( p );
     C.view(true);

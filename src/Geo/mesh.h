@@ -67,6 +67,7 @@ struct Mesh {
   void setCone(double r, double h, uint fineness=2);
   void setCapsule(double r, double l, uint fineness=2);
   void setSSBox(double x_width, double y_width, double z_height, double r, uint fineness=2);
+  void setConvex(const arr& core);
   void setSSCvx(const arr& core, double r, uint fineness=2);
   void setImplicitSurface(ScalarFunction f, double lo=-10., double up=+10., uint res=100);
   void setImplicitSurface(std::function<double(const arr& x)> f, const arr& bounds, uint res);
@@ -101,12 +102,13 @@ struct Mesh {
   uint getComponents();
 
   /// @name support function
-  uint support(const double* dir);
+  uint support(const arr& dir);
 
   /// @name internal computations & cleanup
   void computeTriNormals();
   void computeFaceColors();
   arr computeTriDistances();
+  uintA getNeighborVertices(uint i);
   void buildGraph();
   void deleteUnusedVertices();
   void fuseNearVertices(double tol=1e-5);

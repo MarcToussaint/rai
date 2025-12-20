@@ -92,6 +92,14 @@ void init_Optim(pybind11::module& m) {
   "query the NLP at a point $x$; returns the tuple $(phi,J)$, which is the feature vector and its Jacobian; features define cost terms, sum-of-square (sos) terms, inequalities, and equalities depending on 'getFeatureTypes'"
       )
 
+  .def("eval_scalar", [](std::shared_ptr<NLP>& self, const arr& x) {
+    arr f, g, H;
+    self->eval_scalar(f, g, H);
+    return std::tuple<double, arr, arr>(f, g, H);
+  },
+    "query the NLP assuming that it only has f- and sos-objectives (otherwise raises error); returns the cost, gradient, and Hessian (which is the Gauss-Newton Hessian plus what the user NLP provides with getHessian)"
+  )
+
   .def("getFeatureTypes", [](std::shared_ptr<NLP>& self) {
     return Array2vec<ObjectiveType>(self->featureTypes);
   },

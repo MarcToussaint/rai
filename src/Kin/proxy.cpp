@@ -10,62 +10,51 @@
 #include "kin.h"
 #include "frame.h"
 #include "../Gui/opengl.h"
+#include "../Geo/i_coal.h"
 
 //===========================================================================
 //
 // Proxy
 //
 
-void rai::Proxy::copy(const rai::Configuration& C, const rai::Proxy& p) {
-  collision.reset();
-  if(!!C) {
-    a = C.frames.elem(p.a->ID); CHECK(a, "");
-    b = C.frames.elem(p.b->ID); CHECK(b, "");
-  } else a=b=0;
-  posA = p.posA;
-  posB = p.posB;
-  normal = p.normal;
-  d = p.d;
-  colorCode = p.colorCode;
-//  if(p.collision) collision = p.collision;
-}
+void rai::Proxy::calc_coll(const Array<Frame*>& frames) {
+  rai::Frame* f1 = frames.elem(A);
+  rai::Frame* f2 = frames.elem(B);
+  CHECK(f1 && f2, "ill-defined proxies!");
 
-void rai::Proxy::calc_coll() {
-  CHECK(a && b, "ill-defined proxies!");
-  rai::Shape* s1 = a->shape.get();
-  rai::Shape* s2 = b->shape.get();
-  CHECK(s1 && s2, "");
-
-  double r1 = s1->coll_cvxRadius;
-  double r2 = s2->coll_cvxRadius;
-  arr& m1 = s1->sscCore();
-  arr& m2 = s2->sscCore();
+  double r1=0., r2=0.;
+  arr m1=zeros(1,3), m2=zeros(1,3);
+  if(f1->shape){  m1.referTo( f1->shape->sscCore() );  r1=f1->shape->coll_cvxRadius;  }
+  if(f2->shape){  m2.referTo( f2->shape->sscCore() );  r2=f2->shape->coll_cvxRadius;  }
 
   if(collision) collision.reset();
-  if(s2->_type==rai::ST_pointCloud){
+  if(f2->shape && f2->shape->_type==rai::ST_pointCloud){
     CHECK_EQ(m1.d0, 1, "collision against PCL only work for points (=spheres)");
-    Mesh* m2isPCL = b->shape->_mesh.get();
+    Mesh* m2isPCL = f2->shape->_mesh.get();
     r2=0.;
-    collision = make_shared<rai::PairCollision_PtPcl>(m1, m2isPCL->ensure_ann(), a->ensure_X(), b->ensure_X(), r1, r2);
+    collision = make_shared<rai::PairCollision_PtPcl>(m1, m2isPCL->ensure_ann(), f1->ensure_X(), f2->ensure_X(), r1, r2);
+  }else if(f2->shape && f2->shape->_mesh && f2->shape->_mesh->cvxParts.N){
+    collision = make_shared<rai::PairCollision_CvxDecomp>(m1, *f2->shape->_mesh, f1->ensure_X(), f2->ensure_X(), r1, r2);
   }else{
-    collision = make_shared<PairCollision_CvxCvx>(m1, m2, a->ensure_X(), b->ensure_X(), r1, r2);
+    // collision = make_shared<PairCollision_CvxCvx>(m1, m2, a->ensure_X(), b->ensure_X(), r1, r2);
+    CHECK(f1->shape && f2->shape, "")
+    collision = make_shared<PairCollision_Coal>(f1->shape.get(), f2->shape.get(), f1->ensure_X(), f2->ensure_X(), r1, r2);
   }
 
   d = collision->distance-collision->rad1-collision->rad2;
-  normal = collision->normal;
-  posA = collision->p1;
-  posB = collision->p2;
-  if(collision->rad1>0.) posA -= collision->rad1*normal;
-  if(collision->rad2>0.) posB += collision->rad2*normal;
+  if(collision->p1.N){
+    normal = collision->normal;
+    posA = collision->p1;
+    posB = collision->p2;
+    if(collision->rad1>0.) posA -= collision->rad1*normal;
+    if(collision->rad2>0.) posB += collision->rad2*normal;
+  }
 }
 
 typedef rai::Array<rai::Proxy*> ProxyL;
 
 void rai::Proxy::write(std::ostream& os, bool brief) const {
-  os <<" ("
-     <<a->name <<")-("
-     <<b->name
-     <<") [" <<a->ID <<',' <<b->ID <<"] \td=" <<d;
+  os <<" [" <<A <<',' <<B <<"] \td=" <<d;
   if(!brief)
     os <<" |A-B|=" <<(posB-posA).length()
        //        <<" d^2=" <<(posB-posA).lengthSqr()

@@ -9,70 +9,35 @@
 #include <Kin/F_collisions.h>
 #include <Kin/F_qFeatures.h>
 
+bool interactive=false;
+
 //===========================================================================
 
 void TEST(GJK_Jacobians) {
   rai::Configuration C;
-  rai::Frame base(C), b1(C), B1(C), b2(C), B2(C);
-  rai::Joint j1(base, b1), J1(b1, B1), j2(B1, b2), J2(b2, B2);
-  rai::Shape &s1 = B1.getShape(), &s2 = B2.getShape();
-  j1.setType(rai::JT_free);
-  j2.setType(rai::JT_free);
-  j1.frame->insertPreLink(rai::Transformation(0))->set_Q()->appendRelativeTranslation(1,1,1);
-  j2.frame->insertPreLink(rai::Transformation(0))->set_Q()->appendRelativeTranslation(-1,-1,1);
-  J1.setType(rai::JT_free);
-  J2.setType(rai::JT_free);
+  rai::Frame base(C), b1(&base, rai::JT_free), B1(&b1, rai::JT_free), b2(&B1, rai::JT_free), B2(&b2, rai::JT_free);
 
   C.calcDofsFromConfig();
   arr q = C.getJointState();
 
-//  OpenGL gl;
-//  gl.drawOptions.drawWires=true;
-//  gl.data().addStandardScene();
-//  gl.add(draw);
-//  gl.add(K);
+  C.get_viewer()->opt.polygonLines=true;
 
   F_PairCollision dist(F_PairCollision::_negScalar);
   F_PairCollision distVec(F_PairCollision::_vector);
   F_PairCollision distNorm(F_PairCollision::_normal);
   F_PairCollision distCenter(F_PairCollision::_center);
   FrameL F = {&B1, &B2};
-//  dist.setFrameIDs({B1.ID, B2.ID});
-//  distVec.setFrameIDs({B1.ID, B2.ID});
-//  distNorm.setFrameIDs({B1.ID, B2.ID});
-//  distCenter.setFrameIDs({B1.ID, B2.ID});
 
   for(uint k=0;k<100;k++){
-//    //randomize shapes
-    s1.mesh().clear();             s2.mesh().clear();
-    s1.sscCore() = 2.*rand(10,3);      s2.sscCore() =  2.*rand(10,3);
-     s1.mesh().C = {.5,.8,.5,.4};   s2.mesh().C = {.5,.5,.8,.4};
-    s1.type() = s2.type() = rai::ST_ssCvx; //ST_mesh;
-    s1.size = arr{rnd.uni(.01, .3)}; s2.size = arr{rnd.uni(.01, .3)};
-    if(rnd.uni()<.2) s1.sscCore() = zeros(1,3);
-    if(rnd.uni()<.2) s2.sscCore() = zeros(1,3);
-    s1.createMeshes(B1.name);
-    s2.createMeshes(B2.name);
+    //randomize shapes
+    B1.setConvexMesh(2.*rand(10,3), {128,255,128,100}, .05); //rnd.uni(.01, .3));
+    B2.setConvexMesh(2.*rand(10,3), {128,128,255,100}, .05); //rnd.uni(.01, .3));
 
     //randomize poses
     rndGauss(q, .7);
     C.setJointState(q);
 
     bool succ = true;
-
-//    if(rnd.uni()<.1){
-//      B1.setPosition({-.4,0.,1.});
-//      B1.setQuaternion({1,0,0,0});
-//      B2.setPosition({.4,0.,1.});
-//      B2.setQuaternion({1,0,0,0});
-//      B1.setShape(rai::ST_ssBox, {1., .5, .5, .1});
-//      B2.setShape(rai::ST_ssBox, {1., .5, .5, .1});
-//      B1.setColor({.5,.5,.8,.4});
-//      B2.setColor({.5,.8,.5,.4});
-//      succ=false;
-//      q = C.getJointState();
-//    }
-    succ=true;
 
     arr y = dist.eval(F);
     cout <<k <<" dist ";
@@ -90,15 +55,18 @@ void TEST(GJK_Jacobians) {
     cout <<k <<" center  ";
     succ &= checkJacobian(distCenter.asFct(F), q, 1e-5);
 
-    rai::PairCollision_CvxCvx collInfo(s1.sscCore(), s2.sscCore(), B1.ensure_X(), B2.ensure_X(), s1.size(-1), s2.size(-1));
-
+    // rai::PairCollision_CvxCvx collInfo(B1.getShape().sscCore(), B2.getShape().sscCore(), B1.ensure_X(), B2.ensure_X(), B1.getSize()(-1), B2.getSize()(-1));
     //    cout <<"distance: " <<y <<" vec=" <<y2 <<" error=" <<length(y2)-fabs(y(0)) <<endl;
-    if(!succ) cout <<collInfo;
 
-    C.get_viewer()->updateConfiguration(C);
-    C.get_viewer()->addDistMarker(collInfo.p1, collInfo.p2, 1.);
-    C.view(!succ, STRING(k));
-//    C.view(true);
+    C.proxies.resize(1);
+    C.proxies(0).A = B1.ID;
+    C.proxies(0).B = B2.ID;
+    C.proxies(0).calc_coll(C.frames);
+
+    if(!succ || interactive)
+      cout <<C.proxies(0).ensure_coll(C.frames);
+
+    C.view(!succ || interactive, STRING(k));
 
     if(succ){
       CHECK_ZERO(length(y2)-fabs(y(0)), 1e-3, "");
@@ -108,32 +76,25 @@ void TEST(GJK_Jacobians) {
 
 //===========================================================================
 
-#if 1
-
 void TEST(GJK_Jacobians2) {
   rai::Configuration C;
-  C.addFrame("base");
+  C.addFrame("base")->setPosition({.0, .0, 1.});
   for(uint i=0;i<20;i++){
     rai::Frame *a = C.addFrame(STRING("obj_" <<i), "base");
     a->setJoint(rai::JT_free);
     a->set_Q()->setRandom();
-    a->set_Q()->pos.z += 1.;
 
-    a->setConvexMesh({}, {}, .02 + .1*rnd.uni());
-    a->setColor({.5,.5,.8,.6});
-    a->shape->sscCore() = rand(10,3);
-    a->shape->createMeshes(a->name);
+    a->setConvexMesh(rand(10,3), {128,128,255,100}, rnd.uni(.01, .1));
     a->setContact(1);
   }
 
-  C.gl().drawOptions.drawProxies=true;
-
-  C.coll_stepFcl();
-//  C.reportProxies();
+  C.ensure_proxies(true);
+  C.coll_reportProxies();
+  if(interactive) C.view(true);
 
   VectorFunction f = [&C](const arr& x) -> arr {
     C.setJointState(x);
-    C.coll_stepFcl();
+    C.ensure_proxies(true);
     arr y;
     C.kinematicsPenetration(y, y.J(), .05);
     return y;
@@ -146,13 +107,13 @@ void TEST(GJK_Jacobians2) {
   double y_last=0.;
   for(uint t=0;t<1000;t++){
     C.setJointState(q);
-    C.coll_stepFcl();
+    C.ensure_proxies(true);
+    //C.coll_reportProxies();
 
 //    checkJacobian(f, q, 1e-4);
 
     F_qQuaternionNorms qn;
     qn.setFrameIDs(framesToIndices(C.frames));
-//    C.reportProxies();
 
     arr y,J;
     C.kinematicsPenetration(y, J, .05);
@@ -161,7 +122,7 @@ void TEST(GJK_Jacobians2) {
 
     cout <<"total penetration: " <<y(0) <<"  diff:" <<y(0) - y_last <<endl; //" quat-non-normalization=" <<y2(0) <<endl;
     y_last = y(0);
-    C.view(false, STRING("t=" <<t <<"  movement along negative contact gradient"));
+    C.view(interactive, STRING("t=" <<t <<"  movement along negative contact gradient"));
 
     q -= 1e-2*J + 1e-2*(~y2*y2.J());
 
@@ -223,7 +184,7 @@ void TEST(GJK_Jacobians3) {
     arr y2 = qn.eval(C.frames);
 
     cout <<"contact meassure = " <<y(0) <<endl;
-    C.view(false, STRING("t=" <<t <<"  movement along negative contact gradient"));
+    C.view(interactive, STRING("t=" <<t <<"  movement along negative contact gradient"));
 
     q -= 1e-2*y.J() + 1e-2*(~y2*y2.J());
 
@@ -234,7 +195,6 @@ void TEST(GJK_Jacobians3) {
 }
 
 //===========================================================================
-#endif
 
 void TEST(Functional) {
   rai::Configuration C;
@@ -304,6 +264,9 @@ void testSweepingSDFs(){
   C.addFrame("c") ->setParent(F(1,0)). setShape(rai::ST_marker, {.3}). setColor({1.,1.,0.});
   C.addFrame("d") ->setParent(F(1,1)). setShape(rai::ST_marker, {.3}). setColor({1.,1.,0.});
 
+  C.addFrame("sweep1");
+  C.addFrame("sweep2");
+
   rai::Mesh sweep1;
   rai::Mesh sweep2;
 
@@ -327,6 +290,7 @@ void testSweepingSDFs(){
     sweep1.V.append(V);
     sweep1.V.append(V+(ones(V.d0)^vel));
     sweep1.makeConvexHull();
+    C.getFrame("sweep1")->setMesh2(sweep1) .setColor({.5,1.,.5,.5});
 
     V = F(0,1)->getMeshPoints();
     F(0,1)->ensure_X().applyOnPointArray(V);
@@ -336,18 +300,16 @@ void testSweepingSDFs(){
     sweep2.V.append(V);
     sweep2.V.append(V+(ones(V.d0)^vel));
     sweep2.makeConvexHull();
+    C.getFrame("sweep2")->setMesh2(sweep2) .setColor({.5,.5,1.,.5});
 
-    {
-      auto lock = C.get_viewer()->dataLock(RAI_HERE);
-      C.get_viewer()->clear();
-      C.get_viewer()->addDistMarker(dist.x-dist.d1*dist.g1, dist.x-dist.d2*dist.g2, .1);
-      C.get_viewer()->add().mesh(sweep1);
-      C.get_viewer()->add().mesh(sweep2);
-    }
-    C.get_viewer()->updateConfiguration(C);
-    C.view(true);
+    C.proxies.resize(1);
+    C.proxies(0).posA = dist.x-dist.d1*dist.g1;
+    C.proxies(0).posB = dist.x-dist.d2*dist.g2;
+
+    C.view(interactive);
   }
 
+  C.view(true);
 }
 
 //===========================================================================
@@ -373,9 +335,10 @@ void testPoint2PCL(){
 
     m.setPosition(q);
     m.set_X()->rot.setDiff(Vector_x, y.J());
-    C.view(false);
+    C.view(interactive);
   }
 
+  C.view(true);
 }
 
 //===========================================================================
@@ -383,16 +346,16 @@ void testPoint2PCL(){
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-  rnd.seed_random();
+  // rnd.seed_random();
 
-  testPoint2PCL();
 
   testGJK_Jacobians();
   testGJK_Jacobians2();
   testGJK_Jacobians3();
 
-  testFunctional();
+  // testFunctional();
   testSweepingSDFs();
+  testPoint2PCL();
 
   return 0;
 }

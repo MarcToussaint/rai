@@ -168,15 +168,16 @@ void FclInterface::step(const arr& X) {
     }
   }
 
-  collisions.reshape(-1, 2);
+  // collisions.reshape(-1, 2);
 
   X_lastQuery = X;
 }
 
-void FclInterface::addCollision(uint a, uint b) {
-  collisions.resizeCopy(collisions.N+2);
-  collisions.elem(-2) = a;
-  collisions.elem(-1) = b;
+Proxy& FclInterface::addCollision(uint a, uint b) {
+  Proxy& p = collisions.append();
+  p.A = a;
+  p.B = b;
+  return p;
 }
 
 bool FclInterface_self::BroadphaseCallback(CollObject* o1, CollObject* o2, void* cdata_) {
@@ -197,8 +198,8 @@ bool FclInterface_self::BroadphaseCallback(CollObject* o1, CollObject* o2, void*
   if(fcl->mode==fcl->_broadPhaseOnly) {
     fcl->addCollision(a, b);
   } else if(fcl->mode==fcl->_binaryCollisionSingle || fcl->mode==fcl->_binaryCollisionAll) { //fine boolean collision query
-    CollisionRequest request;
-    CollisionResult result;
+    fcl::CollisionRequest request;
+    fcl::CollisionResult result;
     fcl::collide(o1, o2, request, result);
     if(result.isCollision()) {
       fcl->addCollision(a, b);
@@ -206,8 +207,8 @@ bool FclInterface_self::BroadphaseCallback(CollObject* o1, CollObject* o2, void*
     }
   } else if(fcl->mode==fcl->_distanceCutoff) {
     CHECK(fcl->cutoff>=0., "")
-    DistanceRequest request;
-    DistanceResult result;
+    fcl::DistanceRequest request;
+    fcl::DistanceResult result;
     fcl::distance(o1, o2, request, result);
     if(result.min_distance<fcl->cutoff) fcl->addCollision(a, b);
   } else {

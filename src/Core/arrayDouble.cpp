@@ -2134,7 +2134,7 @@ arr& operator<<(arr& x, const arr& y) { x.append(y); return x; }
   for(; xp!=xstop; xp++) *xp op y;
 
 arr& operator+=(arr& x, const arr& y) {
-  if(x.nd==y.nd){
+  if(x.nd==y.nd || x.N==y.N){
     UpdateOperator_MM(+=);
     if(y.jac) {
       if(x.jac) *x.jac += *y.jac;
@@ -2168,7 +2168,7 @@ arr& operator+=(arr&& x, double y) {
 }
 
 arr& operator-=(arr& x, const arr& y) {
-  if(x.nd==y.nd){
+  if(x.nd==y.nd || x.N==y.N){
     UpdateOperator_MM(-=);
     if(y.jac) {
       if(x.jac) *x.jac -= *y.jac;

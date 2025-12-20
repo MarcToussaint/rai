@@ -33,6 +33,9 @@ struct DirectionDof;
 enum JointType : int { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_circleZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_transYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_generic, JT_tau, JT_path, JT_direction };
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static, BT_soft };
 }
+namespace coal {
+class CollisionGeometry;
+}
 
 typedef rai::Array<rai::Frame*> FrameL;
 typedef rai::Array<rai::Joint*> JointL;
@@ -106,7 +109,7 @@ struct Frame : NonCopyable {
   DirectionDof* dirDof=nullptr;
 
   Frame(Configuration& _C, const Frame* copyFrame=nullptr);
-  Frame(Frame* _parent);
+  Frame(Frame* _parent, JointType jointType=JT_none);
   ~Frame();
 
   //accessors to attachments
@@ -336,6 +339,8 @@ struct Shape : NonCopyable {
   double coll_cvxRadius=-1.;
   int version = 0;
   shared_ptr<SDF> _sdf;
+  std::shared_ptr<coal::CollisionGeometry> geom;
+
   char cont=0;           ///< are contacts registered (or filtered in the callback)
 
   double radius() { if(size.N) return size(-1); return 0.; }

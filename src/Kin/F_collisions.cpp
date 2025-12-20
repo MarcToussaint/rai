@@ -12,6 +12,7 @@
 #include "dof_forceExchange.h"
 
 #include "../Geo/pairCollision.h"
+#include "../Geo/i_coal.h"
 #include "../Optim/m_Newton.h"
 #include "../Gui/opengl.h"
 
@@ -28,7 +29,7 @@ uint F_PairCollision::dim_phi(const FrameL& F) {
 
 void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0) {  Feature::phi2(y, J, F);  return;  }
-  if(F.N>2) {
+  if(F.N>2) { //compute collisions between multiple pairs
     FrameL _F = F.ref();
     if(F.nd==3) _F.reshape(F.d1, F.d2);
     F.last()->C.kinematicsZero(y, J, dim_phi(_F));
@@ -45,55 +46,36 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Frame* f1 = F.elem(0);
   rai::Frame* f2 = F.elem(1);
 
+#if 0
   double r1=0., r2=0.;
-  arr m1, m2;
-  if(f1->shape){
-    m1.referTo( f1->shape->sscCore() );
-    r1=f1->shape->coll_cvxRadius;
-  }else{
-    m1.resize(1,3).setZero();
-  }
-
-  rai::Mesh* m2isPCL = 0;
-  if(f2->shape){
-    m2.referTo( f2->shape->sscCore() );
-    r2=f2->shape->coll_cvxRadius;
-    if(r2<0. && f2->shape->_type==rai::ST_pointCloud){
-      m2isPCL = f2->shape->_mesh.get();
-      r2=0.;
-    }
-  }else{
-    m2.resize(1,3).setZero();
-  }
-
-
+  arr m1=zeros(1,3), m2=zeros(1,3);
+  if(f1->shape){  m1.referTo( f1->shape->sscCore() );  r1=f1->shape->coll_cvxRadius;  }
+  if(f2->shape){  m2.referTo( f2->shape->sscCore() );  r2=f2->shape->coll_cvxRadius;  }
 
   //compute the collision
   coll.reset();
 
 
-#if 0 //use functionals!
-  auto func1=f1->shape->functional();
-  auto func2=f2->shape->functional();
-  if(func1 && func2) {
-    coll=make_shared<PairCollision>(*func1, *func2, .5*(f1->getPosition()+f2->getPosition()));
-  } else {
-    coll=make_shared<PairCollision>(*m1, *m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
-  }
-#else
-
   //if this a point cloud collision? -> different method
-  if(m2isPCL){
+  if(f2->shape->_type==rai::ST_pointCloud){
     CHECK_EQ(m1.d0, 1, "collision against PCL only work for points (=spheres)");
+    rai::Mesh* m2isPCL = f2->shape->_mesh.get();
+    r2=0.;
     CHECK(!m2isPCL->T.N, "");
     coll = make_shared<rai::PairCollision_PtPcl>(m1, m2isPCL->ensure_ann(), f1->ensure_X(), f2->ensure_X(), r1, r2);
     //if 1 is a point, and 2 a decomposed mesh -> different method
   }else if(f2->shape->_mesh && f2->shape->_mesh->cvxParts.N){
     coll = make_shared<rai::PairCollision_CvxDecomp>(m1, *f2->shape->_mesh, f1->ensure_X(), f2->ensure_X(), r1, r2);
   }else{
-
-    coll = make_shared<rai::PairCollision_CvxCvx>(m1, m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
+    // coll = make_shared<rai::PairCollision_CvxCvx>(m1, m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
+    CHECK(f1->shape && f2->shape, "")
+    coll = make_shared<rai::PairCollision_Coal>(f1->shape.get(), f2->shape.get(), f1->ensure_X(), f2->ensure_X(), r1, r2);
   }
+#else
+  rai::Proxy p;
+  p.A=f1->ID; p.B=f2->ID;
+  p.calc_coll(f1->C.frames);
+  shared_ptr<rai::PairCollision> coll = p.collision;
 #endif
 
   if(neglectRadii) coll->rad1=coll->rad2=0.;
@@ -185,22 +167,24 @@ void F_AccumulatedCollisions::phi2(arr& y, arr& J, const FrameL& F) {
   C.kinematicsZero(y, J, 1);
   uint firstID = F.elem(0)->ID, lastID = F.elem(-1)->ID;
   for(rai::Proxy& p: C.proxies) {
-    bool isSelected = (p.a->ID>=firstID && p.a->ID<=lastID)
-                   || (p.b->ID>=firstID && p.b->ID<=lastID);
+    bool isSelected = (p.A>=firstID && p.A<=lastID)
+                   || (p.B>=firstID && p.B<=lastID);
     if(isSelected) {
-      CHECK(p.a->shape, "");
-      CHECK(p.b->shape, "");
+      rai::Frame *a = C.frames.elem(p.A);
+      rai::Frame *b = C.frames.elem(p.B);
+      CHECK(a->shape, "");
+      CHECK(b->shape, "");
 
       //early check: if broadphase is way out of collision, don't bother computing it precisely
-      if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01 + margin) continue;
+      if(p.d > a->shape->radius() + b->shape->radius() + .01 + margin) continue;
 
-      if(!p.collision) p.calc_coll();
+      if(!p.collision) p.calc_coll(C.frames);
 
       if(p.collision->getDistance()>margin) continue;
 
       arr Jp1, Jp2;
-      p.a->C.jacobian_pos(Jp1, p.a, p.collision->p1);
-      p.b->C.jacobian_pos(Jp2, p.b, p.collision->p2);
+      a->C.jacobian_pos(Jp1, a, p.collision->p1);
+      b->C.jacobian_pos(Jp2, b, p.collision->p2);
 
       arr y_dist, J_dist;
       p.collision->kinDistance(y_dist, J_dist, Jp1, Jp2);
@@ -381,7 +365,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F) {
     //  if(!!J) LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" (g1+g2):" <<sumOfSqr(g1+g2) <<" iters:" <<newton.its;
 
     rai::Proxy prox;
-    prox.a = F.elem(0); prox.b = F.elem(1); prox.posA=x-d1*g1; prox.posB=x-d2*g2; prox.normal=g1-g2; prox.d = d1+d2;
+    prox.A = F.elem(0)->ID; prox.B = F.elem(1)->ID; prox.posA=x-d1*g1; prox.posB=x-d2*g2; prox.normal=g1-g2; prox.d = d1+d2;
     F.elem(0)->C.proxies.append(prox);
 
     y.resize(1).scalar() = -d1 -d2;

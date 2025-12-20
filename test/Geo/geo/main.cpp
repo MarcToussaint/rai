@@ -142,8 +142,6 @@ void TEST(QuaternionJacobian){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  testQuaternions(); return 0;
-
   testBasics();
   testQuaternions();
   testQuaternionJacobian();

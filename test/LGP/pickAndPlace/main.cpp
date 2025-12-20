@@ -38,12 +38,12 @@ void generateProblem(rai::Configuration& C){
 
   C.proxies.clear();
 
-  rai::Frame *f = C.addFrame("tray", "table2", "type:ssBox size:[.15 .15 .04 .02] color:[0. 1. 0.], logical={ table }" );
+  rai::Frame *f = C.addFrame("tray", "table2", "type:ssBox size:[.15 .15 .04 .019] color:[0. 1. 0.], logical={ table }" );
   f->setRelativePosition({0.,0.,.07});
 //  f->Q.pos = {rnd.uni(-.3, .3), rnd.uni(-1.,1.), .07};
 //  f->Q.rot.addZ(rnd.uni(-RAI_PI,RAI_PI));
 
-  C.addFrame("", "tray", "type:ssBox size:[.27 .27 .04 .02] color:[0. 1. 0.]" );
+  C.addFrame("", "tray", "type:ssBox size:[.27 .27 .04 .019] color:[0. 1. 0.]" );
 //  K.addFrame("", "tray", "type:ssBox size:[.04 .3 .1 .02] Q:<t(+.13 0 .03)> color:[0. 1. 0.], contact" );
 //  K.addFrame("", "tray", "type:ssBox size:[.04 .3 .1 .02] Q:<t(-.13 0 .03)> color:[0. 1. 0.], contact" );
 //  K.addFrame("", "tray", "type:ssBox size:[.04 .3 .1 .02] Q:<d(90 0 0 1) t(+.13 0 .03)> color:[0. 1. 0.], contact" );

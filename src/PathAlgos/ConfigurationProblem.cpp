@@ -55,11 +55,11 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x) {
     //CHECK(collisionPairs.N, "you need either explicit collision pairs or useBroadCollisions");
     C->proxies.resize(collisionPairs.d0);
     for(uint i=0; i<collisionPairs.d0; i++) {
-      C->proxies(i).a = C->frames(collisionPairs(i, 0));
-      C->proxies(i).b = C->frames(collisionPairs(i, 1));
+      C->proxies(i).A = collisionPairs(i, 0);
+      C->proxies(i).B = collisionPairs(i, 1);
       C->proxies(i).d = -0.;
     }
-    for(rai::Proxy& p:C->proxies) p.calc_coll();
+    for(rai::Proxy& p:C->proxies) p.calc_coll(C->frames);
     C->_state_proxies_isGood = true;
   }
   evals++;
@@ -71,7 +71,7 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x) {
 #if 1
     double D=0.;
     for(rai::Proxy& p:C->proxies){
-      p.calc_coll();
+      p.calc_coll(C->frames);
       if(p.d<0.) D -= p.d;
     }
     qr->totalCollision = D;

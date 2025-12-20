@@ -13,6 +13,14 @@
 
 namespace rai {
 
+struct Shape;
+
+/* A class to represent a basic function: distance between two convex (decomposed) meshes
+ * The constructor compute the collision geometry, the other methods are mostly readouts
+ * The default is distance between two convex meshes
+ * Also distance between point (=mesh1) and points (=mesh2)
+ * Also distance between point (=mesh1) and decomposed mesh (=mesh2)
+ */
 struct PairCollision {
   //INPUTS
   double rad1=0., rad2=0.; ///< only kinVector and glDraw account for this; the basic collision geometry (OUTPUTS below) is computed neglecting radii!!
@@ -24,9 +32,12 @@ struct PairCollision {
   arr simp1, simp2;   ///< simplices on the shapes defining the collision geometry
 
   double getDistance() { return distance-rad1-rad2; }
+  arr get_p1(){ if(rad1>0.) return p1 - rad1*normal;  return p1; }
+  arr get_p2(){ if(rad2>0.) return p2 + rad2*normal;  return p2; }
+
   void write(std::ostream& os) const;
 
-  // differentiable readout methods (Jp1 and Jx1 are linear and angular Jacobians of mesh1)
+  // differentiable readout methods (Jp1 and Jx1 are linear and angular Jacobians of shape1)
   void kinDistance(arr& y, arr& J, const arr& Jp1, const arr& Jp2);
   void kinNormal(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2);
   void kinVector(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2);
@@ -40,12 +51,6 @@ protected:
 
 //===========================================================================
 
-/* A class to represent a basic function: distance between two convex (decomposed) meshes
- * The constructor compute the collision geometry, the other methods are mostly readouts
- * The default is distance between two convex meshes
- * Also distance between point (=mesh1) and points (=mesh2)
- * Also distance between point (=mesh1) and decomposed mesh (=mesh2)
- */
 struct PairCollision_CvxCvx : PairCollision, NonCopyable {
 
   //mesh-to-mesh

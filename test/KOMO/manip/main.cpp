@@ -252,8 +252,8 @@ void testMobileGrasp(){
 
   for(uint k=0;k<10;k++){
     //rnd object pose
-    obj->setPosition(rand({-.5,0.,.05}, {.5,.5,.05}));
-    obj->setQuaternion(rand({-1.,0.,0.,-1.}, {1.,0.,0.,1.}));
+    obj->setPosition(rand(arr{-.5,0.,.05}, {.5,.5,.05}));
+    obj->setQuaternion(rand(arr{-1.,0.,0.,-1.}, {1.,0.,0.,1.}));
     C.view();
 
     //plan

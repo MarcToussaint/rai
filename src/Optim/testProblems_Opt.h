@@ -119,8 +119,9 @@ struct SimpleConstraintFunction : NLP {
 //===========================================================================
 
 struct NLP_RastriginSOS : NLP {
-  double a;
-  double condition;
+  RAI_PARAM("problem/", int, dim, 2)
+  RAI_PARAM("Rastrigin/", double, a, 4.)
+  RAI_PARAM("Rastrigin/", double, condition, 20.)
   NLP_RastriginSOS();
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 };
@@ -158,7 +159,7 @@ struct ANN;
 struct NLP_Rugged : NLP {
   arr pts, Phi;
   std::shared_ptr<ANN> ann;
-  NLP_Rugged(uint dim=2, bool sos=true, uint num_points=10, int num_features=1);
+  NLP_Rugged(uint dim=2, bool sos=true, uint num_points=10, uint num_features=1);
   void evaluate(arr &phi, arr &J, const arr &x);
 };
 

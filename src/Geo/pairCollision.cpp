@@ -13,6 +13,8 @@
 #include "../Algo/ann.h"
 #include "../Core/util.h"
 
+#include "i_coal.h"
+
 #ifdef RAI_GJK
 extern "C" {
 #  include "GJK/gjk.h"
@@ -276,13 +278,13 @@ void PairCollision::write(std::ostream& os) const {
   }
   os <<"  witness points: " <<p1 <<"  " <<p2 <<endl;
   os <<"  simplex #: " <<simp1.d0 <<"  " <<simp2.d0 <<endl;
-//  if(eig1.N || eig2.N) os <<"  EIG #: " <<eig1.d0<<'-' <<eig2.d0 <<endl;
+  os <<"  simplex: " <<simp1 <<"  " <<simp2 <<endl;
 }
 
 #ifdef RAI_CCD
 void support_mesh(const void* _obj, const ccd_vec3_t* dir, ccd_vec3_t* v) {
   rai::Mesh* m = (rai::Mesh*)_obj;
-  uint vertex = m->support(dir->v);
+  uint vertex = m->support(arr(dir->v, 3, true));
   memmove(v->v, m->V.p+3*vertex, 3*m->V.sizeT);
 }
 
@@ -616,10 +618,10 @@ void PairCollision::kinNormal(arr& y, arr& J,
     } else if(simplexType(3, 2)) {
       J = Jp1;
       J.setZero();
-    } else if(simplexType(3, 3)) {
+    } else { //(3,3) or larger
       J = Jp1;
       J.setZero();
-    } else NIY;
+    } //else NIY;
     checkNan(J);
   }
 }

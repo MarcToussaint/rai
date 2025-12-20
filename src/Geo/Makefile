@@ -2,7 +2,7 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-#OPTIM = debug
+OPTIM = debug
 
 DEPEND = Core Optim Algo
 
@@ -15,6 +15,8 @@ PLY = 1
 GJK = 1
 CCD = 1
 CXXFLAGS += -DRAI_VHACD
+
+LIBS += -lcoal
 
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
 OBJS = $(SRCS:%.cpp=%.o)

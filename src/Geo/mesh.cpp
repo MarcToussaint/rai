@@ -401,6 +401,39 @@ void Mesh::setCapsule(double r, double l, uint fineness) {
   makeConvexHull();
 }
 
+void Mesh::setConvex(const arr& core){
+  clear();
+  V = core;
+  makeConvexHull();
+}
+
+void Mesh::setSSCvx(const arr& core, double r, uint fineness) {
+  if(r>0.) {
+    Mesh ball;
+    ball.setSphere(fineness);
+    ball.scale(r);
+
+    arr c=C;
+    clear();
+#if 1
+    V = MinkowskiSum(core, ball.V);
+#else
+    for(uint i=0; i<core.d0; i++) {
+      ball.translate(core(i, 0), core(i, 1), core(i, 2));
+      addMesh(ball);
+      ball.translate(-core(i, 0), -core(i, 1), -core(i, 2));
+    }
+#endif
+    makeConvexHull();
+    C=c;
+  } else {
+    arr c=C;
+    V = core;
+    makeConvexHull();
+    C=c;
+  }
+}
+
 /** @brief add triangles according to the given grid; grid has to be a 2D
   Array, the elements of which are indices referring to vertices in
   the vertex list (V) */
@@ -757,33 +790,6 @@ Mesh Mesh::decompose() {
 //   return cvxParts.N;
 // }
 
-void Mesh::setSSCvx(const arr& core, double r, uint fineness) {
-  if(r>0.) {
-    Mesh ball;
-    ball.setSphere(fineness);
-    ball.scale(r);
-
-    arr c=C;
-    clear();
-#if 1
-    V = MinkowskiSum(core, ball.V);
-#else
-    for(uint i=0; i<core.d0; i++) {
-      ball.translate(core(i, 0), core(i, 1), core(i, 2));
-      addMesh(ball);
-      ball.translate(-core(i, 0), -core(i, 1), -core(i, 2));
-    }
-#endif
-    makeConvexHull();
-    C=c;
-  } else {
-    arr c=C;
-    V = core;
-    makeConvexHull();
-    C=c;
-  }
-}
-
 /** @brief calculate the normals of all triangles (Tn) and the average
   normals of the vertices (N); average normals are averaged over
   all adjacent triangles that are in the triangle list or member of
@@ -836,6 +842,82 @@ arr Mesh::computeTriDistances() {
     d(i) = a*n;
   }
   return d;
+}
+
+uintA Mesh::getNeighborVertices(uint i){
+  uintA N = {i};
+  for(uint j=0; j<T.N; j++) {
+    if(T.p[j]==i){
+      uint t = j/3;
+      for(uint k=0;k<3;k++) N.setAppend(T.p[3*t+k]);
+    }
+  }
+  CHECK(N.p[0]==i, "");
+  N.remove(0);
+  return N;
+}
+
+void Mesh::buildGraph() {
+  graph.resize(V.d0);
+  for(uint i=0; i<T.d0; i++) {
+    graph(T(i, 0)).setAppend(T(i, 1));
+    graph(T(i, 0)).setAppend(T(i, 2));
+    graph(T(i, 1)).setAppend(T(i, 0));
+    graph(T(i, 1)).setAppend(T(i, 2));
+    graph(T(i, 2)).setAppend(T(i, 0));
+    graph(T(i, 2)).setAppend(T(i, 1));
+  }
+}
+
+inline double __scalarProduct(const double* p1, const double* p2) {
+  return p1[0]*p2[0]+p1[1]*p2[1]+p1[2]*p2[2];
+}
+
+uint Mesh::support(const arr& dir) {
+#if 1
+
+  arr q = V*dir;
+  return argmax(q);
+
+#elif 0
+
+  double s = __scalarProduct(dir, V.p);
+  double ms=s;
+  uint mi=0;
+  for(uint i=0; i<V.d0; i++) {
+    s = __scalarProduct(dir, V.p+3*i);
+    if(s>ms) { ms = s;  mi = i; }
+  }
+  _support_vertex = mi;
+  return _support_vertex;
+
+#else
+  if(!graph.N) buildGraph();
+
+  uint mi = _support_vertex;
+  double s = __scalarProduct(dir, V.p+3*mi);
+  double ms=s;
+  for(;;) {
+    //comput scalar product for all neighbors
+    uintA& neigh=graph.p[mi];
+
+    bool stop=true;
+    for(uint i:neigh) {
+      s = __scalarProduct(dir, V.p+3*i);
+      if(s>ms) {
+        mi = i;
+        ms = s;
+        stop = false;
+        break;
+      }
+    }
+    if(stop) {
+      _support_vertex = mi;
+      return _support_vertex;
+    }
+  }
+
+#endif
 }
 
 /** @brief add triangles according to the given grid; grid has to be a 2D
@@ -2078,70 +2160,6 @@ void Mesh::setImplicitSurfaceBySphereProjection(ScalarFunction _f, double rad, u
         .set_damping(1e-10);
     newton.run();
   }
-}
-
-void Mesh::buildGraph() {
-  graph.resize(V.d0);
-  for(uint i=0; i<T.d0; i++) {
-    graph(T(i, 0)).setAppend(T(i, 1));
-    graph(T(i, 0)).setAppend(T(i, 2));
-    graph(T(i, 1)).setAppend(T(i, 0));
-    graph(T(i, 1)).setAppend(T(i, 2));
-    graph(T(i, 2)).setAppend(T(i, 0));
-    graph(T(i, 2)).setAppend(T(i, 1));
-  }
-}
-
-inline double __scalarProduct(const double* p1, const double* p2) {
-  return p1[0]*p2[0]+p1[1]*p2[1]+p1[2]*p2[2];
-}
-
-uint Mesh::support(const double* dir) {
-#if 1
-
-  arr _dir(dir, 3, true);
-  arr q = V*_dir;
-  return argmax(q);
-
-#elif 0
-
-  double s = __scalarProduct(dir, V.p);
-  double ms=s;
-  uint mi=0;
-  for(uint i=0; i<V.d0; i++) {
-    s = __scalarProduct(dir, V.p+3*i);
-    if(s>ms) { ms = s;  mi = i; }
-  }
-  _support_vertex = mi;
-  return _support_vertex;
-
-#else
-  if(!graph.N) buildGraph();
-
-  uint mi = _support_vertex;
-  double s = __scalarProduct(dir, V.p+3*mi);
-  double ms=s;
-  for(;;) {
-    //comput scalar product for all neighbors
-    uintA& neigh=graph.p[mi];
-
-    bool stop=true;
-    for(uint i:neigh) {
-      s = __scalarProduct(dir, V.p+3*i);
-      if(s>ms) {
-        mi = i;
-        ms = s;
-        stop = false;
-        break;
-      }
-    }
-    if(stop) {
-      _support_vertex = mi;
-      return _support_vertex;
-    }
-  }
-
-#endif
 }
 
 } //namespace

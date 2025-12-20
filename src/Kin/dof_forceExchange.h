@@ -58,6 +58,6 @@ stdOutPipe(ForceExchangeDof)
 
 //===========================================================================
 
-rai::ForceExchangeDof* getContact(rai::Frame* a, rai::Frame* b, bool raiseErrorIfNonExist=true);
+ForceExchangeDof* getContact(rai::Frame* a, rai::Frame* b, bool raiseErrorIfNonExist=true);
 
 } //rai

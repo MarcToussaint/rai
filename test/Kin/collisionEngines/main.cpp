@@ -3,6 +3,8 @@
 #include <Gui/opengl.h>
 #include <Kin/frame.h>
 
+bool interactive=false;
+
 /*void TEST(Swift) {
   rai::Configuration C("swift_test.g");
 
@@ -63,13 +65,13 @@ void TEST(CollisionTiming){
   //cout <<" SWIFT initialization time: " <<rai::timerRead(true) <<endl;
 
   rai::timerStart();
-  C.coll_fcl();
+  C.coll_engine();
   cout <<" FCL initialization time: " <<rai::timerRead(true) <<endl;
 
   arr q0,q;
   q0 = C.getJointState();
   rai::timerStart();
-  for(uint t=0;t<3;t++){
+  for(uint t=0;t<10;t++){
     for(rai::Frame *a:C.frames){
       a->setPose(rai::Transformation().setRandom());
       a->set_X()->pos.z += 1.;
@@ -93,10 +95,11 @@ void TEST(CollisionTiming){
     cout <<"FCL:" <<endl;
     cout <<"#proxies: " <<C.proxies.N <<endl; //this also calls pair collisions!!
     cout <<"time: " <<rai::timerRead(true) <<endl;
+    // C.view(interactive, "FCL result");
     cout <<"total penetration: " <<C.coll_totalViolation() <<endl; //this also calls pair collisions!!
     cout <<"time: " <<rai::timerRead(true) <<endl;
     C.coll_reportProxies(FILE("z.col"), 0.);
-    C.view(true, "FCL result");
+    C.view(interactive, "FCL result");
   }
   cout <<" query time: " <<rai::timerRead(true) <<"sec" <<endl;
 }

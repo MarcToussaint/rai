@@ -9,30 +9,42 @@
 #pragma once
 
 #include "../Kin/frame.h"
+#include "pairCollision.h"
 #include "../Kin/proxy.h"
 
 namespace rai {
 
-struct FclInterface {
-  struct FclInterface_self* self=0;
+struct CoalInterface {
+  struct CoalInterface_self* self=0;
   enum QueryMode { _broadPhaseOnly, _binaryCollisionSingle, _binaryCollisionAll, _distanceCutoff, _fine } mode;
 
   double cutoff=.01;
   uintAA excludes;
-  Array<Proxy> collisions; //return values!
+  // uintA collisions; //return values!
+  Array<Proxy> collisions;
   arr X_lastQuery;  //memory to check whether an object has moved in consecutive queries
 
-  FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes, QueryMode _mode);
-  ~FclInterface();
+  CoalInterface(const Array<Shape*>& geometries, const uintAA& _excludes, QueryMode _mode);
+  ~CoalInterface();
 
   void setActiveColliders(uintA geom_ids);
 
   void step(const arr& X);
 
  protected:
-  friend FclInterface_self;
+  friend CoalInterface_self;
   Proxy& addCollision(uint a, uint b);
 };
+
+//===========================================================================
+
+struct PairCollision_Coal : PairCollision, NonCopyable {
+
+  PairCollision_Coal(Shape* s1, Shape* s2,
+                     const rai::Transformation& t1, const rai::Transformation& t2,
+                     double _rad1=0., double _rad2=0.);
+};
+
 
 }
 
