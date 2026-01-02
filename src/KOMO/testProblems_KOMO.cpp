@@ -198,7 +198,10 @@ shared_ptr<KOMO> problem_StableSphere(){
 //===========================================================================
 
 StringA rai::get_NLP_Problem_names(){
-  static StringA names = {"quadratic", "RastriginSOS", "Modes", "Wedge", "HalfCircle", "LinearProgram", "IK", "IKobstacle", "IKtorus", "PushToReach", "StableSphere", "SpherePacking", "MinimalConvexCore"};
+  static StringA names = {"square", "Rugged", "Rastrigin", "Rosenbrock", "Ackley", "Himmelblau",
+                          "Box", "Modes", "Wedge", "HalfCircle", "LinearProgram",
+                          "IK", "IKobstacle", "IKtorus", "PushToReach", "StableSphere",
+                          "SpherePacking", "MinimalConvexCore"};
   return names;
 }
 
@@ -221,11 +224,13 @@ std::shared_ptr<NLP> rai::make_NLP_Problem(str problem){
 
   std::shared_ptr<NLP> nlp;
 
-  if(problem == "square") nlp = make_shared<NLP_Squared>(dim, 1.);
-  else if(problem == "Rugged") nlp = make_shared<NLP_Rugged>(dim);
-  else if(problem == "Rastrigin") nlp = make_shared<NLP_Rosenbrock>(dim);
-  else if(problem == "Rosenbrock") nlp = make_shared<NLP_Rosenbrock>(dim);
+  if(problem == "square") nlp = make_shared<NLP_Squared>();
+  else if(problem == "Rugged") nlp = make_shared<NLP_Rugged>();
+  else if(problem == "Rastrigin") nlp = make_shared<NLP_Rastrigin>();
   else if(problem == "RastriginSOS") nlp = make_shared<NLP_RastriginSOS>();
+  else if(problem == "Rosenbrock") nlp = make_shared<NLP_Rosenbrock>();
+  else if(problem == "Ackley") nlp = make_shared<NLP_Ackley>();
+  else if(problem == "Himmelblau") nlp = make_shared<NLP_Himmelblau>();
 
   else if(problem == "Box") nlp = make_shared<BoxNLP>();
   else if(problem == "Modes") nlp = make_shared<ModesNLP>();
@@ -380,6 +385,7 @@ void SpherePacking::evaluate(arr& phi, arr& J, const arr& _x){
 
 void SpherePacking::report(std::ostream& os, int verbose, const char* msg){
   // NLP::report(os, verbose, msg);
+  if(!x.N) x = getInitializationSample();
   x.reshape(n, 3);
   os <<"SpherePacking problem" <<endl;
   if(!disp.frames.N){
@@ -419,8 +425,7 @@ MinimalConvexCore::MinimalConvexCore(const arr& X, double radius) : radius(radiu
   featureTypes.resize(M.V.d0+1+M.V.N) = OT_ineq;
   featureTypes(0) = OT_f;
   for(uint i=0;i<M.V.N;i++) featureTypes(M.V.d0+1+i)= OT_sos;
-  // bounds.setBlockVector(min(m0.V,0), max(m0.V,0));
-  // bounds.reshape()
+  bounds = (repmat(~min(M.V,0), M.V.d0,1), repmat(~max(M.V,0), M.V.d0,1)).reshape(2, -1);
 }
 
 arr MinimalConvexCore::getInitializationSample(){
@@ -516,6 +521,7 @@ void MinimalConvexCore::report(ostream& os, int verbose, const char* msg){
   // gl.update();
 
   // NLP::report(os, verbose, msg);
+  if(!x.N) x = getInitializationSample();
   x.reshape(M.V.d0, 3);
   os <<"MinimalConvexCore problem" <<endl;
   disp.clear();

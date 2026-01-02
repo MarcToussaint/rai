@@ -35,8 +35,8 @@ struct ConfigurationViewer : RenderData {
   int view_play(bool watch=true, double delay=1., str saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
 
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
-  byteA getRgb();
-  floatA getDepth();
+  byteA getRgb(bool _nonThreaded=true);
+  floatA getDepth(bool _nonThreaded=true);
   void savePng(str saveVideoPath="z.vid/", int count=-1);
 
   void raiseWindow();

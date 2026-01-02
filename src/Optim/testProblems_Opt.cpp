@@ -48,9 +48,15 @@ template<> const char* rai::Enum<BenchmarkSymbol>::names []= {
 
 //===========================================================================
 
+NLP_Rosenbrock::NLP_Rosenbrock() {
+  dimension = dim;
+  bounds = (consts(-2., dim), consts(2., dim)).reshape(2,dim);
+}
+
 double NLP_Rosenbrock::f(arr& g, arr& H, const arr& x) {
+  double a=1., b=100.;
   double f=0.;
-  for(uint i=1; i<x.N; i++) f += rai::sqr(x(i)-rai::sqr(x(i-1))) + .01*rai::sqr(1-x(i-1));
+  for(uint i=1; i<x.N; i++) f += rai::sqr(x(i)-rai::sqr(x(i-1))) + .01*rai::sqr(1.-x(i-1));
 //  f = ::log(1.+f);
   if(!!g) {
     g.resize(x.N).setZero();
@@ -80,17 +86,79 @@ double NLP_Rosenbrock::f(arr& g, arr& H, const arr& x) {
 
 //===========================================================================
 
+NLP_Rastrigin::NLP_Rastrigin() {
+  dimension = dim;
+  bounds = (consts(-5.12, dim), consts(5.12, dim)).reshape(2,dim);
+}
+
 double NLP_Rastrigin::f(arr& g, arr& H, const arr& x) {
-  double A=.5, f=A*x.N;
-  for(uint i=0; i<x.N; i++) f += x(i)*x(i) - A*::cos(10.*x(i));
+  double f=A*x.N;
+  for(uint i=0; i<x.N; i++) f += x(i)*x(i) - A*::cos(RAI_2PI*x(i));
   if(!!g) {
     g.resize(x.N);
-    for(uint i=0; i<x.N; i++) g(i) = 2*x(i) + 10.*A*::sin(10.*x(i));
+    for(uint i=0; i<x.N; i++) g(i) = 2.*x(i) + RAI_2PI*A*::sin(RAI_2PI*x(i));
   }
   if(!!H) {
     H.resize(x.N, x.N).setZero();
-    for(uint i=0; i<x.N; i++) H(i, i) = 2 + 100.*A*::cos(10.*x(i));
+    for(uint i=0; i<x.N; i++) H(i, i) = 2. + RAI_2PI*RAI_2PI*A*::cos(RAI_2PI*x(i));
   }
+  return f;
+}
+
+//===========================================================================
+
+NLP_RastriginSOS::NLP_RastriginSOS() {
+  dimension = 2;
+  bounds = arr{{2,2}, {-2., -2., 2., 2.}};
+  featureTypes = rai::consts<ObjectiveType>(OT_sos, 4);
+}
+
+void NLP_RastriginSOS::evaluate(arr& phi, arr& J, const arr& x) {
+  CHECK_EQ(x.N, 2, "");
+  phi.resize(4);
+  phi(0) = sin(a*x(0));
+  phi(1) = sin(a*condition*x(1));
+  phi(2) = 2.*x(0);
+  phi(3) = 2.*condition*x(1);
+  if(!!J) {
+    J.resize(4, 2);
+    J.setZero();
+    J(0, 0) = cos(a*x(0))*a;
+    J(1, 1) = cos(a*condition*x(1))*a*condition;
+    J(2, 0) = 2.;
+    J(3, 1) = 2.*condition;
+  }
+}
+
+//===========================================================================
+
+NLP_Ackley::NLP_Ackley() {
+  dimension = dim;
+  bounds = (consts(-2., dim), consts(2., dim)).reshape(2,dim);
+}
+
+double NLP_Ackley::f(arr& g, arr& H, const arr& x) {
+  double a=20., b=0.2, c = RAI_2PI, d=x.N;
+  double C=0;
+  for(uint i=0;i<x.N;i++) C += ::cos(c*x.elem(i));
+  double f = -a * ::exp( -b * ::sqrt(sumOfSqr(x)/d) ) - ::exp( C/d ) + a + ::exp(1);
+  if(!!g) g.clear();
+  if(!!H) H.clear();
+  return f;
+}
+
+//===========================================================================
+
+NLP_Himmelblau::NLP_Himmelblau(){
+  dimension = 2;
+  bounds = (consts(-5., dim), consts(5., dim)).reshape(2,dim);
+}
+
+double NLP_Himmelblau::f(arr& g, arr& H, const arr& _x){
+  double x = _x.elem(0), y = _x.elem(1);
+  double f = rai::sqr(x*x+y-11) + rai::sqr(x+y*y-7);
+  if(!!g) g.clear();
+  if(!!H) H.clear();
   return f;
 }
 
@@ -161,8 +229,8 @@ struct _ChoiceFunction : ScalarFunction {
       case sum: f = _SumFunction().f(g, H, y); break;
       case square: f = _SquareFunction().f(g, H, y); break;
       case hole: f = _HoleFunction().f(g, H, y); break;
-      case rosenbrock: f = NLP_Rosenbrock(y.N).f(g, H, y); break;
-      case rastrigin: f = NLP_Rastrigin(y.N).f(g, H, y); break;
+      case rosenbrock: f = NLP_Rosenbrock().f(g, H, y); break;
+      case rastrigin: f = NLP_Rastrigin().f(g, H, y); break;
       default: NIY;
     }
     if(!!g) g = ~C * g;
@@ -183,7 +251,7 @@ void generateConditionedRandomProjection(arr& M, uint n, double condition) {
 
 //===========================================================================
 
-NLP_Squared::NLP_Squared(uint dim, double condition, bool random) {
+NLP_Squared::NLP_Squared() {
   dimension = dim;
   bounds = (consts(-2., dim), consts(2., dim)).reshape(2,dim);
   featureTypes = rai::consts<ObjectiveType>(OT_sos, dim);
@@ -221,7 +289,7 @@ NLP_Squared::NLP_Squared(uint dim, double condition, bool random) {
 
 //===========================================================================
 
-NLP_Rugged::NLP_Rugged(uint dim, bool sos, uint num_points, int num_features){
+NLP_Rugged::NLP_Rugged(){
   dimension = dim;
   featureTypes = rai::consts((sos?OT_sos:OT_f), num_features);
   bounds = (consts(-1., dimension), consts(1., dimension)). reshape(2,-1);
@@ -427,19 +495,18 @@ void ChoiceConstraintFunction::getFHessian(arr& H, const arr& x) {
 
 std::shared_ptr<NLP> getBenchmarkFromCfg() {
   rai::Enum<BenchmarkSymbol> bs(rai::getParameter<rai::String>("benchmark"));
-  uint dim = rai::getParameter<uint>("benchmark/dim", 2);
+  // uint dim = rai::getParameter<uint>("problem/dim", 2);
   // double forsyth = rai::getParameter<double>("benchmark/forsyth", -1.);
-  double condition = rai::getParameter<double>("benchmark/condition", 10.);
+  // double condition = rai::getParameter<double>("problem/condition", 10.);
 
   //-- unconstrained problems
 
   {
     shared_ptr<NLP> nlp;
 
-    if(bs==BS_Rosenbrock) nlp = make_shared<NLP_Rosenbrock>(dim);
-    else if(bs==BS_Rastrigin) nlp = make_shared<NLP_Rastrigin>(dim);
-    else if(bs==BS_Square) nlp = make_shared<NLP_Squared>(dim, condition, false);
-    else if(bs==BS_RandomSquared) nlp = make_shared<NLP_Squared>(dim, condition, true);
+    if(bs==BS_Rosenbrock) nlp = make_shared<NLP_Rosenbrock>();
+    else if(bs==BS_Rastrigin) nlp = make_shared<NLP_Rastrigin>();
+    else if(bs==BS_Square) nlp = make_shared<NLP_Squared>();
     else if(bs==BS_RastriginSOS) nlp = make_shared<NLP_RastriginSOS>();
 
     if(nlp) {
@@ -454,9 +521,9 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
 
   std::shared_ptr<NLP> nlp;
 
-  if(bs==BS_RandomLP) nlp = make_shared<NLP_RandomLP>(dim);
-  else if(bs==BS_Square) nlp = make_shared<NLP_Squared>(dim, condition, false);
-  else if(bs==BS_RandomSquared) nlp = make_shared<NLP_Squared>(dim, condition, true);
+  if(bs==BS_RandomLP) nlp = make_shared<NLP_RandomLP>();
+  else if(bs==BS_Square) nlp = make_shared<NLP_Squared>();
+  else if(bs==BS_RandomSquared) nlp = make_shared<NLP_Squared>();
   else if(bs==BS_RastriginSOS) nlp = make_shared<NLP_RastriginSOS>();
   else if(bs==BS_Wedge) nlp = make_shared<NLP_Wedge>();
   else if(bs==BS_HalfCircle) nlp = make_shared<NLP_HalfCircle>();
@@ -474,34 +541,7 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
   return nlp;
 }
 
-NLP_RastriginSOS::NLP_RastriginSOS() {
-  a = rai::getParameter<double>("Rastrigin/a", 4.);
-  condition = rai::getParameter<double>("benchmark/condition", 20.);
-
-  dimension=2;
-  featureTypes = rai::consts<ObjectiveType>(OT_sos, 4);
-
-  cout <<bounds <<endl;
-}
-
-void NLP_RastriginSOS::evaluate(arr& phi, arr& J, const arr& x) {
-  CHECK_EQ(x.N, 2, "");
-  phi.resize(4);
-  phi(0) = sin(a*x(0));
-  phi(1) = sin(a*condition*x(1));
-  phi(2) = 2.*x(0);
-  phi(3) = 2.*condition*x(1);
-  if(!!J) {
-    J.resize(4, 2);
-    J.setZero();
-    J(0, 0) = cos(a*x(0))*a;
-    J(1, 1) = cos(a*condition*x(1))*a*condition;
-    J(2, 0) = 2.;
-    J(3, 1) = 2.*condition;
-  }
-}
-
-NLP_RandomLP::NLP_RandomLP(uint dim) {
+NLP_RandomLP::NLP_RandomLP() {
   dimension = dim;
 
   bounds.resize(2, dimension);

@@ -93,15 +93,13 @@ struct GlfwSingleton : Thread {
     mutex.lock(RAI_HERE);
     glfwPollEvents();
     for(OpenGL* gl: glwins) if(!gl->offscreen && gl->window && gl->needsRedraw) {
-        gl->isUpdating.setStatus(1);
-
         glfwMakeContextCurrent(gl->window);
         gl->Render(gl->width, gl->height);
         glfwSwapBuffers(gl->window);
         glfwMakeContextCurrent(nullptr);
 
         gl->needsRedraw=false;
-        gl->isUpdating.setStatus(0);
+        gl->needsUpdate.setStatus(0);
       }
     mutex.unlock();
   }
@@ -160,7 +158,7 @@ struct GlfwSingleton : Thread {
 //    OpenGL *gl=(OpenGL*)glfwSetWindowShouldClose(window, GLFW_FALSE);
 //    gl->WindowStatus(0);
     glfwHideWindow(window);
-    gl->watching.setStatus(0);
+    gl->isWaiting.setStatus(0);
 //    gl->closeWindow();
   }
 
@@ -243,6 +241,7 @@ void OpenGL::openWindow() {
 
     _glfw->glwins.append(this);
     needsRedraw = true;
+    needsUpdate.setStatus(1);
     _glfw->mutex.unlock();
   } else {
     auto _glfw = glfwSingleton();
@@ -260,6 +259,7 @@ void OpenGL::closeWindow() {
 //    watching.setStatus(0);
     _glfw->mutex.lock(RAI_HERE);
     needsRedraw = false;
+    needsUpdate.setStatus(0);
     _glfw->glwins.removeValue(this);
     glfwGetWindowPos(window, &_glfw->newWinX, &_glfw->newWinY);
     glfwDestroyWindow(window);
@@ -305,7 +305,8 @@ void OpenGL::endContext(bool fromWithinCallback) {
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
   auto _glfw = glfwSingleton();
   if(!fromWithinCallback) _glfw->mutex.lock(RAI_HERE);
-  if(!needsRedraw) needsRedraw=true;
+  needsRedraw=true;
+  needsUpdate.setStatus(1);
   if(!fromWithinCallback) _glfw->mutex.unlock();
 }
 
@@ -606,8 +607,8 @@ int OpenGL::update(bool wait, bool nonThreaded) {
     if(offscreen) {
       LOG(0) <<"can't pause an offscreen context";
     }else{
-      watching.setStatus(1);
-      watching.waitForStatusEq(0);
+      isWaiting.setStatus(1);
+      isWaiting.waitForStatusEq(0);
     }
   }
   return pressedkey;
@@ -784,7 +785,7 @@ void OpenGL::Key(int key, int mods, bool _keyIsDown) {
   if(key==263 && keyIsDown){ scrollCounter++; pressedkey=0; postRedrawEvent(true); }
   if(key==262 && keyIsDown){ scrollCounter--; pressedkey=0; postRedrawEvent(true); }
 
-  if(keyIsDown && !modifiers && pressedkey && pressedkey!='%') watching.setStatus(0);
+  if(keyIsDown && !modifiers && pressedkey && pressedkey!='%') isWaiting.setStatus(0);
 }
 
 void OpenGL::MouseButton(int button, int buttonIsUp, int _x, int _y, int mods) {

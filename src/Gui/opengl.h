@@ -144,8 +144,8 @@ struct OpenGL {
   uint offscreenFramebuffer=0;
   uint offscreenColor=0;
   uint offscreenDepth=0;
-  Signaler isUpdating;
-  Signaler watching;
+  Signaler needsUpdate;
+  Signaler isWaiting;
   rai::OpenGLDrawOptions drawOptions;
   int selectID=-1;
   std::shared_ptr<rai::RenderData> _data;

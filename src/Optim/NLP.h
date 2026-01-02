@@ -38,6 +38,8 @@ struct NLP : rai::NonCopyable {
   ObjectiveTypeA featureTypes;
   arr bounds;
 
+  NLP *derived=nullptr; //internal use: this may point to derived problems, such as the AugLag
+
   virtual ~NLP() {}
 
   void copySignature(const NLP& P) {
@@ -89,7 +91,7 @@ struct NLP_Scalar : NLP {
     x = _x;
     double f_x = f(J, H_x, x);
     phi.resize(1) = f_x;
-    if(!!J) J.reshape(1, x.N);
+    if(!!J && J.N) J.reshape(1, x.N);
   }
   void getFHessian(arr& H, const arr& _x) {  CHECK_EQ(_x, x, "");  H = H_x;  }
 };
@@ -132,6 +134,7 @@ struct NLP_Traced : NLP {
 
   NLP_Traced(const shared_ptr<NLP>& P) : P(P) {
     copySignature(*P);
+    P->derived=this;
   }
 
   void setTracing(bool _trace_x, bool _trace_costs, bool _trace_phi, bool _trace_J) {

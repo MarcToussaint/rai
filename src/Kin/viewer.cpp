@@ -395,16 +395,33 @@ Camera& ConfigurationViewer::displayCamera() {
   return gl->camera;
 }
 
-byteA ConfigurationViewer::getRgb() {
-  ensure_gl();
-  byteA image = gl->captureImage;
+byteA ConfigurationViewer::getRgb(bool _nonThreaded) {
+  ensure_gl().needsUpdate.waitForStatusEq(0);
+
+  // if(_nonThreaded && !nonThreaded){
+  //   gl->update(false, true);
+  //   nonThreaded=true;
+  // }
+  byteA image;
+  {
+    auto lock = gl->dataLock(RAI_HERE);
+    image = gl->captureImage;
+  }
   flip_image(image);
   return image;
 }
 
-floatA ConfigurationViewer::getDepth() {
-  ensure_gl();
-  floatA depth = gl->captureDepth;
+floatA ConfigurationViewer::getDepth(bool _nonThreaded) {
+  ensure_gl().needsUpdate.waitForStatusEq(0);
+  // if(_nonThreaded && !nonThreaded){
+  //   gl->update(false, true);
+  //   nonThreaded=true;
+  // }
+  floatA depth;
+  {
+    auto lock = gl->dataLock(RAI_HERE);
+    depth = gl->captureDepth;
+  }
   flip_image(depth);
   for(float& d:depth) {
     if(d==1.f || d==0.f) d=-1.f;

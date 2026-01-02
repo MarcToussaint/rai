@@ -137,7 +137,7 @@ void KOMO_NLP::getFHessian(arr& H, const arr& x) {
 }
 
 void KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
-//  komo.reportProblem(os);
+  if(verbose>0) os <<komo.report(true, false);
   if(verbose>4 && komo.featureValues.N) os <<komo.report(false, true, verbose>6);
   if(verbose>2) komo.view(verbose>3, STRING("KOMO nlp report - " <<msg));
 //  if(verbose>4) komo.view_play(false);

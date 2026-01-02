@@ -46,8 +46,8 @@ void init_Config(pybind11::module& m) {
 
       .def("visualsOnly", &rai::ConfigurationViewer::visualsOnly, "display only visuals (no markers/transparent/text)", pybind11::arg("_visualsOnly")=true)
 
-      .def("getRgb", &rai::ConfigurationViewer::getRgb, "return the view's rgb image")
-      .def("getDepth", &rai::ConfigurationViewer::getDepth, "return the view's depth array (scaled to meters)")
+      .def("getRgb", &rai::ConfigurationViewer::getRgb, "return the view's rgb image", pybind11::arg("nonThreaded")=true)
+      .def("getDepth", &rai::ConfigurationViewer::getDepth, "return the view's depth array (scaled to meters)", pybind11::arg("nonThreaded")=true)
       .def("savePng", &rai::ConfigurationViewer::savePng, "saves a png image of the current view, numbered with a global counter, with the intention to make a video", pybind11::arg("saveVideoPath")="z.vid/", pybind11::arg("count")=-1)
 
       .def("raiseWindow", &rai::ConfigurationViewer::raiseWindow, "raise the window")
