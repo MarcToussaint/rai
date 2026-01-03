@@ -10,4 +10,4 @@ box2 (table){
   joint:rigid
 }
 
-tray (table){ shape:ssBox, Q:[-.6 .1 .07], size: [.4 .4 .04 .02], color: [.7] }
+tray (table){ shape:ssBox, Q:[-.6 .1 .07], size: [.4 .4 .04 .019], color: [.7] }

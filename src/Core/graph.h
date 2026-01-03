@@ -464,8 +464,8 @@ inline BracketOp Graph::operator[](const char* key) {
 template<class T> T* Graph::find(const char* key) const {
   Node* n = findNode(key);
   if(n){
-    const Node_typed<T>* typed = dynamic_cast<const Node_typed<T>*>(this);
-    if(typed) return (T*)&typed->value;
+    Node_typed<T>* typed = dynamic_cast<Node_typed<T>*>(n);
+    if(typed) return &(typed->value);
   }
   return nullptr;
 }

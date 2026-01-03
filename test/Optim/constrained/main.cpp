@@ -67,7 +67,7 @@ void TEST(CoveringSphere){
 //===========================================================================
 
 void TEST(NLP){
-  auto P = make_shared<NLP_TrivialSquareFunction>(2, 1., 2.);
+  auto P = make_shared<NLP_Squared>();
 
   arr x, phi;
   x = P->getInitializationSample();

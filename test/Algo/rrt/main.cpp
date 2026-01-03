@@ -105,8 +105,8 @@ void testKinematics(bool withCollisions, uint N=100000){
   arr q = C.getJointState();
 
   if(withCollisions){
-    C.coll_fcl()->mode = rai::FclInterface::_binaryCollisionAll;
-//    C.fcl()->mode = rai::FclInterface::_distanceCutoff;  C.fcl()->cutoff = .0;
+    C.coll_fcl()->mode = rai::_binaryCollisionAll;
+//    C.fcl()->mode = rai::_distanceCutoff;  C.fcl()->cutoff = .0;
   }
 
   double time = -rai::cpuTime();

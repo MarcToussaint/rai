@@ -74,14 +74,15 @@ void FOL_World::init(const Graph& _KB) {
     Subgoal_literal = KB.add<bool>("tmp", true)->setParents({Subgoal_keyword});
   }
 
-  Graph* params = KB.find<Graph>("FOL_World");
-  if(params) {
-    hasWait = params->get<bool>("hasWait", hasWait);
-    gamma = params->get<double>("gamma", gamma);
-    stepCost = params->get<double>("stepCost", stepCost);
-    timeCost = params->get<double>("timeCost", timeCost);
-    deadEndCost = params->get<double>("deadEndCost", deadEndCost);
-    maxHorizon = (uint)params->get<double>("maxHorizon", maxHorizon);
+  { auto params = KB.find<Graph>("FOL_World");
+    if(params) {
+      hasWait = params->get<bool>("hasWait", hasWait);
+      gamma = params->get<double>("gamma", gamma);
+      stepCost = params->get<double>("stepCost", stepCost);
+      timeCost = params->get<double>("timeCost", timeCost);
+      deadEndCost = params->get<double>("deadEndCost", deadEndCost);
+      maxHorizon = (uint)params->get<double>("maxHorizon", maxHorizon);
+    }
   }
 
   if(verbose>1) {

@@ -1379,10 +1379,9 @@ Graph KOMO::report(bool specs, bool listObjectives, bool plotOverTime) {
   bool sortByError=true;
   if(featureValues.N && listObjectives && sortByError){
     std::sort(G.p, G.p+G.N, [](Node* a, Node *b){
-      double* A = a->as<Graph>().find<double>("err");
-      double* B = b->as<Graph>().find<double>("err");
-      if(!A || !B) return true;
-      return *A < *B;
+      double A = a->as<Graph>().get<double>("err");
+      double B = b->as<Graph>().get<double>("err");
+      return A < B;
     });
     G.index();
   }
@@ -1624,7 +1623,7 @@ void KOMO::getSubProblem(uint phase, Configuration& C, arr& q0, arr& q1) {
       d->setActive(false);
     }
     if(d->frame->ats) {
-      bool* activeKey = d->frame->ats->find<bool>("joint_active");
+      auto activeKey = d->frame->ats->find<bool>("joint_active");
       if(activeKey && !(*activeKey)) d->setActive(false);
     }
   }

@@ -28,7 +28,7 @@ b0: false # 4 boolean nodes with keys 'b0', 'b1', 'b2', 'b3'
 b1!:
 b2():
 b3: {} # empty dict
-k: { a, b: 0.2, d!, x: "hallo",     # sub-Graph with 6 nodes
+k: { a, b(b3): 0.2, d!, x: "hallo",     # sub-Graph with 6 nodes
   y,
   z: filename.org, x }
 
@@ -38,8 +38,15 @@ k: { a, b: 0.2, d!, x: "hallo",     # sub-Graph with 6 nodes
 # this example will modify/append the respective attributes of k
 Edit k: { y: false, z: otherString, b: 7, c: newAttribute }
 
+# prefixing
+Prefix: pre_
+toBePrefixed: "hello"
+
 # including
 Include: <example_include.g>   # first creates a normal FileToken node then opens and includes the file directly
+
+# stop prefixing
+Prefix: false
 
 ## strange notations
 a():       # key=a, value=true, parents=none

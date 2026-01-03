@@ -185,14 +185,13 @@ void RTControllerSimulation::open() {
   limits.resize(world->q.N, 5).setZero();
   rai::Joint* j;
   for(rai::Frame* f: world->frames) if((j=f->joint) && j->dim>0) {
-      arr* info;
-      info = f->ats->find<arr>("gains");  if(info) {
+      if(auto info = f->ats->find<arr>("gains")) {
         for(uint i=0; i<j->dim; i++) { Kp_base(j->qIndex+i)=info->elem(0); Kd_base(j->qIndex+i)=info->elem(1); }
       }
-      info = f->ats->find<arr>("limits");  if(info) {
+      if(auto info = f->ats->find<arr>("limits")) {
         for(uint i=0; i<j->dim; i++) { limits(j->qIndex+i, 0)=info->elem(0); limits(j->qIndex+i, 1)=info->elem(1); }
       }
-      info = f->ats->find<arr>("ctrl_limits");  if(info) {
+      if(auto info = f->ats->find<arr>("ctrl_limits")) {
         for(uint i=0; i<j->dim; i++) { limits(j->qIndex+i, 2)=info->elem(0); limits(j->qIndex+i, 3)=info->elem(1); limits(j->qIndex+i, 4)=info->elem(2); }
       }
     }

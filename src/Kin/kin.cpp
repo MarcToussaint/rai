@@ -234,9 +234,11 @@ Frame* Configuration::addFile(const char* filename, const char* namePrefix) {
   if(namePrefix && namePrefix[0]) {
     for(Node* n:G) {
       n->key.prepend(namePrefix);
-      rai::String* tmp=0;
-      if(n->is<Graph>()) tmp=n->graph().find<rai::String>("mimic");
-      if(tmp) tmp->prepend(namePrefix);
+      if(n->is<Graph>()){
+        if(Node *m=n->graph().findNode("mimic")){
+          m->as<String>().prepend(namePrefix);
+        }
+      }
     }
   }
   addDict(G);
@@ -1229,7 +1231,7 @@ void Configuration::reconnectShapesToParents() {
       if(!f->parent->shape && f->get_Q().isZero()){
         f->parent->shape = f->shape;
         if(f->ats){
-          FileToken *fil=f->ats->find<FileToken>("mesh");
+          auto fil=f->ats->find<FileToken>("mesh");
           if(fil) f->parent->getAts().add("mesh", *fil);
         }
         f->shape.reset();

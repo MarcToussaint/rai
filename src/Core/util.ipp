@@ -71,13 +71,7 @@ template<class T> bool checkParameter(const char* tag) {
   return getParameterBase(x, tag, true, (T*)NULL);
 }
 
-template<class T> void setParameter(const char* key, const T& x) {
-  T* y = params()->find<T>(key);
-  if(y) *y = x;
-  else {
-    params()->add<T>(key, x);
-  }
-}
+template<class T> void setParameter(const char* key, const T& x) { params()->set(key, x); }
 
 }//namespace
 

@@ -1830,7 +1830,6 @@ void rai::Joint::flip() {
 }
 
 void rai::Joint::read(const Graph& ats) {
-  double d=0.;
   rai::String str;
 
   rai::Transformation A=0, B=0;
@@ -1885,18 +1884,17 @@ void rai::Joint::read(const Graph& ats) {
   dim = getDimFromType();
   isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_trans3) || type==JT_circleZ || type==JT_quatBall);
 
-  if(ats.get(d, "q")) {
-    if(!dim) { //HACK convention
-      frame->set_Q()->rot.setRad(d*scale, 1., 0., 0.);
-    } else {
-      CHECK(dim!=UINT_MAX, "setting q (in config file) for 0-dim joint");
-      CHECK(dim, "setting q (in config file) for 0-dim joint");
-      q0 = consts<double>(d, dim);
+  if(Node* n = ats.findNode("q")) {
+    if(n->is<arr>()){
+      q0 = n->as<arr>();
+      CHECK_EQ(q0.N, dim, "given q (in config file) does not match dim");
+      setDofs(q0, 0);
+    }else{
+      CHECK(dim!=UINT_MAX, "setting q (in config file) for 0-dim joint '" <<frame->name <<"' makes no sense");
+      // CHECK(dim, "setting q (in config file) for 0-dim joint '" <<frame->name <<"' makes no sense");
+      q0 = consts<double>(n->asFlex<double>(), dim);
       setDofs(q0, 0);
     }
-  } else if(ats.get(q0, "q")) {
-    CHECK_EQ(q0.N, dim, "given q (in config file) does not match dim");
-    setDofs(q0, 0);
   } else {
     //    link->Q.setZero();
     q0 = calcDofsFromConfig();
@@ -2049,7 +2047,7 @@ void rai::Shape::read(Frame& frame) {
     }
   }
 
-  if(ats.findNode("contact")) cont = ats.get<int>("contact");
+  if(Node* n = ats.findNode("contact")) cont = n->asFlex<int>();
 
   createMeshes(frame.name);
 

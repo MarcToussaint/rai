@@ -623,7 +623,8 @@ void readNode_postprocess(Node* n, str& namePrefix, bool parseInfo){
       }
     }
   }
-  if(n->is<bool>() && n->key(-1)=='!'){
+
+  if(n->is<bool>() && n->key.N && n->key(-1)=='!'){
     n->as<bool>() = false;
     n->key.resize(n->key.N-1, true);
   }
@@ -639,9 +640,11 @@ void readNode_postprocess(Node* n, str& namePrefix, bool parseInfo){
     if(namePrefix.N) { //prepend a naming prefix to all nodes just read
       for(uint i=Nbefore; i<G.N; i++) {
         G.elem(i)->key.prepend(namePrefix);
-        rai::String* tmp=0;
-        if(G.elem(i)->is<Graph>()) tmp=G.elem(i)->graph().find<rai::String>("mimic");
-        if(tmp) tmp->prepend(namePrefix);
+        if(G.elem(i)->is<Graph>()){
+          if(Node *m = G.elem(i)->graph().findNode("mimic")){
+            m->as<rai::String>().prepend(namePrefix);
+          }
+        }
       }
       namePrefix.clear();
     }
@@ -695,6 +698,9 @@ void readNode_postprocess(Node* n, str& namePrefix, bool parseInfo){
       n->key.replace(0, j, 0, 0);
     }
   }
+
+  //-- post processes: prepend namePrefix
+  if(n && namePrefix.N) n->key.prepend(namePrefix);
 }
 
 void readGraph_postprocess(Graph& G, uint Nbefore){
@@ -1022,11 +1028,11 @@ Node* readNode(Graph& G, std::istream& is, bool verbose, bool parseInfo) {
           }
           node = G.elem(-1);
         } break;
-        // case '(': { // set of parent nodes
-        //   NodeL par;
-        //   readNodeParents(*this, is, par, pinfo);
-        //   node = add<NodeL>(key,  par);
-        // } break;
+        case '(': { // set of nodes
+          str.read(is, "", ")", true);
+          NodeL par = getParentsFromTag(G, str);
+          node = G.add<NodeL>(key,  par);
+        } break;
         case '{': { // sub graph
           is.putback(c);
           Graph& subgraph = G.addSubgraph(key);
@@ -1535,9 +1541,9 @@ void Graph::sortByDotOrder() {
   uint it_COUNT=0;
   for(Node* it: list()) {
     if(it->is<Graph>()) {
-      double* order = it->graph().find<double>("dot_order");
+      auto order = it->graph().find<double>("dot_order");
       if(!order) { RAI_MSG("doesn't have dot_order attribute"); return; }
-      perm(it_COUNT++) = (uint)*order;
+      perm(it_COUNT++) = (uint)(*order);
     }
   }
   permuteInv(perm);
