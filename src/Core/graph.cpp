@@ -53,31 +53,6 @@ struct ParseInfo {
 };
 stdOutPipe(ParseInfo)
 
-//===========================================================================
-//
-// retrieving types
-//
-
-//-- query existing types
-inline Node* reg_findType(const char* key) {
-  NodeL types = params()->getNodesOfType<std::shared_ptr<Type>>();
-  for(Node* ti: types) {
-    if(String(ti->as<std::shared_ptr<Type>>()->typeId().name())==key) return ti;
-    if(ti->key==key) return ti;
-  }
-  return nullptr;
-}
-
-//===========================================================================
-//
-// read a value from a stream by looking up available registered types
-//
-
-inline Node* readTypeIntoNode(Graph& container, const char* key, std::istream& is) {
-  Node* ti = reg_findType(key);
-  if(ti) return ti->as<std::shared_ptr<Type>>()->readIntoNewNode(container, is);
-  return nullptr;
-}
 
 //===========================================================================
 //
@@ -241,8 +216,6 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
     os <<as<int>();
   } else if(is<uint>()) {
     os <<as<uint>();
-  } else if(is<Type*>()) {
-    as<Type*>()->write(os);
   } else {
     writeValue(os);
   }
@@ -1210,14 +1183,14 @@ struct LibYamlReadHelper{
   void _map(Graph& G){
     uint Nbefore = G.N;
     while(true) {
-      if (!yaml_parser_parse(&parser, &event)) HALT("Failed to parse event " <<event.type <<": " <<parser.problem);
+      if (!yaml_parser_parse(&parser, &event)) HALT("Failed to parse event " <<event.type <<": " <<parser.problem <<' ' <<parser.context <<" line: " <<parser.problem_mark.line << " col: " <<parser.problem_mark.column);
       if(event.type == YAML_MAPPING_END_EVENT){ yaml_event_delete(&event); break; }
 
       CHECK_EQ(event.type, YAML_SCALAR_EVENT, "")
       str key((char*)event.data.scalar.value);
       yaml_event_delete(&event);
 
-      if (!yaml_parser_parse(&parser, &event))  HALT("Failed to parse event " <<event.type <<": " <<parser.problem);
+      if (!yaml_parser_parse(&parser, &event))  HALT("Failed to parse event " <<event.type <<": " <<parser.problem <<' ' <<parser.context <<" line: " <<parser.problem_mark.line << " col: " <<parser.problem_mark.column);
       _value(G, key);
     }
     readGraph_postprocess(G, Nbefore);
@@ -1226,7 +1199,7 @@ struct LibYamlReadHelper{
   strA _seq(){
     strA S;
     while(true) {
-      if (!yaml_parser_parse(&parser, &event)) HALT("Failed to parse event " <<event.type <<": " <<parser.problem);
+      if (!yaml_parser_parse(&parser, &event)) HALT("Failed to parse event " <<event.type <<": " <<parser.problem <<parser.problem <<' ' <<parser.context <<" line: " <<parser.problem_mark.line << " col: " <<parser.problem_mark.column);
       if(event.type == YAML_SEQUENCE_END_EVENT){ yaml_event_delete(&event); break; }
 
       CHECK_EQ(event.type, YAML_SCALAR_EVENT, "")

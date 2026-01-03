@@ -533,25 +533,6 @@ struct CoutToken {
 struct Node;
 struct Graph;
 
-struct Type {
-  virtual ~Type() {}
-  virtual const std::type_info& typeId() const {NIY}
-  virtual struct Node* readIntoNewNode(struct Graph& container, std::istream&) const {NIY}
-  virtual void* newInstance() const {NIY}
-  void write(std::ostream& os) const {  os <<"Type '" <<typeId().name() <<"' ";  }
-  void read(std::istream& is) const {NIY}
-};
-stdPipes(Type)
-
-template<class T>
-struct Type_typed : Type {
-  virtual const std::type_info& typeId() const { return typeid(T); }
-  virtual void* newInstance() const { return new T(); }
-};
-
-inline bool operator!=(Type& t1, Type& t2) { return t1.typeId() != t2.typeId(); }
-inline bool operator==(Type& t1, Type& t2) { return t1.typeId() == t2.typeId(); }
-
 //===========================================================================
 //
 // initialization helpers

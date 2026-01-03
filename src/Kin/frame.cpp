@@ -425,7 +425,7 @@ bool transFromAts(rai::Transformation& X, const rai::Graph& ats, const char* key
   if(n->is<rai::String>()) X.read(n->as<rai::String>().resetIstream());
   else if(n->is<arr>()) X.set(n->as<arr>());
   else THROW("reading transformation from Node '" <<*n <<"' failed");
-  if(!X.isZero()) X.rot.normalize();
+  if(!X.rot.isZero) X.rot.normalize();
   return true;
 }
 
@@ -1842,10 +1842,9 @@ void rai::Joint::read(const Graph& ats) {
   transFromAts(B, ats, "post");
 
   //axis
-  arr axis;
-  if(ats.get(axis, "axis")) {
-    CHECK_EQ(axis.N, 3, "");
-    Vector ax(axis);
+  if(auto axis = ats.find<arr>("axis")) {
+    CHECK_EQ(axis->N, 3, "");
+    Vector ax(*axis);
     Transformation f;
     f.setZero();
     f.rot.setDiff(Vector_x, ax);
@@ -1867,13 +1866,9 @@ void rai::Joint::read(const Graph& ats) {
     frame->insertPreLink(A);
   }
 
-  Node* n;
-  if((n=ats.findNode("Q"))) {
-    if(n->is<String>()) frame->set_Q()->read(n->as<String>().resetIstream());
-    else if(n->is<arr>()) frame->set_Q()->set(n->as<arr>());
-    else NIY;
-    frame->set_Q()->rot.normalize();
-  }
+  Transformation tmp;
+  if(transFromAts(tmp, ats, "Q")) frame->set_Q() = tmp;
+
   ats.get(H, "ctrl_H");
   ats.get(scale, "joint_scale");
 
@@ -1986,28 +1981,16 @@ void rai::Shape::read(Frame& frame) {
   Graph& ats = frame.getAts();
   ats.get(size, "size");
 
-  if(ats.get(d, "shape"))        { type()=(ShapeType)(int)d;}
-  else if(ats.get(str, "shape")) { str>> type(); }
-  else if(ats.get(d, "type"))    { type()=(ShapeType)(int)d;}
-  else if(ats.get(str, "type"))  { str>> type(); }
+  if(ats.get(str, "shape")) { str>> type(); }
+  if(ats.get(str, "type"))  { str>> type(); }
 
-  if(ats.get(str, "mesh"))     { frame.setMeshFile(str); } //mesh().read(FILE(str), str.getLastN(3).p, str); }
-  else if(ats.get(fil, "mesh"))     { frame.setMeshFile(fil.fullPath()); }
-  // fil.cd_file();
-  // mesh().read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
-  // fil.cd_start();
-  // }
-
-  if(ats.get(str, "mesh_decomp")) { mesh().readH5(str, "decomp"); }
-  else if(ats.get(fil, "mesh_decomp")) { fil.cd_file(); mesh().readH5(fil.name, "decomp"); fil.cd_base(); }
-
-  if(ats.get(str, "mesh_points")) { mesh().readH5(str, "points"); }
-  else if(ats.get(fil, "mesh_points")) { fil.cd_file(); mesh().readH5(fil.name, "points"); fil.cd_base(); }
+  if(ats.get(fil, "mesh"))     { frame.setMeshFile(fil.fullPath()); }
+  if(ats.get(fil, "mesh_decomp")) { fil.cd_file(); mesh().readH5(fil.name, "decomp"); fil.cd_base(); }
+  if(ats.get(fil, "mesh_points")) { fil.cd_file(); mesh().readH5(fil.name, "points"); fil.cd_base(); }
 
   if(type()==rai::ST_mesh && !mesh().T.N) type()=rai::ST_pointCloud;
 
-  if(ats.get(str, "texture"))     { frame.setTextureFile(str); }
-  else if(ats.get(fil, "texture"))     {
+  if(ats.get(fil, "texture"))     {
     // fil.cd_file();
     frame.setTextureFile(fil.name);
     // mesh().texImg(fil.name).img = rai::loadImage(fil.name);
@@ -2026,8 +2009,7 @@ void rai::Shape::read(Frame& frame) {
     sscCore() = x;
   }
 
-  if(ats.get(str, "sdf"))      { sdf().read(FILE(str)); }
-  else if(ats.get(fil, "sdf")) { sdf().read(fil); }
+  if(ats.get(fil, "sdf")) { sdf().read(fil); }
   if(_sdf) {
     if(size.N) {
       if(size.N==1) { sdf().lo *= size.elem(); sdf().up *= size.elem(); }
@@ -2067,11 +2049,7 @@ void rai::Shape::read(Frame& frame) {
     }
   }
 
-  if(ats.findNode("contact")) {
-    double d;
-    if(ats.get(d, "contact")) cont = (char)d;
-    else cont=1;
-  }
+  if(ats.findNode("contact")) cont = ats.get<int>("contact");
 
   createMeshes(frame.name);
 
@@ -2389,18 +2367,16 @@ void rai::Inertia::write(Graph& g) {
 }
 
 void rai::Inertia::read(const Graph& G) {
-  double d;
-  if(G.get(d, "mass")) {
-    mass = d;
+  if(Node *n = G.findNode("mass")) {
+    mass = n->as<double>();
     // matrix.setId();
     // matrix *= .2*d;
     if(frame.shape && frame.shape->type()!=ST_marker) defaultInertiaByShape();
   }
-  if(G.findNode("inertia")) {
-    arr& I = G.get<arr>("inertia");
-    if(I.N==3) matrix.setDiag(I);
-    else if(I.N==6) matrix.setSymmetric(I);
-    else { CHECK_EQ(I.N, 9, "") matrix.set(I.p); }
+  if(auto I = G.find<arr>("inertia")) {
+    if(I->N==3) matrix.setDiag(*I);
+    else if(I->N==6) matrix.setSymmetric(*I);
+    else { CHECK_EQ(I->N, 9, "") matrix.set(I->p); }
   }
 }
 

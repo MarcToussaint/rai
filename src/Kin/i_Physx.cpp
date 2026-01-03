@@ -708,7 +708,7 @@ void PhysXInterface_self::prepareLinkShapes(FrameL& shapes, rai::BodyType& type,
     for(rai::Frame* ch: sub) {
       if(ch->shape && ch->getShape().type()!=rai::ST_marker
           && ch->getShape().type()!=rai::ST_camera){ //is a candidate
-        if(ch->ats && ch->ats->find<bool>("simulate")){
+        if(ch->ats && ch->ats->findNode("simulate")){
           if(ch->ats->get<bool>("simulate")) shapes.append(ch);
         }else{
           if(ch->getShape().alpha()==1.) shapes.append(ch);

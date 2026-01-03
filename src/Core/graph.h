@@ -55,15 +55,12 @@ struct Node {
   //-- get value
   template<class T> bool is() const { return type==typeid(T); }
   template<class T> T& as() { T* x=getValue<T>(); CHECK(x, "this node '" <<*this <<"' is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
-  template<class T> const T& as() const { const T* x=getValue<T>(); CHECK(x, "this node '" <<*this <<"'is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
+  template<class T> const T& as() const { const T* x=getValue<T>(); CHECK(x, "this node '" <<*this <<"' is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
+  template<class T> T asFlex() const;
   template<class T> T& asHard() { return ((Node_typed<T>*)(this))->value; }
 
   template<class T> T* getValue();    ///< query whether node type is equal to (or derived from) T, return the value if so
   template<class T> const T* getValue() const; ///< as above
-  template<class T> bool getFromInt(T& x) const; ///< return value = false means parsing object of type T from the double failed
-  template<class T> bool getFromDouble(T& x) const; ///< return value = false means parsing object of type T from the double failed
-  template<class T> bool getFromString(T& x) const; ///< return value = false means parsing object of type T from the string failed
-  template<class T> bool getFromArr(T& x) const; ///< return value = false means parsing object of type T from the arr failed
   bool isBoolAndTrue() const { if(type!=typeid(bool)) return false; return *getValue<bool>() == true; }
   bool isBoolAndFalse() const { if(type!=typeid(bool)) return false; return *getValue<bool>() == false; }
 
@@ -136,7 +133,7 @@ struct Graph : NodeL {
   NodeL findGraphNodesWithTag(const char* tag) const;
 
   //
-  template<class T> Node* set(const char* key, const T& x){ Node* n = findNodeOfType(typeid(T), key); if(n) n->as<T>()=x; else n=add<T>(key, x); return n; }
+  template<class T> Node* set(const char* key, const T& x){ Node* n = findNode(key); if(n && n->is<T>()) n->as<T>()=x; else{ if(n) delete n; n=add<T>(key, x); } return n; }
   Node* set(Node* _n){ Node* n = findNodeOfType(_n->type, _n->key); if(n) n->copyValue(_n); else n=_n->newClone(*this); return n; }
 
   //-- get nodes
@@ -154,14 +151,15 @@ struct Graph : NodeL {
   NodeL getAllNodesRecursively() const;
 
   //-- get values directly
-  template<class T> T* find(const char* key) const { Node* n = findNodeOfType(typeid(T), key); if(!n) return nullptr;  return n->getValue<T>(); }
+  template<class T> T* find(const char* key) const;
   template<class T> T& get(const char* key) const;
-  template<class T> const T& get(const char* key, const T& defaultValue) const;
+  template<class T> T get(const char* key, const T& defaultValue) const;
   template<class T> bool get(T& x, const char* key) const;
+  template<class T> T getFlex(const char* key) const;
   template<class T> T& getNew(const char* key);
 
   //-- get lists of all values of a certain type T (or derived from T)
-  template<class T> rai::Array<T*> getValuesOfType(const char* key=nullptr);
+  template<class T> Array<T*> getValuesOfType(const char* key=nullptr);
 
   //-- editing nodes
   Node* edit(Node* ed); ///< ed describes how another node should be edited; ed is removed after editing is done
@@ -343,17 +341,6 @@ Mutex::TypedToken<rai::Graph> params();
 Mutex::TypedToken<rai::Graph> assets();
 void initParameters(int _argc, char* _argv[], bool forceReload=false, bool verbose=true);
 
-//===========================================================================
-
-// registering a type that can parse io streams into a Node --
-// using this mechanism, a Graph can parse any type from files, when types
-// are registered
-template<class T>
-struct Type_typed_readable:Type_typed<T> {
-  virtual Node* readIntoNewNode(Graph& container, std::istream& is) const { Node_typed<T>* n = container.add<T>(T(0)); is >>n->value; return n; }
-};
-
-typedef rai::Array<std::shared_ptr<Type>> TypeInfoL;
 
 //===========================================================================
 //===========================================================================
@@ -425,6 +412,26 @@ struct Node_typed : Node {
 //
 
 namespace rai {
+template<class T> T Node::asFlex() const {
+  const Node_typed<T>* typed = dynamic_cast<const Node_typed<T>*>(this);
+  if(typed) return typed->value;
+  if constexpr(std::is_arithmetic_v<T>){
+    if(type==typeid(double)) { return (T)dynamic_cast<const Node_typed<double>*>(this)->value; }
+    if(type==typeid(float)) { return (T)dynamic_cast<const Node_typed<float>*>(this)->value; }
+    if(type==typeid(uint)) { return (T)dynamic_cast<const Node_typed<uint>*>(this)->value; }
+    if(type==typeid(int)) { return (T)dynamic_cast<const Node_typed<int>*>(this)->value; }
+    if(type==typeid(bool)) { return (T)dynamic_cast<const Node_typed<bool>*>(this)->value; }
+  }else if(is<str>()){
+    String str = as<String>();
+    T x;
+    str.resetIstream() >>x;
+    if(str.stream().good()) return x;
+  }
+
+  HALT("this node '" <<*this <<"'is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"' and couldn't be converted");
+  return T();
+}
+
 template<class T> T* Node::getValue() {
   Node_typed<T>* typed = dynamic_cast<Node_typed<T>*>(this);
   if(!typed) return nullptr;
@@ -437,61 +444,7 @@ template<class T> const T* Node::getValue() const {
   return &typed->value;
 }
 
-template<class T> bool Node::getFromInt(T& x) const {
-  if(!is<int>()) return false;
-  int y = as<int>();
-  if(typeid(T)==typeid(double)) {
-    *((double*)&x)=(double)y;
-    return true;
-  }
-  if(typeid(T)==typeid(uint)) {
-    CHECK(y>=0, "numerical parameter " <<key <<"=" <<y <<" should be unsigned! integer");
-    *((uint*)&x)=(uint)y;
-    return true;
-  }
-  if(typeid(T)==typeid(bool)) {
-    CHECK(y==0 || y==1, "numerical parameter " <<key <<"=" <<y <<" should be boolean");
-    *((bool*)&x)=(y==1);
-    return true;
-  }
-  return false;
-}
-
-template<class T> bool Node::getFromDouble(T& x) const {
-  if(!is<double>()) return false;
-  double y = as<double>();
-  if(typeid(T)==typeid(int)) {
-    CHECK(!modf(y, &y), "numerical parameter " <<key <<" should be integer");
-    *((int*)&x)=(int)y;
-    return true;
-  }
-  if(typeid(T)==typeid(uint)) {
-    CHECK(!modf(y, &y), "numerical parameter " <<key <<" should be integer");
-    *((uint*)&x)=(uint)y;
-    return true;
-  }
-  if(typeid(T)==typeid(bool)) {
-    CHECK(y==0. || y==1., "numerical parameter " <<key <<" should be boolean");
-    *((bool*)&x)=(y==1.);
-    return true;
-  }
-  return false;
-}
-
-template<class T> bool Node::getFromString(T& x) const {
-  if(!is<rai::String>()) return false;
-  rai::String str = as<rai::String>();
-  str.resetIstream() >>x;
-  if(str.stream().good()) return true;
-  return false;
-}
-
-template<class T> bool Node::getFromArr(T& x) const {
-  if(!is<arr>()) return false;
-  arr z = as<arr>();
-  x.set(z);
-  return true;
-}
+//===========================================================================
 
 template<class T> NodeInitializer::NodeInitializer(const char* key, const T& x) {
   n = G.add<T>(key, x);
@@ -502,50 +455,58 @@ template<class T> NodeInitializer::NodeInitializer(const char* key, const String
   n = G.add<T>(key, x);
 }
 
+//===========================================================================
+
 inline BracketOp Graph::operator[](const char* key) {
   return BracketOp{*this, key, findNode(key)};
 }
 
+template<class T> T* Graph::find(const char* key) const {
+  Node* n = findNode(key);
+  if(n){
+    const Node_typed<T>* typed = dynamic_cast<const Node_typed<T>*>(this);
+    if(typed) return (T*)&typed->value;
+  }
+  return nullptr;
+}
+
 template<class T> T& Graph::get(const char* key) const {
-  Node* n = findNodeOfType(typeid(T), key);
+  Node* n = findNode(key);
   if(!n) HALT("no node of type '" <<typeid(T).name() <<"' with key '"<< key<< "' found");
   return n->as<T>();
 }
 
+template<class T> T Graph::getFlex(const char* key) const {
+  Node* n = findNode(key);
+  if(!n) HALT("no node of type '" <<typeid(T).name() <<"' with key '"<< key<< "' found");
+  return n->asFlex<T>();
+}
+
 template<class T> T& Graph::getNew(const char* key) {
-  Node* n = findNodeOfType(typeid(T), key);
+  Node* n = findNode(key);
   if(!n) n = new Node_typed<T>(*this, key);
   return n->as<T>();
 }
 
-template<class T> const T& Graph::get(const char* key, const T& defaultValue) const {
-  Node* n = findNodeOfType(typeid(T), key);
+template<class T> T Graph::get(const char* key, const T& defaultValue) const {
+  Node* n = findNode(key);
   if(!n) return defaultValue;
-  return n->as<T>();
+  return n->asFlex<T>();
 }
 
 template<class T> bool Graph::get(T& x, const char* key) const {
-  Node* n = findNodeOfType(typeid(T), key);
-  if(n) { x=n->as<T>();  return true; }
-
-  //auto type conversions
-  n = findNodeOfType(typeid(double), key);
-  if(n) return n->getFromDouble<T>(x);
-
-  n = findNodeOfType(typeid(int), key);
-  if(n) return n->getFromInt<T>(x);
-
-  n = findNodeOfType(typeid(rai::String), key);
-  if(n) return n->getFromString<T>(x);
-
-  return false;
+  Node* n = findNode(key);
+  if(!n) return false;
+  if constexpr(std::is_arithmetic_v<T>) x = n->asFlex<T>();
+  else x = n->as<T>();
+  return true;
 }
 
-template<class T> rai::Array<T*> Graph::getValuesOfType(const char* key) {
+template<class T> Array<T*> Graph::getValuesOfType(const char* key) {
   NodeL nodes;
   if(!key) nodes = findNodesOfType(typeid(T), NULL);
   else nodes = findNodesOfType(typeid(T), key);
-  rai::Array<T*> ret;
+  Array<T*> ret;
   for(Node* n: nodes) ret.append(n->getValue<T>());
   return ret;
 }
