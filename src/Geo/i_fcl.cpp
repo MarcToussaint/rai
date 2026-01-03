@@ -59,7 +59,7 @@ struct FclInterface_self {
   static bool BroadphaseCallback(CollObject* o1, CollObject* o2, void* cdata_);
 };
 
-FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes, QueryMode _mode)
+FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes, CollisionQueryMode _mode)
   : mode(_mode), excludes(_excludes) {
   self = new FclInterface_self;
 
@@ -195,17 +195,17 @@ bool FclInterface_self::BroadphaseCallback(CollObject* o1, CollObject* o2, void*
     }
   }
 
-  if(fcl->mode==fcl->_broadPhaseOnly) {
+  if(fcl->mode==_broadPhaseOnly) {
     fcl->addCollision(a, b);
-  } else if(fcl->mode==fcl->_binaryCollisionSingle || fcl->mode==fcl->_binaryCollisionAll) { //fine boolean collision query
+  } else if(fcl->mode==_binaryCollisionSingle || fcl->mode==_binaryCollisionAll) { //fine boolean collision query
     fcl::CollisionRequest request;
     fcl::CollisionResult result;
     fcl::collide(o1, o2, request, result);
     if(result.isCollision()) {
       fcl->addCollision(a, b);
-      if(fcl->mode==fcl->_binaryCollisionSingle) return true; //can stop now
+      if(fcl->mode==_binaryCollisionSingle) return true; //can stop now
     }
-  } else if(fcl->mode==fcl->_distanceCutoff) {
+  } else if(fcl->mode==_distanceCutoff) {
     CHECK(fcl->cutoff>=0., "")
     fcl::DistanceRequest request;
     fcl::DistanceResult result;

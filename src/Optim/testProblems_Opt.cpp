@@ -54,7 +54,7 @@ NLP_Rosenbrock::NLP_Rosenbrock() {
 }
 
 double NLP_Rosenbrock::f(arr& g, arr& H, const arr& x) {
-  double a=1., b=100.;
+  // double a=1., b=100.;
   double f=0.;
   for(uint i=1; i<x.N; i++) f += rai::sqr(x(i)-rai::sqr(x(i-1))) + .01*rai::sqr(1.-x(i-1));
 //  f = ::log(1.+f);

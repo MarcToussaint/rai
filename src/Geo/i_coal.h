@@ -16,7 +16,7 @@ namespace rai {
 
 struct CoalInterface {
   struct CoalInterface_self* self=0;
-  enum QueryMode { _broadPhaseOnly, _binaryCollisionSingle, _binaryCollisionAll, _distanceCutoff, _fine } mode;
+  CollisionQueryMode mode;
 
   double cutoff=.01;
   uintAA excludes;
@@ -24,7 +24,7 @@ struct CoalInterface {
   Array<Proxy> collisions;
   arr X_lastQuery;  //memory to check whether an object has moved in consecutive queries
 
-  CoalInterface(const Array<Shape*>& geometries, const uintAA& _excludes, QueryMode _mode);
+  CoalInterface(const Array<Shape*>& geometries, const uintAA& _excludes, CollisionQueryMode _mode);
   ~CoalInterface();
 
   void setActiveColliders(uintA geom_ids);

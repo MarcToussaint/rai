@@ -54,8 +54,8 @@ struct KOMO : rai::NonCopyable {
   rai::Configuration pathConfig;  ///< configuration containing full path (T+k_order copies of world, with switches applied)
   uintA orgJointIndices;          ///< set of joint IDs (IDs of frames with dofs) of the original world
   FrameL timeSlices;              ///< the original timeSlices of the pathConfig (when switches add frames, pathConfig.frames might differ from timeSlices - otherwise not)
-  bool computeCollisions=true;    ///< whether swift or fcl (collisions/proxies) is evaluated whenever new configurations are set (needed if features read proxy list)
-  shared_ptr<rai::CoalInterface> fcl;
+  bool computeCollisions=true;    ///< whether coll_engine (collisions/proxies) is evaluated whenever new configurations are set (needed if features read proxy list)
+  shared_ptr<rai::CoalInterface> coll_engine;
 
   //-- optimizer
   arr x, dual;                    ///< the primal and dual solution

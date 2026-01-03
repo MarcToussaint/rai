@@ -56,93 +56,6 @@ PairCollision_CvxCvx::PairCollision_CvxCvx(const arr& pts1, const arr& pts2, con
     return;
   }
 
-  //-- special cases: point to pcl
-#if 0
-  if(mesh1.d0==1 && mesh2.d0>2 && !mesh2.T.N) {
-    _mesh2.ensure_ann();
-
-    arr x = mesh1.V;
-    x.reshape(3);
-    if(!t1->isZero() || !t2->isZero()) {
-      rai::Transformation T = *t1 / *t2;
-      x += T.pos.getArr();
-    }
-
-    arr sqrDists;
-    uintA idx;
-    uint K=20;
-    _mesh2.ann->getkNN(sqrDists, idx, x, K);
-
-    p2 = zeros(3);
-    for(uint k=0; k<K; k++) p2 += _mesh2.V[idx(k)];
-    p2 /= double(K);
-
-    if(_mesh2.Vn.N) {
-      normal = zeros(3);
-      for(uint k=0; k<K; k++) normal += _mesh2.Vn[idx(k)]; //points from obj2 to obj1, as desired
-      normal /= double(K);
-    } else {
-      normal.clear();
-    }
-//    normal.clear();
-
-    p1 = x;
-
-    if(!t2->isZero()) { //we computed everything relative to t2
-      t2->applyOnPoint(p1);
-      t2->applyOnPoint(p2);
-      normal = t2->rot.getMatrix() * normal;
-    }
-
-    arr del = p1-p2;
-    distance = length(del);
-    if(normal.N && scalarProduct(del, normal)<.0) {
-      distance *= -1.; //devision by distance below also flips normal
-    }
-    normal = del;
-    if(fabs(distance)>1e-10) normal/=distance;
-    CHECK_GE(rai::sign(distance) * scalarProduct(normal, p1-p2), -1e-10, ""); //just to check, as below
-    simplex1 = ~p1;
-    simplex2 = ~p2;
-    return;
-  }
-
-  //-- special cases: point to multiple cvx parts
-  if(mesh1.d0==1 && _mesh2.cvxParts.N) {
-    arr x = mesh1.V;
-    //directly call gjk for each part to get nearest
-    Object_structure m1, m2;
-    rai::Array<double*> Vhelp1 = getCarray(x);
-    rai::Array<double*> Vhelp2 = getCarray(mesh2);
-    if(!t1->isZero() || !t2->isZero()) {
-      x.reshape(3);
-      rai::Transformation T = *t1 / *t2;
-      x += T.pos.getArr();
-    }
-    double dmin=-1.;
-    int imin=0;
-    //LOG(0) <<_mesh2.cvxParts <<_mesh2.d0 <<endl;
-    for(uint i=0; i<_mesh2.cvxParts.N; i++) {
-      int start = _mesh2.cvxParts(i);
-      int end = i+1<_mesh2.cvxParts.N ? _mesh2.cvxParts(i+1)-1 : _mesh2.d0-1;
-      CHECK_LE(start+1, end, "");
-      m1.numpoints = 1;  m1.vertices = Vhelp1.p;  m1.rings=nullptr; //TODO: rings would make it faster
-      m2.numpoints = end-start;  m2.vertices = Vhelp2.p+start;  m2.rings=nullptr;
-
-      double d = gjk_distance(&m1, 0, &m2, 0, 0, 0, 0, 0);
-      //cout <<" part " <<i <<" d:" <<d <<endl;
-      if(d<dmin || dmin<0.) { imin=i; dmin=d; }
-    }
-    //cout <<" part " <<imin <<" is min" <<endl;
-    //imin is the closest part... do the below with imin..
-    int start = _mesh2.cvxParts(imin);
-    int end = imin+1<(int)_mesh2.cvxParts.N ? _mesh2.cvxParts(imin+1)-1 : _mesh2.d0-1;
-    mesh2.clear();
-    mesh2.T.clear();
-    mesh2.V = _mesh2.V({start, end+1});
-  }
-#endif
-
   //-- generic case
 #ifdef FCLmode
   //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
@@ -376,8 +289,8 @@ void PairCollision_CvxCvx::libccd(const arr& m1, const arr& m2, CCDmethod method
       // m2._support_vertex = rnd(m2.d0);
       libccd(m1, m2, _ccdGJKIntersect);
       if(distance<0.) {
-        LOG(0) <<"WARNING: but GJK says intersection";
-        distance=0;
+        LOG(0) <<"WARNING: called MPR penetration for non intersecting meshes... but GJK says intersection";
+        distance=0.;
       }
       return;
     }

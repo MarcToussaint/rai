@@ -36,9 +36,9 @@ void rai::Proxy::calc_coll(const Array<Frame*>& frames) {
   }else if(f2->shape && f2->shape->_mesh && f2->shape->_mesh->cvxParts.N){
     collision = make_shared<rai::PairCollision_CvxDecomp>(m1, *f2->shape->_mesh, f1->ensure_X(), f2->ensure_X(), r1, r2);
   }else{
-    // collision = make_shared<PairCollision_CvxCvx>(m1, m2, a->ensure_X(), b->ensure_X(), r1, r2);
+    collision = make_shared<PairCollision_CvxCvx>(m1, m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
     CHECK(f1->shape && f2->shape, "")
-    collision = make_shared<PairCollision_Coal>(f1->shape.get(), f2->shape.get(), f1->ensure_X(), f2->ensure_X(), r1, r2);
+    // collision = make_shared<PairCollision_Coal>(f1->shape.get(), f2->shape.get(), f1->ensure_X(), f2->ensure_X(), r1, r2);
   }
 
   d = collision->distance-collision->rad1-collision->rad2;

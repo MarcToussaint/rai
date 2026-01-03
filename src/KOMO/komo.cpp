@@ -133,7 +133,7 @@ void KOMO::clone(const KOMO& komo, bool deepCopyFeatures) {
   tau = komo.tau;
   k_order = komo.k_order;
 
-  if(komo.fcl) fcl=komo.fcl;
+  if(komo.coll_engine) coll_engine=komo.coll_engine;
   //if(komo.swift) swift=komo.swift;
 
   //directly copy pathConfig instead of recreating it (including switches)
@@ -1916,9 +1916,9 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
   timeKinematics += rai::cpuTime();
 
   if(computeCollisions) {
-    if(!fcl) {
-      fcl = world.coll_engine();
-      fcl->mode = fcl->_broadPhaseOnly;
+    if(!coll_engine) {
+      coll_engine = world.coll_engine();
+      coll_engine->mode = _broadPhaseOnly;
     }
     timeCollisions -= rai::cpuTime();
     pathConfig.proxies.clear();
@@ -1927,8 +1927,8 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
     for(uint s=k_order; s<timeSlices.d0; s++) {
       X = pathConfig.getFrameState(timeSlices[s]);
       {
-        fcl->step(X);
-        collisionPairs = fcl->collisions;
+        coll_engine->step(X);
+        collisionPairs = coll_engine->collisions;
       }
       // collisionPairs += timeSlices.d1 * s; //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice
       for(rai::Proxy& p: collisionPairs){ p.A += timeSlices.d1 * s; p.B += timeSlices.d1 * s; } //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice

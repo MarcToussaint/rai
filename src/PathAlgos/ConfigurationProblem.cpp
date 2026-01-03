@@ -10,6 +10,7 @@
 #include "../Kin/feature.h"
 #include "../Optim/constrained.h"
 #include "../Geo/i_fcl.h"
+#include "../Geo/i_coal.h"
 
 #include "ConfigurationProblem.h"
 
@@ -30,7 +31,7 @@ ConfigurationProblem::ConfigurationProblem(shared_ptr<rai::Configuration> _C, bo
   sphericalCoordinates.reshape(-1,2);
 
   // C->fcl()->mode = rai::FclInterface::_distanceCutoff;
-  C->coll_fcl()->mode = rai::FclInterface::_broadPhaseOnly;
+  C->coll_engine()->mode = rai::_broadPhaseOnly;
 }
 
 void ConfigurationProblem::setExplicitCollisionPairs(const StringA& _collisionPairs) {

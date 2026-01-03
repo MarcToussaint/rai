@@ -14,6 +14,7 @@
 
 namespace rai {
 struct Frame;
+enum CollisionQueryMode { _broadPhaseOnly, _binaryCollisionSingle, _binaryCollisionAll, _distanceCutoff, _fine };
 }
 
 //===========================================================================

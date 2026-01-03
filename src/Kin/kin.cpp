@@ -2265,7 +2265,7 @@ std::shared_ptr<FclInterface> Configuration::coll_fcl(int verbose) {
         if(verbose>0) LOG(0) <<"  SKIPPING from FCL interface: " <<f->name;
       }
     }
-    self->fcl = make_shared<FclInterface>(geometries, getCollisionExcludePairIDs(), FclInterface::_broadPhaseOnly); //broadphase only -> many proxies, binary, exact margin (slow)
+    self->fcl = make_shared<FclInterface>(geometries, getCollisionExcludePairIDs(), _broadPhaseOnly); //broadphase only -> many proxies, binary, exact margin (slow)
   }
   return self->fcl;
 }
@@ -2290,7 +2290,7 @@ std::shared_ptr<CoalInterface> Configuration::coll_engine(int verbose) {
         if(verbose>0) LOG(0) <<"  SKIPPING from coal interface: " <<f->name;
       }
     }
-    self->coal = make_shared<CoalInterface>(geometries, getCollisionExcludePairIDs(), CoalInterface::_broadPhaseOnly); //broadphase only -> many proxies, binary, exact margin (slow)
+    self->coal = make_shared<CoalInterface>(geometries, getCollisionExcludePairIDs(), _broadPhaseOnly); //broadphase only -> many proxies, binary, exact margin (slow)
   }
   return self->coal;
 }
@@ -2385,7 +2385,7 @@ void Configuration::coll_addExcludePair(uint aID, uint bID){
 
 /// get the sum of all shape penetrations -- PRECONDITION: proxies have been computed (with stepFcl())
 double Configuration::coll_totalViolation() {
-  coll_engine()->mode = rai::CoalInterface::_broadPhaseOnly;
+  coll_engine()->mode = _broadPhaseOnly;
   ensure_proxies(true);
 
   double D=0.;
@@ -2406,7 +2406,7 @@ double Configuration::coll_totalViolation() {
 }
 
 bool Configuration::coll_isCollisionFree() {
-  coll_engine()->mode = rai::CoalInterface::_binaryCollisionAll;
+  coll_engine()->mode = _binaryCollisionAll;
   ensure_proxies(false);
 
   bool feas=true;
@@ -2871,7 +2871,7 @@ void Configuration::writeMeshes(str pathPrefix, bool copyTextures, bool enumerat
     NodeL texs = P->findNodesOfType(typeid(shared_ptr<SharedTextureImage>));
     uint texCount=0;
     for(Node* n:texs) {
-      shared_ptr<SharedTextureImage> t = n->as<shared_ptr<SharedTextureImage>>();
+      shared_ptr<SharedTextureImage>& t = n->as<shared_ptr<SharedTextureImage>>();
       rai::FileToken fil(t->file.p);
       fil.decomposeFilename();
       str newfilename;
@@ -2897,7 +2897,7 @@ void Configuration::writeMeshes(str pathPrefix, bool copyTextures, bool enumerat
     NodeL meshes = P->findNodesOfType(typeid(shared_ptr<rai::Mesh>));
     uint meshCount=0;
     for(Node* n:meshes) {
-      shared_ptr<rai::Mesh> m = n->as<shared_ptr<rai::Mesh>>();
+      shared_ptr<rai::Mesh>& m = n->as<shared_ptr<rai::Mesh>>();
       rai::FileToken fil(n->key);
       fil.name.resize(fil.name.find('.',true), true);
       fil.decomposeFilename();
@@ -3023,6 +3023,7 @@ void Configuration::report(std::ostream& os) const {
   os <<"Configuration: q.N=" <<getJointStateDimension()
      <<" #frames=" <<frames.N
      <<" #dofs=" <<activeDofs.N
+     <<" #qInactive.N=" <<qInactive.N
      <<" #shapes=" <<nShapes
      <<" #proxies=" <<proxies.N
      <<" #forces=" <<otherDofs.N
