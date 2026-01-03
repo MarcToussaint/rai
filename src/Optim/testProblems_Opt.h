@@ -48,30 +48,11 @@ struct ScalarUnconstrainedProgram : NLP {
 
 //===========================================================================
 
-struct NLP_TrivialSquareFunction : NLP {
-  double lo, hi;
-
-  NLP_TrivialSquareFunction(uint dim=10, double lo=-1., double up=1.) {
-    dimension = dim;
-    featureTypes = rai::consts<ObjectiveType>(OT_sos, dimension);
-    bounds.resize(2, dimension);
-    bounds[0] = lo;
-    bounds[1] = up;
-  }
-
-  void evaluate(arr& phi, arr& J, const arr& x) {
-    phi = x;
-    if(!!J) J.setId(x.N);
-  }
-};
-
-//===========================================================================
-
 struct NLP_RandomLP : NLP {
+  RAI_PARAM("problem/", uint, dim, 2)
+
   arr randomG;
-
-  NLP_RandomLP(uint dim=2);
-
+  NLP_RandomLP();
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 
 };
@@ -119,9 +100,9 @@ struct SimpleConstraintFunction : NLP {
 //===========================================================================
 
 struct NLP_RastriginSOS : NLP {
-  RAI_PARAM("problem/", int, dim, 2)
+  RAI_PARAM("problem/", double, condition, 1.)
   RAI_PARAM("Rastrigin/", double, a, 4.)
-  RAI_PARAM("Rastrigin/", double, condition, 20.)
+
   NLP_RastriginSOS();
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 };
@@ -129,14 +110,38 @@ struct NLP_RastriginSOS : NLP {
 //===========================================================================
 
 struct NLP_Rastrigin : NLP_Scalar {
-  NLP_Rastrigin(uint _dim) { dimension=_dim; }
+  RAI_PARAM("problem/", uint, dim, 2)
+  RAI_PARAM("Rastrigin/", double, A, 10.)
+
+  NLP_Rastrigin();
   virtual double f(arr& g, arr& H, const arr& x);
 };
 
 //===========================================================================
 
+struct NLP_Ackley: NLP_Scalar {
+  RAI_PARAM("problem/", uint, dim, 2)
+
+  NLP_Ackley();
+  virtual double f(arr& g, arr& H, const arr& x);
+};
+
+//===========================================================================
+
+struct NLP_Himmelblau: NLP_Scalar {
+  RAI_PARAM("problem/", uint, dim, 2)
+
+  NLP_Himmelblau();
+  virtual double f(arr& g, arr& H, const arr& x);
+
+};
+
+//===========================================================================
+
 struct NLP_Rosenbrock : NLP_Scalar {
-  NLP_Rosenbrock(uint _dim) { dimension=_dim; }
+  RAI_PARAM("problem/", uint, dim, 2)
+
+  NLP_Rosenbrock();
   virtual double f(arr& g, arr& H, const arr& x);
 };
 
@@ -144,10 +149,14 @@ struct NLP_Rosenbrock : NLP_Scalar {
 
 /// $f(x) = x^T C x$ where C has eigen values ranging from 1 to 'condition'
 struct NLP_Squared : NLP {
+  RAI_PARAM("problem/", uint, dim, 2)
+  RAI_PARAM("problem/", double, condition, 100.)
+  RAI_PARAM("Squared/", bool, random, true)
+
   arr C; /// $A = C^T C $
   arr x0;
 
-  NLP_Squared(uint dim=2, double condition=100., bool random=true);
+  NLP_Squared();
 
   virtual void evaluate(arr& phi, arr& J, const arr& x) { phi=C*(x-x0); if(!!J) J=C; }
 //  virtual arr getInitializationSample(){ return ones(n); }
@@ -157,9 +166,14 @@ struct NLP_Squared : NLP {
 
 struct ANN;
 struct NLP_Rugged : NLP {
+  RAI_PARAM("problem/", uint, dim, 2)
+  RAI_PARAM("Rugged/", bool, sos, true)
+  RAI_PARAM("Rugged/", uint, num_points, 10)
+  RAI_PARAM("Rugged/", uint, num_features, 1)
+
   arr pts, Phi;
   std::shared_ptr<ANN> ann;
-  NLP_Rugged(uint dim=2, bool sos=true, uint num_points=10, uint num_features=1);
+  NLP_Rugged();
   void evaluate(arr &phi, arr &J, const arr &x);
 };
 

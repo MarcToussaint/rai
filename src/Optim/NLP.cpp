@@ -35,6 +35,8 @@ arr NLP::getInitializationSample() {
 
 void NLP::report(std::ostream& os, int verbose, const char* msg) {
   os <<"NLP of type '" <<rai::niceTypeidName(typeid(*this)) <<"'";
+  NLP *d=derived;
+  while(d){ os <<" wraps '" <<rai::niceTypeidName(typeid(d)) <<"'"; d=d->derived; }
   if(msg) os <<' ' <<msg;
   os <<" dimension:" <<dimension <<" #objectives: " <<featureTypes.N <<endl;
   if(verbose>1) os <<"\n  featureTypes: " <<EnumArr(featureTypes) <<"\n  bounds: " <<bounds <<endl;

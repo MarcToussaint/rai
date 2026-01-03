@@ -60,6 +60,7 @@ struct Node {
 
   template<class T> T* getValue();    ///< query whether node type is equal to (or derived from) T, return the value if so
   template<class T> const T* getValue() const; ///< as above
+  template<class T> bool getFromInt(T& x) const; ///< return value = false means parsing object of type T from the double failed
   template<class T> bool getFromDouble(T& x) const; ///< return value = false means parsing object of type T from the double failed
   template<class T> bool getFromString(T& x) const; ///< return value = false means parsing object of type T from the string failed
   template<class T> bool getFromArr(T& x) const; ///< return value = false means parsing object of type T from the arr failed
@@ -436,6 +437,26 @@ template<class T> const T* Node::getValue() const {
   return &typed->value;
 }
 
+template<class T> bool Node::getFromInt(T& x) const {
+  if(!is<int>()) return false;
+  int y = as<int>();
+  if(typeid(T)==typeid(double)) {
+    *((double*)&x)=(double)y;
+    return true;
+  }
+  if(typeid(T)==typeid(uint)) {
+    CHECK(y>=0, "numerical parameter " <<key <<"=" <<y <<" should be unsigned! integer");
+    *((uint*)&x)=(uint)y;
+    return true;
+  }
+  if(typeid(T)==typeid(bool)) {
+    CHECK(y==0 || y==1, "numerical parameter " <<key <<"=" <<y <<" should be boolean");
+    *((bool*)&x)=(y==1);
+    return true;
+  }
+  return false;
+}
+
 template<class T> bool Node::getFromDouble(T& x) const {
   if(!is<double>()) return false;
   double y = as<double>();
@@ -510,6 +531,9 @@ template<class T> bool Graph::get(T& x, const char* key) const {
   //auto type conversions
   n = findNodeOfType(typeid(double), key);
   if(n) return n->getFromDouble<T>(x);
+
+  n = findNodeOfType(typeid(int), key);
+  if(n) return n->getFromInt<T>(x);
 
   n = findNodeOfType(typeid(rai::String), key);
   if(n) return n->getFromString<T>(x);

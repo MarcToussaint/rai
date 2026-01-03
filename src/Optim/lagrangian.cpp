@@ -29,6 +29,7 @@ LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, std::shared_ptr<O
     : P(P), opt(_opt), muLB(0.), mu(0.), useLB(false) {
 
   CHECK(P, "null problem given");
+  P->derived = this;
 
   if(opt->method==M_LogBarrier) useLB=true;
 
@@ -64,7 +65,7 @@ void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
   }
 
   CHECK(x.N, "zero-dim optimization variables!");
-  if(!!J) CHECK_EQ(phi_x.N, J_x.d0, "Jacobian size inconsistent");
+  if(!!J && J_x.N) CHECK_EQ(phi_x.N, J_x.d0, "Jacobian size inconsistent");
   CHECK_EQ(phi_x.N, P->featureTypes.N, "termType array size inconsistent");
 
   //-- construct unconstrained problem
@@ -99,25 +100,27 @@ void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
     } else {
       J.resize(phi.N, J_x.d1).setZero();
     }
-    uint nphi=0;
-    for(uint i=0; i<phi_x.N; i++) {
-      ObjectiveType ot = P->featureTypes.p[i];
+    if(J_x.N){
+      uint nphi=0;
+      for(uint i=0; i<phi_x.N; i++) {
+        ObjectiveType ot = P->featureTypes.p[i];
 //#define J_setRow(fac) { J.setMatrixBlock(fac J_x.sparse().getSparseRow(i), nphi++, 0); }
 //#define J_setRow(fac) { J.setMatrixBlock(fac ~J_x[i], nphi++, 0); }
 #define J_setRow(fac) { if(!isSparse(J)) J.setMatrixBlock(fac ~J_x[i], nphi++, 0); else J.setMatrixBlock(fac J_x.sparse().getSparseRow(i), nphi++, 0); }
-      if(ot==OT_f)   J_setRow()               // direct cost term
-        if(ot==OT_sos) J_setRow()               // sumOfSqr terms
-          if(useLB    && ot==OT_ineq) J_setRow((-muLB/phi_x.p[i])*)                      //log barrier, check feasibility
-            if(!useLB   && ot==OT_ineq) { if(I_lambda_x.p[i]) J_setRow(sqrt(mu)*) else nphi++; }   //g-penalty
-      if(ot==OT_ineqP) { if(phi_x.p[i]>0.) J_setRow(sqrt(mu)*) else nphi++; }              //g-penalty
-      if(ot==OT_ineq) { if(lambda.N && lambda.p[i]>0.) J_setRow(lambda.p[i]*) else nphi++; }                           //g-lagrange terms
-      if(ot==OT_ineqB) J_setRow((-muLB/phi_x.p[i])*)                                  //log barrier, check feasibility
-        if(ot==OT_ineqB) { if(lambda.N && lambda.p[i]>0.) J_setRow(lambda.p[i]*) else nphi++; }                          //g-lagrange terms
-      if(ot==OT_eq) J_setRow(sqrt(mu)*)                                    //h-penalty
-        if(ot==OT_eq) { if(lambda.N) J_setRow(lambda.p[i]*)  else nphi++; }                                               //h-lagrange terms
+	if(ot==OT_f)   J_setRow()               // direct cost term
+	      if(ot==OT_sos) J_setRow()               // sumOfSqr terms
+	      if(useLB    && ot==OT_ineq) J_setRow((-muLB/phi_x.p[i])*)                      //log barrier, check feasibility
+	      if(!useLB   && ot==OT_ineq) { if(I_lambda_x.p[i]) J_setRow(sqrt(mu)*) else nphi++; }   //g-penalty
+	if(ot==OT_ineqP) { if(phi_x.p[i]>0.) J_setRow(sqrt(mu)*) else nphi++; }              //g-penalty
+	if(ot==OT_ineq) { if(lambda.N && lambda.p[i]>0.) J_setRow(lambda.p[i]*) else nphi++; }                           //g-lagrange terms
+	if(ot==OT_ineqB) J_setRow((-muLB/phi_x.p[i])*)                                  //log barrier, check feasibility
+	      if(ot==OT_ineqB) { if(lambda.N && lambda.p[i]>0.) J_setRow(lambda.p[i]*) else nphi++; }                          //g-lagrange terms
+	if(ot==OT_eq) J_setRow(sqrt(mu)*)                                    //h-penalty
+	      if(ot==OT_eq) { if(lambda.N) J_setRow(lambda.p[i]*)  else nphi++; }                                               //h-lagrange terms
 #undef J_setRow
+      }
+      CHECK_EQ(nphi, phi.N, "");
     }
-    CHECK_EQ(nphi, phi.N, "");
   }
 }
 

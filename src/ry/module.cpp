@@ -98,15 +98,17 @@ PYBIND11_MODULE(_robotic, m) {
 }
 
 void init_params(pybind11::module& m) {
-  m.def("params_add", [](const pybind11::dict& D) { rai::Graph G = dict2graph(D); for(rai::Node *n:G) rai::params()->set(n); }, "add/set parameters", pybind11::arg("python dictionary or params to add"));
+  m.def("set_params", [](const pybind11::dict& D) { rai::Graph G = dict2graph(D); for(rai::Node *n:G) rai::params()->set(n); }, "set parameters", pybind11::arg("python dictionary or params to add"));
+  m.def("get_params", []() { return graph2dict(rai::params()()); }, "return parameters as dict");
+  m.def("clear_params", []() { rai::params()->clear(); }, "clear all parameters");
+
+  m.def("params_add", [](const pybind11::dict& D) { rai::Graph G = dict2graph(D); for(rai::Node *n:G) rai::params()->set(n); }, "set parameters", pybind11::arg("python dictionary or params to add"));
   m.def("params_file", [](const char* filename) {
     ifstream fil(filename);
     if(fil.good()) rai::params()->read(fil);
     else LOG(0) <<"could not add params file '" <<filename <<"'";
   }, "add parameters from a file", pybind11::arg("filename"));
   m.def("params_print", []() { cout <<rai::params()(); }, "print the parameters");
-  m.def("params_get", []() { return graph2dict(rai::params()()); }, "return parameters as dict");
-  m.def("params_clear", []() { rai::params()->clear(); }, "clear all parameters");
 }
 
 //void init_BotOp(pybind11::module& m){}

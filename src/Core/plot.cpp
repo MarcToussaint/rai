@@ -92,9 +92,6 @@ rai::PlotModule::PlotModule() {
 }
 
 rai::PlotModule::~PlotModule() {
-#ifdef RAI_GL
-  if(gl) { delete gl; gl=nullptr; }
-#endif
 }
 
 //===========================================================================
@@ -114,9 +111,9 @@ void rai::PlotModule::update(bool wait, const char* txt) {
       break;
 #ifdef RAI_GL
     case opengl:
-      CHECK(gl, "");
+      // CHECK(gl, "");
       NIY; //if(txt) gl->text = txt;
-      gl->update(wait);
+      //gl->update(wait);
       break;
 #else
     case opengl:
@@ -130,11 +127,6 @@ void rai::PlotModule::update(bool wait, const char* txt) {
 }
 
 void rai::PlotModule::Close() {
-#ifdef RAI_GL
-  if(mode==opengl) {
-    if(gl) { delete gl; gl=NULL; }
-  }
-#endif
 }
 
 void rai::PlotModule::Clear() {
@@ -142,7 +134,7 @@ void rai::PlotModule::Clear() {
   self->points.clear();
   self->lines.clear();
 #ifdef RAI_GL
-  self->planes.clear();
+  // self->planes.clear();
 #endif
 }
 
@@ -247,10 +239,10 @@ void rai::PlotModule::FunctionPrecision(const arr& x, const arr& f, const arr& h
 void rai::PlotModule::Surface(const arr& X) {
   self->array.append(X);
 #ifdef RAI_GL
-  self->mesh.clear();
-  self->mesh.V.resize(X.N, 3);
-  self->mesh.C.resize(X.N, 3);
-  self->mesh.setGrid(X.d1, X.d0);
+  // self->mesh.clear();
+  // self->mesh.V.resize(X.N, 3);
+  // self->mesh.C.resize(X.N, 3);
+  // self->mesh.setGrid(X.d1, X.d0);
   //self->mesh.gridToStrips(X.d1, X.d0);
 #endif
 }

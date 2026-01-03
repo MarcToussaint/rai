@@ -12,9 +12,13 @@
 #include "../Optim/NLP_Factory.h"
 #include "../Optim/NLP_Solver.h"
 #include "../Optim/NLP_Sampler.h"
+#include "../Optim/lagrangian.h"
 #include "../KOMO/testProblems_KOMO.h"
+#include "../KOMO/komo_NLP.h"
 #include <pybind11/functional.h>
 #include <pybind11/iostream.h>
+
+void KOMO_null_deleter(KOMO*) {}
 
 /* Explanation: The python user implement a derivation of the nlp.NLP template class, which is defined in the separate nlp.py
  * that ensures that the class has methods "getDimension, getFeatureTypes, getBounds, evaluate, report"
@@ -93,8 +97,8 @@ void init_Optim(pybind11::module& m) {
       )
 
   .def("eval_scalar", [](std::shared_ptr<NLP>& self, const arr& x) {
-    arr f, g, H;
-    self->eval_scalar(f, g, H);
+    arr g, H;
+    double f = self->eval_scalar(g, H, x);
     return std::tuple<double, arr, arr>(f, g, H);
   },
     "query the NLP assuming that it only has f- and sos-objectives (otherwise raises error); returns the cost, gradient, and Hessian (which is the Gauss-Newton Hessian plus what the user NLP provides with getHessian)"
@@ -140,6 +144,21 @@ void init_Optim(pybind11::module& m) {
   .def("checkJacobian", &NLP::checkJacobian, "", pybind11::arg("x"), pybind11::arg("tolerance"), pybind11::arg("featureNames")=StringA{})
   .def("checkHessian", &NLP::checkHessian, "", pybind11::arg("x"), pybind11::arg("tolerance"))
 
+  .def("getKOMO", [](std::shared_ptr<NLP>& self) {
+    shared_ptr<rai::KOMO_NLP> komo = std::dynamic_pointer_cast<rai::KOMO_NLP>(self);
+    if(komo) return std::shared_ptr<KOMO>(&komo->komo, &KOMO_null_deleter);
+    return std::shared_ptr<KOMO>();
+  },
+   "in case this is an NLP defined via KOMO, returns the KOMO object; otherwise returns None")
+
+  .def("get_AugmentedLagrangian", [](std::shared_ptr<NLP>& self, double muSquaredPenalty=-1., double muLogBarrier=-1.) {
+    shared_ptr<NLP> lag = make_shared<rai::LagrangianProblem>(self, make_shared<rai::OptOptions>(), muSquaredPenalty, muLogBarrier);
+    return lag;
+  },
+  "returns the Augmented Lagrangian (another NLP wrapping this NLP), with given penalty/barrier parameters (default: taken from OptOptions)",
+    pybind11::arg("muSquaredPenalty")=-1.,
+    pybind11::arg("muLogBarrier")=-1.
+  )
 
   ;
 

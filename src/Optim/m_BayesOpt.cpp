@@ -227,10 +227,10 @@ void BayesOpt::addDataPoint(const arr& x, const arr& y) {
   data_y.append(y);
   if(leastSquaresCase) data_y.reshape(-1, y.N);
 
-  double fmean = 0.;
+  // double fmean = 0.;
 
   if(!leastSquaresCase){
-    fmean = ::sum(data_y)/data_y.N;
+    // fmean = ::sum(data_y)/data_y.N;
     if(data_y.N>4) {
       kernel->priorVar = 2.*var(data_y);
     }
