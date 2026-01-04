@@ -77,6 +77,11 @@ CXXFLAGS  += -DRAI_FCL
 LIBS      += -lfcl
 endif
 
+ifeq ($(COAL),1)
+CXXFLAGS  += -DRAI_COAL
+LIBS      += -lcoal
+endif
+
 ifeq ($(CCD),1)
 DEPEND += extern_ccd_rai
 CXXFLAGS += -DRAI_CCD

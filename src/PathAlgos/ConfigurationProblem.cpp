@@ -31,7 +31,7 @@ ConfigurationProblem::ConfigurationProblem(shared_ptr<rai::Configuration> _C, bo
   sphericalCoordinates.reshape(-1,2);
 
   // C->fcl()->mode = rai::FclInterface::_distanceCutoff;
-  C->coll_engine()->mode = rai::_broadPhaseOnly;
+  // C->coll_engine()->mode = rai::_broadPhaseOnly;
 }
 
 void ConfigurationProblem::setExplicitCollisionPairs(const StringA& _collisionPairs) {
@@ -51,7 +51,7 @@ shared_ptr<QueryResult> ConfigurationProblem::query(const arr& x) {
 
   C->setJointState(x);
   if(useBroadCollisions) {
-    C->coll_stepFcl();
+    C->coll_stepFcl(rai::_broadPhaseOnly);
   } else {
     //CHECK(collisionPairs.N, "you need either explicit collision pairs or useBroadCollisions");
     C->proxies.resize(collisionPairs.d0);

@@ -419,7 +419,7 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   CHECK(finger2->shape && finger2->shape->cont, "");
 
   //collect objects close to fing1 and fing2
-  C.coll_stepFcl();
+  C.ensure_proxies(true);
   FrameL fing1close;
   FrameL fing2close;
   for(rai::Proxy& p:C.proxies) {
@@ -1044,7 +1044,7 @@ void Imp_NoPenetrations::modConfiguration(Simulation& S, double tau) {
     S.C.kinematicsZero(y, J, 1);
 
     // Check penetrations between robot vs. static objects
-    S.C.coll_stepFcl();
+    S.C.ensure_proxies(false);
     for(rai::Proxy& p: S.C.proxies) {
       if(!(dynamicFrames.contains(p.A) || dynamicFrames.contains(p.B))) {
         rai::Frame *a = S.C.frames(p.A);

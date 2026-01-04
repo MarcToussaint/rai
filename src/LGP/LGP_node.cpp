@@ -202,7 +202,7 @@ void LGP_Node::optBound(BoundType bound, bool useBroadCollisions, int verbose) {
   }
   tree.COUNT_kin += Configuration::setJointStateCount;
   tree.COUNT_opt(bound)++;
-  tree.COUNT_time += komo->timeTotal;
+  tree.COUNT_time += komo->timeSolve;
   count(bound)++;
 
   DEBUG(FILE("z.problem") <<komo->report(););
@@ -237,7 +237,7 @@ void LGP_Node::optBound(BoundType bound, bool useBroadCollisions, int verbose) {
     cost(bound) = cost_here;
     constraints(bound) = constraints_here;
     feasible(bound) = feas;
-    computeTime(bound) = komo->timeTotal;
+    computeTime(bound) = komo->timeSolve;
   }
 
   if(!feasible(bound))

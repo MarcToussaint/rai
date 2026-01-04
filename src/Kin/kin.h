@@ -9,14 +9,13 @@
 #pragma once
 
 #include "featureSymbols.h"
+#include "proxy.h"
 #include "../Core/array.h"
 #include "../Core/graph.h"
 #include "../Geo/geo.h"
 #include "../Geo/mesh.h"
 
-struct OpenGL;
 struct PhysXInterface;
-//struct SwiftInterface;
 struct OdeInterface;
 struct FeatherstoneInterface;
 
@@ -28,7 +27,6 @@ struct Dof;
 struct Joint;
 struct Shape;
 struct Frame;
-struct Proxy;
 struct ForceExchangeDof;
 struct ForceExchangeDof;
 struct Configuration;
@@ -37,6 +35,10 @@ struct KinematicSwitch;
 struct FclInterface;
 struct CoalInterface;
 struct ConfigurationViewer;
+
+//*** switches the used collision engine! ***
+// typedef CoalInterface CollEngine; //is quite slower
+typedef FclInterface CollEngine;
 
 } // namespace rai
 
@@ -90,7 +92,7 @@ struct Configuration {
 
   /// @name copy
   void operator=(const Configuration& K) { copy(K); } ///< same as copy()
-  void copy(const Configuration& K, bool referenceFclOnCopy=false);
+  void copy(const Configuration& K, bool referenceCollEngineOnCopy=false);
   bool operator!() const;
 
   /// @name initializations, building configurations
@@ -206,7 +208,7 @@ struct Configuration {
   /// @name ensure state consistencies
   void ensure_indexedJoints() {   if(!_state_indexedJoints_areGood) calc_indexedActiveJoints();  }
   void ensure_q() {  if(!_state_q_isGood) calcDofsFromConfig();  }
-  void ensure_proxies(bool fine=false); //both, broadphase and fine!!
+  void ensure_proxies(bool fine_postprocess, CollisionQueryMode mode=_broadPhaseOnly);
 
   /// @name Jacobians and kinematics (low level)
   void jacobian_pos(arr& J, Frame* a, const Vector& pos_world) const; //usually called internally with kinematicsPos
@@ -268,10 +270,7 @@ public:
   bool coll_isCollisionFree();
   void coll_reportProxies(std::ostream& os=cout, double belowMargin=1., bool brief=true) const;
   StringA coll_getProxyPairs(double belowMargin, arr& distances=NoArr);
-  std::shared_ptr<FclInterface> coll_fcl(int verbose=0);
-  std::shared_ptr<CoalInterface> coll_engine(int verbose=0);
-  void coll_fclReset();
-  void coll_coalReset();
+  std::shared_ptr<CollEngine> coll_engine(int verbose=0);
   void addProxies(const uintA& collisionPairs);
 
   /// @name extensions on demand
@@ -292,7 +291,7 @@ public:
   arr view_getCameraPose();
   void view_focus(const char* frameName, double heightAbs);
   void set_viewer(const std::shared_ptr<ConfigurationViewer>& _viewer);
-  void coll_stepFcl();
+  void coll_stepFcl(rai::CollisionQueryMode mode);
   void stepPhysx(double tau);
   void stepOde(double tau);
   void stepDynamics(arr& qdot, const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);

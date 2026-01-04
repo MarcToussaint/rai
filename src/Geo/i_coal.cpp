@@ -8,8 +8,6 @@
 
 #include "i_coal.h"
 
-#define RAI_COAL
-
 #ifdef RAI_COAL
 
 #include <coal/config.hh>
@@ -116,21 +114,22 @@ shared_ptr<coal::CollisionGeometry> create_CollisionGeometry(Shape* shape, bool 
 }
 
 struct CoalInterface_self : coal::CollisionCallBackBase{
-  CoalInterface* fcl = 0;
+  CoalInterface* coal = 0;
+  CollisionQueryMode mode;
 
   Array<shared_ptr<struct ConvexGeometryData>> convexGeometryData;
   std::vector<coal::CollisionObject*> objects;
   rai::Array<coal::CollisionObject*> activeColliders;
   shared_ptr<BroadPhaseCollisionManager> manager;
 
-  CoalInterface_self(CoalInterface *_coal) : fcl(_coal) {}
+  CoalInterface_self(CoalInterface *_coal) : coal(_coal) {}
   virtual ~CoalInterface_self() {}
 
   virtual bool collide(coal::CollisionObject* o1, coal::CollisionObject* o2);
 };
 
-CoalInterface::CoalInterface(const Array<Shape*>& geometries, const uintAA& _excludes, CollisionQueryMode _mode)
-  : mode(_mode), excludes(_excludes) {
+CoalInterface::CoalInterface(const Array<Shape*>& geometries, const uintAA& _excludes)
+  : excludes(_excludes) {
   self = new CoalInterface_self(this);
 
   self->convexGeometryData.resize(geometries.N);
@@ -179,7 +178,7 @@ void CoalInterface::setActiveColliders(uintA geom_ids){
   LOG(0) <<"#active colliders: " <<self->activeColliders.N <<endl;
 }
 
-void CoalInterface::step(const arr& X) {
+void CoalInterface::step(const arr& X, CollisionQueryMode mode) {
   CHECK_EQ(X.nd, 2, "");
   CHECK_GE(X.d0, self->convexGeometryData.N, "");
   CHECK_EQ(X.d1, 7, "");
@@ -195,6 +194,7 @@ void CoalInterface::step(const arr& X) {
   self->manager->update();
 
   collisions.clear();
+  self->mode = mode;
   if(!self->activeColliders.N){ //collide all
     self->manager->collide(self);
   }else{
@@ -218,33 +218,36 @@ bool CoalInterface_self::collide(coal::CollisionObject* o1, coal::CollisionObjec
   uint b = (long int)o2->getUserData();
   if(a==b) return false;
 
-  if(fcl->excludes.N) {
+  if(coal->excludes.N) {
     if(a<b) {
-      if(fcl->excludes(a).containsInSorted(b)) return false;
+      if(coal->excludes(a).containsInSorted(b)) return false;
     } else {
-      if(fcl->excludes(b).containsInSorted(a)) return false;
+      if(coal->excludes(b).containsInSorted(a)) return false;
     }
   }
 
-  if(fcl->mode==_broadPhaseOnly) {
-    Proxy& p = fcl->addCollision(a, b);
+  if(mode==_broadPhaseOnly) {
+    Proxy& p = coal->addCollision(a, b);
     p.d = -0.;
     p.posA.set( o1->getTranslation().data() );
     p.posB.set( o2->getTranslation().data() );
-  } else if(fcl->mode==_binaryCollisionSingle || fcl->mode==_binaryCollisionAll) { //fine boolean collision query
+
+  } else if(mode==_binaryCollisionSingle || mode==_binaryCollisionAll) { //fine boolean collision query
     coal::CollisionRequest request;
     coal::CollisionResult result;
     coal::collide(o1, o2, request, result);
     if(result.isCollision()) {
-      fcl->addCollision(a, b);
-      if(fcl->mode==_binaryCollisionSingle) return true; //can stop now
+      coal->addCollision(a, b);
+      if(mode==_binaryCollisionSingle) return true; //can stop now
     }
-  } else if(fcl->mode==_distanceCutoff) {
-    CHECK(fcl->cutoff>=0., "")
+
+  } else if(mode==_distanceCutoff) {
+    CHECK(coal->cutoff>=0., "")
     coal::DistanceRequest request;
     coal::DistanceResult result;
     coal::distance(o1, o2, request, result);
-    if(result.min_distance<fcl->cutoff) fcl->addCollision(a, b);
+    if(result.min_distance<coal->cutoff) coal->addCollision(a, b);
+
   } else {
     coal::CollisionRequest request;
     coal::CollisionResult result;
@@ -253,7 +256,7 @@ bool CoalInterface_self::collide(coal::CollisionObject* o1, coal::CollisionObjec
     // cout <<"   witness points: " <<result.nearest_points[0] << ' '<<result.nearest_points[1] <<endl;
     // cout <<"   normal: " <<result.normal <<endl;
     // if(result.isCollision()) {
-    Proxy& p = fcl->addCollision(a, b);
+    Proxy& p = coal->addCollision(a, b);
     p.d = result.distance_lower_bound;
     p.posA.set( result.nearest_points[0].data() );
     p.posB.set( result.nearest_points[1].data() );
@@ -319,13 +322,14 @@ PairCollision_Coal::PairCollision_Coal(Shape* s1, Shape* s2, const Transformatio
 
 }//namespace
 
-#else //RAI_FCL
-typedef int QueryMode;
-rai::CoalInterface::CoalInterface(const Array<Shape*>& geometries, const uintAA& _excludes, QueryMode _mode){ NICO }
-rai::CoalInterface::~CoalInterface() { NICO }
-void rai::CoalInterface::step(const arr& X) { NICO }
-#endif
-
 RUN_ON_INIT_BEGIN(CoalInterface)
 rai::Array<coal::CollisionObject*>::memMove=true;
 RUN_ON_INIT_END(CoalInterface)
+
+#else //RAI_COAL
+rai::CoalInterface::CoalInterface(const Array<Shape*>& geometries, const uintAA& _excludes){ NICO }
+rai::CoalInterface::~CoalInterface() { NICO }
+void rai::CoalInterface::step(const arr& X, CollisionQueryMode mode) { NICO }
+void rai::CoalInterface::setActiveColliders(uintA geom_ids){ NICO }
+#endif
+

@@ -108,7 +108,7 @@ void testGrasp(){
     tic.waitForTic();
 //    rai::wait(.05);
 
-    C.coll_stepFcl();
+    C.coll_stepFcl(rai::_broadPhaseOnly);
 //    C.reportProxies();
 
     if(!(t%10)) S.getImageAndDepth(rgb, depth); //we don't need images with 100Hz, rendering is slow

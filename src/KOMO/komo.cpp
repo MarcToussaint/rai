@@ -104,13 +104,16 @@ KOMO::~KOMO() {
 }
 
 void KOMO::setConfig(const Configuration& C, bool _computeCollisions) {
+  timeSetup -= rai::cpuTime();
+
   orgJointIndices = C.getDofIDs();
   if(&C!=&world) world.copy(C, _computeCollisions);
   computeCollisions = _computeCollisions;
-//  if(computeCollisions) world.fcl();
   world.ensure_q();
 
   if(stepsPerPhase) setupPathConfig();
+
+  timeSetup +=rai::cpuTime();
 }
 
 void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhase, uint _k_order) {
@@ -1247,7 +1250,7 @@ void KOMO::reset() {
   featureValues.clear();
   featureJacobians.clear();
   featureTypes.clear();
-  timeTotal=timeCollisions=timeKinematics=timeNewton=timeFeatures=0.;
+  timeSolve=timeBroadphase=timeSetJoints=timeFeatures=0.;
 }
 
 std::shared_ptr<SolverReturn> KOMO::solve(double addInitializationNoise, int splineKnots, const rai::OptOptions& options) {
@@ -1269,13 +1272,13 @@ std::shared_ptr<SolverReturn> KOMO::solve(double addInitializationNoise, int spl
   // sol.setSolver(NLPS_Ipopt);
   sol.opt->set_verbose(rai::MAX(opt.verbose-2, 0));
 
-  timeTotal -= rai::cpuTime();
+  timeSolve -= rai::cpuTime();
   std::shared_ptr<SolverReturn> ret = sol.solve();
-  timeTotal += rai::cpuTime();
+  timeSolve += rai::cpuTime();
 
   if(opt.verbose>0) {
-    cout <<"=== KOMO optimization time:" <<timeTotal
-         <<" (kin:" <<timeKinematics <<" coll:" <<timeCollisions <<" feat:" <<timeFeatures <<" newton: " <<timeNewton <<")"
+    cout <<"=== KOMO solve time:" <<timeSolve
+         <<" (setup: " <<timeSetup <<" setJoints:" <<timeSetJoints <<" broadphase:" <<timeBroadphase <<" features:" <<timeFeatures <<")"
          <<" setJointStateCount:" <<Configuration::setJointStateCount
          <<"\n  solver return: " <<*ret <<endl;
   }
@@ -1903,7 +1906,7 @@ void KOMO::setupPathConfig() {
 void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
   CHECK_EQ(timeSlices.d0, k_order+T, "configurations are not setup yet");
 
-  timeKinematics -= rai::cpuTime();
+  timeSetJoints -= rai::cpuTime();
 
   if(!selectedConfigurationsOnly.N) {
     pathConfig.setJointState(x);
@@ -1912,31 +1915,39 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
     HALT("this is untested...");
   }
 
-  timeKinematics += rai::cpuTime();
+  timeSetJoints += rai::cpuTime();
 
   if(computeCollisions) {
     if(!coll_engine) {
+      timeSetup -= rai::cpuTime();
       coll_engine = world.coll_engine();
-      coll_engine->mode = _broadPhaseOnly;
+      timeSetup += rai::cpuTime();
     }
-    timeCollisions -= rai::cpuTime();
+    timeBroadphase -= rai::cpuTime();
     pathConfig.proxies.clear();
     arr X;
     rai::Array<rai::Proxy> collisionPairs;
     for(uint s=k_order; s<timeSlices.d0; s++) {
+#if 0
       X = pathConfig.getFrameState(timeSlices[s]);
+#else
+      X.resize(timeSlices.d1, 7).setZero();
+      for(uint i=0; i<X.d0; i++) {
+        rai::Frame* f = timeSlices(s, i);
+        if(f->shape && f->shape->cont) X[i] = f->ensure_X().getArr7d();
+      }
+#endif
       {
-        coll_engine->step(X);
+        coll_engine->step(X, _broadPhaseOnly);
         collisionPairs = coll_engine->collisions;
       }
       // collisionPairs += timeSlices.d1 * s; //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice
       for(rai::Proxy& p: collisionPairs){ p.A += timeSlices.d1 * s; p.B += timeSlices.d1 * s; } //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice
-      // pathConfig.addProxies(collisionPairs);
       pathConfig.proxies.append(collisionPairs);
     }
     pathConfig._state_proxies_isGood=true;
-    pathConfig.ensure_proxies(); //expensive!!
-    timeCollisions += rai::cpuTime();
+    pathConfig.ensure_proxies(false); //expensive!!
+    timeBroadphase += rai::cpuTime();
   }
 }
 

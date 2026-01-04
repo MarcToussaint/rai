@@ -81,7 +81,7 @@ std::shared_ptr<SolverReturn> ShortPathMPC::solve(bool alsoVels, int verbose) {
   opt.set_stopTolerance(1e-3)
   .set_verbose(0);
   komo.opt.verbose=0;
-  komo.timeTotal=0.;
+  komo.timeSolve=0.;
   komo.pathConfig.setJointStateCount=0;
 //  komo.initWithConstant(qHome);
   auto ret = komo.solve(0., -1, opt);
@@ -91,7 +91,7 @@ std::shared_ptr<SolverReturn> ShortPathMPC::solve(bool alsoVels, int verbose) {
   feasible=ret->sos<50. && ret->ineq<.1 && ret->eq<.1;
 
   if(verbose>0) {
-    msg.clear() <<"SHORT it " <<iters <<" feasible: " <<(feasible?" good":" FAIL") <<" -- queries: " <<komo.pathConfig.setJointStateCount <<" time:" <<komo.timeTotal <<"\t sos:" <<ret->sos <<"\t ineq:" <<ret->ineq <<"\t eq:" <<ret->eq <<endl;
+    msg.clear() <<"SHORT it " <<iters <<" feasible: " <<(feasible?" good":" FAIL") <<" -- queries: " <<komo.pathConfig.setJointStateCount <<" time:" <<komo.timeSolve <<"\t sos:" <<ret->sos <<"\t ineq:" <<ret->ineq <<"\t eq:" <<ret->eq <<endl;
     komo.view(false, msg);
   }
 

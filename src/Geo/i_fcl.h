@@ -15,22 +15,21 @@ namespace rai {
 
 struct FclInterface {
   struct FclInterface_self* self=0;
-  CollisionQueryMode mode;
 
   double cutoff=.01;
   uintAA excludes;
   Array<Proxy> collisions; //return values!
   arr X_lastQuery;  //memory to check whether an object has moved in consecutive queries
 
-  FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes, CollisionQueryMode _mode);
+  FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes);
   ~FclInterface();
 
   void setActiveColliders(uintA geom_ids);
 
-  void step(const arr& X);
+  void step(const arr& X, CollisionQueryMode mode);
 
- protected:
-  friend FclInterface_self;
+protected:
+  friend struct FclInterface_self;
   Proxy& addCollision(uint a, uint b);
 };
 

@@ -127,30 +127,33 @@ void computeMeshGraphs(FrameL& frames, bool force) {
 //
 
 struct sConfiguration {
+  Configuration& C;
+
   shared_ptr<ConfigurationViewer> viewer;
   //shared_ptr<SwiftInterface> swift;
-  shared_ptr<FclInterface> fcl;
-  shared_ptr<CoalInterface> coal;
+  shared_ptr<CollEngine> coal;
+  // shared_ptr<FclInterface> fcl;
   unique_ptr<PhysXInterface> physx;
   unique_ptr<OdeInterface> ode;
   unique_ptr<FeatherstoneInterface> fs;
+
+  sConfiguration(Configuration& _C): C(_C) {}
 };
 
 Configuration::Configuration() {
-  self = make_unique<sConfiguration>();
+  self = make_unique<sConfiguration>(*this);
 }
 
 Configuration::~Configuration() {
   //delete OpenGL and the extensions first!
   self->viewer.reset();
   //self->swift.reset();
-  self->fcl.reset();
+  self->coal.reset();
   clear();
-  self.reset();
 }
 
 /// make this a copy of C (copying all frames, forces & proxies)
-void Configuration::copy(const Configuration& C, bool referenceFclOnCopy) {
+void Configuration::copy(const Configuration& C, bool referenceCollEngineOnCopy) {
   CHECK(this != &C, "never copy C onto itself");
 
   clear();
@@ -180,9 +183,8 @@ void Configuration::copy(const Configuration& C, bool referenceFclOnCopy) {
   }
 
   //copy fcl reference
-  if(referenceFclOnCopy) {
-    //self->swift = C.self->swift;
-    self->fcl = C.self->fcl;
+  if(referenceCollEngineOnCopy) {
+    self->coal = C.self->coal;
   }
 
   //copy vector state
@@ -1156,10 +1158,8 @@ bool Configuration::check_topSort() const {
 
 /// clear all frames, forces & proxies
 void Configuration::clear() {
-//  glClose();
-//  swiftDelete();
 //  if(self && self->viewer) self->viewer.reset();
-  if(self && self->fcl) self->fcl.reset();
+  if(self && self->coal) self->coal.reset();
 
   reset_q();
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
@@ -2251,8 +2251,9 @@ std::shared_ptr<SwiftInterface> Configuration::swift() {
 
 //===========================================================================
 
-std::shared_ptr<FclInterface> Configuration::coll_fcl(int verbose) {
-  if(!self->fcl) {
+/*
+std::shared_ptr<FclInterface> sConfiguration::coll_fcl(int verbose) {
+  if(!fcl) {
     Array<Shape*>::memMove=1;
     Array<Shape*> geometries(frames.N);
     geometries.setZero();
@@ -2267,16 +2268,17 @@ std::shared_ptr<FclInterface> Configuration::coll_fcl(int verbose) {
         if(verbose>0) LOG(0) <<"  SKIPPING from FCL interface: " <<f->name;
       }
     }
-    self->fcl = make_shared<FclInterface>(geometries, getCollisionExcludePairIDs(), _broadPhaseOnly); //broadphase only -> many proxies, binary, exact margin (slow)
+    fcl = make_shared<FclInterface>(geometries, getCollisionExcludePairIDs(), _broadPhaseOnly); //broadphase only -> many proxies, binary, exact margin (slow)
   }
   return self->fcl;
 }
 
-void Configuration::coll_fclReset() {
-  if(self && self->fcl) self->fcl.reset();
+void sConfiguration::coll_fclReset() {
+  if(fcl) fcl.reset();
 }
+*/
 
-std::shared_ptr<CoalInterface> Configuration::coll_engine(int verbose) {
+std::shared_ptr<CollEngine> Configuration::coll_engine(int verbose) {
   if(!self->coal) {
     Array<Shape*>::memMove=1;
     Array<Shape*> geometries(frames.N);
@@ -2292,13 +2294,9 @@ std::shared_ptr<CoalInterface> Configuration::coll_engine(int verbose) {
         if(verbose>0) LOG(0) <<"  SKIPPING from coal interface: " <<f->name;
       }
     }
-    self->coal = make_shared<CoalInterface>(geometries, getCollisionExcludePairIDs(), _broadPhaseOnly); //broadphase only -> many proxies, binary, exact margin (slow)
+    self->coal = make_shared<CollEngine>(geometries, getCollisionExcludePairIDs());
   }
   return self->coal;
-}
-
-void Configuration::coll_coalReset() {
-  if(self && self->coal) self->coal.reset();
 }
 
 void Configuration::addProxies(const uintA& collisionPairs) {
@@ -2342,36 +2340,29 @@ void Configuration::stepSwift() {
 }
 */
 
-void Configuration::coll_stepFcl() {
+void Configuration::coll_stepFcl(CollisionQueryMode mode) {
   //-- get the frame state of collision objects
 #if 0
   arr X = getFrameState();
 #else
-  static arr X;
-  X.resize(frames.N, 7).setZero();
+  arr X(frames.N, 7);
+  X.setZero();
   for(uint i=0; i<X.d0; i++) {
     rai::Frame* f = frames.elem(i);
     if(f->shape && f->shape->cont) X[i] = f->ensure_X().getArr7d();
   }
 #endif
-  //-- step fcl
-  // coll_engine()->step(X);
-  coll_engine()->step(X);
-  //-- add as proxies
-  // proxies.clear();
-  // addProxies(coll_engine()->collisions);
-  // addProxies(coll_coal()->collisions);
+
+  coll_engine()->step(X, mode);
   proxies = coll_engine()->collisions;
 
   _state_proxies_isGood=true;
 }
 
-
-void Configuration::ensure_proxies(bool fine) {
-  if(!_state_proxies_isGood) coll_stepFcl(); //broadphase
-  if(fine) for(Proxy& p: proxies) if(!p.collision) p.calc_coll(frames); //fine
+void Configuration::ensure_proxies(bool fine_postprocess, CollisionQueryMode mode) {
+  if(!_state_proxies_isGood) coll_stepFcl(mode); //broadphase
+  if(fine_postprocess) for(Proxy& p: proxies) if(!p.collision) p.calc_coll(frames); //fine
 }
-
 
 void Configuration::coll_setActiveColliders(const FrameL& colliders){
   coll_engine()->setActiveColliders(rai::framesToIndices(colliders));
@@ -2387,8 +2378,7 @@ void Configuration::coll_addExcludePair(uint aID, uint bID){
 
 /// get the sum of all shape penetrations -- PRECONDITION: proxies have been computed (with stepFcl())
 double Configuration::coll_totalViolation() {
-  coll_engine()->mode = _broadPhaseOnly;
-  ensure_proxies(true);
+  ensure_proxies(true, _broadPhaseOnly);
 
   double D=0.;
   for(const Proxy& p:proxies) {
@@ -2408,8 +2398,7 @@ double Configuration::coll_totalViolation() {
 }
 
 bool Configuration::coll_isCollisionFree() {
-  coll_engine()->mode = _binaryCollisionAll;
-  ensure_proxies(false);
+  ensure_proxies(false, _binaryCollisionAll);
 
   bool feas=true;
   for(const rai::Proxy& p:proxies) if(p.d<=0.) { feas=false; break; }

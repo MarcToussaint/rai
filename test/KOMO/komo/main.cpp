@@ -229,7 +229,8 @@ void TEST(Mobile){
   rai::NLP_Solver sol;
   sol.setProblem(komo.nlp());
   sol.opt->set_verbose(2);
-  sol.solve();
+  auto ret = sol.solve();
+  cout <<*ret <<endl;
   cout <<komo.report(false, true, true) <<endl;
   komo.view(true);
   komo.view_play(true, 0, 1.);

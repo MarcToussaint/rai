@@ -11,7 +11,7 @@
 #include "../Kin/frame.h"
 
 void force(rai::Configuration* world, arr& fR) {
-  world->coll_stepFcl();
+  world->coll_stepFcl(rai::_broadPhaseOnly);
   //world->contactsToForces(100.0);
 
   for(const rai::Proxy& p : world->proxies) {
@@ -33,7 +33,7 @@ void force(rai::Configuration* world, arr& fR) {
 }
 
 void forceSimulateContactOnly(rai::Configuration* world, arr& fR) {
-  world->coll_stepFcl();
+  world->coll_stepFcl(rai::_broadPhaseOnly);
   for(const rai::Proxy& p : world->proxies) {
     if(world->frames.elem(p.A)->name == "endeffR" && world->frames.elem(p.B)->name == "b") {
       if(p.d <= 0.02) {

@@ -55,7 +55,7 @@ struct KOMO : rai::NonCopyable {
   uintA orgJointIndices;          ///< set of joint IDs (IDs of frames with dofs) of the original world
   FrameL timeSlices;              ///< the original timeSlices of the pathConfig (when switches add frames, pathConfig.frames might differ from timeSlices - otherwise not)
   bool computeCollisions=true;    ///< whether coll_engine (collisions/proxies) is evaluated whenever new configurations are set (needed if features read proxy list)
-  shared_ptr<rai::CoalInterface> coll_engine;
+  shared_ptr<rai::CollEngine> coll_engine;
 
   //-- optimizer
   arr x, dual;                    ///< the primal and dual solution
@@ -68,7 +68,7 @@ struct KOMO : rai::NonCopyable {
   arrA featureJacobians;       ///< storage of all features in all time slices
   ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
   StringA featureNames;
-  double timeTotal=0., timeCollisions=0., timeKinematics=0., timeNewton=0., timeFeatures=0.; ///< measured run times
+  double timeSetup=0., timeSolve=0., timeBroadphase=0., timeSetJoints=0., timeFeatures=0.; ///< measured run times
   uint evalCount=0;
 
   KOMO();

@@ -39,7 +39,7 @@ std::shared_ptr<SolverReturn> WaypointMPC::solve(int verbose) {
   .set_stopTolerance(1e-3)
   .set_stopEvals(200);
   komo.opt.verbose=0;
-  komo.timeTotal=0.;
+  komo.timeSolve=0.;
   komo.pathConfig.setJointStateCount=0;
 //  cout <<komo.report(true, false) <<endl;
 //  komo.initWithConstant(qHome);
@@ -54,7 +54,7 @@ std::shared_ptr<SolverReturn> WaypointMPC::solve(int verbose) {
   path = komo.getPath_qOrg();
   tau = komo.getPath_tau();
 
-  msg.clear() <<"WAY it " <<steps <<" feasible: " <<(feasible?" good":" FAIL") <<" -- queries: " <<komo.pathConfig.setJointStateCount <<" time:" <<komo.timeTotal <<"\t sos:" <<ret->sos <<"\t ineq:" <<ret->ineq <<"\t eq:" <<ret->eq <<endl;
+  msg.clear() <<"WAY it " <<steps <<" feasible: " <<(feasible?" good":" FAIL") <<" -- queries: " <<komo.pathConfig.setJointStateCount <<" time:" <<komo.timeSolve <<"\t sos:" <<ret->sos <<"\t ineq:" <<ret->ineq <<"\t eq:" <<ret->eq <<endl;
   if(!feasible) msg <<komo.report();
 
   if(verbose>0) {

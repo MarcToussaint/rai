@@ -5,28 +5,7 @@
 
 bool interactive=false;
 
-/*void TEST(Swift) {
-  rai::Configuration C("swift_test.g");
-
-  C.swift()->cutoff = 2.;
-  C.stepSwift();
-  C.gl()->ensure_gl().drawOptions.drawProxies=true;
-
-  uint t;
-  for(t=0;t<50;t++){
-    C.frames(0)->set_X()->addRelativeTranslation(0,0,-.01);
-    C.frames(0)->set_X()->addRelativeRotationDeg(10,1,0,0);
-
-    C.stepSwift();
-
-    C.reportProxies();
-
-    C.view(true);
-    rai::wait(.1);
-  }
-  }*/
-
-void TEST(FCL) {
+void TEST(Engine) {
   rai::Configuration C("../../../../rai-robotModels/pr2/pr2.g");
   C.view(true);
 
@@ -38,12 +17,13 @@ void TEST(FCL) {
   // C.reportProxies();
 
   cout <<"** FCL: " <<endl;
-  C.coll_stepFcl();
+  C.coll_stepFcl(rai::_broadPhaseOnly);
   C.coll_totalViolation();
   C.coll_reportProxies();
 }
 
 void TEST(CollisionTiming){
+  //-- create a random scene
   rai::Configuration C;
   uint n=1000;
   for(uint i=0;i<n;i++){
@@ -53,25 +33,21 @@ void TEST(CollisionTiming){
     a->set_X()->pos.z += 1.;
     a->set_X()->pos *= 5.;
 
-    a->setConvexMesh(.2*rai::Mesh().setRandom().V, {}, .02 + .1*rnd.uni());
+    a->setConvexMesh(.3*rai::Mesh().setRandom().V, {}, .02 + .1*rnd.uni());
     a->setColor({.5,.5,.8,.6});
     a->setContact(1);
   }
 
   C.view();
 
-  //rai::timerStart();
-  //C.swift(); //.setCutoff(.);
-  //cout <<" SWIFT initialization time: " <<rai::timerRead(true) <<endl;
-
   rai::timerStart();
   C.coll_engine();
-  cout <<" FCL initialization time: " <<rai::timerRead(true) <<endl;
+  cout <<"engine initialization time: " <<rai::timerRead(true) <<endl;
 
   arr q0,q;
   q0 = C.getJointState();
   rai::timerStart();
-  for(uint t=0;t<10;t++){
+  for(uint t=0;t<5;t++){
     for(rai::Frame *a:C.frames){
       a->setPose(rai::Transformation().setRandom());
       a->set_X()->pos.z += 1.;
@@ -82,18 +58,9 @@ void TEST(CollisionTiming){
 
     cout <<"-------------------- t=" <<t <<" ---------" <<endl;
     
-    // C.stepSwift();
-    // cout <<"SWIFT:" <<endl;
-    // cout <<"#proxies: " <<C.proxies.N <<endl; //this also calls pair collisions!!
-    // cout <<"time: " <<rai::timerRead(true) <<endl;
-    // cout <<"total penetration: " <<C.getTotalPenetration() <<endl; //this also calls pair collisions!!
-    // cout <<"time: " <<rai::timerRead(true) <<endl;
-    // C.reportProxies(FILE("z.col"), 0.);
-    // V.setConfiguration(C, "SWIFT result", true);
 
-    C.coll_stepFcl();
-    cout <<"FCL:" <<endl;
-    cout <<"#proxies: " <<C.proxies.N <<endl; //this also calls pair collisions!!
+    C.coll_stepFcl(rai::_broadPhaseOnly);
+    cout <<"#proxies: " <<C.proxies.N <<endl;
     cout <<"time: " <<rai::timerRead(true) <<endl;
     // C.view(interactive, "FCL result");
     cout <<"total penetration: " <<C.coll_totalViolation() <<endl; //this also calls pair collisions!!
@@ -101,14 +68,14 @@ void TEST(CollisionTiming){
     C.coll_reportProxies(FILE("z.col"), 0.);
     C.view(interactive, "FCL result");
   }
-  cout <<" query time: " <<rai::timerRead(true) <<"sec" <<endl;
 }
 
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-  //  testSwift();
-  testFCL();
+  testEngine();
+
+  rnd.seed(0);
   testCollisionTiming();
 
   return 0;

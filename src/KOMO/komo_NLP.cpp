@@ -185,12 +185,12 @@ void KOMO_SubNLP::evaluate(arr& phi, arr& J, const arr& x) {
   evalCount++;
 
   //-- set the trajectory
-  komo.timeKinematics -= rai::cpuTime();
+  komo.timeSetJoints -= rai::cpuTime();
 
   komo.pathConfig.setJointState(x);
   komo.pathConfig.jacMode = Configuration::JM_sparse;
 
-  komo.timeKinematics += rai::cpuTime();
+  komo.timeSetJoints += rai::cpuTime();
 
   //-- compute features
   komo.timeFeatures -= cpuTime();

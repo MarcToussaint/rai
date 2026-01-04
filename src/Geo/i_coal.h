@@ -16,7 +16,6 @@ namespace rai {
 
 struct CoalInterface {
   struct CoalInterface_self* self=0;
-  CollisionQueryMode mode;
 
   double cutoff=.01;
   uintAA excludes;
@@ -24,12 +23,12 @@ struct CoalInterface {
   Array<Proxy> collisions;
   arr X_lastQuery;  //memory to check whether an object has moved in consecutive queries
 
-  CoalInterface(const Array<Shape*>& geometries, const uintAA& _excludes, CollisionQueryMode _mode);
+  CoalInterface(const Array<Shape*>& geometries, const uintAA& _excludes);
   ~CoalInterface();
 
   void setActiveColliders(uintA geom_ids);
 
-  void step(const arr& X);
+  void step(const arr& X, CollisionQueryMode mode); //TODO: this should have the query model as argument
 
  protected:
   friend CoalInterface_self;

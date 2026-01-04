@@ -248,7 +248,7 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
       }
     }
 
-    cout <<"  path trial " <<trial <<(feasible?" good":" FAIL") <<" -- time:" <<komo.timeTotal <<"\t sos:" <<ret->sos <<"\t ineq:" <<ret->ineq <<"\t eq:" <<ret->eq <<endl;
+    cout <<"  path trial " <<trial <<(feasible?" good":" FAIL") <<" -- time:" <<komo.timeSolve <<"\t sos:" <<ret->sos <<"\t ineq:" <<ret->ineq <<"\t eq:" <<ret->eq <<endl;
     if(feasible) break;
   }
 
@@ -436,7 +436,7 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
     }
   } else {
     //use broadphase
-    C.ensure_proxies();
+    C.ensure_proxies(false);
     double p = C.coll_totalViolation();
     if(verbose>1) C.coll_reportProxies();
     if(p>0.) good=false;
@@ -482,7 +482,7 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
     if(verbose) LOG(0) <<"collisions resolved";
     C.setJointState(ret->x);
     if(verbose>1) {
-      C.ensure_proxies();
+      C.ensure_proxies(false);
       double p = C.coll_totalViolation();
       if(verbose>1) C.coll_reportProxies();
       CHECK_LE(p, 0., "collisions were not resolved");

@@ -160,14 +160,14 @@ void TEST(GJK_Jacobians3) {
 
   C.gl().drawOptions.drawProxies=true;
 
-  C.coll_stepFcl();
+  C.coll_stepFcl(rai::_broadPhaseOnly);
   C.coll_reportProxies();
 
   arr q = C.getJointState();
 
   for(uint t=0;t<10;t++){
     C.setJointState(q);
-    C.coll_stepFcl();
+    C.coll_stepFcl(rai::_broadPhaseOnly);
 //    C.stepFcl();
 //    K.reportProxies(cout, -1., false);
 

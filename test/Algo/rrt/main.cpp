@@ -97,17 +97,14 @@ void TEST(Mobile){
 
 // =============================================================================
 
-void testKinematics(bool withCollisions, uint N=100000){
+void testKinematics(bool fine_postprocess, rai::CollisionQueryMode mode, uint N=100000){
+  rnd.seed(1);
+
   rai::Configuration C;
   C.addFile("scene.g");
   C.processStructure();
 
   arr q = C.getJointState();
-
-  if(withCollisions){
-    C.coll_fcl()->mode = rai::_binaryCollisionAll;
-//    C.fcl()->mode = rai::_distanceCutoff;  C.fcl()->cutoff = .0;
-  }
 
   double time = -rai::cpuTime();
   uint count=0;
@@ -116,18 +113,15 @@ void testKinematics(bool withCollisions, uint N=100000){
     C.setJointState(q);
     for(rai::Frame *f:C.frames) if(f->shape && f->shape->cont) f->ensure_X(); //compute pose of all relevant frames
 
-    if(withCollisions){
-#if 0
-      C.stepFcl();
-      bool feas = !C.proxies.N;
-#else
-      bool feas = C.coll_isCollisionFree();
-#endif
+    if(mode!=rai::_none){
+      C.ensure_proxies(fine_postprocess, mode);
+      bool feas=true;
+      for(const rai::Proxy& p:C.proxies) if(p.d<=0.) { feas=false; break; }
       if(!feas) count++;
     }
   }
   time += rai::cpuTime();
-  cout <<"kinematics (collisions=" <<withCollisions <<") time: " <<time <<"sec or " <<1000.*time/double(N) <<"msec/query" <<" (#collisions: " <<double(count)/N <<")" <<endl;
+  cout <<"kinematics (fine_postprocess=" <<fine_postprocess <<" queryMode: " <<mode <<") time: " <<1000.*time/double(N) <<"msec/query" <<" (#collisions: " <<double(count)/N <<")" <<endl;
 }
 
 // =============================================================================
@@ -180,10 +174,19 @@ int MAIN(int argc,char **argv){
   testRRT();
 
   cout <<"=== kinematics test" <<endl;
-  testKinematics(false, 100000);
+  testKinematics(false, rai::_none, 100000);
 
-  cout <<"=== kinematics+FCL test" <<endl;
-  testKinematics(true, 10000);
+  cout <<"=== kinematics test" <<endl;
+  testKinematics(false, rai::_none, 100000);
+
+  cout <<"=== kinematics+broadphase" <<endl;
+  testKinematics(false, rai::_broadPhaseOnly, 10000);
+
+  cout <<"=== kinematics+binary coll" <<endl;
+  testKinematics(false, rai::_binaryCollisionAll, 10000);
+
+  cout <<"=== kinematics+fine" <<endl;
+  testKinematics(true, rai::_broadPhaseOnly, 10000);
 
   testRRTwPCL();
 

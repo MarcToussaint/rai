@@ -51,6 +51,8 @@ struct ConvexGeometryData {
 };
 
 struct FclInterface_self {
+  CollisionQueryMode mode;
+
   Array<shared_ptr<struct ConvexGeometryData>> convexGeometryData;
   std::vector<CollObject*> objects;
   rai::Array<CollObject*> activeColliders;
@@ -59,8 +61,8 @@ struct FclInterface_self {
   static bool BroadphaseCallback(CollObject* o1, CollObject* o2, void* cdata_);
 };
 
-FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes, CollisionQueryMode _mode)
-  : mode(_mode), excludes(_excludes) {
+FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _excludes)
+  : excludes(_excludes) {
   self = new FclInterface_self;
 
   self->convexGeometryData.resize(geometries.N);
@@ -144,7 +146,7 @@ void FclInterface::setActiveColliders(uintA geom_ids){
   LOG(0) <<"#active colliders: " <<self->activeColliders.N <<endl;
 }
 
-void FclInterface::step(const arr& X) {
+void FclInterface::step(const arr& X, CollisionQueryMode mode) {
   CHECK_EQ(X.nd, 2, "");
   CHECK_GE(X.d0, self->convexGeometryData.N, "");
   CHECK_EQ(X.d1, 7, "");
@@ -160,6 +162,7 @@ void FclInterface::step(const arr& X) {
   self->manager->update();
 
   collisions.clear();
+  self->mode = mode;
   if(!self->activeColliders.N){ //collide all
     self->manager->collide(this, FclInterface_self::BroadphaseCallback);
   }else{
@@ -195,17 +198,17 @@ bool FclInterface_self::BroadphaseCallback(CollObject* o1, CollObject* o2, void*
     }
   }
 
-  if(fcl->mode==_broadPhaseOnly) {
+  if(fcl->self->mode==_broadPhaseOnly) {
     fcl->addCollision(a, b);
-  } else if(fcl->mode==_binaryCollisionSingle || fcl->mode==_binaryCollisionAll) { //fine boolean collision query
+  } else if(fcl->self->mode==_binaryCollisionSingle || fcl->self->mode==_binaryCollisionAll) { //fine boolean collision query
     fcl::CollisionRequest request;
     fcl::CollisionResult result;
     fcl::collide(o1, o2, request, result);
     if(result.isCollision()) {
       fcl->addCollision(a, b);
-      if(fcl->mode==_binaryCollisionSingle) return true; //can stop now
+      if(fcl->self->mode==_binaryCollisionSingle) return true; //can stop now
     }
-  } else if(fcl->mode==_distanceCutoff) {
+  } else if(fcl->self->mode==_distanceCutoff) {
     CHECK(fcl->cutoff>=0., "")
     fcl::DistanceRequest request;
     fcl::DistanceResult result;
