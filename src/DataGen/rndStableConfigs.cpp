@@ -48,8 +48,8 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
                    .solve();
     //      komo.nlp()->checkJacobian(ret->x, 1e-4, komo.featureNames);
 #else
-    auto ret = rai::NLP_Sampler(komo.nlp())
-               .setOptions(NLP_Sampler_Options().set_slackMaxStep(.2). set_downhillMaxSteps(100). set_slackRegLambda(.1) .set_tolerance(.01))
+    auto ret = NLP_Sampler(komo.nlp())
+               .setOptions(NLP_Sampler_Options().set_slackMaxStep(.2). set_downhillMaxSteps(50). set_slackRegLambda(.1) .set_tolerance(1e-4))
                .sample();
 #endif
 

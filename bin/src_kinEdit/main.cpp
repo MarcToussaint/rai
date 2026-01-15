@@ -72,7 +72,6 @@ int main(int argc,char **argv){
 
     //-- report collisions
     if(rai::checkParameter<bool>("collisions")){
-      C.ensure_proxies();
       LOG(0) <<"total violation: " <<C.coll_totalViolation();
       LOG(0) <<"collision report: ";
       C.coll_reportProxies(cout, 0.);

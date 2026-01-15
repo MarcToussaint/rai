@@ -13,8 +13,6 @@
 
 namespace rai {
 
-struct Shape;
-
 /* A class to represent a basic function: distance between two convex (decomposed) meshes
  * The constructor compute the collision geometry, the other methods are mostly readouts
  * The default is distance between two convex meshes
@@ -55,8 +53,8 @@ struct PairCollision_CvxCvx : PairCollision, NonCopyable {
 
   //mesh-to-mesh
   PairCollision_CvxCvx(const arr& pts1, const arr& pts2,
-                    const rai::Transformation& t1, const rai::Transformation& t2,
-                    double rad1=0., double rad2=0.);
+                       const rai::Transformation& t1, const rai::Transformation& t2,
+                       double rad1=0., double rad2=0.);
   //sdf-to-sdf -- TODO: own class!
   PairCollision_CvxCvx(ScalarFunction func1, ScalarFunction func2, const arr& seed);
 

@@ -46,37 +46,10 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Frame* f1 = F.elem(0);
   rai::Frame* f2 = F.elem(1);
 
-#if 0
-  double r1=0., r2=0.;
-  arr m1=zeros(1,3), m2=zeros(1,3);
-  if(f1->shape){  m1.referTo( f1->shape->sscCore() );  r1=f1->shape->coll_cvxRadius;  }
-  if(f2->shape){  m2.referTo( f2->shape->sscCore() );  r2=f2->shape->coll_cvxRadius;  }
-
-  //compute the collision
-  coll.reset();
-
-
-  //if this a point cloud collision? -> different method
-  if(f2->shape->_type==rai::ST_pointCloud){
-    CHECK_EQ(m1.d0, 1, "collision against PCL only work for points (=spheres)");
-    rai::Mesh* m2isPCL = f2->shape->_mesh.get();
-    r2=0.;
-    CHECK(!m2isPCL->T.N, "");
-    coll = make_shared<rai::PairCollision_PtPcl>(m1, m2isPCL->ensure_ann(), f1->ensure_X(), f2->ensure_X(), r1, r2);
-    //if 1 is a point, and 2 a decomposed mesh -> different method
-  }else if(f2->shape->_mesh && f2->shape->_mesh->cvxParts.N){
-    coll = make_shared<rai::PairCollision_CvxDecomp>(m1, *f2->shape->_mesh, f1->ensure_X(), f2->ensure_X(), r1, r2);
-  }else{
-    // coll = make_shared<rai::PairCollision_CvxCvx>(m1, m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
-    CHECK(f1->shape && f2->shape, "")
-    coll = make_shared<rai::PairCollision_Coal>(f1->shape.get(), f2->shape.get(), f1->ensure_X(), f2->ensure_X(), r1, r2);
-  }
-#else
   rai::Proxy p;
   p.A=f1->ID; p.B=f2->ID;
   p.calc_coll(f1->C.frames);
   shared_ptr<rai::PairCollision> coll = p.collision;
-#endif
 
   if(neglectRadii) coll->rad1=coll->rad2=0.;
 

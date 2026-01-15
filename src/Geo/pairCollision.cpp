@@ -73,7 +73,7 @@ PairCollision_CvxCvx::PairCollision_CvxCvx(const arr& pts1, const arr& pts2, con
 //  if(distance<1e-10) GJK_sqrDistance();
 
 #ifndef FCLmode
-  if(distance<1e-10) { //WARNING: Setting this to zero does not work when using
+  if(distance<=0.) {
     //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
     arr M1(pts1); if(!t1.isZero()) t1.applyOnPointArray(M1);
     arr M2(pts2); if(!t2.isZero()) t2.applyOnPointArray(M2);
@@ -453,11 +453,14 @@ void PairCollision_CvxCvx::GJK_sqrDistance(const arr& pts1, const arr& pts2, con
   simplex_point simplex;
   p1.resize(3).setZero();
   p2.resize(3).setZero();
-  gjk_distance(&m1, T1Carr.p, &m2, T2Carr.p, p1.p, p2.p, &simplex, 0);
+  double d = gjk_distance(&m1, T1Carr.p, &m2, T2Carr.p, p1.p, p2.p, &simplex, 0);
+  d = sqrt(d);
 
   normal = p1-p2;
   distance = length(normal);
-  if(distance>1e-10) normal /= distance;
+  if(distance>1e-30) normal /= distance;
+
+  // cout <<d <<' ' <<distance <<' ' <<normal <<endl;
 
   //grab simplex points
   simp1.resize(0, 3);

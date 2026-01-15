@@ -2424,7 +2424,9 @@ void Configuration::coll_reportProxies(std::ostream& os, double belowMargin, boo
   for(Frame* a:frames) for(ForceExchangeDof* c:a->forces) {
       if(&c->a==a) {
         c->coll();
-        os <<*c <<endl;
+        Graph g;
+        c->write(g);
+        os <<g <<endl;
       }
     }
 }

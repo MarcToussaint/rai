@@ -199,13 +199,16 @@ arr gnuplot(const double x) {
 }
 
 
-void rai::ForceExchangeDof::write(std::ostream& os) const {
-  os <<a.name <<'-' <<b.name;
+void rai::ForceExchangeDof::write(Graph& g) const {
+  g.add("a", a.name);
+  g.add("b", b.name);
   double d = 0.;
-  if(__coll) {
-    d = -(__coll->distance-__coll->rad1-__coll->rad2);
-  }
-  os <<" force:" <<force <<" torque:" <<torque <<" poa:" <<poa <<" d=" <<d <<"   compl=" <<sumOfSqr(d * force);
+  if(__coll) d = -(__coll->distance-__coll->rad1-__coll->rad2);
+  g.add("force", force);
+  g.add("torque", torque);
+  g.add("poa", poa);
+  g.add("d", d);
+  g.add("compl", sumOfSqr(d * force));
 //  <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
 }
 

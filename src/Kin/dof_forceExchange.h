@@ -52,9 +52,8 @@ struct ForceExchangeDof : Dof, NonCopyable {
 
   PairCollision_CvxCvx* coll();
 
-  virtual void write(ostream& os) const;
+  virtual void write(Graph& ats) const;
 };
-stdOutPipe(ForceExchangeDof)
 
 //===========================================================================
 
