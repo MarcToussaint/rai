@@ -295,23 +295,22 @@ topological order from frame2 to the broken joint"
       )
 
   .def("computeCollisions", [](shared_ptr<rai::Configuration>& self) {
-    self->ensure_proxies();
+    self->ensure_proxies(false);
   },
   "[should be obsolete; getCollision* methods auto ensure proxies] call the broadphase collision engine (SWIFT++ or FCL) to generate the list of collisions (or near proximities) \
 between all frame shapes that have the collision tag set non-zero"
       )
 
   .def("getCollisions", [](shared_ptr<rai::Configuration>& self, double belowMargin) {
-    self->coll_fcl()->mode = rai::FclInterface::_broadPhaseOnly;
-    self->ensure_proxies(true);
+    self->ensure_proxies(true, rai::_broadPhaseOnly);
 
     pybind11::list ret;
     for(const rai::Proxy& p: self->proxies) {
-      if(!p.collision)((rai::Proxy*)&p)->calc_coll();
+      CHECK(p.collision, "");
       if(p.d<=belowMargin){
         pybind11::tuple tuple(3);
-        tuple[0] = p.a->name.p;
-        tuple[1] = p.b->name.p;
+        tuple[0] = self->frames(p.A)->name.p;
+        tuple[1] = self->frames(p.B)->name.p;
         tuple[2] = p.d;
         ret.append(tuple);
       }
