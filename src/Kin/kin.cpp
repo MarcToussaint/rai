@@ -3119,6 +3119,18 @@ void Configuration::addDict(const Graph& G) {
     }
   }
 
+  // shared shapes
+  for(Frame* f: frames) if(f->ats) {
+      Node* s= f->ats->findNode("shared_shape");
+      if(s){
+        CHECK(!f->shape, "frame '" <<f->name <<"' cannot have a shared_shape and other shape at the same time");
+        Frame* otherFrame = getFrame(s->as<str>(), true, true);
+        CHECK(otherFrame, "the argument to 'shared_shape', '" <<otherFrame <<"' is not a frame name");
+        f->shape = otherFrame->shape;
+        CHECK(f->shape, "the shared_shape frame '" <<otherFrame <<"' does not have a shape");
+      }
+    }
+
   // mimic joints: if the joint is coupled to another:
   {
     Joint* j;

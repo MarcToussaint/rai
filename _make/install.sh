@@ -157,6 +157,13 @@ case ${lib} in
 	make -C ${lib}/build install
 	;;
 
+    coal)
+	# libboost-serialization-dev libboost-filesystem-dev
+	git clone --single-branch -b devel https://github.com/coal-library/coal.git
+        cmake -DCMAKE_INSTALL_PREFIX=${pre} -DBUILD_PYTHON_INTERFACE=OFF -DBUILD_TESTING=OFF -DAUTO_UNINSTALL=OFF -DBUILDING_ROS2_PACKAGE=OFF -DBUILD_DOCUMENTATION=OFF ${lib} -B ${lib}/build
+	make -C ${lib}/build install
+	;;
+    
     glew)
 	wget https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0.tgz; tar xvzf glew-2.2.0.tgz
 	env GLEW_DEST=${pre} make -C glew-2.2.0 install

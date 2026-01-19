@@ -462,7 +462,7 @@ void rai::Frame::read(const Graph& ats) {
     }
   }
   if(ats.findNode("shape") || ats.findNode("mesh") || ats.findNode("mesh_decomp") || ats.findNode("mesh_points") || ats.findNode("sdf")) { getShape().read(*this); }
-  if(ats.findNode("shared_shape")) { shape = C.getFrame(ats.get<str>("shared_shape"))->shape; CHECK(shape, ""); }
+  // if(ats.findNode("shared_shape")) { shape = C.getFrame(ats.get<str>("shared_shape"))->shape; CHECK(shape, ""); }
   if(ats.findNode("mass")) { inertia = new Inertia(*this); inertia->read(ats); }
 }
 
