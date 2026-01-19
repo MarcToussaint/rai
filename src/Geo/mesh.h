@@ -105,7 +105,7 @@ struct Mesh {
   uint support(const arr& dir);
 
   /// @name internal computations & cleanup
-  void computeTriNormals();
+  void computeTriNormals(bool assignVertexNormalsToAvg=false);
   void computeFaceColors();
   arr computeTriDistances();
   uintA getNeighborVertices(uint i);

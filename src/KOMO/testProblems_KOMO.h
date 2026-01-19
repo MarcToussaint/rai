@@ -49,10 +49,10 @@ struct MinimalConvexCore : NLP {
   double radius;
   arr x, cen;
 
-  rai::Mesh M;
+  rai::Mesh M; //ground truth mesh
   rai::Configuration disp; //for reporting/display only
 
-  MinimalConvexCore(const arr& X={}, double radius=.1);
+  MinimalConvexCore(const arr& X={}, double radius=.01);
   arr getInitializationSample();
   void evaluate(arr& phi, arr& J, const arr& _x);
   void report(ostream &os, int verbose, const char *msg=0);

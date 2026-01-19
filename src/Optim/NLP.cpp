@@ -33,15 +33,6 @@ arr NLP::getInitializationSample() {
   return getUniformSample();
 }
 
-void NLP::report(std::ostream& os, int verbose, const char* msg) {
-  os <<"NLP of type '" <<rai::niceTypeidName(typeid(*this)) <<"'";
-  NLP *d=derived;
-  while(d){ os <<" wraps '" <<rai::niceTypeidName(typeid(d)) <<"'"; d=d->derived; }
-  if(msg) os <<' ' <<msg;
-  os <<" dimension:" <<dimension <<" #objectives: " <<featureTypes.N <<endl;
-  if(verbose>1) os <<"\n  featureTypes: " <<EnumArr(featureTypes) <<"\n  bounds: " <<bounds <<endl;
-}
-
 double NLP::eval_scalar(arr& g, arr& H, const arr& x) {
   arr phi, J;
   evaluate(phi, J, x);
@@ -141,6 +132,15 @@ bool NLP::checkBounds(bool strictlyLarger){
     }
   }
   return good;
+}
+
+void NLP::report(std::ostream& os, int verbose, const char* msg) {
+  os <<"NLP of type '" <<rai::niceTypeidName(typeid(*this)) <<"'";
+  NLP *d=derived;
+  while(d){ os <<" wraps '" <<rai::niceTypeidName(typeid(d)) <<"'"; d=d->derived; }
+  if(msg) os <<' ' <<msg;
+  os <<" dimension:" <<dimension <<" #objectives: " <<featureTypes.N <<endl;
+  if(verbose>1) os <<"\n  featureTypes: " <<EnumArr(featureTypes) <<"\n  bounds: " <<bounds <<endl;
 }
 
 rai::String NLP::reportSignature(){

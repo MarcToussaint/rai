@@ -425,17 +425,18 @@ MinimalConvexCore::MinimalConvexCore(const arr& X, double radius) : radius(radiu
   featureTypes.resize(M.V.d0+1+M.V.N) = OT_ineq;
   featureTypes(0) = OT_f;
   for(uint i=0;i<M.V.N;i++) featureTypes(M.V.d0+1+i)= OT_sos;
-  bounds = (repmat(~min(M.V,0), M.V.d0,1), repmat(~max(M.V,0), M.V.d0,1)).reshape(2, -1);
+  bounds = (repmat(~min(M.V,0)-.01, M.V.d0,1), repmat(~max(M.V,0)+.01, M.V.d0,1)).reshape(2, -1);
 }
 
 arr MinimalConvexCore::getInitializationSample(){
   arr x = M.V;
   x.reshape(-1);
-  x += .01 * randn(x.N);
+  x += .1*radius * randn(x.N);
+  boundClip(x, bounds);
   return x;
 }
 
-double attractor(double x, double a, double& dydx_x){
+double attractor_old(double x, double a, double& dydx_x){
   CHECK_GE(x, 0., "")
   double f = x/a;
   double lof = log(1.+f);
@@ -445,6 +446,48 @@ double attractor(double x, double a, double& dydx_x){
   double scale= 1e0;
   dydx_x *= scale;
   return scale * y;
+}
+
+double fct_huberHinge(double x, double delta, double& dy){
+  if(x>delta){
+    dy = 1.;
+    return x-0.5*delta;
+  }else if(x>0.){
+    dy = x/delta;
+    return 0.5*x*x/delta ;
+  }
+  dy = 0.;
+  return 0.;
+}
+
+double fct_trap(double x, double delta, double& dy){
+  double x_d = delta+x;
+  dy = delta/(x_d*x_d);
+  return x/x_d;
+}
+
+double fct_huberTrap(double x, double delta, double& dy){
+
+  // gnuplot:
+  // d = 0.1;
+  // b = 0.1;
+  // a = 1/(sqrt(b)*(1+b));
+  // diff = b/(1+b)-0.5*(a*b)**2;
+  // plot [0:5*d][:1] x/(d+x)-diff, d*d/(d+x)**2, 0.5*(a*x/d)**2;
+
+  double b=.2;
+  double a = 1./(sqrt(b)*(1.+b));
+  double diff = b/(1.+b)-0.5*(a*a*b*b);
+  double y;
+  if(x>b*delta){ //trap
+    double x_d = delta+x;
+    y = x/x_d-diff;
+    dy = delta/(x_d*x_d);
+  }else{ //sqr
+    y = 0.5*rai::sqr(a*x/delta);
+    dy = rai::sqr(a/delta)*x;
+  }
+  return y;
 }
 
 void MinimalConvexCore::evaluate(arr& phi, arr& J, const arr& _x) {
@@ -458,33 +501,28 @@ void MinimalConvexCore::evaluate(arr& phi, arr& J, const arr& _x) {
 
   //-- accumulated cost
   double cost = 0.;
-  double l_a=.01, dxdl_l;
+  double delta=1e-4, dxdl_l;
   arr Jcost = zeros(x.N);
   for(uint i=0; i<M.T.d0; i++) {
     int a=M.T(i, 0), b=M.T(i, 1), c=M.T(i, 2);
     {
       arr d = x[a]-x[b];
       double l = length(d);
-      cost += attractor(l, l_a, dxdl_l);
+      cost += fct_huberTrap(l, delta, dxdl_l);
       Jcost({3*a, 3*a+2+1}) += d*dxdl_l;
       Jcost({3*b, 3*b+2+1}) += -d*dxdl_l;
-      //            if(!!H){
-      //              for(uint k=0;k<3;k++) for(uint l=0;l<3;l++){
-      //                H(3*a+k,3*a+l) += d(k)*d(l)/(l*l);
-      //              }
-      //            }
     }
     {
       arr d = x[c]-x[b];
       double l = length(d);
-      cost += attractor(l, l_a, dxdl_l);
+      cost += fct_huberTrap(l, delta, dxdl_l);
       Jcost({3*c, 3*c+2+1}) += d*dxdl_l;
       Jcost({3*b, 3*b+2+1}) += -d*dxdl_l;
     }
     {
       arr d = x[a]-x[c];
       double l = length(d);
-      cost += attractor(l, l_a, dxdl_l);
+      cost += fct_huberTrap(l, delta, dxdl_l);
       Jcost({3*a, 3*a+2+1}) += d*dxdl_l;
       Jcost({3*c, 3*c+2+1}) += -d*dxdl_l;
     }
@@ -506,7 +544,7 @@ void MinimalConvexCore::evaluate(arr& phi, arr& J, const arr& _x) {
   //-- center sos
   for(uint i=0;i<x.d0;i++) x[i] -= cen;
   x.reshape(-1);
-  double scale = 1e-1;
+  double scale = 0.; //1e-0;
   phi.setVectorBlock(scale*x, M.V.d0+1);
   if(!!J) J.setMatrixBlock(scale*eye(x.N), M.V.d0+1, 0);
 

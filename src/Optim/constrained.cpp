@@ -172,9 +172,9 @@ bool ConstrainedSolver::ministep() {
     if(opt->stopGTolerance<0. || err(OT_ineq)+err(OT_eq)<opt->stopGTolerance) {
       return true; //good: small step in last loop and err small
     } else {
-      if(opt->verbose>0) cout <<"               -- but err too large " <<err(OT_ineq)+err(OT_eq) <<'>' <<opt->stopGTolerance <<endl;
+      if(opt->verbose>0) cout <<"               -- err too large " <<err(OT_ineq)+err(OT_eq) <<'>' <<opt->stopGTolerance <<endl;
       if(numBadSteps>6) {
-        cout <<"               -- but numBadSteps > 6" <<endl;
+        if(opt->verbose>0) cout <<"               -- but numBadSteps > 6" <<endl;
         return true;
       }
     }

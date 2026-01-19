@@ -25,14 +25,20 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
   if(opt.verbose>0) komo.set_viewer(C.get_viewer());
 
   //-- discrete decisions:
+  uintA perm = rai::randperm(supports.N);
+  uint n_supports = rnd.uni_int(1,3);
   supp.clear();
-  for(const str& thing:supports){
-    if(rnd.uni()<.5){
-      supp.append(thing);
-      // komo.addContact_stick(0.,-1., "obj", thing, opt.frictionCone_mu);
-      komo.addContact_WithPoaFrame(1., "obj", thing, opt.frictionCone_mu, .05);
-    }
+  for(uint i=0;i<n_supports;i++){
+    str s = supports(perm(i));
+    supp.append(s);
+    // komo.addContact_stick(0.,-1., "obj", thing, opt.frictionCone_mu);
+    komo.addContact_WithPoaFrame(1., "obj", s, opt.frictionCone_mu, .05);
   }
+  for(uint i=n_supports;i<supports.N;i++){
+    //for all NON-supports, introduce an explicit(!) no-collision
+    komo.addObjective({}, FS_negDistance, {"obj", supports(perm(i))}, OT_ineq, {1e1});
+  }
+
   if(opt.verbose>0){
     LOG(0) <<"\n======================\n" <<supp;
   }

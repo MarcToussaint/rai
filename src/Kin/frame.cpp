@@ -462,6 +462,7 @@ void rai::Frame::read(const Graph& ats) {
     }
   }
   if(ats.findNode("shape") || ats.findNode("mesh") || ats.findNode("mesh_decomp") || ats.findNode("mesh_points") || ats.findNode("sdf")) { getShape().read(*this); }
+  if(ats.findNode("shared_shape")) { shape = C.getFrame(ats.get<str>("shared_shape"))->shape; CHECK(shape, ""); }
   if(ats.findNode("mass")) { inertia = new Inertia(*this); inertia->read(ats); }
 }
 
@@ -747,7 +748,7 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
   }
   rai::Mesh& mesh = getShape().mesh();
   mesh.clear();
-  mesh.setSSCvx(getShape().sscCore(), radius);
+  mesh.setSSCvx(getShape().sscCore(), radius, (radius>.01?2:1) );
   if(colors.N) {
     mesh.C = reshapeColor(convert<double>(colors) /= 255.);
   }else{

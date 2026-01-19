@@ -790,11 +790,9 @@ Mesh Mesh::decompose() {
 //   return cvxParts.N;
 // }
 
-/** @brief calculate the normals of all triangles (Tn) and the average
-  normals of the vertices (N); average normals are averaged over
-  all adjacent triangles that are in the triangle list or member of
-  a strip */
-void Mesh::computeTriNormals() {
+/** @brief calculate the normals of all triangles (Tn) and optionally assign vertex normals to the average
+  normals of adjacent triangles */
+void Mesh::computeTriNormals(bool assignVertexNormalsToAvg) {
   CHECK(T.N, "can't compute normals for a point cloud");
 //  CHECK(!isArrayFormatted, "not implemented");
   Vector a, b, c;
@@ -807,6 +805,17 @@ void Mesh::computeTriNormals() {
 
     b-=a; c-=a; a=b^c; if(!a.isZero) a.normalize();
     Tn(i, 0)=a.x;  Tn(i, 1)=a.y;  Tn(i, 2)=a.z;
+  }
+
+  if(assignVertexNormalsToAvg){
+    Vn = zeros(V.d0, 3);
+    for(uint i=0; i<T.d0; i++) {
+      for(uint j=0;j<3;j++) Vn[T(i,j)] += Tn[i];
+    }
+    for(uint v=0;v<V.d0;v++){
+      arr n = Vn[v];
+      n /= length(n);
+    }
   }
 }
 

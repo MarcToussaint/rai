@@ -121,6 +121,46 @@ void computeMeshGraphs(FrameL& frames, bool force) {
     }
 }
 
+void makeMeshesSSCvx(FrameL& frames, double radius){
+  for(rai::Frame* f:frames){
+    if(f->shape && f->shape->type()==rai::ST_mesh){
+
+      //get cvx hull
+      rai::Mesh& M = f->shape->mesh();
+      M.makeConvexHull();
+      M.computeTriNormals(true);
+
+      //shrink
+      for(uint i=0;i<M.V.d0;i++) M.V[i] -= radius*M.Vn[i];
+
+      f->setConvexMesh(M.V, {}, radius);
+
+#if 0
+    auto nlp = std::make_shared<MinimalConvexCore>(X, .003);
+
+    rai::NLP_Solver S;
+    S.setProblem(nlp);
+    arr x = nlp->getInitializationSample();
+    // nlp->checkJacobian(x, 1e-2);
+    auto ret = S.solve();
+    // nlp->checkJacobian(ret->x, 1e-2);
+
+    nlp->report(cout, 3);
+
+    X = ret->x;
+    X.reshape(-1,3);
+    arr Y;
+    for(uint i=0;i<X.d0;i++) for(uint j=0;j<X.d0;j++) if(i!=j){
+          double d = length(X[i]-X[j]);
+          if(d<1e-3){
+            cout <<i <<' ' <<j <<' ' <<d <<endl;
+          }
+        }
+#endif
+    }
+  }
+}
+
 //===========================================================================
 //
 // Configuration
@@ -2415,7 +2455,7 @@ void Configuration::coll_reportProxies(std::ostream& os, double belowMargin, boo
   for(const Proxy& p: proxies) {
     if(p.d>belowMargin) continue;
     if(p.d<0.) pen -= p.d;
-    os <<"  " <<i++;
+    os <<"  " <<i++ <<" [" <<frames(p.A)->name <<' ' <<frames(p.B)->name <<"] ";
     p.write(os, brief);
     os <<endl;
   }

@@ -339,5 +339,6 @@ void makeConvexHulls(FrameL& frames, bool onlyContactShapes=true);
 void computeOptimalSSBoxes(FrameL& frames);
 void computeMeshNormals(FrameL& frames, bool force=false);
 void computeMeshGraphs(FrameL& frames, bool force=false);
+void makeMeshesSSCvx(FrameL& frames, double radius=.005);
 
 } //namespace rai

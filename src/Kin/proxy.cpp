@@ -59,7 +59,7 @@ void rai::Proxy::calc_coll(const Array<Frame*>& frames) {
 typedef rai::Array<rai::Proxy*> ProxyL;
 
 void rai::Proxy::write(std::ostream& os, bool brief) const {
-  os <<" [" <<A <<',' <<B <<"] \td=" <<d;
+  os <<"[" <<A <<',' <<B <<"] \td=" <<d;
   if(!brief)
     os <<" |A-B|=" <<(posB-posA).length()
        //        <<" d^2=" <<(posB-posA).lengthSqr()

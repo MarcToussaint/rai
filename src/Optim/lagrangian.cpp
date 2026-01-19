@@ -164,16 +164,16 @@ double LagrangianProblem::eval_scalar(arr& dL, arr& HL, const arr& _x) {
   double L=0.; //L value
   for(uint i=0; i<phi_x.N; i++) {
     ObjectiveType ot = P->featureTypes.p[i];
-    if(ot==OT_f) L += phi_x.p[i];                                                  // direct cost term
-    if(ot==OT_sos) L += sqr(phi_x.p[i]);                                      // sumOfSqr term
+    if(ot==OT_f) L += phi_x.p[i];                                                 // direct cost term
+    if(ot==OT_sos) L += sqr(phi_x.p[i]);                                          // sumOfSqr term
     if(useLB    && ot==OT_ineq) { if(phi_x.p[i]>0.) return NAN;  L -= muLB * ::log(-phi_x.p[i]); }  //log barrier, check feasibility
-    if(!useLB   && ot==OT_ineq && I_lambda_x.p[i]) L += gpenalty(phi_x.p[i]);      //g-penalty
+    if(!useLB   && ot==OT_ineq && I_lambda_x.p[i]) L += gpenalty(phi_x.p[i]);     //g-penalty
     if(ot==OT_ineqP && phi_x.p[i]>0.) L += gpenalty(phi_x.p[i]);                  //g-penalty
-    if(lambda.N && ot==OT_ineq  && lambda.p[i]>0.) L += lambda.p[i] * phi_x.p[i];   //g-lagrange terms
+    if(lambda.N && ot==OT_ineq  && lambda.p[i]>0.) L += lambda.p[i] * phi_x.p[i]; //g-lagrange terms
     if(ot==OT_ineqB) { if(phi_x.p[i]>0.) return NAN;  L -= muLB * ::log(-phi_x.p[i]); }              //log barrier, check feasibility
-    if(lambda.N && ot==OT_ineqB && lambda.p[i]>0.) L += lambda.p[i] * phi_x.p[i];  //g-lagrange terms
-    if(ot==OT_eq) L += hpenalty(phi_x.p[i]);                                       //h-penalty
-    if(lambda.N && ot==OT_eq) L += lambda.p[i] * phi_x.p[i];                       //h-lagrange terms
+    if(lambda.N && ot==OT_ineqB && lambda.p[i]>0.) L += lambda.p[i] * phi_x.p[i]; //g-lagrange terms
+    if(ot==OT_eq) L += hpenalty(phi_x.p[i]);                                      //h-penalty
+    if(lambda.N && ot==OT_eq) L += lambda.p[i] * phi_x.p[i];                      //h-lagrange terms
   }
 
   if(!!dL) { //L gradient
