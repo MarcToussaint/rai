@@ -9,7 +9,7 @@ struct RndStableConfigs_Options {
 
 struct RndStableConfigs {
   RndStableConfigs_Options opt;
-  uint totalEvals=0, totalSucc=0;
+  uint totalEvals=0, totalSucc=0, totalRuns=0;
   bool savePngs=false;
   strA supp;
   intA pairs;

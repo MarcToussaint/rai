@@ -14,7 +14,11 @@
 #OPTIM = fast_debug
 
 ## by default we use OpenGL a lot, but can be disabled
+#X11 = 0
+#PNG = 0
 #GL = 0
+#GLFW = 0
+#FREETYPE = 0
 
 ## by default we compile python bindings using the Ubuntu pybind package, but can be disabled
 #PYBIND = 0

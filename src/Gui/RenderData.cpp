@@ -1,6 +1,8 @@
 #include "shaders.cxx"
 #include "RenderData.h"
 
+#ifdef RAI_GL
+
 #include <sstream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -298,7 +300,7 @@ void RenderData::renderObjects(GLuint prog_ModelT_WM, const uintA& sortedObjIDs,
 
     obj->asset->glRender();
 
-    if(opt.polygonLines){
+    if(opt.renderPolygonLines){
       glUniform4f(idFlatColor, 0.f, 0.f, 0.f, 1.f);
       glPolygonMode(GL_FRONT, GL_LINE);
       obj->asset->glRender();
@@ -372,7 +374,7 @@ void RenderData::glDraw(OpenGL& gl){
   for(std::shared_ptr<RenderItem>& obj:items) if(obj->type==_solid && obj->asset->isTransparent) obj->type=_transparent;
 
   //-- SHADOW BEGIN
-  if(renderUntil>=_shadow && opt.useShadow){
+  if(renderUntil>=_shadow && opt.renderShadow){
     // Render to shadowFramebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, id.shadowFramebuffer);
     glViewport(0, 0, bufW, bufH);
@@ -451,7 +453,7 @@ void RenderData::glDraw(OpenGL& gl){
     lightDirs.reshape(lights.N, 3);
     glUniform3fv(id.prog_lightDirection_W, lights.N, rai::convert<float>(-lightDirs).p);
 
-    if(renderUntil>=_shadow && opt.useShadow) {
+    if(renderUntil>=_shadow && opt.renderShadow) {
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, id.shadowTexture);
       glUniform1i(id.prog_useShadow, 1);
@@ -465,7 +467,7 @@ void RenderData::glDraw(OpenGL& gl){
     renderObjects(id.prog_ModelT_WM, sorting, _solid, id.prog_FlatColor, -1, id.prog_textureDim);
 //    renderObjects(id.prog_ModelT_WM, sorting, _marker);
 
-    if(renderUntil>=_shadow && opt.useShadow) glBindTexture(GL_TEXTURE_2D, 0);
+    if(renderUntil>=_shadow && opt.renderShadow) glBindTexture(GL_TEXTURE_2D, 0);
   }
 
   // glDisable(GL_DEPTH_TEST);
@@ -490,7 +492,7 @@ void RenderData::glDraw(OpenGL& gl){
   }
 
   glDisable(GL_DEPTH_TEST);
-  if(renderUntil>=_text) {
+  if(renderUntil>=_text && opt.renderText) {
     glUseProgram(id.progText);
     {
       glUniform1i(id.progText_useTexColor, 1);
@@ -1065,5 +1067,29 @@ void RenderData::report(std::ostream& os){
   <<" #distMarkers: " <<distMarkers.pos.d0
   <<endl;
 }
+
+#else
+
+namespace rai {
+  
+  void RenderData::glDeinitialize(OpenGL& gl){ NICO }
+  RenderData::RenderData(){ NICO }
+  void RenderData::addAxes(double scale, const rai::Transformation& _X){ NICO }
+  RenderAsset& RenderData::add(const Transformation& _X, RenderType _type){ NICO }
+  void RenderAsset::tensor(const floatA& vol, const arr& size){ NICO }
+  void RenderAsset::pointCloud(const arr& points, const arr& color){ NICO }
+  void RenderData::addDistMarker(const arr& a, const arr& b, int s, double size, const arr& color){ NICO }
+  void RenderAsset::mesh(rai::Mesh& mesh, double avgNormalsThreshold){ NICO }
+  void RenderAsset::lines(const arr& lines, const arr& color){ NICO }
+  RenderAsset& RenderData::addShared(std::shared_ptr<RenderItem> _item, const rai::Transformation& _X, RenderType _type){ NICO }
+  RenderData& RenderData::addStandardScene(bool addFloor){ NICO }
+  void RenderData::setText(const char* text){ NICO }
+  void RenderData::addText(const char* text, float x, float y, float size){ NICO }
+  int RenderData::setQuad(int id, const byteA& img, float x, float y, float h){ NICO }
+  RenderData& RenderData::clear(){ NICO }
+  void RenderData::glDraw(OpenGL& gl){ NICO }
+  void RenderData::report(std::ostream& os){ NICO }
+
+#endif
 
 }//namespace

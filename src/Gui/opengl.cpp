@@ -37,9 +37,7 @@
 #  include <unistd.h>
 #endif
 
-#define _SHIFT(mod) (mod&GLFW_MOD_SHIFT)
-#define _CTRL(mod) (mod&GLFW_MOD_CONTROL)
-#define _NONE(mod) ((!hideCameraControls && !mod) || (hideCameraControls && _SHIFT(mod) && _CTRL(mod)))
+//===========================================================================
 
 #if 1
 #  define CALLBACK_DEBUG(gl, x) if(gl->reportEvents) { LOG(0) <<x; }
@@ -49,9 +47,11 @@
 #  define CALLBACK_DEBUG(gl, x)
 #endif
 
-//===========================================================================
-
 #ifdef RAI_GLFW
+
+#define _SHIFT(mod) (mod&GLFW_MOD_SHIFT)
+#define _CTRL(mod) (mod&GLFW_MOD_CONTROL)
+#define _NONE(mod) ((!hideCameraControls && !mod) || (hideCameraControls && _SHIFT(mod) && _CTRL(mod)))
 
 //===========================================================================
 
@@ -320,19 +320,21 @@ void OpenGL::resize(int w, int h) {
   }
 }
 
-#endif
+#else //RAI_GLFW
 
-#ifndef RAI_GL
-int GLUT_ACTIVE_SHIFT = 1;
+#define _SHIFT(mod) 0
+#define _CTRL(mod) 0
+#define _NONE(mod) 0
 
-void OpenGL::openWindow() {}
-void OpenGL::closeWindow() {}
+void OpenGL::openWindow() { NICO }
+void OpenGL::closeWindow() { NICO }
+void OpenGL::raiseWindow() { NICO }
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {}
 void OpenGL::resize(int w, int h) {}
-
-struct sOpenGL : NonCopyable {
-  sOpenGL(OpenGL* gl) { }
-};
+void OpenGL::beginContext(bool fromWithinCallback) { NICO }
+void OpenGL::endContext(bool fromWithinCallback) { NICO }
+int OpenGL::displayRedBlue(const arr& x, bool wait, float _zoom) { NICO }
+void OpenGL::setTitle(const char* _title) { NICO }
 
 #endif
 

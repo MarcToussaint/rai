@@ -681,6 +681,8 @@ void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
 
 //===========================================================================
 
+#ifdef RAI_GL
+
 void glRasterImage(float x, float y, byteA& img, float zoom) {
   glRasterPos3f(x, y, 0.); //(int)(y+zoom*img.d0)); (the latter was necessary for other pixel/raster coordinates)
   glPixelZoom(zoom, -zoom);
@@ -703,6 +705,12 @@ void glRasterImage(float x, float y, byteA& img, float zoom) {
   };
 }
 
+#else
+  
+  void glRasterImage(float x, float y, byteA& img, float zoom) { NICO }
+  
+#endif
+  
 struct Simulation_DisplayThread : Thread, ConfigurationViewer {
   //data
   Mutex mux;

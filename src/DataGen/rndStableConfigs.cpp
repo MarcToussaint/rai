@@ -69,12 +69,14 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
     if(opt.verbose>1){
       cout <<pairs <<forces <<endl;
     }
+
+    totalRuns++;
     if(!ret->feasible){
       if(opt.verbose>2){
         komo.view(opt.verbose>3, STRING("failed" <<*ret));
       }
     }else{
-      totalSucc ++;
+      totalSucc++;
       totalEvals += ret->evals;
       if(opt.verbose>0) komo.view(opt.verbose>1, STRING(supp <<"\n" <<*ret));
       if(savePngs){
@@ -89,5 +91,8 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
 }
 
 void RndStableConfigs::report(){
-  LOG(0) <<"TOTAL SUCC: " <<totalSucc <<"   evals/succ: " <<double(totalEvals)/double(totalSucc);
+  LOG(0) <<"TOTAL SUCC: " <<totalSucc
+        <<"  evals/succ: " <<double(totalEvals)/totalSucc
+       <<"  succ rate: " <<double(totalSucc)/totalRuns
+      <<"  runs: " <<totalRuns;
 }
