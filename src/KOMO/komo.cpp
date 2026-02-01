@@ -224,9 +224,13 @@ void KOMO::checkConsistency(){
   uint i=0;
   for(const std::shared_ptr<Objective>& ob:objectives) {
     for(const GroundedObjective* o:ob->groundings) {
-      CHECK_EQ(o, objs.elem(i).get(), "");
+      CHECK_EQ(o, objs.elem(i).get(), "consecutive counting broke; objective: " <<*ob);
       i++;
+      for(rai::Frame* f:o->frames){
+        CHECK_EQ(&f->C, &pathConfig, "frame " <<f->name <<" is not part of this pathconfig");
+      }
     }
+    for(uint i:ob->feat->frameIDs) CHECK(i<pathConfig.frames.N, "frameID " <<i <<" of objective: " <<*ob);
   }
   CHECK_EQ(i, objs.N, "grounded objectives not consistent with declared objectives");
 }

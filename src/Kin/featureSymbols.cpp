@@ -62,6 +62,7 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
 
   "standingAbove",
 
+  "totalForce",
   "physics",
   "contactConstraints",
   "energy",
@@ -112,6 +113,7 @@ std::shared_ptr<Feature> Feature::deepCopy() {
   _cpy(F_LinAngVel);
   _cpy(F_PairCollision);
   _cpy(F_AccumulatedCollisions);
+  _cpy(F_TotalForce);
   _cpy(F_NewtonEuler);
   _cpy(F_NewtonEuler_DampedVelocities);
   _cpy(F_fex_POASurfaceDistance);
@@ -218,6 +220,7 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
     f->setScale(_scale);
   }
 
+  else if(feat==FS_totalForce) { f=make_shared<F_TotalForce>(); }
   else if(feat==FS_physics) { f=make_shared<F_NewtonEuler>(); }
   else if(feat==FS_contactConstraints) { f=make_shared<F_fex_ForceIsNormal>(); }
   else if(feat==FS_energy) { f=make_shared<F_Energy>(); }

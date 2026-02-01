@@ -227,6 +227,7 @@ void init_enums(pybind11::module& m) {
 
   ENUMVAL(FS, standingAbove)
 
+  ENUMVAL(FS, totalForce)
   ENUMVAL(FS, physics)
   ENUMVAL(FS, contactConstraints)
   ENUMVAL(FS, energy)

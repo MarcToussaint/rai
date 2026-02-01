@@ -121,46 +121,6 @@ void computeMeshGraphs(FrameL& frames, bool force) {
     }
 }
 
-void makeMeshesSSCvx(FrameL& frames, double radius){
-  for(rai::Frame* f:frames){
-    if(f->shape && f->shape->type()==rai::ST_mesh){
-
-      //get cvx hull
-      rai::Mesh& M = f->shape->mesh();
-      M.makeConvexHull();
-      M.computeTriNormals(true);
-
-      //shrink
-      for(uint i=0;i<M.V.d0;i++) M.V[i] -= radius*M.Vn[i];
-
-      f->setConvexMesh(M.V, {}, radius);
-
-#if 0
-    auto nlp = std::make_shared<MinimalConvexCore>(X, .003);
-
-    rai::NLP_Solver S;
-    S.setProblem(nlp);
-    arr x = nlp->getInitializationSample();
-    // nlp->checkJacobian(x, 1e-2);
-    auto ret = S.solve();
-    // nlp->checkJacobian(ret->x, 1e-2);
-
-    nlp->report(cout, 3);
-
-    X = ret->x;
-    X.reshape(-1,3);
-    arr Y;
-    for(uint i=0;i<X.d0;i++) for(uint j=0;j<X.d0;j++) if(i!=j){
-          double d = length(X[i]-X[j]);
-          if(d<1e-3){
-            cout <<i <<' ' <<j <<' ' <<d <<endl;
-          }
-        }
-#endif
-    }
-  }
-}
-
 //===========================================================================
 //
 // Configuration
@@ -1344,6 +1304,46 @@ void Configuration::makeObjectsFree(const StringA& objects, double H_cost) {
     if(!a->parent) a->setParent(frames.first());
     if(!a->joint) new Joint(*a);
     a->joint->makeFree(H_cost);
+  }
+}
+
+void Configuration::makeMeshesSSCvx(double radius){
+  for(rai::Frame* f:frames){
+    if(f->shape && f->shape->type()==rai::ST_mesh){
+
+      //get cvx hull
+      rai::Mesh& M = f->shape->mesh();
+      M.makeConvexHull();
+      M.computeTriNormals(true);
+
+      //shrink
+      for(uint i=0;i<M.V.d0;i++) M.V[i] -= radius*M.Vn[i];
+
+      f->setConvexMesh(M.V, {}, radius);
+
+#if 0
+    auto nlp = std::make_shared<MinimalConvexCore>(X, .003);
+
+    rai::NLP_Solver S;
+    S.setProblem(nlp);
+    arr x = nlp->getInitializationSample();
+    // nlp->checkJacobian(x, 1e-2);
+    auto ret = S.solve();
+    // nlp->checkJacobian(ret->x, 1e-2);
+
+    nlp->report(cout, 3);
+
+    X = ret->x;
+    X.reshape(-1,3);
+    arr Y;
+    for(uint i=0;i<X.d0;i++) for(uint j=0;j<X.d0;j++) if(i!=j){
+          double d = length(X[i]-X[j]);
+          if(d<1e-3){
+            cout <<i <<' ' <<j <<' ' <<d <<endl;
+          }
+        }
+#endif
+    }
   }
 }
 
@@ -3068,7 +3068,7 @@ void Configuration::report(std::ostream& os) const {
 }
 
 void Configuration::addDict(const Graph& G) {
-  uint n_prev = frames.N;
+  //uint n_prev = frames.N;
 
   FrameL node2frame(G.N);
   node2frame.setZero();

@@ -132,6 +132,8 @@ void init_Config(pybind11::module& m) {
            pybind11::arg("pruneRigidJoints")=false, pybind11::arg("reconnectToLinks")=true, pybind11::arg("pruneNonContactShapes")=false, pybind11::arg("pruneTransparent")=false )
   .def("processInertias", &rai::Configuration::processInertias, "collect all inertia at root frame of links, optionally reestimate all inertias based on standard surface density, optionally relocate the link frame to the COM with diagonalized I)",
            pybind11::arg("recomputeInertias")=true, pybind11::arg("transformToDiagInertia")=false)
+  .def("makeMeshesSSCvx", &rai::Configuration::makeMeshesSSCvx, "",
+           pybind11::arg("radius")=.005)
 
   .def("getFrame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName, bool warnIfNotExist) {
     rai::Frame* f = self->getFrame(frameName.c_str(), warnIfNotExist);
@@ -185,6 +187,10 @@ void init_Config(pybind11::module& m) {
   },
   "get the joint limits as a n-by-2 matrix; for dofs that do not have limits defined, the entries are [0,-1] (i.e. upper limit < lower limit)"
       )
+
+  .def("setRandom", &rai::Configuration::setRandom, "",
+       pybind11::arg("timeSlices_d1")=0,
+       pybind11::arg("verbose")=0)
 
   .def("setJointState", [](std::shared_ptr<rai::Configuration>& self, const arr& q, const pybind11::list& joints) {
     if(!joints.size()) {
@@ -332,6 +338,8 @@ To get really precise distances and penetrations use the FS.distance feature wit
   .def("getCollidablePairs", [](shared_ptr<rai::Configuration>& self) {
     return rai::framesToNames(self->getCollidablePairs());
   }, "returns the list of collisable pairs -- this should help debugging the 'contact' flag settings in a configuration")
+
+  .def("getForceArrays", &rai::Configuration::getForceArrays, "")
 
   .def("view",  &rai::Configuration::view,
        "open a view window for the configuration; when offscreen you can grab/save rgb/depth from viewer",

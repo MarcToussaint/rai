@@ -60,6 +60,7 @@ enum FeatureSymbol : int {
 
   FS_standingAbove,
 
+  FS_totalForce,
   FS_physics,
   FS_contactConstraints,
   FS_energy,

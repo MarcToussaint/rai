@@ -169,7 +169,7 @@ struct Configuration {
   double getEnergy(const arr& qdot);
   // bool getCollisionFree(); //broken
   Graph reportForces();
-  std::tuple<intA,arr> getForceArrays();
+  std::tuple<intA, arr> getForceArrays();
   bool checkUniqueNames(bool makeUnique=false);
   FrameL calc_topSort() const;
   bool check_topSort() const;
@@ -189,6 +189,7 @@ struct Configuration {
   void processInertias(bool recomputeInertias=true, bool transformToDiagInertia=false);
   void sortFrames();
   void makeObjectsFree(const StringA& objects, double H_cost=0.);
+  void makeMeshesSSCvx(double radius=.005);
   void addTauJoint();
   bool hasTauJoint(Frame* a=0);
   bool checkConsistency() const;
@@ -339,6 +340,5 @@ void makeConvexHulls(FrameL& frames, bool onlyContactShapes=true);
 void computeOptimalSSBoxes(FrameL& frames);
 void computeMeshNormals(FrameL& frames, bool force=false);
 void computeMeshGraphs(FrameL& frames, bool force=false);
-void makeMeshesSSCvx(FrameL& frames, double radius=.005);
 
 } //namespace rai

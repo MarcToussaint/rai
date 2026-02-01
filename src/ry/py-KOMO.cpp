@@ -46,7 +46,8 @@ void init_KOMO(pybind11::module& m) {
        pybind11::arg("kOrder")
        )
   .def("clearObjectives", &KOMO::clearObjectives)
-  .def("getConfig",  [](std::shared_ptr<KOMO>& self) { return std::shared_ptr<rai::Configuration>(&(self->world), &Config_null_deleter); }, "")
+  // .def("getConfig",  [](std::shared_ptr<KOMO>& self) { return std::shared_ptr<rai::Configuration>(&(self->world), &Config_null_deleter); }, "")
+  .def("getConfig",  [](std::shared_ptr<KOMO>& self) { return std::shared_ptr<rai::Configuration>(&(self->pathConfig), &Config_null_deleter); }, "")
   .def("getFrame",  [](std::shared_ptr<KOMO>& self, const std::string& frameName, double phaseTime) {
     uint t = conv_time2step(phaseTime, self->stepsPerPhase);
     rai::Frame* f = self->timeSlices(self->k_order+t, self->world.getFrame(frameName.c_str(), true)->ID);
@@ -89,6 +90,14 @@ void init_KOMO(pybind11::module& m) {
     return shared_ptr<rai::Frame>(f, &null_deleter); //giving it a non-sense deleter!
   }, "complicated...",
   pybind11::arg("name"), pybind11::arg("parent"), pybind11::arg("jointType"), pybind11::arg("stable"), pybind11::arg("originFrameName")=nullptr, pybind11::arg("originFrame")=nullptr)
+
+  .def("addContact_WithPoaFrame", &KOMO::addContact_WithPoaFrame, pybind11::return_value_policy::reference, "",
+       pybind11::arg("time"),
+       pybind11::arg("obj"),
+       pybind11::arg("from"),
+       pybind11::arg("frictionCone_mu"),
+       pybind11::arg("init_objMass"),
+       pybind11::arg("init_POAdist"))
 
   //-- initialize (=set state)
   .def("initOrg", &KOMO::initOrg, "")
