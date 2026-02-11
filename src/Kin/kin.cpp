@@ -444,7 +444,7 @@ Frame* Configuration::addObject(const char* name, const char* parent, ShapeType 
 #endif
 
 /// add copies of all given frames and forces, which can be from another Configuration -> \ref frames array becomes sliced! (a matrix)
-Frame* Configuration::addCopy(const FrameL& F, const DofL& _dofs, const str& prefix) {
+Frame* Configuration::addFramesCopy(const FrameL& F, const DofL& _dofs, const str& prefix) {
   //prepare an index FId -> thisId
   uint maxId=0;
   for(Frame* f:F) if(f->ID>maxId) maxId=f->ID;
@@ -513,7 +513,7 @@ Frame* Configuration::addCopy(const FrameL& F, const DofL& _dofs, const str& pre
 
 /// same as addCopies() with C.frames and C.forces
 Frame* Configuration::addConfigurationCopy(const Configuration& C, const str& prefix, double tau) {
-  Frame* f=addCopy(C.frames, C.otherDofs, prefix);
+  Frame* f=addFramesCopy(C.frames, C.otherDofs, prefix);
   if(tau>=0.) f->tau=tau;
   return f;
 }

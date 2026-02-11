@@ -927,7 +927,7 @@ void KOMO::getConfiguration_full(Configuration& C, int t, int verbose) {
     if(f->parent && !F.contains(f->parent)) F.append(f->parent); //note: this is recursive, as appending to looing over F itself!
   }
   //pathConfig.checkConsistency();
-  C.addCopy(F, {}); //, pathConfig.getDofs(F, false));
+  C.addFramesCopy(F, {}); //, pathConfig.getDofs(F, false));
   C.frames.reshape(-1);
   //C.checkConsistency();
 }
@@ -1871,7 +1871,7 @@ void KOMO::setupPathConfig() {
 //  }
 
   for(uint s=0; s<k_order+T; s++) {
-    pathConfig.addCopy(C.frames, C.otherDofs);
+    pathConfig.addFramesCopy(C.frames, C.otherDofs);
     if(s==0){ for(rai::Frame* f:pathConfig.frames) f->time = -tau*k_order; } //set times of prefix negative
   }
   timeSlices = pathConfig.frames;

@@ -101,7 +101,7 @@ struct Configuration {
   void addDict(const Graph& G);
   Frame* addAssimp(const char* filename, bool mergeNodeMeshes=false, int verbose=0);
   Frame* addH5Object(const char* framename, const char* filename, int verbose);
-  Frame* addCopy(const FrameL& F, const DofL& _dofs, const str& prefix= {});
+  Frame* addFramesCopy(const FrameL& F, const DofL& _dofs, const str& prefix= {});
   Frame* addConfigurationCopy(const Configuration& C, const str& prefix= {}, double tau=1.);
   void delFrame(const char* name);
   void delSubtree(const char* name);

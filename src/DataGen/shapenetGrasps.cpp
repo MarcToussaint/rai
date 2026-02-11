@@ -380,7 +380,7 @@ void ShapenetGrasps::displaySamples(const arr& X, const uintA& shapes, const arr
     }
 
     //add gripper relative to objPts-idx
-    C.addCopy(Cgripper.frames, {});
+    C.addFramesCopy(Cgripper.frames, {});
     setGraspPose(pose, STRING("obj"<<idx<<"_pts"));
 
     if(opt.verbose>0){
