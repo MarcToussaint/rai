@@ -641,8 +641,8 @@ void readNode_postprocess(Node* n, str& namePrefix, bool parseInfo){
       for(uint i=Nbefore; i<G.N; i++) {
         G.elem(i)->key.prepend(namePrefix);
         if(G.elem(i)->is<Graph>()){
-          if(Node *m = G.elem(i)->graph().findNode("mimic")){
-            m->as<rai::String>().prepend(namePrefix);
+          for(Node *m : G.elem(i)->graph()){
+            if(m->key.startsWith("mimic")) m->as<rai::String>().prepend(namePrefix);
           }
         }
       }
@@ -881,6 +881,8 @@ NodeL getParentsFromTag(Graph& G, String& str) {
 }
 
 Node* readNode(Graph& G, std::istream& is, bool verbose, bool parseInfo) {
+  // HALT("THIS IS OBSOLETE - YAML READ IS NOW DEFAULT")
+
   String str;
 
   ParseInfo pinfo;
@@ -1779,7 +1781,7 @@ void initParameters(int _argc, char* _argv[], bool forceReload, bool verbose) {
   ifstream fil;
   fil.open(cfgFileName);
   if(fil.good()) {
-    fil >>P();
+    P->read(fil, false, false); //true
     LOG(3) <<" - success";
   } else {
     LOG(3) <<" - failed";

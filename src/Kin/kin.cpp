@@ -3119,15 +3119,15 @@ void Configuration::addDict(const Graph& G) {
     }
   }
 
-  // shared shapes
+  // mimic shapes
   for(Frame* f: frames) if(f->ats) {
-      Node* s= f->ats->findNode("shared_shape");
+      Node* s = f->ats->findNode("mimic_shape");
       if(s){
-        CHECK(!f->shape, "frame '" <<f->name <<"' cannot have a shared_shape and other shape at the same time");
+        CHECK(!f->shape, "frame '" <<f->name <<"' cannot have a mimic_shape and other shape at the same time");
         Frame* otherFrame = getFrame(s->as<str>(), true, true);
-        CHECK(otherFrame, "the argument to 'shared_shape', '" <<otherFrame <<"' is not a frame name");
+        CHECK(otherFrame, "the argument to 'mimic_shape', '" <<otherFrame <<"' is not a frame name");
         f->shape = otherFrame->shape;
-        CHECK(f->shape, "the shared_shape frame '" <<otherFrame <<"' does not have a shape");
+        CHECK(f->shape, "the mimic_shape frame '" <<otherFrame <<"' does not have a shape");
       }
     }
 

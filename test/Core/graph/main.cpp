@@ -21,11 +21,9 @@ void TEST(Read){
   cout <<G.findNode("k")->graph().findNode("z")->as<rai::String>() <<endl;
   cout <<"DONE" <<endl;
 
-  cout <<"\n---- as yaml ------\n" <<endl;
-
   // G.checkUniqueKeys(true);
-  cout <<"---" <<G.asYaml(true) <<"---" <<endl;
-  cout <<"---" <<G.asYaml(false) <<"---" <<endl;
+  cout <<"--- as yaml serial ---\n" <<G.asYaml(true) <<"---" <<endl;
+  cout <<"--- as yaml normal ---\n" <<G.asYaml(false) <<"---" <<endl;
 }
 
 //===========================================================================
