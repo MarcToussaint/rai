@@ -10,11 +10,12 @@
 #include "../Gui/opengl.h"
 #include "../Geo/pairCollision.h"
 
-rai::ForceExchangeDof::ForceExchangeDof(rai::Frame& a, rai::Frame& b, ForceExchangeType _type, const ForceExchangeDof* copy)
+rai::ForceExchangeDof::ForceExchangeDof(Frame* fpoa, rai::Frame& a, rai::Frame& b, ForceExchangeType _type, const ForceExchangeDof* copy)
   : a(a), b(b), type(_type), scale(1.) {
   CHECK(&a != &b, "");
   CHECK_EQ(&a.C, &b.C, "contact between frames of different configuration!");
-  frame=&a;
+  if(fpoa) frame=fpoa;
+  else frame=&b;
   dim = getDimFromType();
   a.C.reset_q();
   a.forces.append(this);
@@ -27,10 +28,13 @@ rai::ForceExchangeDof::ForceExchangeDof(rai::Frame& a, rai::Frame& b, ForceExcha
 
     scale=copy->scale;
     type = copy->type;
-    force_to_torque = copy->force_to_torque;
+    // force_to_torque = copy->force_to_torque;
     poa = copy->poa;
     force = copy->force;
     torque = copy->torque;
+  }
+  if(type==FXT_forceZ) {
+    limits = {.01, .5};
   }
 }
 
@@ -42,7 +46,7 @@ rai::ForceExchangeDof::~ForceExchangeDof() {
 }
 
 void rai::ForceExchangeDof::setZero() {
-  a.C._state_q_isGood=false;
+  frame->C._state_q_isGood=false;
   force.resize(3).setZero();
   torque.resize(3).setZero();
   if(type==FXT_poa || type==FXT_poaOnly) {
@@ -74,15 +78,15 @@ void rai::ForceExchangeDof::setDofs(const arr& q, uint n) {
     force.clear();
     torque.clear();
   } else if(type==FXT_wrench) {
-    poa = b.getPosition();
+    poa = frame->getPosition();
     force = q({n, n+2+1});
     torque = q({n+3, n+5+1});
   } else if(type==FXT_force) {
-    poa = b.getPosition();
+    poa = frame->getPosition();
     force = q({n, n+2+1});
     torque.resize(3).setZero();
   } else if(type==FXT_forceZ) {
-    poa = b.getPosition();
+    poa = frame->getPosition();
     force.resize(1) = q(n);
     torque.resize(1).setZero();
   } else NIY;
@@ -120,7 +124,7 @@ void rai::ForceExchangeDof::setRandom(uint timeSlices_d1, int verbose) {
 }
 
 void rai::ForceExchangeDof::kinPOA(arr& y, arr& J) const {
-  a.C.kinematicsZero(y, J, 3);
+  frame->C.kinematicsZero(y, J, 3);
 
   if(type==FXT_poa) {
     y = poa;
@@ -129,26 +133,24 @@ void rai::ForceExchangeDof::kinPOA(arr& y, arr& J) const {
     y = poa;
     if(!!J && active) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = 1.;
   } else if(type==FXT_wrench || type==FXT_force || type==FXT_forceZ) {
-    //use b as the POA!! why??
-    // b.C.kinematicsPos(y, J, &b);
-    a.C.kinematicsPos(y, J, &a);
+    frame->C.kinematicsPos(y, J, frame);
   } else NIY;
 }
 
 void rai::ForceExchangeDof::kinForce(arr& y, arr& J) const {
-  a.C.kinematicsZero(y, J, 3);
+  frame->C.kinematicsZero(y, J, 3);
 
   if(type==FXT_poa) {
     y = force;
     if(!!J && active) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = scale;
   } else if(type==FXT_poaOnly) {
     //is zero already
-  } else if(type==FXT_wrench || type==FXT_force || type==FXT_force) {
+  } else if(type==FXT_wrench || type==FXT_force) {
     y = force;
     if(!!J && active) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = scale;
   } else if(type==FXT_forceZ) {
     arr z, Jz;
-    b.C.kinematicsVec(z, Jz, &b, Vector_z);
+    frame->C.kinematicsVec(z, Jz, frame, Vector_z);
     y = force.scalar() * z;
     if(!!J && active) {
       for(uint i=0; i<3; i++) J.elem(i, qIndex) += scale * z.elem(i);
@@ -158,18 +160,18 @@ void rai::ForceExchangeDof::kinForce(arr& y, arr& J) const {
 }
 
 void rai::ForceExchangeDof::kinTorque(arr& y, arr& J) const {
-  a.C.kinematicsZero(y, J, 3);
+  frame->C.kinematicsZero(y, J, 3);
 
-  if(type==FXT_poa || type==FXT_force || type==FXT_poaOnly) {
+  if(type==FXT_poa || type==FXT_force  || type==FXT_forceZ || type==FXT_poaOnly) {
     //zero: POA is zero-momentum point
-  } else if(type==FXT_forceZ) {
-    arr z, Jz;
-    b.C.kinematicsVec(z, Jz, &b, Vector_z);
-    y = force_to_torque * force.scalar() * z;
-    if(!!J) {
-      for(uint i=0; i<3; i++) J.elem(i, qIndex) += (force_to_torque*scale) * z.elem(i);
-      J += (force_to_torque*force.scalar()) * Jz;
-    }
+  // } else if(type==FXT_torqueZ) {
+  //   arr z, Jz;
+  //   b.C.kinematicsVec(z, Jz, &b, Vector_z);
+  //   y = force_to_torque * force.scalar() * z;
+  //   if(!!J) {
+  //     for(uint i=0; i<3; i++) J.elem(i, qIndex) += (force_to_torque*scale) * z.elem(i);
+  //     J += (force_to_torque*force.scalar()) * Jz;
+  //   }
   } else if(type==FXT_wrench) {
     y = torque;
     if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = scale;

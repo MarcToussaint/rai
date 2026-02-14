@@ -179,7 +179,7 @@ void Configuration::copy(const Configuration& C, bool referenceCollEngineOnCopy)
   //copy contacts
   for(Dof* dof:C.otherDofs) {
     const ForceExchangeDof* ex = dof->fex();
-    if(ex) new ForceExchangeDof(*frames.elem(ex->a.ID), *frames.elem(ex->b.ID), ex->type, ex);
+    if(ex) new ForceExchangeDof(frames.elem(ex->frame->ID), *frames.elem(ex->a.ID), *frames.elem(ex->b.ID), ex->type, ex);
   }
 
   //copy fcl reference
@@ -498,7 +498,7 @@ Frame* Configuration::addFramesCopy(const FrameL& F, const DofL& _dofs, const st
   //copy force exchanges
   for(Dof* dof:_dofs) {
     const ForceExchangeDof* ex = dof->fex();
-    if(ex) new ForceExchangeDof(*frames.elem(FId2thisId(ex->a.ID)), *frames.elem(FId2thisId(ex->b.ID)), ex->type, ex);
+    if(ex) new ForceExchangeDof(frames.elem(FId2thisId(ex->frame->ID)), *frames.elem(FId2thisId(ex->a.ID)), *frames.elem(FId2thisId(ex->b.ID)), ex->type, ex);
   }
 
   if(!(frames.N%F.N)) frames.reshape(-1, F.N);
@@ -1103,7 +1103,10 @@ std::tuple<intA, arr> Configuration::getForceArrays() {
     const ForceExchangeDof* ex = dof->fex();
     if(ex) {
       pairs.append(ex->a.ID) .append(ex->b.ID);
-      forces.append(ex->poa) .append(ex->force) .append(ex->torque);
+      arr y;
+      ex->kinPOA(y, NoArr); forces.append(y);
+      ex->kinForce(y, NoArr); forces.append(y);
+      ex->kinTorque(y, NoArr); forces.append(y);
     }
   }
   pairs.reshape(-1,2);

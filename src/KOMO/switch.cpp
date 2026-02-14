@@ -166,13 +166,13 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
 
   else if(symbol==SW_addContact) {
     CHECK_EQ(jointType, JT_none, "");
-    new ForceExchangeDof(*from, *to, FXT_poa);
+    new ForceExchangeDof(nullptr, *from, *to, FXT_poa);
     return from;
   }
 
   else if(symbol==SW_addPOAonly) {
     CHECK_EQ(jointType, JT_none, "");
-    new ForceExchangeDof(*from, *to, FXT_poaOnly);
+    new ForceExchangeDof(nullptr, *from, *to, FXT_poaOnly);
     return from;
   }
 

@@ -748,15 +748,52 @@ rai::Frame* KOMO::addContact_WithPoaFrame(double time, str obj, str from, double
   arr poa = origin.pos.getArr(); //.5*(finger->getPosition() + obj->getPosition());
   arr force = origin.rot.getZ().getArr(); //obj->getPosition() - finger->getPosition());
   force *= init_objMass*9.81;
-  addForceExchangeDofs({time}, obj, from, rai::FXT_poa, poa, force);
+  addForceExchangeDofs({time}, f_poa, obj, from, rai::FXT_poa, poa, force);
 
   //constraints to make poa frames and force exchange consistent
   addObjective({time}, make_shared<F_fex_POAAtFrame>(), {obj, from, poa_name}, OT_eq, {1e1});
   addObjective({time}, make_shared<F_fex_ForceInFrameCone>(frictionCone_mu), {obj, from, poa_name}, OT_ineq, {1e0});
   addObjective({}, FS_negDistance, {obj, poa_name}, OT_eq, {1e1});
   addObjective({}, FS_negDistance, {from, poa_name}, OT_eq, {1e1});
-  addObjective({time}, make_shared<F_PairNormalAlign>(+1.), {poa_name, obj}, OT_eq, {1e0});
-  addObjective({time}, make_shared<F_PairNormalAlign>(-1.), {poa_name, from}, OT_eq, {1e0});
+  addObjective({time}, make_shared<F_PairNormalAlign>(+1.), {poa_name, obj}, OT_eq, {1e-1});
+  addObjective({time}, make_shared<F_PairNormalAlign>(-1.), {poa_name, from}, OT_eq, {1e-1});
+
+  //no sliding
+  if(k_order>0){
+    addObjective({time}, FS_positionRel, {poa_name, from}, OT_eq, {1e1}, {}, 1, +1, +1);
+  }
+  return f_poa;
+}
+
+rai::Frame* KOMO::addContactForceFrame(double time, str obj, str from, double frictionCone_mu, double init_objMass, double init_POAdist){
+  rai::Frame *f_obj = world.getFrame(obj);
+  rai::Frame *f_from = world.getFrame(from);
+  CHECK(f_obj != f_from, "");
+  //create a stable POA frame as geometric DOF, attached to obj, with z becoming the contact normal
+  str poa_name = STRING("poa_" <<obj <<"_" <<from <<"_" <<time);
+  rai::Frame *f_poa = addFrameDof(poa_name, obj, rai::JT_free, true);
+  //initialize
+  rai::Transformation relOrigin;
+  rai::Vector relVec = f_from->ensure_X().pos / f_obj->ensure_X();
+  relOrigin.pos = init_POAdist * relVec / relVec.length();
+  relOrigin.rot.setDiff(Vector_z, -relVec);
+  f_poa->joint->setDofs(relOrigin.getArr7d());
+
+  //create a force exchange DOF
+  rai::Transformation origin = f_obj->ensure_X() * relOrigin;
+  arr poa = origin.pos.getArr(); //.5*(finger->getPosition() + obj->getPosition());
+  arr force = origin.rot.getZ().getArr(); //obj->getPosition() - finger->getPosition());
+  force *= init_objMass*9.81;
+  addForceExchangeDofs({time}, f_poa, obj, from, rai::FXT_forceZ, poa, {init_objMass*9.81});
+
+  //constraints to make poa frames and force exchange consistent
+  // addObjective({time}, make_shared<F_fex_POAAtFrame>(), {obj, from, poa_name}, OT_eq, {1e1});
+  // addObjective({time}, make_shared<F_fex_ForceInFrameCone>(frictionCone_mu), {obj, from, poa_name}, OT_ineq, {1e0});
+  addObjective({}, FS_negDistance, {obj, poa_name}, OT_eq, {1e1});
+  addObjective({}, FS_negDistance, {from, poa_name}, OT_eq, {1e1});
+  addObjective({time}, make_shared<F_PairNormalAlign>(+1.), {poa_name, obj}, OT_sos, {1e-1}); //helps
+  addObjective({time}, make_shared<F_PairNormalAlign>(-1.), {poa_name, from}, OT_sos, {1e-1}); //helps
+  addObjective({time}, make_shared<F_PairNormalAlignsZ>(frictionCone_mu), {obj, from, poa_name}, OT_ineq, {1e0}); //hard constraint
 
   //no sliding
   if(k_order>0){
@@ -1738,7 +1775,7 @@ rai::Frame* KOMO::addFrameDof(const char* name, const char* parent,
         f->setAutoLimits();
       }
     }
-    f->setShape(ST_marker, {.01});
+    f->setShape(ST_marker, {.05});
     if(!f0) f0=f;
     F.append(f);
   }
@@ -1772,7 +1809,7 @@ void KOMO::initFrameDof(rai::Frame* f, rai::Frame* q0Frame){
   // if(!boundCheck(f->joint->q0, f->joint->limits)) LOG(-1) <<"creation config is out of autoLimits!";
 }
 
-void KOMO::addForceExchangeDofs(const arr& times, const char* onto, const char* from, rai::ForceExchangeType type, const arr& initPoa, const arr& initForce){
+void KOMO::addForceExchangeDofs(const arr& times, Frame* fpoa, const char* onto, const char* from, rai::ForceExchangeType type, const arr& initPoa, const arr& initForce){
   //skip doing it in world at all...
   uint ontoId = world.getFrame(onto, true)->ID;
   uint fromId = world.getFrame(from, true)->ID;
@@ -1781,7 +1818,7 @@ void KOMO::addForceExchangeDofs(const arr& times, const char* onto, const char* 
   for(int s=sStart; s<=sEnd; s++) {
     rai::Frame *a = timeSlices(k_order+s, ontoId);
     rai::Frame *b = timeSlices(k_order+s, fromId);
-    rai::ForceExchangeDof* ex = new ForceExchangeDof(*a, *b, type);
+    rai::ForceExchangeDof* ex = new ForceExchangeDof(fpoa, *a, *b, type);
     ex->scale=10.;
     if(initPoa.N) ex->poa = initPoa;
     if(initForce.N) ex->force = initForce;

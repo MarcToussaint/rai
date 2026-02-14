@@ -94,6 +94,18 @@ arr F_PairNormalAlign::phi(const FrameL& F){
 
 //===========================================================================
 
+arr F_PairNormalAlignsZ::phi(const FrameL& F){
+  CHECK_EQ(F.N, 3, "");
+
+  arr normal = F_PairCollision(F_PairCollision::_normal, true) .eval({F.elem(0), F.elem(1)});
+
+  arr vec = F_Vector(Vector_z) .eval({F.elem(2)});
+
+  return mu - (~normal * vec);
+}
+
+//===========================================================================
+
 double fct_hinge(double x, double *dy=0){
   if(x>0.){
     if(dy) (*dy)=1.;

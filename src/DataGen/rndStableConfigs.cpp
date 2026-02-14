@@ -5,6 +5,8 @@
 #include "../Kin/viewer.h"
 #include "../Optim/NLP_Solver.h"
 #include "../Optim/NLP_Sampler.h"
+#include "../Kin/dof_forceExchange.h"
+#include "../Kin/F_collisions.h"
 
 bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports, bool forceAll){
   //  FrameL colls = C.getCollidablePairs();
@@ -33,7 +35,8 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports,
     str s = supports(perm(i));
     supp.append(s);
     // komo.addContact_stick(0.,-1., "obj", thing, opt.frictionCone_mu);
-    komo.addContact_WithPoaFrame(1., "obj", s, opt.frictionCone_mu, .05, .1);
+    // komo.addContact_WithPoaFrame(1., "obj", s, opt.frictionCone_mu, .05, .2);
+    komo.addContactForceFrame(1., "obj", s, opt.frictionCone_mu, .05, .2);
   }
   for(uint i=n_supports;i<supports.N;i++){
     //for all NON-supports, introduce an explicit(!) no-collision
@@ -51,7 +54,7 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports,
     // komo.initRandom();
     // cout <<komo.pathConfig.reportForces() <<endl;
     // komo.view(true, STRING("init with supports: " <<supp));
-    // komo.opt.animateOptimization = 2;
+    if(opt.verbose>4) komo.opt.animateOptimization = opt.verbose-4;
 #if 1
     auto ret = rai::NLP_Solver(komo.nlp(), opt.verbose)
                    // .setOptions(rai::OptOptions().set_stopEvals(100))

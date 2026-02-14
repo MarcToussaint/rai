@@ -38,6 +38,14 @@ struct F_PairNormalAlign : Feature {
   virtual uint dim_phi(const FrameL& F){ return 3; }
 };
 
+//===========================================================================
+
+struct F_PairNormalAlignsZ : Feature {
+  double mu;
+  F_PairNormalAlignsZ(double mu) : mu(mu){}
+  virtual arr phi(const FrameL& F);
+  virtual uint dim_phi(const FrameL& F){ return 1; }
+};
 
 //===========================================================================
 

@@ -179,7 +179,7 @@ ConfigurationViewer& ConfigurationViewer::updateConfiguration(const Configuratio
       if(!p.collision){
         addDistMarker(C.frames(p.A)->getPosition(), C.frames(p.B)->getPosition(), s, .1);
       }else if(p.d<.05){
-        addDistMarker(p.posA.getArr(), p.posB.getArr(), s, .1);
+        addDistMarker(p.posA.getArr(), p.posB.getArr(), s, .1, {1.,1.,0.});
       }
     }
   }

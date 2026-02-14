@@ -108,6 +108,7 @@ struct KOMO : rai::NonCopyable {
   void addContact_slide(double startTime, double endTime, const char* from, const char* to);
   void addContact_stick(double startTime, double endTime, const char* from, const char* to, double frictionCone_mu=.8);
   rai::Frame* addContact_WithPoaFrame(double time, str obj, str from, double frictionCone_mu, double init_objMass, double init_POAdist=.1);
+  rai::Frame* addContactForceFrame(double time, str obj, str from, double frictionCone_mu, double init_objMass, double init_POAdist);
   void addContact_elasticBounce(double time, const char* from, const char* to, double elasticity=.8, double stickiness=0.);
   void addContact_ComplementarySlide(double startTime, double endTime, const char* from, const char* to);
   //  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);
@@ -219,7 +220,7 @@ struct KOMO : rai::NonCopyable {
 
   rai::Frame* addFrameDof(const char* name, const char* parent, rai::JointType jointType, bool stable, const char* originFrameName=0, rai::Frame* originFrame=0, const rai::Transformation& relOrigin=0);
   void initFrameDof(rai::Frame* f, rai::Frame *q0Frame);
-  void addForceExchangeDofs(const arr& times, const char* onto, const char* from,  rai::ForceExchangeType _type, const arr& initPoa={}, const arr& initForce={});
+  void addForceExchangeDofs(const arr& times, rai::Frame* fpoa, const char* onto, const char* from,  rai::ForceExchangeType _type, const arr& initPoa={}, const arr& initForce={});
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly= {});           ///< set the state trajectory of all configurations
 private:
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);

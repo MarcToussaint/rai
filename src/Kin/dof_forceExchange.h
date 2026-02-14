@@ -24,7 +24,7 @@ struct ForceExchangeDof : Dof, NonCopyable {
   Frame& a, &b;
   ForceExchangeType type;
   double scale=1.;
-  double force_to_torque = 0.;
+  // double force_to_torque = 0.;
  private:
   PairCollision_CvxCvx* __coll=0;
  public:
@@ -33,7 +33,7 @@ struct ForceExchangeDof : Dof, NonCopyable {
   arr force; //in world coordinates, acting at the poa
   arr torque; //in world coordinates, acting at the poa
 
-  ForceExchangeDof(Frame& a, Frame& b, ForceExchangeType _type, const ForceExchangeDof* copyContact=nullptr);
+  ForceExchangeDof(Frame* _fpoa, Frame& a, Frame& b, ForceExchangeType _type, const ForceExchangeDof* copyContact=nullptr);
   ~ForceExchangeDof();
 
   void setZero();
