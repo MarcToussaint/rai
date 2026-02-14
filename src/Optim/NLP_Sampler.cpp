@@ -376,10 +376,18 @@ void NLP_Sampler::run_interior(arr& data, uintA& dataEvals){
 
     //-- manifoldRRT builds tree from all points (previously slack-stepped)
     if(opt.interiorMethod=="manifoldRRT"){
-      ann->append(x);
+      ann->append(x);   
       //arr H = 2. * ~ev.Jh * ev.Jh;
       //arr Ph = eye(x.N) - pseudoInverse(H, NoArr, 1e-6) * H; //tangent projection
-      arr Ph = eye(x.N) - ~ev.Jh * pseudoInverse(ev.Jh * ~ev.Jh, NoArr, 1e-6) * ev.Jh; //tangent projection
+
+      // double eps = 1e-3 * ::absMax(ev.Jh);
+      // arr Ph = eye(x.N) - ~ev.Jh * pseudoInverse(ev.Jh * ~ev.Jh, NoArr, eps) * ev.Jh; //tangent projection
+
+      arr U, s, V, J = ev.Jh;
+      if(rai::isSparse(J)) J = J.sparse().unsparse();
+      svd(U, s, V, J);
+      arr Ph = eye(x.N) - V*~V; //tangent projection
+
       annPh.append(Ph);
       annPh.reshape(ann->X.d0, x.N, x.N); //tensor of eq-constraint projections
     }
@@ -391,8 +399,8 @@ void NLP_Sampler::run_interior(arr& data, uintA& dataEvals){
       dataEvals.append(evals);
       CHECK_EQ(data.d0, dataEvals.d0, "");
       if(!(data.d0%10)) cout <<'.' <<std::flush;
-      if(opt.verbose>=2) {
-        nlp->report(cout, 9, STRING("data stored phase2 t: " <<t <<" err: " <<ev.err <<" data: " <<data.d0 <<" good: " <<good));
+      if(opt.verbose>1) {
+        nlp->report(cout, 1+opt.verbose, STRING("data stored phase2 t: " <<t <<" err: " <<ev.err <<" data: " <<data.d0 <<" good: " <<good));
         rai::wait(.1);
       }
     }
@@ -423,7 +431,7 @@ void NLP_Sampler::run_interior(arr& data, uintA& dataEvals){
       uint p = ann->getNN(x_target);
       x = ann->X[p].copy();
       arr dir = x_target - x;
-      dir = annPh[p] * dir;
+      dir = annPh[p] * dir; //project to tangent
       double stepsize = opt.interiorNoiseSigma;
       dir *= stepsize/length(dir);
       x += dir;
@@ -435,7 +443,12 @@ void NLP_Sampler::run_interior(arr& data, uintA& dataEvals){
 
     //-- slack step
     if(opt.slackStepAlpha>0. && !good) {
-      step_GaussNewton(true, opt.penaltyMu, 1., opt.slackMaxStep, opt.slackRegLambda);
+      for(uint k=0;k<5;k++){
+        step_GaussNewton(true, opt.penaltyMu, opt.slackStepAlpha, opt.slackMaxStep, opt.slackRegLambda);
+        ensure_eval();
+        good = (ev.err<=opt.tolerance);
+        if(good) break;
+      }
       bound_clip();
     }
 
@@ -589,8 +602,12 @@ arr NLP_Sampler::get_rnd_direction() {
     //  arr H = 2. * ~Jh * Jh;
     //  for(uint i=0;i<H.d0;i++) H(i,i) += lambda;
     //  arr Hinv = inverse_SymPosDef(H);
-    arr H = 2. * ~ev.Jh * ev.Jh;
-    arr Ph = eye(x.N) - pseudoInverse(H) * H; //tangent projection
+    // arr H = 2. * ~ev.Jh * ev.Jh;
+    // arr Ph = eye(x.N) - pseudoInverse(H) * H; //tangent projection
+    arr U, s, V, J = ev.Jh;
+    if(rai::isSparse(J)) J = J.sparse().unsparse();
+    svd(U, s, V, J);
+    arr Ph = eye(x.N) - V*~V; //tangent projection
     dir = Ph * dir;
   }
 
@@ -607,8 +624,10 @@ void NLP_Sampler::Eval::eval(const arr& _x, NLP_Sampler& walker) {
 
   phi, J;
   walker.nlp->evaluate(phi, J, _x);
-  // if(rai::isSparse(J)) J = J.sparse().unsparse();
-  if(rai::isSparse(J)) J.sparse().setupRowsCols();
+  if(rai::isSparse(J)){
+    if(walker.opt.makeDense) J = J.sparse().unsparse();
+    else J.sparse().setupRowsCols();
+  }
 
   {
     //grab ineqs

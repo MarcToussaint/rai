@@ -6,12 +6,12 @@
 #include "../Optim/NLP_Solver.h"
 #include "../Optim/NLP_Sampler.h"
 
-bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports){
+bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports, bool forceAll){
   //  FrameL colls = C.getCollidablePairs();
   //  cout <<"COLLIDABLE PAIRS:" <<endl;
   //  for(uint k=0;k<colls.d0;k++) cout <<"  " <<colls(k,0)->name <<' ' <<colls(k,1)->name <<endl;
 
-  C.setRandom();
+  C.setRandom(0, 0);
 
   KOMO komo;
   komo.setConfig(C);
@@ -27,12 +27,13 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
   //-- discrete decisions:
   uintA perm = rai::randperm(supports.N);
   uint n_supports = rnd.uni_int(1,3);
+  if(forceAll) n_supports = supports.N;
   supp.clear();
   for(uint i=0;i<n_supports;i++){
     str s = supports(perm(i));
     supp.append(s);
     // komo.addContact_stick(0.,-1., "obj", thing, opt.frictionCone_mu);
-    komo.addContact_WithPoaFrame(1., "obj", s, opt.frictionCone_mu, .05);
+    komo.addContact_WithPoaFrame(1., "obj", s, opt.frictionCone_mu, .05, .1);
   }
   for(uint i=n_supports;i<supports.N;i++){
     //for all NON-supports, introduce an explicit(!) no-collision
@@ -42,12 +43,15 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
   if(opt.verbose>0){
     LOG(0) <<"\n======================\n" <<supp;
   }
+  if(opt.verbose>2){
+    komo.view(true, STRING("supports = " <<supp));
+  }
 
   for(uint k=0;k<1;k++){
     // komo.initRandom();
     // cout <<komo.pathConfig.reportForces() <<endl;
     // komo.view(true, STRING("init with supports: " <<supp));
-
+    // komo.opt.animateOptimization = 2;
 #if 1
     auto ret = rai::NLP_Solver(komo.nlp(), opt.verbose)
                    // .setOptions(rai::OptOptions().set_stopEvals(100))
@@ -55,7 +59,7 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports)
     //      komo.nlp()->checkJacobian(ret->x, 1e-4, komo.featureNames);
 #else
     auto ret = NLP_Sampler(komo.nlp())
-               .setOptions(NLP_Sampler_Options().set_slackMaxStep(.2). set_downhillMaxSteps(50). set_slackRegLambda(.1) .set_tolerance(1e-4))
+               // .setOptions(NLP_Sampler_Options().set_slackMaxStep(.2). set_downhillMaxSteps(50). set_slackRegLambda(.1) .set_tolerance(1e-4))
                .sample();
 #endif
 

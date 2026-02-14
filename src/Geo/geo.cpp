@@ -1857,6 +1857,12 @@ void Camera::focusAtDist(const Vector& x, double dist){
   X.pos = x - X.rot.getZ()*dist;
 }
 
+void Camera::alignFocus(){
+  Vector d = foc - X.pos;
+  Vector z = X.rot.getZ();
+  foc = X.pos + (d*z)*z;
+}
+
 /// rotate the frame to watch in the direction vector D
 void Camera::watchDirection(const Vector& d) {
   if(d.x==0. && d.y==0.) {

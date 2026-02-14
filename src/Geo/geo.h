@@ -265,6 +265,7 @@ struct Camera {
   void focusAtDist(const Vector& x, double dist);
   void watchDirection(const Vector& d);
   void upright(const Vector& up=Vector(0, 0, 1));
+  void alignFocus();
   bool checkFocus();
 
   //-- projection matrix stuff

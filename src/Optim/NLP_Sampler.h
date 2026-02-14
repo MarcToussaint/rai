@@ -18,8 +18,9 @@ struct NLP_Sampler_Options {
   RAI_PARAM("sam/", double, tolerance, .01)
   RAI_PARAM("sam/", double, margin, .0)
   RAI_PARAM("sam/", bool, useCentering, true)
+  RAI_PARAM("sam/", bool, makeDense, false)
 
-  //--new
+  //-- restart
 
   RAI_PARAM("sam/", int, verbose, 1)
 

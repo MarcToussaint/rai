@@ -559,7 +559,13 @@ arr pseudoInverse(const arr& A, const arr& Winv, double eps) {
   if(!!Winv) {
     if(Winv.nd==1) AAt = A*(Winv%At); else AAt = A*Winv*At;
   } else AAt = A*At;
-  if(eps) for(uint i=0; i<AAt.d0; i++) AAt(i, i) += eps;
+  if(eps){
+    if(!isSpecial(AAt)) {
+      for(uint i=0; i<AAt.d0; i++) AAt(i, i) += eps;
+    } else if(isSparseMatrix(AAt)) {
+      for(uint i=0; i<AAt.d0; i++) AAt.sparse().addEntry(i, i) = eps;
+    } else NIY;
+  }
   arr AAt_inv = inverse_SymPosDef(AAt);
   arr Ainv = At * AAt_inv;
   if(!!Winv) { if(Winv.nd==1) Ainv = Winv%Ainv; else Ainv = Winv*Ainv; }

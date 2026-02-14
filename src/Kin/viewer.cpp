@@ -269,6 +269,7 @@ void ConfigurationViewer::setCamera(Frame* camFrame) {
 
     if(camFrame) {
       cam.X = camFrame->ensure_X();
+      cam.alignFocus();
 
       if(camFrame->ats){
         Node* at=0;
