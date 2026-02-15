@@ -29,14 +29,14 @@ struct Feature {
   virtual ~Feature() {}
 
   //-- construction helpers
-  void setup(const rai::Configuration& C, const StringA& frames, const arr& scale=NoArr, const arr& target=NoArr, int _order=-1);
+  void setup(const FrameL& Cframes, const StringA& frames, const arr& scale=NoArr, const arr& target=NoArr, int _order=-1);
   Feature& setOrder(uint _order) { order=_order; return *this; }
   Feature& setScale(const arr& _scale) { scale=_scale; return *this; }
   Feature& setTarget(const arr& _target) { target=_target; return *this; }
   Feature& setFrameIDs(const uintA& _frameIDs) { frameIDs=_frameIDs; return *this; }
   Feature& setFrameIDs(const StringA& frames, const rai::Configuration& C) { setFrameIDs(C.getFrameIDs(frames)); return *this; }
   Feature& setDiffInsteadOfVel() { diffInsteadOfVel=true; return *this; }
-  FrameL getFrames(const rai::Configuration& C, uint s=0);
+  FrameL getFrames(const FrameL& Cframes, uint s=0);
 
  protected:
   //-- core methods to imlement the feature -- to be overloaded (you can choose to overload phi or phi2
@@ -47,13 +47,13 @@ struct Feature {
  public:
   arr eval(const FrameL& F) { arr y = phi(F); applyLinearTrans(y); return y; }
 //  Value eval(const FrameL& F) { arr y, J; eval(y, J, F); return Value(y, J); }
-  arr eval(const rai::Configuration& C) { return eval(getFrames(C)); }
+  arr eval(const rai::Configuration& C) { return eval(getFrames(C.frames)); }
   uint dim(const FrameL& F) { uint d=dim_phi(F); return applyLinearTrans_dim(d); }
   VectorFunction asFct(const FrameL& F);
 
   virtual const char* typeString() { return rai::niceTypeidName(typeid(*this)); }
-  virtual rai::String shortTag(const rai::Configuration& C);
-  virtual rai::Graph getSpec(const rai::Configuration& C) { return rai::Graph({{"description", shortTag(C)}}); }
+  virtual rai::String shortTag(const FrameL& Cframes);
+  virtual rai::Graph getSpec(const FrameL& Cframes) { return rai::Graph({{"description", shortTag(Cframes)}}); }
   virtual std::shared_ptr<Feature> deepCopy();
 
   //automatic finite difference definition of higher order features

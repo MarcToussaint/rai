@@ -47,13 +47,13 @@ arr Feature::phi_finiteDifferenceReduce(const FrameL& F) {
 
 //void Feature::phi(arr& y, arr& J, const rai::Configuration& C) {
 //  FrameL F(order+1, frameIDs.N);
-//  if(order==0 && C.frames.nd==1){
-//    F[0] = C.frames.sub(frameIDs);
+//  if(order==0 && Cframes.nd==1){
+//    F[0] = Cframes.sub(frameIDs);
 //  }else{
-//    CHECK_EQ(C.frames.nd, 2, "");
-//    CHECK_GE(C.frames.d0, order+1, "");
+//    CHECK_EQ(Cframes.nd, 2, "");
+//    CHECK_GE(Cframes.d0, order+1, "");
 //    for(uint k=0;k<F.d0;k++){
-//      F[k] = C.frames[C.frames.d0-F.d0+k].sub(frameIDs);
+//      F[k] = Cframes[Cframes.d0-F.d0+k].sub(frameIDs);
 //    }
 //  }
 //  if(frameIDs.nd==2) F.reshape(F.d0, frameIDs.d0, frameIDs.d1);
@@ -69,32 +69,32 @@ arr Feature::phi_finiteDifferenceReduce(const FrameL& F) {
 //  phi2(y, J, F);
 //}
 
-void Feature::setup(const rai::Configuration& C, const StringA& frames, const arr& _scale, const arr& _target, int _order) {
+void Feature::setup(const FrameL& Cframes, const StringA& frames, const arr& _scale, const arr& _target, int _order) {
   //-- if arguments are given, modify the feature's frames, scaling and order
   if(frames.N) {
-    if(frames.N==1 && frames.scalar()=="ALL") frameIDs = framesToIndices(C.frames); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
-    else frameIDs = C.getFrameIDs(frames);
+    if(frames.N==1 && frames.scalar()=="ALL") frameIDs = framesToIndices(Cframes); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
+    else frameIDs = rai::framesToIndices(rai::namesToFrames(Cframes, frames));
   }
   if(!!_scale) scale = _scale;
   if(!!_target) target = _target;
   if(_order>=0) order = _order;
 }
 
-FrameL Feature::getFrames(const rai::Configuration& C, uint s) {
+FrameL Feature::getFrames(const FrameL& Cframes, uint s) {
   FrameL F;
-  if(C.frames.nd==1) {
+  if(Cframes.nd==1) {
     CHECK(!s, "C does not have multiple slices");
     CHECK(!order, "can't ground a order>0 feature on configuration without slices");
-    F = C.getFrames(frameIDs);
+    F = rai::indicesToFrames(Cframes, frameIDs);
     F.reshape(1, F.N);
   } else {
-    CHECK_EQ(C.frames.nd, 2, "");
-    CHECK_GE(C.frames.d0, order+s+1, "");
+    CHECK_EQ(Cframes.nd, 2, "");
+    CHECK_GE(Cframes.d0, order+s+1, "");
     F.resize(order+1, frameIDs.N);
     for(uint i=0; i<=order; i++) {
       for(uint j=0; j<frameIDs.N; j++) {
         uint fID = frameIDs.elem(j);
-        F(i, j) = C.frames(s+i-order, fID);
+        F(i, j) = Cframes(s+i-order, fID);
       }
     }
   }
@@ -128,7 +128,7 @@ void Feature::phi2(arr& y, arr& J, const FrameL& F) {
   grabJ(y, J);
 }
 
-rai::String Feature::shortTag(const rai::Configuration& C) {
+rai::String Feature::shortTag(const FrameL& Cframes) {
   rai::String s;
   s <<rai::niceTypeidName(typeid(*this));
 
@@ -139,7 +139,7 @@ rai::String Feature::shortTag(const rai::Configuration& C) {
   s <<'[';
   if(frameIDs.N<=3) {
     int comma=0;
-    for(uint i:frameIDs){ if(comma++) s <<',';  s <<C.frames.elem(i)->name; }
+    for(uint i:frameIDs){ if(comma++) s <<',';  s <<Cframes.elem(i)->name; }
   } else {
     s <<'#' <<frameIDs.N;
   }

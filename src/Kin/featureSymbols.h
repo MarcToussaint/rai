@@ -84,11 +84,12 @@ struct Configuration;
 struct Frame;
 }
 struct Feature;
+typedef rai::Array<rai::Frame*> FrameL;
 
-shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
+shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const FrameL& Cframes, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 
-inline shared_ptr<Feature> make_feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1) {
-  return symbols2feature(feat, frames, C, scale, target, order);
+inline shared_ptr<Feature> make_feature(FeatureSymbol feat, const StringA& frames, const FrameL& Cframes, const arr& scale=NoArr, const arr& target=NoArr, int order=-1) {
+  return symbols2feature(feat, frames, Cframes, scale, target, order);
 }
 
 double shapeSize(const rai::Frame* f, uint i=2);

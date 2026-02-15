@@ -53,7 +53,8 @@ struct KOMO : rai::NonCopyable {
   rai::Configuration world;       ///< original configuration; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
   rai::Configuration pathConfig;  ///< configuration containing full path (T+k_order copies of world, with switches applied)
   uintA orgJointIndices;          ///< set of joint IDs (IDs of frames with dofs) of the original world
-  FrameL timeSlices;              ///< the original timeSlices of the pathConfig (when switches add frames, pathConfig.frames might differ from timeSlices - otherwise not)
+  DofL orgActiveJoints;
+  FrameL orgFrames, timeSlices;              ///< the original timeSlices of the pathConfig (when switches add frames, pathConfig.frames might differ from timeSlices - otherwise not)
   bool computeCollisions=true;    ///< whether coll_engine (collisions/proxies) is evaluated whenever new configurations are set (needed if features read proxy list)
   shared_ptr<rai::CollEngine> coll_engine;
 
@@ -96,10 +97,7 @@ struct KOMO : rai::NonCopyable {
   shared_ptr<struct Objective> addObjective(const arr& times, const shared_ptr<Feature>& f, const StringA& frames,
       ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
   shared_ptr<struct Objective> addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
-      ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0) {
-    return addObjective(times, symbols2feature(feat, frames, world),
-                        {}, type, scale, target, order, deltaFromStep, deltaToStep);
-  }
+                                            ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
   void clearObjectives(); ///< clear all objective
   void removeObjective(const Objective* ob);
   void copyObjectives(KOMO& komoB, bool deepCopyFeatures=true);
@@ -224,7 +222,7 @@ struct KOMO : rai::NonCopyable {
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly= {});           ///< set the state trajectory of all configurations
 private:
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);
-  void setupPathConfig();
+  void setupPathConfig(const rai::Configuration& Corg);
 //  void addStableFrame(rai::SkeletonSymbol newMode, const char* parent, const char* name, const char* toShape);
   rai::Frame* applySwitch(const rai::KinematicSwitch& sw);
 public:
@@ -241,7 +239,8 @@ public:
   std::shared_ptr<NLP_Factored> nlp_FactoredParts();
 
 //private:
-  void _addObjective(const std::shared_ptr<Objective>& ob, const intA& timeSlices);
+  void _addObjective(const std::shared_ptr<Objective>& ob, const intA& timeTuples);
+  rai::Frame* _getFrame(const char* name) const;
 };
 
 int conv_time2step(double time, uint stepsPerPhase);

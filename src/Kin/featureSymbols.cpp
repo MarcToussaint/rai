@@ -77,9 +77,9 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
 };
 
 //fwd declarations
-auto getCtrlFramesAndScale(const rai::Configuration& C, bool jointPairs) {
+auto getCtrlFramesAndScale(const FrameL& frames, bool jointPairs) {
   struct Return { uintA frames; arr scale; } R;
-  R.frames = C.getCtrlFramesAndScale(R.scale, jointPairs);
+  R.frames = getCtrlFramesAndScale(R.scale, frames, jointPairs);
   return R;
 }
 
@@ -130,7 +130,7 @@ std::shared_ptr<Feature> Feature::deepCopy() {
   return make_shared<Feature>();
 }
 
-shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& C, const arr& scale, const arr& target, int order) {
+shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const FrameL& Cframes, const arr& scale, const arr& target, int order) {
   shared_ptr<Feature> f;
   if(feat==FS_distance) {  f=make_shared<F_PairCollision>(F_PairCollision::_negScalar, false); }
   else if(feat==FS_oppose) {  f=make_shared<F_GraspOppose>(); }
@@ -196,18 +196,18 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
 
   else if(feat==FS_accumulatedCollisions) {
     f=make_shared<F_AccumulatedCollisions>(0.);
-    if(!frames.N) f->frameIDs = framesToIndices(C.frames);
+    if(!frames.N) f->frameIDs = framesToIndices(Cframes);
   }
 
   else if(feat==FS_jointLimits) {
     f=make_shared<F_qLimits>();
-    if(!frames.N) f->frameIDs = framesToIndices(C.frames);
+    if(!frames.N) f->frameIDs = framesToIndices(Cframes);
   }
 
   else if(feat==FS_qItself) {
     if(!frames.N){
       auto ff=make_shared<F_qItself>();
-      ff->selectActiveJointPairs(C.frames);
+      ff->selectActiveJointPairs(Cframes);
       f = ff;
     }else f=make_shared<F_qItself>();
   }
@@ -215,7 +215,7 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
   else if(feat==FS_qControl) {
     CHECK(!frames.N, "NIY");
     arr _scale;
-    uintA F = C.getCtrlFramesAndScale(_scale);
+    uintA F = getCtrlFramesAndScale(_scale, Cframes);
     f = make_shared<F_qItself>(F);
     f->setScale(_scale);
   }
@@ -234,7 +234,8 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
 //    f = map;
   } else if(feat==FS_qQuaternionNorms) {
     f = make_shared<F_qQuaternionNorms>();
-    for(const rai::Dof* dof:C.activeDofs) {
+    DofL dofs = rai::getDofs(Cframes, true, false, false, false);
+    for(const rai::Dof* dof:dofs) {
       const rai::Joint* j = dof->joint();
       if(j && (j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_rigid)) f->frameIDs.append(j->frame->ID);
     }
@@ -245,8 +246,9 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
 //  if(!f->frameIDs.N) f->frameIDs = C.getFrameIDs(frames);
   if(frames.N) {
     CHECK(!f->frameIDs.N, "frameIDs are already set");
-    if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(C.frames);
-    else f->frameIDs = C.getFrameIDs(frames);
+    if(frames.N==1 && frames.scalar()=="ALL"){
+      f->frameIDs = rai::framesToIndices(Cframes);
+    }else f->frameIDs = rai::framesToIndices(rai::namesToFrames(Cframes, frames));
   }
 
   if(!!scale && scale.N) {

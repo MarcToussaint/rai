@@ -59,6 +59,20 @@ typedef rai::Array<rai::Configuration*> ConfigurationL;
 namespace rai {
 
 //===========================================================================
+// functions on frames; TODO: move to frame.h
+
+uintA framesToIndices(const FrameL& frames);
+StringA framesToNames(const FrameL& frames);
+FrameL dofsToFrames(const DofL& dofs);
+FrameL namesToFrames(const FrameL& frames, const StringA& names);
+FrameL indicesToFrames(const FrameL& frames, const uintA& ids);
+uintA getCtrlFramesAndScale(arr& scale, const FrameL& frames, bool jointPairs=true);
+arr getFrameState(const FrameL& F);
+StringA getDofNames(const DofL& dofs);
+DofL getDofs(const FrameL& F, bool actives, bool inactives, bool mimics=false, bool forces=true);
+
+
+//===========================================================================
 
 /// data structure to store a kinematic/physical situation (lists of frames (with joints, shapes, inertias), forces & proxies)
 struct Configuration {
@@ -110,17 +124,15 @@ struct Configuration {
   Frame* operator[](const char* name) const { return getFrame(name, true); }  ///< same as getFrame()
   Frame* operator()(int i) const { return frames(i); } ///< same as 'frames.elem(i)'  (the i-th frame)
   Frame* getFrame(const char* name, bool warnIfNotExist=true, bool reverse=false) const;
-  FrameL getFrames(const uintA& ids) const;
-  FrameL getFrames(const StringA& names) const;
+  FrameL getFrames(const uintA& ids) const { return indicesToFrames(frames, ids); }
+  FrameL getFrames(const StringA& names) const { return namesToFrames(frames, names); }
   uintA getFrameIDs(const StringA& names) const;
-  StringA getFrameNames() const;
+  StringA getFrameNames() const { return framesToNames(frames); }
   FrameL getJoints(bool activesOnly=true) const;
   FrameL getJointsSlice(uint t, bool activesOnly=true) const;
   FrameL getJointsSlice(const FrameL& slice, bool activesOnly=true) const;
   uintA getDofIDs() const;
   StringA getJointNames() const;
-  DofL getDofs(const FrameL& F, bool actives, bool inactives, bool mimics=false, bool forces=true) const;
-  uintA getCtrlFramesAndScale(arr& scale=NoArr, bool jointPairs=true) const;
   FrameL getRoots() const;
   FrameL getParts() const;
   FrameL getLinks() const;
@@ -134,9 +146,8 @@ struct Configuration {
   arr getJointState(const uintA& F) const { return getJointState(getFrames(F)); } ///< same as getJointState() with getFrames()
   arr getJointStateSlice(uint t, bool activesOnly=true) {  return getJointState(getJointsSlice(t, activesOnly));  }
   arr getDofHomeState(const DofL& dofs) const;
-  arr getFrameState() const { return getFrameState(frames); } ///< same as getFrameState() for all \ref frames
-  arr getFrameState(const FrameL& F) const;
-  arr getFrameState(const uintA& F) const { return getFrameState(getFrames(F)); } ///< same as getFrameState() with getFrames()
+  arr getFrameState() const { return rai::getFrameState(frames); } ///< same as getFrameState() for all \ref frames
+  arr getFrameState(const uintA& F) const { return rai::getFrameState(getFrames(F)); } ///< same as getFrameState() with getFrames()
 
   /// @name set state
   void setJointState(const arr& _q);
@@ -322,14 +333,6 @@ public:
 
 stdPipes(Configuration)
 
-//===========================================================================
-//
-// OpenGL static draw functions
-//
-
-uintA framesToIndices(const FrameL& frames);
-FrameL dofsToFrames(const DofL& dofs);
-StringA framesToNames(const FrameL& frames);
 
 //===========================================================================
 //

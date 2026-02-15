@@ -15,9 +15,7 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports,
 
   C.setRandom(0, 0);
 
-  KOMO komo;
-  komo.setConfig(C);
-  komo.setTiming(1,1,1,0);
+  KOMO komo(C, 1,1,0, true);
   komo.addControlObjective({}, 0, 1e-1);
   komo.add_jointLimits(true);
 

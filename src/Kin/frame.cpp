@@ -2379,6 +2379,161 @@ void rai::Inertia::read(const Graph& G) {
   }
 }
 
+//===========================================================================
+
+namespace rai {
+
+uintA framesToIndices(const FrameL& frames) {
+  uintA I;
+  resizeAs(I, frames);
+  for(uint i=0; i<frames.N; i++) I.elem(i) = frames.elem(i)->ID;
+  return I;
+}
+
+StringA framesToNames(const FrameL& frames) {
+  StringA names;
+  resizeAs(names, frames);
+  for(uint i=0; i<frames.N; i++) {
+    names.elem(i) = frames.elem(i)->name;
+  }
+  return names;
+}
+
+FrameL dofsToFrames(const DofL& dofs) {
+  FrameL F;
+  resizeAs(F, dofs);
+  for(uint i=0; i<dofs.N; i++) F.elem(i) = dofs.elem(i)->frame;
+  return F;
+}
+
+/// get the (F.N,7)-matrix of all poses for all given frames
+arr getFrameState(const FrameL& F) {
+  arr X(F.N, 7);
+  for(uint i=0; i<X.d0; i++) {
+    rai::Transformation Xi = F.elem(i)->ensure_X();
+    Xi.rot.uniqueSign();
+    memmove(X.p+7*i+0, &Xi.pos.x, 3*X.sizeT);
+    memmove(X.p+7*i+3, &Xi.rot.w, 4*X.sizeT);
+//    X[i] = Xi.getArr7d();
+  }
+  return X;
+}
+
+StringA getDofNames(const DofL& dofs) {
+  StringA names;
+  for(Dof* j:dofs) {
+    String name=j->frame->name;
+    if(!name) name <<'q' <<j->qIndex;
+    if(j->dim==1) names.append(name);
+    else for(uint i=0; i<j->dim; i++) names.append(STRING(name <<':' <<i));
+  }
+  return names;
+}
+
+void makeConvexHulls(FrameL& frames, bool onlyContactShapes) {
+  for(Frame* f: frames) if(f->shape && (!onlyContactShapes || f->shape->cont))
+      f->shape->mesh().makeConvexHull();
+}
+
+FrameL namesToFrames(const FrameL& frames, const StringA& names){
+  if(!names.N) return FrameL();
+  FrameL F;
+  resizeAs(F, names);
+  for(uint i=0; i<names.N; i++) {
+    Frame* f = 0;
+    for(Frame* b: frames) if(b->name==names.elem(i)){ f=b; break; }
+    if(!f) HALT("frame name '"<<names.elem(i)<<"' doesn't exist");
+    F.elem(i) = f;
+  }
+  return F;
+}
+
+FrameL indicesToFrames(const FrameL& frames, const uintA& ids){
+  FrameL F;
+  resizeAs(F, ids);
+  for(uint i=0; i<ids.N; i++) F.elem(i) = frames.elem(ids.elem(i));
+  return F;
+}
+
+/// get the (frame-ID, parent-ID) tuples and control scale for all active joints that represent controls
+uintA getCtrlFramesAndScale(arr& scale, const FrameL& frames, bool jointPairs) {
+  uintA qFrames;
+  for(rai::Frame* f : frames) {
+    rai::Joint* j = f->joint;
+    if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau && !j->isStable) {
+      if(jointPairs) qFrames.append(uintA{f->ID, f->parent->ID});
+      else qFrames.append(f->ID);
+      if(!!scale) scale.append(j->H, j->dim);
+    }
+  }
+  if(jointPairs) qFrames.reshape(-1, 2);
+  return qFrames;
+}
+
+DofL getDofs(const FrameL& F, bool actives, bool inactives, bool mimics, bool forces) {
+  DofL dofs;
+  for(Frame* f:F) {
+    Dof* dof = f->joint;
+    if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
+      dofs.append(dof);
+    }
+    dof = f->pathDof;
+    if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
+      dofs.append(dof);
+    }
+    dof = f->dirDof;
+    if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
+      dofs.append(dof);
+    }
+    if(forces){
+      for(ForceExchangeDof* dof: f->forces) if(&dof->a==f) {
+          if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
+            dofs.append(dof);
+          }
+        }
+    }
+  }
+  return dofs;
+}
+
+void computeOptimalSSBoxes(FrameL& frames) {
+  NIY;
+#if 0
+  //  for(Shape *s: shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
+  Shape* s;
+  for(Frame* f: frames) if((s=f->shape)) {
+      if(!(s->type()==ST_mesh && s->mesh.V.N)) continue;
+      Transformation t;
+      arr x;
+      computeOptimalSSBox(s->mesh, x, t, s->mesh.V);
+      s->type() = ST_ssBox;
+      s->size(0)=2.*x(0); s->size(1)=2.*x(1); s->size(2)=2.*x(2); s->size(3)=x(3);
+      s->mesh.setSSBox(s->size(0), s->size(1), s->size(2), s->size(3));
+      s->frame.Q.appendTransformation(t);
+    }
+#endif
+}
+
+void computeMeshNormals(FrameL& frames, bool force) {
+  for(Frame* f: frames) if(f->shape) {
+      Shape* s = f->shape.get();
+      if(force || s->mesh().V.d0!=s->mesh().Vn.d0 || s->mesh().T.d0!=s->mesh().Tn.d0) s->mesh().computeTriNormals();
+      // if(force || s->sscCore().V.d0!=s->sscCore().Vn.d0 || s->sscCore().T.d0!=s->sscCore().Tn.d0) s->sscCore().computeTriNormals();
+    }
+}
+
+void computeMeshGraphs(FrameL& frames, bool force) {
+  for(Frame* f: frames) if(f->shape) {
+      Shape* s = f->shape.get();
+      if(force || s->mesh().V.d0!=s->mesh().graph.N|| s->mesh().T.d0!=s->mesh().Tn.d0) s->mesh().buildGraph();
+      // if(force || s->sscCore().V.d0!=s->sscCore().graph.N || s->sscCore().T.d0!=s->sscCore().Tn.d0) s->sscCore().buildGraph();
+    }
+}
+
+} //namespace
+
+//===========================================================================
+
 RUN_ON_INIT_BEGIN(frame)
 FrameL::memMove=true;
 DofL::memMove=true;

@@ -60,66 +60,7 @@ Joint& NoJoint = *((Joint*)nullptr);
 Configuration __NoWorld;
 Configuration& NoConfiguration = *((Configuration*)&__NoWorld);
 
-uintA framesToIndices(const FrameL& frames) {
-  uintA I;
-  resizeAs(I, frames);
-  for(uint i=0; i<frames.N; i++) I.elem(i) = frames.elem(i)->ID;
-  return I;
-}
 
-StringA framesToNames(const FrameL& frames) {
-  StringA names;
-  resizeAs(names, frames);
-  for(uint i=0; i<frames.N; i++) {
-    names.elem(i) = frames.elem(i)->name;
-  }
-  return names;
-}
-FrameL dofsToFrames(const DofL& dofs) {
-  FrameL F;
-  resizeAs(F, dofs);
-  for(uint i=0; i<dofs.N; i++) F.elem(i) = dofs.elem(i)->frame;
-  return F;
-}
-
-void makeConvexHulls(FrameL& frames, bool onlyContactShapes) {
-  for(Frame* f: frames) if(f->shape && (!onlyContactShapes || f->shape->cont))
-      f->shape->mesh().makeConvexHull();
-}
-
-void computeOptimalSSBoxes(FrameL& frames) {
-  NIY;
-#if 0
-  //  for(Shape *s: shapes) s->mesh.computeOptimalSSBox(s->mesh.V);
-  Shape* s;
-  for(Frame* f: frames) if((s=f->shape)) {
-      if(!(s->type()==ST_mesh && s->mesh.V.N)) continue;
-      Transformation t;
-      arr x;
-      computeOptimalSSBox(s->mesh, x, t, s->mesh.V);
-      s->type() = ST_ssBox;
-      s->size(0)=2.*x(0); s->size(1)=2.*x(1); s->size(2)=2.*x(2); s->size(3)=x(3);
-      s->mesh.setSSBox(s->size(0), s->size(1), s->size(2), s->size(3));
-      s->frame.Q.appendTransformation(t);
-    }
-#endif
-}
-
-void computeMeshNormals(FrameL& frames, bool force) {
-  for(Frame* f: frames) if(f->shape) {
-      Shape* s = f->shape.get();
-      if(force || s->mesh().V.d0!=s->mesh().Vn.d0 || s->mesh().T.d0!=s->mesh().Tn.d0) s->mesh().computeTriNormals();
-      // if(force || s->sscCore().V.d0!=s->sscCore().Vn.d0 || s->sscCore().T.d0!=s->sscCore().Tn.d0) s->sscCore().computeTriNormals();
-    }
-}
-
-void computeMeshGraphs(FrameL& frames, bool force) {
-  for(Frame* f: frames) if(f->shape) {
-      Shape* s = f->shape.get();
-      if(force || s->mesh().V.d0!=s->mesh().graph.N|| s->mesh().T.d0!=s->mesh().Tn.d0) s->mesh().buildGraph();
-      // if(force || s->sscCore().V.d0!=s->sscCore().graph.N || s->sscCore().T.d0!=s->sscCore().Tn.d0) s->sscCore().buildGraph();
-    }
-}
 
 //===========================================================================
 //
@@ -541,26 +482,6 @@ Frame* Configuration::getFrame(const char* name, bool warnIfNotExist, bool rever
   return 0;
 }
 
-/// get all frames of given indices (almost same as \ref frames . Array::sub() )
-FrameL Configuration::getFrames(const uintA& ids) const {
-  FrameL F;
-  resizeAs(F, ids);
-  for(uint i=0; i<ids.N; i++) F.elem(i) = frames.elem(ids.elem(i));
-  return F;
-}
-
-/// calls getFrame() for all given names
-FrameL Configuration::getFrames(const StringA& names) const {
-  if(!names.N) return FrameL();
-  FrameL F(names.N);
-  for(uint i=0; i<names.N; i++) {
-    Frame* f = getFrame(names(i));
-    if(!f) HALT("frame name '"<<names(i)<<"' doesn't exist");
-    F.elem(i) = f;
-  }
-  return F;
-}
-
 /// calls getFrame() for all given names
 uintA Configuration::getFrameIDs(const StringA& names) const {
   if(!names.N) return uintA();
@@ -613,60 +534,7 @@ uintA Configuration::getDofIDs() const {
 /// get the frame names of all active joints
 StringA Configuration::getJointNames() const {
   ((Configuration*)this)->ensure_q();
-  StringA names(getJointStateDimension());
-  for(Dof* j:activeDofs) {
-    String name=j->frame->name;
-    if(!name) name <<'q' <<j->qIndex;
-    if(j->dim==1) names(j->qIndex) <<name;
-    else for(uint i=0; i<j->dim; i++) names(j->qIndex+i) <<name <<':' <<i;
-  }
-  return names;
-}
-
-DofL Configuration::getDofs(const FrameL& F, bool actives, bool inactives, bool mimics, bool forces) const {
-  DofL dofs;
-  for(Frame* f:F) {
-    Dof* dof = f->joint;
-    if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
-      dofs.append(dof);
-    }
-    dof = f->pathDof;
-    if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
-      dofs.append(dof);
-    }
-    dof = f->dirDof;
-    if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
-      dofs.append(dof);
-    }
-    if(forces){
-      for(ForceExchangeDof* dof: f->forces) if(&dof->a==f) {
-          if(dof && ((actives && dof->active) || (inactives && !dof->active)) && (mimics || !dof->mimic)) {
-            dofs.append(dof);
-          }
-        }
-    }
-  }
-  return dofs;
-}
-
-/// get the names of all frames
-StringA Configuration::getFrameNames() const {
-  return framesToNames(frames);
-}
-
-/// get the (frame-ID, parent-ID) tuples and control scale for all active joints that represent controls
-uintA Configuration::getCtrlFramesAndScale(arr& scale, bool jointPairs) const {
-  uintA qFrames;
-  for(rai::Frame* f : frames) {
-    rai::Joint* j = f->joint;
-    if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau && !j->isStable) {
-      if(jointPairs) qFrames.append(uintA{f->ID, f->parent->ID});
-      else qFrames.append(f->ID);
-      if(!!scale) scale.append(j->H, j->dim);
-    }
-  }
-  if(jointPairs) qFrames.reshape(-1, 2);
-  return qFrames;
+  return getDofNames(activeDofs);
 }
 
 /// get all frames without parent
@@ -783,19 +651,6 @@ arr Configuration::getDofHomeState(const DofL& dofs) const {
   }
   CHECK_EQ(n, x.N, "");
   return x;
-}
-
-/// get the (F.N,7)-matrix of all poses for all given frames
-arr Configuration::getFrameState(const FrameL& F) const {
-  arr X(F.N, 7);
-  for(uint i=0; i<X.d0; i++) {
-    rai::Transformation Xi = F.elem(i)->ensure_X();
-    Xi.rot.uniqueSign();
-    memmove(X.p+7*i+0, &Xi.pos.x, 3*X.sizeT);
-    memmove(X.p+7*i+3, &Xi.rot.w, 4*X.sizeT);
-//    X[i] = Xi.getArr7d();
-  }
-  return X;
 }
 
 /// set the q-vector (all joint and force DOFs)
@@ -2324,9 +2179,12 @@ void sConfiguration::coll_fclReset() {
 std::shared_ptr<CollEngine> Configuration::coll_engine(int verbose) {
   if(!self->coal) {
     Array<Shape*>::memMove=1;
-    Array<Shape*> geometries(frames.N);
+    uint n = frames.N;
+    if(frames.nd==2) n = frames.d1;
+    Array<Shape*> geometries(n);
     geometries.setZero();
     for(Frame* f:frames) {
+      if(f->ID>=n) break;
       if(f->shape && f->shape->cont) {
         CHECK(f->shape->type()!=rai::ST_marker, "collision object can't be a marker");
         if(!f->shape->mesh().V.N) f->shape->createMeshes(f->name);
@@ -3264,7 +3122,7 @@ void Configuration::setJacModeAs(const arr& J) {
 
 /// return a feature for a given frame(s)
 std::shared_ptr<Feature> Configuration::feature(FeatureSymbol fs, const StringA& frames, const arr& scale, const arr& target, int order) const {
-  return symbols2feature(fs, frames, *this, scale, target, order);
+  return symbols2feature(fs, frames, this->frames, scale, target, order);
 }
 
 arr Configuration::eval(FeatureSymbol fs, const StringA& frames, const arr& scale, const arr& target, int order) {

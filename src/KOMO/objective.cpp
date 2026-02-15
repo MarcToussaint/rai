@@ -41,7 +41,7 @@ void Objective::write(std::ostream& os) const {
 
 //===========================================================================
 
-rai::String GroundedObjective::name() { return feat->shortTag(frames.first()->C); }
+rai::String GroundedObjective::name() { return feat->shortTag(frames.first()->C.frames); }
 
 shared_ptr<Objective> ObjectiveL::add(const arr& times, const shared_ptr<Feature>& f, ObjectiveType type, const char* name) {
   append(make_shared<Objective>(f, type, name, times));
@@ -49,13 +49,13 @@ shared_ptr<Objective> ObjectiveL::add(const arr& times, const shared_ptr<Feature
 }
 
 shared_ptr<Objective> ObjectiveL::add(const arr& times, const shared_ptr<Feature>& f, const rai::Configuration& C, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order, int deltaFromStep, int deltaToStep) {
-  f->setup(C, frames, scale, target, order);
-  return add(times, f, type, f->shortTag(C));
+  f->setup(C.frames, frames, scale, target, order);
+  return add(times, f, type, f->shortTag(C.frames));
 }
 
 shared_ptr<Objective> ObjectiveL::add(const arr& times, const FeatureSymbol& feat, const rai::Configuration& C, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order, int deltaFromStep, int deltaToStep) {
-  auto f = make_feature(feat, frames, C, scale, target, order);
-  return add(times, f, type, f->shortTag(C));
+  auto f = make_feature(feat, frames, C.frames, scale, target, order);
+  return add(times, f, type, f->shortTag(C.frames));
 }
 
 double ObjectiveL::maxError(const rai::Configuration& C, double time, int verbose) const {
@@ -64,14 +64,14 @@ double ObjectiveL::maxError(const rai::Configuration& C, double time, int verbos
     if(time<0. || o->activeAtTime(time)) {
       if(o->type==OT_ineq || o->type==OT_eq) {
         if(o->feat->order==0) {
-          arr y = o->feat->eval(o->feat->getFrames(C));
+          arr y = o->feat->eval(o->feat->getFrames(C.frames));
           double m=0.;
           for(double& yi : y) {
             if(o->type==OT_ineq && yi>m) m=yi;
             if(o->type==OT_eq  && fabs(yi)>m) m=fabs(yi);
           }
           if(verbose>0) {
-            LOG(0) <<"err: " <<m <<' ' <<o->feat->shortTag(C);
+            LOG(0) <<"err: " <<m <<' ' <<o->feat->shortTag(C.frames);
           }
           if(m>maxError) maxError=m;
         }

@@ -14,9 +14,7 @@ void TEST(Easy){
   rai::Configuration C(rai::raiPath("../rai-robotModels/tests/arm.g"));
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
   
-  KOMO komo;
-  komo.setConfig(C);
-  komo.setTiming(1., 100, 5., 2);
+  KOMO komo(C, 1., 100, 2, true);
   komo.addControlObjective({}, 2, 1.);
   komo.addQuaternionNorms({}, 1e1, false);
 
@@ -62,9 +60,7 @@ void TEST(Align){
   rai::Configuration C(rai::raiPath("../rai-robotModels/tests/arm.g"));
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
 
-  KOMO komo;
-  komo.setConfig(C);
-  komo.setTiming(1., 100, 5., 2);
+  KOMO komo(C, 1., 100, 2);
 
   komo.addControlObjective({}, 2, 1.);
 
@@ -91,9 +87,7 @@ void TEST(Thin){
   rai::Configuration C(rai::raiPath("../rai-robotModels/tests/thin.g"));
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
 
-  KOMO komo;
-  komo.setConfig(C);
-  komo.setTiming(1., 60, 5., 2);
+  KOMO komo(C, 1., 60, 2);
   komo.addControlObjective({}, 2, 1.);
 
   //-- set a time optim objective
@@ -134,10 +128,8 @@ void TEST(PR2){
 
   C.view(true);
 
-  KOMO komo;
-  komo.setConfig(C);
-  komo.setTiming(1., 30, 10., 2);
-  komo.addControlObjective({}, 2, 1.);
+  KOMO komo(C, 1., 30, 2);
+  komo.addControlObjective({}, 2, 1e-2);
   komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e1});
   komo.addObjective({.98,1.}, FS_qItself, {}, OT_sos, {1e1}, {}, 1);
   komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e1});
@@ -156,11 +148,9 @@ void TEST(Threading) {
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/workshopTable.g"));
 
   //-- create KOMO problem, to be cloned later
-  KOMO komo;
+  KOMO komo(C, 1, 10, 2, false);
   komo.opt.verbose = 0;
   //komo.opt.animateOptimization=1;
-  komo.setConfig(C, false);
-  komo.setTiming(1, 10, 2, 2);
   komo.addControlObjective({}, 2);
   komo.addObjective({1, 1}, FS_positionDiff, {"r_gripper", "block1"}, OT_eq, {1e2});
   arr x0 = komo.pathConfig.getJointState();
@@ -214,11 +204,9 @@ void TEST(Mobile){
   uint T=100;
   T = rrt.path.d0;
   C.setJointState(q0);
-  KOMO komo;
-  komo.setConfig(C);
-  komo.setTiming(1, T, 10., 2);
-  komo.addControlObjective({}, 1, 1e-2);
-  komo.addControlObjective({}, 2, 1e-1);
+  KOMO komo(C, 1, T, 2);
+  komo.addControlObjective({}, 1, 1e-3);
+  komo.addControlObjective({}, 2, 1e-2);
   komo.addQuaternionNorms({}, 1e2, false);
   komo.add_collision(true, .0, 1e1);
   komo.addObjective({1.}, FS_poseDiff, {"goal", "ranger_rot"}, OT_eq, {1e1}, {});

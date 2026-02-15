@@ -517,7 +517,7 @@ Simulation::State Simulation::getState() {
     self->physx->pullFreeStates(C, state.freeVel);
     self->physx->pullJointStates(C, state.qDot);
     state.q = C.getJointState();
-    state.freePos = C.getFrameState(self->physx->getFreeFrames());
+    state.freePos = getFrameState(self->physx->getFreeFrames());
   } else if(engine==_bullet) {
     state.q = C.getJointState();
     self->bullet->pullDynamicStates(C, state.freeVel);
@@ -914,8 +914,8 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
     }
     killMe = true;
   } else if(obj) {
-    double d1 = -coll1->eval(coll1->getFrames(S.C)).scalar();
-    double d2 = -coll2->eval(coll2->getFrames(S.C)).scalar();
+    double d1 = -coll1->eval(coll1->getFrames(S.C.frames)).scalar();
+    double d2 = -coll2->eval(coll2->getFrames(S.C.frames)).scalar();
     //cout <<q <<" d1: " <<d1 <<" d2: " <<d2 <<endl;
     if(d1<1e-3 && d2<1e-3) { //stop when both close < 1mm
       //evaluate stability

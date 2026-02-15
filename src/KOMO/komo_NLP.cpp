@@ -50,7 +50,7 @@ KOMO_NLP::KOMO_NLP(KOMO& _komo) : komo(_komo) {
   for(shared_ptr<GroundedObjective>& ob : komo.objs) {
     uint m = ob->feat->dim(ob->frames);
     for(uint i=0; i<m; i++) featureTypes(M+i) = ob->type;
-    for(uint j=0; j<m; j++) komo.featureNames.append(ob->feat->shortTag(komo.pathConfig));
+    for(uint j=0; j<m; j++) komo.featureNames.append(ob->feat->shortTag(komo.timeSlices[0]));
     M += m;
   }
   if(quadraticPotentialLinear.N) {
@@ -171,7 +171,7 @@ KOMO_SubNLP::KOMO_SubNLP(KOMO& _komo, const rai::Array<GroundedObjective*>& _obj
   for(GroundedObjective* ob : objs) {
     uint m = ob->feat->dim(ob->frames);
     for(uint i=0; i<m; i++) featureTypes(M+i) = ob->type;
-    for(uint i=0; i<m; i++) featureNames(M+i) = ob->feat->shortTag(komo.pathConfig);
+    for(uint i=0; i<m; i++) featureNames(M+i) = ob->feat->shortTag(komo.pathConfig.frames);
     M += m;
   }
 }
@@ -525,7 +525,7 @@ void Conv_KOMO2FactoredNLP::reportDetails(std::ostream& os, int verbose, const c
     std::shared_ptr<GroundedObjective>& ob = feats(f).ob;
     os <<"Feature " <<f;
     if(subVars.N) os <<"[" <<subFeats(f) <<"]";
-    os <<" '" <<ob->feat->shortTag(komo.pathConfig) <<"' dim:" <<feats(f).ob->feat->dim(feats(f).ob->frames) <<" vars: " <<featureVariables(f) <<'=' <<feats(f).vars <<"=[ ";
+    os <<" '" <<ob->feat->shortTag(komo.pathConfig.frames) <<"' dim:" <<feats(f).ob->feat->dim(feats(f).ob->frames) <<" vars: " <<featureVariables(f) <<'=' <<feats(f).vars <<"=[ ";
       for(uint& i:featureVariables(f)) if(i!=UINT_MAX) os <<vars(i).name <<' '; else os <<"% ";
     os <<"]" ;
     evaluateSingleFeature(f, y, J, NoArr);

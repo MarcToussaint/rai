@@ -20,7 +20,7 @@ struct F_Max : Feature {
 
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi(const FrameL& F) { return 1; }
-  virtual rai::String shortTag(const rai::Configuration& C) { return STRING("Max:"<<f->shortTag(C)); }
+  virtual rai::String shortTag(const FrameL& Cframes) { return STRING("Max:"<<f->shortTag(Cframes)); }
 };
 
 //===========================================================================
@@ -32,7 +32,7 @@ struct F_Norm : Feature {
 
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi(const FrameL& F) { return 1; }
-  virtual rai::String shortTag(const rai::Configuration& C) { return STRING("Norm:"<<f->shortTag(C)); }
+  virtual rai::String shortTag(const FrameL& Cframes) { return STRING("Norm:"<<f->shortTag(Cframes)); }
 };
 
 //===========================================================================
@@ -44,5 +44,5 @@ struct F_Normalized : Feature {
 
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi(const FrameL& F) { return f->dim(F); }
-  virtual rai::String shortTag(const rai::Configuration& C) { return STRING("Normalized:"<<f->shortTag(C)); }
+  virtual rai::String shortTag(const FrameL& Cframes) { return STRING("Normalized:"<<f->shortTag(Cframes)); }
 };
