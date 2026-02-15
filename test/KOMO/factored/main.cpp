@@ -23,8 +23,8 @@ void testFactored(){
 
   KOMO komo;
 
-  komo.setConfig(C, false);
   komo.setTiming(2.5, 3, 5., 2);
+  komo.setConfig(C, false);
   komo.addControlObjective({}, 2);
   komo.addQuaternionNorms();
 

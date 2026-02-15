@@ -19,7 +19,7 @@ rai::String KOMO_Motif::getHash(){
   str hash;
   hash <<"#objs" <<objs.N;
   for(GroundedObjective* o:objs){
-    hash <<'=' <<o->type <<'-' <<o->feat->shortTag(F.elem(0)->C);
+    hash <<'=' <<o->type <<'-' <<o->feat->shortTag(F.elem(0)->C.frames);
   }
 
   rai::Configuration& C=F.elem(0)->C;
@@ -45,7 +45,7 @@ DofL KOMO_Motif::getDofs(rai::Configuration& C, int verbose){
 
   //-- get dofs
   C.ensure_indexedJoints();
-  DofL dofs = C.getDofs(subFrames, true, false, true);
+  DofL dofs = rai::getDofs(subFrames, true, false, true);
   if(verbose>2){ cout <<" all dofs: "; for(rai::Dof* d:dofs) cout <<d->frame->name <<'[' <<d->frame->time <<"] "; cout <<endl; }
   return dofs;
 }

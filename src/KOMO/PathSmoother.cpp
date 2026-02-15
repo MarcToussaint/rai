@@ -27,8 +27,8 @@ arr ReceedingHorizonPathSmoother::run(int verbose) {
 
   // set up KOMO problem for part of the path
   KOMO komo;
-  komo.setConfig(*P.C, true);
   komo.setTiming(1., horizon, horizonDuration, 2);
+  komo.setConfig(*P.C, true);
   komo.opt.verbose = verbose;
 
   CHECK_EQ(komo.T, horizon, "");

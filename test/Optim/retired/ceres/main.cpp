@@ -150,8 +150,8 @@ void tutorialBasics(){
   rai::Configuration C("model.g");
 
   KOMO komo;
-  komo.setConfig(C, false);
   komo.setTiming(1, 1, 5., 1);
+  komo.setConfig(C, false);
   komo.addControlObjective({}, 1, 1e0);
 //  komo.addQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
 

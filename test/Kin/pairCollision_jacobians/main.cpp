@@ -20,7 +20,7 @@ void TEST(GJK_Jacobians) {
   C.calcDofsFromConfig();
   arr q = C.getJointState();
 
-  C.get_viewer()->opt.polygonLines=true;
+  C.get_viewer()->opt.renderPolygonLines=true;
 
   F_PairCollision dist(F_PairCollision::_negScalar);
   F_PairCollision distVec(F_PairCollision::_vector);
@@ -118,7 +118,7 @@ void TEST(GJK_Jacobians2) {
     arr y,J;
     C.kinematicsPenetration(y, J, .05);
 
-    arr y2 = qn.eval(qn.getFrames(C));
+    arr y2 = qn.eval(qn.getFrames(C.frames));
 
     cout <<"total penetration: " <<y(0) <<"  diff:" <<y(0) - y_last <<endl; //" quat-non-normalization=" <<y2(0) <<endl;
     y_last = y(0);

@@ -14,8 +14,8 @@ ShortPathMPC::ShortPathMPC(rai::Configuration& C, uint steps, double _defaultTau
   : defaultTau(_defaultTau) {
   qHome = C.getJointState();
 
-  komo.setConfig(C, false);
   komo.setTiming(1., steps, defaultTau*steps, 2);
+  komo.setConfig(C, false);
   sliceOfConstraint=komo.T-1;
 
   //control costs at short horizon

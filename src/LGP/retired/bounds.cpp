@@ -93,8 +93,8 @@ PoseBound::PoseBound(shared_ptr<KOMO>& komo,
     finalS.write(cout, finalS.getSwitches(startKinematics));
   }
 
-  komo->setConfig(startKinematics, collisions);
   komo->setTiming(optHorizon, 1, 10., 1);
+  komo->setConfig(startKinematics, collisions);
 
   komo->addQuaternionNorms();
 #if 0
@@ -142,8 +142,8 @@ SeqBound::SeqBound(shared_ptr<KOMO>& komo,
   double maxPhase = S.getMaxPhase();
   komo->clearObjectives();
 
-  komo->setConfig(startKinematics, collisions);
   komo->setTiming(maxPhase+1., 1, 5., 1);
+  komo->setConfig(startKinematics, collisions);
 //  komo->solver=rai::KS_sparse; //sparseOptimization = true;
   komo->animateOptimization = 0;
 
@@ -173,10 +173,10 @@ PathBound::PathBound(shared_ptr<KOMO>& komo,
   double maxPhase = S.getMaxPhase();
   komo->clearObjectives();
 
-  komo->setConfig(startKinematics, collisions);
   uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
   uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
   komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
+  komo->setConfig(startKinematics, collisions);
   komo->animateOptimization = 0;
 
   komo->addQuaternionNorms();
@@ -206,10 +206,10 @@ SeqPathBound::SeqPathBound(shared_ptr<KOMO>& komo,
   double maxPhase = S.getMaxPhase();
   komo->clearObjectives();
 
-  komo->setConfig(startKinematics, collisions);
   uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
   uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
   komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
+  komo->setConfig(startKinematics, collisions);
   komo->animateOptimization = 0;
 
   komo->addQuaternionNorms();
@@ -253,9 +253,9 @@ SeqVelPathBound::SeqVelPathBound(shared_ptr<KOMO>& komo,
   double maxPhase = S.getMaxPhase();
   komo->clearObjectives();
 
-  komo->setConfig(startKinematics, collisions);
   uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
   komo->setTiming(maxPhase+.5, stepsPerPhase, 10., 1);
+  komo->setConfig(startKinematics, collisions);
 
   komo->addControlObjective({}, 1, 1.);
   komo->addControlObjective({}, 0, 1e-2);

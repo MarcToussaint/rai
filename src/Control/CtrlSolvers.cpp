@@ -584,7 +584,7 @@ void CtrlProblem_NLP::getBounds(arr& bounds_lo, arr& bounds_up) {
 
 void CtrlProblem_NLP::getFeatureTypes(ObjectiveTypeA& featureTypes) {
   for(auto& o: CP.objectives) if(o->active) {
-      uint d = o->feat->dim(o->feat->getFrames(CP.komo.world));
+      uint d = o->feat->dim(o->feat->getFrames(CP.komo.world.frames));
       featureTypes.append(o->type, d);
     }
   dimPhi = featureTypes.N;
@@ -593,7 +593,7 @@ void CtrlProblem_NLP::getFeatureTypes(ObjectiveTypeA& featureTypes) {
 void CtrlProblem_NLP::getNames(StringA& variableNames, StringA& featureNames) {
   variableNames = CP.komo.world.getJointNames();
   for(auto& o: CP.objectives) if(o->active) {
-      uint d = o->feat->dim(o->feat->getFrames(CP.komo.world));
+      uint d = o->feat->dim(o->feat->getFrames(CP.komo.world.frames));
       featureNames.append(o->name, d);
     }
 }

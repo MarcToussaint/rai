@@ -15,12 +15,12 @@ void tutorialBasics(){
    * 2) the timing parameters (duration/phases, number os time slices per phase)
    * 3) the objectives */
 
-  //-- setting the model; false -> NOT calling collision detection (FCL) for every 'setJointState' -> faster
-  komo.setConfig(C, false);
-
   //-- the timing parameters: 2 phases, 20 time slices, 5 seconds, k=2 (acceleration mode)
   komo.setTiming(1, 20, 5., 2);
 
+  //-- setting the model; false -> NOT calling collision detection (FCL) for every 'setJointState' -> faster
+  komo.setConfig(C, false);
+  
   //-- default tasks for transition costs
   komo.addControlObjective({}, 2, 1.);
 //  komo.addQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
@@ -77,10 +77,10 @@ void tutorialInverseKinematics(){
 
   KOMO komo;
 
-  komo.setConfig(G, true);
-
   //-- the timing parameters: 1 phase, 1 time slice, duration 1, order 1
   komo.setTiming(1., 1, 1., 1);
+
+  komo.setConfig(G, true);
 
   //-- default tasks for transition costs
   komo.addControlObjective({}, 1, 1.);

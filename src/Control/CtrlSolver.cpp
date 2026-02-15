@@ -13,8 +13,8 @@
 
 CtrlSolver::CtrlSolver(const rai::Configuration& _C, double _tau, uint k_order)
   : tau(_tau) {
-  komo.setConfig(_C, true);
   komo.setTiming(1., 1, _tau, k_order);
+  komo.setConfig(_C, true);
 }
 
 CtrlSolver::~CtrlSolver() {
@@ -86,7 +86,7 @@ void CtrlSolver::update(const arr& q_real, const arr& qDot_real, rai::Configurat
 
   //-- step the moving targets forward, if they have one
   for(shared_ptr<CtrlObjective>& o: objectives) if(o->active) {
-      if(!o->name.N) o->name = o->feat->shortTag(C);
+      if(!o->name.N) o->name = o->feat->shortTag(C.frames);
 
       if(o->movingTarget) {
         o->y_buffer = o->getValue(*this);

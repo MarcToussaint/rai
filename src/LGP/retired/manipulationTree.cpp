@@ -118,8 +118,8 @@ void MNode::solvePoseProblem() {
 #else
   poseProblem = new KOMO();
   KOMO& komo(*poseProblem);
-  komo.setConfig(effKinematics);
   komo.setTiming(1, 1, 5., 1);
+  komo.setConfig(effKinematics);
 
   komo.setSquaredQVelocities();
   cout <<"  ** PoseProblem for state" <<*folState <<endl;
@@ -220,8 +220,8 @@ void MNode::solveSeqProblem(int verbose) {
 #else
   seqProblem = new KOMO();
   KOMO& komo(*seqProblem);
-  komo.setConfig(startKinematics);
   komo.setTiming(time, 2, 5., 1, false);
+  komo.setConfig(startKinematics);
 
   komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
@@ -293,8 +293,8 @@ void MNode::solvePathProblem(uint microSteps, int verbose) {
 #else
   pathProblem = new KOMO();
   KOMO& komo(*pathProblem);
-  komo.setConfig(startKinematics);
   komo.setTiming(time, microSteps, 5., 2);
+  komo.setConfig(startKinematics);
 
   komo.setSquaredQAccelerations();
   komo.setFixEffectiveJoints(-1., -1., 1e3);
@@ -338,8 +338,8 @@ case 1: {
     effKinematics = parent->effKinematics;
   }
 
-  komo.setConfig(effKinematics, false);
   komo.setTiming(1., 2, 5., 1);
+  komo.setConfig(effKinematics, false);
 
   if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
   komo.setSquaredQVelocities(.5, -1., 1.); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
@@ -366,12 +366,12 @@ case 1: {
 //    if(!parent) effKinematics = startKinematics;
 //    else effKinematics = parent->effKinematics;
 
+//    komo.setTiming(2.+.5, 2, 5., 1);
 //    if(!parent || !parent->parent){
 //      komo.setConfig(startKinematics, false);
 //    }else{
 //      komo.setConfig(parent->parent->effKinematics, false);
 //    }
-//    komo.setTiming(2.+.5, 2, 5., 1);
 
 //    if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
 //    komo.setSquaredQVelocities(1.1, -1., 1.); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
@@ -390,9 +390,9 @@ case 1: {
 //    komo.setPairedTimes();
 //  } break;
 case 2: {
-  komo.setConfig(startKinematics, false);
   if(time>1e-2) komo.setTiming(time, 2, 5., 1);
   else  komo.setTiming(1., 2, 5., 1);
+  komo.setConfig(startKinematics, false);
 
   if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
   komo.setSquaredQVelocities();
@@ -417,10 +417,10 @@ case 2: {
 //      cout <<komo.getPath_times() <<endl;
 } break;
 case 3: {
-  komo.setConfig(startKinematics, collisions);
   uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
   uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
   komo.setTiming(time+.5, stepsPerPhase, 5., pathOrder);
+  komo.setConfig(startKinematics, collisions);
 
   if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2);
   if(pathOrder==1) komo.setSquaredQVelocities();
@@ -494,8 +494,8 @@ void MNode::solvePoseProblem() {
 
   poseProblem = new KOMO();
   KOMO& komo(*poseProblem);
-  komo.setConfig(effKinematics);
   komo.setTiming(1., 2, 5., 1, false);
+  komo.setConfig(effKinematics);
 
   if(LGP_useHoming) komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
@@ -567,8 +567,8 @@ void MNode::solveSeqProblem(int verbose) {
 
   seqProblem = new KOMO();
   KOMO& komo(*seqProblem);
-  komo.setConfig(startKinematics);
   komo.setTiming(time, 2, 5., 1, false);
+  komo.setConfig(startKinematics);
 
   if(LGP_useHoming) komo.setHoming(-1., -1., 1e-1); //gradient bug??
   komo.setSquaredQVelocities();
@@ -629,8 +629,8 @@ void MNode::solvePathProblem(uint microSteps, int verbose) {
 
   pathProblem = new KOMO();
   KOMO& komo(*pathProblem);
-  komo.setConfig(startKinematics);
   komo.setTiming(time, microSteps, 5., 2, false);
+  komo.setConfig(startKinematics);
 
   if(LGP_useHoming) komo.setHoming(-1., -1., 1e-2); //gradient bug??
   komo.setSquaredQAccelerations();

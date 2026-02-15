@@ -9,6 +9,7 @@
 #include "LeapMPC.h"
 
 LeapMPC::LeapMPC(rai::Configuration& C, double timingScale) {
+  komo.setTiming(1., 3, 1., 1);
   komo.setConfig(C, false);
 #if 0
   komo.setTiming(2., 1, .1, 2);
@@ -31,7 +32,6 @@ LeapMPC::LeapMPC(rai::Configuration& C, double timingScale) {
 
   komo.timeSlices(-1, 0)->setJointState({100.}); //this should be the tau joint!
 #else
-  komo.setTiming(1., 3, 1., 1);
 
   //control costs at short horizon
   komo.addControlObjective({}, 1, 1e-1);

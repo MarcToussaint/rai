@@ -29,7 +29,7 @@ void testFeature() {
   obj1->setMass(1.);
   obj2->setMass(1.);
 
-  rai::ForceExchangeDof con(*obj1, *obj2, rai::FXT_poa);
+  rai::ForceExchangeDof con(nullptr, *obj1, *obj2, rai::FXT_poa);
 
   C.setTaus(.1);
 
@@ -57,20 +57,20 @@ void testFeature() {
   F.append(make_shared<F_PairCollision>(F_PairCollision::_center)); F(-1)->setFrameIDs({"obj1", "obj2"}, C);
   F.append(make_shared<F_LinAngVel>()); F(-1)->setFrameIDs({"obj1"}, C);
   F.append(make_shared<F_LinAngVel>()); F(-1)->setFrameIDs({"obj2"}, C) .setOrder(2);
-  F.append(symbols2feature(FS_position, {"obj1"}, C));
-  F.append(symbols2feature(FS_positionDiff, {"obj1", "obj2"}, C));
+  F.append(symbols2feature(FS_position, {"obj1"}, C.frames));
+  F.append(symbols2feature(FS_positionDiff, {"obj1", "obj2"}, C.frames));
   F.append(make_shared<F_Matrix>()); F(-1)->setFrameIDs({"obj1"}, C);
   F.append(make_shared<F_MatrixDiff>()); F(-1)->setFrameIDs({"obj1", "obj2"}, C);
-  F.append(symbols2feature(FS_pose, {"obj1"}, C)); F(-1)->setOrder(0);
-  F.append(symbols2feature(FS_pose, {"obj2"}, C)); F(-1)->setOrder(1);
-  F.append(symbols2feature(FS_pose, {"obj1"}, C)); F(-1)->setOrder(2);
-  F.append(symbols2feature(FS_poseRel, {"obj1", "obj2"}, C)); F(-1)->setOrder(0);
-  F.append(symbols2feature(FS_poseRel, {"obj1", "obj2"}, C)); F(-1)->setOrder(1);
-  F.append(symbols2feature(FS_poseRel, {"obj1", "obj2"}, C)); F(-1)->setOrder(2);
-  F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C)); F(-1)->setOrder(0);
-  F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C)); F(-1)->setOrder(1);
-  F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C)); F(-1)->setOrder(2);
-  F.append(symbols2feature(FS_insideBox, {"obj1", "obj2"}, C)); F(-1)->setOrder(0);
+  F.append(symbols2feature(FS_pose, {"obj1"}, C.frames)); F(-1)->setOrder(0);
+  F.append(symbols2feature(FS_pose, {"obj2"}, C.frames)); F(-1)->setOrder(1);
+  F.append(symbols2feature(FS_pose, {"obj1"}, C.frames)); F(-1)->setOrder(2);
+  F.append(symbols2feature(FS_poseRel, {"obj1", "obj2"}, C.frames)); F(-1)->setOrder(0);
+  F.append(symbols2feature(FS_poseRel, {"obj1", "obj2"}, C.frames)); F(-1)->setOrder(1);
+  F.append(symbols2feature(FS_poseRel, {"obj1", "obj2"}, C.frames)); F(-1)->setOrder(2);
+  F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C.frames)); F(-1)->setOrder(0);
+  F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C.frames)); F(-1)->setOrder(1);
+  F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C.frames)); F(-1)->setOrder(2);
+  F.append(symbols2feature(FS_insideBox, {"obj1", "obj2"}, C.frames)); F(-1)->setOrder(0);
   F.append(make_shared<F_NewtonEuler>()); F(-1)->setFrameIDs({"obj1"}, C);
   F.append(make_shared<F_fex_POA>()); F(-1)->setFrameIDs({"obj1", "obj2"}, C);
   F.append(make_shared<F_fex_Force>()); F(-1)->setFrameIDs({"obj1", "obj2"}, C);
@@ -92,11 +92,11 @@ void testFeature() {
     bool succ=true;
 
     for(shared_ptr<Feature>& f: F){
-      cout <<k <<std::setw(30) <<f->shortTag(C) <<' ';
-      succ &= checkJacobian(f->asFct(f->getFrames(pathConfig)), x, 1e-5);
+      cout <<k <<std::setw(30) <<f->shortTag(C.frames) <<' ';
+      succ &= checkJacobian(f->asFct(f->getFrames(pathConfig.frames)), x, 1e-5);
     }
 
-    arr y = F.first()->eval(F.first()->getFrames(pathConfig));
+    arr y = F.first()->eval(F.first()->getFrames(pathConfig.frames));
 
     if(!succ) pathConfig.view(true);
   }

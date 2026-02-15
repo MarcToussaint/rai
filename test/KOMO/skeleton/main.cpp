@@ -16,12 +16,13 @@ void testPickAndPlace(rai::ArgWord pathOrSeq){
 
   KOMO komo;
 
-  komo.setConfig(C, false);
   if(pathOrSeq==rai::_path){
     komo.setTiming(2.5, 30, 5., 2);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 2);
   }else{
     komo.setTiming(3., 1, 5., 1);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 1, 1e-1);
   }
   komo.addQuaternionNorms();
@@ -54,12 +55,13 @@ void testPickAndPush(rai::ArgWord pathOrSeq){
 
   KOMO komo;
 
-  komo.setConfig(C, false);
   if(pathOrSeq==rai::_path){
     komo.setTiming(3.5, 30, 5., 2);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 2);
   }else{
     komo.setTiming(3., 1, 5., 1);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 1, 1e-1);
   }
   komo.addQuaternionNorms();
@@ -89,12 +91,13 @@ void testPickAndThrow(rai::ArgWord pathOrSeq){
 
   KOMO komo;
 
-  komo.setConfig(C, false);
   if(pathOrSeq==rai::_path){
     komo.setTiming(4.5, 30, 2., 2);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 2, 1e-1);
   }else{
     komo.setTiming(5., 1, 2., 1);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 1, 1e-1);
   }
   komo.addQuaternionNorms();
@@ -154,12 +157,13 @@ void testWalkAndPick(rai::ArgWord pathOrSeq){
 
   KOMO komo;
 
-  komo.setConfig(C, false);
   if(pathOrSeq==rai::_path){
     komo.setTiming(4.5, 30, 5., 2);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 2, 1e0);
   }else{
     komo.setTiming(5., 1, 2., 1);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 1, 1e-1);
   }
   komo.addQuaternionNorms();
@@ -200,12 +204,13 @@ void testHandover(rai::ArgWord pathOrSeq){
 
   KOMO komo;
 
-  komo.setConfig(C, false);
   if(pathOrSeq==rai::_path){
     komo.setTiming(3.5, 30, 5., 2);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 2, 1e0);
   }else{
     komo.setTiming(4., 1, 2., 1);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 1, 1e-1);
   }
   komo.addQuaternionNorms();
@@ -239,12 +244,13 @@ void testStackAndBalance(rai::ArgWord pathOrSeq){
 
   KOMO komo;
 
-  komo.setConfig(C, false);
   if(pathOrSeq==rai::_path){
     komo.setTiming(5.5, 30, 5., 2);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 2, 1e0);
   }else{
     komo.setTiming(6., 1, 2., 1);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 1, 1e-1);
   }
   komo.addQuaternionNorms();
@@ -321,12 +327,13 @@ void testWalking(rai::ArgWord pathOrSeq){
 
   KOMO komo;
 
-  komo.setConfig(C, false);
   if(pathOrSeq==rai::_path){
     komo.setTiming(4.5, 30, 5., 2);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 2, 1e0);
   }else{
     komo.setTiming(5., 1, 2., 1);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 1, 1e-1);
   }
   komo.addQuaternionNorms();

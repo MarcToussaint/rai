@@ -118,8 +118,8 @@ rai::String validatePath(const rai::Configuration& _C, const arr& q_now, const S
 
 std::pair<arr, arr> getStartGoalPath_obsolete(const rai::Configuration& C, const arr& target_q, const StringA& target_joints, const char* endeff, double up, double down) {
   KOMO komo;
-  komo.setConfig(C, true);
   komo.setTiming(1., 20, 3.);
+  komo.setConfig(C, true);
   komo.addControlObjective({}, 2, 1.);
 
   if(endeff) {
@@ -175,8 +175,8 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
   KOMO komo;
   komo.opt.verbose=0;
 //  komo.opt.animateOptimization=4;
-  komo.setConfig(C, true);
   komo.setTiming(1., 32, 5., 2);
+  komo.setConfig(C, true);
   komo.addControlObjective({}, 2, 1.);
 
   // constrain target - either hard endeff target (and soft q), or hard qTarget
@@ -363,8 +363,8 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
     if(doesCollide) {
       if(solveForFeasible) {
         KOMO komo;
-        komo.setConfig(C);
         komo.setTiming(1., 1, 1., 1);
+        komo.setConfig(C);
         komo.addControlObjective({}, 1, 1e-1);
         komo.addQuaternionNorms();
 
@@ -456,8 +456,8 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
 
   //solve
   KOMO komo;
-  komo.setConfig(C);
   komo.setTiming(1., 1, 1., 1);
+  komo.setConfig(C);
   komo.addControlObjective({}, 1, 1e-2);
   komo.addQuaternionNorms();
 

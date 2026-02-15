@@ -14,8 +14,8 @@ void TEST(KomoSequence){
   makeConvexHulls(K.frames);
 
   KOMO_ext komo;
-  komo.setConfig(K);
   komo.setTiming(2., 20, 10.);
+  komo.setConfig(K);
 
   komo.addControlObjective({}, 2);// setSquaredQAccVelHoming();
   komo.addQuaternionNorms();

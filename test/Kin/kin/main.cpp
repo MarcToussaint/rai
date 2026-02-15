@@ -404,14 +404,14 @@ void TEST(Limits){
   arr x(n);
   for(uint k=0;k<10;k++){
     rndUniform(x,-2.,2.,false);
-    checkJacobian(F->asFct(F->getFrames(C)),x,1e-4);
+    checkJacobian(F->asFct(F->getFrames(C.frames)),x,1e-4);
     for(uint t=0;t<10;t++){
-      arr lim = F->eval(F->getFrames(C));
+      arr lim = F->eval(F->getFrames(C.frames));
       cout <<"y=" <<lim <<"  " <<std::flush;
 //      cout <<"J:" <<lim.J <<endl;
       for(uint i=0;i<lim.N;i++) if(lim(i)<0.) lim(i)=0.; //penalize only positive
       x -= 1. * pseudoInverse(lim.J()) * lim;
-      checkJacobian(F->asFct(F->getFrames(C)),x,1e-4);
+      checkJacobian(F->asFct(F->getFrames(C.frames)),x,1e-4);
       C.setJointState(x);
       C.view();
     }

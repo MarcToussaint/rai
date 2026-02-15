@@ -11,8 +11,8 @@ void createPath(){
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
   
   KOMO komo;
-  komo.setConfig(C);
   komo.setTiming(1., 100, 1., 2);
+  komo.setConfig(C);
   komo.addControlObjective({}, 2, 1.);
   komo.addQuaternionNorms({}, 1., false);
 

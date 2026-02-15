@@ -109,8 +109,8 @@ arr sampleGraspCandidate(rai::Configuration& C, const char *ptsFrame, const char
 #if 0
     //-- refine using optimization
     KOMO komo;
-    komo.setConfig(C, true);
     komo.setTiming(1,1,1,0);
+    komo.setConfig(C, true);
     //    komo.addControlObjective({}, 0, 1e-1);
     q.append(double(q(-1))); //for the mimic joint..
     komo.addObjective({}, FS_qItself, {}, OT_sos, {1e1}, q); //stay close to initialization

@@ -22,8 +22,8 @@ shared_ptr<KOMO> problem_IK(){
   f->setShape(rai::ST_sphere, {.02}) .setColor({1., 1., 0.});
 
   auto komo = make_shared<KOMO>();
-  komo->setConfig(C, false);
   komo->setTiming(1., 1, 1., 0);
+  komo->setConfig(C, false);
 
   komo->addControlObjective({}, 0, 1e-1);
   komo->add_jointLimits();
@@ -64,8 +64,8 @@ shared_ptr<KOMO> problem_IKtorus(){
   torus->set_X()->rot.setRandom();
 
   auto komo = make_shared<KOMO>();
-  komo->setConfig(C, false);
   komo->setTiming(1., 1, 1., 0);
+  komo->setConfig(C, false);
   komo->addControlObjective({}, 0, 1e-1);
   komo->add_jointLimits();
   komo->addObjective({}, make_shared<F_TorusGraspEq>(.2, .02), {"l_gripper", "torus"}, OT_eq, {1e1});
@@ -170,8 +170,8 @@ shared_ptr<KOMO> problem_StableSphere(){
   StringA supports = { "box", "wall", "l_finger", "r_finger" };
 
   auto komo = make_shared<KOMO>();
-  komo->setConfig(C);
   komo->setTiming(1,1,1,0);
+  komo->setConfig(C);
   komo->addControlObjective({}, 0, 1e-1);
 
   komo->addObjective({}, make_shared<F_TotalForce>(), {"obj"}, OT_eq, {1e1} );
@@ -588,8 +588,8 @@ OptBench_InvKin_Simple::OptBench_InvKin_Simple() {
   f->setShape(rai::ST_sphere, {.02}) .setColor({1., 1., 0.});
 
   komo = make_shared<KOMO>();
-  komo->setConfig(C, false);
   komo->setTiming(1., 1, 1., 0);
+  komo->setConfig(C, false);
 
   komo->addControlObjective({}, 0, 1e-1);
 //  komo->add_jointLimits();
@@ -602,8 +602,8 @@ OptBench_InvKin_Endeff::OptBench_InvKin_Endeff(const char* modelFile, bool uncon
   rai::Configuration C(modelFile);
   komo = make_unique<KOMO>();
   komo->opt.sparse = false;
-  komo->setConfig(C, false);
   komo->setTiming(1., 1, 1., 1);
+  komo->setConfig(C, false);
   komo->addControlObjective({}, 1, 1.);
   //    komo->addQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
 
@@ -622,14 +622,15 @@ void OptBench_Skeleton::create(const char* modelFile, const rai::Skeleton& S, ra
   rai::Configuration C(modelFile);
 
   komo = make_unique<KOMO>();
-  komo->setConfig(C, false);
 
   double maxPhase = S.getMaxPhase();
   if(sequenceOrPath==rai::_sequence) {
     komo->setTiming(maxPhase, 1, 2., 1);
+  komo->setConfig(C, false);
     komo->addControlObjective({}, 1, 1e-1);
   } else {
     komo->setTiming(maxPhase, 30, 5., 2);
+  komo->setConfig(C, false);
     komo->addControlObjective({}, 2, 1e0);
   }
   komo->addQuaternionNorms();

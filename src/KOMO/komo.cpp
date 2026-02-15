@@ -256,7 +256,7 @@ void KOMO::_addObjective(const std::shared_ptr<Objective>& ob, const intA& timeT
 }
 
 Frame* KOMO::_getFrame(const char* name) const{
-  for(Frame* b: orgFrames) if(b->name==name) return b;
+  for(Frame* b: timeSlices[0]) if(b->name==name) return b;
   HALT("cannot find frame named '" <<name <<"'");
   return 0;
 
@@ -272,7 +272,7 @@ shared_ptr<Objective> KOMO::addObjective(const arr& times,
 
   //-- if arguments are given, modify the feature's frames, scaling and order
   f->setup(timeSlices[k_order], frames, scale, target, order);
-  for(uint& id:f->frameIDs) if(id>timeSlices.d1) id=id%timeSlices.d1;
+  for(uint& id:f->frameIDs) if(id>=timeSlices.d1) id=id%timeSlices.d1;
 
   //-- determine when exactly it is active (list of tuples of given order
   intA timeTuples = conv_times2tuples(times, f->order, stepsPerPhase, T, deltaFromStep, deltaToStep);
@@ -308,7 +308,7 @@ rai::Frame* KOMO::addSwitch(double time, bool before, bool stable,
                             rai::JointType type, SwitchInitializationType init,
                             const char* ref1, const char* ref2,
                             const rai::Transformation& jFrom) {
-  auto sw = make_shared<KinematicSwitch>(SW_joint, type, ref1, ref2, world, init, 0, jFrom);
+  auto sw = make_shared<KinematicSwitch>(SW_joint, type, ref1, ref2, pathConfig, init, 0, jFrom);
   sw->isStable = stable;
   return addSwitch(time, before, sw);
 }
@@ -417,7 +417,7 @@ void KOMO::addRigidSwitch(double time, const StringA& frames, bool noJumpStart) 
     //  then we actually need to impose the no-jump constrained on the root of the kinematic chain!
     //  To prevent special case for the skeleton specifer, we use this ugly code to determine the root of
     //  the kinematic chain for frames(1) -- when frames(1) is a normal object, this should be just frames(1) itself
-    rai::Frame* toBePicked = world[frames(1)];
+    rai::Frame* toBePicked = _getFrame(frames(1));
     int s = conv_time2step(time, stepsPerPhase);
     toBePicked = timeSlices(s+k_order, toBePicked->ID);
     rai::Frame* rootOfPicked = toBePicked->getUpwardLink(NoTransformation, true);
@@ -457,7 +457,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       //  then we actually need to impose the no-jump constrained on the root of the kinematic chain!
       //  To prevent special case for the skeleton specifer, we use this ugly code to determine the root of
       //  the kinematic chain for frames(1) -- when frames(1) is a normal object, this should be just frames(1) itself
-      rai::Frame* toBePicked = world[frames(1)];
+      rai::Frame* toBePicked = _getFrame(frames(1));
       int s = conv_time2step(times(0), stepsPerPhase);
       toBePicked = timeSlices(s+k_order, toBePicked->ID);
       rai::Frame* rootOfPicked = toBePicked->getUpwardLink(NoTransformation, true);
@@ -628,7 +628,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
     Transformation rel = 0;
     rel.pos.set(0, 0, .5*(shapeSize(_getFrame(frames(0))) + shapeSize(_getFrame(frames(1)))));
 //    addSwitch(times(0), true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
-    rai::Frame* f = addSwitch(times(0), true, make_shared<KinematicSwitch>(SW_joint, JT_transXYPhi, frames(0), frames(1), world, SWInit_copy, 0, rel));
+    rai::Frame* f = addSwitch(times(0), true, make_shared<KinematicSwitch>(SW_joint, JT_transXYPhi, frames(0), frames(1), pathConfig, SWInit_copy, 0, rel));
     if(f) {
       //limits?
       rai::Shape* on = _getFrame(frames(0))->shape.get();
@@ -681,8 +681,8 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
 }
 
 void KOMO::addContact_slide(double startTime, double endTime, const char* from, const char* to) {
-  addSwitch({startTime}, true, make_shared<rai::KinematicSwitch>(rai::SW_addContact, rai::JT_none, from, to, world));
-  if(endTime>0.) addSwitch(endTime, false, make_shared<rai::KinematicSwitch>(rai::SW_delContact, rai::JT_none, from, to, world));
+  addSwitch({startTime}, true, make_shared<rai::KinematicSwitch>(rai::SW_addContact, rai::JT_none, from, to, pathConfig));
+  if(endTime>0.) addSwitch(endTime, false, make_shared<rai::KinematicSwitch>(rai::SW_delContact, rai::JT_none, from, to, pathConfig));
 
   //-- on-surface (distance) constraints
 #ifdef RAI_USE_FUNCTIONALS //new, based on functionals
@@ -706,8 +706,8 @@ void KOMO::addContact_slide(double startTime, double endTime, const char* from, 
 }
 
 void KOMO::addContact_stick(double startTime, double endTime, const char* from, const char* to, double frictionCone_mu) {
-  addSwitch({startTime}, true, make_shared<rai::KinematicSwitch>(rai::SW_addContact, rai::JT_none, from, to, world));
-  if(endTime>0.) addSwitch(endTime, false, make_shared<rai::KinematicSwitch>(rai::SW_delContact, rai::JT_none, from, to, world));
+  addSwitch({startTime}, true, make_shared<rai::KinematicSwitch>(rai::SW_addContact, rai::JT_none, from, to, pathConfig));
+  if(endTime>0.) addSwitch(endTime, false, make_shared<rai::KinematicSwitch>(rai::SW_delContact, rai::JT_none, from, to, pathConfig));
 
   //-- on-surface (distance) constraints
 #ifdef RAI_USE_FUNCTIONALS //new, based on functionals
@@ -812,8 +812,8 @@ rai::Frame* KOMO::addContactForceFrame(double time, str obj, str from, double fr
 }
 
 void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const char* from, const char* to) {
-  addSwitch({startTime}, true, make_shared<rai::KinematicSwitch>(rai::SW_addContact, rai::JT_none, from, to, world));
-  if(endTime>0.) addSwitch(endTime, false, make_shared<rai::KinematicSwitch>(rai::SW_delContact, rai::JT_none, from, to, world));
+  addSwitch({startTime}, true, make_shared<rai::KinematicSwitch>(rai::SW_addContact, rai::JT_none, from, to, pathConfig));
+  if(endTime>0.) addSwitch(endTime, false, make_shared<rai::KinematicSwitch>(rai::SW_delContact, rai::JT_none, from, to, pathConfig));
 
   //constraints
   addObjective({startTime, endTime}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_eq, {1e2});
@@ -829,8 +829,8 @@ void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const
 }
 
 void KOMO::addContact_elasticBounce(double time, const char* from, const char* to, double elasticity, double stickiness) {
-  addSwitch(time, true,  make_shared<rai::KinematicSwitch>(rai::SW_addContact, rai::JT_none, from, to, world));
-  addSwitch(time, false, make_shared<rai::KinematicSwitch>(rai::SW_delContact, rai::JT_none, from, to, world));
+  addSwitch(time, true,  make_shared<rai::KinematicSwitch>(rai::SW_addContact, rai::JT_none, from, to, pathConfig));
+  addSwitch(time, false, make_shared<rai::KinematicSwitch>(rai::SW_delContact, rai::JT_none, from, to, pathConfig));
 
   //constraints
 #ifdef RAI_USE_FUNCTIONALS //new, based on functionals
@@ -1385,7 +1385,7 @@ Graph KOMO::report(bool specs, bool listObjectives, bool plotOverTime) {
 
       for(auto& sw:switches){
         str tmp;
-        sw->write(tmp, orgFrames);
+        sw->write(tmp, timeSlices[0]);
         g.add("sw", tmp);
       }
     }

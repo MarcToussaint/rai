@@ -19,17 +19,19 @@ void testPickAndPlace(uint order){
 
   KOMO komo;
 
-  komo.setConfig(C, false);
   if(order==2){
     komo.setTiming(2.5, 30, 5., 2);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 2);
     komo.addControlObjective({}, 0, 1e-1);
   } else if(order==1) {
     komo.setTiming(3., 20, 5., 1);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 1, 1e0);
     komo.addControlObjective({}, 0, 1e-2);
   } else if(order==0) {
     komo.setTiming(3., 1, 5., 1);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 0, 1e0);
   }else NIY;
   komo.addQuaternionNorms();
@@ -123,18 +125,20 @@ void testHandover(uint order){
   rai::Configuration C("model3.g");
 
   KOMO komo;
-  komo.setConfig(C, false);
   double phases = 7.;
   if(order==2){
     komo.setTiming(phases, 30, 5., 2);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 2, 1.);
 //    komo.addControlObjective({}, 0, 1e-1);
   } else if(order==1) {
     komo.setTiming(phases, 20, 1., 1);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 1, 1e0);
     komo.addControlObjective({}, 0, 1e-2);
   } else if(order==0) {
     komo.setTiming(phases, 1, 1., 1);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 0, 1e0);
   }else NIY;
   komo.addQuaternionNorms();
@@ -166,19 +170,21 @@ void testFloat(uint order){
   C.getFrame("obj")->makeManipJoint(rai::JT_transXYPhi, C["floor"], true);
 
   KOMO komo;
-  komo.setConfig(C, false);
 
   double phases = 1.;
   if(order==2){
     komo.setTiming(phases, 10, 5., 2);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 2, 1.);
 //    komo.addControlObjective({}, 0, 1e-1);
   } else if(order==1) {
     komo.setTiming(phases, 10, 1., 1);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 1, 1e0);
     komo.addControlObjective({}, 0, 1e-2);
   } else if(order==0) {
     komo.setTiming(phases, 1, 1., 1);
+  komo.setConfig(C, false);
     komo.addControlObjective({}, 0, 1e0);
   }else NIY;
   komo.addQuaternionNorms();
@@ -212,9 +218,9 @@ void testFloat(uint order){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  testPickAndPlace(2);
-  testPickAndPlace(1);
-  testPickAndPlace(0);
+  // testPickAndPlace(2);
+  // testPickAndPlace(1);
+  // testPickAndPlace(0);
 
   testHandover(2);
   testHandover(1);

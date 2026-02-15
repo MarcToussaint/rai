@@ -23,7 +23,7 @@ shared_ptr<CtrlObjective> CtrlSet::addObjective(const shared_ptr<Feature>& f, Ob
 }
 
 shared_ptr<CtrlObjective> CtrlSet::addControlObjective(uint order, double _scale, const rai::Configuration& C) {
-  return addObjective(symbols2feature(FS_qControl, {}, C, {_scale}, NoArr, order), OT_sos);
+  return addObjective(symbols2feature(FS_qControl, {}, C.frames, {_scale}, NoArr, order), OT_sos);
 }
 
 void CtrlSet::report(std::ostream& os) const {
@@ -46,7 +46,7 @@ bool isFeasible(const CtrlSet& CS, const rai::Configuration& pathConfig, bool in
     if(o->type==OT_ineq || o->type==OT_eq) {
       if(!initOnly && o->transientStep>0. && o->movingTarget->isTransient) { isFeasible=false; break; }
       if(!initOnly || o->transientStep<=0.) {
-        arr y = o->feat->eval(o->feat->getFrames(pathConfig));
+        arr y = o->feat->eval(o->feat->getFrames(pathConfig.frames));
         if(o->type==OT_ineq) {
           for(double& yi : y) if(yi>eqPrecision) { isFeasible=false; break; }
         }
