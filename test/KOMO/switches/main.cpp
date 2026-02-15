@@ -6,6 +6,7 @@
 #include <Kin/frame.h>
 #include <Optim/NLP_Solver.h>
 #include <KOMO/skeletonSymbol.h>
+#include <KOMO/manipTools.h>
 
 using namespace std;
 
@@ -18,23 +19,23 @@ void testPickAndPlace(uint order){
 //  V.setConfiguration(C, "initial model", false);
 
   KOMO komo;
+  ManipulationHelper M(komo);
 
   if(order==2){
     komo.setTiming(2.5, 30, 5., 2);
-  komo.setConfig(C, false);
+    komo.setConfig(C, false);
     komo.addControlObjective({}, 2);
     komo.addControlObjective({}, 0, 1e-1);
   } else if(order==1) {
     komo.setTiming(3., 20, 5., 1);
-  komo.setConfig(C, false);
+    komo.setConfig(C, false);
     komo.addControlObjective({}, 1, 1e0);
     komo.addControlObjective({}, 0, 1e-2);
   } else if(order==0) {
     komo.setTiming(3., 1, 5., 1);
-  komo.setConfig(C, false);
+    komo.setConfig(C, false);
     komo.addControlObjective({}, 0, 1e0);
   }else NIY;
-  komo.addQuaternionNorms();
 
   komo.pathConfig.report();
 
@@ -42,6 +43,8 @@ void testPickAndPlace(uint order){
 #if 0
   komo.addStableFrame(rai::SY_stable, "gripper", "gripper_box", "box");
   komo.addRigidSwitch({1., 2.}, {"gripper_box", "box"}, true);
+#elif 1
+  M.action_pick("pick", 1.,"gripper", "box");
 #else
   komo.addModeSwitch({1., 2.}, rai::SY_stable, {"gripper", "box"}, true);
 #endif
@@ -50,13 +53,15 @@ void testPickAndPlace(uint order){
   komo.addObjective({1.}, FS_vectorZ, {"gripper"}, OT_eq, {1e2}, {0., 0., 1.});
 
   //slow - down - up
-  if(order>0) komo.addObjective({1.}, FS_qItself, {}, OT_eq, {}, {}, 1);
+  // if(order>0) komo.addObjective({1.}, FS_qItself, {}, OT_eq, {}, {}, 1);
   if(order>1) komo.addObjective({.9,1.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
 
   //place
 #if 0
   komo.addStableFrame(rai::SY_stableOn, "table", "table_box", "box");
   komo.addRigidSwitch({2., -1.}, {"table_box", "box"}, false);
+#elif 1
+  M.action_place_straightOn("place", 2., "box", "table");
 #else
   komo.addModeSwitch({2., -1.}, rai::SY_stableOn, {"table", "box"}, false);
 #endif
@@ -64,26 +69,27 @@ void testPickAndPlace(uint order){
 //  komo.addObjective({2.}, FS_vectorZ, {"table_box"}, OT_eq, {1e2}, {0., 0., 1.});
 
   //slow - down - up
-  if(order>0) komo.addObjective({2.}, FS_qItself, {}, OT_eq, {}, {}, 1);
+  // if(order>0) komo.addObjective({2.}, FS_qItself, {}, OT_eq, {}, {}, 1);
   if(order>1) komo.addObjective({1.9,2.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
 
 //  komo.add_jointLimits();
+  komo.addQuaternionNorms();
 
-  komo.opt.verbose = 4;
+  // komo.opt.verbose = 4;
 //  komo.opt.animateOptimization = 2;
 
   rai::NLP_Solver sol;
   auto ret = sol.setProblem(komo.nlp()) .solve();
   cout <<*ret <<endl;
 
-  cout <<"REPORT\n" <<komo.report(false, true, true) <<endl;
+  cout <<"REPORT\n" <<komo.report(false, false, true) <<endl;
   cout <<"GRADS\n" <<sol.reportLagrangeGradients(komo.featureNames) <<endl;
 
   //komo.solve();
   //komo.checkGradients();
 
   komo.view(true, "optimized motion");
-  komo.view_play(true, 0, .2);
+  while(komo.view_play(true, 0, .2)!='q') {}
 }
 
 //===========================================================================
@@ -218,9 +224,9 @@ void testFloat(uint order){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  // testPickAndPlace(2);
-  // testPickAndPlace(1);
-  // testPickAndPlace(0);
+  testPickAndPlace(2);
+  testPickAndPlace(1);
+  testPickAndPlace(0);
 
   testHandover(2);
   testHandover(1);

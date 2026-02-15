@@ -41,9 +41,10 @@ void testPickAndPlace(){
     //three totally different ways to model the gripper->object switch:
 #if 0
     seq.komo->addModeSwitch({1., -1.}, rai::SY_stable, {gripper, obj}, true); //a temporary free stable joint gripper -> object
-#elif 0
-    seq.komo->addFrameDof("obj_grasp", gripper, rai::JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
-    seq.komo->addRigidSwitch(1., {"obj_grasp", obj});
+#elif 1
+    // seq.komo->addFrameDof("obj_grasp", gripper, rai::JT_free, true, obj); //a permanent free stable gripper->grasp joint; and a snap grasp->object
+    // seq.komo->addRigidSwitch(1., {"obj_grasp", obj});
+    seq.action_pick("pick", 1., gripper, obj);
 #else
     seq.komo->addFrameDof("obj_grasp", obj, rai::JT_free, true, obj); //a permanent free stable object->grasp joint; and a snap gripper->grasp
     seq.komo->addRigidSwitch(1., {gripper, "obj_grasp"});
@@ -69,9 +70,8 @@ void testPickAndPlace(){
     if(!move0->ret->feasible) continue;
 
     auto move1 = seq.sub_motion(1);
-    move1->no_collisions({}, {table, obj,
-                          obj, "obstacle"});
-    //move1.bias(.5, qHome, 1e0);
+    move1->no_collisions({.1,.9}, {obj, table,  obj, "obstacle"}, .001, 1e-1);
+    move1->bias({.3,.7}, qHome, .2);
     move1->solve();
     if(!move1->ret->feasible) continue;
 
@@ -202,7 +202,7 @@ void testPivot(){
     seq.freeze_relativePose({2.}, gripper, "door");
 
     // just to have a 3 phase, ensuring the the door remains placed
-    seq.bias(3., qHome);
+    seq.bias({3.}, qHome);
     seq.solve();
     if(!seq.ret->feasible) continue;
 

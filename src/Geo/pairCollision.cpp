@@ -13,8 +13,6 @@
 #include "../Algo/ann.h"
 #include "../Core/util.h"
 
-#include "i_coal.h"
-
 #ifdef RAI_GJK
 extern "C" {
 #  include "GJK/gjk.h"
@@ -34,7 +32,9 @@ extern "C" {
 
 namespace rai {
 
-PairCollision_CvxCvx::PairCollision_CvxCvx(const arr& pts1, const arr& pts2, const rai::Transformation& t1, const rai::Transformation& t2, double _rad1, double _rad2) {
+PairCollision_CvxCvx::PairCollision_CvxCvx(const arr& pts1, const arr& pts2,
+					   const rai::Transformation& t1, const rai::Transformation& t2,
+					   double _rad1, double _rad2) {
   CHECK(pts1.N, "PairCollision needs non-empty pts");
   CHECK(pts2.N, "PairCollision needs non-empty pts");
   CHECK_GE(rad1, 0., "PairCollision needs positive radius");
@@ -93,16 +93,19 @@ PairCollision_CvxCvx::PairCollision_CvxCvx(const arr& pts1, const arr& pts2, con
   }
 
   //ensure that the normal always points 'against obj1' (along p1-p2 relative to NON-penetration)
-  if(rai::sign(distance) * scalarProduct(normal, p1-p2) < 0.)
+  if(rai::sign(distance) * scalarProduct(normal, p1-p2) < 0.){
     normal *= -1.;
+  }
 
   if(distance>1e-10) {
     CHECK_ZERO(length(normal) - 1., 1e-5, "");
   }
 
   // CHECK_ZERO(scalarProduct(normal, p1-p2) - distance, 1e-5, "");
-  if(fabs(scalarProduct(normal, p1-p2) - distance)>1e-5){
+  if(fabs(scalarProduct(normal, p1-p2) - distance)>1e-4){
     LOG(-1) <<"distances inconsistent";
+    // cout <<"error:" <<scalarProduct(normal, p1-p2) - distance <<endl;
+    // cout <<normal <<p1 <<p2 <<distance <<length(p1-p2) <<endl;
   }
 
   CHECK_GE(rai::sign(distance) * scalarProduct(normal, p1-p2), -1e-10, "");

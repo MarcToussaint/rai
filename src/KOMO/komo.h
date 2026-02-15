@@ -106,7 +106,7 @@ struct KOMO : rai::NonCopyable {
   void addContact_slide(double startTime, double endTime, const char* from, const char* to);
   void addContact_stick(double startTime, double endTime, const char* from, const char* to, double frictionCone_mu=.8);
   rai::Frame* addContact_WithPoaFrame(double time, str obj, str from, double frictionCone_mu, double init_objMass, double init_POAdist=.1);
-  rai::Frame* addContactForceFrame(double time, str obj, str from, double frictionCone_mu, double init_objMass, double init_POAdist);
+  rai::Frame* addContactForceFrame(double time, str obj, str from, double frictionCone_mu, double init_objMass);
   void addContact_elasticBounce(double time, const char* from, const char* to, double elasticity=.8, double stickiness=0.);
   void addContact_ComplementarySlide(double startTime, double endTime, const char* from, const char* to);
   //  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);

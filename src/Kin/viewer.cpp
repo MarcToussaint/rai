@@ -177,7 +177,7 @@ ConfigurationViewer& ConfigurationViewer::updateConfiguration(const Configuratio
       int s=-1;
       if(timeSlices.N) s = p.A/timeSlices.d1;
       if(!p.collision){
-        addDistMarker(C.frames(p.A)->getPosition(), C.frames(p.B)->getPosition(), s, .1);
+        addDistMarker(C.frames.elem(p.A)->getPosition(), C.frames.elem(p.B)->getPosition(), s, .1);
       }else if(p.d<.05){
         addDistMarker(p.posA.getArr(), p.posB.getArr(), s, .1, {1.,1.,0.});
       }

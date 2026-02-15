@@ -14,9 +14,30 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports,
   //  for(uint k=0;k<colls.d0;k++) cout <<"  " <<colls(k,0)->name <<' ' <<colls(k,1)->name <<endl;
 
   C.setRandom(0, 0);
+  arr qRnd = C.getJointState();
+
+  // if(opt.verbose>2) C.view(true, "random");
+
+  if(true){ //first make configuration collision free
+    KOMO komo(C, 1,1,0, true);
+    // komo.addControlObjective({}, 0, 1e-1);
+    komo.addObjective({}, FS_qItself, {}, OT_sos, {1e-2}, qRnd);
+    komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e1} );
+    komo.addQuaternionNorms();
+    auto ret = rai::NLP_Solver(komo.nlp(), opt.verbose)
+                   .solve();
+    C.setJointState(ret->x);
+    // if(opt.verbose>2){
+    //   cout <<*ret <<endl;
+    //   komo.view(false, "no collide");
+    //   C.view(true, "no collide");
+    // }
+    if(!ret->feasible) return false;
+  }
 
   KOMO komo(C, 1,1,0, true);
-  komo.addControlObjective({}, 0, 1e-1);
+  // komo.addControlObjective({}, 0, 1e-1);
+  komo.addObjective({}, FS_qItself, {}, OT_sos, {1e-2}, qRnd);
   komo.add_jointLimits(true);
 
   komo.addObjective({}, make_shared<F_TotalForce>(), {"obj"}, OT_eq, {1e1} );
@@ -34,12 +55,14 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports,
     supp.append(s);
     // komo.addContact_stick(0.,-1., "obj", thing, opt.frictionCone_mu);
     // komo.addContact_WithPoaFrame(1., "obj", s, opt.frictionCone_mu, .05, .2);
-    komo.addContactForceFrame(1., "obj", s, opt.frictionCone_mu, .05, .2);
+    komo.addContactForceFrame(1., "obj", s, opt.frictionCone_mu, .05);
   }
   for(uint i=n_supports;i<supports.N;i++){
     //for all NON-supports, introduce an explicit(!) no-collision
     komo.addObjective({}, FS_negDistance, {"obj", supports(perm(i))}, OT_ineq, {1e1});
   }
+
+  komo.addQuaternionNorms();
 
   if(opt.verbose>0){
     LOG(0) <<"\n======================\n" <<supp;
