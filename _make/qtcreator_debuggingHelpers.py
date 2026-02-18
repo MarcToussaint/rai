@@ -83,7 +83,7 @@ def qdump__rai__Array(d, value):
             d.putSubItem("M", value["M"])
             d.putSubItem("special", value["special"])
             d.putSubItem("jac", value["jac"])
-            
+
 def qdump__rai__ArrayDouble(d, value):
     qdump__rai__Array(d, value)
 

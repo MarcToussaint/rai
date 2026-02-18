@@ -106,7 +106,7 @@ struct KOMO : rai::NonCopyable {
   void addContact_slide(double startTime, double endTime, const char* from, const char* to);
   void addContact_stick(double startTime, double endTime, const char* from, const char* to, double frictionCone_mu=.8);
   rai::Frame* addContact_WithPoaFrame(double time, str obj, str from, double frictionCone_mu, double init_objMass, double init_POAdist=.1);
-  rai::Frame* addContactForceFrame(double time, str obj, str from, double frictionCone_mu, double init_objMass);
+  rai::Frame* addContactForceFrame(const arr& times, str obj, str from, double frictionCone_mu, double init_objMass);
   void addContact_elasticBounce(double time, const char* from, const char* to, double elasticity=.8, double stickiness=0.);
   void addContact_ComplementarySlide(double startTime, double endTime, const char* from, const char* to);
   //  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);
@@ -186,7 +186,7 @@ struct KOMO : rai::NonCopyable {
   arr getPath_times();
   arr getPath_energies();
 
-  rai::Graph report(bool specs=false, bool listObjectives=true, bool plotOverTime=false);
+  rai::Graph report(bool specs=false, bool listObjectives=true, bool plotOverTime=false, bool sortByError=true);
 
   arr info_objectiveErrorTraces();
   StringA info_objectiveNames();

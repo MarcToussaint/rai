@@ -774,13 +774,13 @@ rai::Frame* KOMO::addContact_WithPoaFrame(double time, str obj, str from, double
   return f_poa;
 }
 
-rai::Frame* KOMO::addContactForceFrame(double time, str obj, str from, double frictionCone_mu, double init_objMass){
+rai::Frame* KOMO::addContactForceFrame(const arr& times, str obj, str from, double frictionCone_mu, double init_objMass){
   rai::Frame *f_obj = _getFrame(obj);
   rai::Frame *f_from = _getFrame(from);
   CHECK(f_obj != f_from, "");
 
   //create a stable POA frame as geometric DOF, attached to obj, with z becoming the contact normal
-  str poa_name = STRING("poa_" <<obj <<"_" <<from <<"_" <<time);
+  str poa_name = STRING("poa_" <<obj <<"_" <<from <<"_" <<times(0));
   rai::Frame *f_poa = addFrameDof(poa_name, obj, rai::JT_free, true);
 
   //initialize using pair collision geometry
@@ -803,22 +803,22 @@ rai::Frame* KOMO::addContactForceFrame(double time, str obj, str from, double fr
   // arr poa = origin.pos.getArr(); //.5*(finger->getPosition() + obj->getPosition());
   // arr force = origin.rot.getZ().getArr(); //obj->getPosition() - finger->getPosition());
   // force *= init_objMass*9.81;
-  addForceExchangeDofs({time}, f_poa, obj, from, rai::FXT_forceZ, zeros(3), {init_objMass*9.81});
+  addForceExchangeDofs(times, f_poa, obj, from, rai::FXT_forceZ, zeros(3), {init_objMass*9.81});
 
   //constraints to make poa frames and force exchange consistent
-  // addObjective({time}, make_shared<F_fex_POAAtFrame>(), {obj, from, poa_name}, OT_eq, {1e1});
-  // addObjective({time}, make_shared<F_fex_ForceInFrameCone>(frictionCone_mu), {obj, from, poa_name}, OT_ineq, {1e0});
-  addObjective({}, FS_negDistance, {from, obj}, OT_eq, {1e1});
-  addObjective({}, FS_negDistance, {obj, poa_name}, OT_eq, {1e1});
-  addObjective({}, FS_negDistance, {from, poa_name}, OT_eq, {1e1});
-  addObjective({time}, make_shared<F_PairNormalAlign>(+1.), {poa_name, obj}, OT_sos, {1e-2}); //helps
-  addObjective({time}, make_shared<F_PairNormalAlign>(-1.), {poa_name, from}, OT_sos, {1e-2}); //helps
-  addObjective({time}, make_shared<F_PairNormalAlignsZ>(frictionCone_mu), {obj, from, poa_name}, OT_ineq, {1e0}); //hard constraint
+  // addObjective(times, make_shared<F_fex_POAAtFrame>(), {obj, from, poa_name}, OT_eq, {1e1});
+  // addObjective(times, make_shared<F_fex_ForceInFrameCone>(frictionCone_mu), {obj, from, poa_name}, OT_ineq, {1e0});
+  addObjective(times, FS_negDistance, {from, obj}, OT_eq, {1e1});
+  addObjective(times, FS_negDistance, {obj, poa_name}, OT_eq, {1e1});
+  addObjective(times, FS_negDistance, {from, poa_name}, OT_eq, {1e1});
+  addObjective(times, make_shared<F_PairNormalAlign>(+1.), {poa_name, obj}, OT_sos, {1e-1}); //helps
+  addObjective(times, make_shared<F_PairNormalAlign>(-1.), {poa_name, from}, OT_sos, {1e-1}); //helps
+  addObjective(times, make_shared<F_PairNormalAlignsZ>(frictionCone_mu), {obj, from, poa_name}, OT_ineq, {1e0}); //hard constraint
 
   //no sliding
-  if(k_order>0){
-    addObjective({time}, FS_positionRel, {poa_name, from}, OT_eq, {1e1}, {}, 1, +1, +1);
-  }
+  // if(k_order>0){
+  //   addObjective(times, FS_positionRel, {poa_name, from}, OT_eq, {1e1}, {}, 1, +1, +1);
+  // }
   return f_poa;
 }
 
@@ -1374,7 +1374,7 @@ void KOMO::run_prepare(double addInitializationNoise) {
   }
 }
 
-Graph KOMO::report(bool specs, bool listObjectives, bool plotOverTime) {
+Graph KOMO::report(bool specs, bool listObjectives, bool plotOverTime, bool sortByError) {
   Graph G;
   if(specs) {
     Graph& g = G.addSubgraph("specs");
@@ -1444,7 +1444,6 @@ Graph KOMO::report(bool specs, bool listObjectives, bool plotOverTime) {
     }
   }
 
-  bool sortByError=true;
   if(featureValues.N && listObjectives && sortByError){
     std::sort(G.p, G.p+G.N, [](Node* a, Node *b){
       double A = a->as<Graph>().get<double>("err");
@@ -1831,14 +1830,16 @@ void KOMO::initFrameDof(rai::Frame* f, rai::Frame* q0Frame){
 
 void KOMO::addForceExchangeDofs(const arr& times, Frame* fpoa, const char* onto, const char* from, rai::ForceExchangeType type, const arr& initPoa, const arr& initForce){
   //skip doing it in world at all...
+  uint poaId = fpoa->ID;
   uint ontoId = _getFrame(onto)->ID;
   uint fromId = _getFrame(from)->ID;
   int sStart, sEnd;
   conv_times2steps(sStart, sEnd, times, stepsPerPhase, T, 0, 0);
   for(int s=sStart; s<=sEnd; s++) {
+    rai::Frame *p = timeSlices(k_order+s, poaId);
     rai::Frame *a = timeSlices(k_order+s, ontoId);
     rai::Frame *b = timeSlices(k_order+s, fromId);
-    rai::ForceExchangeDof* ex = new ForceExchangeDof(fpoa, *a, *b, type);
+    rai::ForceExchangeDof* ex = new ForceExchangeDof(p, *a, *b, type);
     ex->scale=10.;
     if(initPoa.N) ex->poa = initPoa;
     if(initForce.N) ex->force = initForce;

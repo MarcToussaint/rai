@@ -510,6 +510,17 @@ void PairCollision::kinNormal(arr& y, arr& J,
         double nn = ::sqrt(1.-ab*ab);
         double sign = rai::sign(scalarProduct(normal, crossProduct(b, a)));
         J = ((sign/nn) * (eye(3, 3) - normal*~normal)) * (skew(b) * crossProduct(Jx1, a) - skew(a) * crossProduct(Jx2, b));
+      }else{
+        //approximate: mixture of cases (2,1) and (1,2)
+        y = p1 - p2;
+        J = Jp1 - Jp2;
+        normalizeWithJac(y, J);
+        arr aa = a^a;
+        arr bb = b^b;
+        J -= aa*J;
+        J -= bb*J;
+        J += bb*crossProduct(Jx2, y);
+        J += aa*crossProduct(Jx1, y);
       }
     } else if(simplexType(2, 1)) {
       y = p1 - p2;
@@ -542,6 +553,7 @@ void PairCollision::kinNormal(arr& y, arr& J,
       J.setZero();
     } //else NIY;
     checkNan(J);
+    CHECK_EQ(J.d0, 3, "");
   }
 }
 

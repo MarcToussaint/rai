@@ -55,7 +55,7 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports,
     supp.append(s);
     // komo.addContact_stick(0.,-1., "obj", thing, opt.frictionCone_mu);
     // komo.addContact_WithPoaFrame(1., "obj", s, opt.frictionCone_mu, .05, .2);
-    komo.addContactForceFrame(1., "obj", s, opt.frictionCone_mu, .05);
+    komo.addContactForceFrame({1.}, "obj", s, opt.frictionCone_mu, .05);
   }
   for(uint i=n_supports;i<supports.N;i++){
     //for all NON-supports, introduce an explicit(!) no-collision
