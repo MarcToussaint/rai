@@ -53,6 +53,7 @@ struct ManipulationHelper {
   void action_place_straightOn(str action, double time, str obj, str table); //action must be 'place_straightOn'
   void action_place_box(str action, double time, str obj, str table, str gripper, str place_direction); //action can be 'place_box'
 
+  void snap_free(double time, str obj, bool stable);
   void snap_switch(double time, str parent, str obj);
 
   void target_position();

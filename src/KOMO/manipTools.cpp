@@ -314,6 +314,15 @@ void ManipulationHelper::freeze_relativePose(const arr& time_interval, str to, s
   komo->addObjective(time_interval, FS_poseRel, {to, from}, OT_eq, {1e1}, {}, 1);
 }
 
+void ManipulationHelper::snap_free(double time, str obj, bool stable){
+  str snapFrame;
+  snapFrame <<"snapFree_" <<obj <<'_' <<time;
+
+  rai::Frame* f = komo->addFrameDof(snapFrame, komo->pathConfig.frames.elem(0)->name, rai::JT_free, stable, 0); //a permanent free stable gripper->grasp joint; and a snap grasp->object
+  komo->addRigidSwitch(time, {snapFrame, obj}, true);
+  komo->initFrameDof(f, komo->_getFrame(obj));
+}
+
 void ManipulationHelper::action_pick(str action, double time, str gripper, str obj){
   str snapFrame;
   snapFrame <<"pickPose_" <<gripper <<'_' <<obj <<'_' <<time;

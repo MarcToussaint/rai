@@ -1824,6 +1824,14 @@ void KOMO::initFrameDof(rai::Frame* f, rai::Frame* q0Frame){
   boundClip(f->joint->q0, f->joint->limits);
   f->joint->setDofs(f->joint->q0, 0); //ensures we are in the joint sub-space
 
+  uint id = f->ID;
+  if(id<timeSlices.d1){
+    for(uint s=1;s<timeSlices.d0;s++){
+      rai::Frame *ft = timeSlices(s,id);
+      ft->joint->setDofs(f->joint->q0, 0);
+    }
+  }
+
   //check in bound
   // if(!boundCheck(f->joint->q0, f->joint->limits)) LOG(-1) <<"creation config is out of autoLimits!";
 }

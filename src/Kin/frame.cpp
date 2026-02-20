@@ -2460,7 +2460,7 @@ uintA getCtrlFramesAndScale(arr& scale, const FrameL& frames, bool jointPairs) {
   uintA qFrames;
   for(rai::Frame* f : frames) {
     rai::Joint* j = f->joint;
-    if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau  && j->type!=rai::JT_free && !j->isStable) {
+    if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau  && !j->isStable) {
       if(jointPairs) qFrames.append(uintA{f->ID, f->parent->ID});
       else qFrames.append(f->ID);
       if(!!scale) scale.append(j->H, j->dim);
