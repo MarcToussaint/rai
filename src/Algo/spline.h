@@ -33,6 +33,7 @@ struct BSpline {
 
   //-- convenience user functions
   BSpline& set(uint _degree, const arr& points, const arr& times, const arr& startVel=NoArr, const arr& endVel=NoArr);
+  void setConstAccelPiece(double time, const arr& x0, const arr& v0, const arr& a, double tau);
   void overwriteSmooth(const arr& points, const arr& times_rel, double time_cut);
   void append(const arr& points, const arr& times_rel, bool inside);
   void clear();

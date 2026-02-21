@@ -157,6 +157,29 @@ BSpline& BSpline::set(uint _degree, const arr& points, const arr& times, const a
   return *this;
 }
 
+void BSpline::setConstAccelPiece(double time, const arr& x0, const arr& v0, const arr& a, double tau){
+  //-- the following builds a spline that fits the accelleration exactly in the interval [0, 2 tau]
+  tau *= 2.;
+  //four points on the parabola
+  arr X(4,1);
+  for(uint t=0;t<X.d0;t++) X[t] = 0.5*rai::sqr(tau*t/double(X.d0-1))*a + (tau*t/double(X.d0-1))*v0 + x0;
+  //the following is taken from rai::BSpline_path2ctrlPoints(X, 2, 2, false, false);
+  arr Binv = {1,0,0,0,
+              -0.1875, 1.6875, -0.5625, 0.0625,
+              0.0625, -0.5625, 1.6875, -0.1875,
+              0,0,0,1};
+  arr Z = Binv.reshape(4,4) * X;
+  setKnots(2, {time, time+tau});
+  setCtrlPoints(Z, false, false);
+  // cout <<"\nknots = " <<S.knots <<endl;
+  // cout <<"ctrlPoints = " <<~S.ctrlPoints <<endl;
+
+  //--the spline has a knot in the middle (at tau); by appending keep the left side exact, but modify the right side to steady state
+  append(X[-1].reshape(1,1), {.5*tau}, false);
+  // cout <<"\nknots = " <<S.knots <<endl;
+  // cout <<"ctrlPoints = " <<~S.ctrlPoints <<endl;
+}
+
 void BSpline::overwriteSmooth(const arr& points, const arr& times_rel, double time_cut){
   arr x_cut, xDot_cut;
   eval3(x_cut, xDot_cut, NoArr, time_cut);
@@ -651,6 +674,7 @@ arr BSpline_path2ctrlPoints(const arr& path, uint numCtrlPoints, uint degree, bo
   arr B = S.getBmatrix(::range(0., 1., path.d0-1), startDuplicates, endDuplicates);
 
   arr Binv = pseudoInverse(B);
+  cout <<Binv <<endl;
   arr ctrlPoints = Binv * path;
   return ctrlPoints;
 }

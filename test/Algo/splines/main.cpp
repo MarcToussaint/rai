@@ -23,21 +23,21 @@ void TEST(Basics){
   arr vel = {1.};
   S.set(3, X, T);
 
-  cout <<"\ntimes = " <<S.knots <<endl;
-  cout <<"points = " <<~S.ctrlPoints <<endl;
+  cout <<"\nknots = " <<S.knots <<endl;
+  cout <<"ctrlPoints = " <<~S.ctrlPoints <<endl;
   plotIt(S);
 
   S.append(arr{0., 1.}.reshape(-1,1), {.5, 1.}, true);
-  cout <<"\ntimes = " <<S.knots <<endl;
-  cout <<"points = " <<~S.ctrlPoints <<endl;
+  cout <<"\nknots = " <<S.knots <<endl;
+  cout <<"ctrlPoints = " <<~S.ctrlPoints <<endl;
   plotIt(S);
 
   S.setDoubleKnotVel(-1, vel);
   S.setDoubleKnotVel(1, vel);
   S.setDoubleKnotVel(5, -vel);
 
-  cout <<"\ntimes = " <<S.knots <<endl;
-  cout <<"points = " <<~S.ctrlPoints <<endl;
+  cout <<"\nknots = " <<S.knots <<endl;
+  cout <<"ctrlPoints = " <<~S.ctrlPoints <<endl;
   plotIt(S);
 
 }
@@ -181,7 +181,7 @@ void testJacobian(){
     arr x = S.eval(teval);
     arr y = evalFromKnots(knots);
     CHECK_ZERO(maxDiff(x,y), 1e-10, "");
-    cout <<teval <<' ' <<x <<' ' <<y.noJ() <<' ' <<maxDiff(x, y) <<endl;
+    //cout <<teval <<' ' <<x <<' ' <<y.noJ() <<' ' <<maxDiff(x, y) <<endl;
     checkJacobian(evalFromKnots, knots, 1e-4);
     S.knots = knots;
   }
@@ -203,7 +203,7 @@ void testJacobian(){
     arr x = S.eval(teval);
     arr y = evalFromCtrlPoints(ctrlPoints);
     CHECK_ZERO(maxDiff(x,y), 1e-10, "");
-    cout <<teval <<' ' <<x <<' ' <<y.noJ() <<' ' <<maxDiff(x,y) <<endl;
+    //cout <<teval <<' ' <<x <<' ' <<y.noJ() <<' ' <<maxDiff(x,y) <<endl;
     checkJacobian(evalFromCtrlPoints, ctrlPoints, 1e-4);
     S.ctrlPoints = ctrlPoints;
   }
@@ -223,7 +223,7 @@ void testJacobian(){
     arr t = arr{rnd.uni(-.1, 1.1)};
     arr x = S.eval(t.elem(), 1);
     arr y = evalFromTime(t);
-    cout <<t <<' ' <<x <<' ' <<y.noJ() <<' ' <<maxDiff(x,y) <<endl;
+    //cout <<t <<' ' <<x <<' ' <<y.noJ() <<' ' <<maxDiff(x,y) <<endl;
     checkJacobian(evalFromTime, t, 1e-4);
   }
   time += rai::cpuTime();
@@ -233,17 +233,71 @@ void testJacobian(){
 
 //==============================================================================
 
+void testFixedAccel_devel(){
+  arr x0 = {-.3};
+  arr v0 = {-.2};
+  arr a = {1.5};
+  double tau = .1;
+
+  uint n=4;
+  arr X(n,1);
+  for(uint t=0;t<X.N;t++){
+    X[t] = 0.5*rai::sqr(tau*t/double(n-1))*a + (tau*t/double(n-1))*v0 + x0;
+  }
+  uint z=2;
+  arr Z = rai::BSpline_path2ctrlPoints(X, z, 2, false, false);
+  rai::BSpline S;
+  S.setKnots(2, ::range(0., tau, z-1));
+  S.setCtrlPoints(Z, false, false);
+  cout <<"\nknots = " <<S.knots <<endl;
+  cout <<"ctrlPoints = " <<~S.ctrlPoints <<endl;
+
+  arr xT = X[-1];
+  S.append(xT.reshape(1,-1), {.5*tau}, false);
+  // S.knots.append(S.knots(-1));
+  // S.ctrlPoints.append(S.ctrlPoints[-1]);
+  cout <<"\nknots = " <<S.knots <<endl;
+  cout <<"ctrlPoints = " <<~S.ctrlPoints <<endl;
+
+  FILE("z.X.dat") <<rai::catCol(~~::range(0.,tau,X.d0-1), X).modRaw();
+  FILE("z.Z.dat") <<rai::catCol(~~::range(0.,tau,Z.d0-1), Z).modRaw();
+  arr t = ::range(0.,1.5*tau,100.);
+  FILE("z.S.dat") <<rai::catCol(t, S.eval(t)).modRaw();
+
+  gnuplot("a=1.5; v=-.2; x0=-.3; plot 'z.S.dat' us 1:2 w l, 'z.Z.dat' us 1:2 w p, 'z.X.dat' us 1:2 w lp, 0.5*a*(x)**2+v*(x)+x0", true);
+}
+
+void testFixedAccel2(){
+  arr x0 = {.3};
+  arr v0 = {-.4};
+  arr a = {3.};
+  double time = 0.;
+  double tau = .1;
+
+  rai::BSpline S;
+  S.setConstAccelPiece(time, x0, v0, a, tau);
+  cout <<"\nknots = " <<S.knots <<endl;
+  cout <<"ctrlPoints = " <<~S.ctrlPoints <<endl;
+
+  arr t = ::range(time-.2*tau,time+3.*tau,100.);
+  FILE("z.S.dat") <<rai::catCol(t, S.eval(t)).modRaw();
+  gnuplot("a=3.; v=-.4; x0=.3; plot 'z.S.dat' us 1:2 w l, 0.5*a*(x)**2+v*(x)+x0", true);
+}
+
+//==============================================================================
+
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc, argv);
 
   // testBasics();
   // testBasisMatrix();
-  testFitting();
-  testSpeed();
+  // testFitting();
+  // testSpeed();
 
-  // testPath();
-  testJacobian();
+  // testJacobian();
 
-  testConvertToHermite();
+  // testConvertToHermite();
+
+  testFixedAccel2();
   return 0;
 }
