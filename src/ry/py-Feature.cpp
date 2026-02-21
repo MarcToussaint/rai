@@ -46,8 +46,7 @@ void init_Feature(pybind11::module& m) {
 //    return ret;
 //  })
   .def("description", [](shared_ptr<Feature>& self, shared_ptr<rai::Configuration>& C) {
-    std::string s = self->shortTag(*C).p;
-    return s;
+    return self->shortTag(C->frames);
   })
   ;
 }

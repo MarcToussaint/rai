@@ -84,43 +84,46 @@ void init_Config(pybind11::module& m) {
 
   .def(pybind11::init<>(), "initializes to an empty configuration, with no frames")
 
-  .def("clear", &rai::Configuration::clear,
-       "clear all frames and additional data; becomes the empty configuration, with no frames"
-       )
+  .def("clear", [](shared_ptr<rai::Configuration>& self) {
+    self->clear();
+  }, "clear all frames and additional data; becomes the empty configuration, with no frames")
 
-  .def("addFile", &rai::Configuration::addFile, pybind11::return_value_policy::reference,
-       "add the contents of the file to C",
-       pybind11::arg("filename"),
-       pybind11::arg("namePrefix") = nullptr
+  .def("addFile", [](shared_ptr<rai::Configuration>& self, const char* filename, const char* namePrefix) {
+    rai::Frame* f = self->addFile(filename, namePrefix);
+    return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!
+  },
+  "add the contents of the file to C",
+  pybind11::arg("filename"),
+  pybind11::arg("namePrefix") = nullptr
       )
 
-  .def("addH5Object", &rai::Configuration::addH5Object, pybind11::return_value_policy::reference,
-       "add the contents of the file to C",
-       pybind11::arg("framename"),
-       pybind11::arg("filename"),
-       pybind11::arg("verbose") = 0
+  .def("addH5Object", [](shared_ptr<rai::Configuration>& self, const char* framename, const char* filename, int verbose) {
+        rai::Frame* f = self->addH5Object(framename, filename, verbose);
+        return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!
+      },
+           "add the contents of the file to C",
+           pybind11::arg("framename"),
+           pybind11::arg("filename"),
+           pybind11::arg("verbose") = 0
+           )
+
+  .def("addFrame", [](shared_ptr<rai::Configuration>& self, const std::string& name, const std::string& parent, const std::string& args) {
+    rai::Frame* f = self->addFrame(name.c_str(), parent.c_str(), args.c_str());
+    return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!
+  },
+  "add a new frame to C; optionally make this a child to the given parent; use the Frame methods to set properties of the new frame",
+  pybind11::arg("name"),
+  pybind11::arg("parent") = std::string(),
+  pybind11::arg("args") = std::string()
       )
 
-  .def("addFrame", &rai::Configuration::addFrame, pybind11::return_value_policy::reference,
-       "add a new frame to C; optionally make this a child to the given parent; use the Frame methods to set properties of the new frame",
-       pybind11::arg("name"),
-       pybind11::arg("parent") = std::string(),
-       pybind11::arg("args") = std::string(),
-       pybind11::arg("warnDuplicateName") = true
-      )
-
-  .def("addFramesCopy", [](shared_ptr<rai::Configuration>& self, const FrameL& F, const str& prefix){
-    rai::Frame *f = self->addFramesCopy(F, {}, prefix);
-    return shared_ptr<rai::Frame>(f, &null_deleter);
-  }, "add copies of these frames (may be from this or other configuration), including their attached dofs, shapes, etc",
-       pybind11::arg("frames"),
-       pybind11::arg("prefix")=str{}
-      )
-
-  .def("addConfigurationCopy", &rai::Configuration::addConfigurationCopy, pybind11::return_value_policy::reference, "",
-       pybind11::arg("config"),
-       pybind11::arg("prefix")=str{},
-       pybind11::arg("tau")=1.
+  .def("addConfigurationCopy", [](shared_ptr<rai::Configuration>& self, shared_ptr<rai::Configuration>& other, const str& prefix, double tau) {
+    rai::Frame* f = self->addConfigurationCopy(*other, prefix, tau);
+    return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!
+  }, "",
+  pybind11::arg("config"),
+  pybind11::arg("prefix")=str{},
+  pybind11::arg("tau")=1.
       )
 
   .def("addDict", &rai::Configuration::addDict, "add frames as described by a dict (e.g. loaded from a yaml)", pybind11::arg("dict"))
@@ -132,11 +135,13 @@ void init_Config(pybind11::module& m) {
   .def("makeMeshesSSCvx", &rai::Configuration::makeMeshesSSCvx, "",
            pybind11::arg("radius")=.005)
 
-  .def("getFrame", &rai::Configuration::getFrame, pybind11::return_value_policy::reference,
-       "get access to a frame by name; use the Frame methods to set/get frame properties",
-       pybind11::arg("frameName"),
-       pybind11::arg("warnIfNotExist")=true,
-       pybind11::arg("reverse")=false
+  .def("getFrame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName, bool warnIfNotExist) {
+    rai::Frame* f = self->getFrame(frameName.c_str(), warnIfNotExist);
+    return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a non-sense deleter!
+  },
+  "get access to a frame by name; use the Frame methods to set/get frame properties",
+  pybind11::arg("frameName"),
+  pybind11::arg("warnIfNotExist")=true
       )
 
   .def("frame", [](shared_ptr<rai::Configuration>& self, uint ID) {
@@ -172,11 +177,11 @@ void init_Config(pybind11::module& m) {
   .def("getJointIDs", &rai::Configuration::getDofIDs, "get indeces (which are the indices of their frames) of all joints")
   .def("getJointDimension", &rai::Configuration::getJointStateDimension, "get the total number of degrees of freedom")
   .def("getJointState", pybind11::overload_cast<>(&rai::Configuration::getJointState, pybind11::const_),
-       "get the joint state as a numpy vector, optionally only for a subset of joints specified as list of joint names"
+  "get the joint state as a numpy vector, optionally only for a subset of joints specified as list of joint names"
       )
 
   .def("getJointLimits", pybind11::overload_cast<>(&rai::Configuration::getJointLimits, pybind11::const_),
-       "get the joint limits as a n-by-2 matrix; for dofs that do not have limits defined, the entries are [0,-1] (i.e. upper limit < lower limit)"
+  "get the joint limits as a n-by-2 matrix; for dofs that do not have limits defined, the entries are [0,-1] (i.e. upper limit < lower limit)"
       )
 
   .def("setRandom", &rai::Configuration::setRandom, "",
@@ -212,7 +217,7 @@ void init_Config(pybind11::module& m) {
       )
 
   .def("getFrameState", pybind11::overload_cast<>(&rai::Configuration::getFrameState, pybind11::const_),
-       "get the frame state as a n-times-7 numpy matrix, with a 7D pose per frame"
+  "get the frame state as a n-times-7 numpy matrix, with a 7D pose per frame"
       )
 
   .def("setFrameState", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& X, const std::vector<std::string>& frames) {

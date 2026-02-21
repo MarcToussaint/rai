@@ -129,7 +129,8 @@ void init_KOMO(pybind11::module& m) {
        "returns a dict with full list of features, optionally also on problem specs and plotting costs/violations over time",
        pybind11::arg("specs") = false,
        pybind11::arg("listObjectives") = true,
-       pybind11::arg("plotOverTime") = false)
+       pybind11::arg("plotOverTime") = false,
+       pybind11::arg("sortByError") = true)
 
   .def("getFeatureNames", [](std::shared_ptr<KOMO>& self) { return self->featureNames; },
   "(This is to be passed to the NLP_Solver when needed.) returns a long list of features (per time slice!)")

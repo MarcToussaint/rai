@@ -738,38 +738,41 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
   }
 }
 
-rai::Frame* KOMO::addContact_WithPoaFrame(double time, str obj, str from, double frictionCone_mu, double init_objMass, double init_POAdist){
+rai::Frame* KOMO::addContact_WithPoaFrame(const arr& times, str obj, str from, double frictionCone_mu, double init_objMass, double init_POAdist){
   rai::Frame *f_obj = _getFrame(obj);
   rai::Frame *f_from = _getFrame(from);
   CHECK(f_obj != f_from, "");
-  //create a stable POA frame as geometric DOF, attached to obj, with z becoming the contact normal
+
+  //-- create a stable POA frame as geometric DOF, attached to obj, with z becoming the contact normal
   str poa_name = STRING("poa_" <<obj <<"_" <<from <<"_" <<time);
   rai::Frame *f_poa = addFrameDof(poa_name, obj, rai::JT_free, true);
-  //initialize
+  //heuristic to initialize the POA frame
   rai::Transformation relOrigin;
   rai::Vector relVec = f_from->ensure_X().pos / f_obj->ensure_X();
   relOrigin.pos = init_POAdist * relVec / relVec.length();
   relOrigin.rot.setDiff(Vector_z, -relVec);
   f_poa->joint->setDofs(relOrigin.getArr7d());
 
-  //create a force exchange DOF
+  //-- create a force exchange DOF
   rai::Transformation origin = f_obj->ensure_X() * relOrigin;
+  //heuristic to initialize force
   arr poa = origin.pos.getArr(); //.5*(finger->getPosition() + obj->getPosition());
   arr force = origin.rot.getZ().getArr(); //obj->getPosition() - finger->getPosition());
   force *= init_objMass*9.81;
-  addForceExchangeDofs({time}, f_poa, obj, from, rai::FXT_poa, poa, force);
+  addForceExchangeDofs(times, f_poa, obj, from, rai::FXT_poa, poa, force);
 
-  //constraints to make poa frames and force exchange consistent
-  addObjective({time}, make_shared<F_fex_POAAtFrame>(), {obj, from, poa_name}, OT_eq, {1e1});
-  addObjective({time}, make_shared<F_fex_ForceInFrameCone>(frictionCone_mu), {obj, from, poa_name}, OT_ineq, {1e0});
-  addObjective({}, FS_negDistance, {obj, poa_name}, OT_eq, {1e1});
-  addObjective({}, FS_negDistance, {from, poa_name}, OT_eq, {1e1});
-  addObjective({time}, make_shared<F_PairNormalAlign>(+1.), {poa_name, obj}, OT_eq, {1e-1});
-  addObjective({time}, make_shared<F_PairNormalAlign>(-1.), {poa_name, from}, OT_eq, {1e-1});
+  //-- constraints to make poa frames and force exchange consistent
+  addObjective(times, make_shared<F_fex_POAAtFrame>(), {obj, from, poa_name}, OT_eq, {1e1});
+  addObjective(times, make_shared<F_fex_ForceInFrameCone>(frictionCone_mu), {obj, from, poa_name}, OT_ineq, {1e0});
+  addObjective(times, FS_negDistance, {obj, poa_name}, OT_eq, {1e1});
+  addObjective(times, FS_negDistance, {from, poa_name}, OT_eq, {1e1});
+  addObjective(times, make_shared<F_PairNormalAlign>(+1.), {poa_name, obj}, OT_eq, {1e-1});
+  addObjective(times, make_shared<F_PairNormalAlign>(-1.), {poa_name, from}, OT_eq, {1e-1});
 
   //no sliding
   if(k_order>0){
-    addObjective({time}, FS_positionRel, {poa_name, from}, OT_eq, {1e1}, {}, 1, +1, +1);
+    HALT("don't do this automatic?")
+    addObjective(times, FS_positionRel, {poa_name, from}, OT_eq, {1e1}, {}, 1, +1, +1);
   }
   return f_poa;
 }

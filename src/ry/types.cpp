@@ -105,7 +105,7 @@ void dict2graph(rai::Graph &G, const pybind11::dict& dict, str& prefix) {
       } else if(pybind11::isinstance<pybind11::str>(L[0])) {
 //        LOG(0) <<"string list";
         n = G.add<StringA>(key, list2StringA(L));
-      } else LOG(-1) <<"can't convert dict entry '" <<key <<"' of type " <<value.get_type() <<" to graph";
+      } else LOG(-1) <<"can't convert dict entry '" <<key <<"' of type " <<pybind11::type::of(value) <<" to graph";
 
     } else if(pybind11::isinstance<pybind11::array_t<double>>(value)
               || pybind11::isinstance<pybind11::array_t<float>>(value)
