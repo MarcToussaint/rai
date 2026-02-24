@@ -22,6 +22,7 @@ namespace rai {
 struct Frame;
 struct Configuration;
 struct ConfigurationViewer;
+struct ImageViewer;
 struct CameraView;
 }
 

@@ -80,6 +80,18 @@ void init_Config(pybind11::module& m) {
 
   //===========================================================================
 
+  pybind11::class_<rai::ImageViewer, shared_ptr<rai::ImageViewer>>(m, "ImageViewer", "internal viewer handle (gl window)")
+    .def(pybind11::init<>(), "")
+
+    .def("view", &rai::ImageViewer::view, "view a byteA (rgb)",
+         pybind11::arg("img"), pybind11::arg("wait")=false, pybind11::arg("zoom")=1.)
+
+    .def("viewFloat", &rai::ImageViewer::viewFloat, "view a byteA (rgb)",
+         pybind11::arg("img"), pybind11::arg("wait")=false, pybind11::arg("zoom")=1.)
+          ;
+
+  //===========================================================================
+
   pybind11::class_<rai::Configuration, shared_ptr<rai::Configuration>>(m, "Config", "Core data structure to represent a kinematic configuration (essentially a tree of frames). See https://marctoussaint.github.io/robotics-course/tutorials/1a-configurations.html")
 
   .def(pybind11::init<>(), "initializes to an empty configuration, with no frames")

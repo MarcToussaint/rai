@@ -123,7 +123,7 @@ void dict2graph(rai::Graph &G, const pybind11::dict& dict, str& prefix) {
       n = sub.isNodeOfGraph;
 
     } else {
-      LOG(-1) <<"can't convert dict entry '" <<key <<"' of type " <<value.get_type() <<" to graph";
+      LOG(-1) <<"can't convert dict entry '" <<key <<"' of type " <<pybind11::type::of(value) <<" to graph";
     }
     CHECK(n, "");
     rai::readNode_postprocess(n, prefix, false);

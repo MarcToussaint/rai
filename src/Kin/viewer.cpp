@@ -17,6 +17,20 @@
 
 namespace rai{
 
+//===========================================================================
+
+int ImageViewer::view(const byteA &img, bool wait, float zoom){
+  if(!gl) gl = make_shared<OpenGL>("ImageViewer");
+  return gl->watchImage(img, wait, zoom);
+}
+
+int ImageViewer::viewFloat(const floatA &img, bool wait, float zoom){
+  if(!gl) gl = make_shared<OpenGL>("ImageViewer");
+  return gl->watchImage(img, wait, zoom);
+}
+
+//===========================================================================
+
 ConfigurationViewer::~ConfigurationViewer() {
   close_gl();
 }
@@ -576,9 +590,6 @@ StringA ConfigurationViewer::getEvents(){
 Mutex& ConfigurationViewer::getEventsMutex(){
   return eventHandler->mux;
 }
-
-
-
 
 //===========================================================================
 

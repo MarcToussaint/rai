@@ -16,6 +16,12 @@
 
 namespace rai {
 
+struct ImageViewer {
+  shared_ptr<struct OpenGL> gl;
+  int view(const byteA& img, bool wait, float zoom=1.);
+  int viewFloat(const floatA& img, bool wait, float zoom=1.);
+};
+
 struct ConfigurationViewer : RenderData {
   shared_ptr<struct OpenGL> gl;
   intA frame2itemID;

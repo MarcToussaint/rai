@@ -744,7 +744,7 @@ rai::Frame* KOMO::addContact_WithPoaFrame(const arr& times, str obj, str from, d
   CHECK(f_obj != f_from, "");
 
   //-- create a stable POA frame as geometric DOF, attached to obj, with z becoming the contact normal
-  str poa_name = STRING("poa_" <<obj <<"_" <<from <<"_" <<time);
+  str poa_name = STRING("poa_" <<obj <<"_" <<from <<"_" <<times(0));
   rai::Frame *f_poa = addFrameDof(poa_name, obj, rai::JT_free, true);
   //heuristic to initialize the POA frame
   rai::Transformation relOrigin;
