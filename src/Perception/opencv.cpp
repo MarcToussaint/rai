@@ -10,7 +10,7 @@
 
 #include "opencv.h"
 
-::Mutex cvMutex;
+rai::Mutex cvMutex;
 
 //student-t distribution with different degrees
 float student1(float x) {

@@ -1418,12 +1418,14 @@ str Graph::asYaml(bool serial) const {
 }
 
 #else
-void Graph::writeYaml(std::ostream& os, bool classic) const {
-  if(classic){
-    write(os, "\n", "{}", 0, true, false);
+str Graph::asYaml(bool serial) const {
+  str s;
+  if(serial){
+    write(s, "\n", "{}", 0, true, false);
   }else{
-    write(os, "\n", 0, -1, true, false);
+    write(s, "\n", 0, -1, true, false);
   }
+  return s;
 }
 void Graph::readYaml(istream& is){ NICO }
 #endif

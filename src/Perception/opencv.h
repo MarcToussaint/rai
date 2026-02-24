@@ -23,7 +23,7 @@
 #include "../Core/array.h"
 #include "../Core/util.h"
 
-extern ::Mutex cvMutex;
+extern rai::Mutex cvMutex;
 
 inline cv::Mat CV(const byteA& img) {
   if(img.nd==2) return cv::Mat(img.d0, img.d1, CV_8UC1, img.p);
