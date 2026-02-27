@@ -8,7 +8,7 @@
 #include "../Kin/dof_forceExchange.h"
 #include "../Kin/F_collisions.h"
 
-bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports, bool forceAll){
+bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& must_supports, const StringA& rnd_supports, uint max_n_supports){
   //  FrameL colls = C.getCollidablePairs();
   //  cout <<"COLLIDABLE PAIRS:" <<endl;
   //  for(uint k=0;k<colls.d0;k++) cout <<"  " <<colls(k,0)->name <<' ' <<colls(k,1)->name <<endl;
@@ -46,20 +46,19 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& supports,
   if(opt.verbose>0) komo.set_viewer(C.get_viewer());
 
   //-- discrete decisions:
-  uintA perm = rai::randperm(supports.N);
-  uint n_supports = rnd.uni_int(1,3);
-  if(forceAll) n_supports = supports.N;
-  supp.clear();
-  for(uint i=0;i<n_supports;i++){
-    str s = supports(perm(i));
-    supp.append(s);
+  supp = must_supports;
+  uintA perm = rai::randperm(rnd_supports.N);
+  uint n_supports = rnd.uni_int((supp.N?0:1), max_n_supports);
+  for(uint i=0;i<n_supports;i++) supp.append(rnd_supports(perm(i)));
+
+  for(const str& s:supp){
     // komo.addContact_stick(0.,-1., "obj", thing, opt.frictionCone_mu);
     // komo.addContact_WithPoaFrame(1., "obj", s, opt.frictionCone_mu, .05, .2);
     komo.addContactForceFrame({1.}, "obj", s, opt.frictionCone_mu, .05);
   }
-  for(uint i=n_supports;i<supports.N;i++){
+  for(uint i=n_supports;i<rnd_supports.N;i++){
     //for all NON-supports, introduce an explicit(!) no-collision
-    komo.addObjective({}, FS_negDistance, {"obj", supports(perm(i))}, OT_ineq, {1e1});
+    komo.addObjective({}, FS_negDistance, {"obj", rnd_supports(perm(i))}, OT_ineq, {1e1});
   }
 
   komo.addQuaternionNorms();

@@ -1118,14 +1118,9 @@ rai::Frame& rai::Frame::unLink() {
 
 rai::Frame& rai::Frame::setParent(rai::Frame* _parent, bool keepAbsolutePose_and_adaptRelativePose, bool checkForLoop) {
   CHECK(_parent, "you need to set a parent to link from");
-  CHECK(!parent, "this frame ('" <<name <<"') already has a parent");
+  // CHECK(!parent, "this frame ('" <<name <<"') already has a parent");
   CHECK(&this->C==&_parent->C, "you can only set parent frames in the same configuration")
   if(parent==_parent) return *this;
-  //if(parent){ //unlink first...
-  //  parent->children.removeValue(this);
-  //  parent=nullptr;
-  //  
-  //}
 
   if(checkForLoop) {
     rai::Frame* f=_parent;
@@ -1137,6 +1132,7 @@ rai::Frame& rai::Frame::setParent(rai::Frame* _parent, bool keepAbsolutePose_and
 
   if(keepAbsolutePose_and_adaptRelativePose) ensure_X();
 
+  if(parent) parent->children.removeValue(this);
   parent=_parent;
   parent->children.append(this);
 

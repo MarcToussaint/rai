@@ -15,6 +15,6 @@ struct RndStableConfigs {
   intA pairs;
   arr forces;
 
-  bool getSample(rai::Configuration& C, const StringA& supports, bool forceAll);
+  bool getSample(rai::Configuration& C, const StringA& must_supports, const StringA& rnd_supports, uint max_n_supports);
   void report();
 };
