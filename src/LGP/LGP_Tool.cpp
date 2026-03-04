@@ -530,6 +530,128 @@ int LGP_Tool::display(std::shared_ptr<KOMO>& komo, std::shared_ptr<SolverReturn>
   return key;
 }
 
+void LGP_Tool::explorer() {
+
+  //  bool interactive = getParameter<bool>("interact", false);
+  //  bool random = getParameter<bool>("random", false);
+  StringA cmds = getParameter<StringA>("playerCmds", {});
+
+  ActionNode* focusNode = actionTreeRoot;
+  uint level=0;
+
+  for(uint s=0;; s++) {
+    printTree(focusNode);
+    {
+      //print
+      cout <<"********************" <<endl;
+      cout <<"expand level: " <<level <<endl;
+      cout <<"nodeID: " <<*focusNode <<"\nstate: ";
+      cout <<*focusNode;
+      cout <<"\n--------------------" <<endl;
+      cout <<"\nCHOICES:" <<endl;
+      cout <<"(q) quit" <<endl;
+      cout <<"(u) up" <<endl;
+      cout <<"(e) expand node" <<endl;
+      cout <<"(k) print skeleton" <<endl;
+      cout <<"(p) pose optim" <<endl;
+      cout <<"(s) sequence optim" <<endl;
+      cout <<"(x) path optim" <<endl;
+      uint c=0;
+      for(ActionNode* ch:focusNode->children) {
+        cout <<"(" <<c++ <<") " <<ch->action <<endl;
+      }
+    }
+
+    {
+      //query
+      String cmd;
+      if(cmds.N) {
+        cmd = cmds.popFirst();
+      } else {
+        std::string tmp;
+        getline(std::cin, tmp);
+        cmd=tmp.c_str();
+      }
+      cout <<"COMMAND: '" <<cmd <<"'" <<endl;
+
+      //exec
+      if(cmd=="q") break;
+      else if(cmd=="e") { level++; expandToLevel(level); } // _expand(focusNode); }
+      else if(cmd=="u") { if(focusNode->parent) focusNode = focusNode->parent; }
+      // else if(cmd=="k") { Skeleton S; String s; getSkeleton(S, s); cout <<"SKELETON: " <<S <<endl; }
+      // else if(cmd=="p") { optFinalSlice(); }
+      // else if(cmd=="s") { optWaypoints(); }
+      // else if(cmd=="x") { optPath(); }
+      else {
+        int choice=-1;
+        cmd >>choice;
+        cout <<"CHOICE=" <<choice <<endl;
+        if(choice<0 || choice>=(int)focusNode->children.N) {
+          cout <<"--- there is no such choice" <<endl;
+        } else {
+          focusNode = focusNode->children(choice); //choose a decision
+        }
+      }
+    }
+  }
+}
+
+void LGP_Tool::_expand(ActionNode* n){
+  TreeSearchNode *parent = n->hidden;
+  Array<StringA> actions = tamp.expand(parent);
+  CHECK_EQ(actions.N, parent->children.N, "");
+  for(uint i=0;i<parent->children.N;i++){
+    ActionNode* ch = new ActionNode(n, actions(i));
+    ch->hidden = parent->children(i);
+  }
+  cout <<"expanded parent: " <<n->action <<endl;
+  for(auto* ch: n->children){
+    cout <<"child: " <<ch->action <<endl;
+  }
+}
+
+void LGP_Tool::expandToLevel(uint l){
+  for(;;){
+    ActionNode* plan = addNewOpenPlan();
+    if(plan->step>l) break;
+  }
+}
+
+void LGP_Tool::printTree(ActionNode* focus) {
+  rai::Graph G;
+  ActionNodeL T = {actionTreeRoot};
+  for(uint i=0;i<T.N;i++){
+    T.append(T(i)->children);
+  }
+
+  for(uint i=0; i<T.N; i++) {
+    ActionNode* n = T(i);
+    n->ID = i;
+    rai::NodeL par;
+    if(n->parent && n->parent->ID<G.N) par.append(G.elem(n->parent->ID));
+    rai::Graph& sub = G.addSubgraph(n->getActionString(), par);
+
+    sub.add<double>("step", n->step);
+    sub.add<double>("n_children", n->children.N);
+    // if(n->needsWidening) sub.add<bool>("needsWidening", true);
+    // n->data(sub);
+
+    if(n->isTerminal) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", shape=box"; //, style=rounded
+    // if(!n->isComplete) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", style=dashed";
+    if(n==focus) G.getRenderingInfo(sub.isNodeOfGraph).dotstyle <<", color=red";
+  }
+
+  G.checkConsistency();
+  G.write(FILE("z.tree"));
+  G.writeDot(FILE("z.dot"));
+  rai::system("dot -Tpdf z.dot > z.pdf");
+  static bool first=true;
+  if(first){
+    rai::system("evince z.pdf &");
+    first = false;
+  }
+}
+
 //===========================================================================
 
 MotifL analyzeMotifs(KOMO& komo, int verbose){

@@ -15,12 +15,14 @@ rai::AStar::AStar(const std::shared_ptr<rai::TreeSearchNode>& _root, SearchMode 
   addToQueue(root.get());
 }
 
-void rai::AStar::step() {
+void rai::AStar::step(TreeSearchNode* select_explicit) {
   steps++;
 
   //pop
   TreeSearchNode* node = 0;
-  if(mode==astar || mode==FIFO) {
+  if(select_explicit){
+    node = select_explicit;
+  } if(mode==astar || mode==FIFO) {
     if(!queue.N) {
       LOG(-1) <<"AStar: queue is empty -> failure!";
       return;
@@ -69,7 +71,7 @@ void rai::AStar::step() {
   } else if(node->isTerminal) {  //save as solution
     solutions.append(node);
 
-  } else { //expand or deepen
+  } else { //expand (aka deepen)
     CHECK(node->isComplete, "");
     CHECK(!node->isTerminal, "");
 

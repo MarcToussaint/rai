@@ -514,7 +514,7 @@ void PairCollision::kinNormal(arr& y, arr& J,
         //approximate: mixture of cases (2,1) and (1,2)
         y = p1 - p2;
         J = Jp1 - Jp2;
-        normalizeWithJac(y, J);
+        normalizeWithJac(y, J, 1e-8);
         arr aa = a^a;
         arr bb = b^b;
         J -= aa*J;
@@ -525,7 +525,7 @@ void PairCollision::kinNormal(arr& y, arr& J,
     } else if(simplexType(2, 1)) {
       y = p1 - p2;
       J = Jp1 - Jp2;
-      normalizeWithJac(y, J);
+      normalizeWithJac(y, J, 1e-8);
       arr a = simp1[1]-simp1[0];  a/=length(a);
       arr aa = a^a;
       J -= aa*J;
@@ -533,15 +533,18 @@ void PairCollision::kinNormal(arr& y, arr& J,
     } else if(simplexType(1, 2)) {
       y = p1 - p2;
       J = Jp1 - Jp2;
-      normalizeWithJac(y, J);
-      arr b = simp2[1]-simp2[0];  b/=length(b);
-      arr bb = b^b;
-      J -= bb*J;
-      J += bb*crossProduct(Jx2, y);
+      normalizeWithJac(y, J, 1e-8);
+      arr b = simp2[1]-simp2[0];
+      if(absMax(b)>1e-8){
+        b /= length(b);
+        arr bb = b^b;
+        J -= bb*J;
+        J += bb*crossProduct(Jx2, y);
+      }
     } else if(simplexType(1, 1)) {
       y = p1 - p2;
       J = Jp1 - Jp2;
-      normalizeWithJac(y, J);
+      normalizeWithJac(y, J, 1e-8);
     } else if(simplexType(2, 3)) {
       J = Jp1;
       J.setZero();

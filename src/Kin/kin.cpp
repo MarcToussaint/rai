@@ -982,7 +982,7 @@ bool Configuration::checkUniqueNames(bool makeUnique) {
 }
 
 /// compute the natural order of all frames (first adding all root frames, then expanding using breadth-first search)
-FrameL Configuration::calc_topSort() const {
+FrameL Configuration::calc_topSort(bool depthFirst) const {
   FrameL order;
   boolA done = consts<byte>(false, frames.N);
 
@@ -994,10 +994,17 @@ FrameL Configuration::calc_topSort() const {
     order.append(a);
     done(a->ID) = true;
 
-    for(Frame* ch : a->children) fringe.append(ch);
+    if(depthFirst) fringe.prepend(a->children);
+    else fringe.append(a->children);
   }
 
-  for(uint i=0; i<done.N; i++) if(!done(i)) LOG(-1) <<"not done: " <<frames.elem(i)->name <<endl;
+  for(uint i=0; i<done.N; i++) if(!done(i)){
+      rai::Frame *f = frames.elem(i);
+      LOG(-1) <<"not done: " <<f->name <<"path to root: " <<endl;
+      rai::Frame *p = f;
+      for(uint i=0;(i<20) && p; i++){ cout <<p->name <<endl; p=p->parent; }
+    }
+
   CHECK_EQ(order.N, frames.N, "can't top sort");
 
   return order;

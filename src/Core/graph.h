@@ -498,7 +498,11 @@ template<class T> bool Graph::get(T& x, const char* key) const {
   Node* n = findNode(key);
   if(!n) return false;
   if constexpr(std::is_arithmetic_v<T>) x = n->asFlex<T>();
-  else x = n->as<T>();
+  else{
+    T* val = n->getValue<T>();
+    if(!val) return false;
+    x = *val;
+  }
   return true;
 }
 

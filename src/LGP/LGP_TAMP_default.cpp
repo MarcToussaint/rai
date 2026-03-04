@@ -70,6 +70,24 @@ struct Default_LGP_TAMP_Abstraction : LGP_TAMP_Abstraction {
     return actionSequence;
   }
 
+  virtual Array<StringA> expand(TreeSearchNode* n){
+    if(!n) n = fol_astar->root.get();
+    fol_astar->step(n);
+    Array<StringA> actions;
+    for(TreeSearchNode* ch: n->children){
+      cout <<ch->name <<endl;
+      actions.append({ch->name});
+    }
+    // str debug;
+    // NodeL decisions = s->getDecisionSequence(debug);
+    // Array<StringA> actionSequence(decisions.N);
+    // for(uint i=0;i<actionSequence.N;i++){
+    //   actionSequence(i).resize(decisions(i)->parents.N);
+    //   for(uint j=0;j<actionSequence(i).N;j++) actionSequence(i)(j) = decisions(i)->parents(j)->key;
+    // }
+    return actions;
+  }
+
   virtual std::shared_ptr<KOMO> setup_sequence(Configuration& C, uint K){
     ManipulationHelper manip;
     manip.setup_sequence(C, K, -1e-2, 1e-2, false, false, true);

@@ -350,7 +350,7 @@ void normalizeWithJac(arr& y, arr& J, double eps) {
   } else {
     y /= (eps+l);
     if(!!J && J.N) {
-      J -= ((eps+l)/l * (y^y)) * J;
+      J -= (y^y)*J; //((eps+l)/l * (y^y)) * J;
       J /= (eps+l);
     }
   }

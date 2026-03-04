@@ -118,6 +118,7 @@ char* getCmdLineArgument(const char* tag);
 
 String getcwd_string();
 const char* niceTypeidName(const std::type_info& type);
+String niceTime(double time);
 
 //----- get verbose level
 bool getInteractivity();

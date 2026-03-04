@@ -1309,6 +1309,18 @@ const char* niceTypeidName(const std::type_info& type) {
   return buf+cut;
 }
 
+String niceTime(double time){
+  int h = time/3600.;
+  time -= h*3600.;
+  int m = time/60.;
+  time -= m*60.;
+  str s;
+  s.resize(20, false);
+  int l = snprintf(s.p, 20, "%02d:%02d:%06.3f", h, m, time);
+  s.resize(l, true);
+  return s;
+}
+
 }//namespace rai
 
 //===========================================================================

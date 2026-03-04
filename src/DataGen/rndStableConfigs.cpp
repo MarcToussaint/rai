@@ -46,7 +46,8 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& must_supp
   if(opt.verbose>0) komo.set_viewer(C.get_viewer());
 
   //-- discrete decisions:
-  supp = must_supports;
+  supp.clear();
+  if(must_supports.N) supp.append(must_supports.rndElem());
   uintA perm = rai::randperm(rnd_supports.N);
   uint n_supports = rnd.uni_int((supp.N?0:1), max_n_supports);
   for(uint i=0;i<n_supports;i++) supp.append(rnd_supports(perm(i)));

@@ -4,6 +4,8 @@
 
 namespace rai {
 
+struct TreeSearchNode;
+
 //===========================================================================
 
 struct LGP_TAMP_Abstraction{
@@ -16,6 +18,7 @@ struct LGP_TAMP_Abstraction{
 
   //abstraction of the logic parts: get feasible action sequences
   virtual Array<StringA> getNewActionSequence() = 0;
+  virtual Array<StringA> expand(TreeSearchNode* n) = 0;
 
   //abstraction of the motion parts: given an action sequence, what are the constraints on waypoints, and potential additional running constraints on motions between waypoints
   virtual std::shared_ptr<KOMO> setup_sequence(Configuration& C, uint K) = 0;

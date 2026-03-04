@@ -16,7 +16,7 @@ START_STATE {}
 
 #####################################################################
 
-DecisionRule pick {
+DecisionRule pick_touch {
   Obj, From, Hand, 
   pre: { (is_gripper Hand) (is_object Obj) (on From Obj) (busy Hand)! }
   eff: { (on From Obj)! #deletes
@@ -26,7 +26,7 @@ DecisionRule pick {
 
 #####################################################################
 
-DecisionRule place {
+DecisionRule place_straightOn {
   Obj, Hand, To,
   pre: { (is_gripper Hand) (is_object Obj) (is_place To) (on Hand Obj) }
   eff: { (busy Hand)! (on Hand Obj)! #deletes

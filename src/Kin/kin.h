@@ -182,7 +182,7 @@ struct Configuration {
   Graph reportForces();
   std::tuple<intA, arr> getForceArrays();
   bool checkUniqueNames(bool makeUnique=false);
-  FrameL calc_topSort() const;
+  FrameL calc_topSort(bool depthFirst=true) const;
   bool check_topSort() const;
 
   /// @name structural operations, changes of configuration

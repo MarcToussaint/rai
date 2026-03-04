@@ -43,6 +43,8 @@ stdOutPipe(Job)
 //===========================================================================
 
 struct ActionNode{
+  uint ID=0;
+  TreeSearchNode *hidden=0;
   ActionNode* parent;
   Array<ActionNode*> children;
   uint step=0;
@@ -65,8 +67,13 @@ struct ActionNode{
   ActionNode* descentAndCreate(const Array<StringA>& plan);
 
   //-- convenience output/debug
+  str getActionString(){ str s; action.write(s, "_"); return s; }
   str getPlanString();
   Array<StringA> getPlan();
+
+  void write(ostream& os) const{
+    cout <<"[" <<step <<"] " <<action <<" <" <<children.N <<">";
+  }
 
 protected:
   PTR<KOMO> ways;
@@ -74,6 +81,7 @@ protected:
 
   friend struct LGP_Tool;
 };
+stdOutPipe(ActionNode)
 
 //===========================================================================
 
@@ -113,6 +121,12 @@ struct LGP_Tool{
 
 
   int display(PTR<KOMO>& komo, PTR<SolverReturn>& ret, bool pause=true, const char* msg=0, bool play=true);
+
+  void explorer();
+  void _expand(ActionNode* n);
+  void expandToLevel(uint l);
+
+  void printTree(ActionNode* focus);
 
 private:
   //helpers
