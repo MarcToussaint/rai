@@ -114,6 +114,7 @@ NLP_RastriginSOS::NLP_RastriginSOS() {
 }
 
 void NLP_RastriginSOS::evaluate(arr& phi, arr& J, const arr& x) {
+  if(x.nd==2) return batch_evaluate(phi, J, x);
   CHECK_EQ(x.N, 2, "");
   phi.resize(4);
   phi(0) = sin(a*x(0));
@@ -287,6 +288,12 @@ NLP_Squared::NLP_Squared() {
   }
 }
 
+void NLP_Squared::evaluate(arr& phi, arr& J, const arr& x) {
+  if(x.nd==2) return batch_evaluate(phi, J, x);
+  phi=C*(x-x0);
+  if(!!J) J=C;
+}
+
 //===========================================================================
 
 NLP_Rugged::NLP_Rugged(){
@@ -301,6 +308,7 @@ NLP_Rugged::NLP_Rugged(){
 }
 
 void NLP_Rugged::evaluate(arr& phi, arr& J, const arr& x){
+  if(x.nd==2) return batch_evaluate(phi, J, x);
   arr sqrDists;
   uintA idx;
   ann->getkNN(sqrDists, idx, x, 2);
@@ -328,14 +336,17 @@ BoxNLP::BoxNLP(){
 }
 
 void BoxNLP::evaluate(arr& phi, arr& J, const arr& x){
+  if(x.nd==2) return batch_evaluate(phi, J, x);
   phi.resize(2*dimension);
   phi({0,dimension}) = -(x + 1.);
   phi({dimension,0}) = x - 1.;
 
-  J.resize(phi.N, x.N).setZero();
-  for(uint i=0;i<dimension;i++){
-    J(i,i) = -1.;
-    J(dimension+i,i) = 1.;
+  if(!!J){
+    J.resize(phi.N, x.N).setZero();
+    for(uint i=0;i<dimension;i++){
+      J(i,i) = -1.;
+      J(dimension+i,i) = 1.;
+    }
   }
 
   if(featureTypes.N>2*dimension){
@@ -379,6 +390,7 @@ ModesNLP::ModesNLP(){
 }
 
 void ModesNLP::evaluate(arr& phi, arr& J, const arr& x){
+  if(x.nd==2) return batch_evaluate(phi, J, x);
   arr _x = x;
   _x.J_setId();
 
@@ -444,6 +456,7 @@ ChoiceConstraintFunction::ChoiceConstraintFunction() {
 }
 
 void ChoiceConstraintFunction::evaluate(arr& phi, arr& J, const arr& x) {
+  if(x.nd==2) return batch_evaluate(phi, J, x);
   CHECK_EQ(x.N, n, "");
   phi.clear();  if(!!J) J.clear();
 
@@ -560,6 +573,7 @@ NLP_RandomLP::NLP_RandomLP() {
 }
 
 void NLP_RandomLP::evaluate(arr& phi, arr& J, const arr& x) {
+  if(x.nd==2) return batch_evaluate(phi, J, x);
   phi = {sum(x)};
   if(!!J) J = ones(1, x.N);
 

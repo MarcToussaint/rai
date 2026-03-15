@@ -85,7 +85,7 @@ ConstrainedSolver::ConstrainedSolver(arr& _x, arr& _dual, const shared_ptr<NLP>&
   }
 
   //check for no constraints
-  if(P->get_numOfType(OT_ineq)==0 && P->get_numOfType(OT_ineqB)==0 && P->get_numOfType(OT_eq)==0) {
+  if(P->is_unconstrained()) {
     if(opt->verbose>0) cout <<"==nlp== NO CONSTRAINTS -> run just Newton once" <<endl;
     opt->method=M_Newton;
   }

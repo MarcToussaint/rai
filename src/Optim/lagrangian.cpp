@@ -56,10 +56,12 @@ LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, std::shared_ptr<O
 }
 
 void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
+  if(_x.nd==2) return batch_evaluate(phi, J, _x);
+
   //-- evaluate constrained problem and buffer
   if(_x!=x) {
     x=_x;
-    P->evaluate(phi_x, J_x, x);
+    P->evaluate(phi_x, (!!J?J_x:NoArr), x);
     P->getFHessian(H_x, x);
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
@@ -142,7 +144,7 @@ double LagrangianProblem::eval_scalar(arr& dL, arr& HL, const arr& _x) {
   //-- evaluate constrained problem and buffer
   if(_x!=x) {
     x=_x;
-    P->evaluate(phi_x, J_x, x);
+    P->evaluate(phi_x, (!!dL?J_x:NoArr), x);
     P->getFHessian(H_x, x);
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }

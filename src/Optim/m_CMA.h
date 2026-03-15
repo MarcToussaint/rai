@@ -1,10 +1,10 @@
 #pragma once
 
-#include "GenericBO.h"
+#include "GenericZeroOrder.h"
 
 namespace rai {
 
-struct CMAES : GenericBO { //EvolutionStrategy {
+struct CMAES : GenericZeroOrder { //EvolutionStrategy {
   unique_ptr<struct CMA_self> self;
   RAI_PARAM("CMA/", int, lambda, 20)
   RAI_PARAM("CMA/", double, sigmaInit, .1)

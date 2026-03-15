@@ -12,7 +12,7 @@
 
 #include "m_Gradient.h"
 #include "m_Newton.h"
-#include "m_LSBO.h"
+#include "m_LSZO.h"
 #include "m_SlackGaussNewton.h"
 #include "m_LocalGreedy.h"
 #include "m_NelderMead.h"
@@ -29,13 +29,8 @@ namespace rai {
 NLP_Solver::NLP_Solver() { opt = make_shared<OptOptions>(); }
 
 NLP_Solver& NLP_Solver::setProblem(const shared_ptr<NLP>& _P) {
-  if(P) {
-    CHECK_EQ(P->P.get(), _P.get(), "");
-    P->clear();
-    P->copySignature(*_P);
-  } else {
-    P = make_shared<NLP_Traced>(_P);
-  }
+  CHECK(!P, "can't overwrite problem");
+  P = make_shared<NLP_Traced>(_P);
   return *this;
 }
 
@@ -82,7 +77,7 @@ std::shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization, int 
     ret->feasible = true;
 
   } else if(opt->method==M_LSBO) {
-    ret = LeastSquaresBlackboxOpt(Phere, x). solve();
+    ret = LeastSquaresZeroOrder(Phere, x). solve();
     x = ret->x;
 
   } else if(opt->method==M_NelderMead) {
@@ -214,6 +209,20 @@ bool NLP_Solver::step() {
 
   return ret->done;
 }
+
+#if 0
+std::shared_ptr<NLP> NLP_Solver::getProblem(){
+  auto T = std::dynamic_pointer_cast<NLP_Traced>(P);
+  if(T) return T->P;
+  return P;
+}
+
+std::shared_ptr<NLP_Traced> NLP_Solver::getTraced() {
+  auto T = std::dynamic_pointer_cast<NLP_Traced>(P);
+  if(!T) HALT("this problem is not traced!");
+  return T;
+}
+#endif
 
 Graph NLP_Solver::reportLagrangeGradients(const StringA& featureNames) {
   CHECK(optCon, "");

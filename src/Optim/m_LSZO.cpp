@@ -1,4 +1,4 @@
-#include "m_LSBO.h"
+#include "m_LSZO.h"
 #include "m_EvoStrategies.h"
 #include "../Core/util.h"
 
@@ -22,8 +22,8 @@ auto decompose(const arr& phi, const arr& J, ObjectiveTypeA featureTypes){
 
 //===========================================================================
 
-LeastSquaresBlackboxOpt::LeastSquaresBlackboxOpt(shared_ptr<NLP> _P, const arr& x_init, std::shared_ptr<OptOptions> _opt)
- : GenericBO("lsdf", _P, x_init, _opt){
+LeastSquaresZeroOrder::LeastSquaresZeroOrder(shared_ptr<NLP> _P, const arr& x_init, std::shared_ptr<OptOptions> _opt)
+ : GenericZeroOrder("lsdf", _P, x_init, _opt){
   if(x_init.N) x=x_init;
   else x=P->getInitializationSample();
   CHECK_EQ(x.N, P->dimension, "");
@@ -65,7 +65,7 @@ LeastSquaresBlackboxOpt::LeastSquaresBlackboxOpt(shared_ptr<NLP> _P, const arr& 
   // update(X, evaluateSamples(X));
 }
 
-arr LeastSquaresBlackboxOpt::generateSamples(){
+arr LeastSquaresZeroOrder::generateSamples(){
   if(data_X.d0==0){
     arr X = x;
     return X.reshape(1,-1);
@@ -131,7 +131,7 @@ arr LeastSquaresBlackboxOpt::generateSamples(){
   return X;
 }
 
-void LeastSquaresBlackboxOpt::pruneData(){
+void LeastSquaresZeroOrder::pruneData(){
   uint n = data_X.d0;
   uint N = 2.*fabs(weightRatio)*data_X.d1;
   arr dists(n);
@@ -149,7 +149,7 @@ void LeastSquaresBlackboxOpt::pruneData(){
   }
 }
 
-void LeastSquaresBlackboxOpt::update(arr& X, arr& Phi, arr& F){
+void LeastSquaresZeroOrder::update(arr& X, arr& Phi, arr& F){
   for(uint i=0;i<Phi.d0;i++) zero_non_sos_objectives(P->featureTypes, Phi[i].noconst());
 
   //-- store
@@ -199,7 +199,7 @@ void LeastSquaresBlackboxOpt::update(arr& X, arr& Phi, arr& F){
   if(opt->verbose>1) cout <<" (alpha: " <<alpha <<" beta: " <<beta <<" data_r: " <<data_radius <<')';
 }
 
-void LeastSquaresBlackboxOpt::updateJ_rank1(arr& J, const arr& x, const arr& x_last, const arr& phi, const arr& phi_last){
+void LeastSquaresZeroOrder::updateJ_rank1(arr& J, const arr& x, const arr& x_last, const arr& phi, const arr& phi_last){
   arr y = phi - phi_last;
   arr d = x - x_last;
   double d2 = sumOfSqr(d)+1e-3;
@@ -249,7 +249,7 @@ std::tuple<arr,arr> updateJ_linReg(const arr& Xraw, const arr& Y, const arr& x_n
 //===========================================================================
 
 LS_CMA::LS_CMA(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt)
-    : GenericBO("ls-cma", P, x_init, _opt), cma(P, x_init, _opt), lsdf(P, x_init, _opt){
+    : GenericZeroOrder("ls-cma", P, x_init, _opt), cma(P, x_init, _opt), lsdf(P, x_init, _opt){
 }
 
 arr LS_CMA::generateSamples(){

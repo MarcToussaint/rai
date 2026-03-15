@@ -76,7 +76,14 @@ struct NLP : rai::NonCopyable {
     for(uint i=0; i<featureTypes.N; i++) if(featureTypes(i)==ot) d++;
     return d;
   }
+  bool is_unconstrained(){
+    for(ObjectiveType& t:featureTypes) if(t==OT_eq || t==OT_ineq || t==OT_ineqB) return false;
+    return true;
+    // return get_numOfType(OT_ineq)==0 && get_numOfType(OT_ineqB)==0 && get_numOfType(OT_eq)==0;
+  }
   arr summarizeErrors(const arr& phi);
+  // X is a batch/population of points; returns a matrix phi, and degree 3 tensor
+  void batch_evaluate(arr& phi, arr& J, const arr& X);
 
   shared_ptr<rai::NonCopyable> obj;
 };
@@ -84,17 +91,14 @@ struct NLP : rai::NonCopyable {
 //===========================================================================
 
 struct NLP_Scalar : NLP {
-  arr x, H_x;
+  arr H_x;
   NLP_Scalar() { featureTypes.resize(1) = OT_f; }
   virtual double f(arr& g, arr& H, const arr& x) = 0;
-  void evaluate(arr& phi, arr& J, const arr& _x){
-    x = _x;
-    double f_x = f(J, H_x, x);
-    phi.resize(1) = f_x;
-    if(!!J && J.N) J.reshape(1, x.N);
-  }
-  void getFHessian(arr& H, const arr& _x) {  CHECK_EQ(_x, x, "");  H = H_x;  }
+  void evaluate(arr& phi, arr& J, const arr& x);
+  void getFHessian(arr& H, const arr& x) { H = H_x;  }
 };
+
+//===========================================================================
 
 struct NLP_Factored : NLP {
   //-- problem factorization: needs to be defined in the constructor or a derived class
@@ -120,35 +124,21 @@ struct NLP_Factored : NLP {
 };
 
 //===========================================================================
-// TRIVIAL only header
 
 struct NLP_Traced : NLP {
   shared_ptr<NLP> P;
   uint evals=0;
   double best_E = -1.;
   arr xTrace, errsTrace, bestTrace, phiTrace, JTrace;
-  bool trace_x = true;
+  bool trace_x = false;
   bool trace_errs = true;
   bool trace_phi = false;
   bool trace_J = false;
 
-  NLP_Traced(const shared_ptr<NLP>& P) : P(P) {
-    copySignature(*P);
-    P->derived=this;
-  }
+  NLP_Traced(const shared_ptr<NLP>& P);
 
-  void setTracing(bool _trace_x, bool _trace_costs, bool _trace_phi, bool _trace_J) {
-    trace_x=_trace_x; trace_errs=_trace_costs, trace_phi=_trace_phi, trace_J=_trace_J;
-  }
-  void clear() {
-    evals = 0;
-    best_E = -1.;
-    xTrace.clear();
-    errsTrace.clear();
-    bestTrace.clear();
-    phiTrace.clear();
-    JTrace.clear();
-  }
+  void setTracing(bool _trace_x, bool _trace_costs, bool _trace_phi, bool _trace_J);
+  void clear();
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 
@@ -172,12 +162,12 @@ struct NLP_Viewer {
 
 //===========================================================================
 
-struct RegularizedNLP : NLP {
+struct NLP_Regularized : NLP {
   NLP& P;
   arr x_mean;
   double mu;
 
-  RegularizedNLP(NLP& _P, double _mu=1.);
+  NLP_Regularized(NLP& _P, double _mu=1.);
 
   void setRegularization(const arr& _x_mean, double x_var);
   void evaluate(arr& phi, arr& J, const arr& x);

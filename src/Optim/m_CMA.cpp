@@ -10,7 +10,7 @@ struct CMA_self {
   cmaes_t evo;
 };
 
-CMAES::CMAES(shared_ptr<NLP> P, const arr& x_init, shared_ptr<OptOptions> opt) : GenericBO("cmaes", P, x_init, opt) {//EvolutionStrategy("cmaes", f, x_init, opt) {
+CMAES::CMAES(shared_ptr<NLP> P, const arr& x_init, shared_ptr<OptOptions> opt) : GenericZeroOrder("cmaes", P, x_init, opt) {//EvolutionStrategy("cmaes", f, x_init, opt) {
   self = make_unique<CMA_self>();
   arr startDev = rai::consts<double>(sigmaInit, best_x.N);
   int seed = rnd.uni_int(1, INT_MAX);

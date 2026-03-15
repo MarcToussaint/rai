@@ -4,11 +4,11 @@
 #include "options.h"
 #include "../Core/util.h"
 #include "m_CMA.h"
-#include "GenericBO.h"
+#include "GenericZeroOrder.h"
 
 namespace rai {
 
-struct LeastSquaresBlackboxOpt : GenericBO {
+struct LeastSquaresZeroOrder : GenericZeroOrder {
 
   //-- parameters
   str method="rank1";
@@ -24,7 +24,7 @@ struct LeastSquaresBlackboxOpt : GenericBO {
   arr data_X, data_Phi;
   double data_radius;
 
-  LeastSquaresBlackboxOpt(shared_ptr<NLP> _P, const arr& x_init, std::shared_ptr<OptOptions> _opt=make_shared<OptOptions>());
+  LeastSquaresZeroOrder(shared_ptr<NLP> _P, const arr& x_init, std::shared_ptr<OptOptions> _opt=make_shared<OptOptions>());
 
   arr generateSamples();
   void update(arr& X, arr& Phi, arr& F);
@@ -42,10 +42,10 @@ std::tuple<arr,arr> updateJ_linReg(const arr& Xraw, const arr& Y, const arr& x_n
 
 //===========================================================================
 
-struct LS_CMA : GenericBO {
+struct LS_CMA : GenericZeroOrder {
 
   CMAES cma;
-  LeastSquaresBlackboxOpt lsdf;
+  LeastSquaresZeroOrder lsdf;
 
   arr X_cma, X_lsdf;
   LS_CMA(shared_ptr<NLP> P, const arr& x_init, std::shared_ptr<OptOptions> _opt=make_shared<OptOptions>());

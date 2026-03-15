@@ -1,8 +1,8 @@
-#include "GenericBO.h"
+#include "GenericZeroOrder.h"
 
 namespace rai {
 
-void GenericBO::update_best(const arr& X, const arr& Phi, const arr& F){
+void GenericZeroOrder::update_best(const arr& X, const arr& Phi, const arr& F){
   //-- update best
   uint best_i = argmin(F);
   double f_y = F(best_i);
@@ -23,12 +23,19 @@ void GenericBO::update_best(const arr& X, const arr& Phi, const arr& F){
   }
 }
 
-void GenericBO::evaluateSamples(arr& Phi, arr& F, const arr& X){
+void GenericZeroOrder::evaluateSamples(arr& Phi, arr& F, const arr& X){
+#if 1
+  CHECK_EQ(X.nd, 2, "");
+  CHECK_EQ(X.d1, P->dimension, "");
+  P->evaluate(Phi, NoArr, X);
+  evals += X.d0;
+#else
   Phi.resize(X.d0, P->featureTypes.N);
   for(uint i=0;i<X.d0;i++){
     P->evaluate(Phi[i].noconst(), NoArr, X[i]);
     evals++;
   }
+#endif
 
   F.resize(Phi.d0);
   for(uint i=0;i<F.N;i++) F(i) = ::sum(P->summarizeErrors(Phi[i]));
@@ -36,7 +43,7 @@ void GenericBO::evaluateSamples(arr& Phi, arr& F, const arr& X){
   update_best(X, Phi, F);
 }
 
-bool GenericBO::step(){
+bool GenericZeroOrder::step(){
 
   if(opt->verbose>1) cout <<"--" <<method <<"--";
 
@@ -55,7 +62,7 @@ bool GenericBO::step(){
   return false;
 }
 
-shared_ptr<SolverReturn> GenericBO::solve(){
+shared_ptr<SolverReturn> GenericZeroOrder::solve(){
   while(!step()){}
   if(opt->verbose>0) cout <<"--" <<method <<" done-- " <<evals <<" f: " <<best_f <<std::endl;
   shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();

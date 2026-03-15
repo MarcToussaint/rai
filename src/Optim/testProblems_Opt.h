@@ -158,8 +158,7 @@ struct NLP_Squared : NLP {
 
   NLP_Squared();
 
-  virtual void evaluate(arr& phi, arr& J, const arr& x) { phi=C*(x-x0); if(!!J) J=C; }
-//  virtual arr getInitializationSample(){ return ones(n); }
+  virtual void evaluate(arr& phi, arr& J, const arr& x);
 };
 
 //===========================================================================

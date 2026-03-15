@@ -14,7 +14,7 @@
 namespace rai {
 
 BayesOpt::BayesOpt(shared_ptr<NLP> P, shared_ptr<OptOptions> opt)
-    : GenericBO("BayesOpt", P, P->bounds[0] + (P->bounds[1]-P->bounds[0]) % rand(P->bounds.d1), opt),
+    : GenericZeroOrder("BayesOpt", P, P->bounds[0] + (P->bounds[1]-P->bounds[0]) % rand(P->bounds.d1), opt),
     alphaMinima(P->f_scalar(), P->bounds, make_shared<OptOptions>(*opt)) {
 
   alphaMinima.opt->verbose -= 2;

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "GenericBO.h"
+#include "GenericZeroOrder.h"
 #include "m_RestartNewton.h"
 #include "../Core/array.h"
 
@@ -17,7 +17,7 @@ struct DefaultKernelFunction;
 
 namespace rai {
 
-struct BayesOpt : GenericBO {
+struct BayesOpt : GenericZeroOrder {
   arr data_X, data_y;
 
   shared_ptr<KernelRidgeRegression> gp_model;

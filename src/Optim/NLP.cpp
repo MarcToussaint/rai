@@ -159,6 +159,12 @@ rai::String NLP::reportSignature(){
 }
 
 arr NLP::summarizeErrors(const arr& phi) {
+  if(phi.nd==2){ //batch evaluation
+    arr err = zeros(phi.d0, 4);
+    for(uint i=0;i<phi.d0;i++) err[i] = summarizeErrors(phi[i]);
+    return err;
+  }
+
   arr err = zeros(4);
   CHECK_EQ(phi.N, featureTypes.N, "");
   for(uint i=0; i<phi.N; i++) {
@@ -174,6 +180,24 @@ arr NLP::summarizeErrors(const arr& phi) {
   return err;
 }
 
+void NLP::batch_evaluate(arr& phi, arr& J, const arr& X){
+  CHECK_EQ(X.nd, 2, "");
+  CHECK_EQ(X.d1, dimension, "");
+  if(!!J) NIY;
+  phi.resize(X.d0, featureTypes.N);
+  for(uint i=0;i<X.d0;i++){
+    this->evaluate(phi[i].noconst(), NoArr, X[i]);
+  }
+}
+
+//===========================================================================
+
+void NLP_Scalar::evaluate(arr& phi, arr& J, const arr& x){
+  if(x.nd==2) return batch_evaluate(phi, J, x);
+  double f_x = f(J, H_x, x);
+  phi.resize(1) = f_x;
+  if(!!J && J.N) J.reshape(1, x.N);
+}
 
 //===========================================================================
 
@@ -374,17 +398,45 @@ void Conv_FactoredNLP2BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
 
 //===========================================================================
 
+NLP_Traced::NLP_Traced(const shared_ptr<NLP>& P) : P(P) {
+  copySignature(*P);
+  P->derived=this;
+}
+
+void NLP_Traced::setTracing(bool _trace_x, bool _trace_costs, bool _trace_phi, bool _trace_J) {
+  trace_x=_trace_x; trace_errs=_trace_costs, trace_phi=_trace_phi, trace_J=_trace_J;
+}
+
+void NLP_Traced::clear() {
+  evals = 0;
+  best_E = -1.;
+  xTrace.clear();
+  errsTrace.clear();
+  bestTrace.clear();
+  phiTrace.clear();
+  JTrace.clear();
+}
+
 void NLP_Traced::evaluate(arr& phi, arr& J, const arr& x) {
-  evals++;
   P->evaluate(phi, J, x);
+
   arr errs = summarizeErrors(phi);
-  double E = sum(errs);
-  if(evals==1 || E<best_E) best_E = E;
-  if(trace_x) { xTrace.append(x); xTrace.reshape(-1, x.N); }
-  if(trace_errs) { errsTrace.append(errs); errsTrace.reshape(-1, 4);  }
-  if(true) { bestTrace.append(best_E); bestTrace.reshape(-1,1); }
-  if(trace_phi && !!phi) { phiTrace.append(phi);  phiTrace.reshape(-1, phi.N); }
-  if(trace_J && !!J) { JTrace.append(J);  JTrace.reshape(-1, phi.N, x.N); }
+  if(x.nd==2){ //batch evaluation
+    arr E = sum(errs, 1);
+    if(!evals) best_E = E.elem(0);
+    for(double& e:E){ if(e<best_E) best_E=e; bestTrace.append(best_E); bestTrace.reshape(-1,1); }
+    if(trace_errs) { errsTrace.append(errs); errsTrace.reshape(-1, 4);  }
+    evals += x.d0;
+  }else{
+    double E = sum(errs);
+    if(!evals || E<best_E) best_E = E;
+    bestTrace.append(best_E); bestTrace.reshape(-1,1);
+    if(trace_x) { xTrace.append(x); xTrace.reshape(-1, x.N); }
+    if(trace_errs) { errsTrace.append(errs); errsTrace.reshape(-1, 4);  }
+    if(trace_phi && !!phi) { phiTrace.append(phi);  phiTrace.reshape(-1, phi.N); }
+    if(trace_J && !!J) { JTrace.append(J);  JTrace.reshape(-1, phi.N, x.N); }
+    evals++;
+  }
 }
 
 //===========================================================================
@@ -470,19 +522,20 @@ void SolverReturn::write(std::ostream& os) const {
 
 //===========================================================================
 
-RegularizedNLP::RegularizedNLP(NLP& _P, double _mu) : P(_P), mu(_mu) {
+NLP_Regularized::NLP_Regularized(NLP& _P, double _mu) : P(_P), mu(_mu) {
   copySignature(P);
   featureTypes.append(OT_sos, dimension);
 }
 
-void RegularizedNLP::setRegularization(const arr& _x_mean, double x_var) {
+void NLP_Regularized::setRegularization(const arr& _x_mean, double x_var) {
   x_mean = _x_mean;
   mu=sqrt(0.5/x_var);
 }
 
-void RegularizedNLP::evaluate(arr& phi, arr& J, const arr& x) {
+void NLP_Regularized::evaluate(arr& phi, arr& J, const arr& x) {
   P.evaluate(phi, J, x);
   if(rai::isSparse(J)) J = J.sparse().unsparse();
   phi.append(mu*(x-x_mean));
   J.append(mu*eye(x.N));
 }
+
