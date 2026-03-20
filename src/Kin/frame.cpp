@@ -1024,8 +1024,13 @@ arr rai::Frame::getMeshCorePoints() const {
 }
 
 arr rai::Frame::getJointState() const {
-  CHECK(joint, "cannot setJointState for a non-joint");
+  CHECK(joint, "cannot getJointState for a non-joint");
   return joint->calcDofsFromConfig();
+}
+
+uint rai::Frame::getJointQIndex() const{
+  CHECK(joint, "cannot getJointQIndex for a non-joint");
+  return joint->qIndex;
 }
 
 /***********************************************************/

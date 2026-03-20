@@ -106,6 +106,7 @@ void init_Frame(pybind11::module& m) {
   .def("getRelativeTransform", &rai::Frame::getRelativeTransform, "")
   .def("getJointType", &rai::Frame::getJointType, "")
   .def("getJointState", &rai::Frame::getJointState, "")
+  .def("getJointQIndex", &rai::Frame::getJointQIndex, "")
   .def("getSize", &rai::Frame::getSize, "")
   .def("getShapeType", &rai::Frame::getShapeType, "")
   .def("getMeshPoints", &rai::Frame::getMeshPoints, "")

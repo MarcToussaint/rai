@@ -2803,7 +2803,7 @@ void Configuration::writeMeshes(str pathPrefix, bool copyTextures, bool enumerat
       fil.name.resize(fil.name.find('.',true), true);
       fil.decomposeFilename();
       str newfilename = pathPrefix;
-      str ext = ".ply"; //".h5"
+      str ext = ".h5"; //".ply"; //
       if(enumerateAssets) newfilename <<meshCount++ <<'_' <<fil.name <<ext;
       else newfilename <<fil.name <<ext;
       if(!FileToken(newfilename).exists()){

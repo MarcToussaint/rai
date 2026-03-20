@@ -162,8 +162,9 @@ void init_DataGen(pybind11::module& m) {
       .def("getSample", &RndStableConfigs::getSample,
            "sample a random configuration - displayed, access via config passed at construction",
            pybind11::arg("config"),
-           pybind11::arg("supports"),
-           pybind11::arg("forceAll")=false)
+           pybind11::arg("must_supports"),
+           pybind11::arg("rnd_supports"),
+	   pybind11::arg("max_n_supports"))
 
       .def("report", &RndStableConfigs::report, "info on newton steps -per- feasible sample")
 

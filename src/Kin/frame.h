@@ -204,6 +204,7 @@ struct Frame : NonCopyable {
   arr getMeshCorePoints() const ;
   rai::JointType getJointType() const;
   arr getJointState() const; ///< throws error if this frame is not also a joint
+  uint getJointQIndex() const;
   Graph& getAts(){ if(!ats) ats=make_shared<Graph>(); return *ats; }
 
   friend struct Configuration;
