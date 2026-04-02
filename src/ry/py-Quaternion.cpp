@@ -26,7 +26,7 @@ void init_Quaternion(pybind11::module& m) {
       .def("setRad", pybind11::overload_cast<double, const rai::Vector&>(&rai::Quaternion::setRad), "", pybind11::arg("radians"), pybind11::arg("axis"))
       .def("setMatrix", pybind11::overload_cast<const arr&>(&rai::Quaternion::setMatrix), "", pybind11::arg("R"))
       .def("setEuler", &rai::Quaternion::setEuler, "", pybind11::arg("euler_zxz"))
-      .def("setRollPitchYaw", &rai::Quaternion::setRollPitchYaw, "", pybind11::arg("roll_pitch_yaw"))
+      .def("setRollPitchYaw", &rai::Quaternion::setRollPitchYaw, "", pybind11::arg("roll_pitch_yaw"), pybind11::arg("reverse")=false)
       .def("setDiff", &rai::Quaternion::setDiff, "", pybind11::arg("from"), pybind11::arg("to"))
       .def("setInterpolateEmbedded", &rai::Quaternion::setInterpolateEmbedded, "", pybind11::arg("t"), pybind11::arg("from"), pybind11::arg("to"))
       .def("setInterpolateProper", &rai::Quaternion::setInterpolateProper, "", pybind11::arg("t"), pybind11::arg("from"), pybind11::arg("to"))

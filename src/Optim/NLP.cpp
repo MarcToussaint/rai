@@ -51,38 +51,50 @@ double NLP::eval_scalar(arr& g, arr& H, const arr& x) {
     }
 
   if(!!g) { //gradient
-    arr coeff=zeros(phi.N);
-    for(uint i=0; i<phi.N; i++) {
-      if(featureTypes.p[i]==OT_sos) coeff.p[i] += 2.* phi.p[i];
-      else if(featureTypes.p[i]==OT_f) coeff.p[i] += 1.;
+    if(J.N){
+      arr coeff=zeros(phi.N);
+      for(uint i=0; i<phi.N; i++) {
+        if(featureTypes.p[i]==OT_sos) coeff.p[i] += 2.* phi.p[i];
+        else if(featureTypes.p[i]==OT_f) coeff.p[i] += 1.;
+      }
+      g = comp_At_x(J, coeff);
+      g.reshape(x.N);
+    }else{
+      g.resize(x.N).setZero();
     }
-    g = comp_At_x(J, coeff);
-    g.reshape(x.N);
   }
 
   if(!!H) { //hessian: Most terms are of the form   "J^T  diag(coeffs)  J"
-    arr coeff=zeros(phi.N);
-    double hasF=false;
-    for(uint i=0; i<phi.N; i++) {
-      if(featureTypes.p[i]==OT_sos) coeff.p[i] += 2.;
-      else if(featureTypes.p[i]==OT_f) hasF=true;
-    }
-    arr tmp = J;
-    if(!isSparseMatrix(tmp)) {
-      for(uint i=0; i<phi.N; i++) tmp[i] *= sqrt(coeff.p[i]);
-    } else {
-      arr sqrtCoeff = sqrt(coeff);
-      tmp.sparse().rowWiseMult(sqrtCoeff);
-    }
-    H = comp_At_A(tmp); //Gauss-Newton type!
+    if(J.N){
+      arr coeff=zeros(phi.N);
+      double hasF=false;
+      for(uint i=0; i<phi.N; i++) {
+        if(featureTypes.p[i]==OT_sos) coeff.p[i] += 2.;
+        else if(featureTypes.p[i]==OT_f) hasF=true;
+      }
+      arr tmp = J;
+      if(!isSparseMatrix(tmp)) {
+        for(uint i=0; i<phi.N; i++) tmp[i] *= sqrt(coeff.p[i]);
+      } else {
+        arr sqrtCoeff = sqrt(coeff);
+        tmp.sparse().rowWiseMult(sqrtCoeff);
+      }
+      H = comp_At_A(tmp); //Gauss-Newton type!
 
-    if(hasF) { //For f-terms, the Hessian must be given explicitly, and is not \propto J^T J
-      arr fH;
-      getFHessian(fH, x);
-      if(fH.N) H += fH;
-    }
+      if(hasF) { //For f-terms, the Hessian must be given explicitly, and is not \propto J^T J
+        arr fH;
+        getFHessian(fH, x);
+        if(fH.N) H += fH;
+      }
 
-    if(!H.special) H.reshape(x.N, x.N);
+      if(!H.special) H.reshape(x.N, x.N);
+    }else{
+      if(rai::isSparse(J)){
+        H.sparse().resize(x.N, x.N, 0);
+      }else{
+        H.resize(x.N, x.N).setZero();
+      }
+    }
   }
 
   return f;

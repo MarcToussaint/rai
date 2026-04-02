@@ -164,7 +164,7 @@ void init_DataGen(pybind11::module& m) {
            pybind11::arg("config"),
            pybind11::arg("must_supports"),
            pybind11::arg("rnd_supports"),
-	   pybind11::arg("max_n_supports"))
+           pybind11::arg("max_n_supports"))
 
       .def("report", &RndStableConfigs::report, "info on newton steps -per- feasible sample")
 

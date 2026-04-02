@@ -126,7 +126,7 @@ struct Quaternion {
   Quaternion& setRadY(double radians);
   Quaternion& setRadZ(double radians);
   Quaternion& setEuler(const Vector& zxz);
-  Quaternion& setRollPitchYaw(const Vector& rpy);
+  Quaternion& setRollPitchYaw(const Vector& rpy, bool reverse=false);
   Quaternion& setVector(const Vector& w){ return setExp(w); }
   Quaternion& setMatrix(double* m);
   Quaternion& setMatrix(const arr& R) { CHECK_EQ(R.N, 9, ""); return setMatrix(R.p); }

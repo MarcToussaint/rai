@@ -18,6 +18,8 @@
 #include <pybind11/functional.h>
 #include <pybind11/iostream.h>
 
+#undef RAI_PARAM
+
 void KOMO_null_deleter(KOMO*) {}
 
 /* Explanation: The python user implement a derivation of the nlp.NLP template class, which is defined in the separate nlp.py
@@ -30,11 +32,11 @@ struct PyNLP : NLP {
   
   PyNLP(pybind11::object py_nlp) : py_nlp(py_nlp){
     if(!pybind11::hasattr(py_nlp, "dimension")) { HALT("PyNLP needs a dimension member (integer), defining the dimension of the decision variable"); }
-    if(!pybind11::hasattr(py_nlp, "featureTypes")) { HALT("PyNLP needs a featureTypes member (list of OT), defining the ObjectiveTypes of each NLP feature"); }
+    if(!pybind11::hasattr(py_nlp, "types")) { HALT("PyNLP needs a types member (list of OT), defining the ObjectiveTypes of each NLP feature"); }
     if(!pybind11::hasattr(py_nlp, "bounds")) { HALT("PyNLP needs a bounds member (2*n matrix), defining the lower and upper bounds of the decision variable"); }
 
     dimension = py_nlp.attr("dimension").cast<int>();
-    featureTypes = rai::convert<ObjectiveType>( list2arr<int>( py_nlp.attr("featureTypes").cast<pybind11::list>() ) );
+    featureTypes = rai::convert<ObjectiveType>( list2arr<int>( py_nlp.attr("types").cast<pybind11::list>() ) );
     bounds = numpy2arr<double>(py_nlp.attr("bounds").cast<pybind11::array_t<double>>());
   }
 
@@ -88,12 +90,16 @@ void init_Optim(pybind11::module& m) {
   pybind11::class_<NLP, shared_ptr<NLP>> __mp(m, "NLP", "A Nonlinear Mathematical Program (bindings to the c++ object - distinct from the python template nlp.NLP" );
   __mp
 
+  .def_readonly("dimension", &NLP::dimension)
+  .def_readonly("types", &NLP::featureTypes)
+  .def_readonly("bounds", &NLP::bounds)
+
   .def("evaluate", [](std::shared_ptr<NLP>& self, const arr& x) {
     arr phi, J;
     self->evaluate(phi, J, x);
     return std::tuple<arr, arr>(phi, J);
   },
-  "query the NLP at a point $x$; returns the tuple $(phi,J)$, which is the feature vector and its Jacobian; features define cost terms, sum-of-square (sos) terms, inequalities, and equalities depending on 'getFeatureTypes'"
+  "query the NLP at a point $x$; returns the tuple $(phi,J)$, which is the feature vector and its Jacobian; features define cost terms, sum-of-square (sos) terms, inequalities, and equalities depending on 'getTypes'"
       )
 
   .def("eval_scalar", [](std::shared_ptr<NLP>& self, const arr& x) {
@@ -104,7 +110,7 @@ void init_Optim(pybind11::module& m) {
     "query the NLP assuming that it only has f- and sos-objectives (otherwise raises error); returns the cost, gradient, and Hessian (which is the Gauss-Newton Hessian plus what the user NLP provides with getHessian)"
   )
 
-  .def("getFeatureTypes", [](std::shared_ptr<NLP>& self) {
+  .def("getTypes", [](std::shared_ptr<NLP>& self) {
     return Array2vec<ObjectiveType>(self->featureTypes);
   },
   "features (entries of $phi$) can be of one of (ry.OT.f, ry.OT.sos, ry.OT.ineq, ry.OT.eq), which means (cost, sum-of-square, inequality, equality). The total cost $f(x)$ is the sum of all f-terms plus sum-of-squares of sos-terms."
@@ -123,6 +129,11 @@ void init_Optim(pybind11::module& m) {
   .def("getInitializationSample",
        &NLP::getInitializationSample,
        "returns a sample (e.g. uniform within bounds) to initialize an optimization -- not necessarily feasible"
+      )
+
+  .def("getUniformSample",
+      &NLP::getUniformSample,
+      "returns a sample uniform within bounds) to initialize an optimization -- not necessarily feasible"
       )
 
   .def("getFHessian",  [](std::shared_ptr<NLP>& self, const arr& x) {
@@ -144,18 +155,19 @@ void init_Optim(pybind11::module& m) {
   .def("checkJacobian", &NLP::checkJacobian, "", pybind11::arg("x"), pybind11::arg("tolerance"), pybind11::arg("featureNames")=StringA{})
   .def("checkHessian", &NLP::checkHessian, "", pybind11::arg("x"), pybind11::arg("tolerance"))
 
-  .def("getKOMO", [](std::shared_ptr<NLP>& self) {
+  .def("as_KOMO", [](std::shared_ptr<NLP>& self) {
     shared_ptr<rai::KOMO_NLP> komo = std::dynamic_pointer_cast<rai::KOMO_NLP>(self);
     if(komo) return std::shared_ptr<KOMO>(&komo->komo, &KOMO_null_deleter);
     return std::shared_ptr<KOMO>();
   },
    "in case this is an NLP defined via KOMO, returns the KOMO object; otherwise returns None")
 
-  .def("get_AugmentedLagrangian", [](std::shared_ptr<NLP>& self, double muSquaredPenalty=-1., double muLogBarrier=-1.) {
+
+  .def("aug_lag", [](std::shared_ptr<NLP>& self, double muSquaredPenalty=-1., double muLogBarrier=-1.) {
     shared_ptr<NLP> lag = make_shared<rai::LagrangianProblem>(self, make_shared<rai::OptOptions>(), muSquaredPenalty, muLogBarrier);
     return lag;
   },
-  "returns the Augmented Lagrangian (another NLP wrapping this NLP), with given penalty/barrier parameters (default: taken from OptOptions)",
+  "returns the Augmented Lagrangian (another NLP wrapping this NLP), with given penalty/barrier parameters (default: taken from OptOptions) -- makes problem unconstrained",
     pybind11::arg("muSquaredPenalty")=-1.,
     pybind11::arg("muLogBarrier")=-1.
   )
@@ -169,7 +181,7 @@ void init_Optim(pybind11::module& m) {
       .def(pybind11::init<>())
 
       .def("setDimension", &NLP_Factory::setDimension)
-      .def("setFeatureTypes", &NLP_Factory::setFeatureTypes)
+      .def("setTypes", &NLP_Factory::setFeatureTypes)
       .def("setBounds", &NLP_Factory::setBounds)
       .def("setEvalCallback", &NLP_Factory::setEvalCallback2)
 
@@ -180,6 +192,26 @@ void init_Optim(pybind11::module& m) {
   })
 
   ;
+
+//===========================================================================
+
+#define ENUMVAL(x) .value(#x, rai::M_##x)
+  pybind11::enum_<rai::OptMethod>(m, "OptMethod")
+      ENUMVAL(none)
+      ENUMVAL(GradientDescent) ENUMVAL(Rprop) ENUMVAL(LBFGS) ENUMVAL(Newton)
+      ENUMVAL(AugmentedLag) ENUMVAL(LogBarrier) ENUMVAL(slackGN_logBarrier) ENUMVAL(SquaredPenalty) ENUMVAL(singleSquaredPenalty)
+      ENUMVAL(slackGN)
+      ENUMVAL(NLopt) ENUMVAL(Ipopt) ENUMVAL(slackGN_Ipopt) ENUMVAL(Ceres)
+      ENUMVAL(LSBO) ENUMVAL(greedy) ENUMVAL(NelderMead)
+      ENUMVAL(CMA) ENUMVAL(LS_CMA) ENUMVAL(ES)
+      ;
+#undef ENUMVAL
+
+#define ENUMVAL(x) .value(#x, OT_##x)
+  pybind11::enum_<ObjectiveType>(m, "OT")
+      ENUMVAL(f) ENUMVAL(sos) ENUMVAL(ineq) ENUMVAL(eq) ENUMVAL(ineqB) ENUMVAL(ineqP) ENUMVAL(none)
+      ;
+#undef ENUMVAL
 
   //===========================================================================
 
@@ -366,7 +398,8 @@ void init_Optim(pybind11::module& m) {
       .def("setProblem", &rai::NLP_Solver::setProblem, "")
       .def("setInitialization", &rai::NLP_Solver::setInitialization, "")
 
-      .def("setTracing", &rai::NLP_Solver::setTracing, "")
+      .def("setTracing", &rai::NLP_Solver::setTracing, "",
+           pybind11::arg("trace_x")=true, pybind11::arg("trace_errs")=true, pybind11::arg("trace_phi")=false, pybind11::arg("trace_J")=false)
       .def("solve", &rai::NLP_Solver::solve,
            "resampleInitialization=-1 means: only when not already solved",
            pybind11::arg("resampleInitialization")=-1, pybind11::arg("verbose")=-100)
@@ -392,91 +425,94 @@ void init_Optim(pybind11::module& m) {
 
   .def("getOptions", [](std::shared_ptr<rai::NLP_Solver>& self) { return self->opt; })
   .def("setOptions", [](std::shared_ptr<rai::NLP_Solver>& self
-#define MEMBER(type, name, x) ,type name
-  MEMBER(int, verbose, 1)
-  MEMBER(double, stopTolerance, 1e-2)
-  MEMBER(double, stopFTolerance, -1.)
-  MEMBER(double, stopGTolerance, -1.)
-  MEMBER(int,    stopEvals, 1000)
-  MEMBER(int,    stopInners, 1000)
-  MEMBER(int,    stopOuters, 1000)
-  MEMBER(int,    stopLineSteps, 10)
-  MEMBER(int,    stopTinySteps, 4)
-  MEMBER(double, stepInit, 1.)
-  MEMBER(double, stepMin, -1.)
-  MEMBER(double, stepMax, .2)
-  MEMBER(double, stepInc, 1.5)
-  MEMBER(double, stepDec, .5)
-  MEMBER(double, damping, 1.)
-  MEMBER(double, wolfe, .01)
-  MEMBER(double, muInit, 1.)
-  MEMBER(double, muInc, 5.)
-  MEMBER(double, muMax, 1e4)
-  MEMBER(double, muLBInit, .1)
-  MEMBER(double, muLBDec, .2)
-  MEMBER(double, lambdaMax, -1.)
-  MEMBER(double, interiorPadding, 1e-2)
-  MEMBER(bool,   boundedNewton, true)
-  MEMBER(double, finiteDifference, -1.)
-#undef MEMBER
+#define RAI_PARAM(scope, type, name, x) ,type name
+			    RAI_PARAM("opt/", int, verbose, 1)
+			    RAI_PARAM("opt/", double, stopTolerance, 1e-2)
+			    RAI_PARAM("opt/", double, stopFTolerance, 1e-4)
+			    RAI_PARAM("opt/", double, stopGTolerance, -1.)
+			    RAI_PARAM("opt/", int,    stopEvals, 1000)
+			    RAI_PARAM("opt/", int,    stopInners, 1000)
+			    RAI_PARAM("opt/", int,    stopOuters, 1000)
+			    RAI_PARAM("opt/", int,    stopLineSteps, 10)
+			    RAI_PARAM("opt/", int,    stopTinySteps, 4)
+			    RAI_PARAM("opt/", double, stepInit, 1.)
+			    RAI_PARAM("opt/", double, stepMin, -1.)
+			    RAI_PARAM("opt/", double, stepMax, .2)
+			    RAI_PARAM("opt/", double, stepInc, 1.5)
+			    RAI_PARAM("opt/", double, stepDec, .5)
+			    RAI_PARAM("opt/", double, damping, 1.)
+			    RAI_PARAM("opt/", double, wolfe, .01)
+			    RAI_PARAM("opt/", double, muInit, 1.)
+			    RAI_PARAM("opt/", double, muInc, 5.)
+			    RAI_PARAM("opt/", double, muMax, 1e4)
+			    RAI_PARAM("opt/", double, muLBInit, .1)
+			    RAI_PARAM("opt/", double, muLBDec, .2)
+			    RAI_PARAM("opt/", double, lambdaMax, -1.)
+			    RAI_PARAM("opt/", double, interiorPadding, 1e-2)
+			    RAI_PARAM("opt/", bool,   boundedNewton, true)
+			    RAI_PARAM("opt/", rai::OptMethod, method, rai::M_AugmentedLag)
+			    RAI_PARAM("opt/", double, finiteDifference, -1.)
+#undef RAI_PARAM
   ) {
-#define MEMBER(type, name, x) self->opt->name = name;
-  MEMBER(int, verbose, 1)
-  MEMBER(double, stopTolerance, 1e-2)
-  MEMBER(double, stopFTolerance, -1.)
-  MEMBER(double, stopGTolerance, -1.)
-  MEMBER(int,    stopEvals, 1000)
-  MEMBER(int,    stopInners, 1000)
-  MEMBER(int,    stopOuters, 1000)
-  MEMBER(int,    stopLineSteps, 10)
-  MEMBER(int,    stopTinySteps, 4)
-  MEMBER(double, stepInit, 1.)
-  MEMBER(double, stepMin, -1.)
-  MEMBER(double, stepMax, .2)
-  MEMBER(double, stepInc, 1.5)
-  MEMBER(double, stepDec, .5)
-  MEMBER(double, damping, 1.)
-  MEMBER(double, wolfe, .01)
-  MEMBER(double, muInit, 1.)
-  MEMBER(double, muInc, 5.)
-  MEMBER(double, muMax, 1e4)
-  MEMBER(double, muLBInit, .1)
-  MEMBER(double, muLBDec, .2)
-  MEMBER(double, lambdaMax, -1.)
-  MEMBER(double, interiorPadding, 1e-2)
-  MEMBER(bool,   boundedNewton, true)
-  MEMBER(double, finiteDifference, -1.)
-#undef MEMBER
+#define RAI_PARAM(scope, type, name, x) self->opt->name = name;
+  RAI_PARAM("opt/", int, verbose, 1)
+  RAI_PARAM("opt/", double, stopTolerance, 1e-2)
+  RAI_PARAM("opt/", double, stopFTolerance, 1e-4)
+  RAI_PARAM("opt/", double, stopGTolerance, -1.)
+  RAI_PARAM("opt/", int,    stopEvals, 1000)
+  RAI_PARAM("opt/", int,    stopInners, 1000)
+  RAI_PARAM("opt/", int,    stopOuters, 1000)
+  RAI_PARAM("opt/", int,    stopLineSteps, 10)
+  RAI_PARAM("opt/", int,    stopTinySteps, 4)
+  RAI_PARAM("opt/", double, stepInit, 1.)
+  RAI_PARAM("opt/", double, stepMin, -1.)
+  RAI_PARAM("opt/", double, stepMax, .2)
+  RAI_PARAM("opt/", double, stepInc, 1.5)
+  RAI_PARAM("opt/", double, stepDec, .5)
+  RAI_PARAM("opt/", double, damping, 1.)
+  RAI_PARAM("opt/", double, wolfe, .01)
+  RAI_PARAM("opt/", double, muInit, 1.)
+  RAI_PARAM("opt/", double, muInc, 5.)
+  RAI_PARAM("opt/", double, muMax, 1e4)
+  RAI_PARAM("opt/", double, muLBInit, .1)
+  RAI_PARAM("opt/", double, muLBDec, .2)
+  RAI_PARAM("opt/", double, lambdaMax, -1.)
+  RAI_PARAM("opt/", double, interiorPadding, 1e-2)
+  RAI_PARAM("opt/", bool,   boundedNewton, true)
+  RAI_PARAM("opt/", rai::OptMethod, method, rai::M_AugmentedLag)
+  RAI_PARAM("opt/", double, finiteDifference, -1.)
+#undef RAI_PARAM
     ;
     return self;
   }, "set solver options"
-#define MEMBER(type, name, x) , pybind11::arg(#name) = x
-  MEMBER(int, verbose, 1)
-  MEMBER(double, stopTolerance, 1e-2)
-  MEMBER(double, stopFTolerance, -1.)
-  MEMBER(double, stopGTolerance, -1.)
-  MEMBER(int,    stopEvals, 1000)
-  MEMBER(int,    stopInners, 1000)
-  MEMBER(int,    stopOuters, 1000)
-  MEMBER(int,    stopLineSteps, 10)
-  MEMBER(int,    stopTinySteps, 4)
-  MEMBER(double, stepInit, 1.)
-  MEMBER(double, stepMin, -1.)
-  MEMBER(double, stepMax, .2)
-  MEMBER(double, stepInc, 1.5)
-  MEMBER(double, stepDec, .5)
-  MEMBER(double, damping, 1.)
-  MEMBER(double, wolfe, .01)
-  MEMBER(double, muInit, 1.)
-  MEMBER(double, muInc, 5.)
-  MEMBER(double, muMax, 1e4)
-  MEMBER(double, muLBInit, .1)
-  MEMBER(double, muLBDec, .2)
-  MEMBER(double, lambdaMax, -1.)
-  MEMBER(double, interiorPadding, 1e-2)
-  MEMBER(bool,   boundedNewton, true)
-  MEMBER(double, finiteDifference, -1.)
-#undef MEMBER
+#define RAI_PARAM(scope, type, name, x) , pybind11::arg(#name) = x
+	   RAI_PARAM("opt/", int, verbose, 1)
+	   RAI_PARAM("opt/", double, stopTolerance, 1e-2)
+	   RAI_PARAM("opt/", double, stopFTolerance, 1e-4)
+	   RAI_PARAM("opt/", double, stopGTolerance, -1.)
+	   RAI_PARAM("opt/", int,    stopEvals, 1000)
+	   RAI_PARAM("opt/", int,    stopInners, 1000)
+	   RAI_PARAM("opt/", int,    stopOuters, 1000)
+	   RAI_PARAM("opt/", int,    stopLineSteps, 10)
+	   RAI_PARAM("opt/", int,    stopTinySteps, 4)
+	   RAI_PARAM("opt/", double, stepInit, 1.)
+	   RAI_PARAM("opt/", double, stepMin, -1.)
+	   RAI_PARAM("opt/", double, stepMax, .2)
+	   RAI_PARAM("opt/", double, stepInc, 1.5)
+	   RAI_PARAM("opt/", double, stepDec, .5)
+	   RAI_PARAM("opt/", double, damping, 1.)
+	   RAI_PARAM("opt/", double, wolfe, .01)
+	   RAI_PARAM("opt/", double, muInit, 1.)
+	   RAI_PARAM("opt/", double, muInc, 5.)
+	   RAI_PARAM("opt/", double, muMax, 1e4)
+	   RAI_PARAM("opt/", double, muLBInit, .1)
+	   RAI_PARAM("opt/", double, muLBDec, .2)
+	   RAI_PARAM("opt/", double, lambdaMax, -1.)
+	   RAI_PARAM("opt/", double, interiorPadding, 1e-2)
+	   RAI_PARAM("opt/", bool,   boundedNewton, true)
+	   RAI_PARAM("opt/", rai::OptMethod, method, rai::M_AugmentedLag)
+	   RAI_PARAM("opt/", double, finiteDifference, -1.)
+#undef RAI_PARAM
       )
 
   ;
@@ -511,26 +547,6 @@ void init_Optim(pybind11::module& m) {
   })
 
   ;
-
-  //===========================================================================
-
-#define ENUMVAL(x) .value(#x, rai::M_##x)
-  pybind11::enum_<rai::OptMethod>(m, "OptMethod")
-    ENUMVAL(none)
-    ENUMVAL(GradientDescent) ENUMVAL(Rprop) ENUMVAL(LBFGS) ENUMVAL(Newton)
-    ENUMVAL(AugmentedLag) ENUMVAL(LogBarrier) ENUMVAL(slackGN_logBarrier) ENUMVAL(SquaredPenalty) ENUMVAL(singleSquaredPenalty)
-    ENUMVAL(slackGN)
-    ENUMVAL(NLopt) ENUMVAL(Ipopt) ENUMVAL(slackGN_Ipopt) ENUMVAL(Ceres)
-    ENUMVAL(LSBO) ENUMVAL(greedy) ENUMVAL(NelderMead)
-    ENUMVAL(CMA) ENUMVAL(LS_CMA) ENUMVAL(ES)
-  ;
-#undef ENUMVAL
-
-#define ENUMVAL(x) .value(#x, OT_##x)
-  pybind11::enum_<ObjectiveType>(m, "OT")
-      ENUMVAL(f) ENUMVAL(sos) ENUMVAL(ineq) ENUMVAL(eq) ENUMVAL(ineqB) ENUMVAL(ineqP) ENUMVAL(none)
-  ;
-#undef ENUMVAL
 
 }
 

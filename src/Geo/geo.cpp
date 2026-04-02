@@ -755,11 +755,17 @@ Quaternion& Quaternion::setEuler(const Vector& zxz) {
   return *this;
 }
 
-Quaternion& Quaternion::setRollPitchYaw(const Vector& rpy) {
+Quaternion& Quaternion::setRollPitchYaw(const Vector& rpy, bool reverse) {
   setZero();
-  appendX(rpy.x); //roll
-  appendY(rpy.y); //pitch
-  appendZ(rpy.z); //yaw
+  if(!reverse){
+    appendX(rpy.x); //roll
+    appendY(rpy.y); //pitch
+    appendZ(rpy.z); //yaw
+  }else{
+    appendZ(rpy.z); //yaw
+    appendY(rpy.y); //pitch
+    appendX(rpy.x); //roll
+  }
   return *this;
 }
 
