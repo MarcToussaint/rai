@@ -8,7 +8,7 @@
 #include "../Kin/dof_forceExchange.h"
 #include "../Kin/F_collisions.h"
 
-bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& must_supports, const StringA& rnd_supports, uint max_n_supports){
+bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& must_supports, const StringA& rnd_supports, uint max_n_supports, uint min_n_supports){
   //  FrameL colls = C.getCollidablePairs();
   //  cout <<"COLLIDABLE PAIRS:" <<endl;
   //  for(uint k=0;k<colls.d0;k++) cout <<"  " <<colls(k,0)->name <<' ' <<colls(k,1)->name <<endl;
@@ -49,7 +49,7 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& must_supp
   supp.clear();
   if(must_supports.N) supp.append(must_supports.rndElem());
   uintA perm = rai::randperm(rnd_supports.N);
-  uint n_supports = rnd.uni_int((supp.N?0:1), max_n_supports);
+  uint n_supports = rnd.uni_int((supp.N?0:min_n_supports), max_n_supports);
   for(uint i=0;i<n_supports;i++) supp.append(rnd_supports(perm(i)));
 
   for(const str& s:supp){

@@ -20,7 +20,7 @@
 //===========================================================================
 
 template<> const char* rai::Enum<rai::JointType>::names []= {
-  "none", "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "circleZ", "transXY", "trans3", "transXYPhi", "transYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "generic", "tau", "path", "direction", nullptr
+  "none", "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "hinge", "circleZ", "transXY", "trans3", "transXYPhi", "transYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "generic", "tau", "path", "direction", nullptr
 };
 
 template<> const char* rai::Enum<rai::BodyType>::names []= {
@@ -104,10 +104,11 @@ void rai::Frame::calc_X_from_parent() {
   if(joint) {
     Joint* j = joint;
     if(j->type==JT_hingeX || j->type==JT_transX || j->type==JT_XBall)  j->axis = from.rot.getX();
-    if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = from.rot.getY();
-    if(j->type==JT_hingeZ || j->type==JT_transZ || j->type==JT_circleZ)  j->axis = from.rot.getZ();
-    if(j->type==JT_transXYPhi || j->type==JT_transYPhi)  j->axis = from.rot.getZ();
-    if(j->type==JT_phiTransXY)  j->axis = from.rot.getZ();
+    else if(j->type==JT_hinge) j->axis = from.rot * j->joint_axis;
+    else if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = from.rot.getY();
+    else if(j->type==JT_hingeZ || j->type==JT_transZ || j->type==JT_circleZ)  j->axis = from.rot.getZ();
+    else if(j->type==JT_transXYPhi || j->type==JT_transYPhi)  j->axis = from.rot.getZ();
+    else if(j->type==JT_phiTransXY)  j->axis = from.rot.getZ();
   }
 
   _state_X_isGood=true;
@@ -837,7 +838,7 @@ rai::Frame& rai::Frame::setColor(const arr& color) {
   return *this;
 }
 
-rai::Frame& rai::Frame::setJoint(rai::JointType jointType, const arr& limits, double scale, Frame* mimic) {
+rai::Frame& rai::Frame::setJoint(rai::JointType jointType, const arr& limits, const arr& axis, double scale, Frame* mimic) {
   CHECK(parent, "a frame needs a parent to have a joint");
   if(joint) { delete joint; joint=nullptr; }
   if(jointType != JT_none) {
@@ -845,6 +846,15 @@ rai::Frame& rai::Frame::setJoint(rai::JointType jointType, const arr& limits, do
   }
   if(limits.N) {
     joint->limits = limits;
+    CHECK_EQ(joint->limits.N, 2*joint->dim, "joint limits need to have size 2*dim");
+    joint->limits.reshape(2, joint->dim);
+    for(uint i=0;i<joint->limits.d1;i++) CHECK_LE(joint->limits(0,i), joint->limits(1,i), "limits are not lower-equal: " <<limits);
+  }
+  if(axis.N) {
+    CHECK_EQ(joint->type, JT_hinge, "");
+    CHECK_EQ(axis.N, 3, "");
+    joint->joint_axis = axis;
+    joint->joint_axis.normalize();
   }
   if(scale!=1.) {
     joint->scale = scale;
@@ -975,7 +985,7 @@ void rai::Frame::setAutoLimits() {
                        .5*from->size(0),  .5*from->size(1)
                     };
     if(jointType==JT_transXYPhi) joint->limits.append({-RAI_2PI, RAI_2PI});
-  } else if(jointType>=JT_hingeX && jointType<=JT_hingeZ) {
+  } else if(jointType==JT_hinge || (jointType>=JT_hingeX && jointType<=JT_hingeZ)) {
     joint->limits = {-RAI_2PI, RAI_2PI};
   } else {
     NIY;
@@ -1287,7 +1297,7 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint) {
 
   if(copyJoint) {
     qIndex=copyJoint->qIndex; dim=copyJoint->dim;
-    type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H; scale=copyJoint->scale;
+    type=copyJoint->type; axis=copyJoint->axis; joint_axis=copyJoint->joint_axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H; scale=copyJoint->scale;
     active=copyJoint->active;
     isStable=copyJoint->isStable;
     isPartBreak=copyJoint->isPartBreak;
@@ -1366,6 +1376,11 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
 
       case JT_hingeZ: {
         Q.rot.setRadZ(qp[0]);
+      } break;
+
+      case JT_hinge: {
+        Q.rot.setExp(qp[0] * joint_axis);
+        // Q.rot.setRad(qp[0], joint_axis);
       } break;
 
       case JT_universal: {
@@ -1547,6 +1562,15 @@ arr rai::Joint::calcDofsFromConfig() const {
       if(type==JT_hingeZ && rotv*Vector_z<0.) q(0)=-q(0);
     } break;
 
+    case JT_hinge: {
+      q.resize(1);
+      q.elem(0) = Q.rot.getLog() * joint_axis;
+      // rai::Vector rotv;
+      // Q.rot.getRad(q(0), rotv);
+      // if(q(0)>RAI_PI) q(0)-=RAI_2PI;
+      // if(rotv*joint_axis<0.) q(0)=-q(0);
+    } break;
+
     case JT_universal: {
       q.resize(2);
       q(0) = Q.rot.getRoll_X();
@@ -1688,16 +1712,16 @@ arr rai::Joint::getScrewMatrix() {
     axis = X().rot.getX();
     S(0, 0, {}) = axis.getArr();
     S(1, 0, {}) = (-axis ^ X().pos).getArr();
-  }
-  if(type==JT_hingeY) {
+  } else if(type==JT_hingeY) {
     axis = X().rot.getY();
     S(0, 0, {}) = axis.getArr();
     S(1, 0, {}) = (-axis ^ X().pos).getArr();
-  }
-  if(type==JT_hingeZ) {
+  } else if(type==JT_hingeZ) {
     axis = X().rot.getZ();
     S(0, 0, {}) = axis.getArr();
     S(1, 0, {}) = (-axis ^ X().pos).getArr();
+  } else if(type==JT_hinge) {
+    NIY;
   } else if(type==JT_transX) {
     axis = X().rot.getX();
     S(1, 0, {}) = axis.getArr();
@@ -1757,6 +1781,7 @@ arr rai::Joint::getScrewMatrix() {
 
 uint rai::Joint::getDimFromType() const {
   if(type>=JT_hingeX && type<=JT_transZ) return 1;
+  if(type==JT_hinge) return 1;
   if(type==JT_transXY) return 2;
   if(type==JT_transXYPhi) return 3;
   if(type==JT_transYPhi) return 2;
@@ -1811,7 +1836,7 @@ void rai::Joint::setType(rai::JointType _type) {
     dim = getDimFromType();
     frame->C.reset_q();
     q0 = calcDofsFromConfig();
-    isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_trans3) || type==JT_circleZ || type==JT_quatBall);
+    isPartBreak = !(type==JT_hinge || (type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_trans3) || type==JT_circleZ || type==JT_quatBall);
   }
 }
 
@@ -1842,17 +1867,6 @@ void rai::Joint::read(const Graph& ats) {
   transFromAts(B, ats, "B");
   transFromAts(B, ats, "post");
 
-  //axis
-  if(auto axis = ats.find<arr>("axis")) {
-    CHECK_EQ(axis->N, 3, "");
-    Vector ax(*axis);
-    Transformation f;
-    f.setZero();
-    f.rot.setDiff(Vector_x, ax);
-    A = A * f;
-    B = -f * B;
-  }
-
   if(!B.isZero()) {
     //new frame between: from -> f -> to
     CHECK_EQ(frame->children.N, 1, "a post transform of frame '" <<frame->name <<"' requires it has a child");
@@ -1873,6 +1887,7 @@ void rai::Joint::read(const Graph& ats) {
   ats.get(H, "ctrl_H");
   ats.get(scale, "joint_scale");
 
+  type=JT_rigid;
   if(ats.get(str, "joint")) {
     if(str[0]=='_') {
       type=JT_generic;
@@ -1881,10 +1896,29 @@ void rai::Joint::read(const Graph& ats) {
       type=str;
     }
   }
-  else type=JT_rigid;
+
+  //axis
+  if(auto axis = ats.find<arr>("axis")) {
+    CHECK_EQ(axis->N, 3, "");
+#if 0
+    Vector ax(*axis);
+    Transformation f;
+    f.setZero();
+    f.rot.setDiff(Vector_x, ax);
+    A = A * f;
+    B = -f * B;
+#else
+    CHECK_EQ(type, JT_hinge, "");
+    CHECK_EQ(axis->N, 3, "");
+    joint_axis = *axis;
+    joint_axis.normalize();
+    // type=JT_hinge;
+#endif
+  }
+
 
   dim = getDimFromType();
-  isPartBreak = !((type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_trans3) || type==JT_circleZ || type==JT_quatBall);
+  isPartBreak = !(type==JT_hinge || (type>=JT_hingeX && type<=JT_hingeZ) || (type>=JT_transX && type<=JT_trans3) || type==JT_circleZ || type==JT_quatBall);
 
   if(Node* n = ats.findNode("q")) {
     if(n->is<arr>()){
@@ -1940,6 +1974,7 @@ void rai::Joint::write(Graph& ats) const {
   if(H!=1.) ats.add<double>("ctrl_H", H);
   if(scale!=1.) ats.add<double>("joint_scale", scale);
   if(limits.N) ats.add<arr>("limits", limits.copy().reshape(-1));
+  if(type==JT_hinge && joint_axis!=Vector_x) ats.add<arr>("axis", joint_axis.getArr());
   if(mimic) ats.add<rai::String>("mimic", mimic->frame->name);
   arr q = ((Joint*)this)->getDofState();
   if(q.N && absMax(q)>1e-10) ats.add<arr>("q", q);

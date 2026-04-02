@@ -30,7 +30,7 @@ struct ForceExchangeDof;
 struct ParticleDofs;
 struct PathDof;
 struct DirectionDof;
-enum JointType : int { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_circleZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_transYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_generic, JT_tau, JT_path, JT_direction };
+enum JointType : int { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_hinge, JT_circleZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_transYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_generic, JT_tau, JT_path, JT_direction };
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static, BT_soft };
 }
 namespace coal {
@@ -179,7 +179,7 @@ struct Frame : NonCopyable {
   Frame& setTensorShape(const floatA& data, const arr& size);
   Frame& setImplicitSurface(const floatA& data, const arr& size, uint blur=0, double resample=-1.);
   Frame& setColor(const arr& color);
-  Frame& setJoint(rai::JointType jointType, const arr& limits={}, double scale=1., Frame* mimic=0);
+  Frame& setJoint(rai::JointType jointType, const arr& limits={}, const arr& axis={}, double scale=1., Frame* mimic=0);
   Frame& setContact(int cont);
   Frame& setMass(double mass, const arr& inertiaMatrix={});
   Frame& setAttribute(const char* key, double value);
@@ -267,7 +267,8 @@ struct Joint : Dof, NonCopyable {
   double H=1.;       ///< control cost scalar
   double scale=1.;   ///< scaling robot-q = scale * q-vector
 
-  Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
+  Vector axis=0;          ///< joint axis IN WORLD COORDINATES (e.g., same as X.rot.getX() for standard hinge joints)
+  Vector joint_axis=Vector_x; ///< joint axis in relative coordinates
   Enum<JointType> type;   ///< joint type
   bool isPartBreak = false;
 

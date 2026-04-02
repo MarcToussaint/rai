@@ -39,7 +39,7 @@ void init_Frame(pybind11::module& m) {
   .def("setRelativePosition", &rai::Frame::setRelativePosition, "")
   .def("setRelativeQuaternion", &rai::Frame::setRelativeQuaternion, "")
   .def("setRelativeRotationMatrix", &rai::Frame::setRelativeRotationMatrix, "")
-  .def("setJoint", &rai::Frame::setJoint, "", pybind11::arg("jointType"), pybind11::arg("limits")=arr{}, pybind11::arg("scale")=1., pybind11::arg("mimic")=(rai::Frame*)0)
+  .def("setJoint", &rai::Frame::setJoint, "", pybind11::arg("jointType"), pybind11::arg("limits")=arr{}, pybind11::arg("axis")=arr{}, pybind11::arg("scale")=1., pybind11::arg("mimic")=(rai::Frame*)0)
   .def("setJointState", &rai::Frame::setJointState, "")
   .def("setContact", &rai::Frame::setContact, "")
   .def("setMass", &rai::Frame::setMass, "", pybind11::arg("mass"), pybind11::arg("inertiaMatrix")=arr{})
@@ -157,7 +157,7 @@ void init_enums(pybind11::module& m) {
 #define ENUMVAL(pre, x) .value(#x, pre##_##x)
 
   pybind11::enum_<rai::JointType>(m, "JT")
-  ENUMVAL(rai::JT, none) ENUMVAL(rai::JT, hingeX) ENUMVAL(rai::JT, hingeY) ENUMVAL(rai::JT, hingeZ) ENUMVAL(rai::JT, transX) ENUMVAL(rai::JT, transY) ENUMVAL(rai::JT, transZ) ENUMVAL(rai::JT, transXY) ENUMVAL(rai::JT, trans3) ENUMVAL(rai::JT, transXYPhi) ENUMVAL(rai::JT, transYPhi) ENUMVAL(rai::JT, universal) ENUMVAL(rai::JT, rigid) ENUMVAL(rai::JT, quatBall) ENUMVAL(rai::JT, phiTransXY) ENUMVAL(rai::JT, XBall) ENUMVAL(rai::JT, free) ENUMVAL(rai::JT, generic) ENUMVAL(rai::JT, tau)
+  ENUMVAL(rai::JT, none) ENUMVAL(rai::JT, hingeX) ENUMVAL(rai::JT, hingeY) ENUMVAL(rai::JT, hingeZ) ENUMVAL(rai::JT, hinge) ENUMVAL(rai::JT, transX) ENUMVAL(rai::JT, transY) ENUMVAL(rai::JT, transZ) ENUMVAL(rai::JT, transXY) ENUMVAL(rai::JT, trans3) ENUMVAL(rai::JT, transXYPhi) ENUMVAL(rai::JT, transYPhi) ENUMVAL(rai::JT, universal) ENUMVAL(rai::JT, rigid) ENUMVAL(rai::JT, quatBall) ENUMVAL(rai::JT, phiTransXY) ENUMVAL(rai::JT, XBall) ENUMVAL(rai::JT, free) ENUMVAL(rai::JT, generic) ENUMVAL(rai::JT, tau)
   ;
 
   pybind11::enum_<rai::ShapeType>(m, "ST")
