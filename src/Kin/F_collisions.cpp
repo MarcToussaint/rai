@@ -82,6 +82,17 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
+arr F_PairNormalsOppose::phi(const FrameL& F){
+  CHECK_EQ(F.N, 3, "");
+
+  arr normal1 = F_PairCollision(F_PairCollision::_normal, true) .eval({F.elem(0), F.elem(2)});
+  arr normal2 = F_PairCollision(F_PairCollision::_normal, true) .eval({F.elem(1), F.elem(2)});
+
+  return normal1 + normal2;
+}
+
+//===========================================================================
+
 arr F_PairNormalAlign::phi(const FrameL& F){
   CHECK_EQ(F.N, 2, "");
 

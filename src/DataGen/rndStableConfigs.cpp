@@ -8,7 +8,7 @@
 #include "../Kin/dof_forceExchange.h"
 #include "../Kin/F_collisions.h"
 
-bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& must_supports, const StringA& rnd_supports, uint max_n_supports, uint min_n_supports){
+bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& must_supports, const StringA& rnd_supports, const StringA& collides, uint max_n_supports, uint min_n_supports){
   //  FrameL colls = C.getCollidablePairs();
   //  cout <<"COLLIDABLE PAIRS:" <<endl;
   //  for(uint k=0;k<colls.d0;k++) cout <<"  " <<colls(k,0)->name <<' ' <<colls(k,1)->name <<endl;
@@ -38,10 +38,10 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& must_supp
   KOMO komo(C, 1,1,0, true);
   // komo.addControlObjective({}, 0, 1e-1);
   komo.addObjective({}, FS_qItself, {}, OT_sos, {1e-2}, qRnd);
-  komo.add_jointLimits(true);
+  komo.addObjective({}, FS_jointLimits, {}, OT_ineq, {1e0});
+  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e1} );
 
   komo.addObjective({}, make_shared<F_TotalForce>(), {"obj"}, OT_eq, {1e1} );
-  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e1} );
 
   if(opt.verbose>0) komo.set_viewer(C.get_viewer());
 
@@ -49,17 +49,20 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& must_supp
   supp.clear();
   if(must_supports.N) supp.append(must_supports.rndElem());
   uintA perm = rai::randperm(rnd_supports.N);
-  uint n_supports = rnd.uni_int((supp.N?0:min_n_supports), max_n_supports);
-  for(uint i=0;i<n_supports;i++) supp.append(rnd_supports(perm(i)));
+  uint n_supports = rnd.uni_int(min_n_supports, max_n_supports);
+  for(uint i=supp.N;i<n_supports;i++) supp.append(rnd_supports(perm(i)));
 
   for(const str& s:supp){
     // komo.addContact_stick(0.,-1., "obj", thing, opt.frictionCone_mu);
     // komo.addContact_WithPoaFrame(1., "obj", s, opt.frictionCone_mu, .05, .2);
-    komo.addContactForceFrame({1.}, "obj", s, opt.frictionCone_mu, .05);
+    komo.addContactForceFrame({1.}, "obj", s, opt.frictionCone_mu, .1);
   }
   for(uint i=n_supports;i<rnd_supports.N;i++){
     //for all NON-supports, introduce an explicit(!) no-collision
     komo.addObjective({}, FS_negDistance, {"obj", rnd_supports(perm(i))}, OT_ineq, {1e1});
+  }
+  for(const str& s: collides){
+    komo.addObjective({}, FS_negDistance, {"obj", s}, OT_ineq, {1e1});
   }
 
   komo.addQuaternionNorms();

@@ -31,6 +31,13 @@ struct F_PairCollision : Feature {
 
 //===========================================================================
 
+struct F_PairNormalsOppose: Feature {
+  virtual arr phi(const FrameL& F);
+  virtual uint dim_phi(const FrameL& F){ return 3; }
+};
+
+//===========================================================================
+
 struct F_PairNormalAlign : Feature {
   double dir = 1.;
   F_PairNormalAlign(double _dir=1.){ dir=_dir; }

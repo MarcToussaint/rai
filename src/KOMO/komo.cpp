@@ -811,9 +811,10 @@ rai::Frame* KOMO::addContactForceFrame(const arr& times, str obj, str from, doub
   //constraints to make poa frames and force exchange consistent
   // addObjective(times, make_shared<F_fex_POAAtFrame>(), {obj, from, poa_name}, OT_eq, {1e1});
   // addObjective(times, make_shared<F_fex_ForceInFrameCone>(frictionCone_mu), {obj, from, poa_name}, OT_ineq, {1e0});
-  addObjective(times, FS_negDistance, {from, obj}, OT_eq, {1e1});
+  addObjective(times, FS_negDistance, {from, obj}, OT_ineq, {1e1});
   addObjective(times, FS_negDistance, {obj, poa_name}, OT_eq, {1e1});
   addObjective(times, FS_negDistance, {from, poa_name}, OT_eq, {1e1});
+  addObjective(times, make_shared<F_PairNormalsOppose>(), {obj, from, poa_name}, OT_sos, {1e1}); //helps
   addObjective(times, make_shared<F_PairNormalAlign>(+1.), {poa_name, obj}, OT_sos, {1e-1}); //helps
   addObjective(times, make_shared<F_PairNormalAlign>(-1.), {poa_name, from}, OT_sos, {1e-1}); //helps
   addObjective(times, make_shared<F_PairNormalAlignsZ>(frictionCone_mu), {obj, from, poa_name}, OT_ineq, {1e0}); //hard constraint
