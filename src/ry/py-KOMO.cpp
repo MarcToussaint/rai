@@ -99,6 +99,13 @@ void init_KOMO(pybind11::module& m) {
        pybind11::arg("init_objMass"),
        pybind11::arg("init_POAdist"))
 
+  .def("addContactForceFrame", &KOMO::addContactForceFrame, pybind11::return_value_policy::reference, "",
+       pybind11::arg("times"),
+       pybind11::arg("obj"),
+       pybind11::arg("from"),
+       pybind11::arg("frictionCone_mu"),
+       pybind11::arg("init_objMass"))
+
   //-- initialize (=set state)
   .def("initOrg", &KOMO::initOrg, "")
   .def("initRandom", &KOMO::initRandom, "", pybind11::arg("verbose")=0)
