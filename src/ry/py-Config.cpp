@@ -406,6 +406,9 @@ reloads, displays and animates the configuration whenever the file is changed"
        pybind11::arg("filename"), pybind11::arg("format")="collada")
 
 
+  .def("recalibrateJointsToZero", &rai::Configuration::recalibrateJointsToZero,
+       "re-define all joint frames so that the current pose is joint angle zero (requires all parents of joints to be free of shapes)")
+
   .def("checkConsistency", &rai::Configuration::checkConsistency, "internal use")
 
   ;

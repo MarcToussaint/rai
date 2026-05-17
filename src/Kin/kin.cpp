@@ -1121,6 +1121,21 @@ void Configuration::reconnectLinksToClosestJoints() {
     }
 }
 
+void Configuration::recalibrateJointsToZero(){
+  arr q0 = getJointState();
+  for(Dof* d:activeDofs){
+    Joint *j = (Joint*)d->joint();
+    if(j){
+      CHECK_EQ(j->dim, 1, "");
+      j->frame->pushQTransformToParent();
+      if(j->limits.N){
+        j->limits -= q0(j->qIndex);
+      }
+    }
+  }
+  ensure_q();
+}
+
 void Configuration::pruneUselessFrames(bool pruneNamed, bool pruneNonContactShapes, bool pruneTransparent) {
   for(uint i=frames.N; i--;) {
     Frame* f=frames.elem(i);
@@ -3815,7 +3830,6 @@ void Configuration::watchFile(const char* filename) {
       if(succ) {
         try {
           C_tmp.addDict(G);
-          report();
         } catch(std::runtime_error& err) {
           LOG(0) <<"Configuration initialization failed: " <<err.what();
           succ=false;
@@ -3827,11 +3841,15 @@ void Configuration::watchFile(const char* filename) {
     }
 
     //-- WATCHING
-    LOG(0) <<"watching...";
     {
       if(V) V->ensure_gl().dataLock(RAI_HERE);
       copy(C_tmp, false);
     }
+    cout <<"   "; report();
+    cout <<"   q: " <<getJointState() <<endl;
+    cout <<"   limits: " <<getJointLimits() <<endl;
+    cout <<"   names: " <<getJointNames() <<endl;
+    LOG(0) <<"watching...";
     if(!V){
       V = get_viewer();
 

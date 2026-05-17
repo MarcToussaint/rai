@@ -1097,6 +1097,18 @@ rai::Frame* rai::Frame::insertPostLink(const rai::Transformation& B) {
   return f;
 }
 
+void rai::Frame::pushQTransformToParent(){
+  CHECK(parent, "");
+  CHECK(!parent->joint, "");
+  CHECK(!parent->shape, "");
+  CHECK(!parent->inertia, "");
+  parent->Q.appendTransformation(Q);
+  Q.setZero();
+
+  parent->_state_updateAfterTouchingQ();
+  _state_updateAfterTouchingQ();
+}
+
 void rai::Frame::makeRoot(bool untilPartBreak) {
   FrameL pathToOldRoot;
 
@@ -1815,7 +1827,7 @@ arr rai::Joint::get_h() const {
   return h;
 }
 
-double& rai::Joint::get_q() {
+double& rai::Joint::get_q() const {
   CHECK(frame->C._state_q_isGood, "");
   if(!active) return frame->C.qInactive.elem(qIndex);
   return frame->C.q.elem(qIndex);

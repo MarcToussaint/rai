@@ -154,6 +154,8 @@ void init_Optim(pybind11::module& m) {
 
   .def("checkJacobian", &NLP::checkJacobian, "", pybind11::arg("x"), pybind11::arg("tolerance"), pybind11::arg("featureNames")=StringA{})
   .def("checkHessian", &NLP::checkHessian, "", pybind11::arg("x"), pybind11::arg("tolerance"))
+  .def("summarizeErrors", &NLP::summarizeErrors,
+    "convert an evaluation phi to errors, i.e. (f,sos,ineq,eq) costs and constraint violations", pybind11::arg("phi"))
 
   .def("as_KOMO", [](std::shared_ptr<NLP>& self) {
     shared_ptr<rai::KOMO_NLP> komo = std::dynamic_pointer_cast<rai::KOMO_NLP>(self);
@@ -300,7 +302,9 @@ void init_Optim(pybind11::module& m) {
            pybind11::arg("problem")
           )
 
-      .def("sample", &NLP_Sampler::sample, "")
+      .def("sample", &NLP_Sampler::sample,
+           "a single sampling run, the returned sample may be infeasible -- check the ret"
+           "might return a feasible sample")
       .def("setOptions", [](std::shared_ptr<NLP_Sampler>& self
     #define MEMBER(type, name, x) ,type name
            MEMBER(double, eps, .05)

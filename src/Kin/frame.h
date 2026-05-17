@@ -128,6 +128,7 @@ struct Frame : NonCopyable {
   Frame& unLink();
   Frame* insertPreLink(const rai::Transformation& A=0, const char* postfix="_origin");
   Frame* insertPostLink(const rai::Transformation& B=0);
+  void pushQTransformToParent();
   void makeRoot(bool untilPartBreak=true);
 
   //structural information/retrieval
@@ -292,7 +293,7 @@ struct Joint : Dof, NonCopyable {
   arr get_h() const;
 
   //access the C's q vector
-  double& get_q();
+  double& get_q() const;
 
   //structural operations
   void makeRigid();

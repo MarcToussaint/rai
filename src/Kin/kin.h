@@ -195,6 +195,7 @@ struct Configuration {
   void pruneEmptyShapes();
   void reconnectShapesToParents();
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
+  void recalibrateJointsToZero();
   void pruneUselessFrames(bool pruneNamed=false, bool pruneNonContactShapes=false, bool pruneTransparent=false);  ///< delete frames that have no name, joint, and shape
   void processStructure(bool _pruneRigidJoints=false, bool reconnectToLinks=true, bool pruneNonContactShapes=false, bool pruneTransparent=false);        ///< call the three above methods in this order
   void processInertias(bool recomputeInertias=true, bool transformToDiagInertia=false);

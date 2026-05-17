@@ -53,6 +53,15 @@ int main(int argc,char **argv){
       C.processStructure();
     }
 
+    if(rai::checkParameter<bool>("recalibrateJointsToZero")){
+      LOG(0) <<"q before:" <<C.getJointState() <<C.getJointLimits();
+      C.view(true, "before");
+      C.recalibrateJointsToZero();
+      LOG(0) <<"q after: " <<C.getJointState() <<C.getJointLimits();
+      C.view(true, "after");
+    }
+
+
     //-- sort frames
      if(rai::checkParameter<bool>("sort")){
       LOG(0) <<"SORTING FRAMES";
