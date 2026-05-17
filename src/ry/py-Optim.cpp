@@ -64,12 +64,12 @@ struct PyNLP : NLP {
       pybind11::object _x = py_nlp.attr("getInitializationSample")();
       return numpy2arr(_x.cast<pybind11::array_t<double>>());
     }
-    LOG(-1) <<"no getInitializationSample implemented -- using default fallback";
+    // LOG(-1) <<"no getInitializationSample implemented -- using default fallback";
     return NLP::getInitializationSample();
   }
 
   virtual void report(ostream& os, int verbose, const char* nomsg=0){
-    LOG(0) <<"here";
+    // LOG(0) <<"here";
     NLP::report(os, verbose, "(binding in py-Optim.cpp:52)");
     pybind11::object _msg = py_nlp.attr("report")(verbose);
     auto msg = _msg.cast<std::string>();
@@ -400,6 +400,7 @@ void init_Optim(pybind11::module& m) {
 
       .def("setTracing", &rai::NLP_Solver::setTracing, "",
            pybind11::arg("trace_x")=true, pybind11::arg("trace_errs")=true, pybind11::arg("trace_phi")=false, pybind11::arg("trace_J")=false)
+      .def("clearTracing", &rai::NLP_Solver::clearTracing, "")
       .def("solve", &rai::NLP_Solver::solve,
            "resampleInitialization=-1 means: only when not already solved",
            pybind11::arg("resampleInitialization")=-1, pybind11::arg("verbose")=-100)

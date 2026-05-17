@@ -33,6 +33,7 @@ struct NLP_Solver : NonCopyable {
   NLP_Solver& setInitialization(const arr& _x) { x=_x; return *this; }
   NLP_Solver& setWarmstart(const arr& _x, const arr& _dual) { x=_x; dual=_dual; return *this; }
   NLP_Solver& setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J) { P->setTracing(trace_x, trace_costs, trace_phi, trace_J); return *this; }
+  NLP_Solver& clearTracing(){ P->clear(); return *this; }
   NLP_Solver& clear() { P.reset(); optCon.reset(); ret.reset(); x.clear(); dual.clear(); return *this; }
 
   std::shared_ptr<SolverReturn> solve(int resampleInitialization=-1, int verbose=-100); ///< -1: only when not already yet set
