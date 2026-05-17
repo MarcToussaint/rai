@@ -1954,6 +1954,7 @@ void rai::Joint::read(const Graph& ats) {
 
   //sampling
   ats.get(sampleUniform, "sampleUniform");
+  ats.get(sampleSdv, "sampleSdv");
 
   //active
   bool _active=true;
