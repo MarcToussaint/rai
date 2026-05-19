@@ -72,6 +72,8 @@ void init_Config(pybind11::module& m) {
       .def("getEventCursor", &rai::ConfigurationViewer::getEventCursor, "return the position and normal of the 'curser': mouse position 3D projected into scene via depth, and 3D normal of depth map -- returned as 6D vector")
       .def("getEventCursorObject", &rai::ConfigurationViewer::getEventCursorObject, "(aka mouse picking) return the frame ID (or -1) that the 'cursor' currently points at")
 
+      .def("setQuad", &rai::ConfigurationViewer::setQuad, "set an image in a quad object onto the viewer",
+           pybind11::arg("id"), pybind11::arg("rgb"), pybind11::arg("h"), pybind11::arg("y"), pybind11::arg("h"))
       .def("getGLFWWindow", [](shared_ptr<rai::ConfigurationViewer>& self) {
         return (long)self->ensure_gl().window;
       }, "")
