@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 project(rai_devel)
 
 ## variable default values
+set(CMAKE_INSTALL_MESSAGE LAZY)
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ version selection")
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/.local" CACHE PATH "..." FORCE)
@@ -30,7 +31,7 @@ add_definitions(
   -DRAI_ROOT_PATH=\"${CMAKE_SOURCE_DIR}\"
   -DRAI_X11 -DRAI_LAPACK -DRAI_EIGEN -DRAI_PTHREAD
   -DRAI_GL
-  -DRAI_GLFW -DRAI_ANN -DRAI_QHULL8 -DRAI_ASSIMP -DNO_CYCLE_DETECTION -DRAI_PNG -DRAI_PLY
+  -DRAI_GLFW -DRAI_ANN -DRAI_QHULL8 -DRAI_ASSIMP -DNO_CYCLE_DETECTION -DRAI_PNG -DRAI_PLY -DRAI_YAML
   -DRAI_GJK -DRAI_CCD -DRAI_FCL -DRAI_Lewiner -DRAI_VHACD
   )
 
@@ -41,6 +42,18 @@ include_directories(
   $ENV{HOME}/.local/include
   /usr/include/eigen3
   )
+
+link_directories(
+  $ENV{HOME}/.local/lib
+  )
+
+if(USE_H5)
+  link_directories(/usr/lib/x86_64-linux-gnu/hdf5/serial)
+endif()
+
+if(USE_PHYSX)
+  link_directories($ENV{HOME}/.local/lib/PhysX)
+endif()
 
 file(GLOB SRC_Core src/Core/*.cpp)
 file(GLOB SRC_Optim src/Optim/*.cpp)
@@ -54,20 +67,25 @@ file(GLOB SRC_KOMO src/KOMO/*.cpp)
 file(GLOB SRC_Logic src/Logic/*.cpp)
 file(GLOB SRC_LGP src/LGP/*.cpp)
 file(GLOB SRC_Control src/Control/*.cpp)
+file(GLOB SRC_DataGen src/DataGen/*.cpp)
 
+file(GLOB SRC_AlgoLewiner src/Algo/Lewiner/*.cpp)
 file(GLOB SRC_GeoGJK src/Geo/GJK/*.c)
 file(GLOB SRC_GeoPly src/Geo/ply/*.c)
 file(GLOB SRC_GeoCcd src/Geo/ccd_rai/*.c)
-file(GLOB SRC_GeoLewiner src/Geo/Lewiner/*.cpp)
+file(GLOB SRC_OptLBFGS src/Optim/liblbfgs/*.c)
+file(GLOB SRC_OptCMA src/Optim/CMA/*.c)
 
 add_library(raiobjs OBJECT
   ${SRC_Core}
   ${SRC_Optim}
   ${SRC_Geo}
+  ${SRC_AlgoLewiner}
   ${SRC_GeoGJK}
   ${SRC_GeoPly}
   ${SRC_GeoCcd}
-  ${SRC_GeoLewiner}
+  ${SRC_OptLBFGS}
+  ${SRC_OptCMA}
   ${SRC_Algo}
   ${SRC_Search}
   ${SRC_PathAlgos}
@@ -77,21 +95,10 @@ add_library(raiobjs OBJECT
   ${SRC_Logic}
   ${SRC_LGP}
   ${SRC_Control}
+  ${SRC_DataGen}
   )
 
 ################################################################################
-
-link_directories(
-  $ENV{HOME}/.local/lib
-  )
-
-if(USE_H5)
-  link_directories(/usr/lib/x86_64-linux-gnu/hdf5/serial)
-endif()
-
-if(USE_PHYSX)
-  link_directories($ENV{HOME}/.local/lib/PhysX)
-endif()
 
 set_property(TARGET raiobjs PROPERTY POSITION_INDEPENDENT_CODE 1)
 add_library(rai SHARED $<TARGET_OBJECTS:raiobjs>)
@@ -135,13 +142,13 @@ endif()
 pkg_check_modules(DEPS REQUIRED glfw3 glew blas lapack jsoncpp libpng assimp qhull)
 find_package(GLUT REQUIRED)
 
-message(STATUS "[rai] pkg-config libraries: " "${DEPS_LIBRARIES}")
+message(STATUS "[rai] pkg-config libraries: " "${DEPS_LIBRARIES}" "${GLUT_LIBRARIES}")
 
 # default/required dependencies
 target_link_libraries(rai PRIVATE
   ${DEPS_LIBRARIES}
   ${GLUT_LIBRARIES}
-  fcl ccd ANN
+  yaml fcl ccd ANN
   )
 
 ################################################################################
@@ -229,8 +236,8 @@ add_executable(test_thread test/Core/thread/main.cpp)
 target_link_libraries(test_thread rai)
 add_executable(test_graph test/Core/graph/main.cpp)
 target_link_libraries(test_graph rai)
-add_executable(test_hdf5 test/Core/hdf5/main.cpp)
-target_link_libraries(test_hdf5 rai)
+add_executable(test_h5 test/Core/h5/main.cpp)
+target_link_libraries(test_h5 rai)
 add_executable(test_yaml test/Core/yaml/main.cpp)
 target_link_libraries(test_yaml rai yaml-cpp)
 add_executable(test_ML-regression test/Algo/ML-regression/main.cpp)

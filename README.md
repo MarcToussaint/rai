@@ -71,26 +71,24 @@ make dependAll
 make -j4
 ```
 
-## local lib install
+## local compile
 
       export MAKEFLAGS="-j $(command nproc --ignore 2)"
       #apt update
       #apt install wget
 
-      wget https://github.com/MarcToussaint/rai/raw/refs/heads/marc/_make/install.sh; chmod a+x install.sh
-      ./install.sh ubuntu-rai
-      ./install.sh libccd
-      ./install.sh fcl
-      ./install.sh libann
-      ./install.sh rai
+      _make/install.sh ubuntu-rai
+      _make/install.sh libccd
+      _make/install.sh fcl
+      _make/install.sh libann
   
       #build tests
-      cmake -DBUILD_TESTS=ON git/rai -B git/rai/build 
-      cmake --build git/rai/build 
+      cmake . -B build -DBUILD_TESTS=ON -DUSE_PHYSX=OFF
+      cmake --build build
 
       #build with physx
       ./install.sh physx
-      cmake -DUSE_PHYSX=ON git/rai -B git/rai/build 
-      cmake --build git/rai/build 
+      cmake . -B -DUSE_PHYSX=ON
+      cmake --build build 
 
 
