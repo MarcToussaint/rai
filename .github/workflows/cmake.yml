@@ -1,0 +1,20 @@
+name: CMake
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: install ubuntu dependencies
+      run: |
+        sudo apt update
+        _make/install.sh ubuntu-rai
+        _make/install.sh libccd
+        _make/install.sh fcl
+        _make/install.sh libann
+    - name: cmake configure
+      run: cmake . -B build -DBUILD_TESTS=ON
+    - name: build
+      run: make -C build

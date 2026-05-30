@@ -1238,7 +1238,7 @@ void rai::Dof::setRandom(uint timeSlices_d1, int verbose) {
     //gauss
     arr q = calcDofsFromConfig();
     rndGauss(q, sampleSdv, true);
-    if(verbose>0) LOG(0) <<"init '" <<frame->name <<'[' <<frame->ID <<',' <<(timeSlices_d1?frame->ID/timeSlices_d1:0) <<']' <<"' adding noise: " <<q <<" relative to '" <<frame->parent->name <<"'";
+    if(verbose>0) LOG(0) <<"init '" <<frame->name <<'[' <<frame->ID <<',' <<(timeSlices_d1?frame->ID/timeSlices_d1:0) <<']' <<"' adding noise: " <<q <<" (" <<sampleSdv <<") relative to '" <<frame->parent->name <<"'";
 
     //clip
     if(limits.N) {

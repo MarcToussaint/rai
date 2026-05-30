@@ -40,13 +40,19 @@ echo 'Installing' ${lib} ' -- sources:' ${git} ' -- prefix (compiled library):' 
 
 cd ${git}
 
-packages_rai="g++ clang make gnupg cmake git wget \
+packages_rai="g++ clang make gnupg cmake git wget libstdc++-14-dev \
         	liblapack-dev libf2c2-dev libqhull-dev libeigen3-dev \
 		libjsoncpp-dev libyaml-cpp-dev libhdf5-dev \
-        	libx11-dev libglu1-mesa-dev libglfw3-dev libglew-dev freeglut3-dev libglm-dev libfreetype-dev fonts-ubuntu \
+        	libx11-dev libxi-dev libxxf86vm-dev libglu1-mesa-dev \
+		libglfw3-dev libglew-dev libglm-dev freeglut3-dev \
+		libfreetype-dev fonts-ubuntu \
 		libpng-dev libassimp-dev"
-packages_robotic="liblapack3 freeglut3 libglu1-mesa libfreetype6 fonts-ubuntu python3 python3-pip"
-packages_botop="libpoco-dev libboost-system-dev portaudio19-dev libusb-1.0-0-dev libhidapi-dev"
+packages_python="python3-dev python3 python3-pip"
+packages_botop="libpoco-dev libboost-system-dev \
+		portaudio19-dev libusb-1.0-0-dev libhidapi-dev"
+packages_robotic="liblapack3 freeglut3 libglu1-mesa libxrandr2 \
+		libfreetype6 fonts-ubuntu \
+		python3 python3-pip"
 
 case ${lib} in
 

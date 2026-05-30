@@ -442,7 +442,7 @@ reloads, displays and animates the configuration whenever the file is changed"
 
   .def("getFxycxy", &rai::CameraView::getFxycxy, "return the camera intrinsics f_x, f_y, c_x, c_y")
   .def("computeSegmentationImage", &rai::CameraView::computeSegmentationImage, "return an rgb image encoding the object ID segmentation")
-  .def("computeSegmentationID", &rai::CameraView::computeSegmentationImage, "return a uint16 array with object ID segmentation")
+  .def("computeSegmentationID", &rai::CameraView::computeSegmentationID, "return a uint16 array with object ID segmentation")
   ;
 
 }

@@ -1387,9 +1387,7 @@ void Transformation::setAffineMatrix(const double* m) {
     for(j=0; j<3; ++j)
       M[i*3+j] = m[i*4+j];
   rot.setMatrix(M);                 // set 3x3 submatrix as rotation
-  pos.x=m[3];  // set last column as translation
-  pos.y=m[7];  // set last column as translation
-  pos.z=m[11];  // set last column as translation
+  pos.set(m[3], m[7], m[11]);
 }
 
 ///  to = new * from
