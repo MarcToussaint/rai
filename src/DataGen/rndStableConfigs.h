@@ -5,6 +5,7 @@
 struct RndStableConfigs_Options {
   RAI_PARAM("RndStableConfigs/", int, verbose, 1)
   RAI_PARAM("RndStableConfigs/", double, frictionCone_mu, .8)
+  RAI_PARAM("RndStableConfigs/", bool, resolveInitCollisions, false)
 };
 
 struct RndStableConfigs {

@@ -34,20 +34,22 @@ bool RndStableConfigs::getSample(rai::Configuration& C, const StringA& must_supp
 
   // if(opt.verbose>2) C.view(true, "random");
 
-  if(false){ //first make configuration collision free
+  if(opt.resolveInitCollisions){ //first make configuration collision free
     KOMO komo(C, 1,1,0, true);
-    // komo.addControlObjective({}, 0, 1e-1);
     komo.addObjective({}, FS_qItself, {}, OT_sos, {1e-2}, qRnd);
     komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e1} );
     komo.addQuaternionNorms();
+    if(opt.verbose>2){
+      komo.view(true, "before collide resolution");
+    }
     auto ret = rai::NLP_Solver(komo.nlp(), opt.verbose)
                    .solve();
     C.setJointState(ret->x);
-    // if(opt.verbose>2){
-    //   cout <<*ret <<endl;
-    //   komo.view(false, "no collide");
-    //   C.view(true, "no collide");
-    // }
+    if(opt.verbose>2){
+      cout <<*ret <<endl;
+      komo.view(true, STRING("after collide resolution\n" <<*ret));
+      // C.view(true, "no collide");
+    }
     if(!ret->feasible) return false;
   }
 
