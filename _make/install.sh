@@ -1,8 +1,35 @@
 #!/bin/bash
 
-usage() { echo "Usage: $0 [-gtc] [-v <version>] <package>" 1>&2; exit 1; }
-
 lib=${@: -1}
+init_path=$PWD
+usage() { echo "Usage: $0 [-gtc] [-v <version>] <package>" 1>&2; }
+
+### variable defining dependency packages
+
+ubuntu_rai="g++ clang make gnupg cmake git wget libstdc++-14-dev \
+        	liblapack-dev libf2c2-dev libqhull-dev libeigen3-dev \
+		libjsoncpp-dev libyaml-dev libhdf5-dev \
+        	libx11-dev libxi-dev libxxf86vm-dev libglu1-mesa-dev \
+		libglfw3-dev libglew-dev libglm-dev freeglut3-dev \
+		libfreetype-dev fonts-ubuntu \
+		libpng-dev libassimp-dev"
+
+ubuntu_python="python3-dev python3 python3-pip python3-venv"
+
+ubuntu_botop="libpoco-dev libboost-system-dev \
+		portaudio19-dev libusb-1.0-0-dev libhidapi-dev"
+
+ubuntu_robotic="liblapack3 freeglut3 libglu1-mesa libxrandr2 \
+		libfreetype6 fonts-ubuntu \
+		python3 python3-pip"
+
+if [ $lib = "vars_only" ]; then
+    return 0
+fi
+
+
+### additional options (global tmp clean version)
+
 git=${HOME}/git
 pre=${HOME}/.local
 
@@ -24,44 +51,30 @@ while getopts "gtcv:" o; do
             ;;
 	
         *)
+	    echo '=== option' ${o} 'unknown - ignored'
             usage
             ;;
     esac
 done
 
-#if [ -z "${s}" ] || [ -z "${p}" ]; then
-#    usage
-#fi
-
 mkdir -p ${git}
 mkdir -p ${pre}
 
-echo 'Installing' ${lib} ' -- sources:' ${git} ' -- prefix (compiled library):' ${pre} ' -- version' ${version} ' -- clean' ${clean}
+
+### install
+
+echo '=== Installing' ${lib} ' -- sources:' ${git} ' -- prefix (compiled library):' ${pre} ' -- version' ${version} ' -- clean' ${clean}
 
 cd ${git}
-
-packages_rai="g++ clang make gnupg cmake git wget libstdc++-14-dev \
-        	liblapack-dev libf2c2-dev libqhull-dev libeigen3-dev \
-		libjsoncpp-dev libyaml-cpp-dev libhdf5-dev \
-        	libx11-dev libxi-dev libxxf86vm-dev libglu1-mesa-dev \
-		libglfw3-dev libglew-dev libglm-dev freeglut3-dev \
-		libfreetype-dev fonts-ubuntu \
-		libpng-dev libassimp-dev"
-packages_python="python3-dev python3 python3-pip"
-packages_botop="libpoco-dev libboost-system-dev \
-		portaudio19-dev libusb-1.0-0-dev libhidapi-dev"
-packages_robotic="liblapack3 freeglut3 libglu1-mesa libxrandr2 \
-		libfreetype6 fonts-ubuntu \
-		python3 python3-pip"
 
 case ${lib} in
 
     ubuntu-rai)
-	sudo apt install --yes ${packages_rai}
+	sudo apt install --yes ${ubuntu_rai}
 	;;
 
     ubuntu-botop)
-	sudo apt install --yes ${packages_rai} ${packages_botop}
+	sudo apt install --yes ${ubuntu_rai} ${ubuntu_botop}
 	;;
 
     botop)
@@ -224,16 +237,22 @@ case ${lib} in
 	cd isaac-sim
 	unzip
 	;;
-	
-	
+
+    vars_only)
+	;;
+    
     *)
-	echo 'package' ${lib} 'not defined'
+	echo '=== package' ${lib} 'not defined'
 	usage
 esac
 
-cd ${git}
+
+### clean
 
 if [ "${clean}" = "yes" -a -e "${lib}/build" ]; then
+    cd ${git}
     echo 'Cleaning' ${lib}/build
     rm -Rf ${lib}/build
 fi
+
+cd ${init_path}
