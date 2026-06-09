@@ -14,6 +14,7 @@
 #include "dof_direction.h"
 #include "../Geo/signedDistanceFunctions.h"
 #include "../Geo/stbImage.h"
+#include "../Geo/aruco.h"
 
 #include <climits>
 
@@ -805,6 +806,16 @@ rai::Frame& rai::Frame::setImplicitSurface(const floatA& data, const arr& size, 
     sdf.resample(d(0), d(1), d(2));
   }
   getShape().mesh().setImplicitSurface(sdf.gridData, size);
+  getShape().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
+  C.view_unlock();
+  return *this;
+}
+
+rai::Frame& rai::Frame::setQuad(const byteA& image, const arr& size){
+  C.view_lock(RAI_HERE);
+  getShape().type() = ST_quad;
+  getShape().size = size;
+  getShape().mesh().setQuad(size(0), size(1), image, false, false);
   getShape().version++; //if(getShape().glListId>0) getShape().glListId *= -1;
   C.view_unlock();
   return *this;
@@ -2081,6 +2092,13 @@ void rai::Shape::read(Frame& frame) {
       V[i] = (double(i)/n)*y;
     }
     mesh().makeLines();
+  }
+  int i=-1;
+  if(ats.get(i, "aruco_id")){
+    CHECK_EQ(type(), ST_quad, "");
+    byteA img = getArucoImage(i);
+    img.reshape(img.d0, img.d1, 1);
+    mesh().setQuad(size(0), size(1), img, false, false);
   }
 
   if(mesh().V.N && type()==ST_none) type()=ST_mesh;

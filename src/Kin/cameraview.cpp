@@ -15,6 +15,7 @@ namespace rai {
 //===========================================================================
 
 CameraView::CameraView(const Configuration& _C, bool _offscreen) {
+  visualsOnly(true);
   updateConfiguration(_C);
   gl = make_shared<OpenGL>("CameraView", 640, 480, _offscreen);
   gl->camera.setDefault();
@@ -43,7 +44,7 @@ CameraView::CameraFrame& CameraView::setCamera(Frame* frame) {
   double width=400., height=200.;
   double focalLength=-1.;
   double orthoAbsHeight=-1.;
-  arr zRange;
+  arr zRange = {.1, 10.};
 
   CHECK(frame->ats, "");
   frame->ats->get<double>(focalLength, "focalLength");

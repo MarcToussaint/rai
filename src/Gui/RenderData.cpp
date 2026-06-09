@@ -559,7 +559,8 @@ void RenderAsset::mesh(rai::Mesh& mesh, double avgNormalsThreshold){
     // CHECK_EQ(mesh.C.N, 0,"no vertex colors allowed for textured meshes");
     CHECK_EQ(mesh.V.d0, mesh.texCoords.d0,"");
     CHECK_EQ(mesh.texCoords.d1, 2, "");
-    CHECK_EQ(mesh.texImg().img.d2, 3, "");
+    CHECK_EQ(mesh.texImg().img.nd, 3, "");
+    //mis-use colors buffer as texCoords
     colors = rai::convert<float>(mesh.texCoords);
     colors.insColumns(-1, 2);
     for(uint i=0;i<colors.d0;i++) colors(i,2) = colors(i,3) = 1.;
@@ -678,10 +679,10 @@ void RenderAsset::glInitialize(){
       if(textureDim==2){ //this is texture image and colors are texture coordinates
         glBindTexture(GL_TEXTURE_2D, _texture->glBufferID);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); //CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); //CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); //CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER); //CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         if(img.d2==1) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, img.d1, img.d0, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img.p);
         else if(img.d2==2) glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, img.d1, img.d0, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, img.p);
         else if(img.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.d1, img.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, img.p);

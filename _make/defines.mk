@@ -338,7 +338,7 @@ endif
 ifeq ($(OPENCV4),1)
 CXXFLAGS  += -DRAI_OPENCV
 CPATH := $(USER_LIB)/include/opencv4/:$(CPATH)
-LIBS += -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_videoio
+LIBS += -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_videoio -lopencv_objdetect
 endif
 
 ifeq ($(HSL),1)

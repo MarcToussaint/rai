@@ -330,8 +330,8 @@ struct Thread {
   Event event;
   rai::String name;
   std::unique_ptr<std::thread> thread;    ///< the underlying pthread; nullptr iff not opened
-  int tid;                    ///< system thread id
-  rai::Mutex stepMutex;              ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
+  int tid;                      ///< system thread id
+  rai::Mutex stepMutex;         ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
   uint step_count;              ///< how often the step was called
   Metronome metronome;          ///< used for beat-looping
   CycleTimer timer;             ///< measure how the time spend per cycle, within step, idle

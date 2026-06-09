@@ -13,10 +13,14 @@
 
 struct OpencvCamera : Thread {
   unique_ptr<struct sOpencvCamera> self;
-  Var<byteA> rgb;
-  std::map<int, double> properties; bool set(int prop, double status);
-  OpencvCamera(const Var<byteA>& _rgb);
+
+  int cameraID;
+  bool flip_bgr=false;
+  Var<byteA> image;
+
+  OpencvCamera(const char *_name="default", int _cameraID=0);
   ~OpencvCamera();
+
   void open();
   void step();
   void close();

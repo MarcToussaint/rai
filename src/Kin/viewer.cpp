@@ -87,6 +87,8 @@ void ConfigurationViewer::recopyMeshes(const FrameL& frames) {
         addShared(o_mimic, f->ensure_X(), o_mimic->type);
       }else if(f->shape->type()==ST_pointCloud){
         add(f->ensure_X(), _marker).pointCloud(mesh->V, mesh->C);
+      // }else if(f->shape->type()==ST_quad){
+      //   add(f->ensure_X(), _solid).mesh(*mesh);
       }else if(f->shape->type()==ST_lines){
         if(!mesh->isArrayFormatted) mesh->makeLinesArrayFormatted();
         add(f->ensure_X(), _marker).lines(mesh->V, mesh->C);

@@ -1,0 +1,43 @@
+Include: <$RAI_PATH/scenarios/pandaSingle.g>
+
+obj_base: { X: [ 0., 0., .8] }
+obj(obj_base): { joint: free, limits: [-.2,-.2,-.2,-1.1,-1.1,-1.1,-1.1,.2,.2,.2,1.1,1.1,1.1,1.1], Q: [.1, .2, .1], shape: ssBox, size: [.17, .17, .17, .005], color: [1., .5, .0], mass: .2, sampleUniform: 1., contact: 1 }
+# obj_axes(obj): { shape: marker, size: [.2], simulation: false }
+
+ar0(obj): { Q: [.086, .05, .05, 1., 0., 1., 0.], shape: quad, size: [.05, .05], aruco_id: 0 }
+ar1(obj): { Q: [.086, -.05, -.05 , 0., 1., 0., 1.], shape: quad, size: [.05, .05], aruco_id: 1 }
+ar2(obj): { Q: [-.086, .05 , -.05 , 1., 0., -1., 0.], shape: quad, size: [.05, .05], aruco_id: 2 }
+ar3(obj): { Q: [-.086, -.05 , .05 , 0., 1., 0., -1.], shape: quad, size: [.05, .05], aruco_id: 3 }
+ar4(obj): { Q: [.05 , .086, .05 , 0., 0., 1., 1.], shape: quad, size: [.05, .05], aruco_id: 4 }
+ar5(obj): { Q: [-.05 , .086, -.05 , 1., -1., 0., 0.], shape: quad, size: [.05, .05], aruco_id: 5 }
+ar6(obj): { Q: [.05 , -.086, -.05 , 0., 0., 1., -1.], shape: quad, size: [.05, .05], aruco_id: 6 }
+ar7(obj): { Q: [-.05 , -.086, .05 , 1., 1., 0., 0.], shape: quad, size: [.05, .05], aruco_id: 7 }
+ar8(obj): { Q: [.05 , .05 , .086, 1., 0., 0., -1.], shape: quad, size: [.05, .05], aruco_id: 8 }
+ar9(obj): { Q: [-.05 , -.05 , .086, 1., 0., 0., 1.], shape: quad, size: [.05, .05], aruco_id: 9 }
+ar10(obj): { Q: [.05 , -.05 , -.086, 0., 1., 1., 0.], shape: quad, size: [.05, .05], aruco_id: 10 }
+ar11(obj): { Q: [-.05 , .05 , -.086, 0., 1., -1., 0.], shape: quad, size: [.05, .05], aruco_id: 11 }
+
+
+rig_base(table): { Q: [.0, .5, .05] }
+rig1(rig_base): { Q: [.5, .0, .5], shape: ssBox, size: [0.02, 0.02, 1., .002] }
+rig2(rig_base): { Q: [-.5, .0, .5], shape: ssBox, size: [0.02, 0.02, 1., .002] }
+rig3(rig_base): { Q: [.0, .0, .99], shape: ssBox, size: [1., 0.02, .02, .002] }
+rig3(rig_base): { Q: [.0, .0, .01], shape: ssBox, size: [1., 0.02, .02, .002] }
+rig3(rig_base): { Q: [.0, .3, .01], shape: ssBox, size: [1., 0.02, .02, .002] }
+rig3(rig_base): { Q: [.5, .15, .01], shape: ssBox, size: [.02, 0.32, .02, .002] }
+rig3(rig_base): { Q: [-.5, .15, .01], shape: ssBox, size: [.02, 0.32, .02, .002] }
+rig3(rig_base): { Q: "t(-.5 .0 .0) d(-45 0 1 0) t(.15 0 0)", shape: ssBox, size: [.02, 0.02, .3, .002] }
+rig3(rig_base): { Q: "t(.5 .16 .25) d(30 1 0 0)", shape: ssBox, size: [.02, 0.02, .55, .002] }
+rig3(rig_base): { Q: "t(-.5 .16 .25) d(30 1 0 0)", shape: ssBox, size: [.02, 0.02, .55, .002] }
+rig3(rig_base): { Q: "t(.5 .0 .0) d(45 0 1 0) t(-.15 0 0)", shape: ssBox, size: [.02, 0.02, .3, .002] }
+rig3(rig_base): { Q: "t(-.5 .0 .0) d(-45 0 1 0) t(.15 0 0)", shape: ssBox, size: [.02, 0.02, .3, .002] }
+
+
+cam0(rig1): { Q: "t(.0 .0 .3) d(180 0 0 1) d(-90 1 0 0) d(45 0 1 0) d(-30 1 0 0)", shape: marker, size: [.1], width: 800, height: 600, focalLength: 1. }
+cam1(rig2): { Q: "t(.0 .0 .3) d(180 0 0 1) d(-90 1 0 0) d(-45 0 1 0) d(-30 1 0 0)", shape: marker, size: [.1], width: 800, height: 600, focalLength: 1. }
+
+cam2(rig1): { Q: "t(.0 .0 -.3) d(180 0 0 1) d(-90 1 0 0) d(45 0 1 0) d(10 1 0 0)", shape: marker, size: [.1], width: 800, height: 600, focalLength: 1. }
+cam3(rig2): { Q: "t(.0 .0 -.3) d(180 0 0 1) d(-90 1 0 0) d(-45 0 1 0) d(10 1 0 0)", shape: marker, size: [.1], width: 800, height: 600, focalLength: 1. }
+
+
+

@@ -581,21 +581,21 @@ Quaternion& Quaternion::append(const Quaternion& q) {
   return *this;
 }
 
-/// set the quad
+/// set the quat
 Quaternion& Quaternion::set(const double* p) {
   w=p[0]; x=p[1]; y=p[2]; z=p[3];
   isZero=((w==1. || w==-1.) && x==0. && y==0. && z==0.);
   return *this;
 }
 
-/// set the quad
+/// set the quat
 Quaternion& Quaternion::set(const arr& q) {
   CHECK_EQ(q.N, 4, "");
   set(q.p);
   return *this;
 }
 
-/// set the quad
+/// set the quat
 Quaternion& Quaternion::set(double _w, double _x, double _y, double _z) {
   w=_w; x=_x; y=_y; z=_z;
   isZero=((w==1. || w==-1.) && x==0. && y==0. && z==0.);
@@ -796,7 +796,7 @@ void Quaternion::checkZero() const {
   if(isZero) if(!iszero) HALT("you must have set this by hand!");
 }
 
-/// return the squared-error between two quads, modulo flipping
+/// return the squared-error between two quats, modulo flipping
 double Quaternion::sqrDiff(const Quaternion& _q2) const {
   arr q1(&w, 4, true);
   arr q2(&_q2.w, 4, true);

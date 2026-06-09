@@ -13,9 +13,10 @@
 
 struct sOpencvCamera {  cv::VideoCapture capture;  };
 
-OpencvCamera::OpencvCamera(const Var<byteA>& _rgb)
-  : Thread(STRING("OpencvCamera_"<<_rgb.name()), 0.)
-  , rgb(this, _rgb) {
+OpencvCamera::OpencvCamera(const char* _name, int _cameraID)
+  : Thread(STRING("OpencvCamera_"<<_name), 0.),
+    cameraID(_cameraID),
+    image(this) {
   self = make_unique<sOpencvCamera>();
   threadLoop();
 }
@@ -25,13 +26,17 @@ OpencvCamera::~OpencvCamera() {
 }
 
 void OpencvCamera::open() {
-  self->capture.open(0);
-  for(std::map<int, double>::const_iterator i = properties.begin(); i != properties.end(); ++i) {
-    if(!self->capture.set(i->first, i->second)) {
-      cout << "could not set property " << i->first << " to value " << i->second << endl;
-    }
-  }
-  //    capture.set(CV_CAP_PROP_CONVERT_RGB, 1);
+  self->capture.open(cameraID);
+  // for(std::map<int, double>::const_iterator i = properties.begin(); i != properties.end(); ++i) {
+  //   if(!self->capture.set(i->first, i->second)) {
+  //     cout << "could not set property " << i->first << " to value " << i->second << endl;
+  //   }
+  // }
+
+  // self->capture.set(cv::CAP_PROP_CONVERT_RGB, 1);
+  self->capture.set(cv::CAP_PROP_FRAME_WIDTH,  2560);
+  self->capture.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
+  // self->capture.get(cv::CAP_PROP_FPS);
   //    cout <<"FPS of opened OpenCV VideoCapture = " <<capture.get(CV_CAP_PROP_FPS) <<endl;;
 }
 
@@ -40,20 +45,11 @@ void OpencvCamera::close() {
 }
 
 void OpencvCamera::step() {
-  cv::Mat img; //,imgRGB;
+  cv::Mat img;
   self->capture.read(img);
   if(!img.empty()) {
-//    cv::cvtColor(img, imgRGB, CV_BGR2RGB);
-    rgb.set() = conv_cvMat2byteA(img);
-  }
-}
-
-bool OpencvCamera::set(int propId, double value) {
-  if(self)
-    return self->capture.set(propId, value);
-  else {
-    properties[propId] = value;
-    return true; // well, can't really do anything else here...
+    if(flip_bgr) cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
+    image.set() = conv_cvMat2byteA(img);
   }
 }
 

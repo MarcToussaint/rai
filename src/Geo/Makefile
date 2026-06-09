@@ -15,6 +15,7 @@ COAL = 1
 PLY = 1
 GJK = 1
 CCD = 1
+OPENCV4 = 1
 CXXFLAGS += -DRAI_VHACD
 
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
