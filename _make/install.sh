@@ -69,14 +69,6 @@ cd ${git}
 
 case ${lib} in
 
-    ubuntu-rai)
-	sudo apt install --yes ${ubuntu_rai}
-	;;
-
-    ubuntu-botop)
-	sudo apt install --yes ${ubuntu_rai} ${ubuntu_botop}
-	;;
-
     botop)
 	git clone --recurse-submodules https://github.com/MarcToussaint/botop.git
 	export PY_VERSION=`python3 -c "import sys; print(str(sys.version_info[0])+'.'+str(sys.version_info[1]))"`

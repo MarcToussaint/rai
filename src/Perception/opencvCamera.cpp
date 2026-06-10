@@ -53,4 +53,19 @@ void OpencvCamera::step() {
   }
 }
 
+#else //OPENCV
+
+#include "opencvCamera.h"
+
+struct sOpencvCamera {};
+
+OpencvCamera::OpencvCamera(const char* _name, int _cameraID)
+  : Thread(STRING("OpencvCamera_"<<_name), 0.),
+    cameraID(_cameraID),
+    image(this) { NICO }
+OpencvCamera::~OpencvCamera() { NICO }
+void OpencvCamera::open() { NICO }
+void OpencvCamera::step() { NICO }
+void OpencvCamera::close() { NICO }
+
 #endif

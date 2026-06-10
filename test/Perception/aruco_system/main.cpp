@@ -9,6 +9,8 @@
 #include <Kin/viewer.h>
 #include <Kin/cameraview.h>
 
+#ifdef RAI_OPENCV
+
 #include <opencv2/features2d.hpp>
 #include "opencv2/imgproc.hpp"
 #include <opencv2/objdetect/aruco_detector.hpp>
@@ -68,6 +70,10 @@ void test(){
     if(key=='q') break;
   }
 }
+
+#else //opencv
+void test(){ NICO }
+#endif
 
 int main(int argc,char **argv){
   rai::initCmdLine(argc,argv);

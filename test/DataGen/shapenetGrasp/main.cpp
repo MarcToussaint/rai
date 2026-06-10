@@ -64,8 +64,8 @@ void generateGraspsFiles(uint N=10) {
 
       arr scores = SG.evaluateGrasp();
 
-      if(min(scores)>0.) Xsucc.append(convert<float>(pose).reshape(1,-1));
-      else Xfail.append(convert<float>(pose).reshape(1,-1));
+      if(min(scores)>0.) Xsucc.append(rai::convert<float>(pose).reshape(1,-1));
+      else Xfail.append(rai::convert<float>(pose).reshape(1,-1));
 
       cout <<"  -- shape: " <<shape <<" eval: " <<i+1 <<" #succ: " <<Xsucc.d0 <<
 	" #fail: " <<Xfail.d0 <<endl;
@@ -103,7 +103,7 @@ void displayGraspsFiles(uint N=10) {
     shapes.append(shape, Xsucc.d0);
   }
 
-  SG.displaySamples(convert<double>(X), shapes);
+  SG.displaySamples(rai::convert<double>(X), shapes);
 }
 
 

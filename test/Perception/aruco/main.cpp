@@ -7,10 +7,11 @@
 #include <Kin/frame.h>
 #include <Kin/viewer.h>
 
+#ifdef RAI_OPENCV
+
 #include <opencv2/features2d.hpp>
 #include "opencv2/imgproc.hpp"
 #include <opencv2/objdetect/aruco_detector.hpp>
-
 
 void test(){
   rai::Configuration C;
@@ -53,6 +54,10 @@ void test(){
     C.view(true);
   }
 }
+
+#else //opencv
+void test(){ NICO }
+#endif
 
 int main(int argc,char **argv){
   rai::initCmdLine(argc,argv);

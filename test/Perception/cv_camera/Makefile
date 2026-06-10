@@ -1,8 +1,7 @@
 BASE = ../../..
 
-QHULL = 1
-GL = 1
+DEPEND = Core Gui Perception
 
-DEPEND = Core Gui Geo Optim
+OPENCV4 = 1
 
 include $(BASE)/_make/generic.mk
