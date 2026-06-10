@@ -2,4 +2,4 @@
 
 #include <Core/array.h>
 
-byteA getArucoImage(int id, int borderBits = 2);
+byteA getArucoImage(int id);

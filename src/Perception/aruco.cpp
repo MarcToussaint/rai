@@ -23,6 +23,19 @@ byteA getArucoImage(int id, int borderBits){
   return img;
 }
 
+byteA getFullArucoDict(){
+  cv::aruco::Dictionary dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_5X5_50);
+  int borderBits = 1;
+  int width = 5+2*borderBits;
+  cv::Mat _img;
+  byteA dict(50, width, width);
+  for(uint id=0;id<dict.d0;id++){
+    dictionary.generateImageMarker(id, width, _img, 1);
+    dict[id] = conv_cvMat2byteA(_img).reshape(width, width);
+  }
+  return dict;
+}
+
 FindArucos::FindArucos(){
   dictionary = make_shared<cv::aruco::Dictionary>(cv::aruco::getPredefinedDictionary(cv::aruco::DICT_5X5_50));
   cv::aruco::DetectorParameters detectorParams = cv::aruco::DetectorParameters();
