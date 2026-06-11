@@ -79,9 +79,9 @@ public:
 };
 
 struct ConfigurationViewerThread : Thread {
-  Var<rai::Configuration> config;
+  Var<rai::Configuration>& config;
   shared_ptr<ConfigurationViewer> viewer;
-  ConfigurationViewerThread(const Var<rai::Configuration>& _config, double beatIntervalSec=-1.);
+  ConfigurationViewerThread(Var<rai::Configuration>& _config, double beatIntervalSec=-1.);
   ~ConfigurationViewerThread();
   void open();
   void step();

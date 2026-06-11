@@ -83,9 +83,9 @@ struct Var_base : rai::NonCopyable {
 
   /// @name access control
   /// to be called by a thread before access, returns the revision
-  int readAccess(Thread* th=nullptr);  //might set the caller to sleep
-  int writeAccess(Thread* th=nullptr); //might set the caller to sleep
-  int deAccess(Thread* th=nullptr);
+  int readAccess();  //might set the caller to sleep
+  int writeAccess(); //might set the caller to sleep
+  int deAccess();
 
   int getRevision() { rwlock.readLock(); int r=revision; rwlock.unlock(); return r; }
 };
@@ -97,12 +97,12 @@ struct RToken {
   Var_base* var;
   T* data;
   Thread* th;
-  RToken(Var_base& _var, T* _data, Thread* _th=nullptr, int* getRevision=nullptr, bool isAlreadyLocked=false)
-    : var(&_var), data(_data), th(_th) {
-    if(!isAlreadyLocked) var->readAccess(th);
+  RToken(Var_base& _var, T* _data, int* getRevision=nullptr, bool isAlreadyLocked=false)
+    : var(&_var), data(_data) {
+    if(!isAlreadyLocked) var->readAccess();
     if(getRevision) *getRevision=var->revision;
   }
-  ~RToken() { var->deAccess(th); }
+  ~RToken() { var->deAccess(); }
   const T* operator->() { return data; }
   operator const T& () { return *data; }
   const T& operator()() { return *data; }
@@ -113,18 +113,18 @@ struct WToken {
   Var_base* var;
   T* data;
   Thread* th;
-  WToken(Var_base& _var, T* _data, Thread* _th=nullptr, int* getRevision=nullptr)
-    : var(&_var), data(_data), th(_th) {
-    var->writeAccess(_th);
+  WToken(Var_base& _var, T* _data, int* getRevision=nullptr)
+    : var(&_var), data(_data) {
+    var->writeAccess();
     if(getRevision) *getRevision=var->revision+1;
   }
-  WToken(const double& dataTime, Var_base& _var, T* _data, Thread* _th=nullptr, int* getRevision=nullptr)
-    : var(&_var), data(_data), th(_th) {
-    var->writeAccess(th);
+  WToken(const double& dataTime, Var_base& _var, T* _data, int* getRevision=nullptr)
+    : var(&_var), data(_data) {
+    var->writeAccess();
     var->data_time=dataTime;
     if(getRevision) *getRevision=var->revision+1;
   }
-  ~WToken() { var->deAccess(th); }
+  ~WToken() { var->deAccess(); }
   void operator=(const T& y) { *data=y; }
   T* operator->() { return data; }
   operator T& () { return *data; }
@@ -159,34 +159,20 @@ template<class T> void operator<<(ostream& os, const Var_data<T>& v) { os <<"Var
     and set()) which allow convenient and typed read/write access to
     the variable's content */
 template<class T>
-struct Var {
+struct Var: rai::NonCopyable {
   shared_ptr<Var_data<T>> data;
-  Thread* thread;             ///< which thread is the owner
   int last_read_revision;     ///< last revision that has been accessed (read or write)
 
-  Var();
-
-  Var(const Var<T>& v) : Var(nullptr, v, false) {}
-
-  /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thread'
-  Var(Thread* _thread, bool threadListens=false);
-
-  /// A "copy" of acc: An access to the same variable as v refers to, but now for '_thread'
-  Var(Thread* _thread, const Var<T>& v, bool threadListens=false);
-
-  ~Var();
-
-  //only on construction you can make this Var to refer to the data of another Var -- now it is too late; you can of course call
-  //the operator= for the data, using var1.set() = var2.get();
-  Var& operator=(const Var& v) { HALT("you can't copy Var!") }
+  Var() : data(make_shared<Var_data<T>>()), last_read_revision(0) {}
+  ~Var() {};
 
   void checkLocked() { if(!data->rwlock.isLocked()) HALT("direct variable access without locking it before"); }
   T& operator()() { CHECK(data->rwlock.isLocked(), "direct variable access without locking it before");  return data->data; }
   T& operator*() {  CHECK(data->rwlock.isLocked(), "direct variable access without locking it before");  return data->data; }
   T* operator->() { CHECK(data->rwlock.isLocked(), "direct variable access without locking it before");  return &(data->data); }
-  RToken<T> get() { return RToken<T>(*data, &data->data, thread, &last_read_revision); } ///< read access to the variable's data
-  WToken<T> set() { return WToken<T>(*data, &data->data, thread/*, &last_read_revision*/); } ///< write access to the variable's data
-  WToken<T> set(const double& dataTime) { return WToken<T>(dataTime, *data, &data->data, thread/*, &last_read_revision*/); } ///< write access to the variable's data
+  RToken<T> get() { return RToken<T>(*data, &data->data,  &last_read_revision); } ///< read access to the variable's data
+  WToken<T> set() { return WToken<T>(*data, &data->data/*, &last_read_revision*/); } ///< write access to the variable's data
+  WToken<T> set(const double& dataTime) { return WToken<T>(dataTime, *data, &data->data/*, &last_read_revision*/); } ///< write access to the variable's data
   operator Var_base& () { return *std::dynamic_pointer_cast<Var_base>(data); }
 
   void reassignTo(const shared_ptr<Var_data<T>>& _data) {
@@ -195,9 +181,9 @@ struct Var {
   }
 
   rai::String& name() const { return data->name; }
-  int readAccess() {  return last_read_revision = data->readAccess((Thread*)thread); }
-  int writeAccess() { return data->writeAccess((Thread*)thread); }
-  int deAccess() {    return data->deAccess((Thread*)thread); }
+  int readAccess() {  return last_read_revision = data->readAccess(); }
+  int writeAccess() { return data->writeAccess(); }
+  int deAccess() {    return data->deAccess(); }
   int getRevision() { data->rwlock.readLock(); int r=data->revision; data->rwlock.unlock(); return r; }
   bool hasNewRevision() { return getRevision()>last_read_revision; }
   void waitForNextRevision(uint multipleRevisions=0) { waitForRevisionGreaterThan(last_read_revision+multipleRevisions); }
@@ -207,7 +193,6 @@ struct Var {
       return this->data->data==x;
     });
   }
-  void stopListening();
 
   void addCallback(const std::function<void(Var_base*)>& call, const void* callbackID=0) {
     data->addCallback(call, callbackID);
@@ -412,27 +397,6 @@ inline shared_ptr<ScriptThread> run(const std::function<int ()>& script, double 
 //
 
 template<class T>
-Var<T>::Var()
-  : data(make_shared<Var_data<T>>()), thread(0), last_read_revision(0) {}
-
-template<class T>
-Var<T>::Var(Thread* _thread, bool threadListens)
-  : data(make_shared<Var_data<T>>()), thread(_thread), last_read_revision(0) {
-  if(thread && threadListens) thread->event.listenTo(*data);
-}
-
-template<class T>
-Var<T>::Var(Thread* _thread, const Var<T>& v, bool threadListens)
-  : data(v.data), thread(_thread), last_read_revision(0) {
-  if(thread && threadListens) thread->event.listenTo(*data);
-}
-
-template<class T>
-Var<T>::~Var() {
-//  cout <<data.use_count() <<endl;
-}
-
-template<class T>
 int Var<T>::waitForRevisionGreaterThan(int rev) {
   EventFunction evFct = [&rev](const rai::Array<Var_base*>& vars, int whoChanged) -> int {
     CHECK_EQ(vars.N, 1, ""); //this event only checks the revision for a single var
@@ -444,6 +408,3 @@ int Var<T>::waitForRevisionGreaterThan(int rev) {
   ev.waitForStatusEq(1);
   return data->getRevision();
 }
-
-template<class T>
-void Var<T>::stopListening() { thread->event.stopListenTo(data); }

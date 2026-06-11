@@ -15,7 +15,7 @@
 
 struct Depth2PointCloud : Thread {
   //inputs
-  Var<floatA> depth;
+  Var<floatA>& depth;
   Var<rai::Transformation> pose;
   //outputs
   Var<arr> points;

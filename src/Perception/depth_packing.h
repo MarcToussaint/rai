@@ -13,7 +13,7 @@
 struct KinectDepthPacking : Thread {
   Var<uint16A> kinect_depth;
   Var<byteA> kinect_depthRgb;
-  KinectDepthPacking() : Thread("KinectDepthPacking"), kinect_depth(this, true) {}
+  KinectDepthPacking() : Thread("KinectDepthPacking") { event.listenTo(kinect_depth); }
   void open();
   void step();
   void close();

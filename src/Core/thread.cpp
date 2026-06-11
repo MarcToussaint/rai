@@ -255,18 +255,18 @@ void Var_base::addCallback(const std::function<void (Var_base*)>& call, const vo
   callbacks.append(new Callback<void(Var_base*)>(callbackID, call));
 }
 
-int Var_base::readAccess(Thread* th) {
+int Var_base::readAccess() {
   rwlock.readLock();
   return revision;
 }
 
-int Var_base::writeAccess(Thread* th) {
+int Var_base::writeAccess() {
   rwlock.writeLock();
   write_time = rai::clockTime();
   return revision+1;
 }
 
-int Var_base::deAccess(Thread* th) {
+int Var_base::deAccess() {
   int i;
   if(rwlock.rwCount == -1) { //log a revision after write access
     i = revision++;

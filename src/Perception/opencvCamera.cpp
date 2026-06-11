@@ -15,8 +15,7 @@ struct sOpencvCamera {  cv::VideoCapture capture;  };
 
 OpencvCamera::OpencvCamera(const char* _name, int _cameraID)
   : Thread(STRING("OpencvCamera_"<<_name), 0.),
-    cameraID(_cameraID),
-    image(this) {
+    cameraID(_cameraID) {
   self = make_unique<sOpencvCamera>();
   threadLoop();
 }

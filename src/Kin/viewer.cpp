@@ -595,10 +595,13 @@ Mutex& ConfigurationViewer::getEventsMutex(){
 
 //===========================================================================
 
-ConfigurationViewerThread::ConfigurationViewerThread(const Var<Configuration>& _config, double beatIntervalSec)
+ConfigurationViewerThread::ConfigurationViewerThread(Var<Configuration>& _config, double beatIntervalSec)
   : Thread("ConfigurationViewerThread", beatIntervalSec),
-    config(this, _config, (beatIntervalSec<0.)) {
-  if(beatIntervalSec>=0.) threadLoop(); else threadStep();
+    config(_config) {
+  if(beatIntervalSec>=0.) threadLoop(); else{
+    event.listenTo(config);
+    threadStep();
+  }
 }
 
 ConfigurationViewerThread::~ConfigurationViewerThread() {

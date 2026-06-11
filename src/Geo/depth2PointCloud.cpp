@@ -13,8 +13,9 @@
 
 Depth2PointCloud::Depth2PointCloud(Var<floatA>& _depth, float _fx, float _fy, float _px, float _py)
   : Thread("Depth2PointCloud"),
-    depth(this, _depth, true),
+    depth(_depth),
     fx(_fx), fy(_fy), px(_px), py(_py) {
+  event.listenTo(depth);
   pose.set()->setZero();
   threadOpen();
 }

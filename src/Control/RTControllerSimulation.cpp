@@ -144,15 +144,15 @@ void RTControlStep(
 
 }
 
-RTControllerSimulation::RTControllerSimulation(const rai::Configuration& realWorld, const Var<CtrlMsg>& _ctrl_ref, const Var<CtrlMsg>& _ctrl_obs, double tau, bool gravity, double _systematicErrorSdv)
+RTControllerSimulation::RTControllerSimulation(const rai::Configuration& realWorld, Var<CtrlMsg>& _ctrl_ref, double tau, bool gravity, double _systematicErrorSdv)
   : Thread("DynmSim", -1.)
-  , ctrl_ref(this, _ctrl_ref, true)
-  , ctrl_obs(this, _ctrl_obs)
+  , ctrl_ref(_ctrl_ref)
     //, modelWorld(this, "modelWorld")
   , tau(tau)
   , gravity(gravity)
   , stepCount(0)
   , systematicErrorSdv(_systematicErrorSdv) {
+  event.listenTo(ctrl_ref);
   //world = new rai::Configuration(realWorld);
   world = new rai::Configuration(rai::raiPath("data/pr2_model/pr2_model.g"));
 

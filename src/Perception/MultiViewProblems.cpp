@@ -35,7 +35,6 @@ void MultiViewSolver::subSelectObservedPoints(){
   selectedJidx.resize(J) = -1;
   for(uint j=0;j<J;j++) if(count(j)>=2){ selectedJidx(j)=selectedJ; selectedJ++; }
   //select respective data
-  selectedI;
   for(uint i=0;i<data.N;i++) if(selectedJidx(data(i).j)>=0) selectedI.append(i);
 }
 

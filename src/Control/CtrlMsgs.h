@@ -37,11 +37,10 @@ struct CtrlStateMsg {
 };
 
 struct RobotAbstraction {
-  Var<rai::CtrlCmdMsg> cmd;
-  Var<rai::CtrlStateMsg> state;
+  Var<rai::CtrlCmdMsg>& cmd;
+  Var<rai::CtrlStateMsg>& state;
   int writeData=0;
-  RobotAbstraction() {}
-  RobotAbstraction(const Var<rai::CtrlCmdMsg>& _cmd, const Var<rai::CtrlStateMsg>& _state) : cmd(_cmd), state(_state) {}
+  RobotAbstraction(Var<rai::CtrlCmdMsg>& cmd, Var<rai::CtrlStateMsg>& state) : cmd(cmd), state(state) {}
   virtual ~RobotAbstraction() {}
 };
 

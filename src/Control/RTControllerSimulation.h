@@ -15,7 +15,7 @@
 #include "ctrlMsg.h"
 
 struct RTControllerSimulation : Thread {
-  Var<CtrlMsg> ctrl_ref;
+  Var<CtrlMsg>& ctrl_ref;
   Var<CtrlMsg> ctrl_obs;
   //Var<rai::Configuration> modelWorld;
 
@@ -33,8 +33,7 @@ struct RTControllerSimulation : Thread {
   arr I_term;
 
   RTControllerSimulation(const rai::Configuration& realWorld,
-                         const Var<CtrlMsg>& _ctrl_ref,
-                         const Var<CtrlMsg>& _ctrl_obs,
+                         Var<CtrlMsg>& _ctrl_ref,
                          double tau=0.01, bool gravity=false, double _systematicErrorSdv=0.);
   virtual ~RTControllerSimulation() {}
 
