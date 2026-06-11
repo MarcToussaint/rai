@@ -1841,7 +1841,7 @@ void Camera::setZero() {
   setWidthHeight(640., 480.);
 }
 
-/// the height angle (in degrees) of the camera perspective; set it 0 for orthogonal projection
+/// the full height angle (in degrees) of the camera perspective; set it 0 for orthogonal projection
 void Camera::setHeightAngle(float a) { heightAbs=0.; focalLength=1./tan(0.5*a*RAI_PI/180.); }
 /// the absolute height of the camera perspective (automatically also sets heightAngle=0)
 void Camera::setHeightAbs(float h) { focalLength=0.; heightAbs=h; }

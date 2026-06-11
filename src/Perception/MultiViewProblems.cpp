@@ -1,12 +1,12 @@
 #include "MultiViewProblems.h"
 
-void MultiViewPointData::setCamera(uint k, const arr& P_k){
+void MultiViewSolver::setCamera(uint k, const arr& P_k){
   if(!P.N) P = zeros(K,3,4);
   if(P.d0==3) P[k] = P_k;
   else P[k] = P_k({0,3});
 }
 
-void MultiViewPointData::setCamera(uint k, const arr& fxycxy, const rai::Transformation& X){
+void MultiViewSolver::setCamera(uint k, const arr& fxycxy, const rai::Transformation& X){
   arr Tinv = X.getInverseMatrix();
   arr P = zeros(4,4);
   P(0, 0) = fxycxy(0);
@@ -19,29 +19,32 @@ void MultiViewPointData::setCamera(uint k, const arr& fxycxy, const rai::Transfo
   setCamera(k, P);
 }
 
-void MultiViewPointData::addDataPoint(uint j, uint k, const arr& p, double d){
-  data.append(Obs{j,k,p,d});
+void MultiViewSolver::addDataPoint(uint j, uint k, const arr& p, double d){
+  data.append(PointView{j,k,p,d});
 }
 
-void MultiViewPointData::subSelectObservedPoints(){
+void MultiViewSolver::subSelectObservedPoints(){
+  selectedI.clear();
+  selectedJ=0;
   //count how often each point is observed
   uintA count(J);
   count.setZero();
-  for(Obs& obs:data) count(obs.j)++;
+  for(PointView& pv:data) count(pv.j)++;
   //select count>=2
   selectedJ=0;
   selectedJidx.resize(J) = -1;
-  for(uint j=0,n=0;j<J;j++) if(count(j)>=2){ selectedJidx(j)=selectedJ; selectedJ++; }
+  for(uint j=0;j<J;j++) if(count(j)>=2){ selectedJidx(j)=selectedJ; selectedJ++; }
   //select respective data
   selectedI;
   for(uint i=0;i<data.N;i++) if(selectedJidx(data(i).j)>=0) selectedI.append(i);
 }
 
-arr& MultiViewPointData::solveColinearityForPoints(){
+arr& MultiViewSolver::solveColinearityForPoints(){
+  if(!selectedI.N){ X = zeros(J, 3); return X; }
   //-- build system
   arr A, a;
   for(uint i:selectedI){
-    Obs& o = data(i);
+    PointView& o = data(i);
     arr x = {o.p.elem(0), o.p.elem(1), 1.};
     arr skew_x = skew(x);
     arr B = zeros(3, 3*selectedJ);

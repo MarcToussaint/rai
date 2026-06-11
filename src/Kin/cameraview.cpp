@@ -22,7 +22,7 @@ CameraView::CameraView(const Configuration& _C, bool _offscreen) {
   gl->add(this);
 }
 
-CameraView::CameraFrame& CameraView::setCamera(Frame* frame, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile) {
+CameraView::CameraFrame& CameraView::newCamera(Frame* frame, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile) {
   currentCamera = make_shared<CameraFrame>(*frame);
   cameras.append(currentCamera);
   Camera& cam = currentCamera->cam;
@@ -38,7 +38,7 @@ CameraView::CameraFrame& CameraView::setCamera(Frame* frame, uint width, uint he
   return *currentCamera;
 }
 
-CameraView::CameraFrame& CameraView::setCamera(Frame* frame) {
+CameraView::CameraFrame& CameraView::newCamera(Frame* frame) {
   CHECK(frame, "frame is not defined");
 
   double width=400., height=200.;
@@ -53,7 +53,7 @@ CameraView::CameraFrame& CameraView::setCamera(Frame* frame) {
   frame->ats->get<double>(width, "width");
   frame->ats->get<double>(height, "height");
 
-  return setCamera(frame, width, height, focalLength, orthoAbsHeight, zRange);
+  return newCamera(frame, width, height, focalLength, orthoAbsHeight, zRange);
 }
 
 CameraView::CameraFrame& CameraView::selectSensor(Frame *frame) {
@@ -61,7 +61,7 @@ CameraView::CameraFrame& CameraView::selectSensor(Frame *frame) {
   bool found=false;
   for(shared_ptr<CameraFrame>& c:cameras) if(&c->frame==frame) { currentCamera=c; found=true; break; }
   if(!found) {
-    return setCamera(frame);
+    return newCamera(frame);
   }
   gl->resize(currentCamera->cam.width, currentCamera->cam.height);
   return *currentCamera;

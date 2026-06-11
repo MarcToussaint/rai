@@ -49,8 +49,8 @@ struct CameraView : ConfigurationViewer {
   ~CameraView() {}
 
   //-- loading the configuration: the meshes, the robot model, the tote, the sensors; all ends up in K
-  CameraFrame& setCamera(rai::Frame* frame, uint width, uint height, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange= {}, const char* backgroundImageFile=0);
-  CameraFrame& setCamera(rai::Frame* frame); //read everything from the frame attributes
+  CameraFrame& newCamera(rai::Frame* frame, uint width, uint height, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange= {}, const char* backgroundImageFile=0);
+  CameraFrame& newCamera(rai::Frame* frame); //read everything from the frame attributes
   CameraFrame& selectSensor(rai::Frame* frame); //set the OpenGL sensor
 
   void computeImageAndDepth(byteA& image, floatA& depth, bool _simulateDepthNoise=false);

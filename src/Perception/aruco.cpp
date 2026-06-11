@@ -61,7 +61,6 @@ void FindArucos::find(const byteA& rgb){
     // cv::cvtColor(inputImage, grayImage, cv::COLOR_RGB2GRAY);
     // cv::cornerSubPix(grayImage, markerCorners[0], winSize, zeroZone, criteria);
 
-    cout <<ids <<endl;
     for(uint i=0;i<pts.d0;i++){
       CHECK_EQ(markerCorners[i].size(), 4, "");
       for(uint j=0;j<4;j++){
@@ -82,5 +81,8 @@ void FindArucos::find(const byteA& rgb){
 }
 
 #else //OPENCV
+
+byteA getArucoImage(int id, int borderBits){ NICO }
+byteA getFullArucoDict(){ NICO }
 
 #endif //OPENCV

@@ -10,10 +10,10 @@
 
 #include "../Geo/depth2PointCloud.h"
 
-void rai::CameraAbstraction::getPointCloud(byteA& image, arr& pts, bool globalCoordinates) {
-  floatA depth;
-  getImageAndDepth(image, depth);
-  depthData2pointCloud(pts, depth, getFxycxy());
+void rai::CameraAbstraction::getPointCloud(byteA& img, arr& pts, bool globalCoordinates) {
+  floatA dep = depth.get();
+  img = image.get();
+  depthData2pointCloud(pts, dep, getFxycxy());
   if(globalCoordinates) {
     rai::Transformation pose=getPose();
     if(!pose.isZero()) {

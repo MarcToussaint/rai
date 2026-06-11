@@ -75,10 +75,10 @@ struct Simulation {
   void getImageAndDepth(byteA& image, floatA& depth); ///< use this during stepping
   void getSegmentation(byteA& segmentation);
   CameraView& cameraview(); ///< use this if you want to initialize the sensor, etc
-  rai::CameraView::CameraFrame& addSensor(const char* sensorName, uint width=640, uint height=360, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange= {}) {
+  rai::CameraView::CameraFrame& addSensor(const char* sensorName) {
     rai::Frame *f = C.getFrame(sensorName);
     CHECK(f, "a camera frame must exist");
-    return cameraview().setCamera(f, width, height, focalLength, orthoAbsHeight, zRange);
+    return cameraview().newCamera(f);
   }
   rai::CameraView::CameraFrame&  selectSensor(const char* name) { return cameraview().selectSensor(C.getFrame(name)); }
   void  setSimulateDepthNoise(bool _simulateDepthNoise) { simulateDepthNoise=_simulateDepthNoise; }

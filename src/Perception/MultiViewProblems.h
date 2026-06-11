@@ -11,7 +11,10 @@
 #include <Core/array.h>
 #include <Geo/geo.h>
 
-struct MultiViewPointData{
+struct PointView{ uint j, k; arr p; double d=-1.; };
+typedef rai::Array<PointView> PointViewA;
+
+struct MultiViewSolver{
 
   // j enumerates marker points
   // k enumerates cameras
@@ -22,12 +25,11 @@ struct MultiViewPointData{
   uintA selectedI; //subselections of marker points and data points
   intA selectedJidx;
 
-  struct Obs{ uint j, k; arr p; double d=-1.; };
   arr X; //J world points
   arr P; //K camera matrices
-  rai::Array<Obs> data;
+  PointViewA data;
 
-  MultiViewPointData(uint J_numMarkers, uint K_numCameras)
+  MultiViewSolver(uint J_numMarkers, uint K_numCameras)
       : J(J_numMarkers), K(K_numCameras){}
 
   void setCamera(uint k, const arr& P_k);

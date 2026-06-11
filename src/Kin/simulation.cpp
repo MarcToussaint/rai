@@ -297,10 +297,10 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   if(self->display) self->updateDisplayData(time, C); //does not update with freq >20hz - see method
 
-  if(verbose>2){
-    C.view(false, STRING("simulation time: " <<time));
-    rai::wait(tau);
-  }
+  // if(verbose>2){
+  //   C.view(false, STRING("simulation time: " <<time));
+  //   rai::wait(tau);
+  // }
 
   if(engine==_physx && verbose>3){
     self->physx->getDebugConfig().view(false, STRING("Simulation physx debug time: " <<time));
@@ -757,7 +757,6 @@ struct Simulation_DisplayThread : Thread, ConfigurationViewer {
       depth2depthImage(depthImage, depth);
 
       float w = .98f - .2f*float(depth.d0)/float(gl.width);
-      cout <<w <<endl;
       RenderData::setQuad(0, image, .02, .78, .2);
       RenderData::setQuad(1, depthImage, w, .78, .2);
     }

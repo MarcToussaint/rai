@@ -57,8 +57,9 @@ struct GripperAbstraction {
 };
 
 struct CameraAbstraction {
-  rai::String name;
-  virtual void getImageAndDepth(byteA& image, floatA& depth) = 0;
+  rai::String camera_name;
+  Var<byteA> image;
+  Var<floatA> depth;
   virtual arr getFxycxy() { return arr{}; } //intrinsics
   virtual rai::Transformation getPose() { LOG(-2) <<"not implemented for this camera!"; return 0; } //extrinsics
   void getPointCloud(byteA& image, arr& pts, bool globalCoordinates);
