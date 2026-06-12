@@ -84,5 +84,7 @@ void FindArucos::find(const byteA& rgb){
 
 byteA getArucoImage(int id, int borderBits){ NICO }
 byteA getFullArucoDict(){ NICO }
+FindArucos::FindArucos(){ NICO }
+void FindArucos::find(const byteA& rgb){ NICO }
 
 #endif //OPENCV

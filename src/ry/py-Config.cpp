@@ -22,6 +22,7 @@
 #include "../Geo/i_fcl.h"
 #include "../LGP/LGP_tree.h"
 #include "../Geo/depth2PointCloud.h"
+#include "../Geo/aruco.h"
 
 //void checkView(shared_ptr<rai::Configuration>& self){ if(self->hasView()) self->view(); }
 void null_deleter(rai::Frame*) {}
@@ -40,9 +41,14 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("fxycxy")
        );
 
+  m.def("getArucoImage", &getArucoImage, "return arucu image (from 50 5x5 dict)", pybind11::arg("id"));
+
   //===========================================================================
 
   pybind11::class_<rai::ConfigurationViewer, shared_ptr<rai::ConfigurationViewer>>(m, "ConfigurationViewer", "internal viewer handle (gl window)")
+      .def(pybind11::init<>(), "")
+
+      .def("view", &rai::ConfigurationViewer::view, "", pybind11::arg("pause")=false, pybind11::arg("text")=nullptr, pybind11::arg("offscreen")=false)
 
       .def("visualsOnly", &rai::ConfigurationViewer::visualsOnly, "display only visuals (no markers/transparent/text)", pybind11::arg("_visualsOnly")=true)
 

@@ -11,7 +11,6 @@ jobs:
       run: |
         source _make/install.sh vars_only #defines the following dependency packages
         sudo apt install --yes ${ubuntu_rai}
-        _make/install.sh ubuntu-rai
         _make/install.sh libccd
         _make/install.sh fcl
         _make/install.sh libann

@@ -77,18 +77,19 @@ make -j4
       #apt update
       #apt install wget
 
-      _make/install.sh ubuntu-rai
+      source _make/install.sh vars_only #defines the following dependency packages
+      sudo apt install --yes ${ubuntu_rai}
       _make/install.sh libccd
       _make/install.sh fcl
       _make/install.sh libann
   
       #build tests
       cmake . -B build -DBUILD_TESTS=ON -DUSE_PHYSX=OFF
-      cmake --build build
+      make -C build
 
       #build with physx
       ./install.sh physx
-      cmake . -B -DUSE_PHYSX=ON
-      cmake --build build 
+      cmake . -B build -DUSE_PHYSX=ON
+      make -C build
 
 

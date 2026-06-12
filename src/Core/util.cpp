@@ -25,6 +25,7 @@
 #  include <sys/stat.h>
 #  include <poll.h>
 #  include <execinfo.h>
+#  include <dlfcn.h>     // for dladdr
 #  include <cxxabi.h>    // for __cxa_demangle
 #include <wordexp.h>
 #if defined RAI_X11
@@ -678,31 +679,65 @@ LogToken::~LogToken() {
 
 #ifndef RAI_MSVC
       if(log_level<=-2) {
-        void* callstack[10];
-        int stack_count = backtrace(callstack, 10);
-        char** symbols = backtrace_symbols(callstack, stack_count);
-        for(int i=stack_count; i--;)  {
-          char* beg = symbols[i];
-          while(*beg!='(') beg++;
-          beg++;
-          char* end=beg;
-          while(*end!='+') end++;
-          if(beg!=end) {
-            *end=0;
-            char* demangled = NULL;
-            int status;
-            demangled = abi::__cxa_demangle(beg, NULL, 0, &status);
-            if(demangled) {
-              cout <<"STACK" <<i <<' ' <<demangled <<'\n';
-              free(demangled);
-            } else {
-              cout <<"STACK" <<i <<' ' <<symbols[i] <<'\n';
-            }
-          } else {
-            cout <<"STACK" <<i <<' ' <<symbols[i] <<'\n';
-          }
-        }
-        free(symbols);
+        if(useCout) cout <<"-- " <<errString() <<endl;
+
+	{
+	  void *callstack[128];
+	  const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
+	  char buf[1024];
+	  int nFrames = backtrace(callstack, nMaxFrames);
+	  char **symbols = backtrace_symbols(callstack, nFrames);
+
+	  for (int i = 1; i < nFrames; i++) {
+	    Dl_info info;
+	    if (dladdr(callstack[i], &info)) {
+	      char *demangled = NULL;
+	      int status;
+	      demangled = abi::__cxa_demangle(info.dli_sname, NULL, 0, &status);
+	      snprintf(buf, sizeof(buf), "%-3d %*0p %s + %zd\n",
+		       i, 2 + sizeof(void*) * 2, callstack[i],
+		       status == 0 ? demangled : info.dli_sname,
+		       (char *)callstack[i] - (char *)info.dli_saddr);
+	      free(demangled);
+	    } else {
+	      snprintf(buf, sizeof(buf), "%-3d %*0p\n",
+		       i, 2 + sizeof(void*) * 2, callstack[i]);
+	    }
+	    cout << buf;
+
+	    snprintf(buf, sizeof(buf), "%s\n", symbols[i]);
+	    cout << buf;
+	  }
+	  free(symbols);
+	  if (nFrames == nMaxFrames)
+	    cout << "[truncated]\n";
+	}
+
+        // void* callstack[100];
+        // int stack_count = backtrace(callstack, 100);
+        // char** symbols = backtrace_symbols(callstack, stack_count);
+        // for(int i=stack_count; i--;)  {
+        //   char* beg = symbols[i];
+        //   while(*beg!='(') beg++;
+        //   beg++;
+        //   char* end=beg;
+        //   while(*end!='+') end++;
+        //   if(beg!=end) {
+        //     *end=0;
+        //     char* demangled = NULL;
+        //     int status;
+        //     demangled = abi::__cxa_demangle(beg, NULL, 0, &status);
+        //     if(demangled) {
+        //       cout <<"STACK" <<i <<' ' <<demangled <<'\n';
+        //       free(demangled);
+        //     } else {
+        //       cout <<"STACK" <<i <<' ' <<symbols[i] <<'\n';
+        //     }
+        //   } else {
+        //     cout <<"STACK" <<i <<' ' <<symbols[i] <<'\n';
+        //   }
+        // }
+        // free(symbols);
       }
 #endif
 

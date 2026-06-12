@@ -111,8 +111,8 @@ case ${lib} in
     
     librealsense)
 	#sudo apt install --yes libusb-1.0-0-dev libglfw3-dev libgtk-3-dev
-        git clone --single-branch --recurse-submodules https://github.com/IntelRealSense/librealsense.git
-	cmake -DCMAKE_INSTALL_PREFIX=${pre} -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=OFF -DBUILD_GRAPHICAL_EXAMPLES=OFF -DBUILD_TOOLS=OFF -DBUILD_GLSL_EXTENSIONS=OFF ${lib} -B ${lib}/build
+        git clone --single-branch -b v2.58.1 --recurse-submodules https://github.com/IntelRealSense/librealsense.git
+	cmake -DCMAKE_INSTALL_PREFIX=${pre} -DCMAKE_BUILD_TYPE=Release -DBUILD_ROSBAG2=OFF -DBUILD_EXAMPLES=OFF -DBUILD_GRAPHICAL_EXAMPLES=OFF -DBUILD_TOOLS=OFF -DBUILD_GLSL_EXTENSIONS=OFF ${lib} -B ${lib}/build
 	make -C ${lib}/build install
 	;;
 
@@ -211,9 +211,9 @@ case ${lib} in
 	;;
 
     opencv)
-	git clone --single-branch -b 4.7.0 https://github.com/opencv/opencv.git
+	git clone --single-branch -b 5.0.0 https://github.com/opencv/opencv.git
 	#git clone --single-branch -b 4.7.0 https://github.com/opencv/opencv_contrib.git
-	cmake -DCMAKE_INSTALL_PREFIX=${pre} -DWITH_VTK=OFF -DBUILD_TESTS=OFF -DBUILD_PERF_TESTS=OFF ${lib} -B ${lib}/build
+	cmake -DCMAKE_INSTALL_PREFIX=${pre} -DBUILD_opencv_dnn=OFF -DBUILD_opencv_python3=OFF -DWITH_VTK=OFF -DBUILD_TESTS=OFF -DBUILD_PERF_TESTS=OFF ${lib} -B ${lib}/build
 	make -C ${lib}/build install
 	;;
 

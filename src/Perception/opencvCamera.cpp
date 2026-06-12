@@ -60,8 +60,7 @@ struct sOpencvCamera {};
 
 OpencvCamera::OpencvCamera(const char* _name, int _cameraID)
   : Thread(STRING("OpencvCamera_"<<_name), 0.),
-    cameraID(_cameraID),
-    image(this) { NICO }
+    cameraID(_cameraID) { NICO }
 OpencvCamera::~OpencvCamera() { NICO }
 void OpencvCamera::open() { NICO }
 void OpencvCamera::step() { NICO }
