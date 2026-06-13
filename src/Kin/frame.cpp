@@ -421,6 +421,21 @@ void rai::Frame::_state_setXBadinBranch() {
   }
 }
 
+arr rai::Frame::get_Jacobian_pos(const arr& _pos_world) {
+  arr J;
+  Vector pos_world;
+  if(_pos_world.N) pos_world.set(_pos_world);
+  else pos_world = ensure_X().pos;
+  C.jacobian_pos(J, this, pos_world);
+  return J;
+}
+
+arr rai::Frame::get_Jacobian_angular() {
+  arr J;
+  C.jacobian_angular(J, this);
+  return J;
+}
+
 bool transFromAts(rai::Transformation& X, const rai::Graph& ats, const char* key) {
   rai::Node* n = ats.findNode(key);
   if(!n) return false;
@@ -2237,7 +2252,7 @@ void rai::Shape::createMeshes(const str& name) {
       m.setBox();
       m.scale(size(0)-2.*coll_cvxRadius, size(1)-2.*coll_cvxRadius, size(2)-2.*coll_cvxRadius);
       sscCore() = m.V;
-      mesh().setSSBox(size(0), size(1), size(2), coll_cvxRadius);
+      mesh().setSSBox(size(0), size(1), size(2), coll_cvxRadius, 2);
       //      mesh().setSSCvx(sscCore, r);
     } break;
     case rai::ST_ssCylinder: {
@@ -2364,9 +2379,9 @@ void rai::Inertia::defaultInertiaByShape() {
   matrix.setZero();
   //add inertia to the body
   switch(frame.shape->type()) {
-    case ST_sphere:   inertiaSphereSurface(mass, matrix.p(), frame.shape->radius(), (mass>0.?-1.:5.));  break;
+    case ST_sphere:   //inertiaSphereSurface(mass, matrix.p(), frame.shape->radius(), (mass>0.?-1.:5.));  break;
     case ST_ssBox:
-    case ST_box:      inertiaBoxSurface(mass, matrix.p(), frame.shape->size(0), frame.shape->size(1), frame.shape->size(2), (mass>0.?-1.:5.));  break;
+    case ST_box:      //inertiaBoxSurface(mass, matrix.p(), frame.shape->size(0), frame.shape->size(1), frame.shape->size(2), (mass>0.?-1.:5.));  break;
     case ST_capsule:
     case ST_cylinder:
     case ST_ssCylinder: //inertiaCylinder(matrix.p(), mass, (mass>0.?0.:100.), frame.shape->size(0), frame.shape->size(1));  break;

@@ -95,6 +95,8 @@ void init_Frame(pybind11::module& m) {
     for(rai::Frame* f:self->children) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-sense deleter!
     return F;
   })
+  .def("get_Jacobian_pos", &rai::Frame::get_Jacobian_pos, "", pybind11::arg("world_pos_optional")=arr{})
+  .def("get_Jacobian_angular", &rai::Frame::get_Jacobian_angular, "")
   .def("getPose", &rai::Frame::getPose, "", pybind11::arg("relativeTo")=(rai::Frame*)0)
   .def("getPosition", &rai::Frame::getPosition, "", pybind11::arg("relativeTo")=(rai::Frame*)0)
   .def("getQuaternion", &rai::Frame::getQuaternion, "", pybind11::arg("relativeTo")=(rai::Frame*)0)

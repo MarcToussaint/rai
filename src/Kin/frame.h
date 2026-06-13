@@ -154,6 +154,10 @@ struct Frame : NonCopyable {
   Frame& convertDecomposedShapeToChildFrames();
   bool standardizeInertias(bool recomputeInertias=true, bool _transformToDiagInertia=false);
 
+  //core kinematics
+  arr get_Jacobian_pos(const arr& pos_world={});
+  arr get_Jacobian_angular();
+
   //I/O
   void read(const Graph& ats);
   void write(Graph& G) const;
