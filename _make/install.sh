@@ -215,6 +215,7 @@ case ${lib} in
 	#git clone --single-branch -b 4.7.0 https://github.com/opencv/opencv_contrib.git
 	cmake -DCMAKE_INSTALL_PREFIX=${pre} -DBUILD_opencv_dnn=OFF -DBUILD_opencv_python3=OFF -DWITH_VTK=OFF -DBUILD_TESTS=OFF -DBUILD_PERF_TESTS=OFF ${lib} -B ${lib}/build
 	make -C ${lib}/build install
+	#find ${lib}/build/3rdparty -name 'lib*.a' -exec cp {} ${pre}/lib \;
 	;;
 
     test)

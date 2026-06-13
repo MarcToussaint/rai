@@ -136,7 +136,7 @@ endif()
 
 if(USE_OPENCV)
   add_definitions(-DRAI_OPENCV)
-  include_directories($ENV{HOME}/.local/include/opencv4)
+  include_directories($ENV{HOME}/.local/include/opencv5)
   target_link_libraries(rai opencv_core opencv_highgui opencv_imgproc opencv_videoio)
   message(STATUS "[rai] using OpenCV libs from ~/.local")
 endif()

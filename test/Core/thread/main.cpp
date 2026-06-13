@@ -15,10 +15,10 @@ void testMetronome(){
 
 // Normal Thread struct
 struct MyThread: Thread{
-  Var<double> x;
+  Var<double>& x;
   uint n;
   MyThread(Var<double>& _x, uint n, double beat)
-    : Thread(STRING("MyThread_"<<n), beat), x(this, _x), n(n){
+    : Thread(STRING("MyThread_"<<n), beat), x(_x), n(n){
     threadOpen();
   }
   void step(){
@@ -86,8 +86,8 @@ void TEST(Way0){
 void TEST(Way1){
   auto m = make_shared<ComputeSum>();
 
-  Var<arr> x(m->x);
-  Var<double> s(m->s);
+  Var<arr>& x = m->x;
+  Var<double>& s = m->s;
 
   x.set() = {1., 2., 3.};
 
@@ -111,12 +111,12 @@ void TEST(Way1){
 //
 
 struct PairSorter:Thread{
-  Var<int> a;
-  Var<int> b;
+  Var<int>& a;
+  Var<int>& b;
   PairSorter(Var<int>& _a, Var<int>& _b)
     : Thread(STRING("S_"<<_a.name()<<"_"<<_b.name())),
-      a(this, _a),
-      b(this, _b){}
+      a(_a),
+      b(_b){}
   ~PairSorter(){
     threadClose();
   }
@@ -128,19 +128,19 @@ struct PairSorter:Thread{
 void TEST(Sorter){
   uint N=20;
 
-  rai::Array<Var<int>> x(N);
+  rai::Array<shared_ptr<Var<int>>> x(N);
   rai::Array<shared_ptr<PairSorter>> ps(N-1);
-  for(uint i=0;i<N-1;i++)
-    ps(i) = make_shared<PairSorter>(x(i), x(i+1));
+  for(uint i=0;i<N;i++) x(i) = make_shared<Var<int>>();
+  for(uint i=0;i<N-1;i++) ps(i) = make_shared<PairSorter>(*x(i), *x(i+1));
 
   {
     for(auto& s:ps) s->threadOpen();
 
-    for(uint i=0;i<N;i++) x(i).set() = rnd(100);
+    for(uint i=0;i<N;i++) x(i)->set() = rnd(100);
 
     for(uint k=0;k<20;k++){
       //if(moduleShutdown()->getStatus()) break;
-      for(uint i=0;i<N;i++) cout <<x(i).get() <<' ';
+      for(uint i=0;i<N;i++) cout <<x(i)->get() <<' ';
       cout <<endl;
       for(auto& s:ps) s->threadStep();
       rai::wait(.1);

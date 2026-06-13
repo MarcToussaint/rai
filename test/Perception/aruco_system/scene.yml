@@ -33,11 +33,11 @@ rig3(rig_base): { Q: "t(.5 .0 .0) d(45 0 1 0) t(-.15 0 0)", shape: ssBox, size: 
 rig3(rig_base): { Q: "t(-.5 .0 .0) d(-45 0 1 0) t(.15 0 0)", shape: ssBox, size: [.02, 0.02, .3, .002] }
 
 
-cam0(rig1): { Q: "t(.0 .0 .3) d(180 0 0 1) d(-90 1 0 0) d(45 0 1 0) d(-30 1 0 0)", shape: marker, size: [.1], width: 800, height: 600, focalLength: 1. }
-cam1(rig2): { Q: "t(.0 .0 .3) d(180 0 0 1) d(-90 1 0 0) d(-45 0 1 0) d(-30 1 0 0)", shape: marker, size: [.1], width: 800, height: 600, focalLength: 1. }
+cam0(rig1): { Q: "t(.0 .0 .3) d(180 0 0 1) d(-90 1 0 0) d(45 0 1 0) d(-30 1 0 0)", shape: marker, size: [.1], width: 800, height: 600, focalLength: 1.47 }
+cam1(rig2): { Q: "t(.0 .0 .3) d(180 0 0 1) d(-90 1 0 0) d(-45 0 1 0) d(-30 1 0 0)", shape: marker, size: [.1], width: 800, height: 600, focalLength: 1.47 }
 
-cam2(rig1): { Q: "t(.0 .0 -.3) d(180 0 0 1) d(-90 1 0 0) d(45 0 1 0) d(10 1 0 0)", shape: marker, size: [.1], width: 800, height: 600, focalLength: 1. }
-cam3(rig2): { Q: "t(.0 .0 -.3) d(180 0 0 1) d(-90 1 0 0) d(-45 0 1 0) d(10 1 0 0)", shape: marker, size: [.1], width: 800, height: 600, focalLength: 1. }
+cam2(rig1): { Q: "t(.0 .0 -.3) d(180 0 0 1) d(-90 1 0 0) d(45 0 1 0) d(10 1 0 0)", shape: marker, size: [.1], width: 800, height: 600, focalLength: 1.47}
+cam3(rig2): { Q: "t(.0 .0 -.3) d(180 0 0 1) d(-90 1 0 0) d(-45 0 1 0) d(10 1 0 0)", shape: marker, size: [.1], width: 800, height: 600, focalLength: 1.47 }
 
 
 

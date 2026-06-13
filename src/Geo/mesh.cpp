@@ -280,16 +280,16 @@ void Mesh::setIcosahedron() {
 }
 
 void Mesh::setSphere(uint fineness) {
-//  setOctahedron();
-//  setDodecahedron();
-//  setTetrahedron();
-  setIcosahedron();
+  setOctahedron();
+  // setDodecahedron();
+  // setTetrahedron();
+  // setIcosahedron();
   for(uint k=0; k<fineness; k++) {
     subDivide();
     for(uint i=0; i<V.d0; i++) V[i] /= length(V[i]);
   }
   fuseNearVertices(1e-6);
-//  makeConvexHull();
+  //  makeConvexHull();
 }
 
 void Mesh::setHalfSphere(uint fineness) {

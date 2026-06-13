@@ -11,20 +11,22 @@
 void TEST(Primitives) {
   rai::Mesh mesh;
 
+  uint fineness = 1;
+
   OpenGL gl;
   gl.data().addStandardScene();
 
-  mesh.setSphere(2);
+  mesh.setSphere(fineness);
   cout <<"#V=" <<mesh.V.d0 <<endl;
   gl.data().add().mesh(mesh);
   gl.update(true);
 
-  mesh.setSSBox(3,3,3,1,2);
+  mesh.setSSBox(3,3,3,1,fineness);
   cout <<"#V=" <<mesh.V.d0 <<endl;
   gl.data().clear().addStandardScene().add().mesh(mesh);
   gl.update(true);
 
-  mesh.setCapsule(1,3,2);
+  mesh.setCapsule(1,3,fineness);
   cout <<"#V=" <<mesh.V.d0 <<endl;
   gl.data().clear().addStandardScene().add().mesh(mesh);
   gl.update(true);
