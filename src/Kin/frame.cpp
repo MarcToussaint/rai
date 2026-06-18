@@ -1223,16 +1223,14 @@ void rai::Dof::setRandom(uint timeSlices_d1, int verbose) {
     }
     arr q = calcDofsFromConfig();
 
-    if(joint() && joint()->type==rai::JT_quatBall && limits(0)<=-1. && limits(-1)>=1.) { //special case handler for quaternions
+    if(joint() && joint()->type==rai::JT_quatBall) { //special case handler for quaternions
       CHECK_EQ(q.N, 4, "");
       q = randn(4);
       q /= length(q);
-      if(q0.N) q0=q;
-    }else if(joint() && joint()->type==rai::JT_circleZ && limits(0)<=-1. && limits(-1)>=1.) { //special case handler for quaternions
+    }else if(joint() && joint()->type==rai::JT_circleZ) { //special case handler for quaternions
       CHECK_EQ(q.N, 2, "");
       q = randn(2);
       q /= length(q);
-      if(q0.N) q0=q;
     } else {
       CHECK(limits.N>=2*dim, "uniform sampling (for '" <<frame->name <<"') requires limits!")
       for(uint k=0; k<dim; k++) {
@@ -1240,10 +1238,17 @@ void rai::Dof::setRandom(uint timeSlices_d1, int verbose) {
         double up = limits.elem(dim+k); //up
         if(up>=lo) {
           q(k) = rnd.uni(lo, up);
-          if(q0.N) q0(k) = q(k); //CRUCIAL to impose a bias to that random initialization
         }
       }
     }
+    if(joint() && joint()->type==rai::JT_free) { //special case handler for quaternions
+      CHECK_EQ(q.N, 7, "");
+      arr r = randn(4);
+      r /= length(r);
+      q({3,0}) = r;
+    }
+
+    if(q0.N) q0 = q; //CRUCIAL to impose a bias to that random initialization
     setDofs(q);
 
   } else {
@@ -2453,6 +2458,7 @@ void rai::Inertia::read(const Graph& G) {
     // matrix.setId();
     // matrix *= .2*d;
     if(frame.shape && frame.shape->type()!=ST_marker) defaultInertiaByShape();
+    else{ matrix.setId(); matrix *= mass * 1e-4; }
   }
   if(auto I = G.find<arr>("inertia")) {
     if(I->N==3) matrix.setDiag(*I);
