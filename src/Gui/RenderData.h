@@ -21,6 +21,7 @@ struct Render_Options {
   RAI_PARAM("Render/", arr, backgroundColor, {})
   RAI_PARAM("Render/", arr, floorColor, {})
   RAI_PARAM("Render/", arr, lights, {})
+  RAI_PARAM("Render/", double, shadowHeight, 5.)
 };
 
 enum RenderType { _solid, _shadow, _tensor, _text, _marker, _transparent, _all };

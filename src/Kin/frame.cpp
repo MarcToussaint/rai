@@ -2188,7 +2188,7 @@ void rai::Shape::createMeshes(const str& name) {
       CHECK_EQ(size.N, 1, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
       coll_cvxRadius = size(-1);
       sscCore() = zeros(1,3);
-      mesh().setSSCvx(sscCore(), coll_cvxRadius);
+      mesh().setSSCvx(sscCore(), coll_cvxRadius, 3);
     } break;
     case rai::ST_cylinder:
       CHECK_EQ(size.N, 2, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
