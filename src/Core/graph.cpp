@@ -1191,14 +1191,14 @@ struct LibYamlReadHelper{
   void _map(Graph& G){
     uint Nbefore = G.N;
     while(true) {
-      if (!yaml_parser_parse(&parser, &event)) HALT("Failed to parse event " <<event.type <<": " <<parser.problem <<' ' <<parser.context <<" line: " <<parser.problem_mark.line << " col: " <<parser.problem_mark.column);
+      if (!yaml_parser_parse(&parser, &event)) HALT("Failed to parse event " <<event.type <<": " <<parser.problem <<' ' <<parser.context <<" line: " <<parser.problem_mark.line+1 << " col: " <<parser.problem_mark.column);
       if(event.type == YAML_MAPPING_END_EVENT){ yaml_event_delete(&event); break; }
 
       CHECK_EQ(event.type, YAML_SCALAR_EVENT, "")
       str key((char*)event.data.scalar.value);
       yaml_event_delete(&event);
 
-      if (!yaml_parser_parse(&parser, &event))  HALT("Failed to parse event " <<event.type <<": " <<parser.problem <<' ' <<parser.context <<" line: " <<parser.problem_mark.line << " col: " <<parser.problem_mark.column);
+      if (!yaml_parser_parse(&parser, &event))  HALT("Failed to parse event " <<event.type <<": " <<parser.problem <<' ' <<parser.context <<" line: " <<parser.problem_mark.line+1 << " col: " <<parser.problem_mark.column);
       _value(G, key);
     }
     readGraph_postprocess(G, Nbefore);
@@ -1207,7 +1207,7 @@ struct LibYamlReadHelper{
   strA _seq(){
     strA S;
     while(true) {
-      if (!yaml_parser_parse(&parser, &event)) HALT("Failed to parse event " <<event.type <<": " <<parser.problem <<parser.problem <<' ' <<parser.context <<" line: " <<parser.problem_mark.line << " col: " <<parser.problem_mark.column);
+      if (!yaml_parser_parse(&parser, &event)) HALT("Failed to parse event " <<event.type <<": " <<parser.problem <<parser.problem <<' ' <<parser.context <<" line: " <<parser.problem_mark.line+1 << " col: " <<parser.problem_mark.column);
       if(event.type == YAML_SEQUENCE_END_EVENT){ yaml_event_delete(&event); break; }
 
       CHECK_EQ(event.type, YAML_SCALAR_EVENT, "")

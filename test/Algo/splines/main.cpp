@@ -289,8 +289,8 @@ void testFixedAccel2(){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc, argv);
 
-  // testBasics();
-  // testBasisMatrix();
+  testBasics();
+  testBasisMatrix();
   // testFitting();
   // testSpeed();
 
@@ -298,6 +298,6 @@ int MAIN(int argc,char** argv){
 
   // testConvertToHermite();
 
-  testFixedAccel2();
+  // testFixedAccel2();
   return 0;
 }

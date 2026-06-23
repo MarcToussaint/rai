@@ -3813,8 +3813,8 @@ void Configuration::watchFile(const char* filename) {
     //-- LOADING
     LOG(0) <<"loading `" <<filename <<"' ... ";
     Configuration C_tmp;
+    bool succ=true;
     {
-      bool succ=true;
       FileToken file(filename);
       file.cd_file();
       Graph G;
@@ -3841,15 +3841,17 @@ void Configuration::watchFile(const char* filename) {
     }
 
     //-- WATCHING
-    {
+    if(succ){
       if(V) V->ensure_gl().dataLock(RAI_HERE);
       copy(C_tmp, false);
+      cout <<"   "; report();
+      cout <<"   q: " <<getJointState() <<endl;
+      cout <<"   limits: " <<getJointLimits() <<endl;
+      cout <<"   names: " <<getJointNames() <<endl;
+      LOG(0) <<"watching...";
+    }else{
+      LOG(0) <<"FAILED EDIT - watching OLD configuration...";
     }
-    cout <<"   "; report();
-    cout <<"   q: " <<getJointState() <<endl;
-    cout <<"   limits: " <<getJointLimits() <<endl;
-    cout <<"   names: " <<getJointNames() <<endl;
-    LOG(0) <<"watching...";
     if(!V){
       V = get_viewer();
 
@@ -3866,6 +3868,9 @@ void Configuration::watchFile(const char* filename) {
     V->updateConfiguration(*this, {}, true);
     V->_resetPressedKey();
     int key = V->view(false, "waiting for file change ('h' for help, 'q' to close)");
+    if(!succ){
+      key = V->view(false, "FILE SYNTAX ERROR - check console output - displaying old configuration");
+    }
     for(;;) {
       key = V->gl->pressedkey;
 //      V->_resetPressedKey();
