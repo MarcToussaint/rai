@@ -338,8 +338,9 @@ endif
 ifeq ($(OPENCV),1)
 CXXFLAGS  += -DRAI_OPENCV
 CPATH := $(USER_LIB)/include/opencv5/:$(CPATH)
-LPATHS += $(USER_LIB)/lib/opencv5/3rdparty
-LIBS += -lopencv_highgui -lopencv_imgproc -lopencv_videoio -lopencv_objdetect -lopencv_core -llibclapack -littnotify -lippiw -lipphal -lippicv
+LIBS += -lopencv_highgui -lopencv_imgproc -lopencv_videoio -lopencv_objdetect -lopencv_core
+#LPATHS += $(USER_LIB)/lib/opencv5/3rdparty
+#LIBS += -llibclapack -littnotify -lippiw -lipphal -lippicv
 endif
 
 ifeq ($(HSL),1)
