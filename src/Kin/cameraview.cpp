@@ -22,7 +22,7 @@ CameraView::CameraView(const Configuration& _C, bool _offscreen) {
   gl->add(this);
 }
 
-CameraView::CameraFrame& CameraView::newCamera(Frame* frame, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile) {
+CameraView::CameraFrame& CameraView::newCamera(Frame* frame, uint width, uint height, double focalLength, double heightAngle, double heightAbs, const arr& zRange, const char* backgroundImageFile) {
   currentCamera = make_shared<CameraFrame>(*frame);
   cameras.append(currentCamera);
   Camera& cam = currentCamera->cam;
@@ -31,7 +31,8 @@ CameraView::CameraFrame& CameraView::newCamera(Frame* frame, uint width, uint he
   cam.setWidthHeight(width, height);
   if(zRange.N) cam.setZRange(zRange(0), zRange(1));
   if(focalLength>0.) cam.setFocalLength(focalLength);
-  if(orthoAbsHeight>0.) cam.setHeightAbs(orthoAbsHeight);
+  if(heightAngle>0.) cam.setHeightAngle(heightAngle);
+  if(heightAbs>0.) cam.setHeightAbs(heightAbs);
 
   cam.X = currentCamera->frame.ensure_X();
   gl->resize(cam.width, cam.height);
@@ -42,18 +43,19 @@ CameraView::CameraFrame& CameraView::newCamera(Frame* frame) {
   CHECK(frame, "frame is not defined");
 
   double width=400., height=200.;
-  double focalLength=-1.;
-  double orthoAbsHeight=-1.;
+  double focalLength=-1., heightAngle=-1.;
+  double heightAbs=-1.;
   arr zRange = {.1, 10.};
 
   CHECK(frame->ats, "");
   frame->ats->get<double>(focalLength, "focalLength");
-  frame->ats->get<double>(orthoAbsHeight, "orthoAbsHeight");
+  frame->ats->get<double>(heightAngle, "heightAngle");
+  frame->ats->get<double>(heightAbs, "heightAbs");
   frame->ats->get<arr>(zRange, "zRange");
   frame->ats->get<double>(width, "width");
   frame->ats->get<double>(height, "height");
 
-  return newCamera(frame, width, height, focalLength, orthoAbsHeight, zRange);
+  return newCamera(frame, width, height, focalLength, heightAngle, heightAbs, zRange);
 }
 
 CameraView::CameraFrame& CameraView::selectSensor(Frame *frame) {
