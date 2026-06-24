@@ -43,7 +43,7 @@ void test(){
     C.view(true);
     // auto rgb = V.getRgb();
 
-    MultiViewPointData D(12, 4);
+    MultiViewSolver D(12, 4);
 
     V.updateConfiguration(C);
     for(uint k=0;k<cams.N;k++){

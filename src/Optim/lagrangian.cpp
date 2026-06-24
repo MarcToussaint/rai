@@ -142,7 +142,7 @@ double LagrangianProblem::eval_scalar(arr& dL, arr& HL, const arr& _x) {
   return NLP::eval_scalar(dL, HL, _x);
 #else
   //-- evaluate constrained problem and buffer
-  if(_x!=x) {
+  if(_x!=x || (!!dL && J_x.d0!=phi_x.N)) {
     x=_x;
     P->evaluate(phi_x, (!!dL?J_x:NoArr), x);
     P->getFHessian(H_x, x);
@@ -150,7 +150,7 @@ double LagrangianProblem::eval_scalar(arr& dL, arr& HL, const arr& _x) {
   }
 
   CHECK(x.N, "zero-dim optimization variables!");
-  if(!isSparseMatrix(J_x)) {
+  if(!isSparseMatrix(J_x) && !!dL) {
     CHECK_EQ(phi_x.N, J_x.d0, "Jacobian size inconsistent");
   }
   CHECK_EQ(phi_x.N, P->featureTypes.N, "termType array size inconsistent");
