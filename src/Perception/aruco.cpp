@@ -74,7 +74,10 @@ void FindArucos::find(const byteA& rgb){
       cv::Mat outputImage = inputImage.clone();
       cv::aruco::drawDetectedMarkers(outputImage, markerCorners, markerIds);
       rgb_annotated = conv_cvMat2byteA(outputImage);
-      // gl.watchImage(rgb_annotated, verbose>1);
+      if(verbose>1){
+        if(!gl) gl = make_shared<OpenGL>();
+        gl->watchImage(rgb_annotated, false);
+      }
     }
   }
 

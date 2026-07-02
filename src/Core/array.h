@@ -308,6 +308,7 @@ template<class T> struct Array {
 
 //protected:
   /// @name kind of private
+  void initMEM(uint n);
   void resizeMEM(uint n, bool copy, int Mforce=-1);
   void reserveMEM(uint Mforce) { resizeMEM(N, true, Mforce); if(!nd) nd=1; }
   void freeMEM();

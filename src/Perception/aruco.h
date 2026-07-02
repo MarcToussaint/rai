@@ -31,7 +31,7 @@ struct FindArucos {
   shared_ptr<cv::aruco::Dictionary> dictionary;
   shared_ptr<cv::aruco::ArucoDetector> detector;
 
-  // OpenGL gl;
+  std::shared_ptr<OpenGL> gl;
   int verbose=1;
 
   //outputs!

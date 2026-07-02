@@ -89,7 +89,7 @@ template<class T> Array<T>::Array(Array<T>&& a)
 }
 
 /// constructor with resize
-template<class T> Array<T>::Array(uint i) : Array() { resize(i); }
+template<class T> Array<T>::Array(uint i) : Array() { initMEM(i); reshape(i); }
 
 /// constructor with resize
 template<class T> Array<T>::Array(uint i, uint j) : Array() { resize(i, j); }
@@ -254,6 +254,34 @@ template<class T> uint Array<T>::dim(uint k) const {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
 #pragma GCC diagnostic ignored "-Wmismatched-dealloc"
+
+/// allocate initial memory (simpler than resize)
+template<class T> void Array<T>::initMEM(uint n) {
+  CHECK(!p, "");
+  CHECK(!M, "");
+  CHECK(!N, "");
+  CHECK(!isReference, "");
+  if(!n) return;
+
+  M = n;
+  globalMemoryTotal += M*sizeT;
+  if(globalMemoryTotal>globalMemoryBound) {
+    if(globalMemoryStrict) {
+      globalMemoryTotal -= M*sizeT;
+      HALT("out of memory: " <<((globalMemoryTotal+M)>>20) <<"MB");
+    }
+    LOG(0) <<"using massive memory: " <<(globalMemoryTotal>>20) <<"MB";
+  }
+  if(memMove==1) {
+    p=(T*)malloc(M*sizeT);
+    if(!p) { HALT("memory allocation failed! Wanted size = " <<M*sizeT <<"bytes"); }
+  } else {
+    p=new T [M];
+    if(!p) { HALT("memory allocation failed! Wanted size = " <<M*sizeT <<"bytes"); }
+  }
+  N = n;
+  if(N) CHECK(p, "");
+}
 
 /// allocate memory (maybe using \ref flexiMem)
 template<class T> void Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
