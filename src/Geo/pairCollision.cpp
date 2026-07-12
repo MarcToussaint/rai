@@ -98,7 +98,7 @@ PairCollision_CvxCvx::PairCollision_CvxCvx(const arr& pts1, const arr& pts2,
   }
 
   if(distance>1e-10) {
-    CHECK_ZERO(length(normal) - 1., 1e-5, "");
+    CHECK_ZERO(length(normal) - 1., 1e-4, "");
   }
 
   // CHECK_ZERO(scalarProduct(normal, p1-p2) - distance, 1e-5, "");

@@ -470,11 +470,11 @@ Node* Graph::edit(Node* ed) {
   uint edited=0;
   for(Node* n : KVG) if(n!=ed) {
       CHECK(ed->type == n->type, "can't edit/merge nodes of different types!");
-      if(ed->parents.N) { //replace parents
+      if(ed->parents.N) { //overwrite parents
         while(n->parents.N) n->removeParent(n->parents.elem(-1));
         for(Node* p:ed->parents) n->addParent(p);
       }
-      if(n->is<Graph>()) { //merge the KVGs
+      if(n->is<Graph>()) { //overwrite nodes
         n->graph().edit(ed->graph());
       } else { //overwrite the value
         n->copyValue(ed);
@@ -735,8 +735,31 @@ void readGraph_postprocess(Graph& G, uint Nbefore){
     }
   }
 
-  //-- apply edits
+  //-- apply edits new way: child edits
   NodeL edits;
+  for(uint i=Nbefore; i<G.N; i++) {
+    Node* n=G.elem(i);
+    if(n->key=="Edit") edits.append(n);
+  }
+  for(Node* ed:edits) {
+    Node* n = ed->parents.elem(0);
+    CHECK(n->type == ed->type, "can't edit/merge nodes of different types!");
+    ed->removeParent(n);
+    if(ed->parents.N) { //overwrite parents
+      while(n->parents.N) n->removeParent(n->parents.elem(-1));
+      for(Node* p:ed->parents) n->addParent(p);
+    }
+    if(n->is<Graph>()) { //overwrite nodes
+      n->graph().edit(ed->graph());
+    } else { //overwrite the value
+      n->copyValue(ed);
+    }
+    delete ed; ed=nullptr;
+  }
+
+  //-- apply edits old way: via tags
+  // NodeL edits;
+  edits.clear();
   for(uint i=Nbefore; i<G.N; i++) {
     Node* n=G.elem(i), *tag;
     if(n->is<Graph>() && (tag=n->graph().findNode("%Edit"))) {
