@@ -220,7 +220,7 @@ void testRndScene(){
   arr q0 = C.getJointState();
 
   rai::Simulation S(C, S._physx, 2);
-  S.addSensor("camera");
+  S.addSensor(C.getFrame("camera"));
 
   byteA rgb;
   floatA depth;
@@ -292,7 +292,7 @@ void testPcl(){
 
   rai::Simulation S(C, S._physx, 2);
 
-  S.selectSensor("cameraWrist");
+  S.selectSensor(C.getFrame("cameraWrist"));
 
   byteA img;
   floatA depth;
@@ -356,7 +356,7 @@ void testFriction(){
   arr q0 = C.getJointState();
 
   rai::Simulation S(C, S._physx, 2);
-  S.addSensor("camera");
+  S.addSensor(C.getFrame("camera"));
 
   double tau=.01;
   Metronome tic(tau);
