@@ -34,7 +34,7 @@ rai::ForceExchangeDof::ForceExchangeDof(Frame* fpoa, rai::Frame& a, rai::Frame& 
     torque = copy->torque;
   }
   if(type==FXT_forceZ) {
-    limits = {.01, .5};
+    limits = {.01, 1.};
   }
 }
 
@@ -112,7 +112,7 @@ arr rai::ForceExchangeDof::calcDofsFromConfig() const {
   } else if(type==FXT_force) {
     q = force/scale;
   } else if(type==FXT_forceZ) {
-    q.resize(1).first() = force.scalar();
+    q.resize(1).first() = force.scalar()/scale;
   } else NIY;
   return q;
 }

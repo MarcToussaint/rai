@@ -183,22 +183,22 @@ void Node::write(std::ostream& os, int indent, bool yamlMode, bool binary) const
   } else if(is<FileToken>()) {
     os <<'<' <<getValue<FileToken>()->autoPath() <<'>';
   } else if(is<arr>()) {
-    if(getValue<arr>()->N>=20) binary=true;
+    if(getValue<arr>()->N>=50) binary=true;
     getValue<arr>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<floatA>()) {
-    if(getValue<floatA>()->N>=20) binary=true;
+    if(getValue<floatA>()->N>=50) binary=true;
     getValue<floatA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<uint16A>()) {
-    if(getValue<uint16A>()->N>=20) binary=true;
+    if(getValue<uint16A>()->N>=50) binary=true;
     getValue<uint16A>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<uintA>()) {
-    if(getValue<uintA>()->N>=20) binary=true;
+    if(getValue<uintA>()->N>=50) binary=true;
     getValue<uintA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<intA>()) {
-    if(getValue<intA>()->N>=20) binary=true;
+    if(getValue<intA>()->N>=50) binary=true;
     getValue<intA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<byteA>()) {
-    if(getValue<byteA>()->N>=20) binary=true;
+    if(getValue<byteA>()->N>=50) binary=true;
     getValue<byteA>()->write(os, ", ", nullptr, "[]", false, binary);
   } else if(is<intAA>()) {
     getValue<intAA>()->write(os, ", ", nullptr, "[]");

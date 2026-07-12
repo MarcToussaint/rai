@@ -91,6 +91,14 @@ struct F_Energy : Feature {
 //===========================================================================
 // force geometry, complementarity, velocities
 
+struct F_EqCenterOfMass : Feature {
+  virtual arr phi(const FrameL& F);
+  virtual uint dim_phi(const FrameL& F) {  return 3;  }
+};
+
+//===========================================================================
+// force geometry, complementarity, velocities
+
 struct F_fex_POAAtFrame : Feature {
   arr phi(const FrameL& F);
   uint dim_phi(const FrameL& F) { return 3; }

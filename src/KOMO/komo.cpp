@@ -777,7 +777,7 @@ rai::Frame* KOMO::addContact_WithPoaFrame(const arr& times, str obj, str from, d
   return f_poa;
 }
 
-rai::Frame* KOMO::addContactForceFrame(const arr& times, str obj, str from, double frictionCone_mu, double init_objMass){
+rai::Frame* KOMO::addContactForceFrame(const arr& times, str obj, str from, double frictionCone_mu, double init_objMass, str obj_com_frame){
   rai::Frame *f_obj = _getFrame(obj);
   rai::Frame *f_from = _getFrame(from);
   CHECK(f_obj != f_from, "");
@@ -788,7 +788,7 @@ rai::Frame* KOMO::addContactForceFrame(const arr& times, str obj, str from, doub
 
   //initialize using pair collision geometry
   rai::Transformation relOrigin;
-#if 1
+#if 0 //WARNING: changes previous CSRL sampler!
   rai::Vector relVec = f_from->ensure_X().pos / f_obj->ensure_X();
   relOrigin.pos = .5*relVec;
   relOrigin.rot.setDiff(Vector_z, -relVec);
@@ -806,7 +806,12 @@ rai::Frame* KOMO::addContactForceFrame(const arr& times, str obj, str from, doub
   // arr poa = origin.pos.getArr(); //.5*(finger->getPosition() + obj->getPosition());
   // arr force = origin.rot.getZ().getArr(); //obj->getPosition() - finger->getPosition());
   // force *= init_objMass*9.81;
-  addForceExchangeDofs(times, f_poa, obj, from, rai::FXT_forceZ, zeros(3), {init_objMass*9.81});
+  if(obj_com_frame.N){
+    addForceExchangeDofs(times, f_poa, obj_com_frame, from, rai::FXT_forceZ, {}, {init_objMass*9.81});
+    // addObjective(times, make_shared<F_fex_Force>(), {obj_com_frame, from}, OT_sos, {1e-2});
+  }else{
+    addForceExchangeDofs(times, f_poa, obj, from, rai::FXT_forceZ, zeros(3), {init_objMass*9.81});
+  }
 
   //constraints to make poa frames and force exchange consistent
   // addObjective(times, make_shared<F_fex_POAAtFrame>(), {obj, from, poa_name}, OT_eq, {1e1});

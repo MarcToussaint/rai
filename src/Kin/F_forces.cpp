@@ -447,6 +447,30 @@ void F_Energy::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
+arr F_EqCenterOfMass::phi(const FrameL& F){
+  CHECK_EQ(F.d0, 1, "");
+
+  arr p0 = F_Position().eval({F.elem(0)}); //THIS first frame is located at the...
+
+  arr com = F_Zeros(3).eval(F);
+
+  double M = 0.;
+  for(uint i=1; i<F.d1; i++) { //COM of all other frames
+    rai::Frame* f = F.elem(i);
+    CHECK(f->inertia, "com feature only over masses");
+
+    arr p = F_Position().eval({f});
+
+    com += f->inertia->mass * p;
+    M += f->inertia->mass;
+  }
+  com /= M;
+
+  return p0 - com;
+}
+
+//===========================================================================
+
 FrameL getShapesAbove(rai::Frame* a) {
   FrameL aboves;
   if(a->shape) aboves.append(a);
