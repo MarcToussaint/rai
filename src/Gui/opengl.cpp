@@ -382,7 +382,7 @@ int OpenGL::watchImage(const byteA& img, bool wait, float _zoom) {
   resize(img.d1*_zoom, img.d0*_zoom);
   data().clear();
   data().addStandardScene();
-  data().setQuad(0, img, 0, 0, _zoom);
+  data().setQuad(0, img, 0, 0, 1.);
   return update(wait);
 }
 

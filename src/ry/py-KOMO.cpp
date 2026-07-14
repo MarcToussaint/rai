@@ -104,7 +104,8 @@ void init_KOMO(pybind11::module& m) {
        pybind11::arg("obj"),
        pybind11::arg("from"),
        pybind11::arg("frictionCone_mu"),
-       pybind11::arg("init_objMass"))
+       pybind11::arg("init_objMass"),
+       pybind11::arg("obj_com_frame")=0)
 
   //-- initialize (=set state)
   .def("initOrg", &KOMO::initOrg, "")
