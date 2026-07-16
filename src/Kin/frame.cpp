@@ -891,6 +891,12 @@ rai::Frame& rai::Frame::setJoint(rai::JointType jointType, const arr& limits, co
   return *this;
 }
 
+rai::Frame& rai::Frame::setJointSampleStdDev(double sampleStdDev){
+  CHECK(joint, "can set SampleDev only for joints");
+  joint->sampleSdv = sampleStdDev;
+  return *this;
+}
+
 rai::Frame& rai::Frame::setContact(int cont) {
   getShape().cont = cont;
   if(!getShape().sscCore().N) getShape().createMeshes(name);
@@ -1032,6 +1038,11 @@ rai::JointType rai::Frame::getJointType() const {
 arr rai::Frame::getSize() const {
   if(!shape) return {};
   return shape->size;
+}
+
+double rai::Frame::getMass() const{
+  if(!inertia) return 0.;
+  return inertia->mass;
 }
 
 rai::ShapeType rai::Frame::getShapeType() const {

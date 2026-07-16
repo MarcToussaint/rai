@@ -66,6 +66,7 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
   "physics",
   "contactConstraints",
   "energy",
+  "EqCenterOfMass",
 
   "transAccelerations",
   "transVelocities",
@@ -224,6 +225,7 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
   else if(feat==FS_physics) { f=make_shared<F_NewtonEuler>(); }
   else if(feat==FS_contactConstraints) { f=make_shared<F_fex_ForceIsNormal>(); }
   else if(feat==FS_energy) { f=make_shared<F_Energy>(); }
+  else if(feat==FS_EqCenterOfMass) { f=make_shared<F_EqCenterOfMass>(); }
 
   else if(feat==FS_transAccelerations) { HALT("obsolete"); /*f=make_shared<TM_Transition>(world);*/ }
   else if(feat==FS_transVelocities) {

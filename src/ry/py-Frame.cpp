@@ -41,6 +41,7 @@ void init_Frame(pybind11::module& m) {
   .def("setRelativeRotationMatrix", &rai::Frame::setRelativeRotationMatrix, "")
   .def("setJoint", &rai::Frame::setJoint, "", pybind11::arg("jointType"), pybind11::arg("limits")=arr{}, pybind11::arg("axis")=arr{}, pybind11::arg("scale")=1., pybind11::arg("mimic")=(rai::Frame*)0)
   .def("setJointState", &rai::Frame::setJointState, "")
+  .def("setJointSampleStdDev", &rai::Frame::setJointSampleStdDev, "")
   .def("setContact", &rai::Frame::setContact, "")
   .def("setMass", &rai::Frame::setMass, "", pybind11::arg("mass"), pybind11::arg("inertiaMatrix")=arr{})
   .def("setColor", &rai::Frame::setColor, "")
@@ -95,6 +96,12 @@ void init_Frame(pybind11::module& m) {
     for(rai::Frame* f:self->children) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-sense deleter!
     return F;
   })
+  .def("getSubtree", [](shared_ptr<rai::Frame>& self) {
+    std::vector<shared_ptr<rai::Frame>> F;
+    FrameL S = self->getSubtree();
+    for(rai::Frame* f:S) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-sense deleter!
+    return F;
+  })
   .def("get_Jacobian_pos", &rai::Frame::get_Jacobian_pos, "", pybind11::arg("world_pos_optional")=arr{})
   .def("get_Jacobian_angular", &rai::Frame::get_Jacobian_angular, "")
   .def("getPose", &rai::Frame::getPose, "", pybind11::arg("relativeTo")=(rai::Frame*)0)
@@ -110,6 +117,7 @@ void init_Frame(pybind11::module& m) {
   .def("getJointState", &rai::Frame::getJointState, "")
   .def("getJointQIndex", &rai::Frame::getJointQIndex, "")
   .def("getSize", &rai::Frame::getSize, "")
+  .def("getMass", &rai::Frame::getMass, "")
   .def("getShapeType", &rai::Frame::getShapeType, "")
   .def("getMeshPoints", &rai::Frame::getMeshPoints, "")
   .def("getMeshTriangles", &rai::Frame::getMeshTriangles, "")
@@ -234,6 +242,7 @@ void init_enums(pybind11::module& m) {
   ENUMVAL(FS, physics)
   ENUMVAL(FS, contactConstraints)
   ENUMVAL(FS, energy)
+  ENUMVAL(FS, EqCenterOfMass)
 
   ENUMVAL(FS, transAccelerations)
   ENUMVAL(FS, transVelocities)

@@ -64,6 +64,7 @@ enum FeatureSymbol : int {
   FS_physics,
   FS_contactConstraints,
   FS_energy,
+  FS_EqCenterOfMass,
 
   FS_transAccelerations,
   FS_transVelocities,

@@ -186,6 +186,7 @@ struct Frame : NonCopyable {
   Frame& setQuad(const byteA& image, const arr& size);
   Frame& setColor(const arr& color);
   Frame& setJoint(rai::JointType jointType, const arr& limits={}, const arr& axis={}, double scale=1., Frame* mimic=0);
+  Frame& setJointSampleStdDev(double sampleStdDev);
   Frame& setContact(int cont);
   Frame& setMass(double mass, const arr& inertiaMatrix={});
   Frame& setAttribute(const char* key, double value);
@@ -203,6 +204,7 @@ struct Frame : NonCopyable {
   arr getRelativeQuaternion() const { return get_Q().rot.getArr(); }
   arr getRelativeTransform() { return get_Q().getMatrix(); }
   arr getSize() const ;
+  double getMass() const;
   ShapeType getShapeType() const;
   arr getMeshPoints() const ;
   uintA getMeshTriangles() const ;

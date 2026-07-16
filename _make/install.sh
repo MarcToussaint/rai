@@ -218,6 +218,13 @@ case ${lib} in
 	#find ${lib}/build/3rdparty -name 'lib*.a' -exec cp {} ${pre}/lib \;
 	;;
 
+    basler)
+	cd ${pre}
+	scp hal-9000.lis.tu-berlin.de:/home/data/pylon-26-06-minimal.tgz .
+	tar xvzf pylon-26-06-minimal.tgz
+	#tar cvzf pylon-26-06-minimal.tgz include/ lib/libpylonbase.so* lib/libpylonutility* lib/libMathParser_gcc_v3_5_Basler_pylon_v1.so lib/libGenApi_gcc_v3_5_Basler_pylon_v1.so lib/libGCBase_gcc_v3_5_Basler_pylon_v1.so lib/libXmlParser_gcc_v3_5_Basler_pylon_v1.so lib/libLog_gcc_v3_5_Basler_pylon_v1.so lib/libNodeMapData_gcc_v3_5_Basler_pylon_v1.so share/pylon/setup-usb.sh
+	;;
+	
     test)
 	if [ -z "$version" ]; then version="default"; fi
 	echo 'just testing -- version:' ${version}
