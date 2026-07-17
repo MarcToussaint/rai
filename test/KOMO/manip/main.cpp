@@ -87,7 +87,7 @@ void testPickAndPlace(){
 void testPushIntoTable(){
   rai::Configuration C;
   C.addFile("scene.g");
-  C.delFrame("obstacle");
+  C.delFrame(C.getFrame("obstacle"));
 
   //close the gripper
   rai::Joint *j = C["l_panda_finger_joint1"]->joint;

@@ -185,13 +185,14 @@ void init_Config(pybind11::module& m) {
     return F;
   })
 
-  .def("delFrame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName) {
-    rai::Frame* p = self->getFrame(frameName.c_str(), true);
-    if(p) delete p;
-  },
-  "destroy and remove a frame from C",
-  pybind11::arg("frameName")
-      )
+  .def("getShapes", [](shared_ptr<rai::Configuration>& self, bool shared_only_once) {
+        FrameL F = self->getShapes(shared_only_once);
+    std::vector<shared_ptr<rai::Frame>> _F;
+    for(rai::Frame* f:F) _F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-deleter!
+    return _F;
+      }, "", pybind11::arg("shared_only_once")=true)
+
+  .def("delFrame", &rai::Configuration::delFrame, "destroy and remove a frame from C", pybind11::arg("frame"))
 
   .def("getJointNames", &rai::Configuration::getJointNames, "get the list of joint names")
   .def("getJointIDs", &rai::Configuration::getDofIDs, "get indeces (which are the indices of their frames) of all joints")
@@ -405,6 +406,10 @@ reloads, displays and animates the configuration whenever the file is changed"
   .def("writeMeshes", &rai::Configuration::writeMeshes,
        "write all object meshes in a directory",
        pybind11::arg("pathPrefix"), pybind11::arg("copyTextures")=true, pybind11::arg("enumerateAssets")=false)
+
+  .def("writeConvexStls", &rai::Configuration::writeConvexStls,
+       "write all object meshes converted to convex stl in a directory",
+       pybind11::arg("pathPrefix"), pybind11::arg("shrinkRadius")=-1., pybind11::arg("verbose")=1)
 
   .def("writeURDF", [](shared_ptr<rai::Configuration>& self) { str s; self->writeURDF(s);  return pybind11::str(s.p, s.N); },
   "write the full configuration as URDF in a string, e.g. for file export")

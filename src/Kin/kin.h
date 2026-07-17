@@ -117,8 +117,8 @@ struct Configuration {
   Frame* addH5Object(const char* framename, const char* filename, int verbose);
   Frame* addFramesCopy(const FrameL& F, const DofL& _dofs, const str& prefix= {});
   Frame* addConfigurationCopy(const Configuration& C, const str& prefix= {}, double tau=1.);
-  void delFrame(const char* name);
-  void delSubtree(const char* name);
+  void delFrame(Frame* f);
+  void delSubtree(Frame* f);
 
   /// @name get frames
   Frame* operator[](const char* name) const { return getFrame(name, true); }  ///< same as getFrame()
@@ -131,6 +131,7 @@ struct Configuration {
   FrameL getJoints(bool activesOnly=true) const;
   FrameL getJointsSlice(uint t, bool activesOnly=true) const;
   FrameL getJointsSlice(const FrameL& slice, bool activesOnly=true) const;
+  FrameL getShapes(bool shared_only_once=true) const;
   uintA getDofIDs() const;
   StringA getJointNames() const;
   FrameL getRoots() const;
@@ -316,6 +317,7 @@ public:
   void writeURDF(std::ostream& os, const char* robotName="myrobot") const;
   void writeCollada(const char* filename, const char* format="collada") const;
   void writeMeshes(str pathPrefix="meshes/", bool copyTextures=false, bool enumerateAssets=false) const;
+  void writeConvexStls(str pathPrefix="meshes/", double shrinkRadius=-1., int verbose=1) const;
   void writeMesh(const char* filename="z.ply") const;
   void read(std::istream& is);
   void displayDot() const;

@@ -459,16 +459,15 @@ Frame* Configuration::addConfigurationCopy(const Configuration& C, const str& pr
   return f;
 }
 
-void Configuration::delFrame(const char* name){
-  rai::Frame* p = getFrame(name, true);
-  if(p) delete p;
+void Configuration::delFrame(rai::Frame* f){
+  CHECK_EQ(&f->C, this, "");
+  delete f;
 }
 
-void Configuration::delSubtree(const char* name){
-  rai::Frame* p = getFrame(name, true);
-  if(!p) return;
-  FrameL F = p->getSubtree();
-  for(rai::Frame *f:F) delete f;
+void Configuration::delSubtree(rai::Frame* f){
+  CHECK_EQ(&f->C, this, "");
+  FrameL F = f->getSubtree();
+  for(rai::Frame *ff:F) delete ff;
 }
 
 /// get first frame with given name
@@ -515,6 +514,22 @@ FrameL Configuration::getJointsSlice(const FrameL& slice, bool activesOnly) cons
   for(auto* f:slice) {
     if((f->joint && (!activesOnly || f->joint->active))
         || f->forces.N)  F.append(f);
+  }
+  return F;
+}
+
+FrameL Configuration::getShapes(bool shared_only_once) const{
+  FrameL F;
+  rai::Array<size_t> shape_ptrs;
+  for(auto* f:frames){
+    if(f->shape){
+      size_t p = (size_t)f->shape.get();
+      uint cand_pos = shape_ptrs.rankInSorted(p);
+      if(cand_pos==shape_ptrs.N || shape_ptrs.elem(cand_pos) != p){
+        F.append(f);
+        shape_ptrs.insert(cand_pos, p);
+      }
+    }
   }
   return F;
 }
@@ -2858,6 +2873,44 @@ void Configuration::writeMeshes(str pathPrefix, bool copyTextures, bool enumerat
   //     }
   //   }
   // }
+}
+
+void Configuration::writeConvexStls(str pathPrefix, double shrinkRadius, int verbose) const{
+  if(pathPrefix && pathPrefix.N && pathPrefix(-1)=='/'){
+    if(!FileToken(pathPrefix).exists()){
+      rai::system(STRING("mkdir -p " <<pathPrefix));
+    }
+  }
+  {
+    auto P = assets();
+    NodeL meshes = P->findNodesOfType(typeid(shared_ptr<rai::Mesh>));
+    for(Node* n:meshes) {
+      rai::FileToken fil(n->key);
+      fil.name.resize(fil.name.find('.',true), true);
+      fil.decomposeFilename();
+      str newfilename = pathPrefix;
+      // if(enumerateAssets) newfilename <<meshCount++ <<'_' <<fil.name <<ext; else
+      newfilename <<fil.name <<".stl";
+      if(!FileToken(newfilename).exists()){
+        shared_ptr<rai::Mesh>& m = n->as<shared_ptr<rai::Mesh>>();
+        rai::Mesh M;
+        M.setConvex(m->V);
+        if(shrinkRadius>0.){
+          M.computeTriNormals(true);
+          for(uint i=0;i<M.V.d0;i++) M.V[i] -= shrinkRadius*M.Vn[i];
+          M.setConvex(M.V.copy());
+        }
+        M.writeAssimp(newfilename, "stlb");
+        if(verbose>0){
+          LOG(0) <<"writing cvx stl " <<newfilename;
+        }
+      }else{
+        if(verbose>0){
+          LOG(0) <<"exists: cvx stl " <<newfilename;
+        }
+      }
+    }
+  }
 }
 
 /// write meshes into a single ply file

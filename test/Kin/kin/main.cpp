@@ -292,6 +292,8 @@ void TEST(Grid){
   Cgrid.report();
   Cgrid.view();
 
+  LOG(0) <<"unique shape frames: " <<rai::framesToNames(C.getShapes(true));
+
   C.get_viewer()->report(cout);
   Cgrid.get_viewer()->renderUntil=rai::_solid;
 //  Cgrid.get_viewer()->nonThreaded=true;
@@ -782,7 +784,7 @@ void testMergeSceneMesh(){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  testViewer(); return 0;
+  //testGrid(); return 0;
 
   testMini();
   testLoadSave();
