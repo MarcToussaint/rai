@@ -649,7 +649,7 @@ int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
   testMotors();
-  testPassive(rai::raiPath("../rai-robotModels/g1/g1.g"), true);
+  testPassive(rai::raiPath("../rai-robotModels/g1/g1.yml"), true);
   testPassive("../../../../rai-robotModels/scenarios/pendulum.g");
   testComplexObjects();
   testNonconvexObjects();

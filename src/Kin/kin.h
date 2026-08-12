@@ -280,7 +280,7 @@ public:
   void coll_setActiveColliders(const FrameL& colliders);
   void coll_addExcludePair(uint aID, uint bID);
 
-  double coll_totalViolation(); ///< proxies are returns from a collision engine; contacts stable constraints
+  double coll_totalViolation(bool return_maximal=false); ///< proxies are returns from a collision engine; contacts stable constraints
   bool coll_isCollisionFree();
   void coll_reportProxies(std::ostream& os=cout, double belowMargin=1., bool brief=true) const;
   StringA coll_getProxyPairs(double belowMargin, arr& distances=NoArr);

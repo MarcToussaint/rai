@@ -159,7 +159,7 @@ void testPushIntoTable(){
 void testPivot(){
   rai::Configuration C;
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandaSingle.g"));
-  C.delSubtree("cameraWrist");
+  C.delSubtree(C.getFrame("cameraWrist"));
 
   C.addFrame("hinge_origin", "table") ->setRelativePosition({.3, .2, .15});
   C.addFrame("hinge_joint", "hinge_origin") ->setJoint(rai::JT_hingeZ);

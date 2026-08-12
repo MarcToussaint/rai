@@ -752,6 +752,7 @@ void Configuration::setRandom(uint timeSlices_d1, int verbose) {
   ensure_indexedJoints();
   for(Dof* d:activeDofs) d->setRandom(timeSlices_d1, verbose);
   _state_q_isGood=false;
+  _state_proxies_isGood=false;
   checkConsistency();
 }
 
@@ -2315,7 +2316,7 @@ void Configuration::coll_addExcludePair(uint aID, uint bID){
 }
 
 /// get the sum of all shape penetrations -- PRECONDITION: proxies have been computed (with stepFcl())
-double Configuration::coll_totalViolation() {
+double Configuration::coll_totalViolation(bool return_maximal) {
   ensure_proxies(true, _broadPhaseOnly);
 
   double D=0.;
@@ -2327,7 +2328,11 @@ double Configuration::coll_totalViolation() {
     //exact computation
     if(!p.collision)((Proxy*)&p)->calc_coll(frames);
     double d = p.collision->getDistance();
-    if(d<0.) D -= d;
+    if(!return_maximal){
+      if(d<0.) D -= d;
+    }else{
+      if(d<-D) D = -d;
+    }
   }
   //  for(Frame *f:frames) for(ForceExchange *c:f->forces) if(&c->a==f) {
   //        double d = c->getDistance();

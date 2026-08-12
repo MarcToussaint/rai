@@ -137,7 +137,7 @@ struct NLP_Traced : NLP {
 
   NLP_Traced(const shared_ptr<NLP>& P);
 
-  void setTracing(bool _trace_x, bool _trace_costs, bool _trace_phi, bool _trace_J);
+  void setTracing(bool _trace_x, bool _trace_errs, bool _trace_phi, bool _trace_J);
   void clear();
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);

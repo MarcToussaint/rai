@@ -415,8 +415,8 @@ NLP_Traced::NLP_Traced(const shared_ptr<NLP>& P) : P(P) {
   P->derived=this;
 }
 
-void NLP_Traced::setTracing(bool _trace_x, bool _trace_costs, bool _trace_phi, bool _trace_J) {
-  trace_x=_trace_x; trace_errs=_trace_costs, trace_phi=_trace_phi, trace_J=_trace_J;
+void NLP_Traced::setTracing(bool _trace_x, bool _trace_errs, bool _trace_phi, bool _trace_J) {
+  trace_x=_trace_x; trace_errs=_trace_errs, trace_phi=_trace_phi, trace_J=_trace_J;
 }
 
 void NLP_Traced::clear() {

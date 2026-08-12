@@ -43,6 +43,7 @@ void TEST(Solver) {
 
   S.setSolver(sid);
   S.setProblem(nlp);
+  S.setTracing(true, true, false, false);
   if(x_init.N) S.setInitialization(x_init);
   if(sid==rai::M_AugmentedLag || sid==rai::M_SquaredPenalty || sid==rai::M_LogBarrier){
     while(!S.step()){
