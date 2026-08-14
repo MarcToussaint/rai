@@ -136,11 +136,28 @@ void testTensor(){
 #endif
 }
 
+void testImage(){
+  byteA img(200,200);
+  OpenGL gl;
+  CycleTimer tim;
+  double start = rai::clockTime();
+  for(uint i=0;i<img.N/2;i++){
+    tim.cycleStart();
+    img.setZero();
+    img.elem(i)=255;
+    gl.watchImage(img, false);
+    tim.cycleDone();
+  }
+  cout <<tim.report() <<endl;
+  cout <<"time: " <<rai::clockTime()-start <<endl;
+}
+
 int main(int argc, char **argv){
   rai::initCmdLine(argc, argv);
 
   testConfig();
   testTensor();
+  testImage();
 
   return 0;
 }

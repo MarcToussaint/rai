@@ -434,7 +434,7 @@ void RenderData::glDraw(OpenGL& gl){
 
   arr ViewT_CW = camera.getT_CW();
   arr Projection_W = camera.getT_IC() * ViewT_CW;
-  {
+  if(items.N){
     glUseProgram(id.prog_ID);
 
     //set camera parameters
@@ -470,7 +470,7 @@ void RenderData::glDraw(OpenGL& gl){
   }
 
   // glDisable(GL_DEPTH_TEST);
-  if(renderUntil>=_tensor) {
+  if(items.N && renderUntil>=_tensor) {
     glUseProgram(id.progTensor);
     glUniformMatrix4fv(id.progTensor_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
     glUniform3f(id.progTensor_eyePosition_W, camera.X.pos.x, camera.X.pos.y, camera.X.pos.z);
@@ -479,19 +479,19 @@ void RenderData::glDraw(OpenGL& gl){
   }
   // glEnable(GL_DEPTH_TEST);
 
-  if(renderUntil>=_marker) {
+  if(items.N && renderUntil>=_marker) {
     glUseProgram(id.progMarker);
     glUniformMatrix4fv(id.progMarker_Projection_W, 1, GL_TRUE, rai::convert<float>(Projection_W).p);
     renderObjects(id.progMarker_ModelT_WM, sorting, _marker, id.progMarker_FlatColor);
   }
 
-  if(renderUntil>=_transparent) {
+  if(items.N && renderUntil>=_transparent) {
     glUseProgram(id.prog_ID);
     renderObjects(id.prog_ModelT_WM, sorting, _transparent, id.prog_FlatColor, -1, id.prog_textureDim);
   }
 
   glDisable(GL_DEPTH_TEST);
-  if(renderUntil>=_text && opt.renderText) {
+  if((quads.N||texts.N) && renderUntil>=_text) {
     glUseProgram(id.progText);
     {
       glUniform1i(id.progText_useTexColor, 1);
@@ -500,7 +500,7 @@ void RenderData::glDraw(OpenGL& gl){
       for(auto &quad:quads) quad->glRender();
     }
 
-    {
+    if(opt.renderText){
       glUniform1i(id.progText_useTexColor, 0);
       glm::mat4 projection = glm::ortho(0.0f, float(gl.width), 0.0f, float(gl.height));
       glUniformMatrix4fv(glGetUniformLocation(id.progText, "projection"), 1, GL_FALSE, &projection[0][0]);

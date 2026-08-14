@@ -86,6 +86,7 @@ struct GlfwSingleton : Thread {
   }
   ~GlfwSingleton() {
     threadClose();
+    //cout <<"GLFW thread cycling: " <<timer.report() <<endl;
     glfwTerminate();
   }
   void open() {}
@@ -380,10 +381,14 @@ int OpenGL::watchImage(const floatA& _img, bool wait, float _zoom) {
 
 int OpenGL::watchImage(const byteA& img, bool wait, float _zoom) {
   resize(img.d1*_zoom, img.d0*_zoom);
-  data().clear();
-  data().addStandardScene();
-  data().setQuad(0, img, 0, 0, 1.);
-  return update(wait);
+  {
+    auto lock = data().dataLock(RAI_HERE);
+    // data().clear();
+    // data().addStandardScene();
+    data().setQuad(0, img, 0, 0, 1.);
+    data().opt.renderShadow=false;
+  }
+  return update(wait, false);
 }
 
 /*void glWatchImage(const floatA &x, bool wait, float zoom){
