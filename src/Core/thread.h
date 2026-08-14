@@ -289,15 +289,14 @@ struct Metronome {
 struct CycleTimer {
   typedef std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::duration<double>> timepoint;
   uint steps;
-  double busyDt, busyDtMean, busyDtMax;  ///< internal variables to measure step time
-  double cyclDt, cyclDtMean, cyclDtMax;  ///< internal variables to measure step time
-  timepoint now, lastTime;
-  const char* name;                      ///< name
-  CycleTimer(const char* _name=nullptr);
+  arr mean, max;
+  timepoint now, lastTime, lastZero;
+  CycleTimer();
   ~CycleTimer();
   void reset();
-  void cycleStart();
-  void cycleDone();
+  void tic(uint i);
+  void cycleStart(){ tic(0); }
+  void cycleDone(){ tic(1); }
   rai::String report();
 };
 
@@ -365,12 +364,13 @@ struct Thread {
 
 //===========================================================================
 
+#if 0
 struct ScriptThread : Thread {
   std::function<int()> script;
-  Var<ActStatus> status;
+  Var<ActStatus> _status;
   ScriptThread(const std::function<int()>& S, Var_base& listenTo)
     :  Thread("ScriptThread"), script(S) {
-    event.listenTo(listenTo);
+    _status.listenTo(listenTo);
     threadOpen();
   }
   ScriptThread(const std::function<int()>& S, double beatIntervalSec=-1.)
@@ -380,7 +380,7 @@ struct ScriptThread : Thread {
   }
   ~ScriptThread() { threadClose(); }
 
-  virtual void step() { ActStatus r = (ActStatus)script(); status.set()=r; }
+  virtual void step() { ActStatus r = (ActStatus)script(); _status.set()=r; }
 };
 
 inline shared_ptr<ScriptThread> run(const std::function<int ()>& script, Var_base& listenTo) {
@@ -390,6 +390,7 @@ inline shared_ptr<ScriptThread> run(const std::function<int ()>& script, Var_bas
 inline shared_ptr<ScriptThread> run(const std::function<int ()>& script, double beatIntervalSec) {
   return make_shared<ScriptThread>(script, beatIntervalSec);
 }
+#endif
 
 // ================================================
 //

@@ -314,17 +314,18 @@ double Metronome::getTimeSinceTic() {
 // CycleTimer
 //
 
-void updateTimeIndicators(double& dt, double& dtMean, double& dtMax, const CycleTimer::timepoint& now, const CycleTimer::timepoint& last, uint step) {
-  dt = (now-last).count();
+void updateTimeIndicators(uint i, arr& mean, arr& max, const CycleTimer::timepoint& now, const CycleTimer::timepoint& last, uint step) {
+  double dt = (now-last).count();
   if(dt<0.) dt=0.;
   double rate=.01;  if(step<100) rate=1./(1+step);
-  dtMean = (1.-rate)*dtMean    + rate*dt;
-  if(dt>dtMax || !(step%100)) dtMax = dt;
+  while(mean.N<=i) mean.append(0.);
+  while(max.N<=i) max.append(0.);
+  mean.elem(i) = (1.-rate)*mean.elem(i) + rate*dt;
+  if(dt>max.elem(i) || !(step%100)) max.elem(i) = dt;
 }
 
-CycleTimer::CycleTimer(const char* _name) {
+CycleTimer::CycleTimer() {
   reset();
-  name=_name;
 }
 
 CycleTimer::~CycleTimer() {
@@ -332,27 +333,28 @@ CycleTimer::~CycleTimer() {
 
 void CycleTimer::reset() {
   steps=0;
-  busyDt=busyDtMean=busyDtMax=1.;
-  cyclDt=cyclDtMean=cyclDtMax=1.;
   lastTime = std::chrono::high_resolution_clock::now();
+  lastZero = lastTime;
 }
 
-void CycleTimer::cycleStart() {
-  now = std::chrono::high_resolution_clock::now();
-  updateTimeIndicators(cyclDt, cyclDtMean, cyclDtMax, now, lastTime, steps);
-  lastTime=now;
-}
-
-void CycleTimer::cycleDone() {
-  now = std::chrono::high_resolution_clock::now();
-  updateTimeIndicators(busyDt, busyDtMean, busyDtMax, now, lastTime, steps);
-  steps++;
+void CycleTimer::tic(uint i=0) {
+    now = std::chrono::high_resolution_clock::now();
+    updateTimeIndicators(i, mean, max, now, (i?lastTime:lastZero), steps);
+    lastTime=now;
+    if(!i){
+        lastZero=now;
+        steps++;
+    }
 }
 
 rai::String CycleTimer::report() {
-  rai::String s;
-  s.printf("busy=[%5.3f %5.3f] cycle=[%5.3f %5.3f] load=%4.1f%% steps=%i", busyDtMean, busyDtMax, cyclDtMean, cyclDtMax, 100.*busyDtMean/cyclDtMean, steps);
-  return s;
+    str s;
+    s <<std::setprecision(3);
+    s <<"cycle report: " <<mean(0) <<' ' <<1./mean(0) <<"Hz [" <<max(0) <<']';
+    for(uint i=1;i<mean.N;i++){
+        s <<" tic" <<i <<": " <<mean(i) <<' ' <<mean(i)/mean(0)*100. <<"% [" <<max(i) <<']';
+    }
+    return s;
 }
 
 //=============================================
@@ -524,12 +526,12 @@ void Thread::main() {
     if(s>0) event.setStatus(1); //step command -> reset to step
 
     //-- make a step
-    timer.cycleStart();
+    timer.tic(0);
     stepMutex.lock(RAI_HERE);
     step(); //virtual step routine
     stepMutex.unlock();
     step_count++;
-    timer.cycleDone();
+    // timer.tic(1);
 
     if(s>0) event.incrementStatus(0, -1); //step command -> reset to idle
   };
