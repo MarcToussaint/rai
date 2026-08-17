@@ -155,3 +155,16 @@ arr F_TorusGraspEq::phi(const FrameL& F) {
   y.setVectorBlock(y3, 2);
   return y;
 }
+
+//===========================================================================
+
+arr F_PointView::phi(const FrameL& F){
+  CHECK_EQ(order, 0, "");
+  CHECK_EQ(F.N, 2, "");
+  arr p = F_PositionRel().eval(F);
+  // CHECK(p.elem(2) >= .1, "should be in front!")
+  // arr p2 = arr{{3,3}, {0.,0.,1., 0.,0.,1., 0.,0.,1.}} * p; //this adopts Jacobian
+  // arr y = p - x_ref % p2; //the latter is approximate, as Jacobian yet ignored!
+  arr y = p - x_ref * p.elem(2);
+  return y;
+}

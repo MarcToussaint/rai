@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <Core/array.h>
@@ -8,6 +9,8 @@ namespace cv{
 namespace aruco{
 class Dictionary;
 class ArucoDetector;
+class CharucoBoard;
+class CharucoDetector;
 }
 }
 
@@ -27,6 +30,8 @@ inline intA img2intA(const byteA& img){
 byteA getArucoImage(int id, int borderBits = 2);
 byteA getFullArucoDict();
 
+//===========================================================================
+
 struct FindArucos {
   shared_ptr<cv::aruco::Dictionary> dictionary;
   shared_ptr<cv::aruco::ArucoDetector> detector;
@@ -42,4 +47,23 @@ struct FindArucos {
   FindArucos();
 
   void find(const byteA& rgb);
+  str report();
+};
+
+//===========================================================================
+
+struct CalibrateIntrinsicsWithCharuco {
+  shared_ptr<cv::aruco::Dictionary> dictionary;
+  shared_ptr<cv::aruco::CharucoBoard> board;
+  shared_ptr<cv::aruco::CharucoDetector> detector;
+
+  //user
+  int verbose=2;
+  shared_ptr<OpenGL> gl;
+  byteA rgb_annotated;
+
+  //TODO: should get an array of images directly as input, not deal with reading from file
+  CalibrateIntrinsicsWithCharuco(str path="../data/board/", uint t_start=0, uint t_stop=40, uint n_cams=3, float square_len_m=0.055, float marker_len_m=0.041);
+
+  byteA readImage(str filename);
 };

@@ -7,6 +7,10 @@
 #include <opencv2/features2d.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/objdetect/aruco_detector.hpp>
+#include <opencv2/objdetect/charuco_detector.hpp>
+// #include <opencv2/objdetect/objdetect.hpp>
+// #include <opencv2/calib.hpp>
+// #include <opencv2/geometry/3d.hpp>
 
 byteA getArucoImage(int id, int borderBits){
   cv::aruco::Dictionary dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_5X5_50);
@@ -51,7 +55,7 @@ void FindArucos::find(const byteA& rgb){
 
   detector->detectMarkers(inputImage, markerCorners, markerIds, rejectedCandidates);
 
-  ids = as_arr<int>(markerIds, true);
+  ids = as_arr<int>(markerIds, false);
   pts.resize(ids.N, 4, 2);
   if(ids.N){
     // cv::Size winSize = cv::Size( 5, 5 );
@@ -67,7 +71,6 @@ void FindArucos::find(const byteA& rgb){
         pts(i, j, 0) = markerCorners[i][j].x;
         pts(i, j, 1) = markerCorners[i][j].y;
       }
-
     }
 
     if(verbose>0){
@@ -82,6 +85,107 @@ void FindArucos::find(const byteA& rgb){
   }
 
 }
+
+str FindArucos::report(){
+  str msg;
+  msg <<"aruco finder report: " <<ids.N <<" markers, pts shape: " <<pts.dim();
+  return msg;
+}
+
+//===========================================================================
+
+void findCharuco(CalibrateIntrinsicsWithCharuco &CI,
+		 const byteA& rgb,
+		 std::vector<std::vector<cv::Point2f>>& allImagePoints,
+		 std::vector<std::vector<cv::Point3f>>& allObjectPoints,
+		 cv::Size& imageSize){
+  std::vector<int> charucoIds;
+  std::vector<cv::Point2f> charucoCorners;
+  cv::Mat inputImage = CV(rgb);
+
+  CI.detector->detectBoard(inputImage, charucoCorners, charucoIds);
+
+  if(charucoIds.size()>5){
+    intA ids = as_arr<int>(charucoIds, false);
+    arr pts(ids.N, 2);
+    if(ids.N>=10){
+      for(uint i=0;i<pts.d0;i++){
+        pts(i, 0) = charucoCorners[i].x;
+        pts(i, 1) = charucoCorners[i].y;
+      }
+
+      if(CI.verbose>0){
+        cv::Mat outputImage = inputImage.clone();
+        cv::aruco::drawDetectedCornersCharuco(outputImage, charucoCorners, charucoIds);
+        CI.rgb_annotated = conv_cvMat2byteA(outputImage);
+        if(CI.verbose>1){
+          if(!CI.gl) CI.gl = make_shared<OpenGL>();
+          CI.gl->watchImage(CI.rgb_annotated, CI.verbose>2);
+        }
+      }
+    }
+
+
+    std::vector<cv::Point3f> currentObjectPoints;
+    std::vector<cv::Point2f> currentImagePoints;
+    CI.board->matchImagePoints(charucoCorners, charucoIds, currentObjectPoints, currentImagePoints);
+
+    if(currentImagePoints.empty() || currentObjectPoints.empty()) {
+      cout << "Point matching failed, try again." << endl;
+    }
+
+    allImagePoints.push_back(currentImagePoints);
+    allObjectPoints.push_back(currentObjectPoints);
+
+    imageSize = inputImage.size();
+  }
+}
+
+CalibrateIntrinsicsWithCharuco::CalibrateIntrinsicsWithCharuco(str path, uint t_start, uint t_stop, uint n_cams, float square_len_m, float marker_len_m){
+  dictionary = make_shared<cv::aruco::Dictionary>(cv::aruco::getPredefinedDictionary(cv::aruco::DICT_5X5_50));
+  board = make_shared<cv::aruco::CharucoBoard>(cv::Size{5, 7}, square_len_m, marker_len_m, *dictionary, cv::noArray());
+  auto detectorParams = cv::aruco::DetectorParameters();
+  // detectorParams.cornerRefinementMethod = cv::aruco::CornerRefineMethod::CORNER_REFINE_SUBPIX;
+  detector = make_shared<cv::aruco::CharucoDetector>(*board, cv::aruco::CharucoParameters(), detectorParams, cv::aruco::RefineParameters());
+
+  for(uint c=0;c<n_cams;c++){
+    std::vector<std::vector<cv::Point2f>> allImagePoints;
+    std::vector<std::vector<cv::Point3f>> allObjectPoints;
+    cv::Size imageSize;
+
+    for(uint t=t_start; t<t_stop; t++){
+      byteA img = readImage(STRING(path <<"img_" <<std::setw(4) <<std::setfill('0') <<t <<'_' <<c<<".png"));
+      if(!gl) gl = make_shared<OpenGL>();
+      gl->watchImage(img, false);
+      findCharuco(*this, img, allImagePoints, allObjectPoints, imageSize);
+    }
+
+    cv::Mat cameraMatrix, distCoeffs;
+    double repErr = cv::calibrateCamera(allObjectPoints, allImagePoints, imageSize, cameraMatrix, distCoeffs,
+                                        cv::noArray(), cv::noArray(), cv::noArray(), cv::noArray(), cv::noArray(), 0);
+
+    arr P = conv_cvMat2arr(cameraMatrix);
+    arr dist = conv_cvMat2arr(distCoeffs);
+
+    arr fxycxy = {P(0,0), P(1,1), P(0,2), P(1,2)};
+
+    cout <<"camera: " <<c <<", count: " <<allImagePoints.size() <<", fxycxy: " <<fxycxy <<", distortion: " <<dist <<endl;
+  }
+}
+
+byteA CalibrateIntrinsicsWithCharuco::readImage(str filename){
+  byteA img;
+  read_png(img, filename, false);
+  uint H=img.d0, W=img.d1;
+  img.reshape(W*H,4);
+  img.delColumns(3);
+  img.reshape(H,W,3);
+  swap_RGB_BGR(img);
+  // make_grey(img);
+  return img;
+}
+
+
 
 #else //OPENCV
 

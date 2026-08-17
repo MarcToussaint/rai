@@ -46,6 +46,7 @@ inline cv::Mat CV(const arr& img) {
 }
 
 inline byteA conv_cvMat2byteA(const cv::Mat& mat) {
+  // CHECK_EQ(mat.type(), CV_8U, "");
   CHECK_EQ(mat.dims, 2, "");
   if(mat.elemSize()==1) return byteA().referTo(mat.data, mat.total());
   if(mat.elemSize()==3) return byteA().referTo(mat.data, 3*mat.total()).reshape(mat.rows, mat.cols, 3);
@@ -54,6 +55,8 @@ inline byteA conv_cvMat2byteA(const cv::Mat& mat) {
 }
 
 inline floatA conv_cvMat2floatA(const cv::Mat& mat) {
+  HALT("buggy?")
+  CHECK_EQ(mat.type(), CV_32F, "");
   CHECK_EQ(mat.dims, 2, "");
   floatA X(mat.rows, mat.cols);
   if(mat.isContinuous()) {
@@ -61,6 +64,13 @@ inline floatA conv_cvMat2floatA(const cv::Mat& mat) {
   } else {
     for(int i=0; i<mat.rows; i++) X[i].setCarray((float*)mat.ptr<uchar>(i), mat.cols);
   }
+  return X;
+}
+
+inline arr conv_cvMat2arr(const cv::Mat& mat) {
+  CHECK_EQ(mat.dims, 2, "");
+  arr X(mat.rows, mat.cols);
+  for(uint i=0;i<X.N;i++) X.elem(i) = mat.at<double>(i);
   return X;
 }
 

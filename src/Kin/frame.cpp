@@ -1092,8 +1092,14 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A, const char* 
     parent->children.removeValue(this);
     parent=nullptr;
   }
-  if(!!A && !A.isZero()) r->setRelativePose(A);
-  setParent(r, false);
+  if(!!A && !A.isZero()){
+    r->setRelativePose(A);
+    setParent(r, false);
+  }else{
+    r->setRelativePose(this->Q);
+    setParent(r, false);
+    this->set_Q()->setZero();
+  }
   return r;
 #else
   //new frame between: parent -> f -> this
@@ -2217,6 +2223,7 @@ void rai::Shape::createMeshes(const str& name) {
       CHECK_EQ(size.N, 2, "wrong size attribute for frame '" <<name <<"' of shape " <<_type);
       byteA tex = mesh().texImg().img;
       mesh().setQuad(size(0), size(1), tex);
+      sscCore() = mesh().V;
     } break;
     case rai::ST_marker:
     case rai::ST_camera: {
@@ -2309,9 +2316,11 @@ void rai::Shape::createMeshes(const str& name) {
     rai::Mesh m;
     m.V = mesh().V;
     m.makeConvexHull();
-    if(!m.T.N){ //empty mesh -> remove
-      LOG(-1) <<"shape " <<name <<" coll_core is trivial -> removing contact flag";
-      cont=0;
+    if(!m.T.N){ //empty mesh -> remove contact flag
+      if(cont){
+        LOG(-1) <<"shape " <<name <<" coll_core is trivial -> removing contact flag";
+        cont=0;
+      }
     }else{
       coll_cvxRadius=0.;
       sscCore() = m.V;

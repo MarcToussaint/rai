@@ -818,7 +818,7 @@ void flip_image(floatA& img) {
 
 /// make grey scale image
 void make_grey(byteA& img) {
-  CHECK(img.nd==3 && (img.d2==3 || img.d1==4), "makeGray requires color image as input");
+  CHECK(img.nd==3 && (img.d2==3 || img.d2==4), "makeGray requires color image as input");
   byteA tmp;
   tmp.resize(img.d0, img.d1);
   for(uint i=0; i<img.d0; i++) for(uint j=0; j<img.d1; j++) {
