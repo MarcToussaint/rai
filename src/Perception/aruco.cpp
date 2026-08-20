@@ -141,20 +141,26 @@ void findCharuco(CalibrateIntrinsicsWithCharuco &CI,
   }
 }
 
-CalibrateIntrinsicsWithCharuco::CalibrateIntrinsicsWithCharuco(str path, uint t_start, uint t_stop, uint n_cams, float square_len_m, float marker_len_m){
+CalibrateIntrinsicsWithCharuco::CalibrateIntrinsicsWithCharuco(const byteAA& imgs, float square_len_m, float marker_len_m){
   dictionary = make_shared<cv::aruco::Dictionary>(cv::aruco::getPredefinedDictionary(cv::aruco::DICT_5X5_50));
   board = make_shared<cv::aruco::CharucoBoard>(cv::Size{5, 7}, square_len_m, marker_len_m, *dictionary, cv::noArray());
   auto detectorParams = cv::aruco::DetectorParameters();
   // detectorParams.cornerRefinementMethod = cv::aruco::CornerRefineMethod::CORNER_REFINE_SUBPIX;
   detector = make_shared<cv::aruco::CharucoDetector>(*board, cv::aruco::CharucoParameters(), detectorParams, cv::aruco::RefineParameters());
 
-  for(uint c=0;c<n_cams;c++){
+  uint n_cam = imgs.d1;
+
+  Distortion.resize(n_cam);
+  K.resize(n_cam);
+  Fxycxy.resize(n_cam, 4);
+
+  for(uint c=0;c<n_cam;c++){
     std::vector<std::vector<cv::Point2f>> allImagePoints;
     std::vector<std::vector<cv::Point3f>> allObjectPoints;
     cv::Size imageSize;
 
-    for(uint t=t_start; t<t_stop; t++){
-      byteA img = readImage(STRING(path <<"img_" <<std::setw(4) <<std::setfill('0') <<t <<'_' <<c<<".png"));
+    for(uint t=0; t<imgs.d0; t++){
+      byteA& img = imgs(t,c);
       if(!gl) gl = make_shared<OpenGL>();
       gl->watchImage(img, false);
       findCharuco(*this, img, allImagePoints, allObjectPoints, imageSize);
@@ -164,25 +170,14 @@ CalibrateIntrinsicsWithCharuco::CalibrateIntrinsicsWithCharuco(str path, uint t_
     double repErr = cv::calibrateCamera(allObjectPoints, allImagePoints, imageSize, cameraMatrix, distCoeffs,
                                         cv::noArray(), cv::noArray(), cv::noArray(), cv::noArray(), cv::noArray(), 0);
 
-    arr P = conv_cvMat2arr(cameraMatrix);
-    arr dist = conv_cvMat2arr(distCoeffs);
+    K(c) = cv_asArr(cameraMatrix);
 
-    arr fxycxy = {P(0,0), P(1,1), P(0,2), P(1,2)};
+    Distortion(c) =   cv_asArr(distCoeffs);
 
-    cout <<"camera: " <<c <<", count: " <<allImagePoints.size() <<", fxycxy: " <<fxycxy <<", distortion: " <<dist <<endl;
+    Fxycxy[c] = {cameraMatrix.at<double>(0,0), cameraMatrix.at<double>(1,1), cameraMatrix.at<double>(0,2), cameraMatrix.at<double>(1,2)};
+
+    cout <<"camera: " <<c <<", count: " <<allImagePoints.size() <<", fxycxy: " <<Fxycxy[c] <<", distortion: " <<Distortion(c) <<endl;
   }
-}
-
-byteA CalibrateIntrinsicsWithCharuco::readImage(str filename){
-  byteA img;
-  read_png(img, filename, false);
-  uint H=img.d0, W=img.d1;
-  img.reshape(W*H,4);
-  img.delColumns(3);
-  img.reshape(H,W,3);
-  swap_RGB_BGR(img);
-  // make_grey(img);
-  return img;
 }
 
 

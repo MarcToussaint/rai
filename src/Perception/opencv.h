@@ -29,6 +29,7 @@ inline cv::Mat CV(const byteA& img) {
   if(img.nd==2) return cv::Mat(img.d0, img.d1, CV_8UC1, img.p);
   if(img.nd==3) return cv::Mat(img.d0, img.d1, CV_8UC3, img.p);
   if(img.nd==4) return cv::Mat(img.d0, img.d1, CV_8UC4, img.p);
+  NIY;
   return cv::Mat();
 }
 
@@ -36,12 +37,15 @@ inline cv::Mat CV(const floatA& img) {
   if(img.nd==1) return cv::Mat(img.d0, 1, CV_32FC3, img.p);
   if(img.nd==2) return cv::Mat(img.d0, img.d1, CV_32FC1, img.p);
   if(img.nd==3) return cv::Mat(img.d0, img.d1, CV_32FC3, img.p);
+  NIY;
   return cv::Mat();
 }
 
 inline cv::Mat CV(const arr& img) {
+  if(img.nd==1) return cv::Mat(img.d0, 1, CV_64FC1, img.p);
   if(img.nd==2) return cv::Mat(img.d0, img.d1, CV_64FC1, img.p);
   if(img.nd==3) return cv::Mat(img.d0, img.d1, CV_64FC3, img.p);
+  NIY;
   return cv::Mat();
 }
 
@@ -67,7 +71,7 @@ inline floatA conv_cvMat2floatA(const cv::Mat& mat) {
   return X;
 }
 
-inline arr conv_cvMat2arr(const cv::Mat& mat) {
+inline arr cv_asArr(const cv::Mat& mat) {
   CHECK_EQ(mat.dims, 2, "");
   arr X(mat.rows, mat.cols);
   for(uint i=0;i<X.N;i++) X.elem(i) = mat.at<double>(i);

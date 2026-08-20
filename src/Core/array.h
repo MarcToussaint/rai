@@ -385,6 +385,7 @@ typedef rai::Array<uint16_t>   uint16A;
 typedef rai::Array<uint32_t>   uint32A;
 typedef rai::Array<intA>   intAA;
 typedef rai::Array<uintA>  uintAA;
+typedef rai::Array<byteA>   byteAA;
 
 namespace rai { struct String; }
 typedef rai::Array<rai::String> strA;

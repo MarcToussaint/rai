@@ -6,6 +6,7 @@
 
 //forward
 namespace cv{
+class Mat;
 namespace aruco{
 class Dictionary;
 class ArucoDetector;
@@ -57,13 +58,15 @@ struct CalibrateIntrinsicsWithCharuco {
   shared_ptr<cv::aruco::CharucoBoard> board;
   shared_ptr<cv::aruco::CharucoDetector> detector;
 
+  //output
+  rai::Array<arr> K;
+  arr Fxycxy;
+  rai::Array<arr> Distortion;
+
   //user
   int verbose=2;
   shared_ptr<OpenGL> gl;
   byteA rgb_annotated;
 
-  //TODO: should get an array of images directly as input, not deal with reading from file
-  CalibrateIntrinsicsWithCharuco(str path="../data/board/", uint t_start=0, uint t_stop=40, uint n_cams=3, float square_len_m=0.055, float marker_len_m=0.041);
-
-  byteA readImage(str filename);
+  CalibrateIntrinsicsWithCharuco(const byteAA& imgs, float square_len_m=0.055, float marker_len_m=0.041);
 };
