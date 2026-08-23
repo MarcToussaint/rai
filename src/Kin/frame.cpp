@@ -1082,8 +1082,7 @@ uint rai::Frame::getJointQIndex() const{
 
 /***********************************************************/
 
-rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A, const char* postfix) {
-
+rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A, bool prelinkTakesQ, const char* postfix) {
 #if 1
   Frame *r = C.addFrame(0);
   r->name <<name <<postfix;
@@ -1096,9 +1095,13 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A, const char* 
     r->setRelativePose(A);
     setParent(r, false);
   }else{
-    r->setRelativePose(this->Q);
-    setParent(r, false);
-    this->set_Q()->setZero();
+    if(prelinkTakesQ){
+      r->setRelativePose(this->Q);
+      setParent(r, false);
+      this->set_Q()->setZero();
+    }else{
+      setParent(r, false);
+    }
   }
   return r;
 #else

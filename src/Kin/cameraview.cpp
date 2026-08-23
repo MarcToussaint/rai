@@ -22,7 +22,7 @@ CameraView::CameraView(const Configuration& _C, bool _offscreen) {
   gl->add(this);
 }
 
-CameraView::CameraFrame& CameraView::newCamera(Frame* frame, uint width, uint height, double focalLength, double heightAngle, double heightAbs, const arr& zRange, const char* backgroundImageFile) {
+CameraView::CameraFrame& CameraView::newCamera(Frame* frame, uint width, uint height, double focalLength, const arr& fxycxy, double heightAngle, double heightAbs, const arr& zRange, const char* backgroundImageFile) {
   currentCamera = make_shared<CameraFrame>(*frame);
   cameras.append(currentCamera);
   Camera& cam = currentCamera->cam;
@@ -33,6 +33,7 @@ CameraView::CameraFrame& CameraView::newCamera(Frame* frame, uint width, uint he
   if(focalLength>0.) cam.setFocalLength(focalLength);
   if(heightAngle>0.) cam.setHeightAngle(heightAngle);
   if(heightAbs>0.) cam.setHeightAbs(heightAbs);
+  if(fxycxy.N){ cam.fxycxy = (fxycxy - arr{0., 0., .5*width, .5*height}) / double(height); }
 
   cam.X = currentCamera->frame.ensure_X();
   gl->resize(cam.width, cam.height);
@@ -46,6 +47,7 @@ CameraView::CameraFrame& CameraView::newCamera(Frame* frame) {
   double focalLength=-1., heightAngle=-1.;
   double heightAbs=-1.;
   arr zRange = {.1, 10.};
+  arr fxycxy;
 
   CHECK(frame->ats, "");
   frame->ats->get<double>(focalLength, "focalLength");
@@ -54,8 +56,9 @@ CameraView::CameraFrame& CameraView::newCamera(Frame* frame) {
   frame->ats->get<arr>(zRange, "zRange");
   frame->ats->get<double>(width, "width");
   frame->ats->get<double>(height, "height");
+  frame->ats->get<arr>(fxycxy, "fxycxy");
 
-  return newCamera(frame, width, height, focalLength, heightAngle, heightAbs, zRange);
+  return newCamera(frame, width, height, focalLength, fxycxy, heightAngle, heightAbs, zRange);
 }
 
 CameraView::CameraFrame& CameraView::selectSensor(Frame *frame) {

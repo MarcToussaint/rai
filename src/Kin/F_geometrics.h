@@ -68,12 +68,13 @@ struct F_TorusGraspEq: Feature {
 //===========================================================================
 
 struct F_PointView : Feature {
-  arr x_ref;
+  arr x_skew;
   F_PointView(const arr& p, const arr& fxycxy) {
-    x_ref.resize(3);
-    x_ref(0) = (p(0) - fxycxy(2)) / fxycxy(0);
-    x_ref(1) = (p(1) - fxycxy(3)) / fxycxy(1);
-    x_ref(2) = 1.;
+    arr x(3);
+    x(0) = (p(0) - fxycxy(2)) / fxycxy(0);
+    x(1) = (p(1) - fxycxy(3)) / fxycxy(1);
+    x(2) = 1.;
+    x_skew = skew(x);
   }
   virtual arr phi(const FrameL& F);
   virtual uint dim_phi(const FrameL& F) { return 3; }

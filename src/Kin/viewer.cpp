@@ -294,7 +294,7 @@ void ConfigurationViewer::setCamera(Frame* camFrame) {
         if((at=camFrame->ats->getNode("zRange"))) { arr z=at->as<arr>(); cam.setZRange(z(0), z(1)); }
         if((at=camFrame->ats->getNode("width"))) W=at->asFlex<double>();
         if((at=camFrame->ats->getNode("height"))) H=at->asFlex<double>();
-        if((at=camFrame->ats->getNode("fxycxy"))){ arr fxycxy = at->as<arr>();  cam.setFocalLength(fxycxy(0)/H); }
+        if((at=camFrame->ats->getNode("fxycxy"))){ arr fxycxy = at->as<arr>();  cam.setFocalLength(fxycxy(1)/H); }
         //    cam.setWHRatio((double)gl->width/gl->height);
       }
     } else {
@@ -308,7 +308,7 @@ void ConfigurationViewer::focus(const arr& position, double heightAbs){
   rai::Camera& cam = displayCamera();
   arr pos = position;
   cam.focus(pos, true);
-  double dist = heightAbs * cam.focalLength;
+  double dist = heightAbs * cam.fxycxy(1);
   pos -= dist * cam.X.rot.getZ().getArr();
   cam.setPosition(pos);
 }

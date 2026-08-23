@@ -947,7 +947,8 @@ void OpenGL::Scroll(int wheel, int direction) {
 
     //-- ctrl -> focal length
    if(!_SHIFT(modifiers) && _CTRL(modifiers)) {
-     cam->focalLength *= (1.-dz);
+     cam->fxycxy(0) *= (1.-dz);
+     cam->fxycxy(1) *= (1.-dz);
      cam->X.pos += cam->X.rot.getZ() * (dz * (cam->X.pos-cam->foc).length());
    }
   }
@@ -1033,7 +1034,7 @@ void OpenGL::MouseMotion(double _x, double _y) {
   if(mouse_button==1 && (!hideCameraControls && _SHIFT(downModifiers) && !_CTRL(downModifiers)) && !downVec.isZero) {
     rai::Vector diff = vec - downVec;
     diff.z = 0.;
-    diff *= .5*(downFoc - downPos).length()/cam->focalLength;
+    diff *= .5*(downFoc - downPos).length()/cam->fxycxy(1);
     diff = downRot * diff;
     cam->X.pos = downPos - diff;
     cam->foc = downFoc - diff;

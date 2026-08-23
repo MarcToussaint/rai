@@ -1325,6 +1325,7 @@ void KOMO::reset() {
   featureJacobians.clear();
   featureTypes.clear();
   timeSolve=timeBroadphase=timeSetJoints=timeFeatures=0.;
+  evalCount=0;
 }
 
 std::shared_ptr<SolverReturn> KOMO::solve(double addInitializationNoise, int splineKnots, const rai::OptOptions& options) {

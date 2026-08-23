@@ -1183,6 +1183,10 @@ double quat_sqrDistance(const Quaternion& a, const Quaternion& b) {
   return w*w + x*x + y*y + z*z;
 }
 
+double sqrDistance(const Transformation& a, const Transformation& b){
+  return sqrDistance(a.pos, b.pos) + quat_sqrDistance(a.rot, b.rot);
+}
+
 void quat_concat(arr& y, arr& Ja, arr& Jb, const arr& A, const arr& B) {
   rai::Quaternion a(A);
   rai::Quaternion b(B);
@@ -1842,13 +1846,13 @@ void Camera::setZero() {
 }
 
 /// the full height angle (in degrees) of the camera perspective; set it 0 for orthogonal projection
-void Camera::setHeightAngle(float a) { heightAbs=0.; focalLength=1./tan(0.5*a*RAI_PI/180.); }
+void Camera::setHeightAngle(float a) { setFocalLength( 1./tan(0.5*a*RAI_PI/180.) ); }
 /// the absolute height of the camera perspective (automatically also sets heightAngle=0)
-void Camera::setHeightAbs(float h) { focalLength=0.; heightAbs=h; }
+void Camera::setHeightAbs(float h) { fxycxy.clear(); heightAbs=h; }
 /// the z-range (depth range) visible for the camera
 void Camera::setZRange(float znear, float zfar) { zNear=znear; zFar=zfar; }
 /// set the width/height ratio of your viewport to see a non-distorted picture
-void Camera::setFocalLength(float f) { heightAbs=0;  focalLength = f; }
+void Camera::setFocalLength(float f) { heightAbs=0;   fxycxy = {f, f, 0., 0.}; }
 
 void Camera::setWidthHeight(float w, float h){ width = w; height = h; }
 /// the frame's position
@@ -1928,8 +1932,9 @@ void Camera::setCameraProjectionMatrix(const arr& P) {
 }
 
 void Camera::read(Graph& ats) {
-  focalLength = ats.get<double>("focalLength", -1.);
-  heightAbs = ats.get<double>("orthoAbsHeight", -1.);
+  double focalLength = ats.get<double>("focalLength", -1.);
+  if(focalLength>0.) setFocalLength(focalLength);
+  else heightAbs = ats.get<double>("orthoAbsHeight", -1.);
   arr range =  ats.get<arr>("zRange", {});
   if(range.N) { zNear=range(0); zFar=range(1); }
   width = ats.get<double>("width", 400.);
@@ -1939,7 +1944,7 @@ void Camera::read(Graph& ats) {
 void Camera::report(std::ostream& os) {
   os <<"camera pose X: " <<X <<endl;
   os <<"width: " <<width <<" height: " <<height <<endl;
-  os <<"focalLength: " <<focalLength <<endl;
+  os <<"fxycxy: " <<fxycxy <<endl;
   os <<"intrinsic matrix:\n" <<getIntrinsicMatrix() <<endl;
 }
 
@@ -1947,9 +1952,11 @@ arr Camera::getT_IC() const{
   float whRatio = width/height;
   arr P(4, 4);
   P.setZero();
-  if(focalLength>0.) { //normal perspective mode
-    P(0, 0) = 2.*focalLength/whRatio;
-    P(1, 1) = -2.*focalLength;
+  if(fxycxy.N) { //normal perspective mode
+    P(0, 0) = 2.*fxycxy(0)/whRatio;
+    P(1, 1) = -2.*fxycxy(1);
+    P(0, 2) = 2.*fxycxy(2)/whRatio;
+    P(1, 2) = -2.*fxycxy(3);
     P(2, 2) = -(zFar + zNear)/(zNear-zFar);
     P(3, 2) = 1.;
     P(2, 3) = 2. * zFar * zNear / (zNear-zFar);
@@ -1970,18 +1977,19 @@ arr Camera::getT_CW() const{
 /** sets OpenGL's GL_PROJECTION matrix accordingly -- should be
     called in an opengl draw routine */
 void Camera::glSetProjectionMatrix() const {
+  HALT("obsolete?");
   float whRatio = width/height;
 #ifdef RAI_GL
 //  if(fixedProjectionMatrix.N) {
 //    glLoadMatrixd(fixedProjectionMatrix.p);
 //  } else {
-  if(focalLength > 0.) { //focal lengh mode
+  if(fxycxy.N) { //focal lengh mode
 #if 1
     CHECK(!heightAbs, "");
     arr P(4, 4);
     P.setZero();
-    P(0, 0) = 2.*focalLength/whRatio;
-    P(1, 1) = -2.*focalLength;
+    P(0, 0) = 2.*fxycxy(0)/whRatio;
+    P(1, 1) = -2.*fxycxy(1);
     P(2, 2) = -(zFar + zNear)/(zNear-zFar);
     P(2, 3) = 1.;
     P(3, 2) = 2. * zFar * zNear / (zNear-zFar);
@@ -1992,12 +2000,12 @@ void Camera::glSetProjectionMatrix() const {
 #endif
   }
   if(heightAbs > 0.) { //ortho mode
-    CHECK(!focalLength, "");
+    CHECK(!fxycxy.N, "");
     glOrtho(-whRatio*heightAbs/2., whRatio*heightAbs/2.,
             -heightAbs/2., heightAbs/2., zNear, zFar);
   }
 //  if(heightAngle > 0.) { //normal perspective mode
-//    CHECK(!focalLength, "");
+//    CHECK(!fxycxy.N, "");
 //    CHECK(!heightAbs, "");
 //    gluPerspective(heightAngle, whRatio, zNear, zFar);
 //  }
@@ -2007,15 +2015,16 @@ void Camera::glSetProjectionMatrix() const {
 }
 
 arr Camera::getProjectionMatrix() const {
+  HALT("obsolete?");
   arr Tinv = X.getInverseMatrix();
   float whRatio = width/height;
 
-  if(focalLength>0.) { //normal perspective mode
+  if(fxycxy.N) { //normal perspective mode
     CHECK(!heightAbs, "");
     arr P(4, 4);
     P.setZero();
-    P(0, 0) = 2.*focalLength/whRatio;
-    P(1, 1) = -2.*focalLength;
+    P(0, 0) = 2.*fxycxy(0)/whRatio;
+    P(1, 1) = -2.*fxycxy(1);
     P(2, 2) = 1.; //depth is flipped to become positive for 'in front of camera'
     P(3, 3) = 1.; //homogeneous 3D is kept
     return P * Tinv;
@@ -2028,15 +2037,16 @@ arr Camera::getProjectionMatrix() const {
 }
 
 arr Camera::getGLProjectionMatrix(bool includeCameraPose) const {
+  HALT("obsolete?");
   arr Tinv = X.getInverseMatrix();
   float whRatio = width/height;
 
-  if(focalLength > 0.) { //focal lengh mode
+  if(fxycxy.N) { //focal lengh mode
     CHECK(!heightAbs, "");
     arr P(4, 4);
     P.setZero();
-    P(0, 0) = 2.*focalLength/whRatio;
-    P(1, 1) = -2.*focalLength;
+    P(0, 0) = 2.*fxycxy(0)/whRatio;
+    P(1, 1) = -2.*fxycxy(1);
     P(2, 2) = -(zFar + zNear)/(zNear-zFar);
     P(2, 3) = 1.;
     P(3, 2) = 2. * zFar * zNear / (zNear-zFar);
@@ -2045,7 +2055,7 @@ arr Camera::getGLProjectionMatrix(bool includeCameraPose) const {
   }
 #ifdef RAI_GL
   if(heightAbs > 0.) { //ortho mode
-    CHECK(!focalLength, "");
+    CHECK(!fxycxy.N, "");
     glOrtho(-whRatio*heightAbs/2., whRatio*heightAbs/2.,
             -heightAbs/2., heightAbs/2., zNear, zFar);
     NIY;
@@ -2060,11 +2070,13 @@ arr Camera::getInverseProjectionMatrix() const {
   arr T = X.getMatrix();
   float whRatio = width/height;
 
-  if(focalLength>0.) { //normal perspective mode
+  if(fxycxy.N) { //normal perspective mode
     arr Pinv(4, 4);
     Pinv.setZero();
-    Pinv(0, 0) = 1./(2.*focalLength/whRatio);
-    Pinv(1, 1) = -1./(2.*focalLength);
+    CHECK_ZERO(fxycxy(2), 1e-8, "NIY for nonzero offsets");
+    CHECK_ZERO(fxycxy(3), 1e-8, "NIY for nonzero offsets");
+    Pinv(0, 0) = 1./(2.*fxycxy(0)/whRatio);
+    Pinv(1, 1) = -1./(2.*fxycxy(1));
     Pinv(2, 2) = 1.; //flips 'positive depth' back to Right-Handed frame
     Pinv(3, 3) = 1.; //homogeneous 3D is kept
     return T * Pinv;
@@ -2072,8 +2084,8 @@ arr Camera::getInverseProjectionMatrix() const {
   if(heightAbs > 0.) { //ortho mode
     arr Pinv(4, 4);
     Pinv.setZero();
-    Pinv(0, 0) = 1./(2.*focalLength/whRatio);
-    Pinv(1, 1) = -1./(2.*focalLength);
+    Pinv(0, 0) = 1./(2.*fxycxy(0)/whRatio);
+    Pinv(1, 1) = -1./(2.*fxycxy(1));
     Pinv(2, 2) = 1.; //flips 'positive depth' back to Right-Handed frame
     Pinv(3, 3) = 1.; //homogeneous 3D is kept
     NIY;
@@ -2148,15 +2160,16 @@ void Camera::unproject_fromPixelsAndGLDepth(arr& x) const {
 #endif
 }
 
-arr Camera::getFxycxy() { return arr{focalLength*height, focalLength*height, .5*width, .5*height}; }
+arr Camera::getFxycxy() { return arr{fxycxy(0)*height, fxycxy(1)*height, .5*width, .5*height}; }
 
 arr Camera::getIntrinsicMatrix() const {
-  if(focalLength>0.) { //normal perspective mode
+  HALT("obsolete?");
+  if(fxycxy.N) { //normal perspective mode
     CHECK(!heightAbs, "");
     arr K(3, 3);
     K.setZero();
-    K(0, 0) = focalLength*height;
-    K(1, 1) = focalLength*height;
+    K(0, 0) = fxycxy(0)*height;
+    K(1, 1) = fxycxy(1)*height;
     K(2, 2) = 1.; //depth is flipped to become positive for 'in front of camera'
     K(0, 2) = -0.5*width;
     K(1, 2) = -0.5*height;

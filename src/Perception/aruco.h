@@ -59,9 +59,9 @@ struct CalibrateIntrinsicsWithCharuco {
   shared_ptr<cv::aruco::CharucoDetector> detector;
 
   //output
-  rai::Array<arr> K;
-  arr Fxycxy;
-  rai::Array<arr> Distortion;
+  arrA K;
+  arrA Fxycxy;
+  arrA Distortion;
 
   //user
   int verbose=2;
