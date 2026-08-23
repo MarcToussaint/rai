@@ -4,7 +4,7 @@ OUTPUT = lib$(NAME).so
 
 #OPTIM=debug
 
-DEPEND = Core Geo Gui Kin Algo Control
+DEPEND = Core Geo Gui Kin Algo Control KOMO
 
 GL = 1
 LAPACK = 1

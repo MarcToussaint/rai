@@ -60,11 +60,11 @@ void test(){ NICO }
 #endif
 
 
-void generateArucoDict(){
-  byteA dict = getFullArucoDict();
-  intA D(dict.d0, dict.d1);
-  for(uint i=0;i<dict.d0;i++){
-    D[i] = img2intA(dict[i]);
+void generateArucoImgDict(){
+  intA D(50, 9);
+  for(uint i=0;i<D.d0;i++){
+    byteA img = getArucoImage(i, 2);
+    D[i] = img2intA(img);
     // byteA img = intA2img(D[i]);
   }
   cout <<D <<endl;
@@ -73,9 +73,9 @@ void generateArucoDict(){
 int main(int argc,char **argv){
   rai::initCmdLine(argc,argv);
 
-  test();
+  // test();
 
-  // generateArucoDict();
+  generateArucoImgDict();
   
   return 0;
 }

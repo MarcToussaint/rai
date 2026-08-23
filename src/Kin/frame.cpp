@@ -2137,6 +2137,7 @@ void rai::Shape::read(Frame& frame) {
   if(ats.get(i, "aruco_id")){
     CHECK_EQ(type(), ST_quad, "");
     byteA img = getArucoImage(i);
+    CHECK_EQ(img.d0, 9, "should be with black and white margin");
     img.reshape(img.d0, img.d1, 1);
     mesh().setQuad(size(0), size(1), img, false, false);
   }

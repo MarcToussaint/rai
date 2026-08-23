@@ -710,13 +710,15 @@ void readGraph_postprocess(Graph& G, uint Nbefore){
   for(uint i=Nbefore; i<G.N; i++) {
     Node* n=G.elem(i);
     int start = n->key.find('(', false);
-    int stop = n->key.find(')', true);
-    if(start>=0 && stop>=0) {
-      if(stop-1>=start+1) {
-        parentTags(n->index) = n->key.sub(start+1, stop);
+    if(start>=0){
+      int stop = n->key.find(')', true);
+      if(stop>=0) {
+        if(stop-1>=start+1) {
+          parentTags(i) = n->key.sub(start+1, stop);
+        }
+        n->key.replace(start, stop-start+1, 0, 0);
+        while(n->key.N && n->key(-1)==' ') n->key.resize(n->key.N-1, true);
       }
-      n->key.replace(start, stop-start+1, 0, 0);
-      while(n->key.N && n->key(-1)==' ') n->key.resize(n->key.N-1, true);
     }
   }
   //add them
@@ -918,7 +920,7 @@ Node* readNode(Graph& G, std::istream& is, bool verbose, bool parseInfo) {
   pinfo.keys_beg=is.tellg();
   {
     //if(!str.read(is, " \t", " \t\n\r,;([{}=:!\'", false)) break;
-    str.read(is, " \t", ":\t\n\r,;[{})<=!~\'#", false);
+    str.read(is, " \t", ":\t\n\r,;[{}<=!~\'#", false);
     while(str.N && str(-1)==' ') str.resize(str.N-1, true);
     if(str.N) {
       if(str(0)=='"' && str(-1)=='"') str = str.sub(1, -1);

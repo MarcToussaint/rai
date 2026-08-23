@@ -29,7 +29,6 @@ inline intA img2intA(const byteA& img){
   return I;
 }
 byteA getArucoImage(int id, int borderBits = 2);
-byteA getFullArucoDict();
 
 //===========================================================================
 
