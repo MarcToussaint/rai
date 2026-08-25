@@ -44,6 +44,40 @@ CalibrationScene::CalibrationScene(rai::Configuration& C, const char* obj_name)
   }
 }
 
+void CalibrationScene::addCalibDofs_arucos(){
+  //add translational calibration joints to all arucos
+  for(rai::Frame *ar:arucos) if(ar){
+      ar->insertPreLink(0, true, "_calib");
+      calibs.append(ar);
+      cout <<" -- making stable dof: " <<ar->name <<endl;
+      ar->setJoint(rai::JT_transXY);
+      ar->joint->isStable = true;
+    }
+}
+
+void CalibrationScene::addCalibDofs_cameras(){
+  //add camera calibration joints
+  for(rai::Frame* cam:cams){
+    cam->insertPreLink(0, true, "_calib");
+    calibs.append(cam);
+    cout <<" -- making stable dof: " <<cam->name <<endl;
+    cam->setJoint(rai::JT_free);
+    cam->joint->isStable = true;
+  }
+}
+
+void CalibrationScene::addCalibDofs_joints(const uintA& jointIds){
+  for(uint i:jointIds){
+    rai::Frame *f = C.frames(i);
+    rai::Frame *pre = f->insertPreLink(0, false, "_calib");
+    calibs.append(pre);
+    calibs_joints.append(pre);
+    cout <<" -- making stable dof: " <<pre->name <<endl;
+    pre->setJoint(rai::JT_hingeZ);
+    pre->joint->isStable = true;
+  }
+}
+
 str CalibrationScene::report(){
   str s;
   s <<"\ncameras: [" <<cams.N <<"]";
@@ -51,6 +85,7 @@ str CalibrationScene::report(){
   s <<"\narucos: [" <<arucos.N <<"]";
   for(uint i=0;i<arucos.N;i++) if(arucos(i)){ s <<"\n  " <<arucos(i)->name <<" id: " <<i; }
   if(obj){ s <<"\nobj: " <<obj->name <<" with arucos: " <<obj_aruco_ids <<" and joint: "; if(obj->joint) s<<obj->joint->type; else s <<"none"; }
+  cout <<"\ncalibration joints: " <<rai::framesToNames(calibs) <<endl;
   return s;
 }
 

@@ -32,6 +32,11 @@ byteA getArucoImage(int id, int borderBits = 2);
 
 //===========================================================================
 
+std::tuple<intAA, arrA> findArucos(const byteAA& imgs);
+std::tuple<arrA, arrA> calibrateIntrinsicsWithCharuco(const byteAA& imgs, uint distortionDofs, float square_len_m=0.055, float marker_len_m=0.041);
+
+//===========================================================================
+
 struct FindArucos {
   shared_ptr<cv::aruco::Dictionary> dictionary;
   shared_ptr<cv::aruco::ArucoDetector> detector;
@@ -52,20 +57,3 @@ struct FindArucos {
 
 //===========================================================================
 
-struct CalibrateIntrinsicsWithCharuco {
-  shared_ptr<cv::aruco::Dictionary> dictionary;
-  shared_ptr<cv::aruco::CharucoBoard> board;
-  shared_ptr<cv::aruco::CharucoDetector> detector;
-
-  //output
-  arrA K;
-  arrA Fxycxy;
-  arrA Distortion;
-
-  //user
-  int verbose=2;
-  shared_ptr<OpenGL> gl;
-  byteA rgb_annotated;
-
-  CalibrateIntrinsicsWithCharuco(const byteAA& imgs, float square_len_m=0.055, float marker_len_m=0.041);
-};

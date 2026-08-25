@@ -30,8 +30,6 @@ rai::NodeL& NoNodeL=*((rai::NodeL*)nullptr);
 //Graph& NoGraph=*((Graph*)nullptr);
 
 namespace rai {
-  NodeL getParents(Graph& G, const StringA& pars);
-  NodeL getParentsFromTag(Graph& G, String& str);
   Node* readNode(Graph& G, std::istream& is, bool verbose, bool parseInfo);
 }
 
@@ -604,6 +602,73 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
   DEBUG(G.checkConsistency());
 }
 
+strA cutParentsFromKey(Node* n){
+  int start = n->key.find('(', false);
+  str parentsStr;
+  if(start>=0){
+    int stop = n->key.find(')', true);
+    if(stop>=0) {
+      if(stop-1>=start+1) {
+        parentsStr = n->key.sub(start+1, stop);
+      }
+      n->key.replace(start, stop-start+1, 0, 0);
+      while(n->key.N && n->key(-1)==' ') n->key.resize(n->key.N-1, true);
+    }
+  }
+
+  String par;
+  StringA pars;
+  parentsStr.clearStream();
+  for(uint j=0;; j++) {
+    par.read(parentsStr, " \t\n\r,", " \t\n\r,", false);
+    if(!par.N) {
+      char c = parentsStr.get();
+      if(!parentsStr.eof()) {
+        LOG(-1) <<"not fully read: full:" <<parentsStr <<" read:" <<c;
+      }
+      break;
+    }
+    pars.append(par);
+  }
+
+  return pars;
+}
+
+NodeL getParents(Graph& G, const StringA& pars) {
+  NodeL parents;
+  for(const String& par: pars){
+    Node* e = G.findNode(par, true, false); //important: recurse up
+    if(e) { //sucessfully found
+      parents.append(e);
+    } else { //this element is not known!!
+      // int rel=0;
+      // str >>rel;
+      // if(rel<0 && (int)G.N+rel>=0) { //check if this is a negative integer
+      //   e=G.elem(G.N+rel);
+      //   parents.append(e);
+      // } else {
+      LOG(-1) <<"parsing parent '" <<par <<"' -- unknown";
+      return NodeL{};
+      // }
+    }
+  }
+  return parents;
+}
+
+void setParentsFromStrsOrAttr(Node* n, const strA& pars){
+  if(pars.N){
+    NodeL par = getParents(n->container, pars);
+    n->setParents(par);
+  }else if(n->is<Graph>()){
+    Node *p = n->graph().findNodeOfType(typeid(StringA), "parent");
+    if(p){
+      NodeL par = getParents(n->container, p->as<StringA>());
+      n->setParents(par);
+      n->container.delNode(p);
+    }
+  }
+}
+
 void readNode_postprocess(Node* n, str& namePrefix, bool parseInfo){
   Graph& G = n->container;
 
@@ -678,7 +743,22 @@ void readNode_postprocess(Node* n, str& namePrefix, bool parseInfo){
     n=nullptr;
   }
 
-  //-- post processes: split keys -> graph tags (e.g. "Rule grasp: {...}"
+  //-- interpret parents in key -> directly connect or add to graph
+  if(n){
+    strA pars = cutParentsFromKey(n);
+    if(pars.N){
+      NodeL par = getParents(n->container, pars);
+      if(par.N){
+        n->setParents(par);
+      }else{
+        LOG(0) <<"== PARENT TAG " <<pars <<" could not be linked yet - trying to add as attr to graph node";
+        CHECK(n->graph(), "")
+        n->graph().add<strA>("parent", pars);
+      }
+    }
+  }
+
+  //-- split keys -> graph tags (e.g. "Rule grasp: {...}"
   if(n && n->is<Graph>()) {
     for(; n->key.N;) {
       uint i=0;
@@ -705,37 +785,13 @@ void readNode_postprocess(Node* n, str& namePrefix, bool parseInfo){
 
 void readGraph_postprocess(Graph& G, uint Nbefore){
   //-- interpret parents
-  //cut all parentTags
-  StringA parentTags(G.N);
-  for(uint i=Nbefore; i<G.N; i++) {
-    Node* n=G.elem(i);
-    int start = n->key.find('(', false);
-    if(start>=0){
-      int stop = n->key.find(')', true);
-      if(stop>=0) {
-        if(stop-1>=start+1) {
-          parentTags(i) = n->key.sub(start+1, stop);
-        }
-        n->key.replace(start, stop-start+1, 0, 0);
-        while(n->key.N && n->key(-1)==' ') n->key.resize(n->key.N-1, true);
-      }
-    }
-  }
-  //add them
-  for(uint i=Nbefore; i<G.N; i++) {
-    Node* n=G.elem(i);
-    if(parentTags(i).N){
-      NodeL par = getParentsFromTag(G, parentTags(i));
-      n->setParents(par);
-    }else if(n->is<Graph>()){
-      Node *p = n->graph().findNodeOfType(typeid(StringA), "parent");
-      if(p){
-        NodeL par = getParents(G, p->as<StringA>());
-        n->setParents(par);
-        G.delNode(p);
-      }
-    }
-  }
+  //first cut all parentTags
+  //TODO: This should be obsolete if all parent's were interpreted previously
+  StringAA parentStrs(G.N);
+  for(uint i=Nbefore; i<G.N; i++) parentStrs(i) = cutParentsFromKey(G.elem(i));
+  //then add them
+  //TODO: This is NOT obsolete as some have 'parent' attr
+  for(uint i=Nbefore; i<G.N; i++) setParentsFromStrsOrAttr(G.elem(i), parentStrs(i));
 
   //-- apply edits new way: child edits
   NodeL edits;
@@ -865,46 +921,6 @@ void writeFromStream(std::ostream& os, std::istream& is, istream::pos_type beg, 
 //   parse(is, ")");
 // }
 
-NodeL getParents(Graph& G, const StringA& pars) {
-  NodeL parents;
-
-  for(const String& par: pars){
-    Node* e = G.findNode(par, true, false); //important: recurse up
-    if(e) { //sucessfully found
-      parents.append(e);
-    } else { //this element is not known!!
-      // int rel=0;
-      // str >>rel;
-      // if(rel<0 && (int)G.N+rel>=0) { //check if this is a negative integer
-      //   e=G.elem(G.N+rel);
-      //   parents.append(e);
-      // } else {
-      LOG(-1) <<"parsing parent '" <<par <<"' -- unknown";
-      // }
-    }
- }
-
-  return parents;
-}
-
-NodeL getParentsFromTag(Graph& G, String& str) {
-  String par;
-  StringA pars;
-  str.clearStream();
-  for(uint j=0;; j++) {
-    par.read(str, " \t\n\r,", " \t\n\r,", false);
-    if(!par.N) {
-      char c = str.get();
-      if(!str.eof()) {
-        LOG(-1) <<"not fully read: full:" <<str <<" read:" <<c;
-      }
-      break;
-    }
-    pars.append(par);
-  }
-  return getParents(G, pars);
-}
-
 Node* readNode(Graph& G, std::istream& is, bool verbose, bool parseInfo) {
   // HALT("THIS IS OBSOLETE - YAML READ IS NOW DEFAULT")
 
@@ -915,7 +931,7 @@ Node* readNode(Graph& G, std::istream& is, bool verbose, bool parseInfo) {
 
   if(verbose) { cout <<"\nNODE (line="<<lineCount <<")"; }
 
-  //-- read keys
+  //-- read key
   skip(is, " \t\n\r");
   pinfo.keys_beg=is.tellg();
   {
@@ -1055,11 +1071,11 @@ Node* readNode(Graph& G, std::istream& is, bool verbose, bool parseInfo) {
           }
           node = G.elem(-1);
         } break;
-        case '(': { // set of nodes
-          str.read(is, "", ")", true);
-          NodeL par = getParentsFromTag(G, str);
-          node = G.add<NodeL>(key,  par);
-        } break;
+        // case '(': { // set of nodes
+        //   str.read(is, "", ")", true);
+        //   NodeL par = getParentsFromStr(G, str);
+        //   node = G.add<NodeL>(key,  par);
+        // } break;
         case '{': { // sub graph
           is.putback(c);
           Graph& subgraph = G.addSubgraph(key);

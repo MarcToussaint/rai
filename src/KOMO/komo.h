@@ -151,6 +151,7 @@ struct KOMO : rai::NonCopyable {
   //-- setting individual time slices
   void setConfiguration_qAll(int t, const arr& q); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
   void setConfiguration_qOrg(int t, const arr& q); ///< set only those DOFs that were defined in the original world (excluding extra DOFs from switches)
+  void setConfiguration_dofs(int t, const uintA& dofIndices, const arr& q); ///< set only those DOFs that were defined in the original world (excluding extra DOFs from switches)
   void setConfiguration_X(int t, const arr& X); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
   void initOrg();
   void initRandom(int verbose=0);

@@ -5,15 +5,23 @@
 
 struct CalibrationScene {
   rai::Configuration& C;
+
   FrameL cams;
+  FrameL arucos;
+  FrameL calibs;
+  FrameL calibs_joints;
+
   arrA Fxycxy;
   arrA Distortion;
   rai::Frame * obj;
   uintA obj_aruco_ids;
 
-  FrameL arucos;
-
   CalibrationScene(rai::Configuration& C, const char* obj_name=0);
+
+  //-- setup calib dof frames
+  void addCalibDofs_arucos();
+  void addCalibDofs_cameras();
+  void addCalibDofs_joints(const uintA& jointIds);
 
   str report();
 };

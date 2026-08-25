@@ -12,7 +12,7 @@
 #include <Geo/geo.h>
 
 struct PointView{ uint j, k; arr p; double d=-1.; };
-typedef rai::Array<PointView> PointViewA;
+typedef rai::Array<PointView> PointViewData;
 
 struct MultiViewSolver{
 
@@ -27,7 +27,7 @@ struct MultiViewSolver{
 
   arr X; //J world points
   arr P; //K camera matrices
-  PointViewA data;
+  PointViewData data;
 
   MultiViewSolver(uint J_numMarkers, uint K_numCameras)
       : J(J_numMarkers), K(K_numCameras){}

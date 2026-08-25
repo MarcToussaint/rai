@@ -81,7 +81,38 @@ str FindArucos::report(){
 
 //===========================================================================
 
-CalibrateIntrinsicsWithCharuco::CalibrateIntrinsicsWithCharuco(const byteAA& imgs, float square_len_m, float marker_len_m){
+std::tuple<intAA, arrA> findArucos(const byteAA& imgs){
+  FindArucos finder;
+  finder.verbose=1;
+
+  intAA ids(imgs.d0, imgs.d1);
+  arrA pts(imgs.d0, imgs.d1);
+  for(uint t=0;t<imgs.d0;t++) for(uint c=0;c<imgs.d1;c++){
+      finder.find(imgs(t,c));
+      cout <<finder.report() <<endl;
+      ids(t,c) = finder.ids;
+      pts(t,c) = finder.pts;
+    }
+  return std::tuple{ids, pts};
+}
+
+//===========================================================================
+
+std::tuple<arrA, arrA> calibrateIntrinsicsWithCharuco(const byteAA& imgs, uint distortionDofs, float square_len_m, float marker_len_m){
+  shared_ptr<cv::aruco::Dictionary> dictionary;
+  shared_ptr<cv::aruco::CharucoBoard> board;
+  shared_ptr<cv::aruco::CharucoDetector> detector;
+
+  //output
+  arrA K;
+  arrA Fxycxy;
+  arrA Distortion;
+
+  //user
+  int verbose=2;
+  shared_ptr<OpenGL> gl;
+  byteA rgb_annotated;
+
   dictionary = make_shared<cv::aruco::Dictionary>(cv::aruco::getPredefinedDictionary(cv::aruco::DICT_5X5_50));
   board = make_shared<cv::aruco::CharucoBoard>(cv::Size{5, 7}, square_len_m, marker_len_m, *dictionary, cv::noArray());
   auto detectorParams = cv::aruco::DetectorParameters();
@@ -94,6 +125,7 @@ CalibrateIntrinsicsWithCharuco::CalibrateIntrinsicsWithCharuco(const byteAA& img
   K.resize(n_cam);
   Fxycxy.resize(n_cam);
 
+  auto fil = ofstream("calib_cams_intrinsics.yml");
   for(uint c=0;c<n_cam;c++){
     std::vector<std::vector<cv::Point2f>> allImagePoints;
     std::vector<std::vector<cv::Point3f>> allObjectPoints;
@@ -145,7 +177,11 @@ CalibrateIntrinsicsWithCharuco::CalibrateIntrinsicsWithCharuco(const byteAA& img
     }
 
     cv::Mat cameraMatrix, distCoeffs;
-    int flags = cv::CALIB_FIX_K3 | cv::CALIB_FIX_TANGENT_DIST;
+    int flags;
+    if(distortionDofs==5) flags = 0;
+    else if(distortionDofs==4) flags = cv::CALIB_FIX_K3;
+    else if(distortionDofs==2) flags = cv::CALIB_FIX_K3 | cv::CALIB_FIX_TANGENT_DIST;
+    else HALT("distortionDofs needs to be 5, 4, or 2");
     double repErr = cv::calibrateCamera(allObjectPoints, allImagePoints, imageSize, cameraMatrix, distCoeffs,
                                         cv::noArray(), cv::noArray(), flags);
 
@@ -157,8 +193,12 @@ CalibrateIntrinsicsWithCharuco::CalibrateIntrinsicsWithCharuco(const byteAA& img
     Distortion(c) =   cv_asArr(distCoeffs);
     Fxycxy(c) = {cameraMatrix.at<double>(0,0), cameraMatrix.at<double>(1,1), cameraMatrix.at<double>(0,2), cameraMatrix.at<double>(1,2)};
 
-    cout <<"Edit(camera_" <<c <<"): { fxycxy: " <<Fxycxy(c) <<", distortion: " <<Distortion(c) <<" }  #err: " <<repErr <<" count: " <<allImagePoints.size() <<endl;
+    fil <<"   Edit(camera_" <<c <<"): { fxycxy: " <<Fxycxy(c) <<", distortion: " <<Distortion(c) <<" }  #err: " <<repErr <<" count: " <<allImagePoints.size() <<endl;
   }
+
+  { str fn = "calib_cams_intrinsics.yml"; auto fil = ifstream(fn); cout <<"#--- " <<fn <<endl <<str(fil) <<endl; }
+
+  return std::tuple(Fxycxy, Distortion);
 }
 
 
