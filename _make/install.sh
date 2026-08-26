@@ -77,7 +77,7 @@ case ${lib} in
 	;;
 
     rai)
-	git clone --single-branch -b marc https://github.com/MarcToussaint/rai.git
+	git clone --single-branch -b master https://github.com/MarcToussaint/rai.git
 	cmake -DCMAKE_INSTALL_PREFIX=${pre} -DUSE_PHYSX=OFF ${lib} -B ${lib}/build
 	make -C ${lib}/build install
 	;;

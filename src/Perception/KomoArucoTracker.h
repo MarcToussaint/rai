@@ -28,6 +28,17 @@ struct CalibrationScene {
 
 //===========================================================================
 
+void komoCalibrate(CalibrationScene& CS,
+		   const intAA& ids, const arrA& pts, const arr& qs,
+		   bool calibrate_cams = true,
+		   bool calibrate_arucos = true,
+		   bool calibrate_joints = true,
+		   bool calibrate_objPoses = false,
+		   bool undistort_points = true,
+		   double calib_joint_regularization = 1e1);
+
+//===========================================================================
+
 struct KomoArucoTracker{
   CalibrationScene& CS;
 
@@ -39,5 +50,7 @@ struct KomoArucoTracker{
   void reset(rai::Configuration& C, bool force_contructor=false);
   void addArucoDetected(uint cam_id, uint aruco_id);
   void addPointView(arr p, uint cam_id, uint aruco_id, uint corner_id);
+  void addMultiPointView(const intA& ids, const arr& pts, uint cam_id, bool undistort_points = true);
+
   void solve(int verbose=0, double tolerance=1e-4);
 };

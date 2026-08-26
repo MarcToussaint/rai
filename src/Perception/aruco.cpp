@@ -98,6 +98,23 @@ std::tuple<intAA, arrA> findArucos(const byteAA& imgs){
 
 //===========================================================================
 
+void undistort_point(arr& p, const arr& fxycxy, const arr& distortion) {
+  arr K = arr{{3,3}, {fxycxy(0), 0., fxycxy(2), 0., fxycxy(1), fxycxy(3), 0., 0., 1.}};
+  std::vector<cv::Point2d> p_in = { cv::Point2d{p(0), p(1)} };
+  std::vector<cv::Point2d> p_out;
+  cv::undistortImagePoints(p_in, p_out, CV(K), CV(distortion));
+  p = arr{p_out[0].x, p_out[0].y};
+}
+
+byteA undistort_image(const byteA& img, const arr& fxycxy, const arr& distortion)  {
+  arr K = arr{{3,3}, {fxycxy(0), 0., fxycxy(2), 0., fxycxy(1), fxycxy(3), 0., 0., 1.}};
+  byteA imgU = img;
+  cv::undistort(CV(img), CV(imgU), CV(K), CV(distortion));
+  return imgU;
+}
+
+//===========================================================================
+
 std::tuple<arrA, arrA> calibrateIntrinsicsWithCharuco(const byteAA& imgs, uint distortionDofs, float square_len_m, float marker_len_m){
   shared_ptr<cv::aruco::Dictionary> dictionary;
   shared_ptr<cv::aruco::CharucoBoard> board;
