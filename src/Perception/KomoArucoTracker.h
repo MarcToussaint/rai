@@ -2,6 +2,7 @@
 
 #include <Kin/kin.h>
 #include <KOMO/komo.h>
+#include <Control/CtrlMsgs.h>
 
 //===========================================================================
 
@@ -56,20 +57,38 @@ struct NaiveTrackerFilter {
 //===========================================================================
 
 struct KomoArucoTracker{
-  CalibrationScene& CS;
+  CalibrationScene CS;
 
   std::shared_ptr<KOMO> komo;
   std::shared_ptr<SolverReturn> ret;
   NaiveTrackerFilter filter;
 
-  KomoArucoTracker(CalibrationScene& CS) : CS(CS) {}
+  KomoArucoTracker(rai::Configuration& C, const char* obj_name) : CS(C, obj_name) {}
 
-  void reset(rai::Configuration& C, bool force_contructor=false);
+  void reset(bool force_contructor=false);
   void addArucoDetected(uint cam_id, uint aruco_id);
   void addPointView(arr p, uint cam_id, uint aruco_id, uint corner_id);
   void addMultiPointView(const intA& ids, const arr& pts, uint cam_id, bool undistort_points = true);
 
   void solve(int verbose=0, double tolerance=1e-4);
+};
 
+//===========================================================================
 
+namespace rai{
+struct ArucoThread;
+};
+
+struct KomoArucoTracker_Thread : Thread {
+    rai::Array<std::shared_ptr<rai::ArucoThread>> aruco_threads;
+    Var<rai::CtrlStateMsg>& state;
+    Var<arr> obj_pose;
+    KomoArucoTracker tracker;
+
+    KomoArucoTracker_Thread(const rai::Array<std::shared_ptr<rai::ArucoThread>>& aruco_threads,
+                            Var<rai::CtrlStateMsg>& state,
+                            rai::Configuration& C, const char* obj_name);
+    ~KomoArucoTracker_Thread();
+
+    void step();
 };

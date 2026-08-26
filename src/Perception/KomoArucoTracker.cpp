@@ -1,5 +1,7 @@
 #include "KomoArucoTracker.h"
 
+#include <MarkerVision/ArucoThread.h>
+
 #include <Kin/frame.h>
 #include <Kin/F_pose.h>
 #include <Kin/F_geometrics.h>
@@ -11,8 +13,8 @@ void undistort_point(arr& p, const arr& fxycxy, const arr& distortion);
 
 //===========================================================================
 
-CalibrationScene::CalibrationScene(rai::Configuration& C, const char* obj_name)
-    : C(C){
+CalibrationScene::CalibrationScene(rai::Configuration& _C, const char* obj_name)
+    : C(_C){
 
   for(rai::Frame* f:C.frames){
     if(f->name.startsWith("camera_") && f->name(-1)>='0' && f->name(-1)<='9'){
@@ -223,11 +225,11 @@ void komoCalibrate(CalibrationScene& CS, const intAA& ids, const arrA& pts, cons
 //===========================================================================
 
 
-void KomoArucoTracker::reset(rai::Configuration& C, bool force_contructor){
+void KomoArucoTracker::reset(bool force_contructor){
   if(!komo || force_contructor){
     komo = make_shared<KOMO>();
     komo->setTiming(1, 1, 1, 0);
-    komo->setConfig(C, false);
+    komo->setConfig(CS.C, false);
 
     //-- select only obj dofs to be optimized
     {
@@ -331,4 +333,38 @@ void NaiveTrackerFilter::update(const arr& q_measured){
         }
     }
     // qdel.setZero();
+}
+
+KomoArucoTracker_Thread::KomoArucoTracker_Thread(const rai::Array<std::shared_ptr<rai::ArucoThread> >& aruco_threads,
+                                                 Var<rai::CtrlStateMsg>& state,
+                                                 rai::Configuration& C, const char* obj_name)
+    : Thread("aruco_obj_tracker_thread"), aruco_threads(aruco_threads), state(state), tracker(C, obj_name) {
+    LOG(0) <<"launching aruco obj tracker thread";
+    threadLoop();
+}
+
+KomoArucoTracker_Thread::~KomoArucoTracker_Thread(){
+    LOG(0) <<"shutting down aruco obj tracker thread - " <<timer.report();
+    threadClose();
+}
+
+void KomoArucoTracker_Thread::step() {
+    tracker.reset();
+
+    timer.tic(1);
+
+    rai::Array<rai::ArucoOutput> ao(aruco_threads.N);
+    aruco_threads(0)->output.waitForNextRevision();
+    for(uint i=0;i<ao.N;i++) ao(i) = aruco_threads(i)->output.get();
+    for(auto& o:ao) tracker.addMultiPointView(o.ids, o.pts, o.cam_id);
+
+    timer.tic(2);
+
+    tracker.solve(0);
+
+    timer.tic(3);
+
+    obj_pose.set() = tracker.ret->x;
+    state.set()->q({tracker.CS.obj->joint->qIndex, tracker.CS.obj->joint->qIndex+7}) = tracker.ret->x;
+
 }
