@@ -349,10 +349,11 @@ void CycleTimer::tic(uint i=0) {
 
 rai::String CycleTimer::report() {
     str s;
+    if(!steps){ s <<"cycle report: no steps"; return s; }
     s <<std::setprecision(3);
-    s <<"cycle report: " <<mean(0) <<' ' <<1./mean(0) <<"Hz [" <<max(0) <<']';
+    s <<"cycle report [" <<steps <<"]: " <<mean(0) <<' ' <<1./mean(0) <<"Hz (max:" <<max(0) <<')';
     for(uint i=1;i<mean.N;i++){
-        s <<" tic" <<i <<": " <<mean(i) <<' ' <<mean(i)/mean(0)*100. <<"% [" <<max(i) <<']';
+        s <<" tic" <<i <<": " <<mean(i) <<' ' <<mean(i)/mean(0)*100. <<"% (max:" <<max(i) <<')';
     }
     return s;
 }

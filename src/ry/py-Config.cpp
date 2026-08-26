@@ -65,8 +65,8 @@ void init_Config(pybind11::module& m) {
       .def("getCamera_pose", &rai::ConfigurationViewer::getCameraPose, "get the camera pose directly")
       .def("getCamera_focalLength", [](shared_ptr<rai::ConfigurationViewer>& self) {
         rai::Camera& cam = self->displayCamera();
-        return cam.focalLength;
-      }, "return the focal length of the view camera (only intrinsic parameter)")
+        return cam.fxycxy;
+      }, "return fxycxy in OpenGL normalization (assuming height=1 and centered cxy; first entries are conventional focal lengths)")
 
       .def("getCamera_fxycxy", [](shared_ptr<rai::ConfigurationViewer>& self) {
         rai::Camera& cam = self->displayCamera();

@@ -35,7 +35,7 @@ FindArucos::FindArucos(){
 }
 
 void FindArucos::find(const byteA& rgb){
-
+  if(!rgb.N){ ids.clear(); pts.clear(); return; }
   std::vector<int> markerIds;
   std::vector<std::vector<cv::Point2f>> markerCorners, rejectedCandidates;
   cv::Mat inputImage = CV(rgb);

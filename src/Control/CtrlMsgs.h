@@ -33,7 +33,7 @@ struct CtrlStateMsg {
   arr q, qDot; // actual joint state
   arr tauExternalIntegral; // external torques
   int tauExternalCount=0;
-  void initZero(uint n) { q.resize(n).setZero(); qDot.resize(n).setZero(); tauExternalIntegral.resize(n).setZero(); tauExternalCount=0; }
+  void init(const arr& q0) { q=q0; qDot.resize(q.N).setZero(); tauExternalIntegral.resize(q.N).setZero(); tauExternalCount=0; }
 };
 
 struct RobotAbstraction {

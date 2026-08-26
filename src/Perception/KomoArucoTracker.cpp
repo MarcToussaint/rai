@@ -292,4 +292,43 @@ void KomoArucoTracker::solve(int verbose, double tolerance){
     cout <<"== optimized parameters (camera, dots): " <<ret->x <<endl;
     // komo->checkGradients();
   }
+
+  if(ret->sos<10.){
+      // filter.update(ret->x);
+      filter.q = ret->x;
+  }
+}
+
+NaiveTrackerFilter::NaiveTrackerFilter(double threshold) : threshold(threshold) {
+    threshold = .02;
+    alpha = .7;
+    beta = .3;
+    gamma = .1;
+}
+
+void NaiveTrackerFilter::update(const arr& q_measured){
+    if(!q.N || good_ratio<1e-2){
+        LOG(0) <<"reinitializing";
+        q = q_measured;
+        qdel.resize(q.N).setZero();
+        good_ratio = .5;
+        err_filtered = 0.;
+        return;
+    }
+    q += qdel;
+    arr res = q_measured - q;
+    double err = length(res);
+    err_filtered += gamma * (err - err_filtered);
+    if(err<threshold){
+        q += alpha * res;
+        qdel += beta * res;
+    }else{
+        if(err>10.*threshold){
+            LOG(0) <<"huge error: " <<err <<' ' <<res;
+        }else{
+            q += alpha * res;
+            qdel *= (1.-beta);
+        }
+    }
+    // qdel.setZero();
 }

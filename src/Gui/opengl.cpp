@@ -60,7 +60,7 @@ struct GlfwSingleton : Thread {
   rai::Mutex mutex;
   int newWinX=-50, newWinY=50;
 
-  GlfwSingleton() : Thread("GlfwSpinnerSpinner", .01) {
+  GlfwSingleton() : Thread("GlfwSpinnerSpinner", .002) {
     if(rai::getDisableGui()) { HALT("you must not be here with -disableGui"); }
 
     glfwSetErrorCallback(error_callback);
@@ -380,6 +380,7 @@ int OpenGL::watchImage(const floatA& _img, bool wait, float _zoom) {
 }
 
 int OpenGL::watchImage(const byteA& img, bool wait, float _zoom) {
+  if(!img.N) return 0;
   resize(img.d1*_zoom, img.d0*_zoom);
   {
     auto lock = data().dataLock(RAI_HERE);

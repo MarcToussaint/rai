@@ -2160,7 +2160,7 @@ void Camera::unproject_fromPixelsAndGLDepth(arr& x) const {
 #endif
 }
 
-arr Camera::getFxycxy() { return arr{fxycxy(0)*height, fxycxy(1)*height, .5*width, .5*height}; }
+arr Camera::getFxycxy() { return height*fxycxy + arr{ 0., 0., .5*width, .5*height }; }
 
 arr Camera::getIntrinsicMatrix() const {
   HALT("obsolete?");

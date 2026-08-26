@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Kin/kin.h>
 #include <KOMO/komo.h>
 
@@ -39,11 +41,26 @@ void komoCalibrate(CalibrationScene& CS,
 
 //===========================================================================
 
+struct NaiveTrackerFilter {
+    arr q, qdel;
+    double good_ratio=0;
+    double threshold;
+    double alpha=.7, beta=.3, gamma=.1;
+    double err_filtered;
+
+    NaiveTrackerFilter(double threshold=.02);
+
+    void update(const arr& q_measured);
+};
+
+//===========================================================================
+
 struct KomoArucoTracker{
   CalibrationScene& CS;
 
   std::shared_ptr<KOMO> komo;
   std::shared_ptr<SolverReturn> ret;
+  NaiveTrackerFilter filter;
 
   KomoArucoTracker(CalibrationScene& CS) : CS(CS) {}
 
@@ -53,4 +70,6 @@ struct KomoArucoTracker{
   void addMultiPointView(const intA& ids, const arr& pts, uint cam_id, bool undistort_points = true);
 
   void solve(int verbose=0, double tolerance=1e-4);
+
+
 };
