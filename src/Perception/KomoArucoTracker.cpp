@@ -1,6 +1,6 @@
 #include "KomoArucoTracker.h"
 
-#include <MarkerVision/ArucoThread.h>
+#include "aruco.h"
 
 #include <Kin/frame.h>
 #include <Kin/F_pose.h>
@@ -8,15 +8,17 @@
 #include <Kin/F_qFeatures.h>
 #include <Optim/NLP_Solver.h>
 
+namespace rai {
+
 //from aruco.h:
 void undistort_point(arr& p, const arr& fxycxy, const arr& distortion);
 
 //===========================================================================
 
-CalibrationScene::CalibrationScene(rai::Configuration& _C, const char* obj_name)
+CalibrationScene::CalibrationScene(Configuration& _C, const char* obj_name)
     : C(_C){
 
-  for(rai::Frame* f:C.frames){
+  for(Frame* f:C.frames){
     if(f->name.startsWith("camera_") && f->name(-1)>='0' && f->name(-1)<='9'){
       CHECK_EQ(f->name, STRING("camera_" <<cams.N), "cameras need to be enumerated consecutively");
       cams.append(f);
@@ -26,22 +28,22 @@ CalibrationScene::CalibrationScene(rai::Configuration& _C, const char* obj_name)
   }
 
   arucos.resize(50).setZero();
-  for(rai::Frame* f:C.frames.copy()){
+  for(Frame* f:C.frames.copy()){
     if(f->ats && f->ats->findNode("aruco_id")){
       uint id = f->ats->getFlex<uint>("aruco_id");
       CHECK(!arucos(id), "aruco id " <<id <<" already used by frame " <<arucos(id)->name);
       arucos(id) = f;
-      C.addFrame(STRING("arc_" <<id <<"_0"))->setShape(rai::ST_sphere, {.001}).setParent(f).setRelativePosition({-.0175,+.0175,.0});
-      C.addFrame(STRING("arc_" <<id <<"_1"))->setShape(rai::ST_sphere, {.001}).setParent(f).setRelativePosition({+.0175,+.0175,.0});
-      C.addFrame(STRING("arc_" <<id <<"_2"))->setShape(rai::ST_sphere, {.001}).setParent(f).setRelativePosition({+.0175,-.0175,.0});
-      C.addFrame(STRING("arc_" <<id <<"_3"))->setShape(rai::ST_sphere, {.001}).setParent(f).setRelativePosition({-.0175,-.0175,.0});
+      C.addFrame(STRING("arc_" <<id <<"_0"))->setShape(ST_sphere, {.001}).setParent(f).setRelativePosition({-.0175,+.0175,.0});
+      C.addFrame(STRING("arc_" <<id <<"_1"))->setShape(ST_sphere, {.001}).setParent(f).setRelativePosition({+.0175,+.0175,.0});
+      C.addFrame(STRING("arc_" <<id <<"_2"))->setShape(ST_sphere, {.001}).setParent(f).setRelativePosition({+.0175,-.0175,.0});
+      C.addFrame(STRING("arc_" <<id <<"_3"))->setShape(ST_sphere, {.001}).setParent(f).setRelativePosition({-.0175,-.0175,.0});
     }
   }
 
   if(obj_name){
     obj = C.getFrame(obj_name);
     FrameL sub = obj->getSubtree();
-    for(rai::Frame* f:sub){
+    for(Frame* f:sub){
       if(f->ats && f->ats->findNode("aruco_id")){
         uint id = f->ats->getFlex<uint>("aruco_id");
         obj_aruco_ids.append(id);
@@ -52,34 +54,34 @@ CalibrationScene::CalibrationScene(rai::Configuration& _C, const char* obj_name)
 
 void CalibrationScene::addCalibDofs_arucos(){
   //add translational calibration joints to all arucos
-  for(rai::Frame *ar:arucos) if(ar){
+  for(Frame *ar:arucos) if(ar){
       ar->insertPreLink(0, true, "_calib");
       calibs.append(ar);
       cout <<" -- making stable dof: " <<ar->name <<endl;
-      ar->setJoint(rai::JT_transXY);
+      ar->setJoint(JT_transXY);
       ar->joint->isStable = true;
     }
 }
 
 void CalibrationScene::addCalibDofs_cameras(){
   //add camera calibration joints
-  for(rai::Frame* cam:cams){
+  for(Frame* cam:cams){
     cam->insertPreLink(0, true, "_calib");
     calibs.append(cam);
     cout <<" -- making stable dof: " <<cam->name <<endl;
-    cam->setJoint(rai::JT_free);
+    cam->setJoint(JT_free);
     cam->joint->isStable = true;
   }
 }
 
 void CalibrationScene::addCalibDofs_joints(const uintA& jointIds){
   for(uint i:jointIds){
-    rai::Frame *f = C.frames(i);
-    rai::Frame *pre = f->insertPreLink(0, false, "_calib");
+    Frame *f = C.frames(i);
+    Frame *pre = f->insertPreLink(0, false, "_calib");
     calibs.append(pre);
     calibs_joints.append(pre);
     cout <<" -- making stable dof: " <<pre->name <<endl;
-    pre->setJoint(rai::JT_hingeZ);
+    pre->setJoint(JT_hingeZ);
     pre->joint->isStable = true;
   }
 }
@@ -91,7 +93,7 @@ str CalibrationScene::report(){
   s <<"\narucos: [" <<arucos.N <<"]";
   for(uint i=0;i<arucos.N;i++) if(arucos(i)){ s <<"\n  " <<arucos(i)->name <<" id: " <<i; }
   if(obj){ s <<"\nobj: " <<obj->name <<" with arucos: " <<obj_aruco_ids <<" and joint: "; if(obj->joint) s<<obj->joint->type; else s <<"none"; }
-  cout <<"\ncalibration joints: " <<rai::framesToNames(calibs) <<endl;
+  cout <<"\ncalibration joints: " <<framesToNames(calibs) <<endl;
   return s;
 }
 
@@ -100,7 +102,7 @@ str CalibrationScene::report(){
 void komoCalibrate(CalibrationScene& CS, const intAA& ids, const arrA& pts, const arr& qs, bool calibrate_cams, bool calibrate_arucos, bool calibrate_joints, bool calibrate_objPoses, bool undistort_points, double calib_joint_regularization){
 
   CS.C.getJointState();
-  rai::Frame *obj = CS.C.getFrame("obj");
+  Frame *obj = CS.C.getFrame("obj");
   uintA jointIds;
   for(auto* d:CS.C.activeDofs({7,14})) jointIds.append(d->frame->ID);
 
@@ -145,11 +147,11 @@ void komoCalibrate(CalibrationScene& CS, const intAA& ids, const arrA& pts, cons
     DofL dofs;
     if(calibrate_objPoses){
       for(uint s=0;s<komo.timeSlices.d0;s++){
-        rai::Joint * j = komo.timeSlices(s, obj->ID)->joint;
+        Joint * j = komo.timeSlices(s, obj->ID)->joint;
         if(j->active) dofs.append(j);
       }
     }
-    for(rai::Frame *f:CS.calibs) dofs.append(komo.timeSlices(0, f->ID)->joint);
+    for(Frame *f:CS.calibs) dofs.append(komo.timeSlices(0, f->ID)->joint);
 
     komo.pathConfig.selectJoints(dofs);
 
@@ -160,7 +162,7 @@ void komoCalibrate(CalibrationScene& CS, const intAA& ids, const arrA& pts, cons
 
   //-- add regularization to calibs
   if(calib_joint_regularization>0.){
-    komo.addObjective({1.}, make_shared<F_qItself>(rai::framesToIndices(CS.calibs_joints), false), {}, OT_sos, {calib_joint_regularization});
+    komo.addObjective({1.}, make_shared<F_qItself>(framesToIndices(CS.calibs_joints), false), {}, OT_sos, {calib_joint_regularization});
   }
 
   komo.addQuaternionNorms({}, 1e1, false);
@@ -173,7 +175,7 @@ void komoCalibrate(CalibrationScene& CS, const intAA& ids, const arrA& pts, cons
   // komo.pathConfig.animate();
   komo.opt.animateOptimization = 1;
 
-  rai::NLP_Solver sol;
+  NLP_Solver sol;
   sol.setProblem(komo.nlp());
   sol.setInitialization(komo.x.copy());
   sol.opt->set_stopTolerance(1e-6);
@@ -187,28 +189,28 @@ void komoCalibrate(CalibrationScene& CS, const intAA& ids, const arrA& pts, cons
   if(calibrate_arucos){
     auto fil = ofstream("calib_arucos.yml");
     for(auto ar:CS.arucos) if(ar){
-        rai::Frame *f = komo.timeSlices(0, ar->ID);
+        Frame *f = komo.timeSlices(0, ar->ID);
         fil <<"   Edit(" <<ar->name <<"): { aruco_id: " <<ar->ats->getFlex<uint>("aruco_id") <<", Q: " <<f->parent->get_Q() * f->get_Q() <<" } #calib: " <<f->get_Q().diffZero() <<endl;
       }
   }
   if(calibrate_cams){
     auto fil = ofstream("calib_cams.yml");
     for(auto c:CS.cams){
-      rai::Frame *f = komo.timeSlices(0, c->ID);
+      Frame *f = komo.timeSlices(0, c->ID);
       fil <<"   Edit(" <<c->name <<"): { Q: " <<f->parent->get_Q() * f->get_Q() <<" } #calib: " <<f->get_Q().diffZero() <<endl;
     }
   }
   if(calibrate_joints){
     auto fil = ofstream("calib_joints.yml");
-    for(rai::Frame* f_org:CS.calibs_joints){
-      rai::Frame *f = komo.timeSlices(0, f_org->ID);
+    for(Frame* f_org:CS.calibs_joints){
+      Frame *f = komo.timeSlices(0, f_org->ID);
       fil <<"   Edit(" <<f->parent->name <<"): { pose: " <<f->parent->get_Q() * f->get_Q() <<" } #calib: " <<f->joint->get_q()*180./RAI_PI <<"deg" <<endl;
     }
   }
   if(calibrate_objPoses){
     auto fil = ofstream("calib_box.yml");
     for(uint s=0;s<komo.timeSlices.d0;s++){
-      rai::Frame* f = komo.timeSlices(s, obj->ID);
+      Frame* f = komo.timeSlices(s, obj->ID);
       fil <<"   Edit(" <<f->name <<"(obj_base)): { Q: " <<f->get_Q() <<" }" <<endl;
     }
   }
@@ -282,7 +284,7 @@ void KomoArucoTracker::solve(int verbose, double tolerance){
     komo->opt.animateOptimization = verbose-2;
   }
 
-  rai::NLP_Solver sol;
+  NLP_Solver sol;
   sol.setProblem(komo->nlp());
   sol.setInitialization(komo->x.copy());
   sol.opt->set_stopTolerance(tolerance);
@@ -335,9 +337,9 @@ void NaiveTrackerFilter::update(const arr& q_measured){
     // qdel.setZero();
 }
 
-KomoArucoTracker_Thread::KomoArucoTracker_Thread(const rai::Array<std::shared_ptr<rai::ArucoThread> >& aruco_threads,
-                                                 Var<rai::CtrlStateMsg>& state,
-                                                 rai::Configuration& C, const char* obj_name)
+KomoArucoTracker_Thread::KomoArucoTracker_Thread(const Array<std::shared_ptr<ArucoThread> >& aruco_threads,
+                                                 Var<CtrlStateMsg>& state,
+                                                 Configuration& C, const char* obj_name)
     : Thread("aruco_obj_tracker_thread"), aruco_threads(aruco_threads), state(state), tracker(C, obj_name) {
     LOG(0) <<"launching aruco obj tracker thread";
     threadLoop();
@@ -353,7 +355,7 @@ void KomoArucoTracker_Thread::step() {
 
     timer.tic(1);
 
-    rai::Array<rai::ArucoOutput> ao(aruco_threads.N);
+    Array<ArucoOutput> ao(aruco_threads.N);
     aruco_threads(0)->output.waitForNextRevision();
     for(uint i=0;i<ao.N;i++) ao(i) = aruco_threads(i)->output.get();
     for(auto& o:ao) tracker.addMultiPointView(o.ids, o.pts, o.cam_id);
@@ -368,3 +370,5 @@ void KomoArucoTracker_Thread::step() {
     state.set()->q({tracker.CS.obj->joint->qIndex, tracker.CS.obj->joint->qIndex+7}) = tracker.ret->x;
 
 }
+
+} //namespace

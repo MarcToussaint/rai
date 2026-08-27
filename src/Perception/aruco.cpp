@@ -12,6 +12,8 @@
 // #include <opencv2/calib.hpp>
 #include <opencv2/geometry/3d.hpp>
 
+namespace rai {
+
 byteA getArucoImage(int id, int borderBits){
   cv::aruco::Dictionary dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_5X5_50);
   int width = 5+2*borderBits;
@@ -94,6 +96,36 @@ std::tuple<intAA, arrA> findArucos(const byteAA& imgs){
       pts(t,c) = finder.pts;
     }
   return std::tuple{ids, pts};
+}
+
+//===========================================================================
+
+ArucoThread::ArucoThread(uint k_id, Var<byteA>& _input, double beatIntervalSec)
+    : Thread(STRING("aruco_thread_" <<k_id), beatIntervalSec), input(_input), cam_id(k_id) {
+  finder.verbose=0;
+  LOG(0) <<"launching aruco thread " <<k_id;
+  // status.listenTo(input);
+  // threadOpen();
+  threadLoop();
+}
+
+ArucoThread::~ArucoThread(){
+  LOG(0) <<"shutting down aruco thread " <<cam_id <<" - " <<timer.report();
+  threadClose();
+}
+
+void ArucoThread::step() {
+  rgb = input.get()();
+  if(!rgb.N) return;
+  finder.find(rgb);
+  // LOG(0) <<"aruco " <<cam_id <<" found #" <<finder.ids.N <<" points in image rev " <<input_revision;
+  {
+    auto set = output.set();
+    set->cam_id = cam_id;
+    set->ids = finder.ids;
+    set->pts = finder.pts;
+  }
+  timer.tic(1);
 }
 
 //===========================================================================
@@ -218,13 +250,23 @@ std::tuple<arrA, arrA> calibrateIntrinsicsWithCharuco(const byteAA& imgs, uint d
   return std::tuple(Fxycxy, Distortion);
 }
 
-
+} //namespace
 
 #else //OPENCV
 
-byteA getArucoImage(int id, int borderBits){ NICO }
-byteA getFullArucoDict(){ NICO }
-FindArucos::FindArucos(){ NICO }
-void FindArucos::find(const byteA& rgb){ NICO }
+namespace rai {
+  byteA getArucoImage(int id, int borderBits){ NICO }
+  byteA getFullArucoDict(){ NICO }
+  void undistort_point(arr& p, const arr& fxycxy, const arr& distortion) { NICO }
+  FindArucos::FindArucos(){ NICO }
+  void FindArucos::find(const byteA& rgb){ NICO }
+  str FindArucos::report(){ NICO }
+
+  ArucoThread::ArucoThread(uint k_id, Var<byteA>& _input, double beatIntervalSec)
+      : Thread(STRING("aruco_thread_" <<k_id), beatIntervalSec), input(_input), cam_id(k_id) { NICO }
+  ArucoThread::~ArucoThread(){ NICO }
+  void ArucoThread::step(){ NICO }
+}
 
 #endif //OPENCV
+

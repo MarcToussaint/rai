@@ -8,9 +8,8 @@
 void testKomoTracker(){
   rai::Configuration C;
   C.addFile("station.g");
-  CalibrationScene CS(C, "obj");
 
-  KomoArucoTracker K(CS);
+  rai::KomoArucoTracker K(C, "obj");
   cout <<K.CS.report() <<endl;
 
   rai::CameraView V(C);
@@ -19,7 +18,7 @@ void testKomoTracker(){
 
   for(uint k=0;k<20;k++){
     C.setRandom();
-    K.reset(C);
+    K.reset();
     // auto rgb = V.getRgb();
 
     C.setRandom();
@@ -31,7 +30,7 @@ void testKomoTracker(){
       V.computeImageAndDepth(rgb, depth);
       // gl.watchImage(rgb, true);
 
-      auto finder = FindArucos();
+      auto finder = rai::FindArucos();
       finder.verbose=1;
       finder.find(rgb);
       if(finder.rgb_annotated.N){
@@ -42,9 +41,9 @@ void testKomoTracker(){
 
       for(uint i=0;i<finder.pts.d0;i++){
         uint id = finder.ids(i);
-        if(CS.obj_aruco_ids.contains(id)){
+        if(K.CS.obj_aruco_ids.contains(id)){
           for(uint j=0;j<finder.pts.d1;j++){
-            K.addPointView(finder.pts(i, j, {}), c, id, j, false);
+            K.addPointView(finder.pts(i, j, {}), c, id, j);
           }
         }
       }

@@ -4,10 +4,14 @@
 #include <KOMO/komo.h>
 #include <Control/CtrlMsgs.h>
 
+namespace rai {
+
+struct ArucoThread;
+
 //===========================================================================
 
 struct CalibrationScene {
-  rai::Configuration& C;
+  Configuration& C;
 
   FrameL cams;
   FrameL arucos;
@@ -16,10 +20,10 @@ struct CalibrationScene {
 
   arrA Fxycxy;
   arrA Distortion;
-  rai::Frame * obj;
+  Frame * obj;
   uintA obj_aruco_ids;
 
-  CalibrationScene(rai::Configuration& C, const char* obj_name=0);
+  CalibrationScene(Configuration& C, const char* obj_name=0);
 
   //-- setup calib dof frames
   void addCalibDofs_arucos();
@@ -63,7 +67,7 @@ struct KomoArucoTracker{
   std::shared_ptr<SolverReturn> ret;
   NaiveTrackerFilter filter;
 
-  KomoArucoTracker(rai::Configuration& C, const char* obj_name) : CS(C, obj_name) {}
+  KomoArucoTracker(Configuration& C, const char* obj_name) : CS(C, obj_name) {}
 
   void reset(bool force_contructor=false);
   void addArucoDetected(uint cam_id, uint aruco_id);
@@ -75,20 +79,18 @@ struct KomoArucoTracker{
 
 //===========================================================================
 
-namespace rai{
-struct ArucoThread;
-};
-
 struct KomoArucoTracker_Thread : Thread {
-    rai::Array<std::shared_ptr<rai::ArucoThread>> aruco_threads;
-    Var<rai::CtrlStateMsg>& state;
+    Array<std::shared_ptr<ArucoThread>> aruco_threads;
+    Var<CtrlStateMsg>& state;
     Var<arr> obj_pose;
     KomoArucoTracker tracker;
 
-    KomoArucoTracker_Thread(const rai::Array<std::shared_ptr<rai::ArucoThread>>& aruco_threads,
-                            Var<rai::CtrlStateMsg>& state,
-                            rai::Configuration& C, const char* obj_name);
+    KomoArucoTracker_Thread(const Array<std::shared_ptr<ArucoThread>>& aruco_threads,
+                            Var<CtrlStateMsg>& state,
+                            Configuration& C, const char* obj_name);
     ~KomoArucoTracker_Thread();
 
     void step();
 };
+
+} //namespace

@@ -22,7 +22,7 @@ void test(){
   byteA img(5,5,1);
   for(uint i=0;i<img.N;i++) img.elem(i) = 255.*i/(img.N-1);
 
-  img = getArucoImage(10);
+  img = rai::getArucoImage(10);
   img.reshape(img.d0, img.d1, 1);
 
   rai::Frame& f = *C.addFrame("quad");
@@ -36,7 +36,7 @@ void test(){
 
   for(uint k=0;k<20;k++){
 
-    img = getArucoImage(k);
+    img = rai::getArucoImage(k);
     img.reshape(img.d0, img.d1, 1);
     f.setQuad(img, {.1, .1});
 
@@ -45,7 +45,7 @@ void test(){
     auto rgb = V.getRgb();
 
 
-    auto finder = FindArucos();
+    auto finder = rai::FindArucos();
     finder.find(rgb);
     if(finder.rgb_annotated.N){
       gl.watchImage(finder.rgb_annotated, false);
@@ -63,7 +63,7 @@ void test(){ NICO }
 void generateArucoImgDict(){
   intA D(50, 9);
   for(uint i=0;i<D.d0;i++){
-    byteA img = getArucoImage(i, 2);
+    byteA img = rai::getArucoImage(i, 2);
     D[i] = img2intA(img);
     // byteA img = intA2img(D[i]);
   }
