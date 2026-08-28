@@ -3,6 +3,7 @@
 
 #include <Core/array.h>
 #include <Gui/opengl.h>
+#include <Algo/filter.h>
 
 //forward
 namespace cv{
@@ -42,19 +43,20 @@ std::tuple<arrA, arrA> calibrateIntrinsicsWithCharuco(const byteAA& imgs, uint d
 
 //===========================================================================
 
-struct FindArucos {
+struct ArucoFinder {
   shared_ptr<cv::aruco::Dictionary> dictionary;
   shared_ptr<cv::aruco::ArucoDetector> detector;
 
-  std::shared_ptr<OpenGL> gl;
+  //verbosity
   int verbose=1;
+  std::shared_ptr<OpenGL> gl;
 
   //outputs!
   intA ids;
   arr pts;
   byteA rgb_annotated;
 
-  FindArucos();
+  ArucoFinder();
 
   void find(const byteA& rgb);
   str report();
@@ -67,17 +69,21 @@ struct ArucoOutput{ uint cam_id; intA ids; arr pts; };
 struct ArucoThread : Thread {
   Var<byteA>& input;
   Var<ArucoOutput> output;
+  Var<KLinearFilter> filter;
   uint cam_id;
   int input_revision=0;
-  FindArucos finder;
+  ArucoFinder finder;
 
-  ArucoThread(uint cam_id, Var<byteA>& _input, double beatIntervalSec=0.025);
+  bool use_filter = true;
+
+  ArucoThread(uint _cam_id, Var<byteA>& _input, double beatIntervalSec=0.025);
   ~ArucoThread();
 
   void step();
 
 private:
   byteA rgb;
+  arr flat;
 };
 
 //===========================================================================

@@ -33,10 +33,12 @@ CalibrationScene::CalibrationScene(Configuration& _C, const char* obj_name)
       uint id = f->ats->getFlex<uint>("aruco_id");
       CHECK(!arucos(id), "aruco id " <<id <<" already used by frame " <<arucos(id)->name);
       arucos(id) = f;
-      C.addFrame(STRING("arc_" <<id <<"_0"))->setShape(ST_sphere, {.001}).setParent(f).setRelativePosition({-.0175,+.0175,.0});
-      C.addFrame(STRING("arc_" <<id <<"_1"))->setShape(ST_sphere, {.001}).setParent(f).setRelativePosition({+.0175,+.0175,.0});
-      C.addFrame(STRING("arc_" <<id <<"_2"))->setShape(ST_sphere, {.001}).setParent(f).setRelativePosition({+.0175,-.0175,.0});
-      C.addFrame(STRING("arc_" <<id <<"_3"))->setShape(ST_sphere, {.001}).setParent(f).setRelativePosition({-.0175,-.0175,.0});
+      if(!C.getFrame(STRING("arc_" <<id <<"_0"), false)){
+        C.addFrame(STRING("arc_" <<id <<"_0"))->setShape(ST_sphere, {.001}).setParent(f).setRelativePosition({-.0175,+.0175,.0});
+        C.addFrame(STRING("arc_" <<id <<"_1"))->setShape(ST_sphere, {.001}).setParent(f).setRelativePosition({+.0175,+.0175,.0});
+        C.addFrame(STRING("arc_" <<id <<"_2"))->setShape(ST_sphere, {.001}).setParent(f).setRelativePosition({+.0175,-.0175,.0});
+        C.addFrame(STRING("arc_" <<id <<"_3"))->setShape(ST_sphere, {.001}).setParent(f).setRelativePosition({-.0175,-.0175,.0});
+      }
     }
   }
 
@@ -239,8 +241,8 @@ void KomoArucoTracker::reset(bool force_contructor){
       dofs.append(komo->timeSlices(0, CS.obj->ID)->joint);
       komo->pathConfig.selectJoints(dofs);
 
-      cout <<"-- selected dofs: " <<endl;
-      for(auto* d: dofs) cout <<d->frame->time <<' ' <<d->frame->name <<endl;
+      // cout <<"-- selected dofs: " <<endl;
+      // for(auto* d: dofs) cout <<d->frame->time <<' ' <<d->frame->name <<endl;
     }
   }else{
     komo->clearObjectives();
@@ -262,6 +264,7 @@ void KomoArucoTracker::addMultiPointView(const intA& ids, const arr& pts, uint c
     if(CS.obj_aruco_ids.contains(id)){
       for(uint j=0;j<pts.d1;j++){
         arr p = pts(i, j, {});
+        if(std::isnan(p(0)) || std::isnan(p(1))) continue;
         if(undistort_points) undistort_point(p, CS.Fxycxy(cam_id), CS.Distortion(cam_id));
         addPointView(p, cam_id, id, j);
       }
@@ -340,13 +343,13 @@ void NaiveTrackerFilter::update(const arr& q_measured){
 KomoArucoTracker_Thread::KomoArucoTracker_Thread(const Array<std::shared_ptr<ArucoThread> >& aruco_threads,
                                                  Var<CtrlStateMsg>& state,
                                                  Configuration& C, const char* obj_name)
-    : Thread("aruco_obj_tracker_thread"), aruco_threads(aruco_threads), state(state), tracker(C, obj_name) {
+    : Thread("aruco_obj_tracker_thread", .025), aruco_threads(aruco_threads), state(state), tracker(C, obj_name) {
     LOG(0) <<"launching aruco obj tracker thread";
     threadLoop();
 }
 
 KomoArucoTracker_Thread::~KomoArucoTracker_Thread(){
-    LOG(0) <<"shutting down aruco obj tracker thread - " <<timer.report();
+    LOG(0) <<"DTOR - " <<timer.report();
     threadClose();
 }
 
@@ -355,20 +358,65 @@ void KomoArucoTracker_Thread::step() {
 
     timer.tic(1);
 
+    arr data_times(aruco_threads.N);
+    arrA pts(aruco_threads.N);
     Array<ArucoOutput> ao(aruco_threads.N);
-    aruco_threads(0)->output.waitForNextRevision();
-    for(uint i=0;i<ao.N;i++) ao(i) = aruco_threads(i)->output.get();
-    for(auto& o:ao) tracker.addMultiPointView(o.ids, o.pts, o.cam_id);
 
+    // aruco_threads(-1)->output.waitForNextRevision();
     timer.tic(2);
 
-    tracker.solve(0);
+    for(uint i=0;i<ao.N;i++){ data_times(i) = aruco_threads(i)->output.get().var.data_time; }
+    // cout <<"TRACKER: relative data times: " <<data_times-rai::clockTime() <<endl;
+    double min_time = rai::min(data_times);
+    double delay = min_time - rai::realTime();
+    if(delay < -0.1){
+        LOG(0) <<"TRACKER WARNING: time delay from sensor is pretty large: " <<delay <<data_times-rai::realTime();
+    }
+
+    for(uint i=0;i<ao.N;i++){
+      auto get = aruco_threads(i)->filter.get();
+      pts(i) = get.data.get_x(min_time);
+    }
+
+    uint n=0;
+#if 0
+    for(uint i=0;i<ao.N;i++){
+      auto get = aruco_threads(i)->output.get();
+      ao(i) = get();
+      // if(!i) cout <<"cam " <<i <<": ids: " <<ao(i).ids <<endl;
+    }
+#else
+    for(uint i=0;i<ao.N;i++){
+        arr& P = pts(i);
+        if(!P.N) continue;
+        ArucoOutput& o = ao(i);
+        o.cam_id = i;
+        o.ids.clear();
+        o.pts.clear();
+        P.reshape(50, 8);
+        for(uint a=0;a<P.d0;a++){
+            if(!std::isnan(P(a,0))){
+                o.ids.append(a);
+                o.pts.append(P[a]);
+            }
+        }
+        o.pts.reshape(o.ids.N, 4, 2);
+        // if(!i) cout <<"cam " <<i <<": ids: " <<o.ids <<endl;
+        n += o.ids.N;
+    }
+#endif
+    if(n<10) return;
+
+    for(auto& o:ao) tracker.addMultiPointView(o.ids, o.pts, o.cam_id);
 
     timer.tic(3);
 
+    tracker.solve(0);
+
+    timer.tic(4);
+
     obj_pose.set() = tracker.ret->x;
     state.set()->q({tracker.CS.obj->joint->qIndex, tracker.CS.obj->joint->qIndex+7}) = tracker.ret->x;
-
 }
 
 } //namespace

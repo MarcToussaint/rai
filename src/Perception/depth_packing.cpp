@@ -44,7 +44,7 @@ void KinectDepthPacking::step() {
   rai::pack_kindepth2rgb(kinect_depth(), kinect_depthRgb());
 
   kinect_depthRgb().reshape(kinect_depth().d0, kinect_depth().d1, 3);
-  kinect_depthRgb.data->write_time = kinect_depth.data->write_time;
+  kinect_depthRgb.write_time = kinect_depth.write_time;
 
   kinect_depthRgb.deAccess();
   kinect_depth.deAccess();

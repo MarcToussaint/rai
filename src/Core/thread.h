@@ -84,7 +84,7 @@ struct Var_base : rai::NonCopyable {
   /// @name access control
   /// to be called by a thread before access, returns the revision
   int readAccess();  //might set the caller to sleep
-  int writeAccess(); //might set the caller to sleep
+  int writeAccess(); //might set the caller to sleep, _write_time=-1. means clockTime()
   int deAccess();
 
   int getRevision() { rwlock.readLock(); int r=revision; rwlock.unlock(); return r; }
@@ -94,41 +94,39 @@ struct Var_base : rai::NonCopyable {
 
 template<class T>
 struct RToken {
-  Var_base* var;
-  T* data;
-  Thread* th;
-  RToken(Var_base& _var, T* _data, int* getRevision=nullptr, bool isAlreadyLocked=false)
-    : var(&_var), data(_data) {
-    if(!isAlreadyLocked) var->readAccess();
-    if(getRevision) *getRevision=var->revision;
+  Var_base& var;
+  T& data;
+  RToken(Var_base& _var, T& _data, int* getRevision=nullptr, bool isAlreadyLocked=false)
+    : var(_var), data(_data) {
+    if(!isAlreadyLocked) var.readAccess();
+    if(getRevision) *getRevision=var.revision;
   }
-  ~RToken() { var->deAccess(); }
-  const T* operator->() { return data; }
-  operator const T& () { return *data; }
-  const T& operator()() { return *data; }
+  ~RToken() { var.deAccess(); }
+  const T* operator->() { return &data; }
+  operator const T& () { return data; }
+  const T& operator()() { return data; }
 };
 
 template<class T>
 struct WToken {
-  Var_base* var;
-  T* data;
-  Thread* th;
-  WToken(Var_base& _var, T* _data, int* getRevision=nullptr)
-    : var(&_var), data(_data) {
-    var->writeAccess();
-    if(getRevision) *getRevision=var->revision+1;
+  Var_base& var;
+  T& data;
+  WToken(Var_base& _var, T& _data, int* getRevision=nullptr)
+    : var(_var), data(_data) {
+    var.writeAccess();
+    if(getRevision) *getRevision=var.revision+1;
   }
   WToken(const double& dataTime, Var_base& _var, T* _data, int* getRevision=nullptr)
-    : var(&_var), data(_data) {
-    var->writeAccess();
-    var->data_time=dataTime;
-    if(getRevision) *getRevision=var->revision+1;
+    : var(_var), data(_data) {
+    var.writeAccess();
+    var.data_time=dataTime;
+    if(getRevision) *getRevision=var.revision+1;
   }
-  ~WToken() { var->deAccess(); }
-  void operator=(const T& y) { *data=y; }
-  T* operator->() { return data; }
-  operator T& () { return *data; }
-  T& operator()() { return *data; }
+  ~WToken() { var.deAccess(); }
+  void operator=(const T& y) { data=y; }
+  T* operator->() { return &data; }
+  operator T& () { return data; }
+  T& operator()() { return data; }
 };
 
 //===========================================================================
@@ -159,48 +157,48 @@ template<class T> void operator<<(ostream& os, const Var_data<T>& v) { os <<"Var
     and set()) which allow convenient and typed read/write access to
     the variable's content */
 template<class T>
-struct Var: rai::NonCopyable {
-  shared_ptr<Var_data<T>> data;
+struct Var : Var_base {
+  T data;
+  // shared_ptr<Var_data<T>> data;
   int last_read_revision;     ///< last revision that has been accessed (read or write)
 
-  Var() : data(make_shared<Var_data<T>>()), last_read_revision(0) {}
-  ~Var() {};
+  Var() : Var_base(0), last_read_revision(0) {}
+  // Var() : data(make_shared<Var_data<T>>()), last_read_revision(0) {}
+  ~Var() {
+    if(rwlock.isLocked()) { cout << "can't destroy a variable when it is currently accessed!" <<endl; exit(1); }
+  };
 
-  void checkLocked() { if(!data->rwlock.isLocked()) HALT("direct variable access without locking it before"); }
-  T& operator()() { CHECK(data->rwlock.isLocked(), "direct variable access without locking it before");  return data->data; }
-  T& operator*() {  CHECK(data->rwlock.isLocked(), "direct variable access without locking it before");  return data->data; }
-  T* operator->() { CHECK(data->rwlock.isLocked(), "direct variable access without locking it before");  return &(data->data); }
-  RToken<T> get() { return RToken<T>(*data, &data->data,  &last_read_revision); } ///< read access to the variable's data
-  WToken<T> set() { return WToken<T>(*data, &data->data/*, &last_read_revision*/); } ///< write access to the variable's data
-  WToken<T> set(const double& dataTime) { return WToken<T>(dataTime, *data, &data->data/*, &last_read_revision*/); } ///< write access to the variable's data
-  operator Var_base& () { return *std::dynamic_pointer_cast<Var_base>(data); }
+  void checkLocked() { if(!rwlock.isLocked()) HALT("direct variable access without locking it before"); }
+  T& operator()() { CHECK(rwlock.isLocked(), "direct variable access without locking it before");  return data; }
+  T& operator*() {  CHECK(rwlock.isLocked(), "direct variable access without locking it before");  return data; }
+  T* operator->() { CHECK(rwlock.isLocked(), "direct variable access without locking it before");  return &(data); }
+  RToken<T> get() { return RToken<T>(*this, data,  &last_read_revision); } ///< read access to the variable's data
+  WToken<T> set() { return WToken<T>(*this, data/*, &last_read_revision*/); } ///< write access to the variable's data
+  // operator Var_base& () { return *std::dynamic_pointer_cast<Var_base>(data); }
 
   void reassignTo(const shared_ptr<Var_data<T>>& _data) {
     data.reset();
     data = _data;
   }
 
-  rai::String& name() const { return data->name; }
-  int readAccess() {  return last_read_revision = data->readAccess(); }
-  int writeAccess() { return data->writeAccess(); }
-  int deAccess() {    return data->deAccess(); }
-  int getRevision() { data->rwlock.readLock(); int r=data->revision; data->rwlock.unlock(); return r; }
+  rai::String& name() const { return name; }
+  int readAccess() {  return last_read_revision = Var_base::readAccess(); }
   bool hasNewRevision() { return getRevision()>last_read_revision; }
   void waitForNextRevision(uint multipleRevisions=0) { waitForRevisionGreaterThan(last_read_revision+multipleRevisions); }
   int waitForRevisionGreaterThan(int rev);
   void waitForValueEq(const T& x) {
-    data->waitForEvent([this, &x]()->bool {
-      return this->data->data==x;
+    waitForEvent([this, &x]()->bool {
+      return this->data==x;
     });
   }
 
   void addCallback(const std::function<void(Var_base*)>& call, const void* callbackID=0) {
-    data->addCallback(call, callbackID);
+    addCallback(call, callbackID);
   }
 
   void write(ostream& os) {
     readAccess();
-    os <<"VAR " <<name() <<" [" <<data->getStatus() <<"] " <<data->data <<endl;
+    os <<"VAR " <<name() <<" [" <<getRevision() <<"] " <<data <<endl;
     deAccess();
   }
 };
@@ -218,9 +216,9 @@ struct Signaler {
   Signaler(int initialStatus=0);
   virtual ~Signaler(); //virtual, to enforce polymorphism
 
-  void setStatus(int i, Signaler* messenger=nullptr); ///< sets status and broadcasts
-  int  incrementStatus(Signaler* messenger=nullptr, int delta=+1);  ///< increase status by 1
-  void broadcast(Signaler* messenger=nullptr);        ///< wake up waitForSignal callers
+  void setStatus(int i); ///< sets status and broadcasts
+  int  incrementStatus(int delta=+1);  ///< increase status by 1
+  void broadcast();        ///< wake up waitForSignal callers
 
   void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
   void statusUnlock();
@@ -228,10 +226,10 @@ struct Signaler {
   int  getStatus(rai::Mutex::Token* userHasLocked=0) const;
   bool waitForSignal(rai::Mutex::Token* userHasLocked=0, double timeout=-1.);
   bool waitForEvent(std::function<bool()> f, rai::Mutex::Token* userHasLocked=0);
-  bool waitForStatusEq(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.);    ///< return value is the state after the waiting
-  int waitForStatusNotEq(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
-  int waitForStatusGreaterThan(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
-  int waitForStatusSmallerThan(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
+  bool waitForStatusEq(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.);   ///< return value is the status after the waiting
+  int waitForStatusNotEq(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the status after the waiting
+  int waitForStatusGreaterThan(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the status after the waiting
+  int waitForStatusSmallerThan(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the status after the waiting
 };
 
 //===========================================================================
@@ -248,7 +246,7 @@ struct Event : Signaler {
   ~Event();
 
   void listenTo(Var_base& v);
-  template<class T> void listenTo(Var<T>& v) { listenTo(*v.data); }
+  // template<class T> void listenTo(Var<T>& v) { listenTo(*v.data); }
   void stopListening();
   void stopListenTo(Var_base& c);
 
@@ -405,7 +403,7 @@ int Var<T>::waitForRevisionGreaterThan(int rev) {
     return 0;
   };
 
-  Event ev({data.get()}, evFct, 0);
+  Event ev({this}, evFct, 0);
   ev.waitForStatusEq(1);
-  return data->getRevision();
+  return getRevision();
 }

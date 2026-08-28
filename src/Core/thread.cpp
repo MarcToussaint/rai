@@ -93,20 +93,20 @@ Signaler::Signaler(int initialStatus)
 Signaler::~Signaler() {
 }
 
-void Signaler::setStatus(int i, Signaler* messenger) {
+void Signaler::setStatus(int i) {
   auto lock = statusMutex(RAI_HERE);
   status=i;
-  broadcast(messenger);
+  broadcast();
 }
 
-int Signaler::incrementStatus(Signaler* messenger, int delta) {
+int Signaler::incrementStatus(int delta) {
   auto lock = statusMutex(RAI_HERE);
   status+=delta;
-  broadcast(messenger);
+  broadcast();
   return status;
 }
 
-void Signaler::broadcast(Signaler* messenger) {
+void Signaler::broadcast() {
   cond.notify_all();
 }
 
@@ -534,7 +534,7 @@ void Thread::main() {
     step_count++;
     // timer.tic(1);
 
-    if(s>0) event.incrementStatus(0, -1); //step command -> reset to idle
+    if(s>0) event.incrementStatus(-1); //step command -> reset to idle
   };
 
   stepMutex.lock(RAI_HERE);

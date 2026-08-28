@@ -162,6 +162,10 @@ ConfigurationViewer& ConfigurationViewer::updateConfiguration(const Configuratio
         items(objID)->X = f->ensure_X();
       }
     }
+
+    distMarkers.pos.clear();
+    distMarkers.color.clear();
+    distMarkers.slices.clear();
   }
 
   //-- update motion
@@ -179,13 +183,6 @@ ConfigurationViewer& ConfigurationViewer::updateConfiguration(const Configuratio
     motion.clear();
   }
 
-  {
-    auto lock = dataLock(RAI_HERE);
-    distMarkers.pos.clear();
-    distMarkers.color.clear();
-    distMarkers.slices.clear();
-  }
-
   //-- update proxies
   if(C.proxies.N) {
     auto lock = dataLock(RAI_HERE);
@@ -201,17 +198,18 @@ ConfigurationViewer& ConfigurationViewer::updateConfiguration(const Configuratio
   }
 
   //-- update forces
-  if(true){
+  rai::Array<ForceExchangeDof*> forces;
+  for(Frame* f: C.frames) for(ForceExchangeDof* fo:f->forces) if(&fo->a==f) forces.append(fo);
+  if(forces.N){
     auto lock = dataLock(RAI_HERE);
-    for(Frame* fr: C.frames) for(ForceExchangeDof* f:fr->forces) if(f->sign(fr)>0.){
-
+    for(ForceExchangeDof* f: forces){
       arr _poa, _torque, _force;
       f->kinPOA(_poa, NoArr);
       f->kinForce(_force, NoArr);
       f->kinTorque(_torque, NoArr);
 
       int s=-1;
-      if(timeSlices.N) s = fr->ID/timeSlices.d1;
+      if(timeSlices.N) s = f->a.ID/timeSlices.d1;
       addDistMarker(_poa, _poa+.1*_force, s, .025, {1.,0.,1.});
       if(f->type==FXT_wrench){
         addDistMarker(_poa, _poa+.1*_torque, s, .025, {1.,1.,0.});
@@ -220,17 +218,17 @@ ConfigurationViewer& ConfigurationViewer::updateConfiguration(const Configuratio
   }
 
   //-- update directions
-  {
-    auto lock = dataLock(RAI_HERE);
-    for(Frame* f:frames) if(f->dirDof){
-        arr p = f->getPosition();
-        arr v = (f->get_X().rot * f->dirDof->vec).getArr();
-        // LOG(0) <<*f->dirDof <<' ' <<v <<' ' <<p;
-        int s=-1;
-        if(timeSlices.N) s = f->ID/timeSlices.d1;
-        addDistMarker(p, p+.2*v, s, .025);
-      }
-  }
+  // {
+  //   auto lock = dataLock(RAI_HERE);
+  //   for(Frame* f:frames) if(f->dirDof){
+  //       arr p = f->getPosition();
+  //       arr v = (f->get_X().rot * f->dirDof->vec).getArr();
+  //       // LOG(0) <<*f->dirDof <<' ' <<v <<' ' <<p;
+  //       int s=-1;
+  //       if(timeSlices.N) s = f->ID/timeSlices.d1;
+  //       addDistMarker(p, p+.2*v, s, .025);
+  //     }
+  // }
 
   //-- update camera
   if(!gl){

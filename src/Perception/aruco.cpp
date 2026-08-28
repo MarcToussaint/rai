@@ -29,15 +29,16 @@ byteA getArucoImage(int id, int borderBits){
   return img;
 }
 
-FindArucos::FindArucos(){
+ArucoFinder::ArucoFinder(){
   dictionary = make_shared<cv::aruco::Dictionary>(cv::aruco::getPredefinedDictionary(cv::aruco::DICT_5X5_50));
   cv::aruco::DetectorParameters detectorParams = cv::aruco::DetectorParameters();
   // detectorParams.cornerRefinementMethod = cv::aruco::CornerRefineMethod::CORNER_REFINE_SUBPIX;
   detector = make_shared<cv::aruco::ArucoDetector>(*dictionary, detectorParams);
 }
 
-void FindArucos::find(const byteA& rgb){
+void ArucoFinder::find(const byteA& rgb){
   if(!rgb.N){ ids.clear(); pts.clear(); return; }
+
   std::vector<int> markerIds;
   std::vector<std::vector<cv::Point2f>> markerCorners, rejectedCandidates;
   cv::Mat inputImage = CV(rgb);
@@ -75,7 +76,7 @@ void FindArucos::find(const byteA& rgb){
 
 }
 
-str FindArucos::report(){
+str ArucoFinder::report(){
   str msg;
   msg <<"aruco finder report: " <<ids.N <<" markers, pts shape: " <<pts.dim();
   return msg;
@@ -84,7 +85,7 @@ str FindArucos::report(){
 //===========================================================================
 
 std::tuple<intAA, arrA> findArucos(const byteAA& imgs){
-  FindArucos finder;
+  ArucoFinder finder;
   finder.verbose=1;
 
   intAA ids(imgs.d0, imgs.d1);
@@ -100,30 +101,57 @@ std::tuple<intAA, arrA> findArucos(const byteAA& imgs){
 
 //===========================================================================
 
-ArucoThread::ArucoThread(uint k_id, Var<byteA>& _input, double beatIntervalSec)
-    : Thread(STRING("aruco_thread_" <<k_id), beatIntervalSec), input(_input), cam_id(k_id) {
+ArucoThread::ArucoThread(uint _cam_id, Var<byteA>& _input, double beatIntervalSec)
+    : Thread(STRING("aruco_thread_" <<_cam_id), beatIntervalSec),
+    input(_input),
+    cam_id(_cam_id){
   finder.verbose=0;
-  LOG(0) <<"launching aruco thread " <<k_id;
+  LOG(0) <<"launching aruco thread cam_id: " <<_cam_id;
   // status.listenTo(input);
   // threadOpen();
+  filter.set()->K = 2;
+  filter.set()->threshold = 30.;
   threadLoop();
 }
 
 ArucoThread::~ArucoThread(){
-  LOG(0) <<"shutting down aruco thread " <<cam_id <<" - " <<timer.report();
+  LOG(0) <<"DTOR cam_id: " <<cam_id <<" - " <<timer.report();
   threadClose();
 }
 
 void ArucoThread::step() {
-  rgb = input.get()();
+  double data_time;
+  {
+    auto get = input.get();
+    rgb = get.data;
+    data_time = get.var.data_time;
+  }
+
   if(!rgb.N) return;
   finder.find(rgb);
+
+  if(use_filter){
+    flat.resize(50, 8);
+    for(double& d:flat) d=std::nan("");
+    for(uint i=0;i<finder.ids.N;i++){
+      uint id = finder.ids.elem(i);
+      flat[id] = finder.pts[i];
+    }
+    flat.reshape(-1);
+    {
+      auto set = filter.set();
+      set->update(data_time, flat);
+      set.var.data_time = data_time;
+    }
+  }
+
   // LOG(0) <<"aruco " <<cam_id <<" found #" <<finder.ids.N <<" points in image rev " <<input_revision;
   {
     auto set = output.set();
     set->cam_id = cam_id;
     set->ids = finder.ids;
     set->pts = finder.pts;
+    set.var.data_time = data_time;
   }
   timer.tic(1);
 }
@@ -258,9 +286,9 @@ namespace rai {
   byteA getArucoImage(int id, int borderBits){ NICO }
   byteA getFullArucoDict(){ NICO }
   void undistort_point(arr& p, const arr& fxycxy, const arr& distortion) { NICO }
-  FindArucos::FindArucos(){ NICO }
-  void FindArucos::find(const byteA& rgb){ NICO }
-  str FindArucos::report(){ NICO }
+  ArucoFinder::ArucoFinder(){ NICO }
+  void ArucoFinder::find(const byteA& rgb){ NICO }
+  str ArucoFinder::report(){ NICO }
 
   ArucoThread::ArucoThread(uint k_id, Var<byteA>& _input, double beatIntervalSec)
       : Thread(STRING("aruco_thread_" <<k_id), beatIntervalSec), input(_input), cam_id(k_id) { NICO }
