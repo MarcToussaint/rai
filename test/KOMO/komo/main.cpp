@@ -156,29 +156,33 @@ void TEST(Threading) {
   arr x0 = komo.pathConfig.getJointState();
 
   //-- how many threads?
-  uint nThreads = 3;
-  uint nIters = 120 / nThreads;
+  uint nThreads = 120;
+  uint nIters = 1200 / nThreads;
 
   //-- define worker routine
-  auto routine = [&]() {
+  auto routine = [&](uint t) {
     KOMO komo2;
     komo2.clone(komo); //each worker clones original problem
     for (uint i=0; i<nIters; i++) {
       komo2.pathConfig.setJointState(x0);
       komo2.solve();
     }
+    // komo2.view(true, STRING("optim from thread" <<t));
     return 0;
   };
 
+  cout <<"memory before threads: " <<rai::mem() <<endl;
+  // komo.view(true, "init");
   //-- run them all
   double time = -rai::realTime();
   {
     rai::Array<std::shared_ptr<std::thread>> threads;
-    for(uint t=0;t<nThreads;t++) threads.append(make_shared<std::thread>(routine));
+    for(uint t=0;t<nThreads;t++) threads.append(make_shared<std::thread>(routine, t));
     for(uint t=0;t<nThreads;t++) threads(t)->join();
   }
   time += rai::realTime();
-  std::cout <<nThreads <<" threads, " <<nIters <<" runs each: " <<time <<" sec"<< std::endl;
+  std::cout <<"#threads: " <<nThreads <<", mem: " <<rai::mem() <<", #runs each: " <<nIters <<", time: " <<time <<" sec"<< std::endl;
+  rai::wait();
 }
 
 //===========================================================================

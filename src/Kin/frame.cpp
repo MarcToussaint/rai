@@ -2404,6 +2404,9 @@ void rai::Inertia::add(const rai::Inertia& I, const rai::Transformation& rel) {
 void rai::Inertia::defaultInertiaByShape() {
   CHECK(frame.shape, "");
 
+  double defaultMassDensity = rai::getParameter<double>("defaultMassDensity", 5.);
+  double minInertiaDiagonal = rai::getParameter<double>("minInertiaDiagonal", 1e-6);
+
   com.setZero();
   matrix.setZero();
   //add inertia to the body
@@ -2417,7 +2420,9 @@ void rai::Inertia::defaultInertiaByShape() {
     case ST_ssCvx:
     case ST_mesh: {
       CHECK(frame.shape->_mesh, "");
-      inertiaMeshSurface(mass, com.p(), matrix.p(), frame.shape->mesh(), (mass>0.?-1.:5.));
+      rai::Mesh cvx;
+      cvx.setConvex(frame.shape->mesh().V);
+      inertiaMeshSurface(mass, com.p(), matrix.p(), cvx, (mass>0.?-1.:defaultMassDensity));
     } break;
     default: HALT("not implemented for this shape type");
   }
@@ -2427,6 +2432,9 @@ void rai::Inertia::defaultInertiaByShape() {
   CHECK_GE(matrix.m22, 1e-12, "not a good shape to compute default inertia");
   if(com.diffZero()<1e-12) com.setZero();
   if(matrix.isDiagonal()) matrix.deleteOffDiagonal();
+  if(matrix.m00<minInertiaDiagonal) matrix.m00=minInertiaDiagonal;
+  if(matrix.m11<minInertiaDiagonal) matrix.m11=minInertiaDiagonal;
+  if(matrix.m22<minInertiaDiagonal) matrix.m22=minInertiaDiagonal;
 }
 
 rai::Transformation rai::Inertia::getDiagTransform(arr& diag){

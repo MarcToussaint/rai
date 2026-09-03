@@ -1,19 +1,19 @@
 #include <Core/h5.h>
 
 void write(const char* filename){
-  rai::H5_Writer H(filename);
+  rai::H5_Writer h5(filename);
 
   {
     intA x(3,2);
     x.setRandomPerm();
     std::cout <<x <<std::endl;
-    H.write("test", x);
+    h5.write("test", x);
   }
 
   {
     arr x = rand({2,3,2});
     std::cout <<x <<std::endl;
-    H.write("testarr", x);
+    h5.write("testarr", x);
   }
 
   {
@@ -21,7 +21,7 @@ void write(const char* filename){
     x.append(arr{1.,2.,3.});
     x.append(arr{4.,5.});
     std::cout <<x <<std::endl;
-    H.writeA("arr-array", x);
+    h5.writeA("arr-array", x);
   }
 
   {
@@ -30,16 +30,16 @@ void write(const char* filename){
     dict["d"] = arr{{2,1},{1., 2.5}}; //new element
     dict["e"] = StringA{"alpha", "beta"};
     cout <<dict <<endl;
-    H.writeDict("info", dict);
+    h5.writeDict("info", dict);
   }
 }
 
 int read(const char* filename){
   double time = -rai::clockTime();
-  rai::H5_Reader H(filename);
-  auto a = H.read<int>("test");
-  auto b = H.read<double>("testarr");
-  auto c = H.readDict("info");
+  rai::H5_Reader h5(filename);
+  auto a = h5.read<int>("test");
+  auto b = h5.read<double>("testarr");
+  auto c = h5.readDict("info");
   cout <<a <<'\n' <<b <<'\n' <<c <<endl;
   time += rai::clockTime();
   cout <<time <<"sec" <<endl;

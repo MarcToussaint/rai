@@ -516,7 +516,7 @@ int x11_getKey() {
 long mem() {
 #ifndef RAI_MSVC
   static rusage r; getrusage(RUSAGE_SELF, &r);
-  return r.ru_idrss;
+  return r.ru_maxrss;
 #else
   NICO
 #endif

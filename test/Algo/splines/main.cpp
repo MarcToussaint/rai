@@ -44,6 +44,29 @@ void TEST(Basics){
 
 //==============================================================================
 
+void testDirectUse(){
+  rai::BSpline S;
+  arr T = {0., .5, 1.};
+
+  S.setKnots(2, T);
+  cout <<"\nknots = " <<S.knots <<endl;
+  arr t_sample = range(-0.1, 1.1, 100);
+  arr B = S.getBmatrix(t_sample, true, true);
+
+  arr X = {.3, .8, .6};  X.reshape(-1,1);
+  arr X_sample = B*X;
+
+  // S.set(2, X, T);
+  // X_sample = S.eval(t_sample);
+
+  ofstream("z.test") <<rai::catCol({t_sample, X_sample}).modRaw() <<endl;
+  ofstream("z.pts") <<rai::catCol({T, X}).modRaw() <<endl;
+  gnuplot("set size square; set grid; plot [:] 'z.test' us 1:2, 'z.pts' us 1:2 w p");
+  rai::wait();
+}
+
+//==============================================================================
+
 void TEST(BasisMatrix){
   rai::BSpline S;
 
@@ -289,8 +312,9 @@ void testFixedAccel2(){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc, argv);
 
-  testBasics();
-  testBasisMatrix();
+  // testBasics();
+  testDirectUse();
+  // testBasisMatrix();
   // testFitting();
   // testSpeed();
 

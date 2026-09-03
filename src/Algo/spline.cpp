@@ -105,11 +105,20 @@ arr BSpline::getBmatrix(const arr& sampleTimes, bool startDuplicates, bool endDu
   uint m = knots.N-1;
   uint K = m - degree - 1;
   arr Bmatrix(sampleTimes.N, K+1);
+  Bmatrix.setZero();
   for(uint t=0; t<sampleTimes.N; t++){
-    calcB(sampleTimes(t));
-    for(uint i=0;i<=K;i++) Bmatrix(t,i) = B(i, degree);
+    double time = sampleTimes(t);
+    if(time<knots(0)){ //handle out-of-interval cases
+      Bmatrix(t, 0) = 1.;
+    }else if(time>=knots(-1)) {
+      Bmatrix(t, -1) = 1.;
+    }else{
+      calcB(time);
+      for(uint i=0;i<=K;i++) Bmatrix(t,i) = B(i, degree);
+    }
   }
-  if(startDuplicates||endDuplicates){
+  if((startDuplicates||endDuplicates) && degree>1){
+    CHECK_LE(degree, 3, "NIY for higher degrees... would need more duplication")
     Bmatrix = ~Bmatrix;
     if(startDuplicates){
       Bmatrix[1] += Bmatrix[0];
