@@ -414,7 +414,7 @@ Camera& ConfigurationViewer::displayCamera() {
 }
 
 byteA ConfigurationViewer::getRgb(bool _nonThreaded) {
-  ensure_gl().needsUpdate.waitForStatusEq(0);
+  ensure_gl().needsUpdate.waitForEq(0);
 
   // if(_nonThreaded && !nonThreaded){
   //   gl->update(false, true);
@@ -430,7 +430,7 @@ byteA ConfigurationViewer::getRgb(bool _nonThreaded) {
 }
 
 floatA ConfigurationViewer::getDepth(bool _nonThreaded) {
-  ensure_gl().needsUpdate.waitForStatusEq(0);
+  ensure_gl().needsUpdate.waitForEq(0);
   // if(_nonThreaded && !nonThreaded){
   //   gl->update(false, true);
   //   nonThreaded=true;
@@ -598,7 +598,7 @@ ConfigurationViewerThread::ConfigurationViewerThread(Var<Configuration>& _config
   : Thread("ConfigurationViewerThread", beatIntervalSec),
     config(_config) {
   if(beatIntervalSec>=0.) threadLoop(); else{
-    event.listenTo(config);
+    listenTo(config);
     threadStep();
   }
 }

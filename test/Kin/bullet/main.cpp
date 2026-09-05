@@ -70,7 +70,7 @@ void simGfile(){
 
     double tau = .01;
     double glTau = .025;
-    Metronome tic(tau);
+    rai::Metronome tic(tau);
     for(uint t=0;t<5./tau;t++){
       bull_rai.step(tau);
       bull_rai.pullFreeStates(C);

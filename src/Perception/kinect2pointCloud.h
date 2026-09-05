@@ -12,14 +12,14 @@
 #include "../Gui/opengl.h"
 #include "../Geo/geo.h"
 
-struct Kinect2PointCloud : Thread {
+struct Kinect2PointCloud : rai::Thread {
   //inputs
-  Var<byteA> kinect_rgb;
-  Var<uint16A> kinect_depth;
-  Var<rai::Transformation> kinect_frame;
-  Var<arr> pr2_odom;
+  rai::Var<byteA> kinect_rgb;
+  rai::Var<uint16A> kinect_depth;
+  rai::Var<rai::Transformation> kinect_frame;
+  rai::Var<arr> pr2_odom;
   //outputs
-  Var<arr> kinect_points;
+  rai::Var<arr> kinect_points;
 
   arr pts, cols;
   uint16A depth;

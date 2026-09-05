@@ -42,26 +42,26 @@ struct DisplayThread : Thread {
   DisplayThread(LGP_Tree* lgp) : Thread("OptLGP_Display"), lgp(lgp), gl("OptLGP", 3*displaySize, 2*displaySize) { threadLoop(); }
   ~DisplayThread() { threadClose(); }
   void resetSteppings() {
-    lgp->solutions.writeAccess();
-    for(uint i=0; i<lgp->solutions().N; i++) {
-      lgp->solutions()(i)->viewer->drawSlice=0;
+    lgp->solutions.write_lock();
+    for(uint i=0; i<lgp->solutions.data.N; i++) {
+      lgp->solutions.data(i)->viewer->drawSlice=0;
     }
-    lgp->solutions.deAccess();
+    lgp->solutions.write_unlock();
   }
 
   void step() {
     //      tic.waitForTic();
     wait(.1);
-    lgp->solutions.writeAccess();
-    uint numSolutions = lgp->solutions().N;
+    lgp->solutions.write_lock();
+    uint numSolutions = lgp->solutions.data.N;
     for(uint i=0; i<numSolutions; i++) {
-      lgp->solutions()(i)->viewer->drawSlice++;
+      lgp->solutions.data(i)->viewer->drawSlice++;
       if(gl.views.N>i){}
-//        gl.views(i).text.clear() <<i <<':' <<lgp->solutions()(i)->displayStep <<": "
-//                                 <<lgp->solutions()(i)->node->cost <<"|  " <<lgp->solutions()(i)->node->constraints.last() <<'\n'
-//                                 <<lgp->solutions()(i)->decisions;
+//        gl.views(i).text.clear() <<i <<':' <<lgp->solutions.data(i)->displayStep <<": "
+//                                 <<lgp->solutions.data(i)->node->cost <<"|  " <<lgp->solutions.data(i)->node->constraints.last() <<'\n'
+//                                 <<lgp->solutions.data(i)->decisions;
     }
-    lgp->solutions.deAccess();
+    lgp->solutions.write_unlock();
     if(numSolutions)
       gl.update();
     if(saveVideo) write_ppm(gl.captureImage, STRING(lgp->OptLGPDataPath <<"vid/" <<std::setw(4)<<std::setfill('0')<<t++<<".ppm"));
@@ -163,9 +163,9 @@ LGP_Tree::~LGP_Tree() {
   root=nullptr;
   filNodes.reset();
   filComputes.reset();
-  solutions.writeAccess();
-  rai::listDelete(solutions());
-  solutions.deAccess();
+  solutions.write_lock();
+  rai::listDelete(solutions.data);
+  solutions.write_unlock();
 }
 
 void LGP_Tree::initDisplay() {
@@ -228,30 +228,30 @@ void LGP_Tree::updateDisplay() {
   }
 
   //big windows to display solution buffer
-  solutions.writeAccess();
-  for(uint i=0; i<solutions().N && i<6; i++) {
+  solutions.write_lock();
+  for(uint i=0; i<solutions.data.N && i<6; i++) {
     if(dth->gl.views.N<=i || !dth->gl.views(i).drawers.N) {
 //      dth->gl.addSubView(i, glStandardScene, nullptr);
-      dth->gl.addSubView(i, solutions()(i)->viewer.get());
+      dth->gl.addSubView(i, solutions.data(i)->viewer.get());
       dth->gl.views(i).camera.setDefault();
       if(cameraFocus.N) dth->gl.views(i).camera.focus(cameraFocus, true);
       //      dth->gl.views(i).camera.focus(.9, 0., 1.3);
     }
-    dth->gl.views(i).drawers.last() = solutions()(i)->viewer.get();
-//    dth->gl.views(i).text.clear() <<solutions()(i)->node->cost <<'\n' <<solutions()(i)->decisions;
+    dth->gl.views(i).drawers.last() = solutions.data(i)->viewer.get();
+//    dth->gl.views(i).text.clear() <<solutions.data(i)->node->cost <<'\n' <<solutions.data(i)->decisions;
   }
   dth->gl.setSubViewTiles(3, 2);
-  solutions.deAccess();
+  solutions.write_unlock();
   //  gl->update();
 
   //  solutions.writeAccess();
-  //  if(solutions().N){
-  //    cout <<"SOLUTIONS: " <<solutions().N <<endl;
-  //    for(uint i=0;i<solutions().N;i++){
-  //      solutions()(i)->write(cout);
+  //  if(solutions.data.N){
+  //    cout <<"SOLUTIONS: " <<solutions.data.N <<endl;
+  //    for(uint i=0;i<solutions.data.N;i++){
+  //      solutions.data(i)->write(cout);
   //    }
   //  }
-  //  solutions.deAccess();
+  //  solutions.write_unlock();
 
   if(displayTree) {
     //generate the tree pdf

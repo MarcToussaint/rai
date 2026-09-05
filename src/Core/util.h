@@ -466,6 +466,21 @@ struct Mutex {
 };
 
 //===========================================================================
+
+/// a simple struct to realize a strict tic tac timing (called in thread::main once each step if looping)
+struct Metronome {
+  double ticInterval;
+  std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::duration<double>> ticTime;
+  uint tics;
+
+  Metronome(double ticIntervalSec); ///< set tic tac time in seconds
+
+  void reset(double ticIntervalSec);
+  void waitForTic();              ///< waits until the next tic
+  double getTimeSinceTic();       ///< time since last tic
+};
+
+//===========================================================================
 //
 /// a generic singleton
 //

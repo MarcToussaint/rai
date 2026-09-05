@@ -152,7 +152,7 @@ RTControllerSimulation::RTControllerSimulation(const rai::Configuration& realWor
   , gravity(gravity)
   , stepCount(0)
   , systematicErrorSdv(_systematicErrorSdv) {
-  event.listenTo(ctrl_ref);
+  state.listenTo(ctrl_ref);
   //world = new rai::Configuration(realWorld);
   world = new rai::Configuration(rai::raiPath("data/pr2_model/pr2_model.g"));
 
@@ -196,7 +196,7 @@ void RTControllerSimulation::open() {
       }
     }
 
-  this->ctrl_obs.writeAccess();
+  this->ctrl_obs.write_lock();
   this->ctrl_obs().q = q;
   this->ctrl_obs().qdot = qDot;
   this->ctrl_obs().fL = zeros(6);
@@ -244,7 +244,7 @@ void RTControllerSimulation::step() {
   checkNan(qDot);
   checkNan(u);
 
-  this->ctrl_obs.writeAccess();
+  this->ctrl_obs.write_lock();
   /*for(uint i = 0; i < q.N; i++) {
     q(i) = round(q(i)*1000)/1000.0;
   }*/

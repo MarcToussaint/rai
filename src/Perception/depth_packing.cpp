@@ -38,15 +38,15 @@ void KinectDepthPacking::open() {}
 void KinectDepthPacking::close() {}
 
 void KinectDepthPacking::step() {
-  kinect_depth.readAccess();
-  kinect_depthRgb.writeAccess();
+  kinect_depth.read_lock();
+  kinect_depthRgb.write_lock();
 
-  rai::pack_kindepth2rgb(kinect_depth(), kinect_depthRgb());
+  rai::pack_kindepth2rgb(kinect_depth.data, kinect_depthRgb.data);
 
-  kinect_depthRgb().reshape(kinect_depth().d0, kinect_depth().d1, 3);
+  kinect_depthRgb.data.reshape(kinect_depth.data.d0, kinect_depth.data.d1, 3);
   kinect_depthRgb.write_time = kinect_depth.write_time;
 
-  kinect_depthRgb.deAccess();
-  kinect_depth.deAccess();
+  kinect_depthRgb.write_unlock();
+  kinect_depth.read_unlock();
 
 }

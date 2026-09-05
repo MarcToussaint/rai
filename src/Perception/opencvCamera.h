@@ -11,12 +11,12 @@
 #include "../Core/thread.h"
 #include "../Core/array.h"
 
-struct OpencvCamera : Thread {
+struct OpencvCamera : rai::Thread {
   unique_ptr<struct sOpencvCamera> self;
 
   int cameraID;
   bool flip_bgr=false;
-  Var<byteA> image;
+  rai::Var<byteA> image;
 
   OpencvCamera(const char *_name="default", int _cameraID=0);
   ~OpencvCamera();

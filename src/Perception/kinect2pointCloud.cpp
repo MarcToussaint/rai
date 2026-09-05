@@ -11,7 +11,7 @@
 
 Kinect2PointCloud::Kinect2PointCloud()
   : Thread("Kinect2PointCloud") {
-  event.listenTo(kinect_depth);
+  listenTo(kinect_depth);
   depthShift_dx = rai::getParameter<int>("kinectDepthPixelShift_x", 0);
   depthShift_dy = rai::getParameter<int>("kinectDepthPixelShift_y", 0);
   frameShift = rai::getParameter<arr>("kinectFrameShift", {});

@@ -11,16 +11,16 @@
 
 #include <math.h>
 
-Depth2PointCloud::Depth2PointCloud(Var<floatA>& _depth, float _fx, float _fy, float _px, float _py)
+Depth2PointCloud::Depth2PointCloud(rai::Var<floatA>& _depth, float _fx, float _fy, float _px, float _py)
   : Thread("Depth2PointCloud"),
     depth(_depth),
     fx(_fx), fy(_fy), px(_px), py(_py) {
-  event.listenTo(depth);
+  listenTo(depth);
   pose.set()->setZero();
   threadOpen();
 }
 
-Depth2PointCloud::Depth2PointCloud(Var<floatA>& _depth, const arr& fxycxy)
+Depth2PointCloud::Depth2PointCloud(rai::Var<floatA>& _depth, const arr& fxycxy)
   : Depth2PointCloud(_depth, fxycxy(0), fxycxy(1), fxycxy(2), fxycxy(3)) {
 }
 
