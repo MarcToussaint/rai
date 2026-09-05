@@ -1080,6 +1080,24 @@ uint rai::Frame::getJointQIndex() const{
   return joint->qIndex;
 }
 
+rai::Camera rai::Frame::getCameraFromAts() {
+  rai::Camera cam;
+  cam.X = ensure_X();
+  cam.alignFocus();
+  cam.setZRange(.1,10.);
+
+  if(ats){
+    Node* at=0;
+    if((at=ats->getNode("focalLength"))) cam.setFocalLength(at->asFlex<double>());
+    if((at=ats->getNode("orthoAbsHeight"))) cam.setHeightAbs(at->asFlex<double>());
+    if((at=ats->getNode("zRange"))) { arr z=at->as<arr>(); cam.setZRange(z(0), z(1)); }
+    if((at=ats->getNode("width"))) cam.width=at->asFlex<uint>();
+    if((at=ats->getNode("height"))) cam.height=at->asFlex<uint>();
+    if((at=ats->getNode("fxycxy"))){ arr fxycxy = at->as<arr>(); cam.fxycxy = (fxycxy - arr{0., 0., .5*cam.width, .5*cam.height}) / double(cam.height); }
+  }
+  return cam;
+}
+
 /***********************************************************/
 
 rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A, bool prelinkTakesQ, const char* postfix) {

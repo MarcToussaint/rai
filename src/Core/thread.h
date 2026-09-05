@@ -16,14 +16,9 @@
 #include <condition_variable>
 #include <thread>
 
+namespace rai {
+
 enum ThreadState { tsIsClosed=-6, tsToOpen=-1, tsLOOPING=-2, tsBEATING=-3, tsIDLE=0, tsToStep=1, tsToClose=-4,  tsFAILURE=-5,  }; //positive states indicate steps-to-go
-struct Signaler;
-struct Event;
-struct Var_base;
-struct Thread;
-typedef rai::Array<Signaler*> SignalerL;
-typedef rai::Array<Var_base*> VarL;
-typedef rai::Array<Thread*> ThreadL;
 
 //===========================================================================
 
@@ -36,7 +31,7 @@ template<class F> struct Callback {
 };
 
 template<class F>
-struct CallbackL : rai::Array<Callback<F>*> {
+struct CallbackL : Array<Callback<F>*> {
   void removeCallback(const void* id) {
     uint i;
     for(i=0; i<this->N; i++) if(this->elem(i)->id==id) break;
@@ -47,106 +42,38 @@ struct CallbackL : rai::Array<Callback<F>*> {
 
 //===========================================================================
 
-/// a basic read/write access lock
-struct RWLock {
-  std::shared_timed_mutex rwLock;
-  int rwCount=0;     ///< -1==write locked, positive=numer of readers, 0=unlocked
-  rai::Mutex rwCountMutex;
-  RWLock();
-  ~RWLock();
-  void readLock();   ///< multiple threads may request 'lock for read'
-  void writeLock();  ///< only one thread may request 'lock for write'
-  void unlock();     ///< thread must unlock when they're done
-  bool isLocked();
-  bool isWriteLocked();
-};
-
-//===========================================================================
-//
-// access gated (rwlocked) variables (shared memory)
-//
-
 /// This RW lock counts revisions and broadcasts accesses to listeners; who is accessing can be logged; it has a unique name
-struct Var_base : rai::NonCopyable {
-  RWLock rwlock;               ///< rwLock (handled via read/writeAccess)
+struct Var_base : NonCopyable {
+  std::shared_mutex rwlock;    ///< rwLock (handled via read/writeAccess)
+  std::condition_variable_any cond;
+  bool isWriteLocked = false;
   uint revision=0;
-  rai::String name;            ///< name
   double write_time=0.;        ///< clock time of last write access
   double data_time=0.;         ///< time stamp of the original data source
   CallbackL<void(Var_base*)> callbacks;
 
-  Var_base(const char* _name=0);
-  /// @name c'tor/d'tor
-  virtual ~Var_base();
+  Var_base() {}
+  virtual ~Var_base() {}
 
   void addCallback(const std::function<void(Var_base*)>& call, const void* callbackID);
 
   /// @name access control
   /// to be called by a thread before access, returns the revision
-  int readAccess();  //might set the caller to sleep
-  int writeAccess(); //might set the caller to sleep, _write_time=-1. means clockTime()
-  int deAccess();
+  int read_lock();
+  int write_lock();
+  int read_unlock();
+  int write_unlock();
 
-  int getRevision() { rwlock.readLock(); int r=revision; rwlock.unlock(); return r; }
+  int getRevision() { rwlock.lock_shared(); int r=revision; rwlock.unlock_shared(); return r; }
 };
+
 
 //===========================================================================
 
-template<class T>
-struct RToken {
-  Var_base& var;
-  T& data;
-  RToken(Var_base& _var, T& _data, int* getRevision=nullptr, bool isAlreadyLocked=false)
-    : var(_var), data(_data) {
-    if(!isAlreadyLocked) var.readAccess();
-    if(getRevision) *getRevision=var.revision;
-  }
-  ~RToken() { var.deAccess(); }
-  const T* operator->() { return &data; }
-  operator const T& () { return data; }
-  const T& operator()() { return data; }
-};
+//fwd declarations
+template<class T> struct ReadToken;
+template<class T> struct WriteToken;
 
-template<class T>
-struct WToken {
-  Var_base& var;
-  T& data;
-  WToken(Var_base& _var, T& _data, int* getRevision=nullptr)
-    : var(_var), data(_data) {
-    var.writeAccess();
-    if(getRevision) *getRevision=var.revision+1;
-  }
-  WToken(const double& dataTime, Var_base& _var, T* _data, int* getRevision=nullptr)
-    : var(_var), data(_data) {
-    var.writeAccess();
-    var.data_time=dataTime;
-    if(getRevision) *getRevision=var.revision+1;
-  }
-  ~WToken() { var.deAccess(); }
-  void operator=(const T& y) { data=y; }
-  T* operator->() { return &data; }
-  operator T& () { return data; }
-  T& operator()() { return data; }
-};
-
-//===========================================================================
-
-/// A variable is an access gated data field of type T
-template<class T>
-struct Var_data : Var_base {
-  T data;
-
-  Var_data(const char* name=0) : Var_base(name), data() {} // default constructor for value always initializes, also primitive types 'bool' or 'int'
-  ~Var_data() {
-    if(rwlock.isLocked()) { cout << "can't destroy a variable when it is currently accessed!" <<endl; exit(1); }
-  }
-};
-
-template<class T> bool operator==(const Var_data<T>&, const Var_data<T>&) { return false; }
-template<class T> void operator<<(ostream& os, const Var_data<T>& v) { os <<"VariableData '" <<v.name <<'\''; }
-
-//===========================================================================
-//
 /** When using a thread you may declare which variables the
     thread needs access to (for reading or writing). This is done by
     declaring members as 'Var<TYPE> name;' instead of 'TYPE
@@ -159,129 +86,103 @@ template<class T> void operator<<(ostream& os, const Var_data<T>& v) { os <<"Var
 template<class T>
 struct Var : Var_base {
   T data;
-  // shared_ptr<Var_data<T>> data;
-  int last_read_revision;     ///< last revision that has been accessed (read or write)
+  int last_read_revision = 0;     ///< last revision that has been accessed (read or write)
 
-  Var() : Var_base(0), last_read_revision(0) {}
-  // Var() : data(make_shared<Var_data<T>>()), last_read_revision(0) {}
-  ~Var() {
-    if(rwlock.isLocked()) { cout << "can't destroy a variable when it is currently accessed!" <<endl; exit(1); }
-  };
+  Var() {}
+  Var(const T& x) : data(x) {}
+  ~Var() {}
 
-  void checkLocked() { if(!rwlock.isLocked()) HALT("direct variable access without locking it before"); }
-  T& operator()() { CHECK(rwlock.isLocked(), "direct variable access without locking it before");  return data; }
-  T& operator*() {  CHECK(rwlock.isLocked(), "direct variable access without locking it before");  return data; }
-  T* operator->() { CHECK(rwlock.isLocked(), "direct variable access without locking it before");  return &(data); }
-  RToken<T> get() { return RToken<T>(*this, data,  &last_read_revision); } ///< read access to the variable's data
-  WToken<T> set() { return WToken<T>(*this, data/*, &last_read_revision*/); } ///< write access to the variable's data
-  // operator Var_base& () { return *std::dynamic_pointer_cast<Var_base>(data); }
+  void setValue(const T& x) { write_lock(); data=x; write_unlock(); }
+  T getCopy() { T x; read_lock(); x=data; read_unlock(); return x; }
 
-  void reassignTo(const shared_ptr<Var_data<T>>& _data) {
-    data.reset();
-    data = _data;
+  ReadToken<T> get() { return ReadToken<T>(*this, data,  &last_read_revision); } ///< read access to the variable's data
+  WriteToken<T> set() { return WriteToken<T>(*this, data/*, &last_read_revision*/); } ///< write access to the variable's data
+
+  int read_lock() {  return last_read_revision = Var_base::read_lock(); }
+
+  void waitForNextRevision(uint multipleRevisions=0) {
+    waitForRevisionGreaterThan(last_read_revision+multipleRevisions);
   }
-
-  rai::String& name() const { return name; }
-  int readAccess() {  return last_read_revision = Var_base::readAccess(); }
-  bool hasNewRevision() { return getRevision()>last_read_revision; }
-  void waitForNextRevision(uint multipleRevisions=0) { waitForRevisionGreaterThan(last_read_revision+multipleRevisions); }
-  int waitForRevisionGreaterThan(int rev);
-  void waitForValueEq(const T& x) {
-    waitForEvent([this, &x]()->bool {
-      return this->data==x;
-    });
+  uint waitForRevisionGreaterThan(uint rev){
+    rwlock.lock_shared();
+    while(revision<=rev) cond.wait(rwlock);
+    uint i=revision;
+    rwlock.unlock_shared();
+    return i;
   }
-
+  void waitForEq(const T& x) {
+    rwlock.lock_shared();
+    while(data!=x) cond.wait(rwlock);
+    rwlock.unlock_shared();
+  }
+  int waitForNotEq(int x) {
+    rwlock.lock_shared();
+    while(data==x) cond.wait(rwlock);
+    int y=data;
+    rwlock.unlock_shared();
+    return y;
+  }
+  ReadToken<T> waitForEqAndGet(const T& x) {
+    rwlock.lock_shared();
+    while(data!=x) cond.wait(rwlock);
+    return ReadToken<T>(*this, data, &last_read_revision, true);
+  }
   void addCallback(const std::function<void(Var_base*)>& call, const void* callbackID=0) {
     addCallback(call, callbackID);
   }
-
   void write(ostream& os) {
-    readAccess();
-    os <<"VAR " <<name() <<" [" <<getRevision() <<"] " <<data <<endl;
-    deAccess();
+    read_lock();
+    os <<"VAR [" <<getRevision() <<"] " <<data <<endl;
+    read_unlock();
   }
+  void incrementStatus(int delta=1) { write_lock(); data+=delta; write_unlock(); }
 };
 
 template<class T> std::ostream& operator<<(std::ostream& os, Var<T>& x) { x.write(os); return os; }
 
 //===========================================================================
 
-/// a basic condition variable
-struct Signaler {
-  int status;
-  rai::Mutex statusMutex;
-  std::condition_variable cond;
-
-  Signaler(int initialStatus=0);
-  virtual ~Signaler(); //virtual, to enforce polymorphism
-
-  void setStatus(int i); ///< sets status and broadcasts
-  int  incrementStatus(int delta=+1);  ///< increase status by 1
-  void broadcast();        ///< wake up waitForSignal callers
-
-  void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
-  void statusUnlock();
-
-  int  getStatus(rai::Mutex::Token* userHasLocked=0) const;
-  bool waitForSignal(rai::Mutex::Token* userHasLocked=0, double timeout=-1.);
-  bool waitForEvent(std::function<bool()> f, rai::Mutex::Token* userHasLocked=0);
-  bool waitForStatusEq(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.);   ///< return value is the status after the waiting
-  int waitForStatusNotEq(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the status after the waiting
-  int waitForStatusGreaterThan(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the status after the waiting
-  int waitForStatusSmallerThan(int i, rai::Mutex::Token* userHasLocked=0, double timeout=-1.); ///< return value is the status after the waiting
+template<class T>
+struct ReadToken {
+  Var_base& var;
+  T& data;
+  ReadToken(Var_base& _var, T& _data, int* getRevision=nullptr, bool isAlreadyLocked=false)
+      : var(_var), data(_data) {
+    if(!isAlreadyLocked) var.read_lock();
+    if(getRevision) *getRevision=var.revision;
+  }
+  ~ReadToken() { var.read_unlock(); }
+  const T* operator->() { return &data; }
+  operator const T& () { return data; }
+  const T& operator()() { return data; }
 };
 
-//===========================================================================
-
-typedef std::function<int(const rai::Array<Var_base*>&, int whoChanged)> EventFunction;
-
-/// a condition variable that auto-changes status according to a given function of variables
-struct Event : Signaler {
-  rai::Array<Var_base*> variables; /// variables this event depends on
-  EventFunction eventFct;          /// int-valued function that computes status based on variables
-
-  Event(int initialState=0) : Signaler(initialState) {}
-  Event(const rai::Array<Var_base*>& _variables, const EventFunction& _eventFct, int initialState=0);
-  ~Event();
-
-  void listenTo(Var_base& v);
-  // template<class T> void listenTo(Var<T>& v) { listenTo(*v.data); }
-  void stopListening();
-  void stopListenTo(Var_base& c);
-
-  void callback(Var_base* v);
+template<class T>
+struct WriteToken {
+  Var_base& var;
+  T& data;
+  WriteToken(Var_base& _var, T& _data, int* getRevision=nullptr)
+      : var(_var), data(_data) {
+    var.write_lock();
+    if(getRevision) *getRevision=var.revision+1;
+  }
+  WriteToken(const double& dataTime, Var_base& _var, T* _data, int* getRevision=nullptr)
+      : var(_var), data(_data) {
+    var.write_lock();
+    var.data_time=dataTime;
+    if(getRevision) *getRevision=var.revision+1;
+  }
+  ~WriteToken() { var.write_unlock(); }
+  void operator=(const T& y) { data=y; }
+  T* operator->() { return &data; }
+  operator T& () { return data; }
+  T& operator()() { return data; }
 };
-
-template<class T> VarL operator+(shared_ptr<T>& p) { return VarL{p->status.data.get()}; }
-template<class T> VarL operator+(VarL A, shared_ptr<T>& p) { A.append(p->status.data.get()); return A; }
-
-int _allPositive(const VarL& signalers, int whoChanged);
-enum ActStatus { AS_none=-1, AS_init, AS_running, AS_done, AS_converged, AS_stalled, AS_true, AS_false, AS_kill };
-
-inline bool wait(const VarL& acts, double timeout=-1.) {
-  return Event(acts, _allPositive).waitForStatusEq(AS_true, 0, timeout);
-}
 
 //===========================================================================
 //
 // Timing helpers
 //
-
-/// a simple struct to realize a strict tic tac timing (called in thread::main once each step if looping)
-struct Metronome {
-  double ticInterval;
-  std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::duration<double>> ticTime;
-  uint tics;
-
-  Metronome(double ticIntervalSec); ///< set tic tac time in seconds
-
-  void reset(double ticIntervalSec);
-  void waitForTic();              ///< waits until the next tic
-  double getTimeSinceTic();       ///< time since last tic
-};
-
-//===========================================================================
 
 /// to meassure cycle and busy times
 struct CycleTimer {
@@ -295,7 +196,7 @@ struct CycleTimer {
   void tic(uint i);
   void cycleStart(){ tic(0); }
   void cycleDone(){ tic(1); }
-  rai::String report();
+  String report();
 };
 
 //===========================================================================
@@ -309,14 +210,15 @@ struct CycleTimer {
  * the Signaler indicates the state of the thread: positive=do steps, otherwise it is a ThreadState
  */
 struct Thread {
-  Event event;
-  rai::String name;
+  Var<int> status;
+  String name;
   std::unique_ptr<std::thread> thread;    ///< the underlying pthread; nullptr iff not opened
-  int tid;                      ///< system thread id
-  rai::Mutex stepMutex;         ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
-  uint step_count;              ///< how often the step was called
-  Metronome metronome;          ///< used for beat-looping
-  CycleTimer timer;             ///< measure how the time spend per cycle, within step, idle
+  int tid;                    ///< system thread id
+  Mutex stepMutex;            ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside
+  uint step_count;            ///< how often the step was called
+  Array<Var_base*> variables; ///< variables this thread listens to
+  Metronome metronome;        ///< used for beat-looping
+  CycleTimer timer;           ///< measure how the time spend per cycle, within step, idle
 
   /// @name c'tor/d'tor
   /** DON'T open drivers/devices/files or so here in the constructor,
@@ -329,18 +231,25 @@ struct Thread {
   Thread(const char* _name, double beatIntervalSec=-1.);
   virtual ~Thread();
 
-  /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
-  void threadOpen(bool wait=false, int priority=0);      ///< start the thread (in idle mode) (should be positive for changes)
-  void threadClose(double timeoutForce=-1.);                   ///< close the thread (stops looping and waits for idle mode before joining the thread)
-  void threadStep();                    ///< trigger (multiple) step (idle -> working mode) (wait until idle? otherwise calling during non-idle -> error)
+  // -- standard methods to start and close the thread
   void threadLoop(bool waitForOpened=false);  ///< loop, either with fixed beat or at full speed
+  void threadClose(double timeoutForce=-1.);  ///< close the thread (stops looping and waits for idle mode before joining the thread)
+
+  // -- more fine control - but rarely used
+  void threadOpen(bool waitForOpened=false);  ///< start the thread (in idle mode) (should be positive for changes)
+  void threadStep();                    ///< trigger (multiple) step (idle -> working mode) (wait until idle? otherwise calling during non-idle -> error)
   void threadStop(bool wait=false);     ///< stop looping
   void threadCancel();                  ///< a hard kill (pthread_cancel) of the thread
 
-  void waitForOpened();                 ///< caller waits until opening is done (working -> idle mode)
-  void waitForIdle();                   ///< caller waits until step is done (working -> idle mode)
-  bool isIdle();                        ///< check if in idle mode
-  bool isClosed();                      ///< check if closed
+  void waitForOpened() { status.waitForNotEq(tsIsClosed); status.waitForNotEq(tsToOpen); }
+  void waitForIdle() { status.waitForEq(tsIDLE); }
+  bool isIdle() { return status.get()==tsIDLE; }
+  bool isClosed() { return !thread; }
+
+  void listenTo(Var_base& v);
+  void stopListening();
+  void stopListenTo(Var_base& c);
+  void listeningCallback(Var_base* v);
 
   /** use this to open drivers/devices/files and initialize
    *  parameters; this is called within the thread */
@@ -357,53 +266,8 @@ struct Thread {
    *  the thread */
   virtual void close() {}
 
-  void main(); //this is the thread main - should be private!
+private:
+  void main(); //this is the thread main
 };
 
-//===========================================================================
-
-#if 0
-struct ScriptThread : Thread {
-  std::function<int()> script;
-  Var<ActStatus> _status;
-  ScriptThread(const std::function<int()>& S, Var_base& listenTo)
-    :  Thread("ScriptThread"), script(S) {
-    _status.listenTo(listenTo);
-    threadOpen();
-  }
-  ScriptThread(const std::function<int()>& S, double beatIntervalSec=-1.)
-    :  Thread("ScriptThread", beatIntervalSec), script(S) {
-    if(beatIntervalSec<0.) threadOpen();
-    else threadLoop();
-  }
-  ~ScriptThread() { threadClose(); }
-
-  virtual void step() { ActStatus r = (ActStatus)script(); _status.set()=r; }
-};
-
-inline shared_ptr<ScriptThread> run(const std::function<int ()>& script, Var_base& listenTo) {
-  return make_shared<ScriptThread>(script, listenTo);
-}
-
-inline shared_ptr<ScriptThread> run(const std::function<int ()>& script, double beatIntervalSec) {
-  return make_shared<ScriptThread>(script, beatIntervalSec);
-}
-#endif
-
-// ================================================
-//
-// template definitions
-//
-
-template<class T>
-int Var<T>::waitForRevisionGreaterThan(int rev) {
-  EventFunction evFct = [&rev](const rai::Array<Var_base*>& vars, int whoChanged) -> int {
-    CHECK_EQ(vars.N, 1, ""); //this event only checks the revision for a single var
-    if(vars.elem()->revision > (uint)rev) return 1;
-    return 0;
-  };
-
-  Event ev({this}, evFct, 0);
-  ev.waitForStatusEq(1);
-  return getRevision();
-}
+} //namespace

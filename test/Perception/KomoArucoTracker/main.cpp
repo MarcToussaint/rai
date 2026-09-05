@@ -30,7 +30,7 @@ void testKomoTracker(){
       V.computeImageAndDepth(rgb, depth);
       // gl.watchImage(rgb, true);
 
-      auto finder = rai::FindArucos();
+      auto finder = rai::ArucoFinder();
       finder.verbose=1;
       finder.find(rgb);
       if(finder.rgb_annotated.N){

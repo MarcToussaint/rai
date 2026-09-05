@@ -13,19 +13,19 @@
 
 #include <math.h>
 
-struct Depth2PointCloud : Thread {
+struct Depth2PointCloud : rai::Thread {
   //inputs
-  Var<floatA>& depth;
-  Var<rai::Transformation> pose;
+  rai::Var<floatA>& depth;
+  rai::Var<rai::Transformation> pose;
   //outputs
-  Var<arr> points;
+  rai::Var<arr> points;
 
   float fx, fy, px, py;
   floatA _depth;
   arr _points;
 
-  Depth2PointCloud(Var<floatA>& _depth, float _fx=NAN, float _fy=NAN, float _px=NAN, float _py=NAN);
-  Depth2PointCloud(Var<floatA>& _depth, const arr& fxycxy);
+  Depth2PointCloud(rai::Var<floatA>& _depth, float _fx=NAN, float _fy=NAN, float _px=NAN, float _py=NAN);
+  Depth2PointCloud(rai::Var<floatA>& _depth, const arr& fxycxy);
   virtual ~Depth2PointCloud();
 
   void open() {}

@@ -51,7 +51,7 @@ void test(){
       V.computeImageAndDepth(rgb, depth);
       D.setCamera(k, V.getFxycxy(), V.currentCamera->cam.X);
 
-      auto finder = FindArucos();
+      auto finder = rai::ArucoFinder();
       finder.verbose=2;
       finder.find(rgb);
       C.get_viewer()->setQuad(k, finder.rgb_annotated, 0., k*.25, .25);

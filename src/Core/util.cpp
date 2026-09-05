@@ -1249,6 +1249,33 @@ void Mutex::unlock() {
   mutex.unlock();
 }
 
+//===========================================================================
+
+Metronome::Metronome(double ticIntervalSec) {
+  reset(ticIntervalSec);
+}
+
+void Metronome::reset(double ticIntervalSec) {
+  tics=0;
+  ticInterval = ticIntervalSec;
+  ticTime = std::chrono::high_resolution_clock::now();
+}
+
+void Metronome::waitForTic() {
+  ticTime += std::chrono::duration<double>(ticInterval);
+  std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::duration<double>> now = std::chrono::high_resolution_clock::now();
+  if(ticTime>now) {
+    std::this_thread::sleep_until(ticTime);
+  } else {
+    ticTime = now;
+  }
+  tics++;
+}
+
+double Metronome::getTimeSinceTic() {
+  auto now = std::chrono::high_resolution_clock::now();
+  return std::chrono::duration<double>(ticTime-now).count();
+}
 
 //===========================================================================
 //

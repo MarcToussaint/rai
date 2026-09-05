@@ -25,294 +25,43 @@
 #endif
 #include <errno.h>
 
-//===========================================================================
-
-template<> const char* rai::Enum<ActStatus>::names []= {
-  "init", "running", "done", "converged", "stalled", "true", "false", "kill", nullptr
-};
+namespace rai {
 
 //===========================================================================
-//
-// Access RWLock
-//
-
-RWLock::RWLock() {
-  rwCount=0;
-}
-
-RWLock::~RWLock() {
-  if(rwCount) {
-    cout << "Destroying locked RWLock" <<endl;
-    exit(1);
-  }
-}
-
-void RWLock::readLock() {
-  rwLock.lock_shared();
-  rwCountMutex.lock(RAI_HERE);
-  rwCount++;
-  rwCountMutex.unlock();
-}
-
-void RWLock::writeLock() {
-  rwLock.lock();
-  rwCountMutex.lock(RAI_HERE);
-  rwCount=-1;
-  rwCountMutex.unlock();
-}
-
-void RWLock::unlock() {
-  rwCountMutex.lock(RAI_HERE);
-  if(rwCount>0) {
-    rwCount--;
-    rwLock.unlock_shared();
-  } else {
-    rwCount=0;
-    rwLock.unlock();
-  }
-  rwCountMutex.unlock();
-}
-
-bool RWLock::isLocked() {
-  return rwCount!=0;
-}
-
-bool RWLock::isWriteLocked() {
-  return rwCount<0;
-}
-
-//===========================================================================
-//
-// Signaler
-//
-
-Signaler::Signaler(int initialStatus)
-  : status(initialStatus) {
-}
-
-Signaler::~Signaler() {
-}
-
-void Signaler::setStatus(int i) {
-  auto lock = statusMutex(RAI_HERE);
-  status=i;
-  broadcast();
-}
-
-int Signaler::incrementStatus(int delta) {
-  auto lock = statusMutex(RAI_HERE);
-  status+=delta;
-  broadcast();
-  return status;
-}
-
-void Signaler::broadcast() {
-  cond.notify_all();
-}
-
-void Event::listenTo(Var_base& v) {
-  auto lock = statusMutex(RAI_HERE);
-  v.readAccess();
-  variables.append(&v);
-  v.callbacks.append(new Callback<void(Var_base*)>(this, std::bind(&Event::callback, this, std::placeholders::_1)));
-  v.deAccess();
-}
-
-void Event::stopListenTo(Var_base& v) {
-  v.readAccess();
-  auto lock = statusMutex(RAI_HERE);
-  int i=variables.findValue(&v);
-  CHECK_GE(i, 0, "something's wrong");
-  variables.remove(i);
-  v.callbacks.removeCallback(this);
-  v.deAccess();
-}
-
-void Event::stopListening() {
-  while(variables.N) stopListenTo(*variables.elem(-1));
-}
-
-void Event::callback(Var_base* v) {
-  int i = variables.findValue(v);
-  CHECK_GE(i, 0, "signaler " <<v <<" was not registered with this event!");
-  if(eventFct) {
-    int newEventStatus = eventFct(variables, i);
-    //  cout <<"event callback: BOOL=" <<eventStatus <<' ' <<s <<' ' <<status <<" statuses=" <<statuses <<endl;
-    setStatus(newEventStatus);
-  } else { //we don't have an eventFct, just increment value
-    incrementStatus();
-  }
-}
-
-Event::Event(const rai::Array<Var_base*>& _variables, const EventFunction& _eventFct, int initialState)
-  : Signaler(initialState), eventFct(_eventFct) {
-  for(Var_base* v:_variables) listenTo(*v);
-}
-
-Event::~Event() {
-  stopListening();
-}
-
-void Signaler::statusLock() {
-  statusMutex.lock(RAI_HERE);
-}
-
-void Signaler::statusUnlock() {
-  statusMutex.unlock();
-}
-
-int Signaler::getStatus(rai::Mutex::Token* userHasLocked) const {
-  rai::Mutex* m = (rai::Mutex*)&statusMutex; //sorry: to allow for 'const' access
-  if(!userHasLocked) m->lock(RAI_HERE); else CHECK_EQ(m->state, getpid(), "user must have locked before calling this!");
-  int i=status;
-  if(!userHasLocked) m->unlock();
-  return i;
-}
-
-bool Signaler::waitForSignal(rai::Mutex::Token* userHasLocked, double timeout) {
-  bool ret = true;
-  if(userHasLocked) {
-    if(timeout<0.) {
-      cond.wait(*userHasLocked);
-    } else {
-      ret = (cond.wait_for(*userHasLocked, std::chrono::duration<double>(timeout)) == std::cv_status::no_timeout);
-    }
-  } else {
-    auto lk = statusMutex(RAI_HERE);
-    if(timeout<0.) {
-      cond.wait(lk);
-    } else {
-      ret = (cond.wait_for(lk, std::chrono::duration<double>(timeout)) == std::cv_status::no_timeout);
-    }
-  }
-  return ret;
-}
-
-bool Signaler::waitForEvent(std::function<bool()> f, rai::Mutex::Token* userHasLocked) {
-  if(userHasLocked) {
-    cond.wait(*userHasLocked, f);
-  } else {
-    auto lk = statusMutex(RAI_HERE);
-    cond.wait(lk, f);
-  }
-  return true;
-
-}
-
-bool Signaler::waitForStatusEq(int i, rai::Mutex::Token* userHasLocked, double timeout) {
-  bool ret = true;
-  if(userHasLocked) {
-    while(status!=i) ret = waitForSignal(userHasLocked, timeout);
-  } else {
-    auto lk = statusMutex(RAI_HERE);
-    while(status!=i) ret = waitForSignal(&lk, timeout);
-  }
-  return ret;
-}
-
-int Signaler::waitForStatusNotEq(int i, rai::Mutex::Token* userHasLocked, double timeout) {
-  if(userHasLocked) {
-    while(status==i) waitForSignal(userHasLocked, timeout);
-  } else {
-    auto lk = statusMutex(RAI_HERE);
-    while(status==i) waitForSignal(&lk, timeout);
-  }
-  return status;
-}
-
-int Signaler::waitForStatusGreaterThan(int i, rai::Mutex::Token* userHasLocked, double timeout) {
-  if(userHasLocked) {
-    while(status<=i) waitForSignal(userHasLocked, timeout);
-  } else {
-    auto lk = statusMutex(RAI_HERE);
-    while(status<=i) waitForSignal(&lk, timeout);
-  }
-  return status;
-}
-
-int Signaler::waitForStatusSmallerThan(int i, rai::Mutex::Token* userHasLocked, double timeout) {
-  if(userHasLocked) {
-    while(status>=i) waitForSignal(userHasLocked, timeout);
-  } else {
-    auto lk = statusMutex(RAI_HERE);
-    while(status>=i) waitForSignal(&lk, timeout);
-  }
-  return status;
-}
-
-//===========================================================================
-//
-// VariableBase
-//
-
-Var_base::Var_base(const char* _name) : name(_name) {
-}
-
-Var_base::~Var_base() {
-}
 
 void Var_base::addCallback(const std::function<void (Var_base*)>& call, const void* callbackID) {
   callbacks.append(new Callback<void(Var_base*)>(callbackID, call));
 }
 
-int Var_base::readAccess() {
-  rwlock.readLock();
+int Var_base::read_lock() {
+  rwlock.lock_shared();
   return revision;
 }
 
-int Var_base::writeAccess() {
-  rwlock.writeLock();
-  write_time = rai::clockTime();
+int Var_base::write_lock() {
+  rwlock.lock();
+  isWriteLocked=true;
+  write_time = clockTime();
   return revision+1;
 }
 
-int Var_base::deAccess() {
-  int i;
-  if(rwlock.rwCount == -1) { //log a revision after write access
-    i = revision++;
-    for(auto* c:callbacks) c->call()(this);
-  } else {
-    i = revision;
-  }
+int Var_base::read_unlock() {
+  int i = revision;
+  CHECK(!isWriteLocked, "");
+  rwlock.unlock_shared();
+  return i;
+}
+
+int Var_base::write_unlock() {
+  int i = revision++; //before the callbacks and broadcasts, so that they now about the new revision
+  for(auto* c:callbacks) c->call()(this);
+  cond.notify_all();
+  isWriteLocked = false;
   rwlock.unlock();
   return i;
 }
 
 //===========================================================================
-//
-// Metronome
-//
-
-Metronome::Metronome(double ticIntervalSec) {
-  reset(ticIntervalSec);
-}
-
-void Metronome::reset(double ticIntervalSec) {
-  tics=0;
-  ticInterval = ticIntervalSec;
-  ticTime = std::chrono::high_resolution_clock::now();
-}
-
-void Metronome::waitForTic() {
-  ticTime += std::chrono::duration<double>(ticInterval);
-  std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::duration<double>> now = std::chrono::high_resolution_clock::now();
-  if(ticTime>now) {
-    std::this_thread::sleep_until(ticTime);
-  } else {
-    ticTime = now;
-  }
-  tics++;
-}
-
-double Metronome::getTimeSinceTic() {
-  auto now = std::chrono::high_resolution_clock::now();
-  return std::chrono::duration<double>(ticTime-now).count();
-}
-
-//===========================================================================
-//
-// CycleTimer
-//
 
 void updateTimeIndicators(uint i, arr& mean, arr& max, const CycleTimer::timepoint& now, const CycleTimer::timepoint& last, uint step) {
   double dt = (now-last).count();
@@ -338,30 +87,27 @@ void CycleTimer::reset() {
 }
 
 void CycleTimer::tic(uint i=0) {
-    now = std::chrono::high_resolution_clock::now();
-    updateTimeIndicators(i, mean, max, now, (i?lastTime:lastZero), steps);
-    lastTime=now;
-    if(!i){
-        lastZero=now;
-        steps++;
-    }
+  now = std::chrono::high_resolution_clock::now();
+  updateTimeIndicators(i, mean, max, now, (i?lastTime:lastZero), steps);
+  lastTime=now;
+  if(!i){
+    lastZero=now;
+    steps++;
+  }
 }
 
-rai::String CycleTimer::report() {
-    str s;
-    if(!steps){ s <<"cycle report: no steps"; return s; }
-    s <<std::setprecision(3);
-    s <<"cycle report [" <<steps <<"]: " <<mean(0) <<' ' <<1./mean(0) <<"Hz (max:" <<max(0) <<')';
-    for(uint i=1;i<mean.N;i++){
-        s <<" tic" <<i <<": " <<mean(i) <<' ' <<mean(i)/mean(0)*100. <<"% (max:" <<max(i) <<')';
-    }
-    return s;
+String CycleTimer::report() {
+  str s;
+  if(!steps){ s <<"cycle report: no steps"; return s; }
+  s <<std::setprecision(3);
+  s <<"cycle report [" <<steps <<"]: " <<mean(0) <<' ' <<1./mean(0) <<"Hz (max:" <<max(0) <<')';
+  for(uint i=1;i<mean.N;i++){
+    s <<" tic" <<i <<": " <<mean(i) <<' ' <<mean(i)/mean(0)*100. <<"% (max:" <<max(i) <<')';
+  }
+  return s;
 }
 
-//=============================================
-//
-// Thread
-//
+//===========================================================================
 
 #ifdef RAI_QThread
 class sThread:QThread {
@@ -378,7 +124,7 @@ class sThread:QThread {
 #endif
 
 Thread::Thread(const char* _name, double beatIntervalSec)
-  : event(tsIsClosed),
+  : status(tsIsClosed),
     name(_name),
     tid(0),
     step_count(0),
@@ -396,51 +142,45 @@ Thread::~Thread() {
   }
 }
 
-void Thread::threadOpen(bool wait, int priority) {
+void Thread::threadOpen(bool waitForOpened) {
   {
-    auto lock = event.statusMutex(RAI_HERE);
+    auto lock = status.set();
     if(thread) return; //this is already open -- or has just beend opened (parallel call to threadOpen)
     thread = std::make_unique<std::thread>(&Thread::main, this);
 #ifndef RAI_MSVC
     if(name) pthread_setname_np(thread->native_handle(), name);
 #endif
-    event.status=tsToOpen;
+    status.data=tsToOpen;
   }
 
-  if(wait) event.waitForStatusNotEq(tsToOpen);
+  if(waitForOpened) status.waitForNotEq(tsToOpen);
 
   if(metronome.ticInterval>0.) {
     if(metronome.ticInterval>1e-10) {
-      event.setStatus(tsBEATING);
+      status.setValue(tsBEATING);
     } else {
-      event.setStatus(tsLOOPING);
+      status.setValue(tsLOOPING);
     }
   }
 }
 
+void Thread::threadStep() {
+  threadOpen();
+  status.setValue(tsToStep);
+}
+
 void Thread::threadClose(double timeoutForce) {
-  event.stopListening();
-  event.setStatus(tsToClose);
-  if(!thread) { event.setStatus(tsIsClosed); return; }
-  for(;;) {
-    bool ended = event.waitForStatusEq(tsIsClosed, 0, .2);
-    if(ended) break;
-    LOG(-1) <<"timeout to end Thread::main of '" <<name <<"'";
-//    if(timeoutForce>0.){
-//      ended = waitForStatusEq(tsEndOfMain, false, timeoutForce);
-//      if(!ended){
-//        threadCancel();
-//        return;
-//      }
-//    }
-  }
+  stopListening();
+  status.setValue(tsToClose);
+  if(!thread) { status.setValue(tsIsClosed); return; }
+  status.waitForEq(tsIsClosed);
   thread->join();
   thread.reset();
 }
 
 void Thread::threadCancel() {
-  event.stopListening();
-  event.setStatus(tsToClose);
+  stopListening();
+  status.setValue(tsToClose);
   if(!thread) return;
 #ifndef RAI_MSVC
   int rc;
@@ -451,80 +191,78 @@ void Thread::threadCancel() {
   stepMutex.state=-1; //forced destroy in the destructor
 }
 
-void Thread::threadStep() {
-  threadOpen();
-  event.setStatus(tsToStep);
-}
-
-bool Thread::isIdle() {
-  return event.getStatus()==tsIDLE;
-}
-
-bool Thread::isClosed() {
-  return !thread; //getStatus()==tsIsClosed;
-}
-
-void Thread::waitForOpened() {
-  event.waitForStatusNotEq(tsIsClosed);
-  event.waitForStatusNotEq(tsToOpen);
-}
-
-void Thread::waitForIdle() {
-  event.waitForStatusEq(tsIDLE);
-}
-
 void Thread::threadLoop(bool waitForOpened) {
   threadOpen(waitForOpened);
   if(metronome.ticInterval>1e-10) {
-    event.setStatus(tsBEATING);
+    status.setValue(tsBEATING);
   } else {
-    event.setStatus(tsLOOPING);
+    status.setValue(tsLOOPING);
   }
 }
 
 void Thread::threadStop(bool wait) {
   if(thread) {
-    event.setStatus(tsIDLE);
+    status.setValue(tsIDLE);
     if(wait) waitForIdle();
   }
 }
 
+void Thread::listenTo(Var_base& v) {
+  auto lock = status.set();
+  v.rwlock.lock();
+  variables.append(&v);
+  v.callbacks.append(new Callback<void(Var_base*)>(this, std::bind(&Thread::listeningCallback, this, std::placeholders::_1)));
+  v.rwlock.unlock();
+}
+
+void Thread::stopListenTo(Var_base& v) {
+  v.rwlock.lock();
+  auto lock = status.set();
+  int i=variables.findValue(&v);
+  CHECK_GE(i, 0, "something's wrong");
+  variables.remove(i);
+  v.callbacks.removeCallback(this);
+  v.rwlock.unlock();
+}
+
+void Thread::stopListening() {
+  while(variables.N) stopListenTo(*variables.elem(-1));
+}
+
+void Thread::listeningCallback(Var_base* v) {
+  int i = variables.findValue(v);
+  CHECK_GE(i, 0, "signaler " <<v <<" was not registered with this event!");
+  status.incrementStatus();
+}
+
 void Thread::main() {
   tid = getpid();
-//  if(verbose>0) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
-  //http://linux.die.net/man/3/setpriority
-  //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
-  //if(Thread::threadPriority) setNice(Thread::threadPriority);
 
   {
     auto mux = stepMutex(RAI_HERE);
     try {
       open(); //virtual open routine
     } catch(const std::exception& ex) {
-      event.setStatus(tsFAILURE);
+      status.setValue(tsFAILURE);
       cout <<"*** open() of Thread'" <<name <<"'failed: " <<ex.what() <<" -- closing it again" <<endl;
     } catch(...) {
-      event.setStatus(tsFAILURE);
+      status.setValue(tsFAILURE);
       cout <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
       return;
     }
   }
 
-  event.statusLock();
-  if(event.status==tsToOpen) {
-    event.status=tsIDLE;
-    event.broadcast();
-  }
-  //if not =tsOPENING anymore -> the state was set on looping or beating already
-  event.statusUnlock();
+  status.write_lock();
+  if(status.data==tsToOpen) status.data=tsIDLE;
+  status.write_unlock();
 
   timer.reset();
   for(;;) {
-    //-- wait for a non-idle state
-    int s = event.waitForStatusNotEq(tsIDLE);
+    //-- wait for a non-idle status
+    int s = status.waitForNotEq(tsIDLE);
     if(s<=tsToClose) break;
     if(s==tsBEATING) metronome.waitForTic();
-    if(s>0) event.setStatus(1); //step command -> reset to step
+    if(s>0) status.setValue(1);  //multiple single step requests -> single step
 
     //-- make a step
     timer.tic(0);
@@ -534,66 +272,20 @@ void Thread::main() {
     step_count++;
     // timer.tic(1);
 
-    if(s>0) event.incrementStatus(-1); //step command -> reset to idle
+    if(s>0) status.setValue(tsIDLE); //single step -> reset to idle
   };
+
+  stopListening();
 
   stepMutex.lock(RAI_HERE);
   close(); //virtual close routine
   stepMutex.unlock();
-//  if(verbose>0) cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
 
-  event.setStatus(tsIsClosed);
+  status.setValue(tsIsClosed);
 }
 
-//===========================================================================
-//
-// controlling threads
-//
-
-Signaler _moduleShutdown;
-Signaler* moduleShutdown() { return &_moduleShutdown; }
-
-void signalhandler(int s) {
-  int calls = moduleShutdown()->incrementStatus();
-  cout <<"\n*** System received signal " <<s <<" -- count=" <<calls <<endl;
-  if(calls==1) {
-    LOG(0) <<" -- waiting for main loop to break on moduleShutdown()->getStatus()";
-  }
-  if(calls==2) {
-    LOG(0) <<" -- smoothly closing modules directly";
-//    threadCloseModules(); //might lead to a hangup of the main loop, but processes should close
-    LOG(0) <<" -- DONE";
-  }
-  if(calls==3) {
-    LOG(0) <<" -- cancelling threads to force closing";
-//    threadCancelModules();
-    LOG(0) <<" -- DONE";
-  }
-  if(calls>3) {
-    LOG(3) <<" ** moduleShutdown failed - hard exit!";
-    exit(1);
-  }
-}
-
-//===========================================================================
-//
-// Utils
-//
-
-int _allPositive(const VarL& signalers, int whoChanged) {
-  bool allPositive=true;
-  for(Var_base* s:signalers) {
-    Var_data<ActStatus>* a = dynamic_cast<Var_data<ActStatus>*>(s);
-    CHECK(a, "this is not an ActStatus!!");
-    if(a->rwlock.isLocked() && a->data<=0) allPositive=false;
-    if(!a->rwlock.isLocked() && a->data<=0) allPositive=false;
-  }
-  if(allPositive) return AS_true;
-  return AS_false;
-}
+} //namespace
 
 RUN_ON_INIT_BEGIN(thread)
-rai::Array<shared_ptr<Var_base>*>::memMove=true;
-ThreadL::memMove=true;
-SignalerL::memMove=true;
+rai::Array<shared_ptr<rai::Var_base>*>::memMove=true;
 RUN_ON_INIT_END(thread)

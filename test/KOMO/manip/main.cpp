@@ -276,7 +276,7 @@ void testMobileGrasp(){
 
     // execute in sim
     double tau=.01;
-    Metronome met(tau);
+    rai::Metronome met(tau);
     rai::Simulation sim(C, rai::Simulation::_physx, 0);
     sim.setSplineRef(motion1->path, {1.}, false);
 

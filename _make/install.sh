@@ -99,6 +99,13 @@ case ${lib} in
 	make -C build install
 	;;
 
+    trossen_arm)
+	if [ -z "$version" ]; then version="v1.10.0"; fi
+	git clone --single-branch -b ${version} --recurse-submodules https://github.com/TrossenRobotics/trossen_arm.git
+	cmake -DCMAKE_INSTALL_PREFIX=${pre} ${lib} -B ${lib}/build
+	make -C ${lib}/build install
+	;;
+
     physx)
 	if [ -z "$version" ]; then version="105.1-physx-5.3.1"; fi # release/104.2 106.1-physx-5.4.2
         git clone --single-branch -b ${version} https://github.com/NVIDIA-Omniverse/PhysX.git

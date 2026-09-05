@@ -11,7 +11,7 @@ void test(){
   OpenGL gl;
   uint i=0, key=0;
 
-  CycleTimer ct;
+  rai::CycleTimer ct;
 
   for(;;){
     ct.cycleStart();

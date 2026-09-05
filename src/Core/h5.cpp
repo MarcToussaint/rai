@@ -153,9 +153,12 @@ void H5_Reader::readAll() {
 
 #else
 
+namespace rai {
+
 H5_Writer::H5_Writer(const char* filename) { NICO }
 void H5_Writer::addGroup(const char* group) { NICO }
-template<class T> void H5_Writer::add(const char* name, const Array<T>& x) { NICO }
+template<class T> void H5_Writer::write(const char* name, const Array<T>& x) { NICO }
+template<class T> void H5_Writer::writeA(const char* name, const Array<Array<T> >& x){ NICO }
 H5_Reader::H5_Reader(const char* filename) { NICO }
 template<class T> Array<T> H5_Reader::read(const char* name, bool ifExists) { NICO }
 bool H5_Reader::exists(const char* name) { NICO }

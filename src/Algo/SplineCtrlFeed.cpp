@@ -12,6 +12,27 @@ namespace rai {
 
 //===========================================================================
 
+void ConstCtrlReference::getReference(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, const arr& q_real, const arr& qDot_real, double ctrlTime){
+  {
+    arr pos = position_ref.get()();
+    if(pos.N) q_ref = pos;
+    else q_ref.clear(); // = q_real;  //->no position gains at all
+  }
+  {
+    arr vel = velocity_ref.get()();
+    if(vel.N==1){
+      double a = vel.scalar();
+      CHECK(a>=0. && a<=1., "");
+      qDot_ref = a * qDot_real; //[0] -> zero vel reference -> damping
+    }
+    else if(vel.N) qDot_ref = vel;
+    else qDot_ref.clear(); //.clear();  //[] -> no damping at all! (and also no friction compensation based on reference qDot)
+  }
+  qDDot_ref.clear(); //[] -> no acc at all
+}
+
+//===========================================================================
+
 void BSplineCtrlReference::initialize(const arr& q_real, const arr& qDot_real, double ctrlTime) {
   spline.set()->set(degree, ~q_real, {ctrlTime});
 }

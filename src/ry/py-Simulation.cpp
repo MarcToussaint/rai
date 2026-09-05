@@ -91,15 +91,11 @@ void init_Simulation(pybind11::module& m) {
                                 Array2numpy<float>(depth));
   })
 
-  .def("addSensor",  &rai::Simulation::addSensor,
-       "add sensor based on a frame name; frame specs need to provide parameters",
+  .def("setCamera",  &rai::Simulation::setCamera,
+       "select the camera based on a frame name; frame specs need to provide parameters",
        pybind11::arg("sensorName")
       )
   .def("setSimulateDepthNoise", &rai::Simulation::setSimulateDepthNoise, "specify (boolean) on whether to simulate noise", pybind11::arg("_setSimulateDepthNoise"))
-  .def("selectSensor",  &rai::Simulation::selectSensor,
-       "",
-       pybind11::arg("sensorName")
-      )
 
   .def("getState", &rai::Simulation::getState, "returns struct with 5 fields (time, q, qDot, freePos, freeVel)")
 

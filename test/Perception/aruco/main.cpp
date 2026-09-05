@@ -45,7 +45,7 @@ void test(){
     auto rgb = V.getRgb();
 
 
-    auto finder = rai::FindArucos();
+    auto finder = rai::ArucoFinder();
     finder.find(rgb);
     if(finder.rgb_annotated.N){
       gl.watchImage(finder.rgb_annotated, false);

@@ -46,7 +46,7 @@ void testPushes(){
   rai::Simulation S(C, S._physx, 2);
 
   double tau=.01;
-  Metronome tic(tau);
+  rai::Metronome tic(tau);
   byteA rgb;
   floatA depth;
 
@@ -102,7 +102,7 @@ void testGrasp(){
   byteA rgb;
   floatA depth;
   double tau=.01;
-  Metronome tic(tau);
+  rai::Metronome tic(tau);
 
   for(uint t=0;;t++){
     tic.waitForTic();
@@ -220,12 +220,12 @@ void testRndScene(){
   arr q0 = C.getJointState();
 
   rai::Simulation S(C, S._physx, 2);
-  S.addSensor(C.getFrame("camera"));
+  S.setCamera(C.getFrame("camera"));
 
   byteA rgb;
   floatA depth;
   double tau=.01;
-  Metronome tic(tau);
+  rai::Metronome tic(tau);
 
   for(uint t=0;t<300;t++){
     tic.waitForTic();
@@ -292,7 +292,7 @@ void testPcl(){
 
   rai::Simulation S(C, S._physx, 2);
 
-  S.selectSensor(C.getFrame("cameraWrist"));
+  S.setCamera(C.getFrame("cameraWrist"));
 
   byteA img;
   floatA depth;
@@ -356,10 +356,10 @@ void testFriction(){
   arr q0 = C.getJointState();
 
   rai::Simulation S(C, S._physx, 2);
-  S.addSensor(C.getFrame("camera"));
+  S.setCamera(C.getFrame("camera"));
 
   double tau=.01;
-  Metronome tic(tau);
+  rai::Metronome tic(tau);
 
   int ppmCount=0;
   rai::system("mkdir -p z.vid/; rm -f z.vid/*.ppm");
@@ -396,7 +396,7 @@ void testStackOfBlocks(){
   rai::Simulation S(C, S._physx, 2);
 
   double tau=.01;  //jumps a bit for tau=.01
-  Metronome tic(tau);
+  rai::Metronome tic(tau);
 
   for(uint t=0;t<4./tau;t++){
     tic.waitForTic();
@@ -416,7 +416,7 @@ void testCompound(){
   rai::Simulation S(C, S._physx, 2);
 
   double tau=.01;
-  Metronome tic(tau);
+  rai::Metronome tic(tau);
 
   for(uint t=0;t<4./tau;t++){
     tic.waitForTic();
@@ -445,7 +445,7 @@ void testComplexObjects(){
   rai::Simulation S(C, S._physx, 2);
 
   double tau=.01;
-  Metronome tic(tau);
+  rai::Metronome tic(tau);
 
   for(uint t=0;t<4./tau;t++){
     tic.waitForTic();
@@ -472,7 +472,7 @@ void testNonconvexObjects(){
   rai::Simulation S(C, S._physx, 4);
 
   double tau=.01;
-  Metronome tic(tau);
+  rai::Metronome tic(tau);
 
   for(uint t=0;t<4./tau;t++){
     tic.waitForTic();
@@ -497,7 +497,7 @@ void testMotors(){
 //  rai::wait();
 
   double tau=.01;
-  Metronome tic(tau);
+  rai::Metronome tic(tau);
 
   rai::system("mkdir -p z.vid/; rm -f z.vid/*.ppm");
 
@@ -553,7 +553,7 @@ void testPassive(const char* filename, bool hold=false){
 //  rai::wait();
 
   double tau=.001;
-  Metronome tic(1.*tau);
+  rai::Metronome tic(1.*tau);
 
   for(double t=0.;t<4.;t+=tau){
     tic.waitForTic();
@@ -581,7 +581,7 @@ void testSplineMode(){
 
   double tau = .01;
   rai::Simulation S(C, S._physx, 2);
-  Metronome tic(tau);
+  rai::Metronome tic(tau);
 
   //generate random waypoints
   uint T = 10;
@@ -628,7 +628,7 @@ void testResetState(){
   double tau = .01;
   rai::Simulation S(C, S._physx, 4);
   rai::Simulation::State X = S.getState();
-  Metronome tic(tau);
+  rai::Metronome tic(tau);
   for(int t=0;t<2./tau;t++){
     tic.waitForTic();
     S.step({-10.}, tau, S._velocity);
