@@ -160,8 +160,8 @@ static const int successor[16][4] = {
 
 #endif /* CONSTRUCT_TABLES */
 
-static REAL delta_values[TWICE_TWO_TO_DIM][DIM_PLUS_ONE];
-static REAL dot_products[DIM_PLUS_ONE][DIM_PLUS_ONE];
+// static REAL delta_values[TWICE_TWO_TO_DIM][DIM_PLUS_ONE];
+// static REAL dot_products[DIM_PLUS_ONE][DIM_PLUS_ONE];
 
 #ifdef CONSTRUCT_TABLES
 static void initialise_simplex_distance( void);
@@ -174,11 +174,11 @@ static VertexID support_simple( Object obj,
 static VertexID support_hill_climbing( Object obj,
 			       VertexID, REAL *, REAL *);
 
-static int default_distance( struct simplex_point * simplex);
-static void backup_distance( struct simplex_point * simplex);
-static void reset_simplex( int subset, struct simplex_point * simplex);
+static int default_distance(struct simplex_point * simplex, REAL delta[], REAL delta_values[][DIM_PLUS_ONE]);
+static void backup_distance(struct simplex_point * simplex, REAL delta[], REAL delta_values[][DIM_PLUS_ONE], REAL dot_products[][DIM_PLUS_ONE]);
+static void reset_simplex(int subset, struct simplex_point * simplex, REAL delta[], REAL delta_values[][DIM_PLUS_ONE]);
 
-static void compute_subterms( struct simplex_point * s);
+static void compute_subterms(struct simplex_point * s, REAL delta_values[][DIM_PLUS_ONE], REAL dot_products[][DIM_PLUS_ONE]);
 static void compute_point( REAL pt[DIM], int len,
 		   REAL (* vertices)[DIM], REAL *lambdas);
 static void add_simplex_vertex( struct simplex_point * s, int pos,
@@ -300,6 +300,10 @@ REAL gjk_distance(
    struct simplex_point * simplex, int use_seed
    ) {
 
+  REAL delta_values[TWICE_TWO_TO_DIM][DIM_PLUS_ONE];
+  REAL dot_products[DIM_PLUS_ONE][DIM_PLUS_ONE];
+  REAL delta[TWICE_TWO_TO_DIM];
+
    VertexID v, p, maxp, minp;
    REAL minus_minv, maxv, sqrd, g_val;
    REAL displacementv[DIM], reverse_displacementv[DIM];
@@ -379,12 +383,12 @@ REAL gjk_distance(
        simplex->lambdas[0] = ONE;
      }
      else { /* normal case */
-       compute_subterms( simplex);
+       compute_subterms( simplex, delta_values, dot_products);
        if ( use_default ) { 
-	 use_default = default_distance( simplex);
+         use_default = default_distance( simplex, delta, delta_values);
        }
        if ( !use_default ) {
-	 backup_distance( simplex);
+         backup_distance( simplex, delta, delta_values, dot_products);
        }
      }
 
@@ -523,12 +527,12 @@ int gjk_extract_point( struct simplex_point *simp,
   return 1;
 }
 
-static REAL delta[TWICE_TWO_TO_DIM];
+// static REAL delta[TWICE_TWO_TO_DIM];
 
 /* The simplex_distance routine requires the computation of a number of
    delta terms.  These are computed here.
  */
-static void compute_subterms( struct simplex_point * simp) {
+static void compute_subterms( struct simplex_point * simp, REAL delta_values[][DIM_PLUS_ONE], REAL dot_products[][DIM_PLUS_ONE]) {
 
    int i, j, ielt, jelt, s, jsubset, size = simp->npts;
    REAL sum, c_space_points[DIM_PLUS_ONE][DIM];
@@ -542,7 +546,7 @@ static void compute_subterms( struct simplex_point * simp) {
    /* compute the dot product terms */
    for ( i=0 ; i<size ; i++ )
       for ( j=i ; j<size ; j++ )
-         prod( i, j) = prod( j, i) =
+          prod( i, j) = prod( j, i) =
             OTHER_DOT_PRODUCT( c_space_points[i], c_space_points[j]);
 
    /* now compute all the delta terms */
@@ -594,7 +598,7 @@ static void compute_subterms( struct simplex_point * simp) {
  * number of non-zero values of lambda. 
  */
  
-static int default_distance( struct simplex_point * simplex) {
+static int default_distance( struct simplex_point * simplex, REAL delta[], REAL delta_values[][DIM_PLUS_ONE]) {
 
    int s, j, k, ok=0, size;
 
@@ -653,7 +657,7 @@ static int default_distance( struct simplex_point * simplex) {
    }
 
    if ( ok ) {
-     reset_simplex( s, simplex);
+     reset_simplex( s, simplex, delta, delta_values);
      return 1;
    }
    else
@@ -664,7 +668,7 @@ static int default_distance( struct simplex_point * simplex) {
    Note that it requires that the delta[s] entries have been
    computed for all viable s within simplex_distance.
    */
-static void backup_distance( struct simplex_point * simplex) {
+static void backup_distance( struct simplex_point * simplex, REAL delta[], REAL delta_values[][DIM_PLUS_ONE], REAL dot_products[][DIM_PLUS_ONE]) {
 
    int s, i, j, k, bests;
    int size = simplex->npts;
@@ -704,12 +708,12 @@ static void backup_distance( struct simplex_point * simplex) {
          bests = s;
       }
 
-   reset_simplex( bests, simplex);
+   reset_simplex( bests, simplex, delta, delta_values);
 
    return;
 }
 
-static void reset_simplex( int subset, struct simplex_point * simplex) {
+static void reset_simplex( int subset, struct simplex_point * simplex, REAL delta[], REAL delta_values[][DIM_PLUS_ONE]) {
 
   int i, j, oldpos;
 
@@ -1012,17 +1016,17 @@ static void initialise_simplex_distance( void) {
 
 //MT: from gjkdemo.c:
 
-int
-      gjk_num_g_test,     /* how many times the G-test is performed -- the
-                             same as the number of main-loop iterations */
-      gjk_num_simplices,  /* how many times the simplex routine
-                             was called */
-      gjk_num_backups,    /* how many times (if ever!) the GJK backup
-                             procedure was called */
-      gjk_num_dot_products, /* how many dot-product operations are called */
-      gjk_num_support_dp, /* how many dot-product operations are called
-			      whilst executing the support function */
-      gjk_num_other_ops; /* how many other mults and divides are called */
+// int
+//       gjk_num_g_test,     /* how many times the G-test is performed -- the
+//                              same as the number of main-loop iterations */
+//       gjk_num_simplices,  /* how many times the simplex routine
+//                              was called */
+//       gjk_num_backups,    /* how many times (if ever!) the GJK backup
+//                              procedure was called */
+//       gjk_num_dot_products, /* how many dot-product operations are called */
+//       gjk_num_support_dp, /* how many dot-product operations are called
+// 			      whilst executing the support function */
+//       gjk_num_other_ops; /* how many other mults and divides are called */
 
 void apply_trans(  Transform t, REAL * src, REAL * tgt)
 {

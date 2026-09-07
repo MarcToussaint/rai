@@ -45,7 +45,7 @@ struct Mesh {
   rai::Transformation glX; ///< transform (only used for drawing! Otherwise use applyOnPoints)  (optional)
 
   uint _support_vertex=0;
-  bool isArrayFormatted=false;
+  bool isArrayFormatted=false, isCvx=false;
 
   Mesh();
   ~Mesh();

@@ -66,7 +66,7 @@ FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _exclu
   self = new FclInterface_self;
 
   self->convexGeometryData.resize(geometries.N);
-  rai::Array<rai::Mesh> cvx_meshes(geometries.N);
+  rai::Array<shared_ptr<rai::Mesh>> cvx_meshes(geometries.N);
 
   for(long int i=0; i<geometries.N; i++) {
     Shape* shape = geometries(i);
@@ -83,29 +83,33 @@ FclInterface::FclInterface(const Array<Shape*>& geometries, const uintAA& _exclu
       } else {
         CHECK(shape->sscCore().N, "for FCL broadphase, every shape with 'contact' enabled needs a convex core"); // <<shape->frame.name);
         CHECK_EQ(shape->radius(), shape->coll_cvxRadius, "should be equal");
-        rai::Mesh& mesh = cvx_meshes(i);
-        mesh.setSSCvx(shape->sscCore(), shape->coll_cvxRadius*1.05, 1); //make it a little larger... sphere approx
+        CHECK(shape->_mesh && shape->_mesh->T.N, "");
+        shared_ptr<rai::Mesh> mesh = shape->_mesh;
+        cvx_meshes(i) = mesh;
+        CHECK(shape->_mesh->isCvx, "");
+        //alternative(if !isCvx): create a new mesh and then:
+        // mesh->setSSCvx(shape->sscCore(), shape->coll_cvxRadius*1.05, 1); //make it a little larger... sphere approx
+
         // Mesh& mesh_org = shape->mesh();
         // CHECK(!mesh_org.cvxParts.N, "mesh '" <<shape->frame.name <<"' has convex decomposition - not implemented yet in FCL! -- please separate in separate frames")
         // // rai::Mesh& mesh = mesh_org;
         // rai::Mesh& mesh = cvx_mesh(i);
-        // mesh.V = mesh_org.V;
-        // mesh.makeConvexHull();
-        if(!mesh.T.N) continue;
-        mesh.computeTriNormals();
+        // mesh->V = mesh_org.V;
+        // mesh->makeConvexHull();
+        if(!mesh->Tn.N) mesh->computeTriNormals();
         std::shared_ptr<ConvexGeometryData> dat = make_shared<ConvexGeometryData>();
-        dat->plane_dis = mesh.computeTriDistances();
-        copy<int>(dat->polygons, mesh.T);
+        dat->plane_dis = mesh->computeTriDistances();
+        copy<int>(dat->polygons, mesh->T);
         dat->polygons.insColumns(0);
         for(uint i=0; i<dat->polygons.d0; i++) dat->polygons(i, 0) = 3;
 #if FCL_MINOR_VERSION >= 7
-        auto verts = make_shared<std::vector<fcl::Vector3<float>>>(mesh.V.d0);
-        auto faces = make_shared<std::vector<int>>(mesh.T.N);
-        for(uint i=0; i<verts->size(); i++)(*verts)[i] = {(float)mesh.V(i, 0), (float)mesh.V(i, 1), (float)mesh.V(i, 2)};
-        for(uint i=0; i<faces->size(); i++)(*faces)[i] = mesh.T.elem(i);
-        auto model = make_shared<fcl::Convex<float>>(verts, mesh.T.d0, faces, true);
+        auto verts = make_shared<std::vector<fcl::Vector3<float>>>(mesh->V.d0);
+        auto faces = make_shared<std::vector<int>>(mesh->T.N);
+        for(uint i=0; i<verts->size(); i++)(*verts)[i] = {(float)mesh->V(i, 0), (float)mesh->V(i, 1), (float)mesh->V(i, 2)};
+        for(uint i=0; i<faces->size(); i++)(*faces)[i] = mesh->T.elem(i);
+        auto model = make_shared<fcl::Convex<float>>(verts, mesh->T.d0, faces, true);
 #else
-        geom = make_shared<fcl::Convex>((fcl::Vec3f*)mesh.Tn.p, dat->plane_dis.p, mesh.T.d0, (fcl::Vec3f*)mesh.V.p, mesh.V.d0, (int*)dat->polygons.p);
+        geom = make_shared<fcl::Convex>((fcl::Vec3f*)mesh->Tn.p, dat->plane_dis.p, mesh->T.d0, (fcl::Vec3f*)mesh->V.p, mesh->V.d0, (int*)dat->polygons.p);
 #endif
         self->convexGeometryData(i) = dat;
       }

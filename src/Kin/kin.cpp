@@ -72,7 +72,7 @@ struct sConfiguration {
 
   shared_ptr<ConfigurationViewer> viewer;
   //shared_ptr<SwiftInterface> swift;
-  shared_ptr<CollEngine> coal;
+  shared_ptr<CollEngine> coll;
   // shared_ptr<FclInterface> fcl;
   unique_ptr<PhysXInterface> physx;
   unique_ptr<OdeInterface> ode;
@@ -89,7 +89,7 @@ Configuration::~Configuration() {
   //delete OpenGL and the extensions first!
   self->viewer.reset();
   //self->swift.reset();
-  self->coal.reset();
+  self->coll.reset();
   clear();
 }
 
@@ -125,7 +125,7 @@ void Configuration::copy(const Configuration& C, bool referenceCollEngineOnCopy)
 
   //copy fcl reference
   if(referenceCollEngineOnCopy) {
-    self->coal = C.self->coal;
+    self->coll = C.self->coll;
   }
 
   //copy vector state
@@ -1040,7 +1040,7 @@ bool Configuration::check_topSort() const {
 /// clear all frames, forces & proxies
 void Configuration::clear() {
 //  if(self && self->viewer) self->viewer.reset();
-  if(self && self->coal) self->coal.reset();
+  if(self && self->coll) self->coll.reset();
 
   reset_q();
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
@@ -2215,7 +2215,7 @@ void sConfiguration::coll_fclReset() {
 */
 
 std::shared_ptr<CollEngine> Configuration::coll_engine(int verbose) {
-  if(!self->coal) {
+  if(!self->coll) {
     Array<Shape*>::memMove=1;
     uint n = frames.N;
     if(frames.nd==2) n = frames.d1;
@@ -2233,9 +2233,9 @@ std::shared_ptr<CollEngine> Configuration::coll_engine(int verbose) {
         if(verbose>0) LOG(0) <<"  SKIPPING from coal interface: " <<f->name;
       }
     }
-    self->coal = make_shared<CollEngine>(geometries, getCollisionExcludePairIDs());
+    self->coll = make_shared<CollEngine>(geometries, getCollisionExcludePairIDs());
   }
-  return self->coal;
+  return self->coll;
 }
 
 void Configuration::addProxies(const uintA& collisionPairs) {

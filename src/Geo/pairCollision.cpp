@@ -59,8 +59,8 @@ PairCollision_CvxCvx::PairCollision_CvxCvx(const arr& pts1, const arr& pts2,
   //-- generic case
 #ifdef FCLmode
   //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
-  rai::Mesh M1(*mesh1); if(!t1->isZero()) t1->applyOnPointArray(M1);
-  rai::Mesh M2(*mesh2); if(!t2->isZero()) t2->applyOnPointArray(M2);
+  arr M1(pts1); if(!t1.isZero()) t1.applyOnPointArray(M1);
+  arr M2(pts2); if(!t2.isZero()) t2.applyOnPointArray(M2);
 
   libccd(M1, M2, _ccdGJKIntersect);
 #else
@@ -80,8 +80,17 @@ PairCollision_CvxCvx::PairCollision_CvxCvx(const arr& pts1, const arr& pts2,
     libccd(M1, M2, _ccdMPRPenetration);
   }
 #else
-  if(distance<0.) {
+  if(distance<=0.) {
     libccd(M1, M2, _ccdMPRPenetration);
+    if(!p1.N) {
+      LOG(0) <<"horrible!";
+      CHECK(fabs(distance)<1e-10, "");
+      p1 = mean(M1);
+      p2 = mean(M2);
+      normal = p2-p1;
+      normal /= length(normal);
+      p1 = p2 = .5*(p1+p2);
+    }
   }
 #endif
 

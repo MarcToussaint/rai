@@ -84,6 +84,7 @@ void Mesh::clear() {
   if(C.nd==2) C.clear();
   T.clear(); Tn.clear();
   isArrayFormatted=false;
+  isCvx=false;
   graph.clear();
 }
 
@@ -611,6 +612,7 @@ void Mesh::makeConvexHull() {
   texCoords.clear();
   _texImg.reset();
   isArrayFormatted=false;
+  isCvx=true;
 #else
   uintA H = getHullIndices(V, T);
   intA Hinv = consts<int>(-1, V.d0);
@@ -1063,12 +1065,6 @@ void Mesh::deleteUnusedVertices() {
   V.resizeCopy(Nused, 3);
 }
 
-arr* COMP_V;
-bool COMP(uint i, uint j) {
-  bool r=(*COMP_V)[i]<(*COMP_V)[j];
-  return r;
-}
-
 /** @brief delete all void triangles (with vertex indices (0, 0, 0)) and void
   vertices (not used for triangles or strips) */
 void Mesh::fuseNearVertices(double tol) {
@@ -1082,9 +1078,8 @@ void Mesh::fuseNearVertices(double tol) {
   //cout <<V <<endl;
   //sort vertices lexically
   p.setStraightPerm(V.d0);
-  COMP_V=&V;
   uint* pstop=p.p+p.N;
-  std::sort(p.p, pstop, COMP);
+  std::sort(p.p, pstop, [this](uint i, uint j) { return this->V[i]<this->V[j]; });
   permuteVertices(*this, p);
 
 //  cout <<"permuting.." <<std::flush;
