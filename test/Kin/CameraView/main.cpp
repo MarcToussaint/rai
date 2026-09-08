@@ -70,7 +70,7 @@ void TEST(NoisyDepth){
 
   for(uint t=0;t<20;t++){
     //the same method is now integrated in computeImageAndDepth -- this is only to allow debugging
-    auto& cam = V.newCamera(C["cameraWrist"]);
+    auto& cam = V.setCamera(C["cameraWrist"]);
     V.computeImageAndDepth(image1, depth1);
 
     cam.offset.set(opt->binocular_baseline, .0, .0);
@@ -106,7 +106,7 @@ void TEST(NoisyDepth){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-  // testCameraView();
+  testCameraView();
 
   testNoisyDepth();
 

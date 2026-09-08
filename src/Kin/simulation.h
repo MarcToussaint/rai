@@ -75,8 +75,7 @@ struct Simulation {
   void getImageAndDepth(byteA& image, floatA& depth); ///< use this during stepping
   void getSegmentation(byteA& segmentation);
   CameraView& cameraview(); ///< use this if you want to initialize the sensor, etc
-  rai::CameraView::CameraFrame& addSensor(rai::Frame *f_cam) {  return cameraview().newCamera(f_cam); }
-  rai::CameraView::CameraFrame&  selectSensor(rai::Frame *f_cam) { return cameraview().selectSensor(f_cam); }
+  rai::CameraView::CameraFrame& setCamera(rai::Frame *f_cam) { return cameraview().setCamera(f_cam); }
   void  setSimulateDepthNoise(bool _simulateDepthNoise) { simulateDepthNoise=_simulateDepthNoise; }
   byteA getScreenshot();
 

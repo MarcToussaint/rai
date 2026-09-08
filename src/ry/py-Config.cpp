@@ -344,7 +344,8 @@ To get really precise distances and penetrations use the FS.distance feature wit
       )
 
   .def("coll_totalViolation", &rai::Configuration::coll_totalViolation,
-       "returns the sum of all penetrations (using FCL for broadphase; and low-level GJK/MRP for fine pair-wise distance/penetration computation)")
+      "returns the sum of all penetrations (using FCL for broadphase; and low-level GJK/MRP for fine pair-wise distance/penetration computation)"
+      "", pybind11::arg("return_maximal") = false)
 
   //.def("getCollisionFree", &rai::Configuration::getCollisionFree,
   //     "returns if the configuration is collision free (binary collision check, using FCL only; collidable objects need to have contact flag)")
@@ -434,7 +435,7 @@ reloads, displays and animates the configuration whenever the file is changed"
            pybind11::arg("config"),
            pybind11::arg("offscreen") = true)
 
-      .def("setCamera", &rai::CameraView::selectSensor, "select a camera, typically a frame that has camera info attributes",
+      .def("setCamera", &rai::CameraView::setCamera, "select a camera, typically a frame that has camera info attributes",
            pybind11::arg("cameraFrameName"))
 
   .def("computeImageAndDepth", [](rai::CameraView& self, const rai::Configuration& C, bool simulateDepthNoise, bool visualsOnly) {

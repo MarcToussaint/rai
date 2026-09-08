@@ -22,7 +22,7 @@ CameraView::CameraView(const Configuration& _C, bool _offscreen) {
   gl->add(this);
 }
 
-CameraView::CameraFrame& CameraView::newCamera(Frame* frame, uint width, uint height, double focalLength, const arr& fxycxy, double heightAngle, double heightAbs, const arr& zRange, const char* backgroundImageFile) {
+CameraView::CameraFrame& CameraView::setCameraExplicit(Frame* frame, uint width, uint height, double focalLength, const arr& fxycxy, double heightAngle, double heightAbs, const arr& zRange, const char* backgroundImageFile) {
   currentCamera = make_shared<CameraFrame>(*frame);
   cameras.append(currentCamera);
   Camera& cam = currentCamera->cam;
@@ -40,33 +40,14 @@ CameraView::CameraFrame& CameraView::newCamera(Frame* frame, uint width, uint he
   return *currentCamera;
 }
 
-CameraView::CameraFrame& CameraView::newCamera(Frame* frame) {
-  CHECK(frame, "frame is not defined");
-
-  double width=400., height=200.;
-  double focalLength=-1., heightAngle=-1.;
-  double heightAbs=-1.;
-  arr zRange = {.1, 10.};
-  arr fxycxy;
-
-  CHECK(frame->ats, "");
-  frame->ats->get<double>(focalLength, "focalLength");
-  frame->ats->get<double>(heightAngle, "heightAngle");
-  frame->ats->get<double>(heightAbs, "heightAbs");
-  frame->ats->get<arr>(zRange, "zRange");
-  frame->ats->get<double>(width, "width");
-  frame->ats->get<double>(height, "height");
-  frame->ats->get<arr>(fxycxy, "fxycxy");
-
-  return newCamera(frame, width, height, focalLength, fxycxy, heightAngle, heightAbs, zRange);
-}
-
-CameraView::CameraFrame& CameraView::selectSensor(Frame *frame) {
+CameraView::CameraFrame& CameraView::setCamera(Frame *frame) {
   CHECK(frame, "you need to specify a frame, nullptr not allowed");
   bool found=false;
   for(shared_ptr<CameraFrame>& c:cameras) if(&c->frame==frame) { currentCamera=c; found=true; break; }
   if(!found) {
-    return newCamera(frame);
+    currentCamera = make_shared<CameraFrame>(*frame);
+    cameras.append(currentCamera);
+    currentCamera->cam = frame->getCameraFromAts();
   }
   gl->resize(currentCamera->cam.width, currentCamera->cam.height);
   return *currentCamera;

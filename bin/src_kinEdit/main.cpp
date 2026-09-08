@@ -124,7 +124,7 @@ int main(int argc,char **argv){
     S.loadTeleopCallbacks();
 
     double tau=.01;
-    Metronome tic(tau);
+    rai::Metronome tic(tau);
     while(!S.teleopCallbacks->stop){
       tic.waitForTic();
       S.step({}, tau, S._position);
