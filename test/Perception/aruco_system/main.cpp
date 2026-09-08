@@ -47,7 +47,7 @@ void test(){
 
     V.updateConfiguration(C);
     for(uint k=0;k<cams.N;k++){
-      V.selectSensor(cams(k));
+      V.setCamera(cams(k));
       V.computeImageAndDepth(rgb, depth);
       D.setCamera(k, V.getFxycxy(), V.currentCamera->cam.X);
 

@@ -3953,7 +3953,7 @@ void Configuration::watchFile(const char* filename) {
         V->updateConfiguration(*this).view(false);
         cout <<V->text <<endl;
       } else if(key=='s') { //simulate
-        rai::Simulation S(*this, S._physx, 1);
+        rai::Simulation S(*this, S._physx, 4);
         // S.loadTeleopCallbacks();
 
         double tau=.01;

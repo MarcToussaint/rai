@@ -40,14 +40,12 @@ int Var_base::read_lock() {
 
 int Var_base::write_lock() {
   rwlock.lock();
-  isWriteLocked=true;
   write_time = clockTime();
   return revision+1;
 }
 
 int Var_base::read_unlock() {
   int i = revision;
-  CHECK(!isWriteLocked, "");
   rwlock.unlock_shared();
   return i;
 }
@@ -56,7 +54,6 @@ int Var_base::write_unlock() {
   int i = revision++; //before the callbacks and broadcasts, so that they now about the new revision
   for(auto* c:callbacks) c->call()(this);
   cond.notify_all();
-  isWriteLocked = false;
   rwlock.unlock();
   return i;
 }
@@ -124,7 +121,7 @@ class sThread:QThread {
 #endif
 
 Thread::Thread(const char* _name, double beatIntervalSec)
-  : state(tsIsClosed),
+  : status(tsIsClosed),
     name(_name),
     tid(0),
     step_count(0),
@@ -144,43 +141,43 @@ Thread::~Thread() {
 
 void Thread::threadOpen(bool waitForOpened) {
   {
-    auto lock = state.set();
+    auto lock = status.set();
     if(thread) return; //this is already open -- or has just beend opened (parallel call to threadOpen)
     thread = std::make_unique<std::thread>(&Thread::main, this);
 #ifndef RAI_MSVC
     if(name) pthread_setname_np(thread->native_handle(), name);
 #endif
-    state.data=tsToOpen;
+    status.data=tsToOpen;
   }
 
-  if(waitForOpened) state.waitForNotEq(tsToOpen);
+  if(waitForOpened) status.waitForNotEq(tsToOpen);
 
   if(metronome.ticInterval>0.) {
     if(metronome.ticInterval>1e-10) {
-      state.setValue(tsBEATING);
+      status.setValue(tsBEATING);
     } else {
-      state.setValue(tsLOOPING);
+      status.setValue(tsLOOPING);
     }
   }
 }
 
 void Thread::threadStep() {
   threadOpen();
-  state.setValue(tsToStep);
+  status.setValue(tsToStep);
 }
 
 void Thread::threadClose(double timeoutForce) {
   stopListening();
-  state.setValue(tsToClose);
-  if(!thread) { state.setValue(tsIsClosed); return; }
-  state.waitForEq(tsIsClosed);
+  status.setValue(tsToClose);
+  if(!thread) { status.setValue(tsIsClosed); return; }
+  status.waitForEq(tsIsClosed);
   thread->join();
   thread.reset();
 }
 
 void Thread::threadCancel() {
   stopListening();
-  state.setValue(tsToClose);
+  status.setValue(tsToClose);
   if(!thread) return;
 #ifndef RAI_MSVC
   int rc;
@@ -188,27 +185,26 @@ void Thread::threadCancel() {
 #endif
   thread->join();
   thread.reset();
-  stepMutex.state=-1; //forced destroy in the destructor
 }
 
 void Thread::threadLoop(bool waitForOpened) {
   threadOpen(waitForOpened);
   if(metronome.ticInterval>1e-10) {
-    state.setValue(tsBEATING);
+    status.setValue(tsBEATING);
   } else {
-    state.setValue(tsLOOPING);
+    status.setValue(tsLOOPING);
   }
 }
 
 void Thread::threadStop(bool wait) {
   if(thread) {
-    state.setValue(tsIDLE);
+    status.setValue(tsIDLE);
     if(wait) waitForIdle();
   }
 }
 
 void Thread::listenTo(Var_base& v) {
-  auto lock = state.set();
+  auto lock = status.set();
   v.rwlock.lock();
   variables.append(&v);
   v.callbacks.append(new Callback<void(Var_base*)>(this, std::bind(&Thread::listeningCallback, this, std::placeholders::_1)));
@@ -217,7 +213,7 @@ void Thread::listenTo(Var_base& v) {
 
 void Thread::stopListenTo(Var_base& v) {
   v.rwlock.lock();
-  auto lock = state.set();
+  auto lock = status.set();
   int i=variables.findValue(&v);
   CHECK_GE(i, 0, "something's wrong");
   variables.remove(i);
@@ -232,56 +228,51 @@ void Thread::stopListening() {
 void Thread::listeningCallback(Var_base* v) {
   int i = variables.findValue(v);
   CHECK_GE(i, 0, "signaler " <<v <<" was not registered with this event!");
-  state.incrementStatus();
+  status.incrementStatus();
 }
 
 void Thread::main() {
   tid = getpid();
 
   {
-    auto mux = stepMutex(RAI_HERE);
     try {
       open(); //virtual open routine
     } catch(const std::exception& ex) {
-      state.setValue(tsFAILURE);
+      status.setValue(tsFAILURE);
       cout <<"*** open() of Thread'" <<name <<"'failed: " <<ex.what() <<" -- closing it again" <<endl;
     } catch(...) {
-      state.setValue(tsFAILURE);
+      status.setValue(tsFAILURE);
       cout <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
       return;
     }
   }
 
-  state.write_lock();
-  if(state.data==tsToOpen) state.data=tsIDLE;
-  state.write_unlock();
+  status.write_lock();
+  if(status.data==tsToOpen) status.data=tsIDLE;
+  status.write_unlock();
 
   timer.reset();
   for(;;) {
-    //-- wait for a non-idle state
-    int s = state.waitForNotEq(tsIDLE);
+    //-- wait for a non-idle status
+    int s = status.waitForNotEq(tsIDLE);
     if(s<=tsToClose) break;
     if(s==tsBEATING) metronome.waitForTic();
-    if(s>0) state.setValue(1);  //multiple single step requests -> single step
+    if(s>0) status.setValue(1);  //multiple single step requests -> single step
 
     //-- make a step
     timer.tic(0);
-    stepMutex.lock(RAI_HERE);
     step(); //virtual step routine
-    stepMutex.unlock();
     step_count++;
     // timer.tic(1);
 
-    if(s>0) state.setValue(tsIDLE); //single step -> reset to idle
+    if(s>0) status.setValue(tsIDLE); //single step -> reset to idle
   };
 
   stopListening();
 
-  stepMutex.lock(RAI_HERE);
   close(); //virtual close routine
-  stepMutex.unlock();
 
-  state.setValue(tsIsClosed);
+  status.setValue(tsIsClosed);
 }
 
 } //namespace

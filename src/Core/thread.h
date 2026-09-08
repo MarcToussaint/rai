@@ -46,7 +46,6 @@ struct CallbackL : Array<Callback<F>*> {
 struct Var_base : NonCopyable {
   std::shared_mutex rwlock;    ///< rwLock (handled via read/writeAccess)
   std::condition_variable_any cond;
-  bool isWriteLocked = false;
   uint revision=0;
   double write_time=0.;        ///< clock time of last write access
   double data_time=0.;         ///< time stamp of the original data source
@@ -210,11 +209,10 @@ struct CycleTimer {
  * the Signaler indicates the state of the thread: positive=do steps, otherwise it is a ThreadState
  */
 struct Thread {
-  Var<int> state;
+  Var<int> status;
   String name;
   std::unique_ptr<std::thread> thread;    ///< the underlying pthread; nullptr iff not opened
   int tid;                    ///< system thread id
-  Mutex stepMutex;            ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside
   uint step_count;            ///< how often the step was called
   Array<Var_base*> variables; ///< variables this thread listens to
   Metronome metronome;        ///< used for beat-looping
@@ -241,9 +239,9 @@ struct Thread {
   void threadStop(bool wait=false);     ///< stop looping
   void threadCancel();                  ///< a hard kill (pthread_cancel) of the thread
 
-  void waitForOpened() { state.waitForNotEq(tsIsClosed); state.waitForNotEq(tsToOpen); }
-  void waitForIdle() { state.waitForEq(tsIDLE); }
-  bool isIdle() { return state.get()==tsIDLE; }
+  void waitForOpened() { status.waitForNotEq(tsIsClosed); status.waitForNotEq(tsToOpen); }
+  void waitForIdle() { status.waitForEq(tsIDLE); }
+  bool isIdle() { return status.get()==tsIDLE; }
   bool isClosed() { return !thread; }
 
   void listenTo(Var_base& v);

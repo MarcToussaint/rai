@@ -87,8 +87,15 @@ Node* Node::addParent(Node* p, bool prepend) {
   return this;
 }
 
+str listtonames(const NodeL& N){
+  str s;
+  s <<"( ";
+  for(auto* n:N) s <<n->key <<' ';
+  s <<')';
+  return s;
+}
 Node* Node::setParents(const NodeL& P) {
-  CHECK(!parents.N, "already set");
+  CHECK(!parents.N, "trying to set new parents " <<listtonames(P) <<" for node '" <<key <<"' which already has parents " <<listtonames(parents));
   parents = P;
   for(Node* p:P) {
     p->numChildren++;
@@ -659,7 +666,7 @@ void setParentsFromStrsOrAttr(Node* n, const strA& pars){
   if(pars.N){
     NodeL par = getParents(n->container, pars);
     n->setParents(par);
-  }else if(n->is<Graph>()){
+  }else if(!n->parents.N && n->is<Graph>()){
     Node *p = n->graph().findNodeOfType(typeid(StringA), "parent");
     if(p){
       NodeL par = getParents(n->container, p->as<StringA>());

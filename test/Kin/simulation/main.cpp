@@ -549,7 +549,7 @@ void testPassive(const char* filename, bool hold=false){
  // C.processStructure(true);
   arr q0 = C.getJointState();
 
-  rai::Simulation S(C, S._physx, 2);
+  rai::Simulation S(C, S._physx, 4);
 //  rai::wait();
 
   double tau=.001;

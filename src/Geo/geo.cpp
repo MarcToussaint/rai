@@ -1945,7 +1945,6 @@ void Camera::report(std::ostream& os) {
   os <<"camera pose X: " <<X <<endl;
   os <<"width: " <<width <<" height: " <<height <<endl;
   os <<"fxycxy: " <<fxycxy <<endl;
-  os <<"intrinsic matrix:\n" <<getIntrinsicMatrix() <<endl;
 }
 
 arr Camera::getT_IC() const{
@@ -2161,23 +2160,6 @@ void Camera::unproject_fromPixelsAndGLDepth(arr& x) const {
 }
 
 arr Camera::getFxycxy() { return height*fxycxy + arr{ 0., 0., .5*width, .5*height }; }
-
-arr Camera::getIntrinsicMatrix() const {
-  HALT("obsolete?");
-  if(fxycxy.N) { //normal perspective mode
-    CHECK(!heightAbs, "");
-    arr K(3, 3);
-    K.setZero();
-    K(0, 0) = fxycxy(0)*height;
-    K(1, 1) = fxycxy(1)*height;
-    K(2, 2) = 1.; //depth is flipped to become positive for 'in front of camera'
-    K(0, 2) = -0.5*width;
-    K(1, 2) = -0.5*height;
-    return K;
-  }
-  NIY;
-  return arr();
-}
 
 void Camera::setKinect() {
   setZero();

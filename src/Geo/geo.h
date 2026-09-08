@@ -282,7 +282,6 @@ struct Camera {
   void unproject_fromPixelsAndGLDepth(arr& x) const;
 
   arr getFxycxy();
-  arr getIntrinsicMatrix() const;
 
   //retired
   void setCameraProjectionMatrix(const arr& P); //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this

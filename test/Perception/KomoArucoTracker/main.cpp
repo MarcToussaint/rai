@@ -26,7 +26,7 @@ void testKomoTracker(){
     arr q_true = C.getJointState()({-7,0});
 
     for(uint c=0;c<K.CS.cams.N;c++){
-      V.selectSensor(K.CS.cams(c));
+      V.setCamera(K.CS.cams(c));
       V.computeImageAndDepth(rgb, depth);
       // gl.watchImage(rgb, true);
 
