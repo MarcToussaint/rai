@@ -90,6 +90,8 @@ rai::Frame::~Frame() {
     for(uint i=0; i<C.frames.N; i++) C.frames.elem(i)->ID=i;
   }
   C.reset_q();
+  C.proxies.clear();
+  C._state_proxies_isGood=false;
 }
 
 void rai::Frame::calc_X_from_parent() {

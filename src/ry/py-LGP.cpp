@@ -17,7 +17,8 @@ void init_LGP(pybind11::module& m) {
 
   pybind11::class_<rai::LGP_Tool, shared_ptr<rai::LGP_Tool>>(m, "LGP_Tool", "Tools to compute things (and solve) a Task-and-Motion Planning problem formulated as Logic-Geometric Program")
 
-      .def(pybind11::init<rai::Configuration&, rai::LGP_TAMP_Abstraction&>(), "initialization")
+      .def(pybind11::init<rai::Configuration&, rai::LGP_TAMP_Abstraction&>(), "initialization",
+           pybind11::keep_alive<1, 2>(), pybind11::keep_alive<1, 3>()) //LGP_Tool stores C and tamp by reference
 
       .def("solve", &rai::LGP_Tool::solve, "compute new solution", pybind11::arg("verbose")=1)
       .def("getSolvedPlan", &rai::LGP_Tool::getSolvedPlan, "return list of discrete decisions of current solution")

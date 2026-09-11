@@ -854,10 +854,20 @@ Vector Quaternion::getY() const { return (*this)*Vector_y; }
 Vector Quaternion::getZ() const { return (*this)*Vector_z; }
 
 Quaternion& Quaternion::setMatrix(double* m) {
-  w = .5*sqrt(1.+m[0]+m[4]+m[8]);
-  z = (m[3]-m[1])/(4.*w);
-  y = (m[2]-m[6])/(4.*w);
-  x = (m[7]-m[5])/(4.*w);
+  double tr=m[0]+m[4]+m[8];
+  if(tr>0.) {
+    double s=.5/sqrt(tr+1.);
+    w=.25/s;  x=(m[7]-m[5])*s;  y=(m[2]-m[6])*s;  z=(m[3]-m[1])*s;
+  } else if(m[0]>m[4] && m[0]>m[8]) {
+    double s=2.*sqrt(1.+m[0]-m[4]-m[8]);
+    w=(m[7]-m[5])/s;  x=.25*s;  y=(m[1]+m[3])/s;  z=(m[2]+m[6])/s;
+  } else if(m[4]>m[8]) {
+    double s=2.*sqrt(1.+m[4]-m[0]-m[8]);
+    w=(m[2]-m[6])/s;  x=(m[1]+m[3])/s;  y=.25*s;  z=(m[5]+m[7])/s;
+  } else {
+    double s=2.*sqrt(1.+m[8]-m[0]-m[4]);
+    w=(m[3]-m[1])/s;  x=(m[2]+m[6])/s;  y=(m[5]+m[7])/s;  z=.25*s;
+  }
   isZero=(w==1. || w==-1.);
   normalize();
   return *this;

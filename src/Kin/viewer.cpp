@@ -285,7 +285,7 @@ void ConfigurationViewer::setCamera(Frame* camFrame) {
       gl->camera.setDefault();
     }
   }
-  if(W!=gl->width || H!=gl->height) gl->resize(W, H);
+  if(W!=gl->camera.width || H!=gl->camera.height) gl->resize(gl->camera.width, gl->camera.height);
 }
 
 void ConfigurationViewer::focus(const arr& position, double heightAbs){

@@ -41,7 +41,8 @@ void init_Simulation(pybind11::module& m) {
       .def(pybind11::init<rai::Configuration&, rai::Simulation::Engine, int>(), "create a Simulation that is associated/attached to the given configuration",
            pybind11::arg("C"),
            pybind11::arg("engine"),
-           pybind11::arg("verbose") = 2)
+           pybind11::arg("verbose") = 2,
+           pybind11::keep_alive<1, 2>()) //Simulation stores C by reference
 
 //  .def(pybind11::init([](shared_ptr<rai::Configuration>& C, rai::Simulation::Engine engine, int verbose) {
 //    return make_shared<rai::Simulation>(*C, engine, verbose);

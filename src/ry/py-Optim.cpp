@@ -55,8 +55,9 @@ struct PyNLP : NLP {
     if(pybind11::hasattr(py_nlp, "getFHessian")){
       pybind11::object _H = py_nlp.attr("getFHessian")(arr2numpy(x));
       H = numpy2arr(_H.cast<pybind11::array_t<double>>());
+    }else{
+      H.clear();
     }
-    H.clear();
   }
 
   virtual arr getInitializationSample(){

@@ -184,6 +184,7 @@ bool Conv_NLP2Ipopt::get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Numb
 }
 
 bool Conv_NLP2Ipopt::eval_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number& obj_value) {
+  ensure_eval(n, _x, new_x);
 
   double f=0.;
   for(uint i=0; i<phi_x.N; i++) {
