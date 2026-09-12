@@ -219,7 +219,7 @@ struct KOMO : rai::NonCopyable {
 
   rai::Frame* addFrameDof(const char* name, const char* parent, rai::JointType jointType, bool stable, const char* originFrameName=0, rai::Frame* originFrame=0, const rai::Transformation& relOrigin=0);
   void initFrameDof(rai::Frame* f, rai::Frame *q0Frame);
-  void addForceExchangeDofs(const arr& times, rai::Frame* fpoa, const char* onto, const char* from,  rai::ForceExchangeType _type, const arr& initPoa={}, const arr& initForce={});
+  void addForceExchangeDofs(const arr& times, rai::Frame* fpoa, const char* onto, const char* from,  rai::ForceExchangeType _type, const arr& initPoa={}, const arr& initForce={}, double scale=10.);
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly= {});           ///< set the state trajectory of all configurations
 private:
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);

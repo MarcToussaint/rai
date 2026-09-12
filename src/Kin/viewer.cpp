@@ -208,11 +208,14 @@ ConfigurationViewer& ConfigurationViewer::updateConfiguration(const Configuratio
       f->kinForce(_force, NoArr);
       f->kinTorque(_torque, NoArr);
 
+      _force/=f->scale;
+      _torque/=f->scale;
+
       int s=-1;
       if(timeSlices.N) s = f->a.ID/timeSlices.d1;
-      addDistMarker(_poa, _poa+.1*_force, s, .025, {1.,0.,1.});
+      addDistMarker(_poa, _poa+_force, s, .025, {1.,0.,1.});
       if(f->type==FXT_wrench){
-        addDistMarker(_poa, _poa+.1*_torque, s, .025, {1.,1.,0.});
+        addDistMarker(_poa, _poa+_torque, s, .025, {1.,1.,0.});
       }
     }
   }

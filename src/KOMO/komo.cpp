@@ -807,10 +807,10 @@ rai::Frame* KOMO::addContactForceFrame(const arr& times, str obj, str from, doub
   // arr force = origin.rot.getZ().getArr(); //obj->getPosition() - finger->getPosition());
   // force *= init_objMass*9.81;
   if(obj_com_frame.N){
-    addForceExchangeDofs(times, f_poa, obj_com_frame, from, rai::FXT_forceZ, {}, {init_objMass*9.81});
+    addForceExchangeDofs(times, f_poa, obj_com_frame, from, rai::FXT_forceZ, {}, {init_objMass*9.81}, 2.*init_objMass*9.81);
     // addObjective(times, make_shared<F_fex_Force>(), {obj_com_frame, from}, OT_sos, {1e-2});
   }else{
-    addForceExchangeDofs(times, f_poa, obj, from, rai::FXT_forceZ, zeros(3), {init_objMass*9.81});
+    addForceExchangeDofs(times, f_poa, obj, from, rai::FXT_forceZ, zeros(3), {init_objMass*9.81}, 2.*init_objMass*9.81);
   }
 
   //constraints to make poa frames and force exchange consistent
@@ -1851,7 +1851,7 @@ void KOMO::initFrameDof(rai::Frame* f, rai::Frame* q0Frame){
   // if(!boundCheck(f->joint->q0, f->joint->limits)) LOG(-1) <<"creation config is out of autoLimits!";
 }
 
-void KOMO::addForceExchangeDofs(const arr& times, Frame* fpoa, const char* onto, const char* from, rai::ForceExchangeType type, const arr& initPoa, const arr& initForce){
+void KOMO::addForceExchangeDofs(const arr& times, Frame* fpoa, const char* onto, const char* from, rai::ForceExchangeType type, const arr& initPoa, const arr& initForce, double scale){
   //skip doing it in world at all...
   uint poaId = fpoa->ID;
   uint ontoId = _getFrame(onto)->ID;
@@ -1863,7 +1863,7 @@ void KOMO::addForceExchangeDofs(const arr& times, Frame* fpoa, const char* onto,
     rai::Frame *a = timeSlices(k_order+s, ontoId);
     rai::Frame *b = timeSlices(k_order+s, fromId);
     rai::ForceExchangeDof* ex = new ForceExchangeDof(p, *a, *b, type);
-    ex->scale=10.;
+    ex->scale = scale;
     if(initPoa.N) ex->poa = initPoa;
     if(initForce.N) ex->force = initForce;
     ex->q0 = ex->calcDofsFromConfig();

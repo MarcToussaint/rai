@@ -842,7 +842,7 @@ String::String(const std::string& s) : std::iostream(&buffer) { init(); this->op
 
 String::String(std::istream& is) : std::iostream(&buffer) { init(); read(is, "", "", 0); }
 
-String::~String() { if(M) delete[] p; }
+String::~String() { if(M) delete[] p; M=N=0; p=0; }
 
 /// returns a reference to this
 std::iostream& String::stream() { return (std::iostream&)(*this); }

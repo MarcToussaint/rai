@@ -212,11 +212,13 @@ void F_TotalForce::phi2(arr& y, arr& J, const FrameL& F) {
   a->C.kinematicsZero(force, Jforce, 3);
   a->C.kinematicsZero(torque, Jtorque, 3);
 
-  if(gravity.N) {
+  if(gravity.N==1) {
     CHECK(a->inertia, "can't accumulate gravity force for zero-mass object '" <<a->name <<"'")
-    double mass=1.;
-    if(a->inertia) mass = a->inertia->mass;
-    force += gravity * mass;
+    gravity = arr{0., 0., gravity.elem()*a->inertia->mass};
+  }
+
+  if(gravity.N){
+    force += gravity;
   }
 
   //-- collect contacts and signs FOR ALL shapes attached to this link
