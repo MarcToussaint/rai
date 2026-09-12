@@ -94,7 +94,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
     to->setJoint(jointType);
     CHECK(jointType!=JT_none, "");
 
-    if(!rel.isZero()) to->insertPreLink(rel);
+    if(!rel.isZero()) to->insertPreFrame(rel);
     //if(!jB.isZero()) { to->insertPostLink(jB); orgX = orgX * (-jB); }
 
     //initialize to zero, copy, or random

@@ -126,13 +126,14 @@ struct Frame : NonCopyable {
   //structural operations
   Frame& setParent(Frame* _parent, bool keepAbsolutePose_and_adaptRelativePose=false, bool checkForLoop=false);
   Frame& unLink();
-  Frame* insertPreLink(const rai::Transformation& A=0, bool prelinkTakesQ=false, const char* postfix="_origin");
+  Frame* insertPreFrame(const rai::Transformation& A=0, bool pushQToPrelink=false, const char* postfix="_origin");
   Frame* insertPostLink(const rai::Transformation& B=0);
   void pushQTransformToParent();
   void makeRoot(bool untilPartBreak=true);
 
   //structural information/retrieval
   bool isChildOf(const Frame* par, int order=1) const;
+  bool isPureTransform() const { return parent && !joint && !shape && !inertia && children.N==1; }
   void getRigidSubFrames(FrameL& F, bool includeRigidJoints=false) const; ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
   void getPartSubFrames(FrameL& F) const; ///< recursively collect all frames of this part
   void getSubtree(FrameL& F) const;
@@ -160,7 +161,7 @@ struct Frame : NonCopyable {
 
   //I/O
   void read(const Graph& ats);
-  void write(Graph& G) const;
+  void write(Graph& G, bool includeOriginToOtherParent=false) const;
   void write(std::ostream& os) const { Graph G; write(G); G.write(os); }
 
   //-- HIGHER LEVEL USER INTERFACE

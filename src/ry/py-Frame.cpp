@@ -118,6 +118,10 @@ void init_Frame(pybind11::module& m) {
   .def("getJointQIndex", &rai::Frame::getJointQIndex, "")
   .def("getSize", &rai::Frame::getSize, "")
   .def("getMass", &rai::Frame::getMass, "")
+  .def("getInertia", [](shared_ptr<rai::Frame>& self) {
+        if(!self->inertia) return pybind11::make_tuple(double(0.), pybind11::array_t<double>(), pybind11::array_t<double>());
+        return pybind11::make_tuple(self->inertia->mass, pybind11::array_t<double>({3}, self->inertia->com.p()), pybind11::array_t<double>({3,3}, self->inertia->matrix.p()));
+      }, "returns tuple (mass, com, matrix), with 0 mass and empty com/matrix for no inertia")
   .def("getShapeType", &rai::Frame::getShapeType, "")
   .def("getMeshPoints", &rai::Frame::getMeshPoints, "")
   .def("getMeshTriangles", &rai::Frame::getMeshTriangles, "")

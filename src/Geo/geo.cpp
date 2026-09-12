@@ -1475,18 +1475,6 @@ double* Transformation::getInverseMatrixGL(double* m) const {
   return m;
 }
 
-arr Transformation::getArr7d() const {
-  arr t(7);
-  t.p[0]=pos.x;
-  t.p[1]=pos.y;
-  t.p[2]=pos.z;
-  t.p[3]=rot.w;
-  t.p[4]=rot.x;
-  t.p[5]=rot.y;
-  t.p[6]=rot.z;
-  return t;
-}
-
 arr Transformation::getWrenchTransform() const {
   arr z(3, 3);  z.setZero();
   arr r = skew(pos.getArr()); //(3, 3);  Featherstone::skew(r, &pos.x); skew pos

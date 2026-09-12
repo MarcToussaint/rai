@@ -118,7 +118,7 @@ struct Graph : NodeL {
   template<class T> Node_typed<T&>* addRef(const char* key, const T& x);
 
   //Node_typed<int>* add(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
-  Graph& addSubgraph(const char* key=NULL, const NodeL& parents= {});
+  Graph& addSubgraph(const char* key=NULL, const NodeL& parents={});
   void appendDict(const std::map<std::string, std::string>& dict);
   Graph& addInit(const NodeInitializer& ni); ///< (internal) append a node initializer
 

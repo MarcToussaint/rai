@@ -185,6 +185,7 @@ struct Configuration {
   bool checkUniqueNames(bool makeUnique=false);
   FrameL calc_topSort(bool depthFirst=true) const;
   bool check_topSort() const;
+  bool check_sorted() const;
 
   /// @name structural operations, changes of configuration
   void clear();
@@ -258,6 +259,7 @@ struct Configuration {
 
   /// @name dynamics following the lecture notes
   void dyn_MF(arr& M, arr& F, const arr& q_dot);
+  arr dyn_F0();
   arr dyn_inverseDyamics(const arr& q_dot, const arr& q_ddot);
   arr dyn_fwdDynamics(const arr& q_dot, const arr& u);
   void dyn_fwdStep_RungeKutta(arr& q_dot, const arr& u, double tau);

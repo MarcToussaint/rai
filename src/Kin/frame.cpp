@@ -456,6 +456,9 @@ void rai::Frame::read(const Graph& ats) {
   if(transFromAts(tmp, ats, "pose")){
     if(!parent) set_X() = tmp; else set_Q() = tmp;
   }
+  if(transFromAts(tmp, ats, "origin")){
+    insertPreFrame(tmp);
+  }
 
   if(ats.findNode("type")) ats.findNode("type")->key = "shape"; //compatibility with old convention: 'body { type... }' generates shape
 
@@ -485,21 +488,14 @@ void rai::Frame::read(const Graph& ats) {
   if(ats.findNode("mass")) { inertia = new Inertia(*this); inertia->read(ats); }
 }
 
-void rai::Frame::write(Graph& G) const {
-  //if(parent) G.add<rai::String>("parent", parent->name);
-
+void rai::Frame::write(Graph& G, bool includePureOriginTransform) const {
   if(parent) {
-    if(!Q.isZero() && !joint){
-      if(Q.rot.isZero) G.add<arr>("pose", Q.pos.getArr());
-      else if(Q.pos.isZero) G.add<arr>("pose", Q.rot.getArr());
-      else G.add<arr>("pose", Q.getArr7d());
+    if(includePureOriginTransform){
+      if(parent->isPureTransform()) G.add<arr>("origin", parent->Q.getFlexArr());
     }
+    if(!Q.isZero() && !joint) G.add<arr>("pose", Q.getFlexArr());
   } else {
-    if(!X.isZero()){
-      if(X.rot.isZero) G.add<arr>("pose", X.pos.getArr());
-      else if(X.pos.isZero) G.add<arr>("pose", X.rot.getArr());
-      else G.add<arr>("pose", X.getArr7d());
-    }
+    if(!X.isZero()) G.add<arr>("pose", X.getFlexArr());
   }
 
   if(joint) joint->write(G);
@@ -507,46 +503,13 @@ void rai::Frame::write(Graph& G) const {
   if(shape) shape->write(G, *this);
   if(inertia) inertia->write(G);
 
-  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "joint_scale", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
+  StringA avoid = {"Q", "pose", "rel", "X", "origin", "from", "to", "q", "shape", "joint", "type", "joint_scale", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
   if(ats) for(Node* n : *ats) {
       if(!n->key.startsWith("%") && !avoid.contains(n->key)) {
         n->newClone(G);
       }
     }
 }
-
-// void rai::Frame::write(std::ostream& os) const {
-//   os <<name;
-
-//   if(parent) os <<" (" <<parent->name <<')';
-
-//   os <<": { ";
-
-//   if(parent) {
-//     if(!Q.isZero()) os <<" rel: " <<Q;
-//   } else {
-//     if(!X.isZero()) os <<" pose: " <<X;
-//   }
-
-//   if(joint) joint->write(os);
-//   if(shape) shape->write(os);
-//   if(inertia) inertia->write(os);
-
-//   StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "joint_scale", "color", "size", "contact", "mesh", "meshscale", "mass", "inertia", "limits", "ctrl_H", "axis", "A", "pre", "B", "mimic"};
-//   if(ats) for(Node* n : *ats) {
-//       if(!n->key.startsWith("%") && !avoid.contains(n->key)) {
-//         os <<", ";
-//         n->write(os, -1, true);
-//       }
-//     }
-
-//   os <<" }\n";
-//   //  if(mass) os <<"mass:" <<mass <<' ';
-//   //  if(type!=BT_dynamic) os <<"dyntype:" <<(int)type <<' ';
-//   //  uint i; Node *a;
-//   //  for(Type *  a:  ats)
-//   //      if(a->keys(0)!="X" && a->keys(0)!="pose") os <<*a <<' ';
-// }
 
 /************* USER INTERFACE **************/
 
@@ -954,7 +917,7 @@ void rai::Frame::makeManipJoint(rai::JointType jointType, rai::Frame* parent, bo
   if(jointType==JT_transXYPhi || jointType==JT_transXY) {
     rel.pos.set(0, 0, .5*(shapeSize(parent) + shapeSize(this)));
   }
-  if(!rel.isZero()) insertPreLink(rel);
+  if(!rel.isZero()) insertPreFrame(rel);
 
   //-- initialize with current relative transformation
   {
@@ -1102,8 +1065,7 @@ rai::Camera rai::Frame::getCameraFromAts() {
 
 /***********************************************************/
 
-rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A, bool prelinkTakesQ, const char* postfix) {
-#if 1
+rai::Frame* rai::Frame::insertPreFrame(const rai::Transformation& A, bool preFrameTakesQ, const char* postfix) {
   Frame *r = C.addFrame(0);
   r->name <<name <<postfix;
   if(parent){
@@ -1115,7 +1077,7 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A, bool prelink
     r->setRelativePose(A);
     setParent(r, false);
   }else{
-    if(prelinkTakesQ){
+    if(preFrameTakesQ){
       r->setRelativePose(this->Q);
       setParent(r, false);
       this->set_Q()->setZero();
@@ -1124,25 +1086,6 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A, bool prelink
     }
   }
   return r;
-#else
-  //new frame between: parent -> f -> this
-  Frame* f;
-
-  if(parent) {
-    f = new Frame(parent);
-    parent->children.removeValue(this);
-  } else {
-    f = new Frame(C);
-  }
-  f->name <<name <<postfix;//<<parent->name <<'>' <<name;
-  parent=f;
-  parent->children.append(this);
-
-  if(!!A && !A.isZero()) f->Q=A; else f->Q.setZero();
-  f->_state_updateAfterTouchingQ();
-
-  return f;
-#endif
 }
 
 rai::Frame* rai::Frame::insertPostLink(const rai::Transformation& B) {
@@ -1961,7 +1904,7 @@ void rai::Joint::read(const Graph& ats) {
   }
 
   if(!A.isZero()) {
-    frame->insertPreLink(A);
+    frame->insertPreFrame(A);
   }
 
   Transformation tmp;

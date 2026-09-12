@@ -356,6 +356,15 @@ To get really precise distances and penetrations use the FS.distance feature wit
 
   .def("getForceArrays", &rai::Configuration::getForceArrays, "")
 
+  .def("dyn_MF", [](shared_ptr<rai::Configuration>& self, const arr& q_dot){
+        arr M,F;
+        self->dyn_MF(M, F, q_dot);
+        return pybind11::make_tuple(arr2numpy(M), arr2numpy(F));
+      }, "return M and F, so that 'u = M q_ddot + F(q_dot)' for a given q_dot",
+      pybind11::arg("q_dot"))
+
+  .def("dyn_F0", &rai::Configuration::dyn_F0, "return only F assuming zero velocity, i.e., only gravity term")
+
   .def("view",  &rai::Configuration::view,
        "open a view window for the configuration; when offscreen you can grab/save rgb/depth from viewer",
        pybind11::arg("pause")=false,

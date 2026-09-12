@@ -229,7 +229,8 @@ struct Transformation {
   arr getInverseMatrix() const;
   double* getMatrixGL(double* m) const;       // in OpenGL format (transposed memory storage!!)
   double* getInverseMatrixGL(double* m) const;// in OpenGL format (transposed memory storage!!)
-  arr getArr7d() const;
+  arr getArr7d() const { return arr{ pos.x, pos.y, pos.z, rot.w, rot.x, rot.y, rot.z }; }
+  arr getFlexArr() const { if(rot.isZero) return pos.getArr(); if(pos.isZero) return rot.getArr(); return getArr7d(); }
   arr getWrenchTransform() const;
 
   void applyOnPoint(arr& pt) const;

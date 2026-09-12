@@ -1037,6 +1037,11 @@ bool Configuration::check_topSort() const {
   return true;
 }
 
+bool Configuration::check_sorted() const {
+  for(Frame* f: frames) if(f->parent && f->parent->ID>f->ID) return false;
+  return true;
+}
+
 /// clear all frames, forces & proxies
 void Configuration::clear() {
 //  if(self && self->viewer) self->viewer.reset();
@@ -2626,11 +2631,25 @@ void Configuration::write(std::ostream& os, bool explicitlySorted) const {
 
 Graph Configuration::asDict() const {
   Graph G;
-  // for(Frame* f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
-  for(Frame* f: frames) f->write(G.addSubgraph(f->name));
-  for(uint i=0; i<frames.N; i++) if(frames.elem(i)->parent) {
-      G.elem(i)->addParent(G.elem(frames.elem(i)->parent->ID));
+  NodeL f2n(frames.N);
+  f2n.setZero();
+  if(check_sorted()){
+    for(Frame* f: frames){
+      if(!(f->isPureTransform() && f->children.N==1 && !f->children.elem()->isPureTransform())){
+        rai::Frame *par = f->parent;
+        if(par && par->isPureTransform()) par = par->parent;
+        if(par) CHECK(f2n(par->ID), "");
+        Graph& g = G.addSubgraph(f->name, (par?NodeL{f2n(par->ID)}:NodeL{}));
+        f->write(g, true);
+        f2n(f->ID) = g.isNodeOfGraph;
+      }
     }
+  }else{ //old!
+    for(Frame* f: frames) f->write(G.addSubgraph(f->name));
+    for(uint i=0; i<frames.N; i++) if(frames.elem(i)->parent) {
+        G.elem(i)->addParent(G.elem(frames.elem(i)->parent->ID));
+      }
+  }
   return G;
 }
 
@@ -3254,6 +3273,7 @@ Configuration::FrameDynState& Configuration::dyn_ensure(Frame* f, const arr& q_d
 
     //parent
     FrameDynState& par = buffer(f->parent->ID);
+    CHECK(par.isGood, "");
 
     //relative (in world coordinates)
     Vector P = par.R * f->Q.pos;
@@ -3377,6 +3397,19 @@ void Configuration::dyn_MF(arr& M, arr& F, const arr& q_dot){
 #endif
       }
     }
+}
+
+arr Configuration::dyn_F0(){
+  uint n = getJointStateDimension();
+  arr F = zeros(n);
+  arr Jpos, cg = zeros(3);
+  for(Frame *f:frames) if(f->inertia){
+      CHECK(f->inertia->com.isZero, "");
+      jacobian_pos(Jpos, f, f->X.pos);
+      cg(2) = 9.81*f->inertia->mass;
+      F += ~Jpos * cg;
+    }
+  return F;
 }
 
 arr Configuration::dyn_inverseDyamics(const arr& q_dot, const arr& q_ddot){
