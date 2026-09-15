@@ -217,6 +217,8 @@ struct Frame : NonCopyable {
   Graph& getAts(){ if(!ats) ats=make_shared<Graph>(); return *ats; }
   Camera getCameraFromAts();
 
+  arr trans_rel2world(const arr& x){ arr y(x); ensure_X().applyOnPoint(y); return y; }
+
   friend struct Configuration;
   friend struct Configuration_ext;
   friend struct KinematicSwitch;

@@ -185,6 +185,13 @@ void init_Config(pybind11::module& m) {
     return F;
   })
 
+  .def("getJoints", [](shared_ptr<rai::Configuration>& self) {
+    FrameL J = self->getJoints();
+    std::vector<shared_ptr<rai::Frame>> F;
+    for(rai::Frame* f:J) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-deleter!
+    return F;
+  })
+
   .def("getShapes", [](shared_ptr<rai::Configuration>& self, bool shared_only_once) {
         FrameL F = self->getShapes(shared_only_once);
     std::vector<shared_ptr<rai::Frame>> _F;

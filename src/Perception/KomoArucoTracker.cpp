@@ -57,7 +57,7 @@ CalibrationScene::CalibrationScene(Configuration& _C, const char* obj_name)
 void CalibrationScene::addCalibDofs_arucos(){
   //add translational calibration joints to all arucos
   for(Frame *ar:arucos) if(ar){
-      ar->insertPreLink(0, true, "_calib");
+      ar->insertPreFrame(0, true, "_calib");
       calibs.append(ar);
       cout <<" -- making stable dof: " <<ar->name <<endl;
       ar->setJoint(JT_transXY);
@@ -68,7 +68,7 @@ void CalibrationScene::addCalibDofs_arucos(){
 void CalibrationScene::addCalibDofs_cameras(){
   //add camera calibration joints
   for(Frame* cam:cams){
-    cam->insertPreLink(0, true, "_calib");
+    cam->insertPreFrame(0, true, "_calib");
     calibs.append(cam);
     cout <<" -- making stable dof: " <<cam->name <<endl;
     cam->setJoint(JT_free);
@@ -79,7 +79,7 @@ void CalibrationScene::addCalibDofs_cameras(){
 void CalibrationScene::addCalibDofs_joints(const uintA& jointIds){
   for(uint i:jointIds){
     Frame *f = C.frames(i);
-    Frame *pre = f->insertPreLink(0, false, "_calib");
+    Frame *pre = f->insertPreFrame(0, false, "_calib");
     calibs.append(pre);
     calibs_joints.append(pre);
     cout <<" -- making stable dof: " <<pre->name <<endl;

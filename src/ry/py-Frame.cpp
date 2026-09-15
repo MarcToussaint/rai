@@ -120,7 +120,7 @@ void init_Frame(pybind11::module& m) {
   .def("getMass", &rai::Frame::getMass, "")
   .def("getInertia", [](shared_ptr<rai::Frame>& self) {
         if(!self->inertia) return pybind11::make_tuple(double(0.), pybind11::array_t<double>(), pybind11::array_t<double>());
-        return pybind11::make_tuple(self->inertia->mass, pybind11::array_t<double>({3}, self->inertia->com.p()), pybind11::array_t<double>({3,3}, self->inertia->matrix.p()));
+        return pybind11::make_tuple(double(self->inertia->mass), pybind11::array_t<double>({3}, self->inertia->com.p()), pybind11::array_t<double>({3,3}, self->inertia->matrix.p()));
       }, "returns tuple (mass, com, matrix), with 0 mass and empty com/matrix for no inertia")
   .def("getShapeType", &rai::Frame::getShapeType, "")
   .def("getMeshPoints", &rai::Frame::getMeshPoints, "")
@@ -131,6 +131,8 @@ void init_Frame(pybind11::module& m) {
                                   Array2numpy<uint>(self->getMeshTriangles()),
                                   Array2numpy<byte>(self->getMeshColors()) );
   }, "")
+
+  .def("trans_rel2world", &rai::Frame::trans_rel2world, "")
 
   .def("asDict", [](shared_ptr<rai::Frame>& self) {  rai::Graph G;  self->write(G);  return graph2dict(G); }, "")
 
