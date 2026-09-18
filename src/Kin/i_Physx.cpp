@@ -613,6 +613,9 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
           axis = PxArticulationAxis::eSWING2;
           break;
         }
+        case rai::JT_hinge: {
+          HALT("haven't implemented flipped hinge joints yet");
+        }
         case rai::JT_transX: {
           type = PxArticulationJointType::ePRISMATIC;
           axis = PxArticulationAxis::eX;
@@ -644,7 +647,10 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
           axis = PxArticulationAxis::eCOUNT;
           break;
         }
-        default: NIY;
+        default:{
+          LOG(0) <<f->name <<f->getAts() <<endl;
+          NIY;
+        }
       }
       joint->setJointType(type);
       if(axis!=PxArticulationAxis::eCOUNT){
