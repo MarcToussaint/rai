@@ -162,6 +162,7 @@ struct PhysXInterface_self {
   rai::Array<PxRigidActor*> actors;
   rai::Array<rai::BodyType> actorTypes;
   rai::Array<PxArticulationAxis::Enum> jointAxis;
+  rai::Array<double> jointScales;
   rai::Array<PxJoint*> joints;
 
   rai::PhysX_Options opt;
@@ -498,8 +499,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
   }
 
   //-- collect all links/joints for that root
-  FrameL F = {base};
-  base->getSubtree(F);
+  FrameL F = base->getSubtree();
   FrameL links = {base};
   for(auto* f:F) { if(f->joint && !f->joint->isPartBreak) links.append(f); }
   intA parents(links.N);
@@ -530,7 +530,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
     //prepare link shapes, inertia, and type
     rai::Frame* f = links(i);
     if(i!=0) CHECK(f->joint, "");
-    if(opt.verbose>0) cout <<"-- kin_physx.cpp:  adding multibody link '" <<f->name <<"'" <<endl;
+    if(opt.verbose>0) cout <<"-- i_Physx.cpp:  adding multibody link '" <<f->name <<"'" <<endl;
 
     FrameL shapes;
     rai::BodyType type;
@@ -583,7 +583,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
         if(!f->joint->active) str <<"(inactive)";
       }
       if(f->inertia) str <<" and mass " <<f->inertia->mass;
-      cout <<"-- kin_physx.cpp:" <<str <<endl;
+      cout <<"-- i_Physx.cpp:" <<str <<endl;
     }
 
     if(i>0) {
@@ -597,6 +597,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
 
       PxArticulationAxis::Enum axis = PxArticulationAxis::eCOUNT;
       PxArticulationJointType::Enum type = PxArticulationJointType::eUNDEFINED;
+      jointScales(f->ID) = f->joint->scale;
       switch(f->joint->type) {
         case rai::JT_hingeX: {
           type = PxArticulationJointType::eREVOLUTE;
@@ -614,7 +615,17 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
           break;
         }
         case rai::JT_hinge: {
-          HALT("haven't implemented flipped hinge joints yet");
+          if(f->joint->joint_axis==arr{0., -1., 0.}){
+            type = PxArticulationJointType::eREVOLUTE;
+            axis = PxArticulationAxis::eSWING1;
+            jointScales(f->ID) = -f->joint->scale;
+          }else if(f->joint->joint_axis==arr{0., 0., -1.}){
+              type = PxArticulationJointType::eREVOLUTE;
+              axis = PxArticulationAxis::eSWING2;
+              jointScales(f->ID) = -f->joint->scale;
+          }else{
+            HALT("haven't implemented hinge joints yet for axis=" <<f->joint->joint_axis);
+          }
         }
         case rai::JT_transX: {
           type = PxArticulationJointType::ePRISMATIC;
@@ -656,15 +667,15 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
       if(axis!=PxArticulationAxis::eCOUNT){
         if(f->joint->limits.N){
           joint->setMotion(axis, PxArticulationMotion::eLIMITED);
-          if(f->joint->scale>0.){
-            joint->setLimitParams(axis, {float(f->joint->scale*f->joint->limits.elem(0)), float(f->joint->scale*f->joint->limits.elem(1))});
+          if(jointScales(f->ID)>0.){
+            joint->setLimitParams(axis, {float(jointScales(f->ID)*f->joint->limits.elem(0)), float(jointScales(f->ID)*f->joint->limits.elem(1))});
           }else{
-            joint->setLimitParams(axis, {float(f->joint->scale*f->joint->limits.elem(1)), float(f->joint->scale*f->joint->limits.elem(0))});
+            joint->setLimitParams(axis, {float(jointScales(f->ID)*f->joint->limits.elem(1)), float(jointScales(f->ID)*f->joint->limits.elem(0))});
           }
         }else{
           joint->setMotion(axis, PxArticulationMotion::eFREE);
         }
-        joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
+        joint->setJointPosition(axis, jointScales(f->ID)*f->joint->get_q());
       }
       jointAxis(f->ID) = axis;
 
@@ -688,7 +699,7 @@ void PhysXInterface_self::addMultiBody(rai::Frame* base) {
         posDrive.driveType = PxArticulationDriveType::eFORCE; // make the drive output be a force/torque (default)
         joint->setDriveParams(axis, posDrive);
         joint->setDriveVelocity(axis, 0.);
-        joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
+        joint->setDriveTarget(axis, jointScales(f->ID)*f->joint->get_q());
       }
     }
   }
@@ -730,13 +741,13 @@ void PhysXInterface_self::prepareLinkShapes(FrameL& shapes, rai::BodyType& type,
   bool subHaveInertia=false;
   for(rai::Frame* ch: sub) if(ch->inertia && ch!=link) { subHaveInertia=true; break; }
   if(subHaveInertia) {
-    if(opt.verbose>0) cout <<"-- kin_physx.cpp:    computing compound inertia for link frame '" <<link->name <<endl;
+    if(opt.verbose>0) cout <<"-- i_Physx.cpp:    computing compound inertia for link frame '" <<link->name <<endl;
     link->computeCompoundInertia();
   }
   if(!link->inertia) {
     bool hasMass = link->standardizeInertias();
     if(hasMass){
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    link '" <<link->name <<"' does not have inertia -> computing standard inertias (alternatively, define inertias for links before starting physx)" <<endl;
+      if(opt.verbose>0) cout <<"-- i_Physx.cpp:    link '" <<link->name <<"' does not have inertia -> computing standard inertias (alternatively, define inertias for links before starting physx)" <<endl;
     }else{
       if(opt.verbose>0) LOG(0) <<"link '" <<link->name <<"' has no mass -> becomes static";
     }
@@ -769,17 +780,17 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
   switch(s->type()) {
     case rai::ST_box: {
       geometry = make_shared<PxBoxGeometry>(.5*s->size(0), .5*s->size(1), .5*s->size(2));
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape box '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
+      if(opt.verbose>0) cout <<"-- i_Physx.cpp:    adding shape box '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
     } break;
     case rai::ST_ssBox: {
       double r = s->size(3);
       geometry = make_shared<PxBoxGeometry>(.5*s->size(0)-r, .5*s->size(1)-r, .5*s->size(2)-r);
       paddingRadius = r;
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape ssBox '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
+      if(opt.verbose>0) cout <<"-- i_Physx.cpp:    adding shape ssBox '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
     } break;
     case rai::ST_sphere: {
       geometry = make_shared<PxSphereGeometry>(s->size(0));
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape sphere '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
+      if(opt.verbose>0) cout <<"-- i_Physx.cpp:    adding shape sphere '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
     } break;
     case rai::ST_capsule: { //GRRRR... capsule are extended along x-axis in physx.. all inconsistent. use explicit mesh
       // geometry = make_shared<PxCapsuleGeometry>(s->size(1), .5*s->size(0));
@@ -789,7 +800,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
           PxConvexFlag::eCOMPUTE_CONVEX);
       meshes.append(triangleMesh);
       geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape capsule '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
+      if(opt.verbose>0) cout <<"-- i_Physx.cpp:    adding shape capsule '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
     } break;
     // case rai::ST_cylinder:{
     //   NIY;
@@ -805,23 +816,23 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
             PxConvexFlag::eCOMPUTE_CONVEX);
         geometry = make_shared<PxConvexMeshGeometry>(triangleMesh);
         paddingRadius = s->coll_cvxRadius;
-        if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape cvx mesh '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
+        if(opt.verbose>0) cout <<"-- i_Physx.cpp:    adding shape cvx mesh '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
       }else if(s->mesh().V.N){ //a non-convex mesh!
         floatA Vfloat = rai::convert<float>(s->mesh().V);
         uintA& Tri = s->mesh().T;
         PxTriangleMesh* triangleMesh = PxToolkit::createTriangleMesh32(
             *core()->mPhysics, /**core()->mCooking,*/ (PxVec3*)Vfloat.p, Vfloat.d0, (PxU32*) Tri.p, Tri.d0);
         geometry = make_shared<PxTriangleMeshGeometry>(triangleMesh);
-        if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape non-cvx mesh '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
+        if(opt.verbose>0) cout <<"-- i_Physx.cpp:    adding shape non-cvx mesh '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
       }else NIY;
       } break;
     case rai::ST_sdf:
     // default: {
     //   rai::Mesh& M = s->mesh();
-    //   if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding shape mesh '" <<shape->name <<"' (" <<s->type() <<") as mesh" <<endl;
+    //   if(opt.verbose>0) cout <<"-- i_Physx.cpp:    adding shape mesh '" <<shape->name <<"' (" <<s->type() <<") as mesh" <<endl;
     //   if(M.cvxParts.N) {
     //     floatA Vfloat;
-    //     if(opt.verbose>0) cout <<"-- kin_physx.cpp:    creating " <<M.cvxParts.N <<" convex parts for shape " <<shape->name <<endl;
+    //     if(opt.verbose>0) cout <<"-- i_Physx.cpp:    creating " <<M.cvxParts.N <<" convex parts for shape " <<shape->name <<endl;
     //     for(uint i=0; i<M.cvxParts.N; i++) {
     //       Vfloat.clear();
     //       int start = M.cvxParts(i);
@@ -845,7 +856,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     //     }
     //     geometry.reset();
     //   } else {
-    //     if(opt.verbose>0) cout <<"-- kin_physx.cpp:    using cvx hull of mesh as no decomposition (M.cvxParts) is available" <<endl;
+    //     if(opt.verbose>0) cout <<"-- i_Physx.cpp:    using cvx hull of mesh as no decomposition (M.cvxParts) is available" <<endl;
     //     floatA Vfloat = rai::convert<float>(s->mesh().V);
     //     PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
     //                                    *core()->mPhysics, *core()->mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
@@ -857,7 +868,7 @@ void PhysXInterface_self::addSingleShape(PxRigidActor* actor, rai::Frame* f, rai
     case rai::ST_camera:
     case rai::ST_pointCloud:
     case rai::ST_marker: {
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    skipping shape '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
+      if(opt.verbose>0) cout <<"-- i_Physx.cpp:    skipping shape '" <<f_shape->name <<"' (" <<s->type() <<")" <<endl;
       geometry = nullptr;
     } break;
     // default:
@@ -911,7 +922,7 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, FrameL& shapes
     actor->setMass(f->inertia->mass);
     if(f->inertia->com.isZero && f->inertia->matrix.isDiagonal()){
       actor->setMassSpaceInertiaTensor({float(f->inertia->matrix.m00), float(f->inertia->matrix.m11), float(f->inertia->matrix.m22)});
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding mass " <<f->inertia->mass <<" inertia " <<f->inertia->matrix.getDiag() <<" with zero trans " <<endl;
+      if(opt.verbose>0) cout <<"-- i_Physx.cpp:    adding mass " <<f->inertia->mass <<" inertia " <<f->inertia->matrix.getDiag() <<" with zero trans " <<endl;
     }else{
       arr Idiag;
       rai::Transformation t = f->inertia->getDiagTransform(Idiag);
@@ -919,7 +930,7 @@ void PhysXInterface_self::addShapesAndInertia(PxRigidBody* actor, FrameL& shapes
         actor->setCMassLocalPose(conv_Transformation2PxTrans(t));
       }
       actor->setMassSpaceInertiaTensor({float(Idiag(0)), float(Idiag(1)), float(Idiag(2))});
-      if(opt.verbose>0) cout <<"-- kin_physx.cpp:    adding mass " <<f->inertia->mass <<" inertia " <<Idiag <<" trans " <<t <<endl;
+      if(opt.verbose>0) cout <<"-- i_Physx.cpp:    adding mass " <<f->inertia->mass <<" inertia " <<Idiag <<" trans " <<t <<endl;
     }
     //      //cout <<*f->inertia <<" m:" <<actor->getMass() <<" I:" <<conv_PxVec2arr(actor->getMassSpaceInertiaTensor()) <<endl;
   }
@@ -1054,6 +1065,7 @@ PhysXInterface::PhysXInterface(rai::Configuration& C, int verbose, const rai::Ph
   self->actors.resize(C.frames.N).setZero();
   self->actorTypes.resize(C.frames.N).setZero();
   self->jointAxis.resize(C.frames.N) = PxArticulationAxis::eCOUNT;
+  self->jointScales.resize(C.frames.N).setZero();
 
   for(rai::Frame* a : C.frames) a->ensure_X();
 
@@ -1174,12 +1186,12 @@ void PhysXInterface::pushJointTargets(const rai::Configuration& C, const arr& qD
     {
       auto axis = self->jointAxis(f->ID);
       if(axis!=PxArticulationAxis::eCOUNT){ //only joints with drive
-        if(setStatesInstantly) joint->setJointPosition(axis, f->joint->scale*f->joint->get_q());
-        joint->setDriveTarget(axis, f->joint->scale*f->joint->get_q());
+        if(setStatesInstantly) joint->setJointPosition(axis, self->jointScales(f->ID)*f->joint->get_q());
+        joint->setDriveTarget(axis, self->jointScales(f->ID)*f->joint->get_q());
 
 	if(!!qDot_ref && qDot_ref.N) { //also setting vel reference!
-	  if(setStatesInstantly) joint->setJointVelocity(axis, f->joint->scale*qDot_ref(f->joint->qIndex));
-	  joint->setDriveVelocity(axis, f->joint->scale*qDot_ref(f->joint->qIndex));
+	  if(setStatesInstantly) joint->setJointVelocity(axis, self->jointScales(f->ID)*qDot_ref(f->joint->qIndex));
+	  joint->setDriveVelocity(axis, self->jointScales(f->ID)*qDot_ref(f->joint->qIndex));
 	} else {
 	  if(setStatesInstantly) joint->setJointVelocity(axis, 0.);
 	  joint->setDriveVelocity(axis, 0.);
@@ -1206,12 +1218,12 @@ void PhysXInterface::pullJointStates(rai::Configuration& C, arr& qDot) {
       auto axis = self->jointAxis(f->ID);
       if(axis!=PxArticulationAxis::eCOUNT){ //only joints with drive
         if(f->joint->active){
-          q(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
-          if(!!qDot) qDot(f->joint->qIndex) = joint->getJointVelocity(axis) / f->joint->scale;
+          q(f->joint->qIndex) = joint->getJointPosition(axis) / self->jointScales(f->ID);
+          if(!!qDot) qDot(f->joint->qIndex) = joint->getJointVelocity(axis) / self->jointScales(f->ID);
         }else{
-          qInactive(f->joint->qIndex) = joint->getJointPosition(axis) / f->joint->scale;
+          qInactive(f->joint->qIndex) = joint->getJointPosition(axis) / self->jointScales(f->ID);
           f->joint->setDofs(qInactive, f->joint->qIndex);
-	  //          if(!!qDot){ NIY }
+          // if(!!qDot){ NIY }
 	}
       }
     }
@@ -1418,12 +1430,12 @@ rai::PhysX_Options& PhysXInterface::opt() { NICO }
 #endif
 
 #ifdef RAI_PHYSX
-RUN_ON_INIT_BEGIN(kin_physx)
+RUN_ON_INIT_BEGIN(i_Physx)
 rai::Array<PxGeometry*>::memMove=true;
 rai::Array<PxShape*>::memMove=true;
 rai::Array<PxMaterial*>::memMove=true;
 rai::Array<PxRigidActor*>::memMove=true;
 rai::Array<PxD6Joint*>::memMove=true;
 rai::Array<rai::BodyType>::memMove=true;
-RUN_ON_INIT_END(kin_physx)
+RUN_ON_INIT_END(i_Physx)
 #endif

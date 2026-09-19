@@ -464,12 +464,6 @@ void Configuration::delFrame(rai::Frame* f){
   delete f;
 }
 
-void Configuration::delSubtree(rai::Frame* f){
-  CHECK_EQ(&f->C, this, "");
-  FrameL F = f->getSubtree();
-  for(rai::Frame *ff:F) delete ff;
-}
-
 /// get first frame with given name
 Frame* Configuration::getFrame(const char* name, bool warnIfNotExist, bool reverse) const {
   if(!reverse) {
@@ -823,10 +817,7 @@ void Configuration::selectJointsByName(const StringA& names, bool notThose) {
 /// select joint frames of trees given by the set of roots
 void Configuration::selectJointsBySubtrees(const FrameL& roots, bool notThose) {
   FrameL F;
-  for(Frame* f: roots) {
-    F.append(f);
-    f->getSubtree(F);
-  }
+  for(Frame* f: roots) F.append(f->getSubtree());
   selectJoints(F, notThose);
 }
 
@@ -1692,7 +1683,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
       if(j_idx>=N) if(j->active) CHECK_EQ(j->type, JT_rigid, "");
       if(j_idx<N) {
         if(j->type==JT_hingeX || j->type==JT_hingeY || j->type==JT_hingeZ) {
-          Vector tmp = j->axis ^ (pos_world-j_pos); //j->X()*j->Q().pos);
+          Vector tmp = j->X_axis ^ (pos_world-j_pos); //j->X()*j->Q().pos);
           tmp *= j->scale;
           J.elem(0, j_idx) += tmp.x;
           J.elem(1, j_idx) += tmp.y;
@@ -1712,9 +1703,9 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           J.elem(1, j_idx+1) += tmp.y;
           J.elem(2, j_idx+1) += tmp.z;
         } else if(j->type==JT_transX || j->type==JT_transY || j->type==JT_transZ || j->type==JT_XBall) {
-          J.elem(0, j_idx) += j->scale * j->axis.x;
-          J.elem(1, j_idx) += j->scale * j->axis.y;
-          J.elem(2, j_idx) += j->scale * j->axis.z;
+          J.elem(0, j_idx) += j->scale * j->X_axis.x;
+          J.elem(1, j_idx) += j->scale * j->X_axis.y;
+          J.elem(2, j_idx) += j->scale * j->X_axis.z;
         } else if(j->type==JT_transXY) {
           arr R = j->X().rot.getMatrix();
           R *= j->scale;
@@ -1723,13 +1714,13 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           arr R = j->X().rot.getMatrix();
           R *= j->scale;
           J.setMatrixBlock(R.sub({0,0},{0, 1+1}), 0, j_idx);
-          Vector tmp = j->axis ^ (pos_world-j_pos); //(j->X().pos + j->X().rot*a->Q.pos));
+          Vector tmp = j->X_axis ^ (pos_world-j_pos); //(j->X().pos + j->X().rot*a->Q.pos));
           tmp *= j->scale;
           J.elem(0, j_idx+2) += tmp.x;
           J.elem(1, j_idx+2) += tmp.y;
           J.elem(2, j_idx+2) += tmp.z;
         } else if(j->type==JT_phiTransXY) {
-          Vector tmp = j->axis ^ (pos_world-j->X().pos);
+          Vector tmp = j->X_axis ^ (pos_world-j->X().pos);
           tmp *= j->scale;
           J.elem(0, j_idx) += tmp.x;
           J.elem(1, j_idx) += tmp.y;
@@ -1842,9 +1833,9 @@ void Configuration::jacobian_angular(arr& J, Frame* a) const {
       if(j_idx<N) {
         if((j->type>=JT_hingeX && j->type<=JT_hingeZ) || j->type==JT_transXYPhi || j->type==JT_phiTransXY) {
           if(j->type==JT_transXYPhi) j_idx += 2; //refer to the phi only
-          J.elem(0, j_idx) += j->scale * j->axis.x;
-          J.elem(1, j_idx) += j->scale * j->axis.y;
-          J.elem(2, j_idx) += j->scale * j->axis.z;
+          J.elem(0, j_idx) += j->scale * j->X_axis.x;
+          J.elem(1, j_idx) += j->scale * j->X_axis.y;
+          J.elem(2, j_idx) += j->scale * j->X_axis.z;
         }
         if(j->type==JT_universal) {
           rai::Vector tmp;
@@ -2104,12 +2095,12 @@ void Configuration::hessianPos(arr& H, Frame* a, Vector* rel) const {
         j2_idx=j2->qIndex;
 
         if(j1->type>=JT_hingeX && j1->type<=JT_hingeZ && j2->type>=JT_hingeX && j2->type<=JT_hingeZ) { //both are hinges
-          tmp = j2->axis ^ (j1->axis ^ (pos_a-j1->X().pos));
+          tmp = j2->X_axis ^ (j1->X_axis ^ (pos_a-j1->X().pos));
           H(0, j1_idx, j2_idx) = H(0, j2_idx, j1_idx) = tmp.x;
           H(1, j1_idx, j2_idx) = H(1, j2_idx, j1_idx) = tmp.y;
           H(2, j1_idx, j2_idx) = H(2, j2_idx, j1_idx) = tmp.z;
         } else if(j1->type>=JT_transX && j1->type<=JT_transZ && j2->type>=JT_hingeX && j2->type<=JT_hingeZ) { //i=trans, j=hinge
-          tmp = j1->axis ^ j2->axis;
+          tmp = j1->X_axis ^ j2->X_axis;
           H(0, j1_idx, j2_idx) = H(0, j2_idx, j1_idx) = tmp.x;
           H(1, j1_idx, j2_idx) = H(1, j2_idx, j1_idx) = tmp.y;
           H(2, j1_idx, j2_idx) = H(2, j2_idx, j1_idx) = tmp.z;
@@ -2120,7 +2111,7 @@ void Configuration::hessianPos(arr& H, Frame* a, Vector* rel) const {
         } else if(j1->type==JT_trans3 && j2->type>=JT_hingeX && j2->type<=JT_hingeZ) { //i=trans3, j=hinge
           Matrix R, A;
           j1->X().rot.getMatrix(R.p());
-          A.setSkew(j2->axis);
+          A.setSkew(j2->X_axis);
           R = R*A;
           H(0, j1_idx, j2_idx) = H(0, j2_idx, j1_idx) = R.m00;
           H(1, j1_idx, j2_idx) = H(1, j2_idx, j1_idx) = R.m10;
@@ -3283,10 +3274,10 @@ Configuration::FrameDynState& Configuration::dyn_ensure(Frame* f, const arr& q_d
     if(f->joint){
       if(f->joint->dim==1 && f->joint->type>=rai::JT_hingeX && f->joint->type<=rai::JT_hingeZ){
         CHECK_EQ(f->joint->dim, 1, "");
-        W = q_dot(f->joint->qIndex) * f->joint->axis; //axis is already in world coordinates! (see Frame::calc_X_from_parent())
+        W = q_dot(f->joint->qIndex) * f->joint->X_axis; //axis is already in world coordinates! (see Frame::calc_X_from_parent())
       }else if(f->joint->dim==1 && f->joint->type>=rai::JT_transX && f->joint->type<=rai::JT_transZ){
         CHECK_EQ(f->joint->dim, 1, "");
-        V = q_dot(f->joint->qIndex) * f->joint->axis; //axis is already in world coordinates! (see Frame::calc_X_from_parent())
+        V = q_dot(f->joint->qIndex) * f->joint->X_axis; //axis is already in world coordinates! (see Frame::calc_X_from_parent())
       }else{
         arr Jang, Jlin;
         f->C.jacobian_angular(Jang, f);

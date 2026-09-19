@@ -3,7 +3,6 @@
 x:            # a vertex: key=x, value=true, parents=none
 y:            # another vertex: key=y, value=true, parents=none
 (x y):        # an edge: key=none, value=true, parents=x y
-(-1 -2):      # a hyperedge: key=none, value=true, parents=the previous edge and the y-node
 
 ## nodes with subgraphs as value
 A: { color: blue }         # key=A, value=<Graph>, parents=none

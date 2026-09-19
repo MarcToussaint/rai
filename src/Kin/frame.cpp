@@ -106,12 +106,12 @@ void rai::Frame::calc_X_from_parent() {
 //  CHECK_EQ(X.pos.x, X.pos.x, "NAN transformation:" <<from <<'*' <<Q);
   if(joint) {
     Joint* j = joint;
-    if(j->type==JT_hingeX || j->type==JT_transX || j->type==JT_XBall)  j->axis = from.rot.getX();
-    else if(j->type==JT_hinge) j->axis = from.rot * j->joint_axis;
-    else if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = from.rot.getY();
-    else if(j->type==JT_hingeZ || j->type==JT_transZ || j->type==JT_circleZ)  j->axis = from.rot.getZ();
-    else if(j->type==JT_transXYPhi || j->type==JT_transYPhi)  j->axis = from.rot.getZ();
-    else if(j->type==JT_phiTransXY)  j->axis = from.rot.getZ();
+    if(j->type==JT_hingeX || j->type==JT_transX || j->type==JT_XBall)  j->X_axis = from.rot.getX();
+    else if(j->type==JT_hinge) j->X_axis = from.rot * j->joint_axis;
+    else if(j->type==JT_hingeY || j->type==JT_transY)  j->X_axis = from.rot.getY();
+    else if(j->type==JT_hingeZ || j->type==JT_transZ || j->type==JT_circleZ)  j->X_axis = from.rot.getZ();
+    else if(j->type==JT_transXYPhi || j->type==JT_transYPhi)  j->X_axis = from.rot.getZ();
+    else if(j->type==JT_phiTransXY)  j->X_axis = from.rot.getZ();
   }
 
   _state_X_isGood=true;
@@ -188,8 +188,27 @@ void rai::Frame::getPartSubFrames(FrameL& F) const {
     if(!child->joint || !child->joint->isPartBreak) { F.append(child); child->getPartSubFrames(F); }
 }
 
-void rai::Frame::getSubtree(FrameL& F) const {
-  for(Frame* child:children) { F.append(child); child->getSubtree(F); }
+void _addSubtree(FrameL& F, const rai::Frame *f) {
+  for(rai::Frame* child:f->children) { F.append(child); _addSubtree(F, child); }
+}
+
+FrameL rai::Frame::getSubtree() const {
+  FrameL F;
+  F.append((Frame*)this);
+  _addSubtree(F, this);
+  return F;
+}
+
+FrameL rai::Frame::getSubJoints(bool actives, bool inactives, bool mimics) const {
+  FrameL F = getSubtree();
+  FrameL J;
+  for(auto* f:F) {
+    Joint* j= f->joint;
+    if(j && ((actives && j->active) || (inactives && !j->active)) && (mimics || !j->mimic)) {
+      J.append(f);
+    }
+  }
+  return J;
 }
 
 rai::Frame* rai::Frame::getRoot() {
@@ -287,8 +306,7 @@ rai::Dof* rai::Frame::getDof() const {
 }
 
 void rai::Frame::prefixSubtree(const char* prefix) {
-  FrameL F = {this};
-  getSubtree(F);
+  FrameL F = getSubtree();
   for(auto* f:F) f->name.prepend(prefix);
 }
 
@@ -1323,7 +1341,7 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint) {
 
   if(copyJoint) {
     qIndex=copyJoint->qIndex; dim=copyJoint->dim;
-    type=copyJoint->type; axis=copyJoint->axis; joint_axis=copyJoint->joint_axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H; scale=copyJoint->scale;
+    type=copyJoint->type; X_axis=copyJoint->X_axis; joint_axis=copyJoint->joint_axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H; scale=copyJoint->scale;
     active=copyJoint->active;
     isStable=copyJoint->isStable;
     isPartBreak=copyJoint->isPartBreak;
@@ -2141,15 +2159,19 @@ void rai::Shape::write(std::ostream& os, const Frame& frame) const {
 }
 
 void rai::Shape::write(Graph& g, const Frame& frame) {
-  g.add<rai::Enum<ShapeType>>("shape", type());
+  Node* n;
+
+  if(frame.ats && (n=frame.ats->findNode("mesh"))){
+    n->newClone(g);
+    if((n=frame.ats->findNode("meshscale"))) n->newClone(g);
+  }else{
+    g.add<rai::Enum<ShapeType>>("shape", type());
+  }
   if(type()!=ST_mesh) g.add<arr>("size", size);
 
-  Node* n;
   if(frame.ats && (n=frame.ats->findNode("color"))) n->newClone(g);
   else if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4) g.add<arr>("color", mesh().C);
   // else if(_mesh && _mesh->C.nd==2) g.add<arr>("color", mesh().C[0]);
-  if(frame.ats && (n=frame.ats->findNode("mesh"))) n->newClone(g);
-  if(frame.ats && (n=frame.ats->findNode("meshscale"))) n->newClone(g);
   if(cont) g.add<int>("contact", cont);
 }
 

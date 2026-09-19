@@ -13,6 +13,7 @@
 #include "../Core/array.h"
 #include "../Core/graph.h"
 #include "../Geo/geo.h"
+#include "../Kin/frame.h"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -87,9 +88,21 @@ template<class T> rai::Array<T> list2arr(const pybind11::list& X) {
   return Y;
 }
 
-template<class T> rai::Array<T> arr2list(const rai::Array<T>& X) {
+template<class T> pybind11::list arr2list(const rai::Array<T>& X) {
   pybind11::list Y(X.N);
   for(uint i=0; i<X.N; i++) Y[i] = X.elem(i);
+  return Y;
+}
+
+template<class T> rai::Array<T*> list2ArrayL(const pybind11::list& X) {
+  rai::Array<T*> Y(X.size());
+  for(uint i=0; i<Y.N; i++) Y.elem(i) = X[i].cast<shared_ptr<T>>().get();
+  return Y;
+}
+
+template<class T> pybind11::list ArrayL2list(const rai::Array<T*>& X) {
+  pybind11::list Y(X.N);
+  for(uint i=0; i<X.N; i++) Y[i] = shared_ptr<T>(X.elem(i), [](T*){});  //giving it a nil deleter
   return Y;
 }
 
@@ -200,6 +213,20 @@ template <> struct type_caster<StringA> {
 
   static handle cast(const StringA& src, return_value_policy, handle) {
     return StringA2list(src).release();
+  }
+};
+
+//== FrameL -- list<shared_ptr<Frame>>
+template <> struct type_caster<FrameL> {
+  PYBIND11_TYPE_CASTER(FrameL, _("FrameL"));
+
+  bool load(pybind11::handle src, bool) {
+    value = list2ArrayL<rai::Frame>(src.cast<pybind11::list>());
+    return !PyErr_Occurred();
+  }
+
+  static handle cast(const FrameL& src, return_value_policy, handle) {
+    return ArrayL2list<rai::Frame>(src).release();
   }
 };
 

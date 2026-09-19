@@ -155,8 +155,8 @@ void TEST(Manual){
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-  // testRandom();
-  testRead(); return 0;
+  testRandom();
+  testRead();
   testInit();
   testDot();
 

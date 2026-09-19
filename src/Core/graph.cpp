@@ -707,8 +707,9 @@ void readNode_postprocess(Node* n, str& namePrefix, bool parseInfo){
 
   } else if(n->key=="Include") {
     uint Nbefore = G.N;
-    n->as<FileToken>().cd_file();
-    G.read(n->as<FileToken>().getIs(), parseInfo);
+    FileToken& file = n->as<FileToken>();
+    file.cd_file();
+    G.read(file.getIs(), parseInfo, file.name.endsWith("yml"));
     if(namePrefix.N) { //prepend a naming prefix to all nodes just read
       for(uint i=Nbefore; i<G.N; i++) {
         G.elem(i)->key.prepend(namePrefix);
@@ -1421,9 +1422,9 @@ struct LibYamlWriteHelper{
     _str(writeNode_name(n));
 
     if(n->is<Graph>()){
-      map_start();
       Graph& g = n->graph();
-      // g.checkUniqueKeys(true);
+      bool flow=true; //g.N<4;
+      map_start(flow);
       for(Node *ch:g) writeNode(ch);
       map_end();
     } else if(n->is<String>()) { _str(n->as<String>());

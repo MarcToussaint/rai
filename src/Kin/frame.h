@@ -136,8 +136,8 @@ struct Frame : NonCopyable {
   bool isPureTransform() const { return parent && !joint && !shape && !inertia && children.N==1; }
   void getRigidSubFrames(FrameL& F, bool includeRigidJoints=false) const; ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
   void getPartSubFrames(FrameL& F) const; ///< recursively collect all frames of this part
-  void getSubtree(FrameL& F) const;
-  FrameL getSubtree() const { FrameL F; getSubtree(F); return F; }
+  FrameL getSubtree() const;
+  FrameL getSubJoints(bool actives=true, bool inactives=false, bool mimics=false) const; //same conventions as Config::getDofs
   Frame* getRoot();
   Frame* getCommonRoot(Frame* g);
   FrameL getPathToRoot(Frame* stop=0);
@@ -279,7 +279,7 @@ struct Joint : Dof, NonCopyable {
   double H=1.;       ///< control cost scalar
   double scale=1.;   ///< scaling robot-q = scale * q-vector
 
-  Vector axis=0;          ///< joint axis IN WORLD COORDINATES (e.g., same as X.rot.getX() for standard hinge joints)
+  Vector X_axis=0;          ///< joint axis IN WORLD COORDINATES (e.g., same as X.rot.getX() for standard hinge joints)
   Vector joint_axis=Vector_x; ///< joint axis in relative coordinates
   Enum<JointType> type;   ///< joint type
   bool isPartBreak = false;

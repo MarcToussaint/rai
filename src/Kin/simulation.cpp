@@ -352,8 +352,7 @@ bool getFingersForGripper(rai::Frame*& gripper, rai::Joint*& joint, rai::Frame*&
   }
   gripper = gripper->getUpwardLink();
   //browse all children of the gripper and find by name
-  FrameL F;
-  gripper->getSubtree(F);
+  FrameL F = gripper->getSubtree();
   for(rai::Frame* f:F) {
     if(f->name.endsWith("finger1")) fing1=f;
     if(f->name.endsWith("finger2")) fing2=f;
