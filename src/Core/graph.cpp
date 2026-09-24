@@ -1351,6 +1351,7 @@ struct LibYamlWriteHelper{
     // yaml_emitter_set_output_file(&emitter, file);
     yaml_emitter_set_output(&emitter, write_handler, &output);
     yaml_emitter_set_width(&emitter, -1);
+    // yaml_emitter_set_indent(&emitter, 4);
 
     yaml_stream_start_event_initialize(&event, YAML_UTF8_ENCODING);
     if (!yaml_emitter_emit(&emitter, &event)) HALT("Failed to emit event " <<event.type <<": " <<emitter.problem);
@@ -1423,7 +1424,7 @@ struct LibYamlWriteHelper{
 
     if(n->is<Graph>()){
       Graph& g = n->graph();
-      bool flow=true; //g.N<4;
+      bool flow=g.N<4;
       map_start(flow);
       for(Node *ch:g) writeNode(ch);
       map_end();

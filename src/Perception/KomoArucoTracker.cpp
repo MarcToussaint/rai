@@ -101,7 +101,7 @@ str CalibrationScene::report(){
 
 //===========================================================================
 
-void komoCalibrate(CalibrationScene& CS, const intAA& ids, const arrA& pts, const arr& qs, bool calibrate_cams, bool calibrate_arucos, bool calibrate_joints, bool calibrate_objPoses, bool undistort_points, double calib_joint_regularization){
+void komoCalibrate(CalibrationScene& CS, const intAA& ids, const arrA& pts, const arr& qs, const uintA& exclude_times, bool calibrate_cams, bool calibrate_arucos, bool calibrate_joints, bool calibrate_objPoses, bool undistort_points, double calib_joint_regularization){
 
   CS.C.getJointState();
   Frame *obj = CS.C.getFrame("obj");
@@ -126,6 +126,7 @@ void komoCalibrate(CalibrationScene& CS, const intAA& ids, const arrA& pts, cons
 
   //-- add objectives for each data point
   for(uint t=0;t<ids.d0;t++){
+    if(exclude_times.contains(t)) continue;
     for(uint c=0;c<ids.d1;c++){
       CHECK_EQ(ids(t,c).N, pts(t,c).d0, "");
       for(uint i=0;i<ids(t,c).N;i++){

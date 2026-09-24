@@ -304,6 +304,7 @@ void OpenGL::endContext(bool fromWithinCallback) {
 }
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
+  if(rai::getDisableGui()) return;
   auto _glfw = glfwSingleton();
   if(!fromWithinCallback) _glfw->mutex.lock(RAI_HERE);
   needsRedraw=true;
@@ -312,6 +313,7 @@ void OpenGL::postRedrawEvent(bool fromWithinCallback) {
 }
 
 void OpenGL::resize(int w, int h) {
+  if(rai::getDisableGui()) return;
   openWindow();
   {
     auto _glfw = glfwSingleton();

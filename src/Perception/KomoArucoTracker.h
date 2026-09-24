@@ -37,6 +37,7 @@ struct CalibrationScene {
 
 void komoCalibrate(CalibrationScene& CS,
 		   const intAA& ids, const arrA& pts, const arr& qs,
+		   const uintA& exclude_times,
 		   bool calibrate_cams = true,
 		   bool calibrate_arucos = true,
 		   bool calibrate_joints = true,
