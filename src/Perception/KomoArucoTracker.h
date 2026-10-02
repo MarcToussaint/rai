@@ -4,46 +4,13 @@
 #include <KOMO/komo.h>
 #include <Control/CtrlMsgs.h>
 
+#include "calibration.h"
+
 namespace rai {
 
 struct ArucoThread;
 
 //===========================================================================
-
-struct CalibrationScene {
-  Configuration& C;
-
-  FrameL cams;
-  FrameL arucos;
-  FrameL calibs;
-  FrameL calibs_joints;
-
-  arrA Fxycxy;
-  arrA Distortion;
-  Frame * obj;
-  uintA obj_aruco_ids;
-
-  CalibrationScene(Configuration& C, const char* obj_name=0);
-
-  //-- setup calib dof frames
-  void addCalibDofs_arucos();
-  void addCalibDofs_cameras();
-  void addCalibDofs_joints(const uintA& jointIds);
-
-  str report();
-};
-
-//===========================================================================
-
-void komoCalibrate(CalibrationScene& CS,
-		   const intAA& ids, const arrA& pts, const arr& qs,
-		   const uintA& exclude_times,
-		   bool calibrate_cams = true,
-		   bool calibrate_arucos = true,
-		   bool calibrate_joints = true,
-		   bool calibrate_objPoses = false,
-		   bool undistort_points = true,
-		   double calib_joint_regularization = 1e1);
 
 //===========================================================================
 

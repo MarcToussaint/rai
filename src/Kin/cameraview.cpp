@@ -57,7 +57,7 @@ void CameraView::computeImageAndDepth(byteA& image, floatA& depth, bool _simulat
   updateCamera();
   if(renderMode==visuals) renderUntil=_shadow;
 //  else if(renderMode==all) renderUntil=_all;
-  // gl->update(nullptr, true);
+  // gl->update(false, true);
   gl->renderInBack();
   image = gl->captureImage;
   flip_image(image);

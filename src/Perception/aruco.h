@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <Core/array.h>
@@ -38,8 +37,8 @@ byteA getArucoImage(int id, int borderBits = 2);
 void undistort_point(arr& p, const arr& fxycxy, const arr& distortion);
 byteA undistort_image(const byteA& img, const arr& fxycxy, const arr& distortion);
 
-std::tuple<intAA, arrA> findArucos(const byteAA& imgs);
-std::tuple<arrA, arrA> calibrateIntrinsicsWithCharuco(const byteAA& imgs, uint distortionDofs, float square_len_m=0.055, float marker_len_m=0.041);
+std::tuple<intAA, arrA> detect_arucos(const byteAA& imgs, int verbose=0);
+std::tuple<arrA, arrA> calibrate_intrinsics(const byteAA& imgs, uint distortionDofs, int verbose=2, float square_len_m=0.055, float marker_len_m=0.041);
 
 //===========================================================================
 

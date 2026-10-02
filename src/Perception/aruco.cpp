@@ -84,15 +84,15 @@ str ArucoFinder::report(){
 
 //===========================================================================
 
-std::tuple<intAA, arrA> findArucos(const byteAA& imgs){
+std::tuple<intAA, arrA> detect_arucos(const byteAA& imgs, int verbose){
   ArucoFinder finder;
-  finder.verbose=1;
+  finder.verbose=verbose;
 
   intAA ids(imgs.d0, imgs.d1);
   arrA pts(imgs.d0, imgs.d1);
   for(uint t=0;t<imgs.d0;t++) for(uint c=0;c<imgs.d1;c++){
       finder.find(imgs(t,c));
-      cout <<finder.report() <<endl;
+      if(verbose>0) cout <<finder.report() <<endl;
       ids(t,c) = finder.ids;
       pts(t,c) = finder.pts;
     }
@@ -175,7 +175,7 @@ byteA undistort_image(const byteA& img, const arr& fxycxy, const arr& distortion
 
 //===========================================================================
 
-std::tuple<arrA, arrA> calibrateIntrinsicsWithCharuco(const byteAA& imgs, uint distortionDofs, float square_len_m, float marker_len_m){
+std::tuple<arrA, arrA> calibrate_intrinsics(const byteAA& imgs, uint distortionDofs, int verbose, float square_len_m, float marker_len_m){
   shared_ptr<cv::aruco::Dictionary> dictionary;
   shared_ptr<cv::aruco::CharucoBoard> board;
   shared_ptr<cv::aruco::CharucoDetector> detector;
@@ -186,7 +186,6 @@ std::tuple<arrA, arrA> calibrateIntrinsicsWithCharuco(const byteAA& imgs, uint d
   arrA Distortion;
 
   //user
-  int verbose=2;
   shared_ptr<OpenGL> gl;
   byteA rgb_annotated;
 
@@ -219,7 +218,14 @@ std::tuple<arrA, arrA> calibrateIntrinsicsWithCharuco(const byteAA& imgs, uint d
 
         detector->detectBoard(inputImage, charucoCorners, charucoIds);
 
-	if(charucoIds.size()>20){
+        if(verbose>0){
+            cv::Mat outputImage = inputImage.clone();
+            cv::aruco::drawDetectedCornersCharuco(outputImage, charucoCorners, charucoIds);
+            rgb_annotated = conv_cvMat2byteA(outputImage);
+            if(verbose>1) gl->watchImage(rgb_annotated, verbose>2);
+        }
+
+    if(charucoIds.size()>20){
 	  intA ids = as_arr<int>(charucoIds, false);
 	  arr pts(ids.N, 2);
 	  if(ids.N>=10){
@@ -228,12 +234,6 @@ std::tuple<arrA, arrA> calibrateIntrinsicsWithCharuco(const byteAA& imgs, uint d
 	      pts(i, 1) = charucoCorners[i].y;
 	    }
 
-	    if(verbose>0){
-	      cv::Mat outputImage = inputImage.clone();
-	      cv::aruco::drawDetectedCornersCharuco(outputImage, charucoCorners, charucoIds);
-	      rgb_annotated = conv_cvMat2byteA(outputImage);
-	      if(verbose>1) gl->watchImage(rgb_annotated, verbose>2);
-	    }
 	  }
 
 	  std::vector<cv::Point3f> currentObjectPoints;

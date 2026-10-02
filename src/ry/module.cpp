@@ -24,6 +24,7 @@
 #include "py-Optim.h"
 #include "py-tests.h"
 #include "py-DataGen.h"
+#include "py-calib.h"
 #include "types.h"
 
 #include <pybind11/pybind11.h>
@@ -95,6 +96,7 @@ PYBIND11_MODULE(_robotic, m) {
 #ifdef RAI_BotOp
   init_BotOp(m);
 #endif
+  init_calib(m);
 }
 
 void init_params(pybind11::module& m) {

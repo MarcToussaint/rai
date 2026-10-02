@@ -51,6 +51,14 @@ template<class T> pybind11::array_t<T> Array2numpy(const rai::Array<T>& x) {
   return pybind11::array_t<T>(vecdim(x), x.p);
 }
 
+template<class T> pybind11::array_t<pybind11::array_t<T>> ArrArr2numpy(const rai::Array<rai::Array<T>>& x) {
+    NIY;
+}
+
+template<class T> rai::Array<rai::Array<T>> numpy2ArrArr(const pybind11::array_t<pybind11::array_t<T>>& x) {
+    NIY;
+}
+
 inline pybind11::array_t<double> arr2numpy(const arr& x) {
   //default!
   if(!isSparse(x)) return Array2numpy<double>(x);
@@ -308,6 +316,22 @@ template <class T> struct type_caster<rai::Array<T>> {
     pybind11::array_t<T> ret = Array2numpy<T>(src);
     return ret.release();
   }
+};
+
+//== Array<Array<T>> <--> numpy<numpy>
+template <class T> struct type_caster<rai::Array<rai::Array<T>>> {
+    PYBIND11_TYPE_CASTER(rai::Array<rai::Array<T>>, _("Array<Array<T>>"));
+
+    bool load(pybind11::handle src, bool) {
+        auto buf = pybind11::array_t<pybind11::array_t<T>>::ensure(src);
+        if(!buf) return false;
+        value = numpy2ArrArr<T>(buf);
+        return !PyErr_Occurred();
+    }
+
+    static handle cast(const rai::Array<rai::Array<T>>& src, return_value_policy, handle) {
+        return ArrArr2numpy<T>(src).release();
+    }
 };
 
 //== Vector -- numpy
