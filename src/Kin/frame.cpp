@@ -359,6 +359,7 @@ bool rai::Frame::standardizeInertias(bool recomputeInertias, bool _transformToDi
     for(rai::Frame* ch: sub){
       bool needsInertia = ch->shape
                           && ch->getShape().type()!=rai::ST_marker
+                          && ch->getShape().type()!=rai::ST_quad
                           && ch->getShape().type()!=rai::ST_camera
                           && ((ch->ats && ch->ats->get<bool>("simulate", false))
                               || ch->getShape().alpha()==1.);
@@ -2409,7 +2410,7 @@ void rai::Inertia::defaultInertiaByShape() {
       cvx.setConvex(frame.shape->mesh().V);
       inertiaMeshSurface(mass, com.p(), matrix.p(), cvx, (mass>0.?-1.:defaultMassDensity));
     } break;
-    default: HALT("not implemented for this shape type");
+    default: HALT("not implemented for this shape type:" <<frame.shape->type() <<" frame " <<frame.name);
   }
   CHECK_GE(mass, 1e-6, "not a good shape to compute default inertia");
   CHECK_GE(matrix.m00, 1e-12, "not a good shape to compute default inertia");

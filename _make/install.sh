@@ -45,11 +45,9 @@ while getopts "gtcv:" o; do
 	c)
 	    clean="yes"
 	    ;;
-
 	v)
 	    version=${OPTARG}
             ;;
-	
         *)
 	    echo '=== option' ${o} 'unknown - ignored'
             usage
@@ -83,17 +81,20 @@ case ${lib} in
 	;;
 
     libfranka)
-	if [ -z "$version" ]; then version="0.10.0"; fi #old: 0.8.0 very old: 0.7.1
+	if [ -z "$version" ]; then version="0.13.3"; fi #old: 0.8.0 very old: 0.7.1
 	git clone --single-branch -b ${version} --recurse-submodules https://github.com/frankaemika/libfranka
-	cmake -DCMAKE_INSTALL_PREFIX=${pre} -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=OFF ${lib} -B ${lib}/build
-	make -C ${lib}/build install
+	cd libfranka
+	curl -LO https://github.com/Human-Centered-Robotics-Team/Libfranka-Non-RT-Patch/raw/master/PatchFile
+	patch -p1 < PatchFile
+	cmake -DCMAKE_INSTALL_PREFIX=${pre} -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=OFF . -B build
+	make -C build install
 	;;
 
     libfranka-static)
 	if [ -z "$version" ]; then version="0.10.0"; fi #old: 0.7.1
 	git clone --single-branch -b ${version} --recurse-submodules https://github.com/frankaemika/libfranka
 	cd libfranka
-	wget https://github.com/MarcToussaint/rai-extern/raw/main/franka.patch
+	curl -LO https://github.com/MarcToussaint/rai-extern/raw/main/franka.patch
 	patch -p1 CMakeLists.txt franka.patch
 	cmake -DCMAKE_INSTALL_PREFIX=${pre} -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=OFF . -B build
 	make -C build install
