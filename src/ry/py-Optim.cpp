@@ -37,14 +37,14 @@ struct PyNLP : NLP {
 
     dimension = py_nlp.attr("dimension").cast<int>();
     featureTypes = rai::convert<ObjectiveType>( list2arr<int>( py_nlp.attr("types").cast<pybind11::list>() ) );
-    bounds = numpy2arr<double>(py_nlp.attr("bounds").cast<pybind11::array_t<double>>());
+    bounds = numpy2Array<double>(py_nlp.attr("bounds").cast<pybind11::array_t<double>>());
   }
 
   virtual void evaluate(arr& phi, arr& J, const arr& x){
     pybind11::object _phiJ = py_nlp.attr("evaluate")(arr2numpy(x));
     auto phiJ = _phiJ.cast< std::tuple< pybind11::array_t<double>, pybind11::array_t<double> > >();
-    phi = numpy2arr(std::get<0>(phiJ));
-    J = numpy2arr(std::get<1>(phiJ));
+    phi = numpy2Array(std::get<0>(phiJ));
+    J = numpy2Array(std::get<1>(phiJ));
     if(J.d0!=phi.N && J.d1==3){ //assume sparse triplet storage!!
       arr T = J;
       J.sparse().setFromTriplets(T, phi.N, x.N);
@@ -54,7 +54,7 @@ struct PyNLP : NLP {
   virtual void getFHessian(arr& H, const arr& x) {
     if(pybind11::hasattr(py_nlp, "getFHessian")){
       pybind11::object _H = py_nlp.attr("getFHessian")(arr2numpy(x));
-      H = numpy2arr(_H.cast<pybind11::array_t<double>>());
+      H = numpy2Array(_H.cast<pybind11::array_t<double>>());
     }else{
       H.clear();
     }
@@ -63,7 +63,7 @@ struct PyNLP : NLP {
   virtual arr getInitializationSample(){
     if(pybind11::hasattr(py_nlp, "getInitializationSample")){
       pybind11::object _x = py_nlp.attr("getInitializationSample")();
-      return numpy2arr(_x.cast<pybind11::array_t<double>>());
+      return numpy2Array(_x.cast<pybind11::array_t<double>>());
     }
     // LOG(-1) <<"no getInitializationSample implemented -- using default fallback";
     return NLP::getInitializationSample();

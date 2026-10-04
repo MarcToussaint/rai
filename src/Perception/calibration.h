@@ -20,39 +20,39 @@ byteAA render_images(rai::Configuration& C, const arr& qs, uint T=0);
 //===========================================================================
 
 struct CalibrationScene {
-    Configuration& C;
+  Configuration& C;
 
-    FrameL cams;
-    FrameL arucos;
-    FrameL calibs;
-    FrameL calibs_joints;
+  FrameL cams;
+  FrameL arucos;
+  FrameL calibs;
+  FrameL calibs_joints;
 
-    arrA Fxycxy;
-    arrA Distortion;
-    Frame * obj;
-    uintA obj_aruco_ids;
+  arrA Fxycxy;
+  arrA Distortion;
+  Frame * obj;
+  uintA obj_aruco_ids;
 
-    CalibrationScene(Configuration& C, const char* obj_name=0);
+  CalibrationScene(Configuration& C, const char* obj_name=0);
 
-    //-- setup calib dof frames
-    void addCalibDofs_arucos();
-    void addCalibDofs_cameras();
-    void addCalibDofs_joints(const uintA& jointIds);
+  //-- setup calib dof frames
+  void addCalibDofs_arucos();
+  void addCalibDofs_cameras();
+  void addCalibDofs_joints(const uintA& jointIds);
 
-    str report();
+  str report();
 };
 
 //===========================================================================
 
 void komo_calibrate(Configuration& C,
-                    const intAA& ids, const arrA& pts, const arr& qs,
-                    const uintA& exclude_times,
-                    bool calibrate_cams = true,
-                    bool calibrate_arucos = true,
-                    bool calibrate_joints = true,
-                    bool calibrate_objPoses = false,
-                    double calib_joint_regularization = 1e1,
-                    int verbose=1);
+		    const intAA& ids, const arrA& pts, const arr& qs,
+		    const uintA& exclude_times,
+		    bool calibrate_cams = true,
+		    bool calibrate_arucos = true,
+		    bool calibrate_joints = true,
+		    bool calibrate_objPoses = false,
+		    double calib_joint_regularization = 1e1,
+		    int verbose=1);
 
 //===========================================================================
 

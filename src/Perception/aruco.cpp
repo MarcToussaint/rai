@@ -286,6 +286,10 @@ namespace rai {
   byteA getArucoImage(int id, int borderBits){ NICO }
   byteA getFullArucoDict(){ NICO }
   void undistort_point(arr& p, const arr& fxycxy, const arr& distortion) { NICO }
+  byteA undistort_image(const byteA& img, const arr& fxycxy, const arr& distortion) { NICO }
+  std::tuple<intAA, arrA> detect_arucos(const byteAA& imgs, int verbose) { NICO }
+  std::tuple<arrA, arrA> calibrate_intrinsics(const byteAA& imgs, uint distortionDofs, int verbose, float square_len_m, float marker_len_m) { NICO }
+
   ArucoFinder::ArucoFinder(){ NICO }
   void ArucoFinder::find(const byteA& rgb){ NICO }
   str ArucoFinder::report(){ NICO }

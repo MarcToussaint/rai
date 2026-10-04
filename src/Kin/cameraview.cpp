@@ -56,7 +56,7 @@ CameraView::CameraFrame& CameraView::setCamera(Frame *frame) {
 void CameraView::computeImageAndDepth(byteA& image, floatA& depth, bool _simulateDepthNoise) {
   updateCamera();
   if(renderMode==visuals) renderUntil=_shadow;
-//  else if(renderMode==all) renderUntil=_all;
+  //  else if(renderMode==all) renderUntil=_all;
   // gl->update(false, true);
   gl->renderInBack();
   image = gl->captureImage;

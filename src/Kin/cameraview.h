@@ -59,7 +59,7 @@ struct CameraView : ConfigurationViewer {
   arr getFxycxy() { CHECK(currentCamera, "no sensor selected yet"); return currentCamera->cam.getFxycxy(); }
   arr getProjectionMatrix() { CHECK(currentCamera, "no sensor selected yet"); return currentCamera->cam.getProjectionMatrix(); }
 
- private:
+private:
   void updateCamera();
 };
 

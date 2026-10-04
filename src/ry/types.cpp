@@ -112,7 +112,7 @@ void dict2graph(rai::Graph &G, const pybind11::dict& dict, str& prefix) {
               || pybind11::isinstance<pybind11::array_t<int>>(value)) {
 //      LOG(0) <<"converting arr";
       auto val = value.cast<pybind11::array_t<double>>();
-      n = G.add<arr>(key, numpy2arr(val));
+      n = G.add<arr>(key, numpy2Array(val));
 
     } else if(pybind11::isinstance<pybind11::str>(value)) {
       n = G.add<str>(key, value.cast<std::string>().c_str());

@@ -34,7 +34,7 @@ void init_Config(pybind11::module& m) {
 
   m.def("depthImage2PointCloud", [](const pybind11::array_t<float>& depth, const arr& fxycxy) {
     arr pts;
-    depthData2pointCloud(pts, numpy2arr<float>(depth), fxycxy);
+    depthData2pointCloud(pts, numpy2Array<float>(depth), fxycxy);
     return pts;
   }, "return the point cloud from the depth image",
   pybind11::arg("depth"),
@@ -263,7 +263,7 @@ void init_Config(pybind11::module& m) {
       )
 
   .def("setFrameState", [](shared_ptr<rai::Configuration>& self, const pybind11::array& X, const std::vector<std::string>& frames) {
-    arr _X = numpy2arr<double>(X);
+    arr _X = numpy2Array<double>(X);
     _X.reshape(_X.N/7, 7);
     if(frames.size()) {
       self->setFrameState(_X, self->getFrames(strvec2StringA(frames)));
