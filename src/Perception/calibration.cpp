@@ -45,6 +45,7 @@ CalibrationScene::CalibrationScene(Configuration& _C, const char* obj_name)
     if(f->name.startsWith("camera_") && f->name(-1)>='0' && f->name(-1)<='9'){
       CHECK_EQ(f->name, STRING("camera_" <<cams.N), "cameras need to be enumerated consecutively");
       cams.append(f);
+      CHECK(f->ats, "frame " <<f->name <<" does not have attributes");
       Fxycxy.append(f->ats->get<arr>("fxycxy"));
       Distortion.append(f->ats->get<arr>("distortion"));
     }
@@ -67,12 +68,16 @@ CalibrationScene::CalibrationScene(Configuration& _C, const char* obj_name)
 
   if(obj_name){
     obj = C.getFrame(obj_name);
-    FrameL sub = obj->getSubtree();
-    for(Frame* f:sub){
-      if(f->ats && f->ats->findNode("aruco_id")){
-        uint id = f->ats->getFlex<uint>("aruco_id");
-        obj_aruco_ids.append(id);
+    if(obj){
+      FrameL sub = obj->getSubtree();
+      for(Frame* f:sub){
+        if(f->ats && f->ats->findNode("aruco_id")){
+          uint id = f->ats->getFlex<uint>("aruco_id");
+          obj_aruco_ids.append(id);
+        }
       }
+    }else{
+      LOG(0) <<"object " <<obj_name <<" not part of the scene - will be ignored";
     }
   }
 }
@@ -132,8 +137,8 @@ void komo_calibrate(Configuration& C, const intAA& ids, const arrA& pts, const a
   CS.C.getJointState();
   Frame *obj = CS.C.getFrame("obj");
   uintA jointIds;
-  for(auto* d:CS.C.activeDofs({7,14})) jointIds.append(d->frame->ID);
-
+  for(auto* d:CS.C.activeDofs) jointIds.append(d->frame->ID);
+  
   //-- setup calib frames
   if(calibrate_arucos) CS.addCalibDofs_arucos();
   if(calibrate_cams) CS.addCalibDofs_cameras();

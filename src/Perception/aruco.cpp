@@ -69,7 +69,7 @@ void ArucoFinder::find(const byteA& rgb){
       rgb_annotated = conv_cvMat2byteA(outputImage);
       if(verbose>1){
         if(!gl) gl = make_shared<OpenGL>();
-        gl->watchImage(rgb_annotated, false);
+        gl->watchImage(rgb_annotated, verbose>2);
       }
     }
   }
