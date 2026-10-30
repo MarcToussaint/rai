@@ -1398,7 +1398,7 @@ bool Configuration::checkConsistency() const {
 
 Joint* Configuration::attach(Frame* a, Frame* b) {
   b = b->getUpwardLink();
-  if(a->isChildOf(b, 1000)) LOG(-1) <<"attaching '" <<b->name <<"' to '" <<a->name <<"' creates a kinematic loop";
+  if(a->isChildOf(b, 1000)) { LOG(-1) <<"attaching '" <<b->name <<"' to '" <<a->name <<"' creates a kinematic loop -- not attaching"; return 0; }
   if(b->parent) b->unLink();
   b->setParent(a, true);
   return new Joint(*b, JT_rigid);

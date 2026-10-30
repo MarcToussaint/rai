@@ -114,7 +114,8 @@ void init_Config(pybind11::module& m) {
   },
   "add the contents of the file to C",
   pybind11::arg("filename"),
-  pybind11::arg("namePrefix") = nullptr
+  pybind11::arg("namePrefix") = nullptr,
+  pybind11::keep_alive<0, 1>() //returned frame is owned by self
       )
 
   .def("addH5Object", [](shared_ptr<rai::Configuration>& self, const char* framename, const char* filename, int verbose) {
@@ -124,7 +125,8 @@ void init_Config(pybind11::module& m) {
            "add the contents of the file to C",
            pybind11::arg("framename"),
            pybind11::arg("filename"),
-           pybind11::arg("verbose") = 0
+           pybind11::arg("verbose") = 0,
+           pybind11::keep_alive<0, 1>() //returned frame is owned by self
            )
 
   .def("addFrame", [](shared_ptr<rai::Configuration>& self, const std::string& name, const std::string& parent, const std::string& args) {
@@ -134,7 +136,8 @@ void init_Config(pybind11::module& m) {
   "add a new frame to C; optionally make this a child to the given parent; use the Frame methods to set properties of the new frame",
   pybind11::arg("name"),
   pybind11::arg("parent") = std::string(),
-  pybind11::arg("args") = std::string()
+  pybind11::arg("args") = std::string(),
+  pybind11::keep_alive<0, 1>() //returned frame is owned by self
       )
 
   .def("addConfigurationCopy", [](shared_ptr<rai::Configuration>& self, shared_ptr<rai::Configuration>& other, const str& prefix, double tau) {
@@ -143,7 +146,8 @@ void init_Config(pybind11::module& m) {
   }, "",
   pybind11::arg("config"),
   pybind11::arg("prefix")=str{},
-  pybind11::arg("tau")=1.
+  pybind11::arg("tau")=1.,
+  pybind11::keep_alive<0, 1>() //returned frame is owned by self
       )
 
   .def("addDict", &rai::Configuration::addDict, "add frames as described by a dict (e.g. loaded from a yaml)", pybind11::arg("dict"))
@@ -161,7 +165,8 @@ void init_Config(pybind11::module& m) {
   },
   "get access to a frame by name; use the Frame methods to set/get frame properties",
   pybind11::arg("frameName"),
-  pybind11::arg("warnIfNotExist")=true
+  pybind11::arg("warnIfNotExist")=true,
+  pybind11::keep_alive<0, 1>() //returned frame is owned by self
       )
 
   .def("frame", [](shared_ptr<rai::Configuration>& self, uint ID) {
@@ -169,7 +174,8 @@ void init_Config(pybind11::module& m) {
     return shared_ptr<rai::Frame>(f, &null_deleter);  //giving it a nonsense deleter!
   },
   "get access to a frame by index (< getFrameDimension)",
-  pybind11::arg("frameID")
+  pybind11::arg("frameID"),
+  pybind11::keep_alive<0, 1>() //returned frame is owned by self
       )
 
   .def("getFrames", [](shared_ptr<rai::Configuration>& self) {

@@ -70,7 +70,7 @@ void init_DataGen(pybind11::module& m) {
        "(direct interface) return scores of grasp candidate (min(scores)<0. means fail)")
 
   .def("getEvalGripperPoses",  [](std::shared_ptr<ShapenetGrasps>& self) { return self->evalGripperPoses; }, "return the relative gripper after each motion phase: esp. poses[1] (after closing fingers) is interesting; the later ones allow you to estimate relative motion yourself)")
-  .def("getConfig",  [](std::shared_ptr<ShapenetGrasps>& self) { return std::shared_ptr<rai::Configuration>(&(self->C), &Config_null_deleter); }, "")
+  .def("getConfig",  [](std::shared_ptr<ShapenetGrasps>& self) { return std::shared_ptr<rai::Configuration>(&(self->C), &Config_null_deleter); }, "", pybind11::keep_alive<0, 1>()) //returned config is owned by self
 
   .def("setOptions", [](std::shared_ptr<ShapenetGrasps>& self
 #define OPT(type, name, x) ,type name

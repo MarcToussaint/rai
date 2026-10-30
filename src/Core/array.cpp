@@ -1412,7 +1412,7 @@ double& rai::RowShifted::elemNew(uint i, uint j) {
     return entry(i, 0);
   }
   if(j<rs) { //need to shift row to the right!
-    CHECK_LE(rl+rs-j, Z.d1, ""); //can't shift! (rs+rl<=Z.d1 always!)
+    CHECK_LE(rl+rs-j, Z.d1, "rowShifted was created too small"); //can't shift! (rs+rl<=Z.d1 always!)
     memmove(&entry(i, rs-j), &entry(i, 0), rl*Z.sizeT);
     memset(&entry(i, 0), 0, (rs-j)*Z.sizeT);
     rowLen.p[i] += rs-j;

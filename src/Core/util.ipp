@@ -25,7 +25,8 @@ namespace rai {
 
 template<class T>
 bool getParameterBase(T& x, const char* key, bool hasDefault, const T* Default) {
-  if(params()->get<T>(x, key)) {
+  auto P = params(); //hold the lock across lookup and insertion
+  if(P->get<T>(x, key)) {
     LOG(4) <<std::setw(20) <<key <<": " <<std::setw(5) <<x <<" # user [" <<typeid(x).name() <<"]";
     return true;
   }
@@ -35,7 +36,7 @@ bool getParameterBase(T& x, const char* key, bool hasDefault, const T* Default) 
       x=*Default;
       LOG(4) <<std::setw(20) <<key <<": " <<std::setw(5) <<x <<" # default [" <<typeid(x).name() <<"]";
       //-- add used parameter back to graph??
-      params()->add<T>(key, x); //add the parameter to the parameterGraph
+      P->add<T>(key, x); //add the parameter to the parameterGraph
     }
     return false;
   }

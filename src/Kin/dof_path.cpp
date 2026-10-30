@@ -35,6 +35,7 @@ void PathDof::setDofs(const arr& q_full, uint qIndex) {
   CHECK_LE(qIndex+dim, q_full.N, "out of range");
   q = q_full.elem(qIndex);
   CHECK_GE(q, 0., "out of range");
+  CHECK(path.d0, "PathDof of frame '" <<frame->name <<"' has no path loaded");
   CHECK_LE(q, path.d0-1+1e-6, "out of range");
   double a=q*double(path.d0-1), i;
   a = modf(a, &i);
@@ -59,6 +60,7 @@ void PathDof::read(const Graph& ats) {
 }
 
 void PathDof::getJacobians(arr& Jpos, arr& Jang) const {
+  CHECK_GE(path.d0, 2, "PathDof of frame '" <<frame->name <<"' has no path loaded (needs at least 2 waypoints)");
   //compute 'fwd kin' again:
   double a=q*double(path.d0-1), i;
   a = modf(a, &i);

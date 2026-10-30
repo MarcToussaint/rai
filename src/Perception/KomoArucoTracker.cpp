@@ -129,6 +129,7 @@ KomoArucoTracker_Thread::KomoArucoTracker_Thread(const Array<std::shared_ptr<Aru
                                                  Var<CtrlStateMsg>& state,
                                                  Configuration& C, const char* obj_name)
     : Thread("aruco_obj_tracker_thread", .025), aruco_threads(aruco_threads), state(state), tracker(C, obj_name) {
+    CHECK(aruco_threads.N, "no aruco threads to track from - launch the aruco threads (cameras) first");
     LOG(0) <<"launching aruco obj tracker thread";
     threadLoop();
 }

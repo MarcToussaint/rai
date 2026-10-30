@@ -96,7 +96,7 @@ double distanceToConvexHull(const arr& X, const arr& y, arr& distances, arr& pro
   //static const char* cmd = "qhull Tv i p";
   static char* cmd = (char*) "qhull ";
   exitcode = qh_new_qhull(X.d1, X.d0, X.p, false, cmd, nullptr, stderr);
-  if(exitcode) HALT("qh_new_qhull error - exitcode " <<exitcode);
+  if(exitcode) { qhull_free();  HALT("qh_new_qhull error - exitcode " <<exitcode); }
 
   facetT* bestfacet;
   double bestdist;
@@ -386,7 +386,7 @@ void getDelaunayEdges(uintA& E, const arr& V) {
   int exitcode;
   static char* cmd = (char*) "qhull d Qbb Qt ";
   exitcode = qh_new_qhull(V.d1, V.d0, V.p, false, cmd, nullptr, stderr);
-  if(exitcode) HALT("qh_new_qhull error - exitcode " <<exitcode);
+  if(exitcode) { qhull_free();  HALT("qh_new_qhull error - exitcode " <<exitcode); }
 
   facetT* facet;
   vertexT* vertex, **vertexp;

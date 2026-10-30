@@ -555,6 +555,7 @@ void ConfigurationViewer::setupEventHandler(bool blockDefaultHandler){
 }
 
 arr ConfigurationViewer::getEventCursor(){
+  CHECK(eventHandler, "call setupEventHandler() before querying events");
   arr cursor;
   {
     auto lock = eventHandler->mux(RAI_HERE);
@@ -569,6 +570,7 @@ uint ConfigurationViewer::getEventCursorObject(){
 }
 
 StringA ConfigurationViewer::getEvents(){
+  CHECK(eventHandler, "call setupEventHandler() before querying events");
   StringA events;
   {
     auto lock = eventHandler->mux(RAI_HERE);
@@ -578,6 +580,7 @@ StringA ConfigurationViewer::getEvents(){
 }
 
 Mutex& ConfigurationViewer::getEventsMutex(){
+  if(!eventHandler) HALT("call setupEventHandler() before querying events");
   return eventHandler->mux;
 }
 

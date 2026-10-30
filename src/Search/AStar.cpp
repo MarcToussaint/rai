@@ -22,7 +22,7 @@ void rai::AStar::step(TreeSearchNode* select_explicit) {
   TreeSearchNode* node = 0;
   if(select_explicit){
     node = select_explicit;
-  } if(mode==astar || mode==FIFO) {
+  } else if(mode==astar || mode==FIFO) {
     if(!queue.N) {
       LOG(-1) <<"AStar: queue is empty -> failure!";
       return;

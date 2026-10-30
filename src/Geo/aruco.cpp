@@ -114,6 +114,7 @@ inline byteA intA2img(const intA& I){
 }
 
 byteA getArucoImage(int id){
+  if(id<0 || 9*(id+1)>int(sizeof(aruco_dict_5X5_50)/sizeof(int))) HALT("aruco id " <<id <<" is out of range of the 5X5_50 dictionary");
   intA I;
   I.referTo(aruco_dict_5X5_50 + 9*id, 9);
   return intA2img(I);

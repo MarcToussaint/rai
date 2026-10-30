@@ -47,12 +47,12 @@ void init_KOMO(pybind11::module& m) {
        )
   .def("clearObjectives", &KOMO::clearObjectives)
   // .def("getConfig",  [](std::shared_ptr<KOMO>& self) { return std::shared_ptr<rai::Configuration>(&(self->world), &Config_null_deleter); }, "")
-  .def("getConfig",  [](std::shared_ptr<KOMO>& self) { return std::shared_ptr<rai::Configuration>(&(self->pathConfig), &Config_null_deleter); }, "")
+  .def("getConfig",  [](std::shared_ptr<KOMO>& self) { return std::shared_ptr<rai::Configuration>(&(self->pathConfig), &Config_null_deleter); }, "", pybind11::keep_alive<0, 1>()) //returned config is owned by self
   .def("getFrame",  [](std::shared_ptr<KOMO>& self, const std::string& frameName, double phaseTime) {
     uint t = conv_time2step(phaseTime, self->stepsPerPhase);
     rai::Frame* f = self->timeSlices(self->k_order+t, self->world.getFrame(frameName.c_str(), true)->ID);
     return std::shared_ptr<rai::Frame>(f, &null_deleter);
-  }, "",  pybind11::arg("frameName"), pybind11::arg("phaseTime"))
+  }, "",  pybind11::arg("frameName"), pybind11::arg("phaseTime"), pybind11::keep_alive<0, 1>()) //returned frame is owned by self
 
   //-- add objectives
   .def("addObjective", [](std::shared_ptr<KOMO>& self, const arr& times, const FeatureSymbol& feature, const StringA& frames, const ObjectiveType& type, const arr& scale, const arr& target, int order) {
@@ -89,7 +89,7 @@ void init_KOMO(pybind11::module& m) {
     rai::Frame* f = self->addFrameDof(name, parent, jointType, stable, initName, initFrame);
     return shared_ptr<rai::Frame>(f, &null_deleter); //giving it a non-sense deleter!
   }, "complicated...",
-  pybind11::arg("name"), pybind11::arg("parent"), pybind11::arg("jointType"), pybind11::arg("stable"), pybind11::arg("originFrameName")=nullptr, pybind11::arg("originFrame")=nullptr)
+  pybind11::arg("name"), pybind11::arg("parent"), pybind11::arg("jointType"), pybind11::arg("stable"), pybind11::arg("originFrameName")=nullptr, pybind11::arg("originFrame")=nullptr, pybind11::keep_alive<0, 1>()) //returned frame is owned by self
 
   .def("addContact_WithPoaFrame", &KOMO::addContact_WithPoaFrame, pybind11::return_value_policy::reference, "",
        pybind11::arg("time"),

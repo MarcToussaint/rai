@@ -243,6 +243,7 @@ void Thread::main() {
     } catch(...) {
       status.setValue(tsFAILURE);
       cout <<"*** open() of Thread '" <<name <<"' failed! -- closing it again";
+      status.setValue(tsIsClosed);
       return;
     }
   }

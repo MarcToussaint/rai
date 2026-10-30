@@ -621,8 +621,8 @@ bool Simulation::getGripperIsClose(const char* gripperFrameName) {
   getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
   if(!gripper) return -1.;
   double speed=.1;
-  if(joint->frame->parent->name.contains("robotiq")) speed=-1.;
   if(joint) {
+    if(joint->frame->parent->name.contains("robotiq")) speed=-1.;
     double q = joint->get_q();
     if((speed>0. && q<joint->limits.elem(0)+.005)
         || (speed<0. && q>joint->limits.elem(1)-.005)) return true;
@@ -638,8 +638,8 @@ bool Simulation::getGripperIsOpen(const char* gripperFrameName) {
   getFingersForGripper(gripper, joint, fing1, fing2, C, gripperFrameName);
   if(!gripper) return false;
   double speed=-1.;
-  if(joint->frame->parent->name.contains("robotiq")) speed=1.;
   if(joint) {
+    if(joint->frame->parent->name.contains("robotiq")) speed=1.;
     double q = joint->get_q();
     if((speed>0. && q<joint->limits.elem(0)+.005)
         || (speed<0. && q>joint->limits.elem(1)-.005)) return true;

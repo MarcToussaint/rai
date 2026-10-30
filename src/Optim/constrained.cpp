@@ -51,8 +51,11 @@ void PhaseOneProblem::evaluate(arr& meta_phi, arr& meta_J, const arr& meta_x) {
     }
 
   if(!!meta_J) {
-    meta_J = J;
-    meta_J.append(zeros(meta_J.d1));
+    meta_J.resize(meta_phi.N, dimension).setZero();
+    meta_J.setMatrixBlock(J, 0, 0);
+    for(uint i=0; i<phi.N; i++) if(P->featureTypes.elem(i)==OT_ineq) {
+        meta_J(i, -1) = -1.; //derivative of the subtracted slack
+      }
     meta_J(-1, -1) = -1.;
   }
 }

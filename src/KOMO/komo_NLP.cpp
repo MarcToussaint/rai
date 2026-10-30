@@ -267,6 +267,7 @@ Conv_KOMO2FactoredNLP::Conv_KOMO2FactoredNLP(KOMO& _komo, const rai::Array<DofL>
     xDim += varDim;
 
     //variable name
+    CHECK(dofs.N, "need to have dofs");
     String name;
     String A; A <<dofs(0)->frame->name <<'.' <<(int(dofs(0)->frame->ID/komo.timeSlices.d1) - int(komo.k_order));
     String B; B <<dofs(-1)->frame->name <<'.' <<(int(dofs(-1)->frame->ID/komo.timeSlices.d1) - int(komo.k_order));

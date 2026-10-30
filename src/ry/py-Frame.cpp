@@ -90,7 +90,7 @@ void init_Frame(pybind11::module& m) {
   .def_readonly("ID", &rai::Frame::ID, "the unique ID of the frame, which is also its index in lists/arrays (e.g. when the frameState is returned as matrix) (readonly)")
   .def_readwrite("name", &rai::Frame::name, "the name of the frame (editable)")
 
-  .def("getParent", [](shared_ptr<rai::Frame>& self) { if(self->parent) return shared_ptr<rai::Frame>(self->parent, &null_deleter);  return shared_ptr<rai::Frame>(); }, "")
+  .def("getParent", [](shared_ptr<rai::Frame>& self) { if(self->parent) return shared_ptr<rai::Frame>(self->parent, &null_deleter);  return shared_ptr<rai::Frame>(); }, "", pybind11::keep_alive<0, 1>()) //returned frame is owned by self's config
   .def("getChildren", [](shared_ptr<rai::Frame>& self) {
     std::vector<shared_ptr<rai::Frame>> F;
     for(rai::Frame* f:self->children) F.push_back(shared_ptr<rai::Frame>(f, &null_deleter)); //giving it a non-sense deleter!

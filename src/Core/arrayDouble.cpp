@@ -1779,7 +1779,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     int* k, *kstop;
     y.resize(A.d0); y.setZero();
     double* xp=x.p;
-    intA& elems = dynamic_cast<rai::SparseMatrix*>(x.special)->elems;
+    intA& elems = dynamic_cast<rai::SparseVector*>(x.special)->elems;
     for(k=elems.p, kstop=elems.p+elems.N; k!=kstop; xp++) {
       j=*k; k++;
       for(i=0; i<A.d0; i++) {

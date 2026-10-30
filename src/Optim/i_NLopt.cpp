@@ -111,8 +111,10 @@ arr NLoptInterface::solve(const arr& x_init) {
     FuncCallData& d = funcCallData.elem(i);
     d.I = this;
     d.feature = i;
-    if(P->featureTypes.elem(i) == OT_ineq) opt.add_inequality_constraint(_g, &d);
-    if(P->featureTypes.elem(i) == OT_eq) opt.add_equality_constraint(_h, &d);
+    ObjectiveType t = P->featureTypes.elem(i);
+    if(t == OT_ineq) opt.add_inequality_constraint(_g, &d);
+    else if(t == OT_eq) opt.add_equality_constraint(_h, &d);
+    else if(t != OT_f && t != OT_sos) HALT("NLopt can't handle feature type '" <<Enum<ObjectiveType>(t) <<"' - it would be silently dropped");
   }
 
   //-- optimize

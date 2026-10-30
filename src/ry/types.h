@@ -60,9 +60,12 @@ inline pybind11::array_t<double> arr2numpy(const arr& x) {
 }
 
 template<class T> rai::Array<T> numpy2Array(const pybind11::array_t<T>& X) {
+  if(X.ndim()>3){
+    HALT("can't handle arrays with more than 3 dims: nd=" <<X.ndim());
+  }
   rai::Array<T> Y;
   uintA dim(X.ndim());
-  for(uint i=0; i<dim.N; i++) dim(i)=X.shape()[i];
+  for(uint i=0; i<dim.N; i++) dim(i)=X.shape(i);
   Y.resize(dim);
   auto ref = X.unchecked();
   if(Y.nd==0) {
@@ -90,9 +93,12 @@ template<class T> pybind11::array ArrArr2numpy(const rai::Array<rai::Array<T>>& 
 }
 
 template<class T> rai::Array<rai::Array<T>> numpy2ArrArr(const pybind11::array& X) {
+  if(!X.dtype().is(pybind11::dtype("O"))){
+    HALT("the given array is not an array of arrays (numpy makes it hard to create these, create empty with dtype=object first); please double check again");
+  }
   rai::Array<rai::Array<T>> Y;
   uintA dim(X.ndim());
-  for(uint i=0; i<dim.N; i++) dim(i)=X.shape()[i];
+  for(uint i=0; i<dim.N; i++) dim(i)=X.shape(i);
   Y.resize(dim);
   auto ref = X.unchecked<pybind11::array_t<T>>();
   if(Y.nd==0) { Y.clear(); }
@@ -101,15 +107,6 @@ template<class T> rai::Array<rai::Array<T>> numpy2ArrArr(const pybind11::array& 
   else if(Y.nd==3) { for(uint i=0; i<Y.d0; i++) for(uint j=0; j<Y.d1; j++) for(uint k=0; k<Y.d2; k++) Y(i, j, k) = numpy2Array<T>(ref(i, j, k)); }
   else HALT("not implemented: array dimensionality " <<X.ndim());
   return Y;
-
-  // if(X.ndim()==0) Y.clear();
-  // else if(X.ndim()==1) Y.resize(X.shape()[0]);
-  // else if(X.ndim()==2) Y.resize(X.shape()[0], X.shape()[1]);
-  // else if(X.ndim()==3) Y.resize(X.shape()[0], X.shape()[1], X.shape()[2]);
-  // else HALT("not implemented: array dimensionality " <<X.ndim());
-  // auto ref = X.unchecked<pybind11::array_t<T>>();
-  // for(uint i=0; i<Y.N; i++) Y.elem(i) = numpy2Array<T>(ref[i]);
-  // return Y;
 }
 
 #if 0
@@ -182,7 +179,7 @@ template<class T> pybind11::list ArrayL2list(const rai::Array<T*>& X) {
 
 template<class T> rai::Vector numpy2Vector(const pybind11::array_t<T>& X) {
   CHECK_EQ(X.ndim(), 1, "");
-  CHECK_EQ(X.shape()[0], 3, "");
+  CHECK_EQ(X.shape(0), 3, "");
   auto ref = X.unchecked();
   return rai::Vector(ref(0), ref(1), ref(2));
 }

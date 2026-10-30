@@ -50,11 +50,12 @@ struct PhaseOneProblem : NLP {
   uint dim_ineq, dim_eq;
 
   PhaseOneProblem(const shared_ptr<NLP>& _P):P(_P) {
-    dimension = P->dimension;
+    dimension = P->dimension+1; //the extra slack variable s
     featureTypes = P->featureTypes;
     featureTypes.append(OT_ineq);
   }
   void initialize(arr& x);
+  virtual arr  getInitializationSample() { arr x = P->getInitializationSample(); initialize(x); return x; }
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 };
 

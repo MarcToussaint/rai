@@ -16,10 +16,11 @@ struct ReceedingHorizonPathSmoother {
   double totalDuration;
   const arr initialPath;
 
-  ReceedingHorizonPathSmoother(ConfigurationProblem& _P, const arr& initialPath, double _duration=20, uint _horizon=10)
+  ReceedingHorizonPathSmoother(ConfigurationProblem& _P, const arr& _initialPath, double _duration=20, uint _horizon=10)
     : P(_P),
       horizon(_horizon),
-      totalDuration(_duration) {
+      totalDuration(_duration),
+      initialPath(_initialPath) {
     if(initialPath.d0 < horizon) {
       horizon = initialPath.d0;
     }

@@ -117,7 +117,7 @@ void TimingMPC::set_updatedWaypoints(const arr& _waypoints, bool setNextWaypoint
 void TimingMPC::update_backtrack() {
   CHECK(phase>0, "");
   uint phaseTo = phase-1;
-  if(backtrackingTable.N) phaseTo = backtrackingTable(phase);
+  if(phase<backtrackingTable.N) phaseTo = backtrackingTable(phase);
   update_setPhase(phaseTo);
 }
 
