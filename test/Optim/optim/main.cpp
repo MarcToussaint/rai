@@ -29,11 +29,11 @@ void TEST(Solver) {
 
   rai::Enum<rai::OptMethod> sid (rai::getParameter<rai::String>("solver"));
   if(sid==rai::M_LogBarrier){
-    NLP_Viewer(nlp).display(1., 1.);
+    NLP_Viewer(nlp).display(1., 1., 10.);
   }else{
-    NLP_Viewer(nlp).display(1., -1.);
+    NLP_Viewer(nlp).display(1., -1., 10.);
   }
-  // rai::wait(.5, true);
+  rai::wait(.5, true);
 
   //  arr x = nlp->getInitializationSample();
   //  checkJacobianCP(*nlp, x, 1e-4);

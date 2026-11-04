@@ -49,6 +49,8 @@ struct Node {
 
   Node* addParent(Node* p, bool prepend=false);
   Node* setParents(const NodeL& P);
+  Node* applyEdit(Node* ed);
+
   void removeParent(Node* p);
   void swapParent(uint i, Node* p);
 
@@ -162,8 +164,8 @@ struct Graph : NodeL {
   template<class T> Array<T*> getValuesOfType(const char* key=nullptr);
 
   //-- editing nodes
-  Node* edit(Node* ed); ///< ed describes how another node should be edited; ed is removed after editing is done
-  void edit(const NodeL& L) { for(Node* ed:L) edit(ed); }
+  void applyEdit(Node* ed); ///< ed describes how another node should be edited; ed is removed after editing is done
+  void applyEdits(const NodeL& L) { for(Node* ed:L) applyEdit(ed); }
   bool checkUniqueKeys(bool makeUnique=false);
   void collapse(Node* a, Node* b);
 
