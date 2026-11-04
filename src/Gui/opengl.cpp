@@ -618,6 +618,7 @@ int OpenGL::update(bool wait, bool nonThreaded) {
       LOG(0) <<"can't pause an offscreen context";
     }else{
       isWaiting.set() = 1; //Status(1);
+      rai::wait(.02);
       isWaiting.waitForEq(0);
     }
   }
