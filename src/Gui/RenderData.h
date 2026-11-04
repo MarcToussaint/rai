@@ -2,7 +2,11 @@
 
 #include "opengl.h" //needed to include glew-etc before gl.h
 
-#include <GL/gl.h>
+#ifdef __APPLE__
+#  include <OpenGL/gl.h>
+#else
+#  include <GL/gl.h>
+#endif
 
 //#include <Geo/geo.h>
 #include "../Core/util.h"
