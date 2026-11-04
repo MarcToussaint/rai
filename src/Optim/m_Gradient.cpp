@@ -47,6 +47,7 @@ OptGrad::StopCriterion OptGrad::step() {
 
   //compute Delta
   Delta = g_x / (-length(g_x));
+  if(alpha>opt->stepMax) alpha = opt->stepMax;
 
   //line search
   uint lineSteps=0;

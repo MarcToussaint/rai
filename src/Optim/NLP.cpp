@@ -453,7 +453,7 @@ void NLP_Traced::evaluate(arr& phi, arr& J, const arr& x) {
 
 //===========================================================================
 
-void NLP_Viewer::display(double mu, double muLB) {
+void NLP_Viewer::display(double mu, double muLB, double upperCap) {
   uint d = P->dimension;
   CHECK_EQ(d, 2, "can only display 2D problems for now");
 
@@ -482,7 +482,7 @@ void NLP_Viewer::display(double mu, double muLB) {
   //-- evaluate over the grid
   for(uint i=0; i<X.d0; i++) {
     double fx = lag->eval_scalar(NoArr, NoArr, X[i]);
-    Y(i) = ((fx==fx && fx<10.)? fx : 10.);
+    Y(i) = ((fx==fx && fx<upperCap)? fx : upperCap);
   }
   Y.reshape(101, 101);
 
@@ -491,10 +491,10 @@ void NLP_Viewer::display(double mu, double muLB) {
   FILE("z.fct") <<Y.modRaw() <<endl;
 
   rai::String cmd;
-  cmd <<"reset; set contour; set size square; set cntrparam linear; set cntrparam levels incremental 0,.1,10; set xlabel 'x'; set ylabel 'y'; ";
+  cmd <<"reset; set contour; set size square; set cntrparam linear; set cntrparam levels incremental 0,.2,10; set xlabel 'x'; set ylabel 'y'; ";
   rai::String splot;
   splot <<"splot [" <<lo(0) <<':' <<up(0) <<"][" <<lo(1) <<':' <<up(1) <<"] "
-        <<"'z.fct' matrix us (" <<lo(0) <<"+(" <<up(0)-lo(0) <<")*$2/100):(" <<lo(1) <<"+(" <<up(1)-lo(1) <<")*$1/100):3 w l";
+        <<"'z.fct' matrix us (" <<lo(0) <<"+(" <<up(0)-lo(0) <<")*$2/100):(" <<lo(1) <<"+(" <<up(1)-lo(1) <<")*$1/100):3 w l notitle";
   if(!T) {
     cmd <<splot <<";";
   } else {
