@@ -104,6 +104,25 @@ Node* Node::setParents(const NodeL& P) {
   return this;
 }
 
+Node* Node::applyEdit(Node* ed) {
+  if(ed->type == type){ //same type -> overwrite
+    if(ed->parents.N) { //overwrite parents
+      while(parents.N) removeParent(parents.elem(-1));
+      for(Node* p:ed->parents) addParent(p);
+    }
+    if(is<Graph>()) { //apply all nodes as edits
+      graph().applyEdits(ed->graph());
+    } else { //overwrite the value
+      copyValue(ed);
+    }
+  }else{ //different type -> replace (create new and del old)
+    Node* n = ed->newClone(container);
+    container.delNode(this);
+    return n;
+  }
+  return this;
+}
+
 void Node::removeParent(Node* p) {
   if(p==parents.elem(-1)) parents.removeLast(); else parents.removeValue(p);
   CHECK(p->numChildren, "");
@@ -457,40 +476,21 @@ NodeL Graph::getAllNodesRecursively() const {
   return ret;
 }
 
-Node* Graph::edit(Node* ed) {
-  NodeL KVG = findNodesOfType(ed->type, ed->key);
+void Graph::applyEdit(Node* ed) {
+  // NodeL KVG = findNodesOfType(ed->type, ed->key);
+  NodeL toBeEdited = findNodes(ed->key);
   //CHECK_LE(KVG.N, 1, "can't edit into multiple nodes yet");
-  if(!KVG.N) { //nothing to merge, append
-    if(&ed->container!=this) {
-      if(!isIndexed) index();
-      if(!ed->container.isIndexed) ed->container.index();
-      Node* it = ed->newClone(*this);
-      for(uint i=0; i<it->parents.N; i++) {
-        it->swapParent(i, elem(it->parents(i)->index));
-      }
-    }
-    return ed;
+  if(!toBeEdited.N) { //nothing to merge, append
+    LOG(-1) <<"NO EDIT: edit node " <<*ed <<" does not match any previouly defined node";
+  }
+  if(toBeEdited.N>1) { //nothing to merge, append
+    LOG(-1) <<"MULTIPLE EDITS: edit node " <<*ed <<" applies to " <<toBeEdited.N <<" previouly defined nodes";
   }
 
-  uint edited=0;
-  for(Node* n : KVG) if(n!=ed) {
-      CHECK(ed->type == n->type, "can't edit/merge nodes of different types!");
-      if(ed->parents.N) { //overwrite parents
-        while(n->parents.N) n->removeParent(n->parents.elem(-1));
-        for(Node* p:ed->parents) n->addParent(p);
-      }
-      if(n->is<Graph>()) { //overwrite nodes
-        n->graph().edit(ed->graph());
-      } else { //overwrite the value
-        n->copyValue(ed);
-      }
-      edited++;
+  for(Node* n : toBeEdited) if(n!=ed) {
+      n->applyEdit(ed);
     }
-  if(!edited) {
-    LOG(-1) <<"no nodes edited! (from '" <<*ed <<"')";
-  }
-  if(&ed->container==this) { delete ed; ed=nullptr; }
-  return nullptr;
+  if(&ed->container==this) delNode(ed);
 }
 
 bool Graph::checkUniqueKeys(bool makeUnique) {
@@ -809,18 +809,9 @@ void readGraph_postprocess(Graph& G, uint Nbefore){
   }
   for(Node* ed:edits) {
     Node* n = ed->parents.elem(0);
-    CHECK(n->type == ed->type, "can't edit/merge nodes of different types!");
     ed->removeParent(n);
-    if(ed->parents.N) { //overwrite parents
-      while(n->parents.N) n->removeParent(n->parents.elem(-1));
-      for(Node* p:ed->parents) n->addParent(p);
-    }
-    if(n->is<Graph>()) { //overwrite nodes
-      n->graph().edit(ed->graph());
-    } else { //overwrite the value
-      n->copyValue(ed);
-    }
-    delete ed; ed=nullptr;
+    n->applyEdit(ed);
+    G.delNode(ed);
   }
 
   //-- apply edits old way: via tags
@@ -834,7 +825,7 @@ void readGraph_postprocess(Graph& G, uint Nbefore){
     }
   }
   for(Node* ed:edits) {
-    G.edit(ed);
+    G.applyEdit(ed);
   }
 
   DEBUG(G.checkConsistency();)
