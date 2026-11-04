@@ -117,6 +117,7 @@ Node* Node::applyEdit(Node* ed) {
     }
   }else{ //different type -> replace (create new and del old)
     Node* n = ed->newClone(container);
+    CHECK(!ed->parents.N || &ed->container==&container, "edit node with parents in different container is disabled");
     container.delNode(this);
     return n;
   }
@@ -480,16 +481,26 @@ void Graph::applyEdit(Node* ed) {
   // NodeL KVG = findNodesOfType(ed->type, ed->key);
   NodeL toBeEdited = findNodes(ed->key);
   //CHECK_LE(KVG.N, 1, "can't edit into multiple nodes yet");
+  uint edited=0;
+
   if(!toBeEdited.N) { //nothing to merge, append
-    LOG(-1) <<"NO EDIT: edit node " <<*ed <<" does not match any previouly defined node";
-  }
-  if(toBeEdited.N>1) { //nothing to merge, append
-    LOG(-1) <<"MULTIPLE EDITS: edit node " <<*ed <<" applies to " <<toBeEdited.N <<" previouly defined nodes";
+    CHECK(&ed->container!=this, "should always hold: if ed is in THIS container, findNodes should have found it");
+    ed->newClone(*this);
+    CHECK(!ed->parents.N, "edit node with parents in different container is disabled");
+    edited++;
   }
 
   for(Node* n : toBeEdited) if(n!=ed) {
       n->applyEdit(ed);
+      edited++;
     }
+
+  if(!edited){
+    LOG(-1) <<"no nodes edited! (from '" <<*ed <<"')";
+  }else if(edited>2) {
+    LOG(-1) <<"MULTIPLE EDITS: edit node " <<*ed <<" applied to " <<edited <<" previouly defined nodes";
+  }
+
   if(&ed->container==this) delNode(ed);
 }
 
