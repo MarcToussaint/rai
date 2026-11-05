@@ -362,7 +362,7 @@ etc
 struct FileToken {
   String path, name, baseDir;
   std::shared_ptr<std::ofstream> os;
-  std::shared_ptr<std::ifstream> is;
+  std::shared_ptr<std::istream> is;
 
   FileToken();
   FileToken(const char* _filename);
