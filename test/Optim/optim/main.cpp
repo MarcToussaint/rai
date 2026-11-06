@@ -29,9 +29,9 @@ void TEST(Solver) {
 
   rai::Enum<rai::OptMethod> sid (rai::getParameter<rai::String>("solver"));
   if(sid==rai::M_LogBarrier){
-    NLP_Viewer(nlp).display(1., 1., 10.);
+    NLP_Viewer(nlp). display(1., 1., 10.);
   }else{
-    NLP_Viewer(nlp).display(1., -1., 10.);
+    NLP_Viewer(nlp). display(1., -1., 10.);
   }
   rai::wait(.5, true);
 
@@ -39,20 +39,32 @@ void TEST(Solver) {
   //  checkJacobianCP(*nlp, x, 1e-4);
 
   arr x_init = rai::getParameter<arr>("x_init", {});
-  rai::NLP_Solver S;
+  if(!x_init.N) x_init = nlp->getInitializationSample();
+  //example of directly evaluating
+  arr phi, J;
+  nlp->evaluate(phi, J, x_init);
+  arr errs = nlp->summarizeErrors(phi);
+  cout <<"=== PROBLEM INFO ===" <<endl;
+  nlp->report(cout, 0);
+  cout <<"errors at x_init: " <<errs <<endl;
+  if(sid==rai::M_LogBarrier && errs(OT_ineq)>0.){
+    HALT("initializing at infeasible point " <<x_init <<" - not allowed for log barrier");
+  }
 
+  rai::NLP_Solver S;
   S.setSolver(sid);
   S.setProblem(nlp);
   S.setTracing(true, true, false, false);
   if(x_init.N) S.setInitialization(x_init);
-  if(sid==rai::M_AugmentedLag || sid==rai::M_SquaredPenalty || sid==rai::M_LogBarrier){
+
+  if(sid==rai::M_AugmentedLag || sid==rai::M_SquaredPenalty || sid==rai::M_LogBarrier){ //illustrate the landscape for each inner step (which is a line search along the Newton step)
     while(!S.step()){
       if(sid==rai::M_LogBarrier){
-        NIY;// NLP_Viewer(nlp, S.P). display(S.optCon->L.mu, S.optCon->L.muLB);
+        NLP_Viewer(nlp, S.P). display(S.optCon->L.mu, S.optCon->L.muLB);
       }else{
-        NIY;// NLP_Viewer(nlp, S.P). display(S.optCon->L.mu);
+        NLP_Viewer(nlp, S.P). display(S.optCon->L.mu);
       }
-      if(S.opt->verbose>2) rai::wait(.2, true);
+      rai::wait(1.);
     }
   }else{
     S.solve();
@@ -104,8 +116,8 @@ void testSpherePacking(){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  // rnd.seed_random();
-  rnd.seed(0);
+  rnd.seed_random();
+  // rnd.seed(0);
 
   // testDisplay();
   testSolver();

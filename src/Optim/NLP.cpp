@@ -507,7 +507,7 @@ void NLP_Viewer::display(double mu, double muLB, double upperCap) {
       cmd <<"unset surface; set table 'z.table'; ";
       cmd <<splot <<"; ";
       cmd <<"unset table; ";
-      cmd <<"plot 'z.table' w l, 'z.trace' us 1:2 w lp lw 2; ";
+      cmd <<"plot [" <<lo(0) <<':' <<up(0) <<"][" <<lo(1) <<':' <<up(1) <<"] 'z.table' w l, 'z.trace' us 1:2 w lp lw 2; ";
     }
   }
 //  cout <<cmd <<endl;

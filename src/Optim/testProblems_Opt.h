@@ -183,7 +183,7 @@ struct NLP_Wedge : NLP {
     dimension=2;
     featureTypes = { OT_f };
     featureTypes.append(rai::consts(OT_ineq, 2));
-    bounds = arr{-2.,-2.,2.,2.}.reshape(2,2);
+    bounds = arr{-1.,-1.,1.,1.}.reshape(2,2);
   }
 
   virtual void evaluate(arr& phi, arr& J, const arr& x) {
@@ -202,7 +202,7 @@ struct NLP_HalfCircle : NLP {
     dimension=2;
     featureTypes = { OT_f };
     featureTypes.append(rai::consts(OT_ineq, 2));
-    bounds = arr{-2.,-2.,2.,2.}.reshape(2,2);
+    bounds = arr{-.5,-.7,.7,.7}.reshape(2,2);
   }
 
   virtual void evaluate(arr& phi, arr& J, const arr& x) {

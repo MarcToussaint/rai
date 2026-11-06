@@ -550,6 +550,10 @@ std::shared_ptr<NLP> getBenchmarkFromCfg() {
     }
     nlp->bounds = B.reshape(2, nlp->dimension);
   }
+  if(!nlp->bounds.N){
+    nlp->bounds = ones(2, nlp->dimension);
+    nlp->bounds[0] = -1.;
+  }
 
   return nlp;
 }
@@ -558,8 +562,8 @@ NLP_RandomLP::NLP_RandomLP() {
   dimension = dim;
 
   bounds.resize(2, dimension);
-  bounds[0]=-2.;
-  bounds[1]=+2.;
+  bounds[0]=-1.;
+  bounds[1]=+1.;
 
   randomG.resize(5*dim+5, dim+1);
   rndGauss(randomG, 1.);
