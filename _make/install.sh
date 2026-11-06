@@ -151,7 +151,8 @@ case ${lib} in
 
     hdf5)
 	git clone --single-branch -b hdf5-1_10_4 https://github.com/HDFGroup/hdf5.git
-	cd ${lib}; env CFLAGS="-fPIC" CXXFLAGS="-fPIC" ./configure --prefix=${pre} --enable-cxx --disable-tests --disable-tools --disable-shared
+	cd ${lib}
+	env CC="gcc -Wno-error=implicit-function-declaration -Wno-error=incompatible-pointer-types" CFLAGS="-fPIC" CXXFLAGS="-fPIC" ./configure --prefix=${pre} --enable-cxx --disable-tests --disable-tools --disable-shared
 	make install
 	;;
 
@@ -202,19 +203,20 @@ case ${lib} in
 
     assimp)
 	git clone --single-branch -b v5.2.5 https://github.com/assimp/assimp.git
-	cmake -DCMAKE_INSTALL_PREFIX=${pre} -DASSIMP_BUILD_TESTS=OFF -DASSIMP_BUILD_ZLIB=ON -DBUILD_SHARED_LIBS=OFF ${lib} -B ${lib}/build
+	env CXXFLAGS="-Wno-dangling-reference" cmake -DCMAKE_INSTALL_PREFIX=${pre} -DASSIMP_BUILD_TESTS=OFF -DASSIMP_BUILD_ZLIB=ON -DBUILD_SHARED_LIBS=OFF ${lib} -B ${lib}/build
 	make -C ${lib}/build install
 	;;
 
     bullet)
-	git clone --single-branch -b 3.08 https://github.com/bulletphysics/bullet3.git bullet
+	git clone --single-branch -b 3.08 https://github.com/bulletphysics/bullet3.git ${lib}
 	env CFLAGS="-fPIC" CXXFLAGS="-fPIC" cmake -DCMAKE_INSTALL_PREFIX=${pre} -DBUILD_SHARED_LIBS=OFF -DBUILD_UNIT_TESTS=OFF -DBUILD_OPENGL3_DEMOS=OFF -DBUILD_BULLET2_DEMOS=OFF -DBUILD_EXTRAS=OFF ${lib} -B ${lib}/build
 	make -C ${lib}/build install
 	;;
 
     libann)
-	git clone --single-branch https://github.com/daveb-dev/libANN.git libann
-	make -C ${lib}/src targets "ANNLIB=libANN.a" "C++=g++" "CFLAGS=-O3 -fPIC" "MAKELIB=ar ruv" "RANLIB=true"
+	git clone --single-branch https://github.com/daveb-dev/libANN.git ${lib}
+	rm -f ${lib}/src/*.o
+	env CFLAGS="-Wno-register -O3 -fPIC" ANNLIB="libANN.a" "C++=g++" MAKELIB="ar ruv" RANLIB="true" make -C ${lib}/src targets 
 	cp -v ${lib}/lib/libANN.a ${pre}/lib; cp -vR ${lib}/include/ANN ${pre}/include
 	;;
 
