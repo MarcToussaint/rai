@@ -1875,11 +1875,10 @@ arr finiteDifference_jacobian(VectorFunction f, const arr& x0, const arr& y0, do
 // }
 
 /// numeric (finite difference) check of the gradient of f at x
-bool checkGradient(ScalarFunction f,
-                   const arr& x, double tolerance, bool verbose) {
+bool checkGradient(ScalarFunction f, const arr& x, double tolerance, double eps, bool verbose) {
   arr J;
   double y = f(J, NoArr, x);
-  arr JJ = finiteDifference_gradient(f, x, y);
+  arr JJ = finiteDifference_gradient(f, x, y, eps);
   uint i;
   double md=maxDiff(J, JJ, &i);
   if(md>tolerance && md>fabs(J.elem(i))*tolerance) {
@@ -1899,13 +1898,12 @@ bool checkGradient(ScalarFunction f,
   return true;
 }
 
-bool checkHessian(ScalarFunction f, const arr& x, double tolerance, bool verbose) {
+bool checkHessian(ScalarFunction f, const arr& x, double tolerance, double eps, bool verbose) {
   arr g, H, dx, dy, Jg;
   f(g, H, x);
   if(isRowShifted(H)) H = unpack(H);
 
   Jg.resize(g.N, x.N);
-  double eps=1e-8;
   uint i, k;
   for(i=0; i<x.N; i++) {
     dx=x;
@@ -1931,12 +1929,11 @@ bool checkHessian(ScalarFunction f, const arr& x, double tolerance, bool verbose
   return true;
 }
 
-bool checkJacobian(VectorFunction f,
-                   const arr& x, double tolerance, bool verbose, const StringA& featureNames) {
+bool checkJacobian(VectorFunction f, const arr& x, double tolerance, double eps, bool verbose, const StringA& featureNames) {
   arr y = f(x);
   arr J = y.J_reset();
   if(isRowShifted(J) || isSparseMatrix(J)) J = unpack(J);
-  arr JJ = finiteDifference_jacobian(f, x, y);
+  arr JJ = finiteDifference_jacobian(f, x, y, eps);
 #if 1
   uint k;
   double md=maxDiff(J, JJ, &k);

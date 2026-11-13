@@ -1597,7 +1597,7 @@ arr KOMO::info_errorTotals(const arr& errorTraces){
 void KOMO::checkGradients() {
   CHECK(timeSlices.N, "path config is not setup");
   arr x0 = pathConfig.getJointState();
-  nlp()->checkJacobian(x0, 1e-6, featureNames);
+  nlp()->checkJacobian(x0, 1e-6, 1e-8, featureNames);
 }
 
 int KOMO::view(bool pause, const char* txt) {

@@ -440,13 +440,11 @@ arr reshapeColor(const arr& col, int d0=-1);
 
 void scanArrFile(const char* name);
 
-arr finiteDifference_gradient(ScalarFunction f, const arr& x0, double y0, double eps=1e-8);
-arr finiteDifference_jacobian(VectorFunction f, const arr& x0, const arr& y0, double eps=1e-8);
-// arr finiteDifferenceGradient(ScalarFunction f, const arr& x, arr& Janalytic=NoArr, double eps=1e-8);
-// arr finiteDifferenceJacobian(VectorFunction f, const arr& _x, arr& Janalytic=NoArr, double eps=1e-8);
-bool checkGradient(ScalarFunction f, const arr& x, double tolerance, bool verbose=false);
-bool checkHessian(ScalarFunction f, const arr& x, double tolerance, bool verbose=false);
-bool checkJacobian(VectorFunction f, const arr& x, double tolerance, bool verbose=false, const StringA& featureNames= {});
+arr finiteDifference_gradient(ScalarFunction f, const arr& x0, double y0, double eps);
+arr finiteDifference_jacobian(VectorFunction f, const arr& x0, const arr& y0, double eps);
+bool checkGradient(ScalarFunction f, const arr& x, double tolerance, double eps=1e-8, bool verbose=false);
+bool checkHessian(ScalarFunction f, const arr& x, double tolerance, double eps=1e-8, bool verbose=false);
+bool checkJacobian(VectorFunction f, const arr& x, double tolerance, double eps=1e-8, bool verbose=false, const StringA& featureNames= {});
 void boundClip(arr& y, const arr& bounds);
 bool boundCheck(const arr& x, const arr& bounds, double eps=1e-3, bool verbose=true);
 

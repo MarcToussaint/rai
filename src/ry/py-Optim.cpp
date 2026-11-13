@@ -153,8 +153,8 @@ void init_Optim(pybind11::module& m) {
   "displays semantic information on the last query"
       )
 
-  .def("checkJacobian", &NLP::checkJacobian, "", pybind11::arg("x"), pybind11::arg("tolerance"), pybind11::arg("featureNames")=StringA{})
-  .def("checkHessian", &NLP::checkHessian, "", pybind11::arg("x"), pybind11::arg("tolerance"))
+  .def("checkJacobian", &NLP::checkJacobian, "", pybind11::arg("x"), pybind11::arg("tolerance"), pybind11::arg("eps")=1e-8, pybind11::arg("featureNames")=StringA{})
+  .def("checkHessian", &NLP::checkHessian, "", pybind11::arg("x"), pybind11::arg("tolerance"), pybind11::arg("eps")=1e-8)
   .def("summarizeErrors", &NLP::summarizeErrors,
     "convert an evaluation phi to errors, i.e. (f,sos,ineq,eq) costs and constraint violations", pybind11::arg("phi"))
 
@@ -427,6 +427,7 @@ void init_Optim(pybind11::module& m) {
   .def("setPyProblem", [](std::shared_ptr<rai::NLP_Solver>& self, pybind11::object py_nlp){
     std::shared_ptr<NLP> nlp = std::dynamic_pointer_cast<NLP>( std::make_shared<PyNLP>(py_nlp) );
     self->setProblem(nlp);
+    return nlp;
   })
 
   .def("getOptions", [](std::shared_ptr<rai::NLP_Solver>& self) { return self->opt; })

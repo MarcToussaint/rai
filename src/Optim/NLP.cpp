@@ -100,7 +100,7 @@ double NLP::eval_scalar(arr& g, arr& H, const arr& x) {
   return f;
 }
 
-bool NLP::checkJacobian(const arr& _x, double tolerance, const StringA& featureNames) {
+bool NLP::checkJacobian(const arr& _x, double tolerance, double eps, const StringA& featureNames) {
   VectorFunction F = [this](const arr& x) {
     arr phi, J;
     this->evaluate(phi, J, x);
@@ -109,10 +109,10 @@ bool NLP::checkJacobian(const arr& _x, double tolerance, const StringA& featureN
   };
   arr x(_x);
   if(x.N!=dimension) x = getInitializationSample();
-  return ::checkJacobian(F, x, tolerance, true, featureNames);
+  return ::checkJacobian(F, x, tolerance, eps, 1, featureNames);
 }
 
-bool NLP::checkHessian(const arr& x, double tolerance) {
+bool NLP::checkHessian(const arr& x, double tolerance, double eps) {
   uint i;
   arr phi, J;
   evaluate(phi, NoArr, x); //TODO: only call getStructure

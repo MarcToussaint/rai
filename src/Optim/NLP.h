@@ -66,8 +66,8 @@ struct NLP : rai::NonCopyable {
   shared_ptr<NLP> ptr() { return shared_ptr<NLP>(this, [](NLP*) {}); }
   virtual double eval_scalar(arr& g, arr& H, const arr& x);
   ScalarFunction f_scalar(){ return [this](arr& g, arr& H, const arr& x){ return this->eval_scalar(g, H, x); }; }
-  bool checkJacobian(const arr& x, double tolerance, const StringA& featureNames= {});
-  bool checkHessian(const arr& x, double tolerance);
+  bool checkJacobian(const arr& x, double tolerance, double eps=1e-8, const StringA& featureNames= {});
+  bool checkHessian(const arr& x, double tolerance, double eps=1e-8);
   bool checkBounds(bool strictlyLarger);
   arr getUniformSample() { return bounds[0] + rand(dimension) % (bounds[1] - bounds[0]); }
   rai::String reportSignature();

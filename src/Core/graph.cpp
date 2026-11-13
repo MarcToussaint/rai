@@ -713,27 +713,26 @@ void readNode_postprocess(Node* n, str& namePrefix, bool parseInfo){
   }
 
   //-- special keys
-  if(n->key=="Quit") {
-    delete n; n=nullptr;
-
-  } else if(n->key=="Include") {
-    uint Nbefore = G.N;
-    FileToken& file = n->as<FileToken>();
-    file.cd_file();
-    G.read(file.getIs(), parseInfo, file.name.endsWith("yml"));
-    if(namePrefix.N) { //prepend a naming prefix to all nodes just read
-      for(uint i=Nbefore; i<G.N; i++) {
-        G.elem(i)->key.prepend(namePrefix);
-        if(G.elem(i)->is<Graph>()){
-          for(Node *m : G.elem(i)->graph()){
-            if(m->key.startsWith("mimic")) m->as<rai::String>().prepend(namePrefix);
+  if(n->key=="Include") {
+    if(n->is<FileToken>()){
+      uint Nbefore = G.N;
+      FileToken& file = n->as<FileToken>();
+      file.cd_file();
+      G.read(file.getIs(), parseInfo, file.name.endsWith("yml"));
+      if(namePrefix.N) { //prepend a naming prefix to all nodes just read
+        for(uint i=Nbefore; i<G.N; i++) {
+          G.elem(i)->key.prepend(namePrefix);
+          if(G.elem(i)->is<Graph>()){
+            for(Node *m : G.elem(i)->graph()){
+              if(m->key.startsWith("mimic")) m->as<rai::String>().prepend(namePrefix);
+            }
           }
         }
+        namePrefix.clear();
       }
-      namePrefix.clear();
+      n->as<FileToken>().cd_base();
+      delete n; n=nullptr;
     }
-    n->as<FileToken>().cd_base();
-    delete n; n=nullptr;
 
   } else if(n->key=="Prefix") {
     if(n->is<String>()) {
@@ -796,6 +795,19 @@ void readNode_postprocess(Node* n, str& namePrefix, bool parseInfo){
       n->graph().add<bool>(STRING('%' <<n->key.sub(0, i)), true);
       n->key.replace(0, j, 0, 0);
     }
+  }
+
+  //-- special keys
+  if(n && n->key=="Delete" && n->parents.N) {
+    NodeL dels = n->parents;
+    for(Node* d: dels) { delete d; d=nullptr; }
+    delete n; n=nullptr;
+  }else if(n && n->key=="Include" && n->parents.N){
+    for(Node* p:n->parents){
+      CHECK(p->is<Graph>(), "include macros need to be graphs(dicts)")
+      G.copy(p->graph(), true);
+    }
+    delete n; n=nullptr;
   }
 
   //-- post processes: prepend namePrefix
@@ -1245,7 +1257,7 @@ struct LibYamlReadHelper{
       if (!yaml_parser_parse(&parser, &event)) HALT("Failed to parse event " <<event.type <<": " <<parser.problem <<' ' <<parser.context <<" line: " <<parser.problem_mark.line+1 << " col: " <<parser.problem_mark.column);
       if(event.type == YAML_MAPPING_END_EVENT){ yaml_event_delete(&event); break; }
 
-      CHECK_EQ(event.type, YAML_SCALAR_EVENT, "")
+      CHECK_EQ(event.type, YAML_SCALAR_EVENT, "map element isn't scalar" <<" line: " <<parser.mark.line+1 << " col: " <<parser.mark.column);
       str key((char*)event.data.scalar.value);
       yaml_event_delete(&event);
 
@@ -1261,7 +1273,7 @@ struct LibYamlReadHelper{
       if (!yaml_parser_parse(&parser, &event)) HALT("Failed to parse event " <<event.type <<": " <<parser.problem <<parser.problem <<' ' <<parser.context <<" line: " <<parser.problem_mark.line+1 << " col: " <<parser.problem_mark.column);
       if(event.type == YAML_SEQUENCE_END_EVENT){ yaml_event_delete(&event); break; }
 
-      CHECK_EQ(event.type, YAML_SCALAR_EVENT, "")
+      CHECK_EQ(event.type, YAML_SCALAR_EVENT, "sequence element isn't scalar" <<" line: " <<parser.mark.line+1 << " col: " <<parser.mark.column);
       S.append().set((char*)event.data.scalar.value, event.data.scalar.length);
       yaml_event_delete(&event);
     }
