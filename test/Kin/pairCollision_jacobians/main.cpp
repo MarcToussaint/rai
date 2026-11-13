@@ -136,52 +136,33 @@ void TEST(GJK_Jacobians2) {
 
 void TEST(GJK_Jacobians3) {
   rai::Configuration C;
-  rai::Frame base(C), B1(C), B2(C);
-  rai::Joint J1(base, B1), J2(base, B2);
-  rai::Shape &s1 = B1.getShape(), &s2=B2.getShape();
-  J1.setType(rai::JT_free);
-  J2.setType(rai::JT_rigid);
-//  B1.set_Q()->setRandom();
-  B1.set_Q()->pos = {0.,0., 1.05};
-  B2.set_Q()->pos = {0.,0., 1.21};
-  B1.set_Q()->pos.x += .03;
-  B1.set_Q()->pos.y += .03;
-//  B1.set_Q()->rot.addX(.01);
-  s1.cont=s2.cont = true;
-  B1.name = "1"; B2.name="2";
+  auto base = C.addFrame("base");
+  auto B1 = C.addFrame("box1"); B1->setParent(base) .setJoint(rai::JT_free) .setShape(rai::ST_ssBox, {.2, .2, .2, .01 }) .setContact(1) .setColor({1., .5, .5, .2});
+  auto B2 = C.addFrame("box2"); B2->setParent(base) .setJoint(rai::JT_rigid) .setShape(rai::ST_ssBox, {.2, .2, .2, .01 }) .setContact(1) .setColor({.5, .5, 1.5, .2});
 
-  s1.type() = s2.type() = rai::ST_ssBox;
-  s1.size = {.2, .2, .2, .01 };
-  s2.size = {.2, .2, .2, .01 };
-  s1.createMeshes(B1.name);
-  s1.mesh().C = {.5,.8,.5,.9};
-  s2.mesh().C = {.5,.5,.8,.9};
-  s2.createMeshes(B2.name);
+  B1->setRelativePosition({.03,.03, 1.15});
+  B2->setRelativePosition({.0,.0, 1.});
 
   C.gl().drawOptions.drawProxies=true;
-
-  C.coll_stepFcl(rai::_broadPhaseOnly);
+  C.ensure_proxies(true);
   C.coll_reportProxies();
-
+  // interactive = true;
+  C.view(interactive);
   arr q = C.getJointState();
 
   for(uint t=0;t<10;t++){
     C.setJointState(q);
-    C.coll_stepFcl(rai::_broadPhaseOnly);
-//    C.stepFcl();
-//    K.reportProxies(cout, -1., false);
-
-//    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(-1), s2.size(-1));
+    C.ensure_proxies(true);
+    C.coll_reportProxies();
 
     F_PairCollision gjk(F_PairCollision::_negScalar);
-    FrameL F = {&B1, &B2};
+    FrameL F = {B1, B2};
     bool good = checkJacobian(gjk.asFct(F), q, 1e-4);
     if(!good) rndGauss(q, 1e-4, true);
 
     arr y = gjk.eval(F);
 
-    F_qQuaternionNorms qn;
-    arr y2 = qn.eval(C.frames);
+    arr y2 = F_qQuaternionNorms().eval(C.frames);
 
     cout <<"contact meassure = " <<y(0) <<endl;
     C.view(interactive, STRING("t=" <<t <<"  movement along negative contact gradient"));
@@ -347,7 +328,6 @@ int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
   // rnd.seed_random();
-
 
   testGJK_Jacobians();
   testGJK_Jacobians2();

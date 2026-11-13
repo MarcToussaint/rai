@@ -73,7 +73,7 @@ PairCollision_CvxCvx::PairCollision_CvxCvx(const arr& pts1, const arr& pts2,
 //  if(distance<1e-10) GJK_sqrDistance();
 
 #ifndef FCLmode
-  if(distance<=0.) {
+  if(distance<1e-10) { //WARNING: Setting this to zero does not work! GJK does not return zero or negative number
     //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
     arr M1(pts1); if(!t1.isZero()) t1.applyOnPointArray(M1);
     arr M2(pts2); if(!t2.isZero()) t2.applyOnPointArray(M2);
@@ -101,7 +101,7 @@ PairCollision_CvxCvx::PairCollision_CvxCvx(const arr& pts1, const arr& pts2,
     p1 = p2 = .5*(p1+p2);
   }
 
-  //ensure that the normal always points 'against obj1' (along p1-p2 relative to NON-penetration)
+  //ensure that the normal always points 'against obj1' (along p1-p2 relative to non-penetration)
   if(rai::sign(distance) * scalarProduct(normal, p1-p2) < 0.){
     normal *= -1.;
   }
@@ -118,8 +118,6 @@ PairCollision_CvxCvx::PairCollision_CvxCvx(const arr& pts1, const arr& pts2,
   }
 
   CHECK_GE(rai::sign(distance) * scalarProduct(normal, p1-p2), -1e-10, "");
-
-  //in current state, the rad1, rad2, have not been used at all!!
 }
 
 PairCollision_CvxCvx::PairCollision_CvxCvx(ScalarFunction func1, ScalarFunction func2, const arr& seed) {

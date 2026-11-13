@@ -218,8 +218,14 @@ bool FclInterface_self::BroadphaseCallback(CollObject* o1, CollObject* o2, void*
     fcl::DistanceResult result;
     fcl::distance(o1, o2, request, result);
     if(result.min_distance<fcl->cutoff) fcl->addCollision(a, b);
-  } else {
-    NIY;
+  } else if(fcl->self->mode==_fine) {
+    fcl::DistanceRequest request;
+    fcl::DistanceResult result;
+    fcl::distance(o1, o2, request, result);
+    Proxy& p = fcl->addCollision(a, b);
+    p.posA.set(result.nearest_points[0].data.vs);
+    p.posB.set(result.nearest_points[1].data.vs);
+    p.d = result.min_distance;
   }
   return false;
 }
