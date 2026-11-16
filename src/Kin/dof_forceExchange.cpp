@@ -34,7 +34,7 @@ rai::ForceExchangeDof::ForceExchangeDof(Frame* fpoa, rai::Frame& a, rai::Frame& 
     torque = copy->torque;
   }
   if(type==FXT_forceZ) {
-    limits = {.01, 1.};
+    limits = {.01, 10.};
   }
 }
 

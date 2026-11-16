@@ -520,8 +520,8 @@ arr F_fex_ForceIsNormal::phi(const FrameL& F) {
                .eval(F);
   op_normalize(normal);
 #else
-  Value normal = F_PairCollision(F_PairCollision::_normal, true)
-                 .eval(F);
+  arr normal = F_PairCollision(F_PairCollision::_normal, true)
+               .eval(F);
 #endif
 
   //-- force needs to align with normal -> project force along normal
@@ -596,8 +596,8 @@ void F_fex_ForceIsPositive::phi2(arr& y, arr& J, const FrameL& F) {
                .eval(F);
   op_normalize(normal);
 #else
-  Value normal = F_PairCollision(F_PairCollision::_normal, true)
-                 .eval(F);
+  arr normal = F_PairCollision(F_PairCollision::_normal, true)
+                   .eval(F);
 #endif
 
   //-- force needs to align with normal -> project force along normal

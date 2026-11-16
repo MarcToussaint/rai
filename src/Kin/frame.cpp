@@ -542,6 +542,7 @@ rai::Frame& rai::Frame::setShape(rai::ShapeType shape, const arr& size) {
 rai::Frame& rai::Frame::setPose(const rai::Transformation& _X) {
   ensure_X();
   X = _X;
+  X.rot.normalize();
   _state_updateAfterTouchingX();
   return *this;
 }
