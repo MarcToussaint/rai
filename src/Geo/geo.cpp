@@ -516,6 +516,7 @@ Quaternion& Quaternion::normalize() {
   if(isZero) return *this;
   double n=w*w + x*x + y*y + z*z;
   n=sqrt(n);
+  if(n<1e-8) LOG(-1) <<"WARNING: tiny quaternion norm " <<n <<" deviding by it";
   w/=n; x/=n; y/=n; z/=n;
   return *this;
 }

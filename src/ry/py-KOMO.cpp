@@ -104,7 +104,16 @@ void init_KOMO(pybind11::module& m) {
        pybind11::arg("obj"),
        pybind11::arg("from"),
        pybind11::arg("frictionCone_mu"),
-       pybind11::arg("init_objMass"),
+       pybind11::arg("init_poa"),
+       pybind11::arg("init_force"),
+       pybind11::arg("obj_com_frame")=str{})
+  .def("addContactForceDirect", &KOMO::addContactForceDirect, "",
+       pybind11::arg("times"),
+       pybind11::arg("obj"),
+       pybind11::arg("from"),
+       pybind11::arg("frictionCone_mu"),
+       pybind11::arg("init_poa"),
+       pybind11::arg("init_force"),
        pybind11::arg("obj_com_frame")=str{})
 
   //-- initialize (=set state)
@@ -166,6 +175,7 @@ void init_KOMO(pybind11::module& m) {
   .def("view_close",  &KOMO::view_close)
   .def("set_viewer",  &KOMO::set_viewer)
   .def("get_viewer",  &KOMO::get_viewer)
+  .def("animateOptimization", [](std::shared_ptr<KOMO>& self, int verbose){ self->opt.animateOptimization=verbose; }, "", pybind11::arg("verbose") = 1)
 
   ;
 

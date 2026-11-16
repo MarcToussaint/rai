@@ -777,7 +777,7 @@ rai::Frame* KOMO::addContact_WithPoaFrame(const arr& times, str obj, str from, d
   return f_poa;
 }
 
-rai::Frame* KOMO::addContactForceFrame(const arr& times, str obj, str from, double frictionCone_mu, double init_objMass, str obj_com_frame){
+rai::Frame* KOMO::addContactForceFrame(const arr& times, str obj, str from, double frictionCone_mu, arr init_poa, arr init_force, str obj_com_frame){
   rai::Frame *f_obj = _getFrame(obj);
   rai::Frame *f_from = _getFrame(from);
   CHECK(f_obj != f_from, "");
@@ -787,19 +787,35 @@ rai::Frame* KOMO::addContactForceFrame(const arr& times, str obj, str from, doub
   rai::Frame *f_poa = addFrameDof(poa_name, obj, rai::JT_free, true);
 
   //initialize using pair collision geometry
-  rai::Transformation relOrigin;
+  rai::Transformation initPose;
 #if 0 //WARNING: changes previous CSRL sampler!
   rai::Vector relVec = f_from->ensure_X().pos / f_obj->ensure_X();
   relOrigin.pos = .5*relVec;
   relOrigin.rot.setDiff(Vector_z, -relVec);
 #else
   pathConfig.ensure_indexedJoints();
-  arr p = F_PairCollision(F_PairCollision::_center, false).eval({f_from, f_obj});
-  arr n = F_PairCollision(F_PairCollision::_normal, false).eval({f_from, f_obj});
-  relOrigin.pos = Vector(p) / f_obj->ensure_X();
-  relOrigin.rot.setDiff(Vector_z, -Vector(n));
+  if(init_poa.N==3){
+    // cout <<"HERE initializing with poa:" <<init_poa <<endl;
+    initPose.pos = init_poa;
+  }else{
+    arr p = F_PairCollision(F_PairCollision::_center, false).eval({f_from, f_obj});
+    initPose.pos = Vector(p);
+  }
+  if(init_force.N==3){
+    // cout <<"HERE initializing with force:" <<init_force <<endl;
+    Vector f(init_force);
+    double f_norm = length(init_force);
+    f /= f_norm;
+    initPose.rot.setDiff(Vector_z, f);
+    init_force = arr{f_norm};
+  }else{
+    arr n = F_PairCollision(F_PairCollision::_normal, false).eval({f_from, f_obj});
+    initPose.rot.setDiff(Vector_z, -Vector(n));
+    CHECK_EQ(init_force.N, 1, "init_force needs to be either 1D or 3D")
+  }
+  initPose = initPose / f_obj->ensure_X();
 #endif
-  f_poa->joint->setDofs(relOrigin.getArr7d());
+  f_poa->joint->setDofs(initPose.getArr7d());
 
   //create a force exchange DOF
   // rai::Transformation origin = f_obj->ensure_X() * relOrigin;
@@ -807,10 +823,10 @@ rai::Frame* KOMO::addContactForceFrame(const arr& times, str obj, str from, doub
   // arr force = origin.rot.getZ().getArr(); //obj->getPosition() - finger->getPosition());
   // force *= init_objMass*9.81;
   if(obj_com_frame.N){
-    addForceExchangeDofs(times, f_poa, obj_com_frame, from, rai::FXT_forceZ, {}, {init_objMass*9.81}, 2.*init_objMass*9.81);
+    addForceExchangeDofs(times, f_poa, obj_com_frame, from, rai::FXT_forceZ, init_poa, init_force, 4.*length(init_force));
     // addObjective(times, make_shared<F_fex_Force>(), {obj_com_frame, from}, OT_sos, {1e-2});
   }else{
-    addForceExchangeDofs(times, f_poa, obj, from, rai::FXT_forceZ, zeros(3), {init_objMass*9.81}, 2.*init_objMass*9.81);
+    addForceExchangeDofs(times, f_poa, obj, from, rai::FXT_forceZ, init_poa, init_force, 4.*length(init_force));
   }
 
   //constraints to make poa frames and force exchange consistent
@@ -829,6 +845,32 @@ rai::Frame* KOMO::addContactForceFrame(const arr& times, str obj, str from, doub
   //   addObjective(times, FS_positionRel, {poa_name, from}, OT_eq, {1e1}, {}, 1, +1, +1);
   // }
   return f_poa;
+}
+
+void KOMO::addContactForceDirect(const arr& times, str obj, str from, double frictionCone_mu, arr init_poa, arr init_force, str obj_com_frame){
+  rai::Frame *f_obj = _getFrame(obj);
+  rai::Frame *f_from = _getFrame(from);
+  CHECK(f_obj != f_from, "");
+
+  if(obj_com_frame.N){
+    addForceExchangeDofs(times, 0, obj_com_frame, from, rai::FXT_poa, init_poa, init_force, 4.*length(init_force));
+  }else{
+    addForceExchangeDofs(times, 0, obj, from, rai::FXT_poa, init_poa, init_force, 4.*length(init_force));
+  }
+
+  //-- on-surface (distance) constraints
+  addObjective(times, FS_negDistance, {obj, from}, OT_ineq, {1e1});
+  // addObjective(times, make_shared<F_fex_POASurfaceDistance>(rai::_left), {obj, from}, OT_eq, {1e2}); //left-poa dist zero
+  // addObjective(times, make_shared<F_fex_POASurfaceDistance>(rai::_right), {obj, from}, OT_eq, {1e2}); //right-poa dist zero
+  addObjective(times, make_shared<F_fex_POAContactDistances>(), {obj, from}, OT_eq, {1e2});
+
+  //-- force constraints
+  addObjective(times, make_shared<F_fex_ForceIsPositive>(), {obj, from}, OT_ineq, {1e1});
+  if(frictionCone_mu<1.){
+    addObjective(times, make_shared<F_fex_ForceInFrictionCone>(frictionCone_mu), {obj, from}, OT_ineq, {1e0});
+  }else{
+    addObjective(times, make_shared<F_fex_ForceIsNormal>(), {obj, from}, OT_eq, {1e1});
+  }
 }
 
 void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const char* from, const char* to) {
@@ -1853,13 +1895,12 @@ void KOMO::initFrameDof(rai::Frame* f, rai::Frame* q0Frame){
 
 void KOMO::addForceExchangeDofs(const arr& times, Frame* fpoa, const char* onto, const char* from, rai::ForceExchangeType type, const arr& initPoa, const arr& initForce, double scale){
   //skip doing it in world at all...
-  uint poaId = fpoa->ID;
   uint ontoId = _getFrame(onto)->ID;
   uint fromId = _getFrame(from)->ID;
   int sStart, sEnd;
   conv_times2steps(sStart, sEnd, times, stepsPerPhase, T, 0, 0);
   for(int s=sStart; s<=sEnd; s++) {
-    rai::Frame *p = timeSlices(k_order+s, poaId);
+    rai::Frame *p = (fpoa ? timeSlices(k_order+s, fpoa->ID) : 0);
     rai::Frame *a = timeSlices(k_order+s, ontoId);
     rai::Frame *b = timeSlices(k_order+s, fromId);
     rai::ForceExchangeDof* ex = new ForceExchangeDof(p, *a, *b, type);
