@@ -144,7 +144,7 @@ void Thread::threadOpen(bool waitForOpened) {
     auto lock = status.set();
     if(thread) return; //this is already open -- or has just beend opened (parallel call to threadOpen)
     thread = std::make_unique<std::thread>(&Thread::main, this);
-#ifndef RAI_MSVC
+#if !defined RAI_MSVC && !defined __APPLE__
     if(name) pthread_setname_np(thread->native_handle(), name);
 #endif
     status.data=tsToOpen;
