@@ -21,7 +21,9 @@
 #include <thread>
 #  include <limits.h>
 #  include <sys/resource.h>
+#ifndef __APPLE__
 #  include <sys/inotify.h>
+#endif
 #  include <sys/stat.h>
 #  include <poll.h>
 #  include <execinfo.h>
@@ -643,12 +645,12 @@ LogObject::LogObject(const char* key, int defaultLogCoutLevel, int defaultLogFil
 }
 
 LogObject::~LogObject() {
-  if(!strcmp(key, "global")) {
+  if(!strcmp(key, "global")) try {
     (*fil) <<"** execution stop: " <<date()
            <<"\n** real time: " <<realTime()
            <<"sec\n** CPU time: " <<cpuTime() <<endl;
     (*fil) <<"\n** set+queried params:\n" <<getParamsDump();
-  }
+  } catch(...) {} //at exit, singleton mutexes may already be destroyed (throws on macOS)
   if(fil) {
     (*fil).close();
     delete fil;
@@ -1099,12 +1101,15 @@ std::ostream& FileToken::getOs() {
 std::istream& FileToken::getIs() {
   CHECK(!os, "don't use a FileToken both as input and output");
   if(!is) {
-    is = std::make_unique<std::ifstream>();
-    is->open(name);
+    std::ifstream fil(name);
     LOG(3) <<"opening input file '" <<name <<"'";
-    if(!is->good()){
+    if(!fil.good()){
       THROW("could not open file '" <<name <<"' for input from '" <<baseDir <<" / " <<path <<"'");
     }
+    //read into memory: libc++'s filebuf fails tellg() after repeated putback (used by the parser)
+    auto ss = std::make_shared<std::stringstream>();
+    *ss <<fil.rdbuf();
+    is = ss;
   }
   return *is;
 }
@@ -1144,7 +1149,7 @@ uint rndInt(uint up){ return uint(rnd.uni_int(0, up-1)); }
 // Inotify
 //
 
-#ifndef RAI_MSVC
+#if !defined RAI_MSVC && !defined __APPLE__
 Inotify::Inotify(const char* filename): fd(0), wd(0) {
   fd = inotify_init();
   if(fd<0) HALT("Couldn't initialize inotify");

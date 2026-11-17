@@ -43,7 +43,7 @@ void createPath(){
       .setProblem(skomo)
       .solve();
   cout <<*ret <<endl;
-  skomo->checkJacobian(ret->x, 1e-4, komo.featureNames);
+  skomo->checkJacobian(ret->x, 1e-4, 1e-8, komo.featureNames);
 //  komo.solve();
 
   komo.view(true, "result");
