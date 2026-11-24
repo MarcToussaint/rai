@@ -158,7 +158,7 @@ const rai::Transformation& rai::Frame::get_Q() const {
 // }
 
 rai::Transformation_Qtoken rai::Frame::set_Q() {
-  CHECK(parent, "setQ is only allowed for child frames (at frame '" <<name <<"'");
+  CHECK(parent, "setQ is only allowed for child frames (at frame '" <<name <<"')");
   return Transformation_Qtoken(*this);
 }
 
@@ -512,9 +512,9 @@ void rai::Frame::write(Graph& G, bool includePureOriginTransform) const {
     if(includePureOriginTransform){
       if(parent->isPureTransform()) G.add<arr>("origin", parent->Q.getFlexArr());
     }
-    if(!Q.isZero() && !joint) G.add<arr>("pose", Q.getFlexArr());
+    if(!Q.isZero() && !joint) G.add<arr>("Q", Q.getFlexArr());
   } else {
-    if(!X.isZero()) G.add<arr>("pose", X.getFlexArr());
+    if(!X.isZero()) G.add<arr>("X", X.getFlexArr());
   }
 
   if(joint) joint->write(G);
@@ -2152,8 +2152,15 @@ void rai::Shape::write(std::ostream& os, const Frame& frame) const {
   if(_type!=ST_mesh) os <<", size: " <<size;
 
   Node* n;
-  if(frame.ats && (n=frame.ats->findNode("color"))) { os <<", "; n->write(os, -1, true); }
-  else if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4) os <<", color: " <<_mesh->C;
+  if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4){
+    arr c = _mesh->C;
+    if(c.N==4 && c(3)==1.) c.resizeCopy(3);
+    if(c.N==3 && c(0)==c(1) && c(0)==c(2)) c.resize(1.);
+    if(c.N==4 && c(0)==c(1) && c(0)==c(2)) c = c({2,4});
+    if(c!=arr{.8}){
+      os <<", color: " <<c;
+    }
+  }else if(frame.ats && (n=frame.ats->findNode("color"))) { os <<", "; n->write(os, -1, true); }
   // else if(_mesh && _mesh->C.nd==2) os <<", color: " <<_mesh->C[0];
   if(frame.ats && (n=frame.ats->findNode("mesh"))) { os <<", "; n->write(os, -1, true); }
   if(frame.ats && (n=frame.ats->findNode("meshscale"))) { os <<", "; n->write(os, -1, true); }
@@ -2171,9 +2178,13 @@ void rai::Shape::write(Graph& g, const Frame& frame) {
   }
   if(type()!=ST_mesh) g.add<arr>("size", size);
 
-  if(frame.ats && (n=frame.ats->findNode("color"))) n->newClone(g);
-  else if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4) g.add<arr>("color", mesh().C);
-  // else if(_mesh && _mesh->C.nd==2) g.add<arr>("color", mesh().C[0]);
+  if(_mesh && _mesh->C.N>0 && _mesh->C.N<=4){
+    arr c = _mesh->C;
+    if(c.N==4 && c(3)==1.) c.resizeCopy(3);
+    if(c.N==3 && c(0)==c(1) && c(0)==c(2)) c.resize(1.);
+    if(c.N==4 && c(0)==c(1) && c(0)==c(2)) c = c({2,4});
+    if(c!=arr{.8}) g.add<arr>("color", c);
+  }else if(frame.ats && (n=frame.ats->findNode("color"))) n->newClone(g);
   if(cont) g.add<int>("contact", cont);
 }
 

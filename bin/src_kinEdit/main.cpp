@@ -63,10 +63,10 @@ int main(int argc,char **argv){
 
 
     //-- sort frames
-     if(rai::checkParameter<bool>("sort")){
+    if(rai::checkParameter<bool>("sort")){
       LOG(0) <<"SORTING FRAMES";
       C.sortFrames();
-     }
+    }
 
     //    C.processStructure(false, false, false);
     C.ensure_q();

@@ -1438,7 +1438,7 @@ struct LibYamlWriteHelper{
 
     if(n->is<Graph>()){
       Graph& g = n->graph();
-      bool flow=g.N<4;
+      bool flow=g.N<=5;
       map_start(flow);
       for(Node *ch:g) writeNode(ch);
       map_end();

@@ -183,6 +183,7 @@ struct Configuration {
   std::tuple<intA, arr> getForceArrays();
   bool checkUniqueNames(bool makeUnique=false);
   FrameL calc_topSort(bool depthFirst=true) const;
+  FrameL calc_minimalSort() const;
   bool check_topSort() const;
   bool check_sorted() const;
 
@@ -314,7 +315,7 @@ public:
   /// @name I/O
   Graph asDict() const;
   str asYaml(bool serial=false) const { return asDict().asYaml(serial); }
-  void write(std::ostream& os, bool explicitlySorted=false) const;
+  void write(std::ostream& os) const { os <<asDict().asYaml(false) <<endl; }
   void writeURDF(std::ostream& os, const char* robotName="myrobot") const;
   void writeCollada(const char* filename, const char* format="collada") const;
   void writeMeshes(str pathPrefix="meshes/", bool copyTextures=false, bool enumerateAssets=false) const;

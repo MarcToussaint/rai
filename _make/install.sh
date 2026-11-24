@@ -17,7 +17,7 @@ ubuntu_rai="g++ clang make gnupg cmake git wget libstdc++-14-dev \
 ubuntu_python="python3-dev python3 python3-pip python3-venv"
 
 ubuntu_botop="libpoco-dev libboost-system-dev \
-		portaudio19-dev libusb-1.0-0-dev libhidapi-dev"
+		portaudio19-dev libusb-1.0-0-dev libhidapi-dev libtinyxml2-dev"
 
 ubuntu_robotic="liblapack3 freeglut3 libglu1-mesa libxrandr2 \
 		libfreetype6 fonts-ubuntu \
@@ -65,6 +65,13 @@ echo '=== Installing' ${lib} ' -- sources:' ${git} ' -- prefix (compiled library
 
 cd ${git}
 
+### clean full path before
+
+if [ "${clean}" = "yes" -a -e "${lib}" ]; then
+    echo 'Clearing' ${lib}
+    rm -Rf ${lib}
+fi
+
 case ${lib} in
 
     botop)
@@ -80,10 +87,43 @@ case ${lib} in
 	make -C ${lib}/build install
 	;;
 
+    console_bridge)
+	git clone --single-branch https://github.com/ros/console_bridge.git
+	cd ${lib}
+	cmake -DCMAKE_INSTALL_PREFIX=${pre} . -B build
+	make -C build install
+	;;
+    
+    urdfdom_headers)
+	git clone --single-branch https://github.com/ros/urdfdom_headers.git
+	cd ${lib}
+	cmake -DCMAKE_INSTALL_PREFIX=${pre} . -B build
+	make -C build install
+	;;
+
+    urdfdom)
+	git clone --single-branch https://github.com/ros/urdfdom.git
+	cd ${lib}
+	cmake -DCMAKE_INSTALL_PREFIX=${pre} . -B build
+	make -C build install
+	;;
+
+    pinocchio)
+	git clone --single-branch -b v3.9.0 https://github.com/stack-of-tasks/pinocchio.git
+	cd ${lib}
+	cmake -DCMAKE_INSTALL_PREFIX=${pre} \
+	      -DBoost_USE_STATIC_LIBS=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+	      -DBUILD_SHARED_LIBS=OFF -DBUILD_PYTHON_INTERFACE=OFF \
+	      -DBUILD_DOCUMENTATION=OFF -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF \
+	      -DBUILDING_ROS2_PACKAGE=OFF \
+	      -DCMAKE_BUILD_TYPE=Release . -B build
+	make -j4 -C build install
+	;;
+	
     libfranka)
-	if [ -z "$version" ]; then version="0.13.3"; fi #old: 0.8.0 very old: 0.7.1
+	if [ -z "$version" ]; then version="0.18.0"; fi #old: 0.13.3 0.8.0 very old: 0.7.1
 	git clone --single-branch -b ${version} --recurse-submodules https://github.com/frankaemika/libfranka
-	cd libfranka
+	cd ${lib}
 	curl -LO https://github.com/Human-Centered-Robotics-Team/Libfranka-Non-RT-Patch/raw/master/PatchFile
 	patch -p1 < PatchFile
 	cmake -DCMAKE_INSTALL_PREFIX=${pre} -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=OFF . -B build
@@ -105,6 +145,13 @@ case ${lib} in
 	git clone --single-branch -b ${version} --recurse-submodules https://github.com/TrossenRobotics/trossen_arm.git
 	cmake -DCMAKE_INSTALL_PREFIX=${pre} ${lib} -B ${lib}/build
 	make -C ${lib}/build install
+	;;
+
+    z1_sdk)
+	git clone --single-branch https://github.com/unitreerobotics/z1_sdk.git
+	cmake -DCMAKE_INSTALL_PREFIX=${pre} ${lib} -B ${lib}/build
+	make -C ${lib}/build
+	cp -v ${lib}/lib/lib*.so ${pre}/lib; cp -vR ${lib}/include/unitree_arm_sdk ${pre}/include
 	;;
 
     physx)

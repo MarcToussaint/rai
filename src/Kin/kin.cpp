@@ -988,7 +988,7 @@ bool Configuration::checkUniqueNames(bool makeUnique) {
   return true;
 }
 
-/// compute the natural order of all frames (first adding all root frames, then expanding using breadth-first search)
+/// compute the natural order of all frames (first adding all root frames, then expanding using breadth-first or depth-first search)
 FrameL Configuration::calc_topSort(bool depthFirst) const {
   FrameL order;
   boolA done = consts<byte>(false, frames.N);
@@ -1015,6 +1015,23 @@ FrameL Configuration::calc_topSort(bool depthFirst) const {
   CHECK_EQ(order.N, frames.N, "can't top sort");
 
   return order;
+}
+
+FrameL Configuration::calc_minimalSort() const {
+  FrameL F = frames;
+  for(uint i=0;i<F.N;i++) F.elem(i)->ID = i;
+  for(uint i=0;i<F.N;){
+    Frame *f = F.elem(i);
+    uint j = f->parent->ID;
+    if(j>i){ //swap
+      F({i,j-1}) = F({i+1,j});
+      F(j-1) = f;
+      for(uint k=i;k<j;k++) F.elem(k)->ID = k;
+    }else{
+      i++;
+    }
+  }
+  return F;
 }
 
 /// check if the current \ref frames is topologically sorted
@@ -2603,37 +2620,27 @@ void Configuration::filterProxiesToContacts(double margin) {
 }
 #endif
 
-/// prototype for \c operator<<
-void Configuration::write(std::ostream& os, bool explicitlySorted) const {
-#if 0
-  for(Frame* f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
-  if(!explicitlySorted) {
-    for(Frame* f: frames) f->write(os);
-  } else {
-    FrameL sorted = calc_topSort();
-    for(Frame* f: sorted) f->write(os);
-  }
-  os <<endl;
-#else
-  // asDict().write(os, "\n", 0, -1, true);
-  os <<asDict().asYaml(false) <<endl;
-#endif
-}
-
 Graph Configuration::asDict() const {
   Graph G;
   NodeL f2n(frames.N);
+  intA parId(frames.N);
   f2n.setZero();
-  if(check_sorted()){
+  if(true){ //check_sorted()){
     for(Frame* f: frames){
       if(!(f->isPureTransform() && f->children.N==1 && !f->children.elem()->isPureTransform())){
-        rai::Frame *par = f->parent;
-        if(par && par->isPureTransform()) par = par->parent;
-        if(par) CHECK(f2n(par->ID), "");
-        Graph& g = G.addSubgraph(f->name, (par?NodeL{f2n(par->ID)}:NodeL{}));
+        Graph& g = G.addSubgraph(f->name); //no parents yet (for unsorted), (par?NodeL{f2n(par->ID)}:NodeL{}));
         f->write(g, true);
         f2n(f->ID) = g.isNodeOfGraph;
+
+        rai::Frame *par = f->parent;
+        if(par && par->isPureTransform()) par = par->parent;
+        if(par) parId(f->ID) = par->ID; else parId(f->ID) = -1;
       }
+    }
+    for(Frame* f: frames){
+      Node* n = f2n(f->ID);
+      int p = parId(f->ID);
+      if(n && p>=0) n->setParents(NodeL{f2n(p)});
     }
   }else{ //old!
     for(Frame* f: frames) f->write(G.addSubgraph(f->name));
@@ -4050,7 +4057,7 @@ void Configuration::watchFile(const char* filename) {
         V->updateConfiguration(*this).view(false);
       } else if(key=='x') { //export
         LOG(0) <<"exporting";
-        FILE("z.g") <<*this;
+        FILE("z.yml") <<asYaml();
         writeURDF(FILE("z.urdf"));
         writeMesh("z.ply");
         writeCollada("z.dae");
